@@ -15,15 +15,25 @@ const tokens = new Map(Object.values(instances).map((i) => [i.url, i.token]));
 let rpcId = 0;
 /** The only way this driver touches anything: an MCP tools/call to a RightClick X server. */
 async function mcp(server: string, tool: string, args: Record<string, unknown> = {}): Promise<any> {
+  // Retry Cloudflare edge errors (e.g. 1042 while a new workers.dev route propagates).
+  for (let attempt = 0; ; attempt++) {
+    const r = await callOnce(server, tool, args);
+    if (r.ok || attempt >= 5) return r.value;
+    await new Promise((res) => setTimeout(res, 1000 * 2 ** attempt));
+  }
+}
+
+async function callOnce(server: string, tool: string, args: Record<string, unknown>): Promise<{ ok: boolean; value?: any }> {
   const res = await fetch(`${server}/mcp`, {
     method: "POST",
     headers: { "content-type": "application/json", accept: "application/json, text/event-stream", authorization: `Bearer ${tokens.get(server)}` },
     body: JSON.stringify({ jsonrpc: "2.0", id: ++rpcId, method: "tools/call", params: { name: tool, arguments: args } }),
   });
-  const j: any = await res.json();
+  const j: any = await res.json().catch(() => null);
+  if (!j?.jsonrpc) return { ok: false };
   if (j.error) throw new Error(`${tool}: ${j.error.message}`);
   if (j.result.isError) throw new Error(`${tool}: ${j.result.content?.[0]?.text}`);
-  return j.result.structuredContent;
+  return { ok: true, value: j.result.structuredContent };
 }
 
 const show = (s: unknown, n = 150) => (typeof s === "string" ? s : JSON.stringify(s)).replace(/\s+/g, " ").slice(0, n);
@@ -32,7 +42,7 @@ const out: Record<string, unknown> = { at: new Date().toISOString() };
 try {
   const [A, B, C] = [instances.a.url, instances.b.url, instances.c.url];
   const where = await Promise.all([A, B, C].map((s) => mcp(s, "context_runtime")));
-  ["A", "B", "C"].forEach((n, i) => log(`${n} ${[A, B, C][i]}  runs in ${where[i].runtime.region}, ${where[i].runtime.country}  (${where[i].runtime.name})`));
+  ["A", "B", "C"].forEach((n, i) => log(`${n} ${[A, B, C][i]}  runs in Cloudflare datacenter ${where[i].runtime.region}`));
   log("(three RightClick X instances on Cloudflare, each pinned to a region; this driver speaks only MCP over HTTPS)\n");
   out.placement = where.map((w) => ({ name: w.name, region: w.runtime.region, country: w.runtime.country }));
 
@@ -84,8 +94,9 @@ try {
     log(`  ${r.executed?.status === "completed" ? "✓" : "✗"} ${country}: ${r.executed?.titles?.join(" → ")} → ${show(r.executed?.output, 110)}`);
     bRuns.push({ country, pipeline: r.executed?.titles, output: r.executed?.output, published: r.published?.path });
   }
-  const money = await mcp(B, "context_compose", { have: { country: "GB" }, want: "json", intent: "country money", run: true });
-  log(`  ✓ GB via A's "Country money": ${show(money.executed?.output, 110)}`);
+  const money = await mcp(B, "context_compose", { have: { country: "GB" }, want: "json", intent: "country money", run: true, verify: [{ op: "exists", path: "result.rates.USD" }] });
+  const moneyOk = money.executed?.status === "completed";
+  log(`  ${moneyOk ? "✓" : "✗"} GB via A's "Country money": ${moneyOk ? show(money.executed?.output, 110) : "not available (" + (money.executed?.attempts?.map((a: any) => a.error).join("; ").slice(0, 100) || "no plan") + ")"}`);
   out.B = { learned: lb.totalNewCapabilities, runs: bRuns, money: show(money.executed?.output, 300) };
 
   // ------------------------------------------------------------- C

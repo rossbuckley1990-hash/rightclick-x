@@ -186,6 +186,8 @@ function bind(cap: Capability, values: Value[], intent: Set<string>): Binding[] 
       if (!bridged && !accepts(port.name, port.type, v.type)) continue;
       // Optional ports are only filled when the caller supplied them by name.
       if (!port.required && v.ref !== `$in.${port.name}`) continue;
+      // A port with a fixed set of allowed values takes a caller's choice, never another step's output.
+      if (port.enum && v.step >= 0) continue;
       const leafName = v.ref.replace(/^(\$in|\d+)\./, "").split(".").pop() ?? "";
       // Name-like ports (title, name, q) take names, not prose fields like body/description.
       if (isNominal(port.name, port.type) && CONTENT.test(leafName)) continue;

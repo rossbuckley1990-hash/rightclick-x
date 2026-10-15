@@ -17,6 +17,8 @@ export interface Port {
   description?: string;
   /** Raw source schema type, when the source declares one (e.g. "String!", "integer"). */
   wire?: string;
+  /** Allowed values, when the source declares an enum. Only the caller can choose one. */
+  enum?: string[];
 }
 
 export type SourceKind =

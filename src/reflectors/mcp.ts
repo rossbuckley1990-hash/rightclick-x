@@ -119,6 +119,7 @@ export function reflectMcpTools(tools: any[], endpoint: string, serverName?: str
     const props: Record<string, any> = t.inputSchema?.properties ?? {};
     const req = new Set<string>(t.inputSchema?.required ?? []);
     const inputs: Port[] = Object.entries(props).map(([name, s]) => ({
+      ...(Array.isArray(s?.enum) ? { enum: s.enum.map(String) } : {}),
       name,
       type: inferType(name, s, s?.description ?? ""),
       required: req.has(name),

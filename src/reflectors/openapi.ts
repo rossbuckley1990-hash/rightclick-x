@@ -37,7 +37,9 @@ export function reflectOpenAPI(spec: Obj, specUrl: string): Reflection {
         if (seen.has(name)) return false;
         seen.add(name);
         const t = schema?.type;
+        const values = Array.isArray(schema?.enum) ? schema.enum.map(String) : undefined;
         inputs.push({
+          ...(values ? { enum: values } : {}),
           name,
           // Another RightClick X tells us the exact semantic type; trust it over inference.
           type: (schema as any)?.["x-rightclick-type"] ?? inferType(name, schema, description),

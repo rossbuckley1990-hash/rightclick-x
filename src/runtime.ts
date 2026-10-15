@@ -10,7 +10,7 @@ import type { Capability, FetchLike, PlanStep, Reflection, SemType } from "./cor
 import { check, pick, type Predicate, type PredicateResult } from "./core/verify.ts";
 import { builtinReflection, type BuiltinFn } from "./reflectors/builtins.ts";
 import { DEFAULT_DIRECTORIES, type Candidate, type Directory } from "./reflectors/directories.ts";
-import { discover, type Discovery } from "./reflectors/discover.ts";
+import { discover, type Discovery, type SourceKind } from "./reflectors/discover.ts";
 import { buildDocument } from "./reflectors/graphql.ts";
 import { McpClient } from "./reflectors/mcp.ts";
 import { Authority, readBody, request, type Net, type NetworkPolicy } from "./reflectors/net.ts";
@@ -245,7 +245,7 @@ export class RightClick {
 
   // ================================================================ context_learn
 
-  async learn(opts: { source?: string; sources?: string[]; deep?: boolean; spec?: Reflection }) {
+  async learn(opts: { source?: string; sources?: string[]; deep?: boolean; spec?: Reflection; kinds?: Record<string, SourceKind> }) {
     const sources = [...(opts.source ? [opts.source] : []), ...(opts.sources ?? [])];
     // Batch learning measures powers once for the whole batch, not per provider.
     const batchBefore = this.graph.powers().total;
@@ -255,7 +255,7 @@ export class RightClick {
     await Promise.all(
       sources.map(async (source) => {
         try {
-          const d = await discover(this.net, source, { deep: opts.deep, mcp: (u) => this.mcp(u) });
+          const d = await discover(this.net, source, { deep: opts.deep, mcp: (u) => this.mcp(u), kind: opts.kinds?.[source] });
           // Re-learning a source replaces everything it produced before, even when
           // the provider changed protocol (OpenAPI -> GraphQL -> MCP) and so its id.
           const previous = [...this.graph.providers.values()].filter((p) => p.meta?.source === source);
@@ -510,7 +510,7 @@ export class RightClick {
       }
       const batch = candidates.splice(0, 3);
       if (!batch.length) return false;
-      const l = await this.learn({ sources: batch.map((c) => c.source) });
+      const l = await this.learn({ sources: batch.map((c) => c.source), kinds: Object.fromEntries(batch.map((c) => [c.source, c.kind])) });
       for (const c of batch) {
         const res = l.results.find((x) => x.source === c.source);
         result.acquisition!.learned.push({ title: c.title, kind: c.kind, source: c.source, capabilities: res?.learned.reduce((n, d) => n + d.capabilitiesAdded, 0) ?? 0, error: res?.error });

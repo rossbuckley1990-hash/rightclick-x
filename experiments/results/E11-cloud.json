@@ -1,0 +1,131 @@
+{
+  "at": "2026-10-15T23:51:44.924Z",
+  "placement": [
+    {
+      "name": "rcx-a (Western Europe)",
+      "region": "AMS (weur)",
+      "country": "GB"
+    },
+    {
+      "name": "rcx-b (Eastern North America)",
+      "region": "EWR (enam)",
+      "country": "GB"
+    },
+    {
+      "name": "rcx-c (Asia-Pacific)",
+      "region": "HKG (apac)",
+      "country": "GB"
+    }
+  ],
+  "A": {
+    "learned": 1297,
+    "published": [
+      {
+        "goal": "Country briefing",
+        "ok": true,
+        "pipeline": [
+          "Country",
+          "Get basic metadata and simplified article introduction.",
+          "Summarize text"
+        ],
+        "path": "/x/country-briefing",
+        "output": "Tokyo, officially the Tokyo Metropolis, is the capital and most populous city of Japan. The population of the city proper was over 14 million as of 2023. The Greater Tokyo Area, which includes Tokyo and parts of six neighboring prefectures, is the third-most populous metropolitan area in the world, "
+      },
+      {
+        "goal": "Country money",
+        "ok": true,
+        "pipeline": [
+          "Country",
+          "Returns latest exchange rates in parameter-supplied base currency."
+        ],
+        "path": "/x/country-money",
+        "output": "{\"provider\":\"https://www.exchangerate-api.com\",\"WARNING_UPGRADE_TO_V6\":\"https://www.exchangerate-api.com/docs/free\",\"terms\":\"https://www.exchangerate-api.com/terms\",\"base\":\"JPY\",\"date\":\"2026-10-15\",\"time_last_updated\":1792022401,\"rates\":{\"JPY\":1,\"AED\":0.0232,\"AFN\":0.41,\"ALL\":0.515,\"AMD\":2.29,\"ANG\":0"
+      },
+      {
+        "goal": "Project explainer",
+        "ok": false,
+        "pipeline": [],
+        "output": "null"
+      }
+    ]
+  },
+  "B": {
+    "learned": 2,
+    "runs": [
+      {
+        "country": "BR",
+        "pipeline": [
+          "Country briefing keywords: Country briefing → Extract keywords"
+        ],
+        "output": [
+          "brasília",
+          "capital",
+          "city",
+          "rio",
+          "janeiro",
+          "brazil",
+          "federal",
+          "district"
+        ],
+        "published": "/x/country-keywords"
+      },
+      {
+        "country": "KE",
+        "pipeline": [
+          "Country briefing keywords: Country briefing → Extract keywords"
+        ],
+        "output": [
+          "city",
+          "metropolitan",
+          "largest",
+          "population",
+          "million",
+          "making",
+          "most",
+          "populous"
+        ],
+        "published": "/x/country-keywords"
+      }
+    ],
+    "money": "{\"ok\":true,\"result\":{\"provider\":\"https://www.exchangerate-api.com\",\"WARNING_UPGRADE_TO_V6\":\"https://www.exchangerate-api.com/docs/free\",\"terms\":\"https://www.exchangerate-api.com/terms\",\"base\":\"GBP\",\"date\":\"2026-10-15\",\"time_last_updated\":1792022401,\"rates\":{\"GBP\":1,\"AED\":4.86,\"AFN\":86.15,\"ALL\":108.3"
+  },
+  "C": {
+    "learned": 1,
+    "capability": "openapi:rcx-b-eastern-north-america:countrykeywords",
+    "status": "completed",
+    "verification": "verified",
+    "result": [
+      "city",
+      "lima",
+      "peru",
+      "within",
+      "province",
+      "capital",
+      "largest",
+      "well"
+    ],
+    "bPipeline": [
+      "Country briefing keywords: Country briefing → Extract keywords"
+    ]
+  },
+  "receipts": [
+    {
+      "count": 66,
+      "intact": true,
+      "brokenAt": null,
+      "head": "e6ef3072ac9d655d59f2a38ab1dd17ed6ac3b4ac90fbbf5432c9641531bce8a8"
+    },
+    {
+      "count": 19,
+      "intact": true,
+      "brokenAt": null,
+      "head": "5b60530956f48de3e4595fbac0bdc21311144b826db5ccb9beab9eec7934cfcf"
+    },
+    {
+      "count": 2,
+      "intact": true,
+      "brokenAt": null,
+      "head": "cf374ead9b1c196635675f1baaf527d14a26f97fe5c2c1bdb31129cc452c12e7"
+    }
+  ]
+}

@@ -26,9 +26,14 @@ const WELL_KNOWN = [
   "/mcp",
 ];
 
-export async function discover(net: Net, source: string, opts: { deep?: boolean; mcp?: (url: string) => McpClient } = {}): Promise<Discovery> {
+export type SourceKind = "openapi" | "graphql" | "mcp" | "peer" | "web";
+
+export async function discover(net: Net, source: string, opts: { deep?: boolean; mcp?: (url: string) => McpClient; kind?: SourceKind } = {}): Promise<Discovery> {
   const url = new URL(source);
   const probes: Discovery["probes"] = [];
+  // When a directory already says what a source is, learn it with one probe, not ten
+  // (edge runtimes cap outbound requests per invocation).
+  if (opts.kind) return { reflections: await probeKind(net, url.toString(), opts.kind, probes, opts), probes };
   const found = new Map<string, Reflection>();
   const keep = (r: Reflection | null) => {
     if (r && (r.capabilities.length || r.provider.source !== "web")) found.set(r.provider.id, r);
@@ -52,6 +57,43 @@ export async function discover(net: Net, source: string, opts: { deep?: boolean;
     for (const r of e.reflections) keep(r);
   }
   return { reflections: [...found.values()], probes };
+}
+
+async function probeKind(net: Net, url: string, kind: SourceKind, probes: Discovery["probes"], opts: { mcp?: (url: string) => McpClient }): Promise<Reflection[]> {
+  try {
+    if (kind === "mcp") {
+      const client = opts.mcp?.(url) ?? new McpClient(url, net);
+      const tools = await client.listTools();
+      probes.push({ url, kind, ok: true, detail: `${tools.length} tools` });
+      return [reflectMcpTools(tools, url, client.serverInfo.name)];
+    }
+    if (kind === "graphql") {
+      for (const query of INTROSPECTION_QUERIES) {
+        const res = await request(net, url, { method: "POST", headers: { "content-type": "application/json", accept: "application/json" }, body: JSON.stringify({ query }) });
+        const body = await readBody(res);
+        if (res.ok && isIntrospection(body)) {
+          const r = reflectGraphQL(body, url);
+          probes.push({ url, kind, ok: true, detail: `${r.capabilities.length} fields` });
+          return [r];
+        }
+      }
+      throw new Error("introspection failed");
+    }
+    const res = await request(net, url, { headers: { accept: "application/json, text/html;q=0.9" } });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const body = await readBody(res);
+    if (kind === "openapi" && isOpenAPI(body)) {
+      const r = reflectOpenAPI(body as any, url);
+      probes.push({ url, kind, ok: true, detail: `${r.capabilities.length} operations` });
+      return [r];
+    }
+    if (kind === "peer") return [await reflectPeer(net, new URL(url).origin)];
+    if (kind === "web" && typeof body === "string") return [reflectWeb(body, url)];
+    throw new Error(`not a ${kind} source`);
+  } catch (e) {
+    probes.push({ url, kind, ok: false, detail: String((e as Error)?.message ?? e).slice(0, 200) });
+    return [];
+  }
 }
 
 async function probeUrl(
