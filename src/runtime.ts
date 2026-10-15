@@ -68,7 +68,7 @@ class StepError extends Error {
 }
 
 export interface ComposeResult {
-  goal: { have: Record<string, SemType>; want: SemType; intent?: string };
+  goal: { have: Record<string, SemType>; want: SemType; intent?: string; through?: string[] };
   plans: Array<Plan & { titles: string[] }>;
   executed?: {
     summary: string;
@@ -397,6 +397,9 @@ export class RightClick {
     maxSteps?: number;
     limit?: number;
     crystallize?: boolean;
+    risks?: Capability["risk"][];
+    /** Capability ids or search phrases the pipeline must pass through. */
+    through?: string[];
   }): Promise<ComposeResult> {
     const values: Record<string, unknown> = {};
     const types: Record<string, SemType> = {};
@@ -410,11 +413,12 @@ export class RightClick {
       types[k] = byName !== "text" && byName !== "id" ? byName : inspectValue(v).type;
       values[k] = v;
     }
-    const goal = { have: types, want: opts.want, intent: opts.intent, maxSteps: opts.maxSteps, limit: opts.limit ?? 5 };
+    const through = (opts.through ?? []).map((t) => (this.graph.get(t) ? t : this.graph.search(t, 1)[0]?.capability.id)).filter((x): x is string => !!x);
+    const goal = { have: types, want: opts.want, intent: opts.intent, maxSteps: opts.maxSteps, limit: opts.limit ?? 5, risks: opts.risks, through };
     let plans = plan(this.graph, this.ledger, goal);
     const titles = (p: Plan) => p.steps.map((s) => this.graph.get(s.capability)!.title);
     const result: ComposeResult = {
-      goal: { have: types, want: opts.want, intent: opts.intent },
+      goal: { have: types, want: opts.want, intent: opts.intent, through },
       plans: plans.map((p) => ({ ...p, titles: titles(p) })),
     };
     if (!opts.run || !plans.length) return result;
@@ -589,7 +593,11 @@ export class RightClick {
       }
       case "http": {
         let url = inv.url;
-        for (const p of inv.pathParams) url = url.replace(`{${p}}`, encodeURIComponent(String(args[p] ?? "")));
+        for (const p of inv.pathParams) {
+          const raw = String(args[p] ?? "");
+          const enc = inv.multiSegment?.includes(p) ? raw.split("/").map(encodeURIComponent).join("/") : encodeURIComponent(raw);
+          url = url.replace(`{${p}}`, enc);
+        }
         const u = new URL(url);
         const constants = inv.constants ?? {};
         for (const q of inv.queryParams) {
@@ -616,7 +624,7 @@ export class RightClick {
         }
         const res = await request(this.net, u.toString(), { method: inv.method, headers, body });
         const out = await readBody(res);
-        if (!res.ok) throw new Error(`HTTP ${res.status}: ${preview(out)}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}: ${String(JSON.stringify(preview(out))).slice(0, 300)}`);
         return out;
       }
       case "graphql": {
@@ -636,7 +644,7 @@ export class RightClick {
         return j.data[inv.field];
       }
       case "mcp":
-        return this.mcp(inv.endpoint).call(inv.tool, args);
+        return this.mcp(inv.endpoint).call(inv.tool, args, cap.outputs.some((o) => o.name !== ""));
       case "peer": {
         const res = await request(this.net, `${inv.endpoint}/api/run`, {
           method: "POST",

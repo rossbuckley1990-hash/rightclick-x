@@ -50,7 +50,7 @@ test("Swagger 2.0 specs reflect too", () => {
   );
   const c = r.capabilities[0];
   assert.equal(c.invoke.kind === "http" && c.invoke.url, "https://legacy.test/v1/users/{userId}");
-  assert.deepEqual(c.inputs[0], { name: "userId", type: "id", required: true, description: undefined, wire: "string" });
+  assert.deepEqual(c.inputs[0], { name: "userId", type: "id.user", required: true, description: undefined, wire: "string" });
   assert.deepEqual(c.outputs.slice(1).map((o) => o.type), ["email", "url"]);
 });
 

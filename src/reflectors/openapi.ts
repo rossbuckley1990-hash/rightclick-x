@@ -1,6 +1,6 @@
 // OpenAPI 3.x and Swagger 2.0 -> typed capabilities.
 
-import { inferType, type SchemaLike } from "../core/semantics.ts";
+import { inferInContext, inferType, type SchemaLike } from "../core/semantics.ts";
 import type { Capability, Port, Reflection, Risk } from "../core/types.ts";
 import { slug } from "./net.ts";
 
@@ -30,6 +30,7 @@ export function reflectOpenAPI(spec: Obj, specUrl: string): Reflection {
       const queryParams: string[] = [];
       const headerParams: string[] = [];
       const bodyParams: string[] = [];
+      const multiSegment: string[] = [];
       let body: "json" | "form" | "raw" | null = null;
       const seen = new Set<string>();
       const addInput = (name: string, schema: SchemaLike, required: boolean, description = "") => {
@@ -51,6 +52,7 @@ export function reflectOpenAPI(spec: Obj, specUrl: string): Reflection {
         const schema = resolve(p.schema ?? p) as SchemaLike;
         if (p.in === "path") {
           if (addInput(p.name, schema, true, p.description)) pathParams.push(p.name);
+          if (p["x-multi-segment"]) multiSegment.push(p.name);
         } else if (p.in === "query") {
           if (addInput(p.name, schema, !!p.required, p.description)) queryParams.push(p.name);
         } else if (p.in === "header") {
@@ -90,7 +92,7 @@ export function reflectOpenAPI(spec: Obj, specUrl: string): Reflection {
         inputs,
         outputs,
         risk,
-        tags: [...(op.tags ?? []), title, method],
+        tags: [...(op.tags ?? []), title, method, ...path.split("/").filter((seg) => seg && !seg.startsWith("{"))],
         invoke: {
           kind: "http",
           method: method.toUpperCase(),
@@ -100,6 +102,7 @@ export function reflectOpenAPI(spec: Obj, specUrl: string): Reflection {
           headerParams,
           body,
           bodyParams,
+          ...(multiSegment.length ? { multiSegment } : {}),
         },
       });
     }
@@ -156,16 +159,18 @@ function responsePorts(op: Obj, resolve: (o: any) => any): Port[] {
   }
   if (textual) return [{ name: "", type: Object.keys(r.content).includes("text/html") ? "html" : "text", required: true }];
   if (!schema) return [{ name: "", type: "json", required: true }];
+  // The schema's own name is context: `id` on a "release" is an id.release.
+  const context = refName(rawRef(r, resolve)) ?? "";
   const merged = mergeAllOf(schema, resolve);
   const ports: Port[] = [{ name: "", type: merged.type === "array" ? inferType("items", merged) : inferType("", merged), required: true }];
   if (merged.properties) {
     for (const [name, prop] of Object.entries<Obj>(merged.properties)) {
       const p = mergeAllOf(resolve(prop), resolve);
-      ports.push({ name, type: inferType(name, p, p.description), required: true, wire: p.type });
+      ports.push({ name, type: inferInContext(name, p, p.description ?? "", context), required: true, wire: p.type });
       if (p.properties) {
         for (const [sub, sp] of Object.entries<Obj>(p.properties).slice(0, 12)) {
           const s = resolve(sp);
-          ports.push({ name: `${name}.${sub}`, type: inferType(sub, s, s.description), required: true, wire: s.type });
+          ports.push({ name: `${name}.${sub}`, type: inferInContext(sub, s, s.description ?? "", name), required: true, wire: s.type });
         }
       }
     }
@@ -173,7 +178,31 @@ function responsePorts(op: Obj, resolve: (o: any) => any): Port[] {
   return ports;
 }
 
+function rawRef(r: Obj | null, resolve: (o: any) => any): string | undefined {
+  if (!r) return undefined;
+  if (r.content) {
+    const json = r.content["application/json"] ?? Object.entries<Obj>(r.content).find(([k]) => k.includes("json"))?.[1];
+    return json?.schema?.$ref;
+  }
+  return r.schema?.$ref ?? resolve(r)?.schema?.$ref;
+}
+
+function refName(ref?: string): string | undefined {
+  return ref?.split("/").pop()?.replace(/[-_](simple|full|minimal|private|public)$/i, "");
+}
+
 function mergeAllOf(schema: Obj, resolve: (o: any) => any): Obj {
+  // oneOf/anyOf (e.g. GitHub's private-user | public-user): union of the variants' properties.
+  const variants = schema?.oneOf ?? schema?.anyOf;
+  if (variants && !schema.properties) {
+    const out: Obj = { type: "object", properties: {}, required: [] };
+    for (const v of variants.map(resolve)) {
+      const m = mergeAllOf(v, resolve);
+      if (m.type && m.type !== "object" && !m.properties) return m;
+      for (const [k, p] of Object.entries<Obj>(m.properties ?? {})) out.properties[k] ??= p;
+    }
+    return out;
+  }
   if (!schema?.allOf) return schema ?? {};
   const out: Obj = { type: "object", properties: {}, required: [] };
   for (const part of schema.allOf.map(resolve)) {

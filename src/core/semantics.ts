@@ -25,6 +25,8 @@ const PARENT: Record<string, SemType> = {
   id: "text",
   hash: "text",
   path: "text",
+  account: "text",
+  repo: "text",
   color: "text",
   text: "json",
   number: "json",
@@ -38,6 +40,7 @@ export const SEMANTIC_TYPES = Object.keys(PARENT);
 
 export function parentOf(t: SemType): SemType | undefined {
   if (t.startsWith("list:")) return "json";
+  if (t.startsWith("id.")) return "id";
   const p = PARENT[t];
   return p === undefined ? "json" : p || undefined;
 }
@@ -71,6 +74,20 @@ export function strongly(wanted: SemType, produced: SemType): boolean {
   return d <= 1;
 }
 
+/** Ports that take the *name* of something: they accept specific string types (a place, a country). */
+const NOMINAL = /^(title|name|q|query|search|term|keyword|topic|subject|page|entity|label)$/i;
+const NOT_NOMINAL = new Set(["html", "markdown", "text"]);
+
+/** Can a value of type `value` flow into port (`name`, `type`)? */
+export function accepts(portName: string, portType: SemType, value: SemType): boolean {
+  if (strongly(portType, value)) return true;
+  return portType === "text" && NOMINAL.test(portName) && !NOT_NOMINAL.has(value) && distance("text", value) === 1;
+}
+
+export function isNominal(portName: string, portType: SemType): boolean {
+  return portType === "text" && NOMINAL.test(portName);
+}
+
 const NAME_RULES: Array<[RegExp, SemType]> = [
   [/^(image|img|photo|avatar|thumbnail|picture|icon)(url|uri|link|src)?$/, "image.url"],
   [/(^|_)(url|uri|href|link|website|homepage|endpoint|webpage)$/, "url"],
@@ -84,8 +101,10 @@ const NAME_RULES: Array<[RegExp, SemType]> = [
   [/^(target|source|to|from)(lang|language)?$/, "language"],
   [/(^|_)(country|countrycode|countryiso|iso2|iso3)$/, "country"],
   [/(^|_)(currency|currencycode)$/, "currency"],
-  [/(^|_)(city|place|location|address|town|placename|region)$/, "place"],
+  [/(^|_)(city|place|location|address|town|placename|region|capital)$/, "place"],
   [/(^|_)(domain|hostname|host)$/, "domain"],
+  [/^(username|login|owner|user|org|organization|account|handle|screen_name|user_login|owner_login)$/, "account"],
+  [/^(repo|repository|repo_name|repository_name)$/, "repo"],
   [/(^|_)(ip|ipaddress|ipv4|ipv6)$/, "ip"],
   [/(^|_)(date|time|datetime|timestamp|createdat|updatedat)$/, "datetime"],
   [/(^|_)(color|colour|hex)$/, "color"],
@@ -121,6 +140,11 @@ export function inferType(name: string, schema: SchemaLike = {}, description = "
   if (rawType === "boolean") return "boolean";
   const n = normalize(name);
   const compact = n.replace(/_/g, "");
+  // Qualified identifiers: release_id, ghsaId, check_run_id -> id.release, id.ghsa, id.checkrun.
+  // Ids of different things must never flow into each other.
+  const idm = /^(.+?)_(id|uuid|guid|number|num)$/.exec(n);
+  if (idm && rawType !== "array" && rawType !== "object") return `id.${idm[1].replace(/_/g, "")}`;
+  if (/^(id|uuid|guid)$/.test(n) && rawType !== "array" && rawType !== "object") return "id";
   if (rawType === "integer" || rawType === "number") {
     if (/(^|_)(lat|latitude)$/.test(n)) return "geo.lat";
     if (/(^|_)(lon|lng|long|longitude)$/.test(n)) return "geo.lon";
@@ -155,6 +179,21 @@ export function inferType(name: string, schema: SchemaLike = {}, description = "
   if (/\burl\b|\buri\b/.test(d) && rawType === "string") return "url";
   if (rawType === undefined && !schema.format && compact === "") return "json";
   return "text";
+}
+
+const GENERIC = new Set(["text", "id", "json", "number"]);
+
+/**
+ * Infer with context: a GraphQL arg `code` on field `country`, or an output
+ * `code` on type `Language`, means more than the bare name says. If the bare
+ * name yields a generic type, try "<context><Name>" (countryCode, languageCode).
+ */
+export function inferInContext(name: string, schema: SchemaLike, description: string, context: string): SemType {
+  const bare = inferType(name, schema, description);
+  if (!GENERIC.has(bare) || !context) return bare;
+  const s = schema.format === "uuid" ? { ...schema, format: undefined } : schema;
+  const ctx = inferType(context + name.charAt(0).toUpperCase() + name.slice(1), s, description);
+  return GENERIC.has(ctx) ? bare : ctx;
 }
 
 function singular(name: string): string {

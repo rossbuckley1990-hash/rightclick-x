@@ -5,7 +5,7 @@
 // Everything found is reflected; page hints are followed one level deep.
 
 import type { Capability, Reflection } from "../core/types.ts";
-import { INTROSPECTION_QUERY, isIntrospection, reflectGraphQL } from "./graphql.ts";
+import { INTROSPECTION_QUERIES, isIntrospection, reflectGraphQL } from "./graphql.ts";
 import { McpClient, reflectMcpTools } from "./mcp.ts";
 import { readBody, request, slug, type Net } from "./net.ts";
 import { isOpenAPI, reflectOpenAPI } from "./openapi.ts";
@@ -93,23 +93,25 @@ async function probeUrl(
   } catch (e) {
     if (!opts.quiet) probes.push({ url, kind: "get", ok: false, detail: String((e as Error).message ?? e) });
   }
-  // 2. POST GraphQL introspection.
-  try {
-    const res = await request(net, url, {
-      method: "POST",
-      headers: { "content-type": "application/json", accept: "application/json" },
-      body: JSON.stringify({ query: INTROSPECTION_QUERY }),
-    });
-    if (res.ok) {
+  // 2. POST GraphQL introspection (shallower retry for depth-limited servers).
+  for (const query of INTROSPECTION_QUERIES) {
+    try {
+      const res = await request(net, url, {
+        method: "POST",
+        headers: { "content-type": "application/json", accept: "application/json" },
+        body: JSON.stringify({ query }),
+      });
       const body = await readBody(res);
-      if (isIntrospection(body)) {
+      if (res.ok && isIntrospection(body)) {
         const r = reflectGraphQL(body, url);
         probes.push({ url, kind: "graphql", ok: true, detail: `${r.capabilities.length} fields` });
         return { reflections: [r], hints, definitive: true };
       }
-    } else await res.body?.cancel();
-  } catch {
-    /* not graphql */
+      // Only retry when the server answered like GraphQL (an errors array).
+      if (!(body && typeof body === "object" && Array.isArray((body as any).errors))) break;
+    } catch {
+      break;
+    }
   }
   // 3. MCP initialize + tools/list.
   try {

@@ -1,11 +1,15 @@
 // GraphQL introspection -> typed capabilities. Every Query and Mutation field
 // becomes a capability; the reflector builds the selection set itself.
 
-import { graphqlScalar, inferType } from "../core/semantics.ts";
+import { graphqlScalar, inferInContext } from "../core/semantics.ts";
 import type { Capability, Port, Reflection, SemType } from "../core/types.ts";
 import { slug } from "./net.ts";
 
-export const INTROSPECTION_QUERY = `query RightClickIntrospection {
+/** Introspection query with a type-reference nesting depth (servers often cap query depth). */
+export function introspectionQuery(refDepth = 4): string {
+  let ref = "kind name";
+  for (let i = 0; i < refDepth; i++) ref = `kind name ofType { ${ref} }`;
+  return `query RightClickIntrospection {
   __schema {
     queryType { name }
     mutationType { name }
@@ -13,13 +17,17 @@ export const INTROSPECTION_QUERY = `query RightClickIntrospection {
       kind name description
       fields(includeDeprecated: false) {
         name description
-        args { name description defaultValue type { ...T } }
-        type { ...T }
+        args { name description defaultValue type { ${ref} } }
+        type { ${ref} }
       }
     }
   }
+}`;
 }
-fragment T on __Type { kind name ofType { kind name ofType { kind name ofType { kind name ofType { kind name } } } } }`;
+
+/** Tried in order: full depth first, then shallower for depth-limited servers. */
+export const INTROSPECTION_QUERIES = [introspectionQuery(4), introspectionQuery(3), introspectionQuery(2)];
+export const INTROSPECTION_QUERY = INTROSPECTION_QUERIES[0];
 
 interface TypeRef {
   kind: string;
@@ -49,19 +57,21 @@ function printType(t: TypeRef): string {
   return t.name ?? "String";
 }
 
-function named(t: TypeRef): { name: string; kind: string; list: boolean } {
+/** Unwrap NON_NULL/LIST. `name` is null when a depth-limited introspection truncated the chain. */
+function named(t: TypeRef): { name: string | null; kind: string; list: boolean } {
   let list = false;
   let cur: TypeRef = t;
   while (cur.ofType) {
     if (cur.kind === "LIST") list = true;
     cur = cur.ofType;
   }
-  return { name: cur.name ?? "String", kind: cur.kind, list };
+  if (cur.kind === "LIST") list = true;
+  return { name: cur.name, kind: cur.name ? cur.kind : "UNKNOWN", list };
 }
 
-function semantic(name: string, t: TypeRef, description = ""): SemType {
+function semantic(name: string, t: TypeRef, description = "", context = ""): SemType {
   const n = named(t);
-  const base = n.kind === "SCALAR" || n.kind === "ENUM" ? inferType(name, graphqlScalar(n.name), description) : "json";
+  const base = n.kind === "SCALAR" || n.kind === "ENUM" ? inferInContext(name, graphqlScalar(n.name!), description, context) : "json";
   return n.list ? `list:${base}` : base;
 }
 
@@ -83,7 +93,7 @@ export function reflectGraphQL(introspection: any, endpoint: string, title?: str
       if (field.name.startsWith("__")) continue;
       const inputs: Port[] = field.args.map((a) => ({
         name: a.name,
-        type: semantic(a.name, a.type, a.description ?? ""),
+        type: semantic(a.name, a.type, a.description ?? "", field.name),
         required: a.type.kind === "NON_NULL" && a.defaultValue == null,
         description: a.description ?? undefined,
         wire: printType(a.type),
@@ -98,7 +108,7 @@ export function reflectGraphQL(introspection: any, endpoint: string, title?: str
         inputs,
         outputs: ports,
         risk: operation === "query" ? "read" : "write",
-        tags: [operation, "graphql", host, named(field.type).name],
+        tags: [operation, "graphql", host, named(field.type).name ?? ""],
         invoke: {
           kind: "graphql",
           endpoint,
@@ -127,7 +137,7 @@ export function reflectGraphQL(introspection: any, endpoint: string, title?: str
 function buildSelection(field: Field, types: Map<string, FullType>): { selection: string; ports: Port[] } {
   const ret = named(field.type);
   const wrap = (t: SemType) => (ret.list ? `list:${t}` : t);
-  const target = types.get(ret.name);
+  const target = ret.name ? types.get(ret.name) : undefined;
   if (!target || target.kind === "SCALAR" || target.kind === "ENUM") {
     return { selection: "", ports: [{ name: "", type: semantic(field.name, field.type), required: true }] };
   }
@@ -135,18 +145,22 @@ function buildSelection(field: Field, types: Map<string, FullType>): { selection
   const parts: string[] = [];
   for (const f of (target.fields ?? []).filter((f) => !f.args.some((a) => a.type.kind === "NON_NULL")).slice(0, 25)) {
     const n = named(f.type);
+    if (!n.name) continue; // truncated type: can't build a valid selection
     const ft = types.get(n.name);
     if (!ft || ft.kind === "SCALAR" || ft.kind === "ENUM") {
       parts.push(f.name);
-      ports.push({ name: f.name, type: wrap(semantic(f.name, f.type, f.description ?? "")), required: true });
+      ports.push({ name: f.name, type: wrap(semantic(f.name, f.type, f.description ?? "", target.name)), required: true });
     } else if (ft.kind === "OBJECT") {
       const subs = (ft.fields ?? [])
-        .filter((s) => !s.args.length && ["SCALAR", "ENUM"].includes(types.get(named(s.type).name)?.kind ?? "SCALAR"))
+        .filter((s) => {
+          const sn = named(s.type).name;
+          return !s.args.length && !!sn && ["SCALAR", "ENUM"].includes(types.get(sn)?.kind ?? "SCALAR");
+        })
         .slice(0, 8);
       if (!subs.length) continue;
       parts.push(`${f.name} { ${subs.map((s) => s.name).join(" ")} }`);
       for (const s of subs) {
-        const st = semantic(s.name, s.type, s.description ?? "");
+        const st = semantic(s.name, s.type, s.description ?? "", ft.name);
         const listy = ret.list || n.list;
         ports.push({ name: `${f.name}.${s.name}`, type: listy && !st.startsWith("list:") ? `list:${st}` : st, required: true });
       }

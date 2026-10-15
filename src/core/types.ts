@@ -45,6 +45,8 @@ export interface HttpInvoke {
   bodyParams: string[];
   /** Fixed values always sent (e.g. hidden form fields). */
   constants?: Record<string, string>;
+  /** Path params whose "/" must stay literal (OpenAPI x-multi-segment, e.g. git refs "heads/main"). */
+  multiSegment?: string[];
 }
 
 export interface GraphQLInvoke {

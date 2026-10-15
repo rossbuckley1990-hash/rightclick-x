@@ -11,7 +11,7 @@
 // add far more powers than capabilities, because its nodes connect to
 // everything already present. That is the number the dashboard shows.
 
-import { parentOf, strongly } from "./semantics.ts";
+import { accepts, distance, isNominal, parentOf, strongly } from "./semantics.ts";
 import type { Capability, Provider, Reflection, SemType } from "./types.ts";
 
 export type GraphEventKind =
@@ -118,7 +118,7 @@ export class CapabilityGraph {
 
   /** Capabilities with a required input that strongly accepts `type`. */
   consumersOf(type: SemType): Capability[] {
-    return this.list().filter((c) => c.inputs.some((p) => strongly(p.type, type)));
+    return this.list().filter((c) => c.inputs.some((p) => accepts(p.name, p.type, type)));
   }
 
   /** Capabilities with an output that strongly fits `type`. */
@@ -131,12 +131,14 @@ export class CapabilityGraph {
     // Index required inputs by their exact type, then walk each produced type
     // up the lattice so lookups stay proportional to edges, not nodes squared.
     const byInputType = new Map<SemType, Set<string>>();
+    const nominal = new Set<string>();
     for (const c of this.capabilities.values()) {
       for (const p of c.inputs) {
         if (!p.required) continue;
         let set = byInputType.get(p.type);
         if (!set) byInputType.set(p.type, (set = new Set()));
         set.add(c.id);
+        if (isNominal(p.name, p.type)) nominal.add(c.id);
       }
     }
     const adj = new Map<string, Set<string>>();
@@ -148,6 +150,7 @@ export class CapabilityGraph {
           if (strongly(t, port.type)) for (const b of byInputType.get(t) ?? []) if (b !== a.id) out.add(b);
           t = parentOf(t);
         }
+        if (distance("text", port.type) === 1 && !["html", "markdown"].includes(port.type)) for (const b of nominal) if (b !== a.id) out.add(b);
       }
       adj.set(a.id, out);
     }
@@ -214,6 +217,9 @@ export class CapabilityGraph {
         const idf = Math.log(1 + (N - (df.get(q) ?? 0) + 0.5) / ((df.get(q) ?? 0) + 0.5));
         score += (idf * f * 2.2) / (f + 1.2 * (0.25 + 0.75 * (tokens.length / avg)));
       }
+      // A title containing every query term is the strongest signal.
+      const title = new Set(tokenize(c.title));
+      if (terms.every((t) => title.has(t))) score += 3 + 3 / title.size;
       return { capability: c, score };
     });
     return scored.filter((s) => s.score > 0).sort((a, b) => b.score - a.score).slice(0, limit);

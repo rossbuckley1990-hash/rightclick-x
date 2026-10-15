@@ -71,7 +71,8 @@ export class McpClient {
     return tools;
   }
 
-  async call(name: string, args: Record<string, unknown>): Promise<unknown> {
+  /** Returns structured content when the caller wants it (tool has an output schema), else the text. */
+  async call(name: string, args: Record<string, unknown>, structured = true): Promise<unknown> {
     await this.init();
     let r: any;
     try {
@@ -89,7 +90,7 @@ export class McpClient {
       .map((c: any) => c.text)
       .join("\n");
     if (r?.isError) throw new Error(text || "MCP tool reported an error");
-    return r?.structuredContent ?? text;
+    return structured && r?.structuredContent !== undefined ? r.structuredContent : text;
   }
 }
 

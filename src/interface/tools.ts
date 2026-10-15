@@ -74,6 +74,8 @@ export const TOOLS = [
         run: bool("Execute the best plan."),
         verify: predicates,
         maxSteps: num("Max pipeline length (default 4)."),
+        through: { type: "array", items: { type: "string" }, description: "Anchors: capability ids or search phrases the pipeline must pass through; the planner wires the types between them." },
+        risks: { type: "array", items: { type: "string", enum: ["read", "write", "external", "destructive"] }, description: 'Optional constraint: plan only with these risk labels, e.g. ["read"].' },
       },
       ["have", "want"],
     ),
@@ -118,7 +120,7 @@ export async function dispatch(rc: RightClick, name: string, a: Record<string, a
     case "context_run_status":
       return a.runId ? rc.runStatus({ runId: a.runId }) : { ...(rc.runStatus({ limit: a.limit }) as object), chain: await rc.verifyReceipts() };
     case "context_compose":
-      return rc.compose({ have: a.have ?? {}, want: a.want, intent: a.intent, run: a.run, verify: a.verify, maxSteps: a.maxSteps });
+      return rc.compose({ have: a.have ?? {}, want: a.want, intent: a.intent, run: a.run, verify: a.verify, maxSteps: a.maxSteps, risks: a.risks, through: a.through });
     case "context_graph":
       return rc.graphQuery(a as any);
     case "context_providers":
