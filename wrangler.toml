@@ -1,0 +1,21 @@
+# Cloudflare Workers deployment: `npx wrangler deploy`
+name = "rightclick-x"
+main = "src/entry/edge.ts"
+compatibility_date = "2026-09-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+RCX_NAME = "rightclick-x-edge"
+# RCX_SOURCES = "https://countries.trevorblades.com/,https://petstore3.swagger.io/api/v3/openapi.json"
+
+# Required: `npx wrangler secret put RCX_TOKEN`
+# Optional: `npx wrangler secret put RCX_AUTH`  (JSON: {"https://api.x.com": "Bearer ..."})
+
+# Persist the learned graph, ledger and receipts across isolates:
+# [[kv_namespaces]]
+# binding = "RCX_STATE"
+# id = "<kv namespace id>"
+
+# Any other KV namespace or Workers AI binding becomes graph capabilities automatically:
+# [ai]
+# binding = "AI"

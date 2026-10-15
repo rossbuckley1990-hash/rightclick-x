@@ -1,0 +1,291 @@
+// The live capability graph.
+//
+// Nodes are capabilities. A directed edge A -> B exists when some output port
+// of A strongly fits some required input port of B (see semantics.strongly).
+// The graph is live: reflections add and replace providers at runtime, and
+// every change is an event that watchers (MCP context_watch, the dashboard
+// stream, federation peers) can follow.
+//
+// "Powers" are what the graph can do, not what it lists: every capability,
+// plus every 2- and 3-step pipeline the edges allow. Adding one provider can
+// add far more powers than capabilities, because its nodes connect to
+// everything already present. That is the number the dashboard shows.
+
+import { parentOf, strongly } from "./semantics.ts";
+import type { Capability, Provider, Reflection, SemType } from "./types.ts";
+
+export type GraphEventKind =
+  | "provider.learned"
+  | "provider.forgotten"
+  | "capability.crystallized"
+  | "run.completed"
+  | "research";
+
+export interface GraphEvent {
+  seq: number;
+  at: string;
+  kind: GraphEventKind;
+  data: Record<string, unknown>;
+}
+
+export interface Powers {
+  capabilities: number;
+  edges: number;
+  chains2: number;
+  chains3: number;
+  total: number;
+}
+
+export interface LearnDelta {
+  provider: string;
+  capabilitiesAdded: number;
+  powersBefore: number;
+  powersAfter: number;
+  newPowers: number;
+}
+
+const EVENT_BUFFER = 1000;
+
+export class CapabilityGraph {
+  readonly capabilities = new Map<string, Capability>();
+  readonly providers = new Map<string, Provider>();
+  private adjacency: Map<string, Set<string>> | null = null;
+  private powersCache: Powers | null = null;
+  private events: GraphEvent[] = [];
+  private seq = 0;
+  private listeners = new Set<(e: GraphEvent) => void>();
+
+  add(reflection: Reflection): LearnDelta {
+    const before = this.powers().total;
+    const { provider, capabilities } = reflection;
+    if (this.providers.has(provider.id)) this.dropProvider(provider.id);
+    for (const cap of capabilities) this.capabilities.set(cap.id, cap);
+    this.providers.set(provider.id, { ...provider, capabilityIds: capabilities.map((c) => c.id) });
+    this.invalidate();
+    const after = this.powers().total;
+    const delta: LearnDelta = {
+      provider: provider.id,
+      capabilitiesAdded: capabilities.length,
+      powersBefore: before,
+      powersAfter: after,
+      newPowers: after - before,
+    };
+    this.emit("provider.learned", { ...delta, title: provider.title, source: provider.source, origin: provider.origin });
+    return delta;
+  }
+
+  /** Add one capability to an existing (or synthetic) provider, e.g. a crystallized pipeline. */
+  addCapability(cap: Capability, provider: Omit<Provider, "capabilityIds">): LearnDelta {
+    const before = this.powers().total;
+    const existing = this.providers.get(provider.id);
+    const ids = new Set(existing?.capabilityIds ?? []);
+    ids.add(cap.id);
+    this.providers.set(provider.id, { ...(existing ?? provider), capabilityIds: [...ids] });
+    this.capabilities.set(cap.id, cap);
+    this.invalidate();
+    const after = this.powers().total;
+    return { provider: provider.id, capabilitiesAdded: 1, powersBefore: before, powersAfter: after, newPowers: after - before };
+  }
+
+  forget(providerId: string): boolean {
+    if (!this.providers.has(providerId)) return false;
+    const before = this.powers().total;
+    this.dropProvider(providerId);
+    this.invalidate();
+    this.emit("provider.forgotten", { provider: providerId, powersBefore: before, powersAfter: this.powers().total });
+    return true;
+  }
+
+  private dropProvider(id: string): void {
+    for (const capId of this.providers.get(id)?.capabilityIds ?? []) this.capabilities.delete(capId);
+    this.providers.delete(id);
+  }
+
+  private invalidate(): void {
+    this.adjacency = null;
+    this.powersCache = null;
+  }
+
+  get(id: string): Capability | undefined {
+    return this.capabilities.get(id);
+  }
+
+  list(): Capability[] {
+    return [...this.capabilities.values()];
+  }
+
+  // ------------------------------------------------------------- structure
+
+  /** Capabilities with a required input that strongly accepts `type`. */
+  consumersOf(type: SemType): Capability[] {
+    return this.list().filter((c) => c.inputs.some((p) => strongly(p.type, type)));
+  }
+
+  /** Capabilities with an output that strongly fits `type`. */
+  producersOf(type: SemType): Capability[] {
+    return this.list().filter((c) => c.outputs.some((p) => strongly(type, p.type)));
+  }
+
+  edges(): Map<string, Set<string>> {
+    if (this.adjacency) return this.adjacency;
+    // Index required inputs by their exact type, then walk each produced type
+    // up the lattice so lookups stay proportional to edges, not nodes squared.
+    const byInputType = new Map<SemType, Set<string>>();
+    for (const c of this.capabilities.values()) {
+      for (const p of c.inputs) {
+        if (!p.required) continue;
+        let set = byInputType.get(p.type);
+        if (!set) byInputType.set(p.type, (set = new Set()));
+        set.add(c.id);
+      }
+    }
+    const adj = new Map<string, Set<string>>();
+    for (const a of this.capabilities.values()) {
+      const out = new Set<string>();
+      for (const port of a.outputs) {
+        let t: SemType | undefined = port.type;
+        while (t !== undefined) {
+          if (strongly(t, port.type)) for (const b of byInputType.get(t) ?? []) if (b !== a.id) out.add(b);
+          t = parentOf(t);
+        }
+      }
+      adj.set(a.id, out);
+    }
+    this.adjacency = adj;
+    return adj;
+  }
+
+  powers(): Powers {
+    if (this.powersCache) return this.powersCache;
+    const adj = this.edges();
+    let edges = 0;
+    let chains3 = 0;
+    for (const [a, outs] of adj) {
+      edges += outs.size;
+      for (const b of outs) {
+        const next = adj.get(b)!;
+        chains3 += next.size - (next.has(a) ? 1 : 0);
+      }
+    }
+    const capabilities = this.capabilities.size;
+    this.powersCache = { capabilities, edges, chains2: edges, chains3, total: capabilities + edges + chains3 };
+    return this.powersCache;
+  }
+
+  neighbors(id: string): { upstream: string[]; downstream: string[] } {
+    const adj = this.edges();
+    const upstream: string[] = [];
+    for (const [a, outs] of adj) if (outs.has(id)) upstream.push(a);
+    return { upstream, downstream: [...(adj.get(id) ?? [])] };
+  }
+
+  /** Every semantic type the graph can currently produce or consume, with counts. */
+  census(): Array<{ type: SemType; producers: number; consumers: number }> {
+    const m = new Map<SemType, { producers: number; consumers: number }>();
+    const bump = (t: SemType, k: "producers" | "consumers") => {
+      const e = m.get(t) ?? { producers: 0, consumers: 0 };
+      e[k]++;
+      m.set(t, e);
+    };
+    for (const c of this.capabilities.values()) {
+      for (const t of new Set(c.outputs.map((p) => p.type))) bump(t, "producers");
+      for (const t of new Set(c.inputs.map((p) => p.type))) bump(t, "consumers");
+    }
+    return [...m].map(([type, v]) => ({ type, ...v })).sort((a, b) => b.producers + b.consumers - (a.producers + a.consumers));
+  }
+
+  // ---------------------------------------------------------------- search
+
+  search(query: string, limit = 10): Array<{ capability: Capability; score: number }> {
+    const terms = tokenize(query);
+    if (!terms.length) return [];
+    const docs = this.list().map((c) => ({ c, tokens: tokenize(docText(c)) }));
+    const N = docs.length || 1;
+    const avg = docs.reduce((s, d) => s + d.tokens.length, 0) / N || 1;
+    const df = new Map<string, number>();
+    for (const d of docs) for (const t of new Set(d.tokens)) df.set(t, (df.get(t) ?? 0) + 1);
+    const scored = docs.map(({ c, tokens }) => {
+      const tf = new Map<string, number>();
+      for (const t of tokens) tf.set(t, (tf.get(t) ?? 0) + 1);
+      let score = 0;
+      for (const q of terms) {
+        const f = tf.get(q) ?? 0;
+        if (!f) continue;
+        const idf = Math.log(1 + (N - (df.get(q) ?? 0) + 0.5) / ((df.get(q) ?? 0) + 0.5));
+        score += (idf * f * 2.2) / (f + 1.2 * (0.25 + 0.75 * (tokens.length / avg)));
+      }
+      return { capability: c, score };
+    });
+    return scored.filter((s) => s.score > 0).sort((a, b) => b.score - a.score).slice(0, limit);
+  }
+
+  // ---------------------------------------------------------------- events
+
+  emit(kind: GraphEventKind, data: Record<string, unknown>): GraphEvent {
+    const e: GraphEvent = { seq: ++this.seq, at: new Date().toISOString(), kind, data };
+    this.events.push(e);
+    if (this.events.length > EVENT_BUFFER) this.events.splice(0, this.events.length - EVENT_BUFFER);
+    for (const l of this.listeners) {
+      try {
+        l(e);
+      } catch {
+        /* a broken watcher must not break the graph */
+      }
+    }
+    return e;
+  }
+
+  since(seq: number): GraphEvent[] {
+    return this.events.filter((e) => e.seq > seq);
+  }
+
+  get cursor(): number {
+    return this.seq;
+  }
+
+  subscribe(fn: (e: GraphEvent) => void): () => void {
+    this.listeners.add(fn);
+    return () => this.listeners.delete(fn);
+  }
+}
+
+const STOP = new Set(["the", "a", "an", "of", "to", "and", "or", "for", "in", "on", "by", "with", "is", "it", "this", "that", "from", "as", "be"]);
+
+export function tokenize(s: string): string[] {
+  return s
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter((t) => t.length > 1 && !STOP.has(t))
+    .map(stem);
+}
+
+const SUFFIXES = ["ations", "ation", "ings", "ing", "ions", "ion", "ies", "ed", "es", "er", "e", "s"];
+
+/** Light stemmer: translate/translated/translation -> transl, weather -> weath. */
+export function stem(t: string): string {
+  if (t.length <= 3 || /^\d+$/.test(t)) return t;
+  // Two passes so plurals reduce like their singulars (weathers -> weather -> weath).
+  for (let pass = 0; pass < 2; pass++) {
+    for (const s of SUFFIXES) {
+      if (t.endsWith(s) && t.length - s.length >= 4) {
+        t = s === "ies" ? t.slice(0, -3) + "y" : t.slice(0, -s.length);
+        break;
+      }
+    }
+  }
+  if (t.length > 5 && t.endsWith("at")) t = t.slice(0, -2);
+  return t;
+}
+
+function docText(c: Capability): string {
+  return [
+    c.title,
+    c.title,
+    c.description,
+    c.tags.join(" "),
+    c.provider,
+    c.inputs.map((p) => `${p.name} ${p.type}`).join(" "),
+    c.outputs.map((p) => `${p.name} ${p.type}`).join(" "),
+  ].join(" ");
+}
