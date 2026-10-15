@@ -36,7 +36,7 @@ Cursor, Claude Desktop, Windsurf (`mcpServers` JSON), VS Code (`.vscode/mcp.json
 |---|---|
 | `context_research` | Survey the environment: runtime, platform bindings, which types the graph produces and consumes, unfed inputs, and — given a topic — candidate sources worldwide (APIs.guru's ~2,500 OpenAPI specs, the official MCP Registry). `learn: N` acquires the top N immediately. |
 | `context_learn` | Point it at any URL. It works out what is there and reflects it, reporting new capabilities and new composite powers. |
-| `context_compose` | `have` + `want` (+ `intent`, optional `through` anchors, optional `risks` constraint) → ranked multi-provider pipelines; `run: true` executes, self-heals, verifies and crystallizes. |
+| `context_compose` | `have` + `want` (+ `intent`, optional `through` anchors, optional `risks` constraint) → ranked multi-provider pipelines; `run: true` executes, self-heals, verifies and crystallizes; `acquire: true` goes and finds missing capabilities in public directories. |
 | `context_run` | Run one capability, with optional verification predicates. |
 | `context_actions` | What can be done with a value: direct capabilities plus every type it can become through pipelines. |
 | `context_inspect` | Classify any value into the semantic type lattice. |
@@ -59,6 +59,8 @@ From the live-internet experiments in [`experiments/`](experiments/EXPERIMENTS.m
 - **Kubernetes, with no MCP server written**: the live cluster's whole API (799 operations) reflected in 210 ms; RightClick X installed a new CRD through a capability it had just reflected, then grew that resource's 8 operations into its own graph 1.2 s later, and filled it with live internet knowledge (countries GraphQL → Wikipedia → `Insight` objects), confirmed independently by kubectl.
 - **Integrations that maintain themselves**: an integration is a goal plus a check, not hard-coded calls. When a provider ships a breaking release, RightClick X re-reflects it, detects the drift, retires stale pipelines, re-plans and re-verifies. Across REST v1 → renamed REST v2 → GraphQL → MCP → rollback, a hand-written client broke three times; the RightClick X integration stayed verified with 0 lines changed ([E10](experiments/EXPERIMENTS.md)).
 - **It published itself**: through capabilities reflected from GitHub's spec, RightClick X created [`rossbuckley1990-hash/rightclick-x`](https://github.com/rossbuckley1990-hash/rightclick-x) and uploaded its own source; GitHub's tree hash is identical to the checkout's `git write-tree`.
+- **Acquisition on demand**: start with nothing, ask for something it can't do (`acquire: true`), and it researches APIs.guru and the MCP Registry, learns an API or MCP server it has never seen, and completes the goal: live EUR exchange rates, a Wikipedia summary through a third-party MCP server, Ontario's public holidays ([X5](experiments/STRESS.md)).
+- **Under stress**: 20,014 capabilities and 156.7 M typed links in one graph with 197 ms planning; 100% availability through 373 breaking releases across 50 providers; 1,000 concurrent MCP calls with 0 errors; routing that learns which vendors to trust as their reliability changes ([STRESS.md](experiments/STRESS.md)).
 - **Self-healing under real failure**: a pipeline whose output failed verification was routed around automatically; with a provider's route cut, compose re-planned through a federated peer.
 
 And the offline demo (`npm run demo`), which spins up four local services in four protocols:
@@ -110,7 +112,7 @@ There are no approval gates: write and destructive capabilities run when called,
 
 ```bash
 npm install
-npm test             # 37 offline tests (node:test)
+npm test             # 39 offline tests (node:test)
 npm run typecheck
 npm run demo         # seven-act offline demo
 node experiments/cloud.ts   # live-internet experiments (read-only)

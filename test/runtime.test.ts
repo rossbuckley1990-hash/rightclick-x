@@ -87,6 +87,15 @@ test("receipts form a verifiable hash chain; tampering is detected", async () =>
   assert.equal(await ReceiptChain.verify(forged), 2);
 });
 
+test("receipt chain stays linear under 200 concurrent runs", async () => {
+  const { rc } = await world();
+  await Promise.all(Array.from({ length: 200 }, (_, i) => rc.run("builtin:text.sha256", { text: String(i) })));
+  const v = await rc.verifyReceipts();
+  assert.equal(v.count, 200);
+  assert.equal(v.intact, true);
+  assert.deepEqual(rc.chain.receipts.map((r) => r.seq), Array.from({ length: 200 }, (_, i) => i + 1));
+});
+
 test("verification: refuted predicates fail the run honestly", async () => {
   const { rc } = await world();
   const ok = await rc.run("builtin:url.domain", { url: "https://x.test/p" }, { verify: [{ op: "equals", value: "x.test" }] });
@@ -140,6 +149,29 @@ test("research: environment survey, gaps, directory search and auto-learn", asyn
   assert.equal(r.directories[1].reachable, false);
   assert.equal(r.learned?.totalNewCapabilities, 2);
   assert.ok(rc.graph.get("mcp:skycast:forecast"));
+});
+
+test("acquisition on demand: an empty graph finds, learns and uses a capability it lacked", async () => {
+  const searched: string[] = [];
+  const dir: Directory = {
+    id: "fake",
+    title: "Fake directory",
+    url: "https://dir.test",
+    async search(_net, topic) {
+      searched.push(topic);
+      return [
+        { directory: "fake", name: "dead", title: "Dead API", description: "", source: "https://dead.test/openapi.json", kind: "openapi", score: 1 },
+        { directory: "fake", name: "polyglot", title: "Polyglot", description: "translation", source: URLS.polyglot, kind: "openapi", score: 0.9 },
+      ];
+    },
+  };
+  const { rc } = await world({}, { directories: [dir] });
+  assert.equal(rc.graph.list().some((c) => /translate/i.test(c.title)), false);
+  const r = await rc.compose({ have: { text: "Hello world", language: "es" }, want: "text", intent: "translate", run: true, acquire: true });
+  assert.equal(r.executed?.status, "completed");
+  assert.equal(r.executed?.output, "Hola mundo");
+  assert.deepEqual(searched, ["translate text"]);
+  assert.deepEqual(r.acquisition?.learned.map((l) => [l.title, l.capabilities > 0]), [["Dead API", false], ["Polyglot", true]]);
 });
 
 test("actions: direct capabilities plus everything reachable through pipelines", async () => {

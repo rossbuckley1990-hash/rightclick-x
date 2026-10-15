@@ -2,7 +2,7 @@
 // the whole context_* family. Every interface (MCP, HTTP API, CLI, dashboard,
 // federation) is a thin shell around this class.
 
-import { CapabilityGraph, signature, type GraphEvent, type LearnDelta } from "./core/graph.ts";
+import { CapabilityGraph, signature, tokenize, type GraphEvent, type LearnDelta } from "./core/graph.ts";
 import { Ledger, ReceiptChain, sha256, type Receipt } from "./core/ledger.ts";
 import { plan, type Plan } from "./core/planner.ts";
 import { distance, inferType, inspectValue, type Inspection } from "./core/semantics.ts";
@@ -82,6 +82,8 @@ export interface ComposeResult {
     durationMs: number;
   };
   crystallized?: { id: string; title: string; newPowers: number };
+  /** Present when compose had to go and find new capabilities in the world. */
+  acquisition?: { topic: string; considered: string[]; learned: Array<{ title: string; kind: string; source: string; capabilities: number; error?: string }> };
 }
 
 export interface SourceDrift {
@@ -217,6 +219,9 @@ export class RightClick {
 
   async learn(opts: { source?: string; sources?: string[]; deep?: boolean; spec?: Reflection }) {
     const sources = [...(opts.source ? [opts.source] : []), ...(opts.sources ?? [])];
+    // Batch learning measures powers once for the whole batch, not per provider.
+    const batchBefore = this.graph.powers().total;
+    this.graph.measuring = sources.length <= 3;
     const results: Array<{ source: string; probes: Discovery["probes"]; learned: LearnDelta[]; drift?: SourceDrift; error?: string }> = [];
     if (opts.spec) results.push({ source: opts.spec.provider.origin, probes: [], learned: [this.graph.add(opts.spec)] });
     await Promise.all(
@@ -253,12 +258,13 @@ export class RightClick {
         }
       }),
     );
+    this.graph.measuring = true;
     this.persist();
     const powers = this.graph.powers();
     return {
       results,
       totalNewCapabilities: results.flatMap((r) => r.learned).reduce((s, l) => s + l.capabilitiesAdded, 0),
-      totalNewPowers: results.flatMap((r) => r.learned).reduce((s, l) => s + l.newPowers, 0),
+      totalNewPowers: powers.total - batchBefore,
       graph: { providers: this.graph.providers.size, ...powers },
     };
   }
@@ -434,6 +440,8 @@ export class RightClick {
     risks?: Capability["risk"][];
     /** Capability ids or search phrases the pipeline must pass through. */
     through?: string[];
+    /** If the graph can't do it, research public directories, learn candidates and re-plan. */
+    acquire?: boolean;
   }): Promise<ComposeResult> {
     const values: Record<string, unknown> = {};
     const types: Record<string, SemType> = {};
@@ -455,6 +463,38 @@ export class RightClick {
       goal: { have: types, want: opts.want, intent: opts.intent, through },
       plans: plans.map((p) => ({ ...p, titles: titles(p) })),
     };
+
+    // Acquisition on demand: nothing in the graph can do this yet, so go and
+    // find something in the world that can, learn it, and plan again.
+    let candidates: Candidate[] | null = null;
+    const acquireMore = async (): Promise<boolean> => {
+      if (!opts.acquire) return false;
+      if (!candidates) {
+        const topic = [opts.intent ?? "", opts.want].join(" ").trim();
+        const r = await this.research({ topic, limit: 6 });
+        // Interleave directories so one noisy source can't crowd out the other.
+        const lists = r.directories.map((d) => d.candidates);
+        candidates = [];
+        for (let i = 0; lists.some((l) => l[i]); i++) for (const l of lists) if (l[i]) candidates.push(l[i]);
+        result.acquisition = { topic, considered: candidates.map((c) => `${c.title} (${c.kind})`), learned: [] };
+      }
+      const batch = candidates.splice(0, 3);
+      if (!batch.length) return false;
+      const l = await this.learn({ sources: batch.map((c) => c.source) });
+      for (const c of batch) {
+        const res = l.results.find((x) => x.source === c.source);
+        result.acquisition!.learned.push({ title: c.title, kind: c.kind, source: c.source, capabilities: res?.learned.reduce((n, d) => n + d.capabilitiesAdded, 0) ?? 0, error: res?.error });
+      }
+      plans = plan(this.graph, this.ledger, goal);
+      result.plans = plans.map((p) => ({ ...p, titles: titles(p) }));
+      return true;
+    };
+    // Acquire when nothing can do it, or when the best plan covers too little of the intent
+    // (a builtin that merely echoes text is not "a Wikipedia summary").
+    const intentTerms = new Set(tokenize(opts.intent ?? "")).size;
+    const covered = () => plans[0]?.intentScore ?? 0;
+    const enough = () => plans.length > 0 && (!intentTerms || covered() >= Math.ceil(intentTerms * 0.75));
+    for (let round = 0; !enough() && round < 3; round++) if (!(await acquireMore())) break;
     if (!opts.run || !plans.length) return result;
 
     // Self-healing execution: when a step fails, route around that capability
@@ -507,6 +547,7 @@ export class RightClick {
           for (const s of p.steps) if (this.graph.get(s.capability)?.invoke.kind === "composite") exclude.add(s.capability);
         }
         plans = plan(this.graph, this.ledger, { ...goal, exclude });
+        if (!plans.length && (await acquireMore())) plans = plan(this.graph, this.ledger, { ...goal, exclude });
       }
     }
     result.executed = {
@@ -592,11 +633,8 @@ export class RightClick {
         return plan(this.graph, this.ledger, { have: { input: opts.from }, want: opts.to, limit: opts.limit ?? 10 }).map((p) => ({ summary: p.summary, steps: p.steps.length, providers: p.providers, cost: Number(p.cost.toFixed(2)) }));
       case "export":
         return this.exportGraph();
-      case "edges": {
-        const out: Array<[string, string]> = [];
-        for (const [a, bs] of this.graph.edges()) for (const b of bs) if (out.length < (opts.limit ?? 2000)) out.push([a, b]);
-        return out;
-      }
+      case "edges":
+        return this.graph.sampleEdges(opts.limit ?? 2000);
       default:
         throw new Error(`unknown graph op: ${opts.op} (stats|types|search|neighbors|paths|export|edges)`);
     }

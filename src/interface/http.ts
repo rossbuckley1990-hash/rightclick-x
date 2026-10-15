@@ -104,8 +104,7 @@ export function createHandler(rc: RightClick, opts: HttpOptions = {}): (req: Req
 
 function viz(rc: RightClick) {
   const nodes = rc.graph.list().map((c) => ({ id: c.id, title: c.title, provider: c.provider, source: c.source }));
-  const links: Array<[string, string]> = [];
-  for (const [a, bs] of rc.graph.edges()) for (const b of bs) if (links.length < 4000) links.push([a, b]);
+  const links = rc.graph.sampleEdges(4000);
   return { nodes, links, powers: rc.graph.powers(), providers: rc.providers(), runtime: rc.runtime(), recent: rc.runStatus({ limit: 15 }) };
 }
 

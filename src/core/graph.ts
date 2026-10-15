@@ -62,7 +62,7 @@ export class CapabilityGraph {
   private listeners = new Set<(e: GraphEvent) => void>();
 
   add(reflection: Reflection): LearnDelta {
-    const before = this.powers().total;
+    const before = this.measure ? this.powers().total : 0;
     const { provider, capabilities } = reflection;
     const previous = this.providers.get(provider.id);
     let drift: LearnDelta["drift"];
@@ -79,7 +79,7 @@ export class CapabilityGraph {
     this.providers.set(provider.id, { ...provider, capabilityIds: capabilities.map((c) => c.id) });
     this.invalidate();
     const retired = this.retireBroken();
-    const after = this.powers().total;
+    const after = this.measure ? this.powers().total : 0;
     const delta: LearnDelta = {
       provider: provider.id,
       capabilitiesAdded: capabilities.length,
@@ -95,24 +95,23 @@ export class CapabilityGraph {
 
   /** Add one capability to an existing (or synthetic) provider, e.g. a crystallized pipeline. */
   addCapability(cap: Capability, provider: Omit<Provider, "capabilityIds">): LearnDelta {
-    const before = this.powers().total;
+    const before = this.measure ? this.powers().total : 0;
     const existing = this.providers.get(provider.id);
     const ids = new Set(existing?.capabilityIds ?? []);
     ids.add(cap.id);
     this.providers.set(provider.id, { ...(existing ?? provider), capabilityIds: [...ids] });
     this.capabilities.set(cap.id, cap);
     this.invalidate();
-    const after = this.powers().total;
+    const after = this.measure ? this.powers().total : 0;
     return { provider: provider.id, capabilitiesAdded: 1, powersBefore: before, powersAfter: after, newPowers: after - before };
   }
 
   forget(providerId: string): boolean {
     if (!this.providers.has(providerId)) return false;
-    const before = this.powers().total;
     this.dropProvider(providerId);
     this.invalidate();
     this.retireBroken();
-    this.emit("provider.forgotten", { provider: providerId, powersBefore: before, powersAfter: this.powers().total });
+    this.emit("provider.forgotten", { provider: providerId });
     return true;
   }
 
@@ -149,6 +148,13 @@ export class CapabilityGraph {
   private invalidate(): void {
     this.adjacency = null;
     this.powersCache = null;
+    this.index = null;
+  }
+
+  /** Per-change power deltas are measured only while counting is cheap. */
+  measuring = true;
+  private get measure(): boolean {
+    return this.measuring && this.capabilities.size < 2500;
   }
 
   get(id: string): Capability | undefined {
@@ -171,10 +177,11 @@ export class CapabilityGraph {
     return this.list().filter((c) => c.outputs.some((p) => strongly(type, p.type)));
   }
 
-  edges(): Map<string, Set<string>> {
-    if (this.adjacency) return this.adjacency;
-    // Index required inputs by their exact type, then walk each produced type
-    // up the lattice so lookups stay proportional to edges, not nodes squared.
+  private index: { byInputType: Map<SemType, Set<string>>; nominal: Set<string> } | null = null;
+
+  /** Required inputs indexed by exact type, plus name-like ports; built once per graph version. */
+  private inputIndex() {
+    if (this.index) return this.index;
     const byInputType = new Map<SemType, Set<string>>();
     const nominal = new Set<string>();
     for (const c of this.capabilities.values()) {
@@ -186,34 +193,61 @@ export class CapabilityGraph {
         if (isNominal(p.name, p.type)) nominal.add(c.id);
       }
     }
-    const adj = new Map<string, Set<string>>();
-    for (const a of this.capabilities.values()) {
-      const out = new Set<string>();
-      for (const port of a.outputs) {
-        let t: SemType | undefined = port.type;
-        while (t !== undefined) {
-          if (strongly(t, port.type)) for (const b of byInputType.get(t) ?? []) if (b !== a.id) out.add(b);
-          t = parentOf(t);
-        }
-        if (distance("text", port.type) === 1 && !["html", "markdown"].includes(port.type)) for (const b of nominal) if (b !== a.id) out.add(b);
+    return (this.index = { byInputType, nominal });
+  }
+
+  /** Capabilities that an output of `a` can feed. Walks each produced type up the lattice. */
+  outSet(a: Capability): Set<string> {
+    const { byInputType, nominal } = this.inputIndex();
+    const out = new Set<string>();
+    for (const port of a.outputs) {
+      let t: SemType | undefined = port.type;
+      while (t !== undefined) {
+        if (strongly(t, port.type)) for (const b of byInputType.get(t) ?? []) if (b !== a.id) out.add(b);
+        t = parentOf(t);
       }
-      adj.set(a.id, out);
+      if (distance("text", port.type) === 1 && !["html", "markdown"].includes(port.type)) for (const b of nominal) if (b !== a.id) out.add(b);
     }
+    return out;
+  }
+
+  /** Full adjacency. Materialized lazily: large graphs never need it for counting. */
+  edges(): Map<string, Set<string>> {
+    if (this.adjacency) return this.adjacency;
+    const adj = new Map<string, Set<string>>();
+    for (const a of this.capabilities.values()) adj.set(a.id, this.outSet(a));
     this.adjacency = adj;
     return adj;
   }
 
+  /** Up to `limit` edges without materializing the whole adjacency. */
+  sampleEdges(limit: number): Array<[string, string]> {
+    const out: Array<[string, string]> = [];
+    for (const a of this.capabilities.values()) {
+      for (const b of this.outSet(a)) {
+        out.push([a.id, b]);
+        if (out.length >= limit) return out;
+      }
+    }
+    return out;
+  }
+
+  /**
+   * Streaming count, O(edges) time and O(nodes) memory: pass 1 records each
+   * node's out-degree, pass 2 sums the out-degrees of every node's successors
+   * (a→b→c walks with c ≠ b).
+   */
   powers(): Powers {
     if (this.powersCache) return this.powersCache;
-    const adj = this.edges();
+    const outdeg = new Map<string, number>();
     let edges = 0;
+    if (this.adjacency) for (const [a, s] of this.adjacency) outdeg.set(a, s.size);
+    else for (const a of this.capabilities.values()) outdeg.set(a.id, this.outSet(a).size);
+    for (const n of outdeg.values()) edges += n;
     let chains3 = 0;
-    for (const [a, outs] of adj) {
-      edges += outs.size;
-      for (const b of outs) {
-        const next = adj.get(b)!;
-        chains3 += next.size - (next.has(a) ? 1 : 0);
-      }
+    for (const a of this.capabilities.values()) {
+      const succ = this.adjacency?.get(a.id) ?? this.outSet(a);
+      for (const b of succ) chains3 += outdeg.get(b) ?? 0;
     }
     const capabilities = this.capabilities.size;
     this.powersCache = { capabilities, edges, chains2: edges, chains3, total: capabilities + edges + chains3 };

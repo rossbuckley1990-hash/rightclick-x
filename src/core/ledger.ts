@@ -11,6 +11,8 @@ export interface Experience {
   failed: number;
   /** Exponential moving average, milliseconds. */
   latencyMs: number;
+  /** Exponential moving average of success (1 = ok), so the ledger notices change. */
+  recent?: number;
   lastRunAt?: string;
   lastError?: string;
 }
@@ -24,6 +26,7 @@ export class Ledger {
     if (ok) e.ok++;
     else e.failed++;
     e.latencyMs = e.runs === 1 ? latencyMs : e.latencyMs * 0.7 + latencyMs * 0.3;
+    e.recent = e.runs === 1 || e.recent === undefined ? (ok ? 1 : 0) : e.recent * 0.8 + (ok ? 0.2 : 0);
     e.lastRunAt = new Date().toISOString();
     if (error) e.lastError = error.slice(0, 300);
     this.stats.set(id, e);
@@ -37,7 +40,11 @@ export class Ledger {
   /** Laplace-smoothed success probability: unknown capabilities start at 0.75. */
   reliability(id: string): number {
     const e = this.stats.get(id);
-    return e ? (e.ok + 3) / (e.runs + 4) : 0.75;
+    if (!e) return 0.75;
+    const lifetime = (e.ok + 3) / (e.runs + 4);
+    if (e.runs < 3 || e.recent === undefined) return lifetime;
+    // Recent behaviour dominates: a provider that starts failing loses trust fast.
+    return Math.max(0.02, 0.25 * lifetime + 0.75 * e.recent);
   }
 
   /** Planner edge cost: one step, inflated by unreliability, nudged by latency. */
@@ -94,7 +101,16 @@ export class ReceiptChain {
   readonly receipts: Receipt[] = [];
   private head = GENESIS;
 
-  async append(r: Omit<Receipt, "seq" | "prev" | "hash" | "inputDigest" | "outputDigest">, input: unknown, output: unknown): Promise<Receipt> {
+  private tail: Promise<unknown> = Promise.resolve();
+
+  /** Appends are serialized: concurrent runs must never link to the same previous receipt. */
+  append(r: Omit<Receipt, "seq" | "prev" | "hash" | "inputDigest" | "outputDigest">, input: unknown, output: unknown): Promise<Receipt> {
+    const next = this.tail.then(() => this.appendNow(r, input, output));
+    this.tail = next.catch(() => {});
+    return next;
+  }
+
+  private async appendNow(r: Omit<Receipt, "seq" | "prev" | "hash" | "inputDigest" | "outputDigest">, input: unknown, output: unknown): Promise<Receipt> {
     const body = {
       ...r,
       seq: this.receipts.length + 1,

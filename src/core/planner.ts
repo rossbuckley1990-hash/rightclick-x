@@ -118,11 +118,11 @@ export function plan(graph: CapabilityGraph, ledger: Ledger, goal: Goal): Plan[]
         seen.add(key);
 
         const hit = produced
-          .map((v) => ({ v, d: distance(goal.want, v.type), s: outputScore(v.ref, intent) }))
+          .map((v) => ({ v, d: distance(goal.want, v.type), s: outputScore(v.ref, intent, goal.want) }))
           .filter((x) => satisfies(goal.want, x.v.type))
           .sort((a, b) => a.d - b.d || b.s - a.s)[0];
         if (hit) {
-          const p = finalize(graph, child, hit.v, hit.d, intent);
+          const p = finalize(graph, child, hit.v, hit.d, intent, goal.want);
           if (p) results.push(p);
         }
         next.push(child);
@@ -164,8 +164,10 @@ function satisfies(want: SemType, got: SemType): boolean {
 const CONTENT = /(^|\.)(extract|summary|description|content|text|body|answer|result|translated\w*|message|output|response)$/i;
 
 /** Prefer content-bearing outputs (extract, summary) and ones named like the intent. */
-function outputScore(ref: string, intent: Set<string>): number {
+function outputScore(ref: string, intent: Set<string>, want?: SemType): number {
   const path = ref.replace(/^\d+\./, "");
+  // Asked for structured data: the complete result beats any fragment of it.
+  if (want === "json") return path === "" ? 3 : 1 - path.split(".").length * 0.1;
   let s = CONTENT.test(path) ? 2 : 0;
   for (const t of tokenize(path)) if (intent.has(t)) s += 1;
   if (path === "") s += 0.5;
@@ -179,14 +181,16 @@ function bind(cap: Capability, values: Value[], intent: Set<string>): Binding[] 
     let best: Value | undefined;
     let bestScore = Infinity;
     for (const v of values) {
-      if (!accepts(port.name, port.type, v.type)) continue;
+      // A caller input named after an entity ("province") identifies it: it can fill id.province.
+      const bridged = v.step === -1 && port.type === `id.${v.ref.slice(4).toLowerCase().replace(/[^a-z0-9]/g, "")}`;
+      if (!bridged && !accepts(port.name, port.type, v.type)) continue;
       // Optional ports are only filled when the caller supplied them by name.
       if (!port.required && v.ref !== `$in.${port.name}`) continue;
       const leafName = v.ref.replace(/^(\$in|\d+)\./, "").split(".").pop() ?? "";
       // Name-like ports (title, name, q) take names, not prose fields like body/description.
       if (isNominal(port.name, port.type) && CONTENT.test(leafName)) continue;
       // Prefer exact types, recent values, the caller's names, and values named like the intent.
-      const d = distance(port.type, v.type);
+      const d = bridged ? 0 : distance(port.type, v.type);
       const nameBonus = v.ref === `$in.${port.name}` ? (port.type === "text" ? 1.5 : 5) : 0;
       const leaf = v.ref.replace(/^(\$in|\d+)\./, "").split(".").pop() ?? "";
       const leafToks = tokenize(leaf);
@@ -254,7 +258,7 @@ function intentOf(graph: CapabilityGraph, node: Node, intent: Set<string>, resul
   return covered.size;
 }
 
-function finalize(graph: CapabilityGraph, node: Node, v: Value, d: number, intent: Set<string>): Plan | null {
+function finalize(graph: CapabilityGraph, node: Node, v: Value, d: number, intent: Set<string>, want?: SemType): Plan | null {
   // Drop trailing steps that don't contribute to the result.
   const needed = new Set<number>([v.step]);
   for (let i = node.steps.length - 1; i >= 0; i--) {
@@ -270,7 +274,7 @@ function finalize(graph: CapabilityGraph, node: Node, v: Value, d: number, inten
   const intentScore = intentOf(graph, node, intent, v.ref);
   const last = graph.get(node.steps[v.step].capability)!;
   // A crystallized pipeline is judged by the result it was proven on.
-  let resultScore = last.invoke.kind === "composite" ? outputScore(last.invoke.result, intent) : outputScore(v.ref, intent);
+  let resultScore = last.invoke.kind === "composite" ? outputScore(last.invoke.result, intent, want) : outputScore(v.ref, intent, want);
   // The whole result of a step that *is* the intent (Summarize for "summary") is content.
   if (/^\d+\.$/.test(v.ref) && [...tokensOf(last)].some((t) => intent.has(t))) resultScore += 2;
   return {
