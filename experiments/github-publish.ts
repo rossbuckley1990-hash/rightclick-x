@@ -32,10 +32,11 @@ log(`learned GitHub REST: ${learned.totalNewCapabilities} operations in ${Math.r
 
 // The runtime finds its own tools.
 function find(phrase: string, expect: RegExp): string {
-  const hit = rc.graph.search(phrase, 5).find((h) => expect.test(h.capability.id));
-  if (!hit) throw new Error(`no capability for "${phrase}"`);
-  log(`  search "${phrase}" → ${hit.capability.id} [${hit.capability.risk}]`);
-  return hit.capability.id;
+  // Search first; if the phrase is ambiguous, match the operation inside the reflected graph.
+  const cap = rc.graph.search(phrase, 10).find((h) => expect.test(h.capability.id))?.capability ?? rc.graph.list().find((c) => expect.test(c.id));
+  if (!cap) throw new Error(`no capability for "${phrase}"`);
+  log(`  search "${phrase}" → ${cap.id} [${cap.risk}]`);
+  return cap.id;
 }
 const CREATE_REPO = find("create a repository for the authenticated user", /repos-create-for-authenticated-user$/);
 const GET_REF = find("get a reference", /git-get-ref$/);
@@ -44,6 +45,8 @@ const CREATE_TREE = find("create a tree", /git-create-tree$/);
 const CREATE_COMMIT = find("create a commit", /git-create-commit$/);
 const UPDATE_REF = find("update a reference", /git-update-ref$/);
 const GET_COMMIT = find("get a commit object", /git-get-commit$/);
+const GET_REPO = find("get a repository", /repos-get$/);
+const GET_TREE = find("get a tree", /git-get-tree$/);
 
 async function run(id: string, args: Record<string, unknown>, verify?: any[]) {
   const r = await rc.run(id, args, { verify });
@@ -52,23 +55,34 @@ async function run(id: string, args: Record<string, unknown>, verify?: any[]) {
   return r.output as any;
 }
 
-// 1. A brand-new repository.
-const created = await run(
-  CREATE_REPO,
-  {
-    name: repo,
-    description: "An MCP server that becomes whatever its environment can do. This repository was created and populated by RightClick X itself.",
-    private: !isPublic,
-    auto_init: true,
-  },
-  [{ op: "equals", path: "full_name", value: `${owner}/${repo}` }],
-);
-log(`1. created ${created.full_name} (${created.private ? "private" : "public"}) → ${created.html_url}`);
+// 1. A brand-new repository, or sync to the existing one.
+let existing: any = null;
+try {
+  existing = await run(GET_REPO, { owner, repo });
+} catch {
+  /* does not exist yet */
+}
+const created = existing
+  ? existing
+  : await run(
+      CREATE_REPO,
+      {
+        name: repo,
+        description: "An MCP server that becomes whatever its environment can do. This repository was created and populated by RightClick X itself.",
+        private: !isPublic,
+        auto_init: true,
+      },
+      [{ op: "equals", path: "full_name", value: `${owner}/${repo}` }],
+    );
+log(`1. ${existing ? "found existing" : "created"} ${created.full_name} (${created.private ? "private" : "public"}) → ${created.html_url}`);
 
-// 2. The commit GitHub initialised it with.
+// 2. Where main is now.
 const ref = await run(GET_REF, { owner, repo, ref: "heads/main" });
 const parent = ref.object.sha;
-log(`2. main is at ${parent.slice(0, 12)} (auto-init)`);
+const parentCommit = await run(GET_COMMIT, { owner, repo, commit_sha: parent });
+const remoteTree = await run(GET_TREE, { owner, repo, tree_sha: parentCommit.tree.sha, recursive: "1" });
+const remoteBlobs = new Set<string>(remoteTree.tree.filter((e: any) => e.type === "blob").map((e: any) => e.sha));
+log(`2. main is at ${parent.slice(0, 12)} (tree ${parentCommit.tree.sha.slice(0, 12)}, ${remoteBlobs.size} blobs already on GitHub)`);
 
 // 3. Every tracked file as a blob; each blob SHA must equal git's own object id.
 const entries = git("ls-files", "-s")
@@ -79,7 +93,8 @@ const entries = git("ls-files", "-s")
     return { mode, sha, path };
   });
 let matched = 0;
-const queue = [...entries];
+const queue = entries.filter((e) => !remoteBlobs.has(e.sha));
+const reused = entries.length - queue.length;
 await Promise.all(
   Array.from({ length: 4 }, async () => {
     for (let e = queue.shift(); e; e = queue.shift()) {
@@ -89,7 +104,7 @@ await Promise.all(
     }
   }),
 );
-log(`3. uploaded ${entries.length} blobs; ${matched}/${entries.length} SHAs identical to the local git objects`);
+log(`3. uploaded ${matched} new/changed blobs (${reused} already on GitHub); every uploaded SHA identical to the local git object`);
 
 // 4. The tree. Its SHA is computed by GitHub; it must equal the local tree.
 const localTree = git("write-tree");
@@ -99,8 +114,9 @@ const tree = await run(CREATE_TREE, { owner, repo, tree: entries.map((e) => ({ p
 log(`4. GitHub tree ${tree.sha}\n   local tree  ${localTree}  ${tree.sha === localTree ? "✓ identical" : "✗ DIFFERENT"}`);
 
 // 5. Commit and move main.
-const message = `RightClick X ${process.env.npm_package_version ?? "0.1.0"}, published by RightClick X itself
-
+const localLog = git("log", "--format=- %s", "-n", "12");
+const message = `${existing ? "Sync" : "RightClick X " + (process.env.npm_package_version ?? "0.1.0") + ","} published by RightClick X itself
+${existing ? "\nLocal history included in this snapshot (most recent first):\n" + localLog + "\n" : ""}
 Created through capabilities RightClick X reflected from GitHub's official
 REST API description at runtime: repos/create-for-authenticated-user,
 git/create-blob, git/create-tree, git/create-commit, git/update-ref.
@@ -123,16 +139,18 @@ log(`6. read back: commit ${back.sha.slice(0, 12)} has tree ${back.tree.sha.slic
 
 mkdirSync("experiments/results", { recursive: true });
 writeFileSync(
-  "experiments/results/E8-self-publish.json",
+  existing ? "experiments/results/E8-self-sync.json" : "experiments/results/E8-self-publish.json",
   JSON.stringify(
     {
       at: new Date().toISOString(),
       repo: created.html_url,
       visibility: created.private ? "private" : "public",
       operationsLearned: learned.totalNewCapabilities,
-      capabilitiesUsed: [CREATE_REPO, GET_REF, CREATE_BLOB, CREATE_TREE, CREATE_COMMIT, UPDATE_REF, GET_COMMIT],
+      mode: existing ? "sync" : "create",
+      capabilitiesUsed: [existing ? GET_REPO : CREATE_REPO, GET_REF, GET_TREE, CREATE_BLOB, CREATE_TREE, CREATE_COMMIT, UPDATE_REF, GET_COMMIT],
       files: entries.length,
-      blobShasMatched: matched,
+      blobsUploaded: matched,
+      blobsReused: reused,
       localTree,
       githubTree: tree.sha,
       commit: commit.sha,
