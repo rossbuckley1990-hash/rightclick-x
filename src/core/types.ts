@@ -98,6 +98,8 @@ export interface CompositeInvoke {
   steps: PlanStep[];
   /** Where the final value is read from: "<stepIndex>.<outputPath>". */
   result: string;
+  /** Contract signature of each step when the pipeline was proven; a mismatch retires it. */
+  signatures?: string[];
 }
 
 export type Invoke =

@@ -18,6 +18,8 @@ export type GraphEventKind =
   | "provider.learned"
   | "provider.forgotten"
   | "capability.crystallized"
+  | "capability.retired"
+  | "provider.drifted"
   | "run.completed"
   | "research";
 
@@ -38,6 +40,10 @@ export interface Powers {
 
 export interface LearnDelta {
   provider: string;
+  /** Present when this provider was already known: how its contract changed. */
+  drift?: { changed: boolean; added: string[]; removed: string[]; modified: string[] };
+  /** Crystallized pipelines retired because a step they depend on changed or vanished. */
+  retired?: string[];
   capabilitiesAdded: number;
   powersBefore: number;
   powersAfter: number;
@@ -58,10 +64,21 @@ export class CapabilityGraph {
   add(reflection: Reflection): LearnDelta {
     const before = this.powers().total;
     const { provider, capabilities } = reflection;
-    if (this.providers.has(provider.id)) this.dropProvider(provider.id);
+    const previous = this.providers.get(provider.id);
+    let drift: LearnDelta["drift"];
+    if (previous) {
+      const old = new Map(previous.capabilityIds.map((id) => [id, this.capabilities.get(id) ? signature(this.capabilities.get(id)!) : ""]));
+      const next = new Map(capabilities.map((c) => [c.id, signature(c)]));
+      const added = [...next.keys()].filter((id) => !old.has(id));
+      const removed = [...old.keys()].filter((id) => !next.has(id));
+      const modified = [...next.keys()].filter((id) => old.has(id) && old.get(id) !== next.get(id));
+      drift = { changed: !!(added.length || removed.length || modified.length), added, removed, modified };
+      this.dropProvider(provider.id);
+    }
     for (const cap of capabilities) this.capabilities.set(cap.id, cap);
     this.providers.set(provider.id, { ...provider, capabilityIds: capabilities.map((c) => c.id) });
     this.invalidate();
+    const retired = this.retireBroken();
     const after = this.powers().total;
     const delta: LearnDelta = {
       provider: provider.id,
@@ -69,6 +86,8 @@ export class CapabilityGraph {
       powersBefore: before,
       powersAfter: after,
       newPowers: after - before,
+      ...(drift ? { drift } : {}),
+      ...(retired.length ? { retired } : {}),
     };
     this.emit("provider.learned", { ...delta, title: provider.title, source: provider.source, origin: provider.origin });
     return delta;
@@ -92,8 +111,34 @@ export class CapabilityGraph {
     const before = this.powers().total;
     this.dropProvider(providerId);
     this.invalidate();
+    this.retireBroken();
     this.emit("provider.forgotten", { provider: providerId, powersBefore: before, powersAfter: this.powers().total });
     return true;
+  }
+
+  /**
+   * Crystallized pipelines are proofs about specific contracts. When a step's
+   * capability vanishes or its contract (ports, invocation) changes, the proof
+   * no longer holds: retire the pipeline so the planner rebuilds it.
+   */
+  retireBroken(): string[] {
+    const retired: string[] = [];
+    for (const c of [...this.capabilities.values()]) {
+      if (c.invoke.kind !== "composite") continue;
+      const sigs = c.invoke.signatures;
+      const broken = c.invoke.steps.some((s, i) => {
+        const step = this.capabilities.get(s.capability);
+        return !step || (sigs?.[i] !== undefined && sigs[i] !== signature(step));
+      });
+      if (!broken) continue;
+      this.capabilities.delete(c.id);
+      const p = this.providers.get(c.provider);
+      if (p) p.capabilityIds = p.capabilityIds.filter((id) => id !== c.id);
+      retired.push(c.id);
+      this.emit("capability.retired", { id: c.id, title: c.title });
+    }
+    if (retired.length) this.invalidate();
+    return retired;
   }
 
   private dropProvider(id: string): void {
@@ -253,6 +298,17 @@ export class CapabilityGraph {
     this.listeners.add(fn);
     return () => this.listeners.delete(fn);
   }
+}
+
+/** Contract signature of a capability: its typed ports and how it is invoked (FNV-1a). */
+export function signature(c: Capability): string {
+  const text = JSON.stringify([c.inputs.map((p) => [p.name, p.type, p.required]), c.outputs.map((p) => [p.name, p.type]), c.invoke]);
+  let h = 0x811c9dc5;
+  for (let i = 0; i < text.length; i++) {
+    h ^= text.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return h.toString(16).padStart(8, "0");
 }
 
 const STOP = new Set(["the", "a", "an", "of", "to", "and", "or", "for", "in", "on", "by", "with", "is", "it", "this", "that", "from", "as", "be"]);
