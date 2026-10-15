@@ -2,7 +2,7 @@
 // the whole context_* family. Every interface (MCP, HTTP API, CLI, dashboard,
 // federation) is a thin shell around this class.
 
-import { CapabilityGraph, type GraphEvent, type LearnDelta } from "./core/graph.ts";
+import { CapabilityGraph, signature, type GraphEvent, type LearnDelta } from "./core/graph.ts";
 import { Ledger, ReceiptChain, sha256, type Receipt } from "./core/ledger.ts";
 import { plan, type Plan } from "./core/planner.ts";
 import { distance, inferType, inspectValue, type Inspection } from "./core/semantics.ts";
@@ -78,10 +78,21 @@ export interface ComposeResult {
     verification: RunRecord["verification"];
     runs: string[];
     /** Failed attempts the runtime routed around before succeeding. */
-    attempts: Array<{ summary: string; failed: string; error: string }>;
+    attempts: Array<{ summary: string; failed: string; error: string; healing?: string }>;
     durationMs: number;
   };
   crystallized?: { id: string; title: string; newPowers: number };
+}
+
+export interface SourceDrift {
+  changed: boolean;
+  providersBefore: string[];
+  providersAfter: string[];
+  added: string[];
+  removed: string[];
+  modified: string[];
+  /** Crystallized pipelines retired because their proof no longer holds. */
+  retired: string[];
 }
 
 const RUN_BUFFER = 500;
@@ -206,14 +217,37 @@ export class RightClick {
 
   async learn(opts: { source?: string; sources?: string[]; deep?: boolean; spec?: Reflection }) {
     const sources = [...(opts.source ? [opts.source] : []), ...(opts.sources ?? [])];
-    const results: Array<{ source: string; probes: Discovery["probes"]; learned: LearnDelta[]; error?: string }> = [];
+    const results: Array<{ source: string; probes: Discovery["probes"]; learned: LearnDelta[]; drift?: SourceDrift; error?: string }> = [];
     if (opts.spec) results.push({ source: opts.spec.provider.origin, probes: [], learned: [this.graph.add(opts.spec)] });
     await Promise.all(
       sources.map(async (source) => {
         try {
           const d = await discover(this.net, source, { deep: opts.deep, mcp: (u) => this.mcp(u) });
-          const learned = d.reflections.map((r) => this.graph.add(r));
-          results.push({ source, probes: d.probes, learned });
+          // Re-learning a source replaces everything it produced before, even when
+          // the provider changed protocol (OpenAPI -> GraphQL -> MCP) and so its id.
+          const previous = [...this.graph.providers.values()].filter((p) => p.meta?.source === source);
+          const before = new Map(previous.flatMap((p) => p.capabilityIds.map((id) => [id, this.graph.get(id) ? signature(this.graph.get(id)!) : ""] as const)));
+          if (!d.reflections.length && previous.length) throw new Error(`no supported contract found at ${source} any more`);
+          const ids = new Set(d.reflections.map((r) => r.provider.id));
+          const compositesBefore = this.graph.list().filter((c) => c.source === "composite").map((c) => c.id);
+          for (const p of previous) if (!ids.has(p.id)) this.graph.forget(p.id);
+          const learned = d.reflections.map((r) => this.graph.add({ ...r, provider: { ...r.provider, meta: { ...r.provider.meta, source } } }));
+          let drift: SourceDrift | undefined;
+          if (previous.length) {
+            const after = new Map(learned.flatMap((l) => (this.graph.providers.get(l.provider)?.capabilityIds ?? []).map((id) => [id, signature(this.graph.get(id)!)] as const)));
+            drift = {
+              changed: false,
+              providersBefore: previous.map((p) => p.id),
+              providersAfter: [...ids],
+              added: [...after.keys()].filter((id) => !before.has(id)),
+              removed: [...before.keys()].filter((id) => !after.has(id)),
+              modified: [...after.keys()].filter((id) => before.has(id) && before.get(id) !== after.get(id)),
+              retired: compositesBefore.filter((id) => !this.graph.get(id)),
+            };
+            drift.changed = !!(drift.added.length || drift.removed.length || drift.modified.length);
+            if (drift.changed) this.graph.emit("provider.drifted", { source, ...drift });
+          }
+          results.push({ source, probes: d.probes, learned, drift });
         } catch (e) {
           results.push({ source, probes: [], learned: [], error: String((e as Error).message ?? e) });
         }
@@ -425,8 +459,9 @@ export class RightClick {
 
     // Self-healing execution: when a step fails, route around that capability
     // (and every crystallized pipeline containing it) and re-plan.
-    const attempts: Array<{ summary: string; failed: string; error: string }> = [];
+    const attempts: Array<{ summary: string; failed: string; error: string; healing?: string }> = [];
     const exclude = new Set<string>();
+    const refreshed = new Set<string>();
     const t0 = performance.now();
     for (let attempt = 0; attempt < 6 && plans.length; attempt++) {
       const p = plans[0];
@@ -448,10 +483,29 @@ export class RightClick {
         return result;
       } catch (e) {
         const failed = e instanceof StepError ? e.capability : p.steps[0].capability;
-        attempts.push({ summary: p.summary, failed, error: String((e as Error)?.message ?? e) });
-        exclude.add(failed);
-        // A crystallized pipeline in a failed plan is suspect as a whole.
-        for (const s of p.steps) if (this.graph.get(s.capability)?.invoke.kind === "composite") exclude.add(s.capability);
+        const attempt: { summary: string; failed: string; error: string; healing?: string } = { summary: p.summary, failed, error: String((e as Error)?.message ?? e) };
+        attempts.push(attempt);
+        // Self-maintenance: the provider may have changed its API. Re-reflect its
+        // source once; if the contract drifted, the graph now describes the new
+        // API and stale crystallized pipelines are retired, so just re-plan.
+        const source = this.graph.providers.get(this.graph.get(failed)?.provider ?? "")?.meta?.source as string | undefined;
+        let drifted = false;
+        if (source && !refreshed.has(source) && !(e instanceof StepError && /verification refuted/.test(attempt.error))) {
+          refreshed.add(source);
+          const r = await this.learn({ source, deep: true });
+          const d = r.results[0]?.drift;
+          drifted = !!d?.changed;
+          attempt.healing = r.results[0]?.error
+            ? `re-reflected ${source}: ${r.results[0].error}`
+            : drifted
+              ? `API drift at ${source}: ${d!.providersBefore.join(",")} → ${d!.providersAfter.join(",")}; +${d!.added.length} −${d!.removed.length} ~${d!.modified.length} capabilities; ${d!.retired.length} pipeline(s) retired`
+              : `re-reflected ${source}: no contract change`;
+        }
+        if (!drifted) {
+          exclude.add(failed);
+          // A crystallized pipeline in a failed plan is suspect as a whole.
+          for (const s of p.steps) if (this.graph.get(s.capability)?.invoke.kind === "composite") exclude.add(s.capability);
+        }
         plans = plan(this.graph, this.ledger, { ...goal, exclude });
       }
     }
@@ -485,7 +539,7 @@ export class RightClick {
       outputs: [{ name: "", type: p.resultType, required: true }],
       risk: stepCaps.some((c) => c.risk === "destructive") ? "destructive" : stepCaps.some((c) => c.risk === "write") ? "write" : stepCaps.some((c) => c.risk === "external") ? "external" : "read",
       tags: [...new Set([...(intent ? intent.split(/\s+/) : []), "composite", "crystallized", ...stepCaps.flatMap((c) => c.tags)])].slice(0, 30),
-      invoke: { kind: "composite", steps: p.steps, result: p.result },
+      invoke: { kind: "composite", steps: p.steps, result: p.result, signatures: stepCaps.map(signature) },
     };
     const delta = this.graph.addCapability(cap, {
       id: "composite:crystallized",

@@ -56,6 +56,9 @@ From the live-internet experiments in [`experiments/`](experiments/EXPERIMENTS.m
 - **GitHub user → real name → Wikipedia**: `{username: "gvanrossum"}` → GitHub `users/get` → `name` → Wikipedia page summary → *"Guido van Rossum is a Dutch programmer…"*. The pipeline crystallized and was reused for `torvalds`.
 - **Repository → homepage → the live site**: `{owner: "denoland", repo: "deno"}` → GitHub `repos/get` → `homepage` (a `url`) → fetch → readable text → summary.
 - **GraphQL → REST**: `{country: "PT"}` → countries GraphQL API → `capital` → Wikipedia → verified summary of Lisbon, for five countries; then reused as one crystallized capability.
+- **Kubernetes, with no MCP server written**: the live cluster's whole API (799 operations) reflected in 210 ms; RightClick X installed a new CRD through a capability it had just reflected, then grew that resource's 8 operations into its own graph 1.2 s later, and filled it with live internet knowledge (countries GraphQL → Wikipedia → `Insight` objects), confirmed independently by kubectl.
+- **Integrations that maintain themselves**: an integration is a goal plus a check, not hard-coded calls. When a provider ships a breaking release, RightClick X re-reflects it, detects the drift, retires stale pipelines, re-plans and re-verifies. Across REST v1 → renamed REST v2 → GraphQL → MCP → rollback, a hand-written client broke three times; the RightClick X integration stayed verified with 0 lines changed ([E10](experiments/EXPERIMENTS.md)).
+- **It published itself**: through capabilities reflected from GitHub's spec, RightClick X created [`rossbuckley1990-hash/rightclick-x`](https://github.com/rossbuckley1990-hash/rightclick-x) and uploaded its own source; GitHub's tree hash is identical to the checkout's `git write-tree`.
 - **Self-healing under real failure**: a pipeline whose output failed verification was routed around automatically; with a provider's route cut, compose re-planned through a federated peer.
 
 And the offline demo (`npm run demo`), which spins up four local services in four protocols:
@@ -79,6 +82,7 @@ And the offline demo (`npm run demo`), which spins up four local services in fou
 - **Reflectors** turn contracts into typed capabilities: OpenAPI 3.x and Swagger 2.0 (`$ref`, `allOf`/`oneOf`, servers, path/query/header/body), GraphQL (introspection with a depth-limited fallback; selections generated), remote MCP over Streamable HTTP (sessions, SSE responses, output schemas, annotations), HTML forms (hidden fields become constants; password fields are never reflected), RightClick X peers (federation), and the platform itself (Cloudflare KV / Workers AI bindings, a sandboxed workspace filesystem on servers).
 - **Semantic types** come from names, formats, descriptions and context: `lat` → `geo.lat`, `target` + "ISO 639-1" → `language`, `code` on field `country` → `country`, `release_id` → `id.release`, `owner` → `account`. A lattice says what may flow where; ids of different things never mix.
 - **The planner** is a best-first search over typed values, ranked by how fully it uses the caller's inputs, intent coverage, result quality and the experience ledger. Agents can pin `through` anchors and the planner wires the rest.
+- **Self-maintenance**: every capability has a contract signature; crystallized pipelines carry the signatures they were proven on. When a step fails, compose re-reflects that provider's source; if the contract drifted (even to another protocol), stale pipelines are retired and the goal is re-planned against the new contract.
 - **Execution** records every run in a SHA-256 hash-chained receipt log, updates per-capability reliability and latency, checks optional predicates (`verified` / `refuted` / honestly `unverified`), re-plans around failures, and crystallizes successful multi-step pipelines into new capabilities.
 - **Powers** = capabilities + typed links + 3-step chains. It is the number that shows why a graph beats a tool list: one new provider adds far more powers than capabilities.
 
@@ -106,7 +110,7 @@ There are no approval gates: write and destructive capabilities run when called,
 
 ```bash
 npm install
-npm test             # 35 offline tests (node:test)
+npm test             # 37 offline tests (node:test)
 npm run typecheck
 npm run demo         # seven-act offline demo
 node experiments/cloud.ts   # live-internet experiments (read-only)

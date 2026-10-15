@@ -187,7 +187,7 @@ function bind(cap: Capability, values: Value[], intent: Set<string>): Binding[] 
       if (isNominal(port.name, port.type) && CONTENT.test(leafName)) continue;
       // Prefer exact types, recent values, the caller's names, and values named like the intent.
       const d = distance(port.type, v.type);
-      const nameBonus = v.ref === `$in.${port.name}` ? 5 : 0;
+      const nameBonus = v.ref === `$in.${port.name}` ? (port.type === "text" ? 1.5 : 5) : 0;
       const leaf = v.ref.replace(/^(\$in|\d+)\./, "").split(".").pop() ?? "";
       const leafToks = tokenize(leaf);
       // Intent words often name the caller's own inputs ("question"); only produced values earn this.

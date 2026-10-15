@@ -75,7 +75,7 @@ export function strongly(wanted: SemType, produced: SemType): boolean {
 }
 
 /** Ports that take the *name* of something: they accept specific string types (a place, a country). */
-const NOMINAL = /^(title|name|q|query|search|term|keyword|topic|subject|page|entity|label)$/i;
+const NOMINAL = /^(title|q|query|search|term|keyword|topic|subject)$/i;
 const NOT_NOMINAL = new Set(["html", "markdown", "text"]);
 
 /** Can a value of type `value` flow into port (`name`, `type`)? */
@@ -169,6 +169,9 @@ export function inferType(name: string, schema: SchemaLike = {}, description = "
     case "hostname":
       return "domain";
   }
+  // Resource identifiers described in prose: "name of the Namespace" -> id.namespace.
+  const of = /\bname of the ([A-Za-z]+)\b/i.exec(description);
+  if (of && (n === "name" || n.endsWith("_name"))) return `id.${of[1].toLowerCase()}`;
   for (const [re, t] of NAME_RULES) {
     if (re.test(n) || re.test(compact)) return t;
   }

@@ -1,0 +1,109 @@
+{
+  "at": "2026-10-15T23:10:45.712Z",
+  "goal": {
+    "have": {
+      "text": "Hello world. The weather is sunny today.",
+      "language": "es"
+    },
+    "want": "text",
+    "intent": "summary translated",
+    "verify": [
+      {
+        "op": "contains",
+        "value": "Hola mundo"
+      }
+    ]
+  },
+  "rows": [
+    {
+      "version": 1,
+      "contract": "REST  POST /translate {text, target} → {translatedText}",
+      "handWrittenClient": "✓ \"Hola mundo\"",
+      "rightclick": "✓ verified",
+      "via": "openapi translatetext",
+      "pipeline": [
+        "Translate text",
+        "Summarize text"
+      ],
+      "healing": [],
+      "ms": 6,
+      "output": "Hola mundo. The tiempo is soleado hoy.",
+      "crystallized": "composite:e25804999b85"
+    },
+    {
+      "version": 2,
+      "contract": "REST  POST /v2/translations {input, targetLanguage} → {result:{translation}}",
+      "handWrittenClient": "✗ HTTP 404",
+      "rightclick": "✓ verified",
+      "via": "openapi createtranslation",
+      "pipeline": [
+        "Create a translation",
+        "Summarize text"
+      ],
+      "healing": [
+        "API drift at http://127.0.0.1:63355/: openapi:polyglot → openapi:polyglot; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+      ],
+      "ms": 11,
+      "output": "Hola mundo. The tiempo is soleado hoy.",
+      "crystallized": "composite:f0154c0911a4"
+    },
+    {
+      "version": 3,
+      "contract": "GraphQL  translate(input, to) { translation }",
+      "handWrittenClient": "✗ HTTP 404",
+      "rightclick": "✓ verified",
+      "via": "graphql translate",
+      "pipeline": [
+        "Translate",
+        "Summarize text"
+      ],
+      "healing": [
+        "API drift at http://127.0.0.1:63355/: openapi:polyglot → graphql:127-0-0-1-63355-graphql; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+      ],
+      "ms": 8,
+      "output": "Hola mundo. The tiempo is soleado hoy.",
+      "crystallized": "composite:52a6c72915c2"
+    },
+    {
+      "version": 4,
+      "contract": "MCP  tool translate_text {text, language} → {translation}",
+      "handWrittenClient": "✗ HTTP 404",
+      "rightclick": "✓ verified",
+      "via": "mcp translate-text",
+      "pipeline": [
+        "Translate text",
+        "Summarize text"
+      ],
+      "healing": [
+        "API drift at http://127.0.0.1:63355/: graphql:127-0-0-1-63355-graphql → mcp:polyglot; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+      ],
+      "ms": 9,
+      "output": "Hola mundo. The tiempo is soleado hoy.",
+      "crystallized": "composite:3ee2d4f7577a"
+    },
+    {
+      "version": 1,
+      "contract": "REST  POST /translate {text, target} → {translatedText}",
+      "handWrittenClient": "✓ \"Hola mundo\"",
+      "rightclick": "✓ verified",
+      "via": "openapi translatetext",
+      "pipeline": [
+        "Translate text",
+        "Summarize text"
+      ],
+      "healing": [
+        "API drift at http://127.0.0.1:63355/: mcp:polyglot → openapi:polyglot; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+      ],
+      "ms": 8,
+      "output": "Hola mundo. The tiempo is soleado hoy.",
+      "crystallized": "composite:e25804999b85"
+    }
+  ],
+  "integrationCodeChanges": 0,
+  "receipts": {
+    "count": 18,
+    "intact": true,
+    "brokenAt": null,
+    "head": "05b5e2d909da09fa02f15195e02f52fd16f358f37f737b871915692837663eb5"
+  }
+}
