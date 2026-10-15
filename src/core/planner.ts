@@ -130,8 +130,9 @@ export function plan(graph: CapabilityGraph, ledger: Ledger, goal: Goal): Plan[]
     }
     // Beam: keep the cheapest, most on-intent partial plans.
     frontier = next
-      .map((n) => ({ n, score: n.cost - intentOf(graph, n, intent) * 0.5 - anchorsIn(n, anchors) * 3 }))
-      .sort((a, b) => a.score - b.score)
+      .map((n) => ({ n, anchored: anchorsIn(n, anchors), score: n.cost - intentOf(graph, n, intent) * 0.5 }))
+      // Routes through the caller's anchors are never pruned, however poor their history.
+      .sort((a, b) => b.anchored - a.anchored || a.score - b.score)
       .map((x) => x.n)
       .slice(0, 150);
   }

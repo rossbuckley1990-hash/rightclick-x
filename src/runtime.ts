@@ -29,6 +29,8 @@ export interface PersistedState {
   ledger: Record<string, any>;
   receipts: Receipt[];
   published?: PublishedGoal[];
+  /** Credential fingerprints per origin when this state was saved (never the credentials). */
+  authFingerprints?: Record<string, string>;
 }
 
 /**
@@ -169,6 +171,21 @@ export class RightClick {
       rc.ledger.load(saved.ledger);
       rc.chain.restore(saved.receipts ?? []);
       for (const g of saved.published ?? []) rc.published.set(g.slug, g);
+      // Credentials changed for an origin: its past auth and rate-limit failures no longer apply.
+      const now = await rc.net.auth.fingerprints();
+      const changed = new Set(Object.keys(now).filter((o) => saved.authFingerprints?.[o] !== now[o]));
+      for (const o of Object.keys(saved.authFingerprints ?? {})) if (!(o in now)) changed.add(o);
+      if (changed.size) {
+        const originOf = (id: string) => {
+          const inv = rc.graph.get(id)?.invoke as any;
+          try {
+            return new URL(inv?.url ?? inv?.endpoint ?? "").origin;
+          } catch {
+            return "";
+          }
+        };
+        rc.ledger.forgive((id, e) => changed.has(originOf(id)) && /\b(401|403|429)\b|rate limit/i.test(e.lastError ?? ""));
+      }
     }
     return rc;
   }
@@ -894,7 +911,7 @@ export class RightClick {
     const reflections: Reflection[] = [...this.graph.providers.values()]
       .filter((p) => p.source !== "builtin" && p.source !== "platform")
       .map((p) => ({ provider: p, capabilities: p.capabilityIds.map((id) => this.graph.get(id)!).filter(Boolean) }));
-    await this.store.save({ version: 1, reflections, ledger: this.ledger.toJSON(), receipts: this.chain.receipts.slice(-300), published: [...this.published.values()] });
+    await this.store.save({ version: 1, reflections, ledger: this.ledger.toJSON(), receipts: this.chain.receipts.slice(-300), published: [...this.published.values()], authFingerprints: await this.net.auth.fingerprints() });
   }
 }
 

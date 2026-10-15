@@ -25,6 +25,16 @@ export class Authority {
     return [...this.byOrigin.keys()];
   }
 
+  /** A non-reversible fingerprint per origin, to notice when credentials change. */
+  async fingerprints(): Promise<Record<string, string>> {
+    const out: Record<string, string> = {};
+    for (const [origin, headers] of this.byOrigin) {
+      const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(JSON.stringify(headers)));
+      out[origin] = [...new Uint8Array(buf)].slice(0, 8).map((b) => b.toString(16).padStart(2, "0")).join("");
+    }
+    return out;
+  }
+
   /**
    * Load from RCX_AUTH, a JSON object of origin -> header value or header map:
    *   {"https://api.example.com": "Bearer abc", "https://x.dev": {"X-Key": "k"}}

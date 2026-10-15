@@ -33,6 +33,17 @@ export class Ledger {
     return e;
   }
 
+  /** Clear failure history for matching capabilities (e.g. credentials for their origin changed). */
+  forgive(match: (id: string, e: Experience) => boolean): string[] {
+    const forgiven: string[] = [];
+    for (const [id, e] of this.stats) {
+      if (!match(id, e)) continue;
+      this.stats.set(id, { runs: e.ok, ok: e.ok, failed: 0, latencyMs: e.latencyMs, recent: e.ok ? 1 : undefined, lastRunAt: e.lastRunAt });
+      forgiven.push(id);
+    }
+    return forgiven;
+  }
+
   get(id: string): Experience | undefined {
     return this.stats.get(id);
   }

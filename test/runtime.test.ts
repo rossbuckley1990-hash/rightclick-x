@@ -87,6 +87,22 @@ test("receipts form a verifiable hash chain; tampering is detected", async () =>
   assert.equal(await ReceiptChain.verify(forged), 2);
 });
 
+test("new credentials for an origin forgive its past auth and rate-limit failures", async () => {
+  const store = new MemoryStore();
+  const { rc } = await world({}, { store });
+  await rc.learn({ source: URLS.polyglot });
+  const id = rc.graph.list().find((c) => c.id.endsWith("translatetext"))!.id;
+  for (let i = 0; i < 3; i++) rc.ledger.record(id, false, 10, "HTTP 403: API rate limit exceeded");
+  await rc.flush();
+  const { Authority } = await import("../src/reflectors/net.ts");
+  const auth = new Authority();
+  auth.set("https://polyglot.test", { Authorization: "Bearer new" });
+  const again = await RightClick.create({ store, auth, directories: [] });
+  assert.equal(again.ledger.get(id)?.failed, 0);
+  const same = await RightClick.create({ store, directories: [] });
+  assert.equal(same.ledger.get(id)?.failed, 3, "without a credential change, history stands");
+});
+
 test("receipt chain stays linear under 200 concurrent runs", async () => {
   const { rc } = await world();
   await Promise.all(Array.from({ length: 200 }, (_, i) => rc.run("builtin:text.sha256", { text: String(i) })));
