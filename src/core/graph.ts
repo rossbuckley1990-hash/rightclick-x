@@ -19,6 +19,7 @@ export type GraphEventKind =
   | "provider.forgotten"
   | "capability.crystallized"
   | "capability.retired"
+  | "goal.published"
   | "provider.drifted"
   | "run.completed"
   | "research";

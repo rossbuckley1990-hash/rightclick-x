@@ -57,7 +57,7 @@ export function createHandler(rc: RightClick, opts: HttpOptions = {}): (req: Req
       return new Response(DASHBOARD_HTML, { headers: { "content-type": "text/html; charset=utf-8" } });
     }
     if (req.method === "GET" && path === "/.well-known/rightclick.json") {
-      return json({ rightclick: VERSION, name: rc.name, region: rc.info.region, runtime: rc.info.name, api: "/api", mcp: "/mcp", auth: opts.token ? "bearer" : opts.open ? "none" : "locked" });
+      return json({ rightclick: VERSION, name: rc.name, region: rc.info.region, runtime: rc.info.name, api: "/api", mcp: "/mcp", openapi: "/openapi.json", auth: opts.token ? "bearer" : opts.open ? "none" : "locked" });
     }
     if (req.method === "GET" && path === "/health") return json({ ok: true, version: VERSION });
 
@@ -81,6 +81,13 @@ export function createHandler(rc: RightClick, opts: HttpOptions = {}): (req: Req
         return json(Array.isArray(body) ? out : out[0]);
       }
       if (req.method === "GET" && path === "/api/graph") return json(rc.exportGraph());
+      if (req.method === "GET" && path === "/openapi.json") return json(rc.openApi(url.origin));
+      const x = /^\/x\/([a-z0-9-]+)$/.exec(path);
+      if (x && (req.method === "GET" || req.method === "POST")) {
+        const args = req.method === "GET" ? Object.fromEntries(url.searchParams) : ((await req.json().catch(() => ({}))) as Record<string, unknown>);
+        const out = await rc.callPublished(x[1], args);
+        return json(out, out.ok ? 200 : 502);
+      }
       if (req.method === "GET" && path === "/api/viz") return json(viz(rc));
       if (req.method === "GET" && path === "/events") return events(rc, Number(url.searchParams.get("since") ?? rc.graph.cursor));
       if (req.method === "GET" && path === "/api/tools") return json(TOOLS);

@@ -1,0 +1,141 @@
+{
+  "at": "2026-10-15T23:42:22.605Z",
+  "A": {
+    "learned": 1297,
+    "published": [
+      {
+        "goal": "Country briefing",
+        "ok": true,
+        "pipeline": [
+          "Country",
+          "Get basic metadata and simplified article introduction.",
+          "Summarize text"
+        ],
+        "path": "/x/country-briefing",
+        "output": "Tokyo, officially the Tokyo Metropolis, is the capital and most populous city of Japan. The population of the city proper was over 14 million as of 2023. The Greater Tokyo Area, which includes Tokyo and parts of six neighboring prefectures, is the third-most populous metropolitan area in the world, "
+      },
+      {
+        "goal": "Country money",
+        "ok": true,
+        "pipeline": [
+          "Country",
+          "Returns latest exchange rates in parameter-supplied base currency."
+        ],
+        "acquisition": [
+          {
+            "title": "Interzoid Get Currency Rate API",
+            "kind": "openapi",
+            "source": "https://api.apis.guru/v2/specs/interzoid.com/getcurrencyrate/1.0.0/openapi.json",
+            "capabilities": 1
+          },
+          {
+            "title": "Exchange Rate MCP",
+            "kind": "mcp",
+            "source": "https://mcp.pianam.cn/exchange-mcp/mcp",
+            "capabilities": 0
+          },
+          {
+            "title": "ExchangeRate-API",
+            "kind": "openapi",
+            "source": "https://api.apis.guru/v2/specs/exchangerate-api.com/4/openapi.json",
+            "capabilities": 1
+          }
+        ],
+        "path": "/x/country-money",
+        "output": "{\"provider\":\"https://www.exchangerate-api.com\",\"WARNING_UPGRADE_TO_V6\":\"https://www.exchangerate-api.com/docs/free\",\"terms\":\"https://www.exchangerate-api.com/terms\",\"base\":\"JPY\",\"date\":\"2026-10-15\",\"time_last_updated\":1792022401,\"rates\":{\"JPY\":1,\"AED\":0.0232,\"AFN\":0.41,\"ALL\":0.515,\"AMD\":2.29,\"ANG\":0"
+      },
+      {
+        "goal": "Project explainer",
+        "ok": true,
+        "pipeline": [
+          "Get a repository",
+          "Fetch web page",
+          "Extract readable text",
+          "Summarize text"
+        ],
+        "path": "/x/project-explainer",
+        "output": "Get started GitHub Built-in tools: package manager, test runner, formatter, linter, task runner, type checker, coverage tool, workspace manager, benchmarker, doc generator, jupyter kernel, compiler, desktop app builder. package manager test runner formatter linter task runner type checker coverage t"
+      }
+    ]
+  },
+  "B": {
+    "learned": 3,
+    "runs": [
+      {
+        "country": "BR",
+        "pipeline": [
+          "Country briefing",
+          "Extract keywords"
+        ],
+        "output": [
+          "brasília",
+          "capital",
+          "city",
+          "rio",
+          "janeiro",
+          "brazil",
+          "federal",
+          "district"
+        ],
+        "published": "/x/country-keywords"
+      },
+      {
+        "country": "KE",
+        "pipeline": [
+          "Country briefing keywords: Country briefing → Extract keywords"
+        ],
+        "output": [
+          "city",
+          "metropolitan",
+          "largest",
+          "population",
+          "million",
+          "making",
+          "most",
+          "populous"
+        ],
+        "published": "/x/country-keywords"
+      }
+    ],
+    "money": "{\"ok\":true,\"result\":{\"provider\":\"https://www.exchangerate-api.com\",\"WARNING_UPGRADE_TO_V6\":\"https://www.exchangerate-api.com/docs/free\",\"terms\":\"https://www.exchangerate-api.com/terms\",\"base\":\"GBP\",\"date\":\"2026-10-15\",\"time_last_updated\":1792022401,\"rates\":{\"GBP\":1,\"AED\":4.86,\"AFN\":86.15,\"ALL\":108.3"
+  },
+  "C": {
+    "learned": 1,
+    "capability": "openapi:instance-b:countrykeywords",
+    "status": "completed",
+    "verification": "verified",
+    "result": [
+      "city",
+      "lima",
+      "peru",
+      "within",
+      "province",
+      "capital",
+      "largest",
+      "well"
+    ],
+    "bPipeline": [
+      "Country briefing keywords: Country briefing → Extract keywords"
+    ]
+  },
+  "receipts": [
+    {
+      "count": 24,
+      "intact": true,
+      "brokenAt": null,
+      "head": "94eb1b4b7526359fba4f108ed77e9a9d8fe7430b92fe72132205f66a27bc5211"
+    },
+    {
+      "count": 9,
+      "intact": true,
+      "brokenAt": null,
+      "head": "51ae61f184326b1174b13dbc845368fdca0af7f46d4d385a52296550c8a7d4ed"
+    },
+    {
+      "count": 1,
+      "intact": true,
+      "brokenAt": null,
+      "head": "9e8556fef8a2345e519c60de6eb0323ca8cafd1a42806405cc53d54bbbe926bd"
+    }
+  ]
+}

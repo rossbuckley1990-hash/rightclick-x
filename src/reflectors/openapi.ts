@@ -39,7 +39,8 @@ export function reflectOpenAPI(spec: Obj, specUrl: string): Reflection {
         const t = schema?.type;
         inputs.push({
           name,
-          type: inferType(name, schema, description),
+          // Another RightClick X tells us the exact semantic type; trust it over inference.
+          type: (schema as any)?.["x-rightclick-type"] ?? inferType(name, schema, description),
           required,
           description: description || undefined,
           wire: Array.isArray(t) ? t.join("|") : t,
@@ -166,7 +167,7 @@ function responsePorts(op: Obj, resolve: (o: any) => any): Port[] {
   if (merged.properties) {
     for (const [name, prop] of Object.entries<Obj>(merged.properties)) {
       const p = mergeAllOf(resolve(prop), resolve);
-      ports.push({ name, type: inferInContext(name, p, p.description ?? "", context), required: true, wire: p.type });
+      ports.push({ name, type: p["x-rightclick-type"] ?? inferInContext(name, p, p.description ?? "", context), required: true, wire: p.type });
       if (p.properties) {
         for (const [sub, sp] of Object.entries<Obj>(p.properties).slice(0, 12)) {
           const s = resolve(sp);

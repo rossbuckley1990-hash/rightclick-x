@@ -237,7 +237,9 @@ const TOKENS = new WeakMap<Capability, Set<string>>();
 
 function tokensOf(c: Capability): Set<string> {
   let t = TOKENS.get(c);
-  if (!t) TOKENS.set(c, (t = new Set(tokenize(`${c.title} ${c.description} ${c.tags.join(" ")}`))));
+  // What a capability *is* (title, tags), not incidental words in its prose
+  // description ("rate limit: 200 req/s" must not satisfy "exchange rates").
+  if (!t) TOKENS.set(c, (t = new Set(tokenize(`${c.title} ${c.tags.join(" ")}`))));
   return t;
 }
 

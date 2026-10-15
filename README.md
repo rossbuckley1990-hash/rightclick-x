@@ -36,7 +36,7 @@ Cursor, Claude Desktop, Windsurf (`mcpServers` JSON), VS Code (`.vscode/mcp.json
 |---|---|
 | `context_research` | Survey the environment: runtime, platform bindings, which types the graph produces and consumes, unfed inputs, and — given a topic — candidate sources worldwide (APIs.guru's ~2,500 OpenAPI specs, the official MCP Registry). `learn: N` acquires the top N immediately. |
 | `context_learn` | Point it at any URL. It works out what is there and reflects it, reporting new capabilities and new composite powers. |
-| `context_compose` | `have` + `want` (+ `intent`, optional `through` anchors, optional `risks` constraint) → ranked multi-provider pipelines; `run: true` executes, self-heals, verifies and crystallizes; `acquire: true` goes and finds missing capabilities in public directories. |
+| `context_compose` | `have` + `want` (+ `intent`, optional `through` anchors, optional `risks` constraint) → ranked multi-provider pipelines; `run: true` executes, self-heals, verifies and crystallizes; `acquire: true` goes and finds missing capabilities in public directories; `publish: "<name>"` turns the goal into an endpoint of this instance's synthesized API. |
 | `context_run` | Run one capability, with optional verification predicates. |
 | `context_actions` | What can be done with a value: direct capabilities plus every type it can become through pipelines. |
 | `context_inspect` | Classify any value into the semantic type lattice. |
@@ -57,6 +57,7 @@ From the live-internet experiments in [`experiments/`](experiments/EXPERIMENTS.m
 - **Repository → homepage → the live site**: `{owner: "denoland", repo: "deno"}` → GitHub `repos/get` → `homepage` (a `url`) → fetch → readable text → summary.
 - **GraphQL → REST**: `{country: "PT"}` → countries GraphQL API → `capital` → Wikipedia → verified summary of Lisbon, for five countries; then reused as one crystallized capability.
 - **Kubernetes, with no MCP server written**: the live cluster's whole API (799 operations) reflected in 210 ms; RightClick X installed a new CRD through a capability it had just reflected, then grew that resource's 8 operations into its own graph 1.2 s later, and filled it with live internet knowledge (countries GraphQL → Wikipedia → `Insight` objects), confirmed independently by kubectl.
+- **APIs that write themselves**: publish a goal (`context_compose` with `publish`) and it becomes an endpoint in the instance's own OpenAPI API, with no handler or schema written. In E11, instance A fused the countries GraphQL API with an exchange-rate API it found on its own into a *Country money* endpoint; instance B learned A's API and published one on top of it; instance C called B: C → B → A → the internet, driven only through MCP ([E11](experiments/EXPERIMENTS.md)).
 - **Integrations that maintain themselves**: an integration is a goal plus a check, not hard-coded calls. When a provider ships a breaking release, RightClick X re-reflects it, detects the drift, retires stale pipelines, re-plans and re-verifies. Across REST v1 → renamed REST v2 → GraphQL → MCP → rollback, a hand-written client broke three times; the RightClick X integration stayed verified with 0 lines changed ([E10](experiments/EXPERIMENTS.md)).
 - **It published itself**: through capabilities reflected from GitHub's spec, RightClick X created [`rossbuckley1990-hash/rightclick-x`](https://github.com/rossbuckley1990-hash/rightclick-x) and uploaded its own source; GitHub's tree hash is identical to the checkout's `git write-tree`.
 - **Acquisition on demand**: start with nothing, ask for something it can't do (`acquire: true`), and it researches APIs.guru and the MCP Registry, learns an API or MCP server it has never seen, and completes the goal: live EUR exchange rates, a Wikipedia summary through a third-party MCP server, Ontario's public holidays ([X5](experiments/STRESS.md)).
@@ -112,7 +113,7 @@ There are no approval gates: write and destructive capabilities run when called,
 
 ```bash
 npm install
-npm test             # 39 offline tests (node:test)
+npm test             # 40 offline tests (node:test)
 npm run typecheck
 npm run demo         # seven-act offline demo
 node experiments/cloud.ts   # live-internet experiments (read-only)

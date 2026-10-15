@@ -13,7 +13,7 @@ import { DEFAULT_DIRECTORIES, type Candidate, type Directory } from "./reflector
 import { discover, type Discovery } from "./reflectors/discover.ts";
 import { buildDocument } from "./reflectors/graphql.ts";
 import { McpClient } from "./reflectors/mcp.ts";
-import { Authority, readBody, request, type Net } from "./reflectors/net.ts";
+import { Authority, readBody, request, type Net, type NetworkPolicy } from "./reflectors/net.ts";
 import { detectRuntime, platformReflection, type PlatformFn, type RuntimeInfo } from "./reflectors/platform.ts";
 
 export const VERSION = "0.1.0";
@@ -28,6 +28,27 @@ export interface PersistedState {
   reflections: Reflection[];
   ledger: Record<string, any>;
   receipts: Receipt[];
+  published?: PublishedGoal[];
+}
+
+/**
+ * A goal published as an API endpoint. The contract (typed inputs, output
+ * type, checks) is fixed; the implementation is whatever pipeline the graph
+ * finds at call time, so it survives upstream changes.
+ */
+export interface PublishedGoal {
+  slug: string;
+  title: string;
+  have: Record<string, SemType>;
+  want: SemType;
+  intent?: string;
+  verify?: Predicate[];
+  risks?: Capability["risk"][];
+  through?: string[];
+  publishedAt: string;
+  calls: number;
+  lastPipeline?: string[];
+  providers?: string[];
 }
 
 export interface RuntimeOptions {
@@ -40,6 +61,8 @@ export interface RuntimeOptions {
   bindings?: Record<string, unknown>;
   workspace?: string;
   store?: Store;
+  /** Outbound network policy. Default: allow everything (local use); servers exposed beyond loopback block private addresses. */
+  network?: NetworkPolicy;
 }
 
 export interface RunRecord {
@@ -82,6 +105,8 @@ export interface ComposeResult {
     durationMs: number;
   };
   crystallized?: { id: string; title: string; newPowers: number };
+  /** Present when the goal was published as an endpoint. */
+  published?: { slug: string; path: string };
   /** Present when compose had to go and find new capabilities in the world. */
   acquisition?: { topic: string; considered: string[]; learned: Array<{ title: string; kind: string; source: string; capabilities: number; error?: string }> };
 }
@@ -108,6 +133,7 @@ export class RightClick {
   readonly info: RuntimeInfo;
   readonly name: string;
   readonly startedAt = new Date();
+  readonly published = new Map<string, PublishedGoal>();
   private directories: Directory[];
   private builtins = new Map<string, BuiltinFn>();
   private platformFns = new Map<string, PlatformFn>();
@@ -121,6 +147,7 @@ export class RightClick {
       fetch: opts.fetch ?? ((i, init) => fetch(i, init)),
       auth: opts.auth ?? new Authority(),
       timeoutMs: opts.timeoutMs ?? 20_000,
+      policy: opts.network,
     };
     this.directories = opts.directories ?? DEFAULT_DIRECTORIES;
     this.info = { ...detectRuntime(), region: opts.region };
@@ -141,6 +168,7 @@ export class RightClick {
       for (const r of saved.reflections) rc.graph.add(r);
       rc.ledger.load(saved.ledger);
       rc.chain.restore(saved.receipts ?? []);
+      for (const g of saved.published ?? []) rc.published.set(g.slug, g);
     }
     return rc;
   }
@@ -442,6 +470,8 @@ export class RightClick {
     through?: string[];
     /** If the graph can't do it, research public directories, learn candidates and re-plan. */
     acquire?: boolean;
+    /** After a verified run, publish this goal as an API endpoint under this name. */
+    publish?: string;
   }): Promise<ComposeResult> {
     const values: Record<string, unknown> = {};
     const types: Record<string, SemType> = {};
@@ -520,6 +550,26 @@ export class RightClick {
           durationMs: Math.round(performance.now() - t0),
         };
         if (opts.crystallize !== false && p.steps.length > 1) result.crystallized = await this.crystallize(p, types, opts.intent);
+        if (opts.publish) {
+          const slug = slugify(opts.publish);
+          this.published.set(slug, {
+            slug,
+            title: opts.publish,
+            have: types,
+            want: opts.want,
+            intent: opts.intent,
+            verify: opts.verify,
+            risks: opts.risks,
+            through: opts.through,
+            publishedAt: new Date().toISOString(),
+            calls: 0,
+            lastPipeline: titles(p),
+            providers: [...new Set(p.steps.map((st) => this.graph.get(st.capability)!.provider))],
+          });
+          result.published = { slug, path: `/x/${slug}` };
+          this.graph.emit("goal.published", { slug, title: opts.publish, pipeline: titles(p) });
+          this.persist();
+        }
         return result;
       } catch (e) {
         const failed = e instanceof StepError ? e.capability : p.steps[0].capability;
@@ -561,6 +611,79 @@ export class RightClick {
       durationMs: Math.round(performance.now() - t0),
     };
     return result;
+  }
+
+  /** Serve a published goal: fixed contract, implementation re-derived from the live graph. */
+  async callPublished(slug: string, args: Record<string, unknown>) {
+    const g = this.published.get(slug);
+    if (!g) throw new Error(`no published goal: ${slug}`);
+    const missing = Object.keys(g.have).filter((k) => args[k] === undefined || args[k] === "");
+    if (missing.length) throw new Error(`missing parameter(s): ${missing.join(", ")}`);
+    const have: Record<string, unknown> = {};
+    for (const [k, t] of Object.entries(g.have)) {
+      const raw = args[k];
+      const value = (t === "number" || t.startsWith("geo.")) && typeof raw === "string" ? Number(raw) : raw;
+      have[k] = { type: t, value };
+    }
+    const r = await this.compose({ have, want: g.want, intent: g.intent, verify: g.verify, risks: g.risks, through: g.through, run: true });
+    g.calls++;
+    if (r.executed?.status === "completed") {
+      g.lastPipeline = r.executed.titles;
+      g.providers = [...new Set(r.executed.runs.map((id) => this.runs.get(id)?.provider).filter((x): x is string => !!x))];
+    }
+    this.persist();
+    return {
+      ok: r.executed?.status === "completed",
+      result: r.executed?.output ?? null,
+      pipeline: r.executed?.titles ?? [],
+      verification: r.executed?.verification.status ?? "refuted",
+      healed: r.executed?.attempts.length ?? 0,
+      receipt: this.chain.headHash,
+      error: r.executed?.status === "completed" ? undefined : (r.executed?.attempts.map((a) => a.error).join("; ") || "no pipeline found"),
+    };
+  }
+
+  /** The API this instance has synthesized: one OpenAPI operation per published goal. */
+  openApi(baseUrl: string) {
+    const paths: Record<string, unknown> = {};
+    for (const g of this.published.values()) {
+      paths[`/x/${g.slug}`] = {
+        get: {
+          operationId: camel(g.slug),
+          summary: g.title,
+          description: `Synthesized by RightClick X from a goal (${g.intent ?? g.want}), not from code. Current pipeline: ${(g.lastPipeline ?? []).join(" → ")}. Providers: ${(g.providers ?? []).join(", ")}. The contract is stable; the pipeline is re-derived from the live capability graph on every call.`,
+          parameters: Object.entries(g.have).map(([name, t]) => ({ name, in: "query", required: true, schema: { ...jsonSchemaFor(t), "x-rightclick-type": t } })),
+          responses: {
+            "200": {
+              description: "Result of the goal",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    properties: {
+                      result: { ...jsonSchemaFor(g.want), "x-rightclick-type": g.want },
+                      pipeline: { type: "array", items: { type: "string" } },
+                      verification: { type: "string", enum: ["verified", "refuted", "unverified"] },
+                      receipt: { type: "string", description: "Head of this instance's receipt hash chain" },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      };
+    }
+    return {
+      openapi: "3.1.0",
+      info: {
+        title: `${this.name}`,
+        version: VERSION,
+        description: `An API synthesized by RightClick X. Every operation is a published goal executed over a live, self-maintaining capability graph.`,
+      },
+      servers: [{ url: baseUrl }],
+      paths,
+    };
   }
 
   /** Turn a proven pipeline into a first-class capability. Powers compound. */
@@ -771,7 +894,7 @@ export class RightClick {
     const reflections: Reflection[] = [...this.graph.providers.values()]
       .filter((p) => p.source !== "builtin" && p.source !== "platform")
       .map((p) => ({ provider: p, capabilities: p.capabilityIds.map((id) => this.graph.get(id)!).filter(Boolean) }));
-    await this.store.save({ version: 1, reflections, ledger: this.ledger.toJSON(), receipts: this.chain.receipts.slice(-300) });
+    await this.store.save({ version: 1, reflections, ledger: this.ledger.toJSON(), receipts: this.chain.receipts.slice(-300), published: [...this.published.values()] });
   }
 }
 
@@ -800,6 +923,25 @@ function coerceArgs(cap: Capability, args: Record<string, unknown>): Record<stri
   const missing = cap.inputs.filter((p) => p.required && (out[p.name] === undefined || out[p.name] === null)).map((p) => p.name);
   if (missing.length) throw new Error(`missing required input(s): ${missing.join(", ")}`);
   return out;
+}
+
+function slugify(s: string): string {
+  return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60) || "goal";
+}
+
+function camel(slug: string): string {
+  return slug.replace(/-([a-z0-9])/g, (_, c) => c.toUpperCase());
+}
+
+function jsonSchemaFor(t: SemType): Record<string, unknown> {
+  if (t === "number" || t.startsWith("geo.")) return { type: "number" };
+  if (t === "boolean") return { type: "boolean" };
+  if (t === "json") return {};
+  if (t.startsWith("list:")) return { type: "array", items: jsonSchemaFor(t.slice(5)) };
+  if (t === "url" || t === "image.url") return { type: "string", format: "uri" };
+  if (t === "email") return { type: "string", format: "email" };
+  if (t === "datetime") return { type: "string", format: "date-time" };
+  return { type: "string" };
 }
 
 export function preview(v: unknown, n = 300): unknown {

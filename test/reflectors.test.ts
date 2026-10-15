@@ -106,7 +106,8 @@ test("federation: a peer's graph is absorbed and runs remotely", async () => {
   await peer.learn({ source: "https://skycast.test/mcp" });
   const { rc } = await world({ "https://peer.test": peerHandler(peer) });
   const r = await rc.learn({ source: "https://peer.test/" });
-  assert.equal(r.results[0].probes.find((p) => p.ok)?.kind, "peer");
+  assert.ok(r.results[0].probes.some((p) => p.ok && p.kind === "peer"));
+  assert.deepEqual([...new Set(r.results[0].learned.map((l) => l.provider.split(":")[0]))], ["peer"], "a peer is federated, not re-learned as plain OpenAPI");
   const fed = rc.graph.list().filter((c) => c.source === "peer");
   assert.deepEqual(fed.map((c) => c.id).sort(), ["peer:peer-test:mcp:skycast:air-quality", "peer:peer-test:mcp:skycast:forecast"]);
   const out = await rc.run("peer:peer-test:mcp:skycast:forecast", { latitude: 0, longitude: 0 });
