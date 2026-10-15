@@ -56,6 +56,8 @@ From the live-internet experiments in [`experiments/`](experiments/EXPERIMENTS.m
 - **GitHub user → real name → Wikipedia**: `{username: "gvanrossum"}` → GitHub `users/get` → `name` → Wikipedia page summary → *"Guido van Rossum is a Dutch programmer…"*. The pipeline crystallized and was reused for `torvalds`.
 - **Repository → homepage → the live site**: `{owner: "denoland", repo: "deno"}` → GitHub `repos/get` → `homepage` (a `url`) → fetch → readable text → summary.
 - **GraphQL → REST**: `{country: "PT"}` → countries GraphQL API → `capital` → Wikipedia → verified summary of Lisbon, for five countries; then reused as one crystallized capability.
+- **Kubernetes, with no MCP server written**: the live cluster's whole API (799 operations) reflected in 210 ms; RightClick X installed a new CRD through a capability it had just reflected, then grew that resource's 8 operations into its own graph 1.2 s later, and filled it with live internet knowledge (countries GraphQL → Wikipedia → `Insight` objects), confirmed independently by kubectl.
+- **It published itself**: through capabilities reflected from GitHub's spec, RightClick X created [`rossbuckley1990-hash/rightclick-x`](https://github.com/rossbuckley1990-hash/rightclick-x) and uploaded its own source; GitHub's tree hash is identical to the checkout's `git write-tree`.
 - **Self-healing under real failure**: a pipeline whose output failed verification was routed around automatically; with a provider's route cut, compose re-planned through a federated peer.
 
 And the offline demo (`npm run demo`), which spins up four local services in four protocols:
