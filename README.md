@@ -1,7 +1,7 @@
 <div align="center">
 
 <!-- The wordmark doubles as the README title. Keep the image alt text descriptive for accessibility. -->
-<img src="assets/rightclick-x-banner.png" alt="RightClick X — Connect anything. Empower any agent." width="100%" />
+<img src="assets/rightclick-x-banner.svg" alt="RightClick X — Connect anything. Empower any agent." width="100%" />
 
 ### Your AI should adapt to software. Not the other way around.
 
