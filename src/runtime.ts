@@ -515,6 +515,8 @@ export class RightClick {
       }
       const byName = inferType(k, typeof v === "number" ? { type: "number" } : { type: "string" });
       types[k] = byName !== "text" && byName !== "id" ? byName : inspectValue(v).type;
+      // The value can be more specific than the name: a "repo" written as owner/repo is a full name.
+      if (types[k] === "repo" && /^[\w.-]+\/[\w.-]+$/.test(String(v))) types[k] = "repo.full";
       values[k] = v;
     }
     const through = (opts.through ?? []).map((t) => (this.graph.get(t) ? t : this.graph.search(t, 1)[0]?.capability.id)).filter((x): x is string => !!x);
