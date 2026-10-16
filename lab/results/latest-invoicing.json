@@ -1,7 +1,7 @@
 {
-  "seed": 14377121,
+  "seed": 283236797,
   "domain": "invoicing",
-  "startedAt": "2026-10-16T07:19:14.639Z",
+  "startedAt": "2026-10-16T07:19:33.670Z",
   "steps": [
     {
       "n": 1,
@@ -15,7 +15,7 @@
       "title": "Connect an MCP client to RightClick X (stdio)",
       "ok": true,
       "tools": 13,
-      "startupMs": 109.4
+      "startupMs": 110.1
     },
     {
       "n": 3,
@@ -40,12 +40,12 @@
       "title": "Discover contracts from root addresses only (no protocols, no schemas given)",
       "ok": true,
       "found": [
-        "graphql",
+        "mcp",
         "mcp",
         "mcp"
       ],
       "newCapabilities": 3,
-      "ms": 30.6
+      "ms": 31.1
     },
     {
       "n": 5,
@@ -53,9 +53,9 @@
       "ok": true,
       "candidatePlans": 3,
       "best": [
-        "Retrieve invoice",
-        "Look up customer",
-        "Country Tax Rate"
+        "Fetch invoice details",
+        "Get customer",
+        "Tax rate by country"
       ],
       "planningMs": 2.2
     },
@@ -64,68 +64,68 @@
       "title": "Compose a multi-provider workflow",
       "ok": true,
       "steps": [
-        "Retrieve invoice ← invoice_number=$in.invoice_id",
-        "Look up customer ← customer_number=0.customer_number",
-        "Country Tax Rate ← countryCode=1.country_code"
+        "Fetch invoice details ← invoice_id=$in.invoice_id",
+        "Get customer ← customerId=0.customer_number",
+        "Tax rate by country ← country=1.country_code"
       ]
     },
     {
       "n": 7,
       "title": "Execute the workflow",
       "ok": true,
-      "input": "INV-1003",
+      "input": "INV-1000",
       "pipeline": [
-        "Retrieve invoice",
-        "Look up customer",
-        "Country Tax Rate"
+        "Fetch invoice details",
+        "Get customer",
+        "Tax rate by country"
       ],
-      "ms": 3.7
+      "ms": 3.9
     },
     {
       "n": 8,
       "title": "Verify against independently held test data",
       "ok": true,
-      "expected": 19.4,
-      "got": 19.4
+      "expected": 19.1,
+      "got": 19.1
     },
     {
       "n": 9,
       "title": "Save the successful composition and reuse it",
       "ok": true,
-      "saved": "Tax rate invoice customer country: Retrieve invoice → Look up customer → Country Tax Rate",
+      "saved": "Tax rate invoice customer country: Fetch invoice details → Get customer → Tax rate by country",
       "reusedAs": [
-        "Tax rate invoice customer country: Retrieve invoice → Look up customer → Country Tax Rate"
+        "Tax rate invoice customer country: Fetch invoice details → Get customer → Tax rate by country"
       ],
-      "expected": 19.4,
-      "got": 19.4,
-      "ms": 2.5
+      "expected": 19.1,
+      "got": 19.1,
+      "ms": 2.7
     },
     {
       "n": 10,
-      "title": "Change the interface of the last provider in the chain (Cobaltix)",
+      "title": "Change the interface of the last provider in the chain (Tallyport)",
       "ok": true,
-      "before": "graphql \"Country tax rate\" countryCode → countryCode, standard_rate",
-      "after": "openapi \"Lookup tax rate for a country\" country → result.{country, rate}"
+      "before": "mcp \"Tax rate by country\" country → country, vat_rate",
+      "after": "openapi \"Get tax rate\" countryCode → result.{countryCode, rate}"
     },
     {
       "n": 11,
       "title": "Recover without changing integration code",
       "ok": true,
       "healing": [
-        "API drift at http://127.0.0.1:56209/: graphql:127-0-0-1-56209-graphql → openapi:cobaltix; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:57930/: mcp:tallyport → openapi:tallyport; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "via": [
-        "mcp:tallyport",
-        "mcp:quillbase",
-        "openapi:cobaltix"
+        "mcp:harbourly",
+        "mcp:duneworks",
+        "openapi:tallyport"
       ],
-      "expected": 19.4,
-      "got": 19.4,
-      "ms": 7.7
+      "expected": 24.8,
+      "got": 24.8,
+      "ms": 9
     },
     {
       "n": 12,
-      "title": "Remove that provider (Cobaltix)",
+      "title": "Remove that provider (Tallyport)",
       "ok": true
     },
     {
@@ -134,38 +134,38 @@
       "ok": true,
       "status": "failed",
       "healing": [
-        "provider gone at http://127.0.0.1:56209/: withdrew openapi:cobaltix (1 capabilities, 1 pipeline(s) retired)"
+        "provider gone at http://127.0.0.1:57930/: withdrew openapi:tallyport (1 capabilities, 1 pipeline(s) retired)"
       ],
       "withdrawn": [
-        "Cobaltix"
+        "Tallyport"
       ],
       "capabilities": "21 → 19",
       "savedPipelines": "1 → 0"
     },
     {
       "n": 14,
-      "title": "Introduce a different provider (Kestrel Freight, openapi): the objective works again",
+      "title": "Introduce a different provider (Northwind Billing, graphql): the objective works again",
       "ok": true,
       "learned": [
-        "openapi: 1 operations"
+        "graphql: 1 fields"
       ],
       "via": [
-        "mcp:tallyport",
-        "mcp:quillbase",
-        "openapi:kestrel-freight"
+        "mcp:harbourly",
+        "mcp:duneworks",
+        "graphql:127-0-0-1-57994-graphql"
       ],
-      "expected": 10.3,
-      "got": 10.3,
-      "ms": 1.9
+      "expected": 19.1,
+      "got": 19.1,
+      "ms": 2.1
     }
   ],
   "benchmarks": {
-    "startupMs": 109.4,
+    "startupMs": 110.1,
     "mcpLatencyMs": {
       "p50": 0.04,
-      "p95": 0.12
+      "p95": 0.11
     },
-    "discoveryMs": 30.6,
+    "discoveryMs": 31.1,
     "graph": {
       "providers": 5,
       "capabilities": 20,
@@ -176,27 +176,27 @@
     },
     "graphStatsMs": 0.1,
     "planningMs": 2.2,
-    "executionMs": 3.7,
-    "recoveryAfterChangeMs": 7.7,
-    "recoveryAfterNewProviderMs": 1.9,
+    "executionMs": 3.9,
+    "recoveryAfterChangeMs": 9,
+    "recoveryAfterNewProviderMs": 2.1,
     "memoryMB": 135
   },
   "freeze": {
-    "commit": "0ddedff92fb43a2dc22bedb18f94f48492809a15",
+    "commit": "3739ddf7263c05abc40a463a0f80700d2b989175",
     "tag": "lab-freeze-3",
-    "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/interface/mcp-server.ts\nsrc/runtime.ts",
-    "uncommittedProductChanges": "M src/core/semantics.ts\n M src/runtime.ts",
+    "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/core/semantics.ts\nsrc/interface/mcp-server.ts\nsrc/runtime.ts",
+    "uncommittedProductChanges": "",
     "frozen": false
   },
   "environment": [
     {
       "service": "invoices",
-      "brand": "Tallyport",
+      "brand": "Harbourly",
       "protocol": "mcp",
-      "operation": "Retrieve invoice",
-      "input": "invoice_number",
+      "operation": "Fetch invoice details",
+      "input": "invoice_id",
       "outputs": [
-        "invoice_number",
+        "invoice_id",
         "customer_number",
         "total",
         "currency"
@@ -204,38 +204,38 @@
     },
     {
       "service": "customers",
-      "brand": "Quillbase",
+      "brand": "Duneworks",
       "protocol": "mcp",
-      "operation": "Look up customer",
-      "input": "customer_number",
+      "operation": "Get customer",
+      "input": "customerId",
       "outputs": [
-        "customer_number",
-        "display_name",
+        "customerId",
+        "legal_name",
         "country_code"
       ]
     },
     {
       "service": "tax",
-      "brand": "Cobaltix",
-      "protocol": "graphql",
-      "operation": "Country tax rate",
-      "input": "countryCode",
+      "brand": "Tallyport",
+      "protocol": "mcp",
+      "operation": "Tax rate by country",
+      "input": "country",
       "outputs": [
-        "countryCode",
-        "standard_rate"
+        "country",
+        "vat_rate"
       ]
     }
   ],
   "firstRunProviders": [
-    "mcp:tallyport",
-    "mcp:quillbase",
-    "graphql:127-0-0-1-56209-graphql"
+    "mcp:harbourly",
+    "mcp:duneworks",
+    "mcp:tallyport"
   ],
   "receipts": {
     "count": 21,
     "intact": true,
     "brokenAt": null,
-    "head": "c4cda04d6a69dcb78cf200289672cd372d371ab52760f16a8be13ce007c80802"
+    "head": "4105105bc9dcf9ae6a1a00451267594683821d5501b1f11f58dfbb448e4e26b3"
   },
   "passed": 14,
   "total": 14

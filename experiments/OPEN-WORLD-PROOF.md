@@ -20,7 +20,7 @@ Machine-readable results: [`open-world/results/manifest.json`](open-world/result
 
 ## Build
 
-- Frozen build: tag **`gauntlet-freeze-1`**, commit `5945a9a` (`eb757bd` plus a host-side audit log of MCP tool calls; no behavioural change). Validated: 63/63 tests, `tsc` clean, 13 tools over stdio and Streamable HTTP confirmed with `@modelcontextprotocol/inspector --cli`. Record: [`phase0-build.json`](open-world/evidence/phase0-build.json) (Node v24.16.0, macOS 26.4.1 arm64, `dist/rcx.mjs` sha256 `9d433baa…`).
+- Frozen builds: OW1–OW5 ran on **`gauntlet-freeze-1`**; the generalization extension below ran on **`gauntlet-freeze-2`** (`3739ddf`), which adds two general inference/healing fixes. Original build record: tag **`gauntlet-freeze-1`**, commit `5945a9a` (`eb757bd` plus a host-side audit log of MCP tool calls; no behavioural change). Validated: 63/63 tests, `tsc` clean, 13 tools over stdio and Streamable HTTP confirmed with `@modelcontextprotocol/inspector --cli`. Record: [`phase0-build.json`](open-world/evidence/phase0-build.json) (Node v24.16.0, macOS 26.4.1 arm64, `dist/rcx.mjs` sha256 `9d433baa…`).
 - Later commits touched only `experiments/` and `lab/`: `git diff gauntlet-freeze-1 -- src bin` is empty.
 - MCP clients: **Claude Code 2.1.294** (headless, `--strict-mcp-config`, only RightClick X's tools allowed) and **Codex CLI 0.159.3** (headless, `--approve-for-me`: Codex's own automatic reviewer handles approvals; shell sandboxed). RightClick X ran as a local stdio MCP server per agent session with its state persisted to a file (which is how "restart" is realized: a new process, same state).
 
@@ -137,10 +137,23 @@ Results vary with live data (exchange rates, holidays); verification compares ag
 4. Run `node experiments/open-world/ow4.ts`. Narrate each contract change on the live Cloudflare service and the recovery line; then the deletion line ("failed, honestly") and the rediscovery.
 5. Close on the limitations below.
 
+## Generalization extension (`gauntlet-freeze-2`)
+
+Two gaps from the first round were tested further.
+
+**More AI models.** The no-address discovery experiment (OW2) was repeated through Claude Code with **Claude Sonnet 5.5** and the much smaller **Claude Haiku 5.5**. Both found the Canada Holidays API and ExchangeRate-API in public directories and answered correctly (Sonnet 66 s / 10 MCP calls; Haiku 115 s / 11 MCP calls). With the client defaults already tested (Claude Code's default model and Codex's `gpt-6-astra`), four models from two vendors succeeded through the same interface. Evidence: `ow2-discovery-claude-sonnet.json`, `ow2-discovery-claude-haiku.json`.
+
+**Idiosyncratic field names.** A third lab domain uses cryptic fields (`acctno`, `hldr`, `jur`, `vatpct`, `txr`…) whose meaning is only in each field's published description. On `gauntlet-freeze-1` it **failed 0/5** (no plan; preserved as `accounts-domain-on-gauntlet-freeze-1-FAILED.json`). Two general fixes, each with regression tests:
+
+- a field described as "*entity* reference / identifier / ID" identifies that entity (`acctno`: "Account reference" → `id.account`), with filler words and "phone number" excluded;
+- the self-healing bar is measured once, before execution, from the original plan's leaf capabilities, so saved pipelines' titles cannot inflate it and withdrawal during healing cannot erase it (the regression test that refuses an order total as a tax rate caught a first, wrong version of this fix).
+
+On `gauntlet-freeze-2`: **30/30 freshly generated environments across three domains** (10 each, including cryptic names), 64/64 tests, 6/6 negative controls, and OW2 re-run against the real services: PASS.
+
 ## Limitations (verified, not hypothetical)
 
-- **Two AI clients.** Claude Code and Codex. Other MCP clients (Cursor, VS Code, Gemini CLI) were not available here.
-- **Friendly providers.** The real services used publish clean machine-readable contracts (OpenAPI, GraphQL introspection, MCP tool lists) with conventional field names. Idiosyncratic naming and interfaces without machine-readable descriptions are not covered.
+- **Two AI clients, four models.** Claude Code (default model, Sonnet 5.5, Haiku 5.5) and Codex (`gpt-6-astra`). Other MCP clients (Cursor, VS Code, Gemini CLI) were not available here, and Codex with a ChatGPT login offers only its default model.
+- **Friendly providers.** The real services used publish clean machine-readable contracts with conventional field names. Cryptic names are covered only when the contract describes the field (lab domain *accounts*); cryptic names with no description, and interfaces with no machine-readable contract at all, are not covered.
 - **Keys limit acquisition.** In OW5 phase 3, RightClick X found real alternative translation services, but they required credentials it did not have. It reported unavailability correctly; it did not obtain access.
 - **Directory quality.** Discovery without addresses depends on what APIs.guru and the MCP Registry list and how well their descriptions match the objective.
 - **Prompts name the shape of the output** (and, in OW1/OW5, ask for a Wikipedia MCP server from the registry, to ensure protocol diversity). The workflow itself was never given.

@@ -1,7 +1,7 @@
 {
-  "seed": 781091703,
+  "seed": 534545655,
   "domain": "accounts",
-  "startedAt": "2026-10-16T07:19:10.568Z",
+  "startedAt": "2026-10-16T07:19:40.444Z",
   "steps": [
     {
       "n": 1,
@@ -15,7 +15,7 @@
       "title": "Connect an MCP client to RightClick X (stdio)",
       "ok": true,
       "tools": 13,
-      "startupMs": 107
+      "startupMs": 121.1
     },
     {
       "n": 3,
@@ -40,12 +40,12 @@
       "title": "Discover contracts from root addresses only (no protocols, no schemas given)",
       "ok": true,
       "found": [
-        "graphql",
         "openapi",
+        "mcp",
         "mcp"
       ],
       "newCapabilities": 3,
-      "ms": 30.1
+      "ms": 34
     },
     {
       "n": 5,
@@ -53,20 +53,20 @@
       "ok": true,
       "candidatePlans": 3,
       "best": [
-        "Get Account",
-        "Get account holder",
-        "VAT rate lookup"
+        "Account lookup",
+        "Holder lookup",
+        "Get VAT rate"
       ],
-      "planningMs": 2
+      "planningMs": 2.1
     },
     {
       "n": 6,
       "title": "Compose a multi-provider workflow",
       "ok": true,
       "steps": [
-        "Get Account ← acct_ref=$in.account_id",
-        "Get account holder ← cust_ref=0.cust_ref",
-        "VAT rate lookup ← ctry=1.ctry"
+        "Account lookup ← acct_ref=$in.account_id",
+        "Holder lookup ← cref=0.cref",
+        "Get VAT rate ← cc=1.ctry"
       ]
     },
     {
@@ -75,57 +75,57 @@
       "ok": true,
       "input": "ACC-1000",
       "pipeline": [
-        "Get Account",
-        "Get account holder",
-        "VAT rate lookup"
+        "Account lookup",
+        "Holder lookup",
+        "Get VAT rate"
       ],
-      "ms": 4.4
+      "ms": 4.7
     },
     {
       "n": 8,
       "title": "Verify against independently held test data",
       "ok": true,
-      "expected": 5.3,
-      "got": 5.3
+      "expected": 22.9,
+      "got": 22.9
     },
     {
       "n": 9,
       "title": "Save the successful composition and reuse it",
       "ok": true,
-      "saved": "Vat rate account holder country: Get Account → Get account holder → VAT rate lookup",
+      "saved": "Vat rate account holder country: Account lookup → Holder lookup → Get VAT rate",
       "reusedAs": [
-        "Vat rate account holder country: Get Account → Get account holder → VAT rate lookup"
+        "Vat rate account holder country: Account lookup → Holder lookup → Get VAT rate"
       ],
-      "expected": 25.8,
-      "got": 25.8,
-      "ms": 2.1
+      "expected": 25.3,
+      "got": 25.3,
+      "ms": 2.3
     },
     {
       "n": 10,
-      "title": "Change the interface of the last provider in the chain (Brightmark)",
+      "title": "Change the interface of the last provider in the chain (Cobaltix)",
       "ok": true,
-      "before": "mcp \"VAT rate lookup\" ctry → ctry, vatpct",
-      "after": "openapi \"VAT rate inquiry\" jur → result.{jur, vr}"
+      "before": "openapi \"Get VAT rate\" cc → cc, vr",
+      "after": "graphql \"VAT rate lookup\" ctry → result.{ctry, vatpct}"
     },
     {
       "n": 11,
       "title": "Recover without changing integration code",
       "ok": true,
       "healing": [
-        "API drift at http://127.0.0.1:55276/: mcp:brightmark → openapi:brightmark; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:59480/: openapi:cobaltix → graphql:127-0-0-1-59480-graphql; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "via": [
-        "graphql:127-0-0-1-55274-graphql",
-        "openapi:quillbase",
-        "openapi:brightmark"
+        "mcp:fjordsoft",
+        "mcp:harbourly",
+        "graphql:127-0-0-1-59480-graphql"
       ],
-      "expected": 25.8,
-      "got": 25.8,
-      "ms": 7.3
+      "expected": 25.3,
+      "got": 25.3,
+      "ms": 8.7
     },
     {
       "n": 12,
-      "title": "Remove that provider (Brightmark)",
+      "title": "Remove that provider (Cobaltix)",
       "ok": true
     },
     {
@@ -134,38 +134,38 @@
       "ok": true,
       "status": "failed",
       "healing": [
-        "provider gone at http://127.0.0.1:55276/: withdrew openapi:brightmark (1 capabilities, 1 pipeline(s) retired)"
+        "provider gone at http://127.0.0.1:59480/: withdrew graphql:127-0-0-1-59480-graphql (1 capabilities, 1 pipeline(s) retired)"
       ],
       "withdrawn": [
-        "Brightmark"
+        "GraphQL 127.0.0.1:59480"
       ],
       "capabilities": "21 → 19",
       "savedPipelines": "1 → 0"
     },
     {
       "n": 14,
-      "title": "Introduce a different provider (Kestrel Freight, openapi): the objective works again",
+      "title": "Introduce a different provider (Ashgrove, graphql): the objective works again",
       "ok": true,
       "learned": [
-        "openapi: 1 operations"
+        "graphql: 1 fields"
       ],
       "via": [
-        "graphql:127-0-0-1-55274-graphql",
-        "openapi:quillbase",
-        "openapi:kestrel-freight"
+        "mcp:fjordsoft",
+        "mcp:harbourly",
+        "graphql:127-0-0-1-59543-graphql"
       ],
-      "expected": 5.3,
-      "got": 5.3,
-      "ms": 1.6
+      "expected": 25.3,
+      "got": 25.3,
+      "ms": 1.7
     }
   ],
   "benchmarks": {
-    "startupMs": 107,
+    "startupMs": 121.1,
     "mcpLatencyMs": {
-      "p50": 0.04,
-      "p95": 0.11
+      "p50": 0.03,
+      "p95": 0.16
     },
-    "discoveryMs": 30.1,
+    "discoveryMs": 34,
     "graph": {
       "providers": 5,
       "capabilities": 20,
@@ -175,66 +175,66 @@
       "total": 114
     },
     "graphStatsMs": 0.1,
-    "planningMs": 2,
-    "executionMs": 4.4,
-    "recoveryAfterChangeMs": 7.3,
-    "recoveryAfterNewProviderMs": 1.6,
-    "memoryMB": 134
+    "planningMs": 2.1,
+    "executionMs": 4.7,
+    "recoveryAfterChangeMs": 8.7,
+    "recoveryAfterNewProviderMs": 1.7,
+    "memoryMB": 135
   },
   "freeze": {
-    "commit": "0ddedff92fb43a2dc22bedb18f94f48492809a15",
+    "commit": "3739ddf7263c05abc40a463a0f80700d2b989175",
     "tag": "lab-freeze-3",
-    "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/interface/mcp-server.ts\nsrc/runtime.ts",
-    "uncommittedProductChanges": "M src/core/semantics.ts\n M src/runtime.ts",
+    "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/core/semantics.ts\nsrc/interface/mcp-server.ts\nsrc/runtime.ts",
+    "uncommittedProductChanges": "",
     "frozen": false
   },
   "environment": [
     {
       "service": "ledger",
-      "brand": "Emberlane",
-      "protocol": "graphql",
-      "operation": "Get account",
+      "brand": "Fjordsoft",
+      "protocol": "mcp",
+      "operation": "Account lookup",
       "input": "acct_ref",
       "outputs": [
         "acct_ref",
-        "cust_ref",
+        "cref",
         "bal"
       ]
     },
     {
       "service": "kyc",
-      "brand": "Quillbase",
-      "protocol": "openapi",
-      "operation": "Get account holder",
-      "input": "cust_ref",
+      "brand": "Harbourly",
+      "protocol": "mcp",
+      "operation": "Holder lookup",
+      "input": "cref",
       "outputs": [
-        "cust_ref",
-        "lglnm",
+        "cref",
+        "nm",
         "ctry"
       ]
     },
     {
       "service": "vat",
-      "brand": "Brightmark",
-      "protocol": "mcp",
-      "operation": "VAT rate lookup",
-      "input": "ctry",
+      "brand": "Cobaltix",
+      "protocol": "openapi",
+      "operation": "Get VAT rate",
+      "input": "cc",
       "outputs": [
-        "ctry",
-        "vatpct"
+        "cc",
+        "vr"
       ]
     }
   ],
   "firstRunProviders": [
-    "graphql:127-0-0-1-55274-graphql",
-    "openapi:quillbase",
-    "mcp:brightmark"
+    "mcp:fjordsoft",
+    "mcp:harbourly",
+    "openapi:cobaltix"
   ],
   "receipts": {
     "count": 21,
     "intact": true,
     "brokenAt": null,
-    "head": "b0991cb522031bc52c19e6d4d6899d7652fe455d0e496dbc6fe7fcb3b0f705f3"
+    "head": "cca02785a153973048475651b5090ef0370cf4fe996cea4126183808c00b69fc"
   },
   "passed": 14,
   "total": 14

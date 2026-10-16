@@ -87,7 +87,7 @@ ${stepTitles.map((t, i) => `| ${t} | ${stepPass[i]}/${N} |`).join("\n")}
 
 ## What remains unverified
 
-- Two domains, not many. Names vary per run, but field vocabularies are drawn from conventions RightClick X's inference understands; truly idiosyncratic naming (e.g. \`ctry\`, \`vatpct\`) is not covered.
+- Three domains, not many. One (*accounts*) uses cryptic field names whose meaning is only in their descriptions; cryptic names *without* descriptions are not covered.
 - Discovery is from given addresses. Finding services without being told where they are is not part of this lab.
 - Interfaces without a machine-readable contract (no OpenAPI, GraphQL introspection or MCP tool list) are not covered.
 - One objective shape (a three-step chain). Fan-in joins are covered by unit tests and live experiments (E12), not by this lab.

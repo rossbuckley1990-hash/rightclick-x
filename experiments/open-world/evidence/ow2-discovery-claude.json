@@ -1,8 +1,9 @@
 {
   "experiment": 1,
   "hypothesis": "Given no addresses, an AI can acquire useful capabilities from unfamiliar real services via public directories, without SDKs or integration code.",
-  "build": "5945a9ae81e87c2af40fbad9d4c6d305da18501a",
+  "build": "3739ddf7263c05abc40a463a0f80700d2b989175",
   "client": "claude",
+  "model": "client default",
   "prompt": "You are connected to exactly one MCP server, rightclick-x. Use only its tools. You are not given any service addresses.\nResearch objective, for someone planning a trip to Toronto:\n  1. What is the next upcoming public holiday in the Canadian province of Ontario (province code ON), and on what date?\n  2. What is today's exchange rate from Canadian dollars (CAD) to euros (EUR)?\nUse rightclick-x's research and acquisition abilities to find suitable public services in public directories, learn them, and use them to answer.\nSave each working workflow as a reusable capability (names: 'Next Ontario holiday' and 'CAD to EUR').\nEnd with a final line: ANSWER: <holiday name> | <YYYY-MM-DD> | <CAD to EUR rate>",
   "answer": "Christmas Day | 2026-12-25 | 0.628",
   "independentTruth": {
@@ -16,20 +17,20 @@
     "nameOk": true,
     "rateOk": true
   },
-  "seconds": 63.5,
+  "seconds": 66.3,
   "mcpCalls": [
     {
       "tool": "context_research",
       "ok": true,
-      "ms": 8763.9,
+      "ms": 10903.7,
       "args": {
-        "topic": "public holidays Canada"
+        "topic": "public holidays"
       }
     },
     {
       "tool": "context_research",
       "ok": true,
-      "ms": 9560.4,
+      "ms": 20068.6,
       "args": {
         "topic": "currency exchange rates"
       }
@@ -37,7 +38,7 @@
     {
       "tool": "context_learn",
       "ok": true,
-      "ms": 147.9,
+      "ms": 177.5,
       "args": {
         "sources": [
           "https://api.apis.guru/v2/specs/canada-holidays.ca/1.8.0/openapi.json",
@@ -54,7 +55,7 @@
     {
       "tool": "context_explain",
       "ok": true,
-      "ms": 3.2,
+      "ms": 1.9,
       "args": {
         "id": "canada holidays province"
       }
@@ -62,7 +63,7 @@
     {
       "tool": "context_explain",
       "ok": true,
-      "ms": 1,
+      "ms": 1.2,
       "args": {
         "id": "exchangerate latest"
       }
@@ -70,7 +71,7 @@
     {
       "tool": "context_explain",
       "ok": true,
-      "ms": 0.1,
+      "ms": 0.2,
       "args": {
         "id": "openapi:canada-holidays-api:province"
       }
@@ -78,7 +79,7 @@
     {
       "tool": "context_run",
       "ok": true,
-      "ms": 551.7,
+      "ms": 533.3,
       "args": {
         "id": "openapi:exchangerate-api:get-latest-base-currency",
         "args": {
@@ -89,7 +90,7 @@
     {
       "tool": "context_run",
       "ok": true,
-      "ms": 362.9,
+      "ms": 266.1,
       "args": {
         "id": "openapi:canada-holidays-api:province",
         "args": {
@@ -100,7 +101,7 @@
     {
       "tool": "context_compose",
       "ok": true,
-      "ms": 380.6,
+      "ms": 256.8,
       "args": {
         "have": {
           "provinceId": {
@@ -109,24 +110,24 @@
           }
         },
         "want": "json",
-        "intent": "next upcoming public holiday in Ontario",
+        "intent": "next upcoming public holiday in Ontario province",
         "through": [
           "openapi:canada-holidays-api:province"
         ],
         "run": true,
-        "publish": "Next Ontario holiday",
         "verify": [
           {
-            "op": "contains",
-            "value": "nextHoliday"
+            "op": "exists",
+            "path": "province.nextHoliday.date"
           }
-        ]
+        ],
+        "publish": "Next Ontario holiday"
       }
     },
     {
       "tool": "context_compose",
       "ok": true,
-      "ms": 537.7,
+      "ms": 534.3,
       "args": {
         "have": {
           "base_currency": {
@@ -135,18 +136,19 @@
           }
         },
         "want": "json",
-        "intent": "CAD to EUR exchange rate",
+        "intent": "latest exchange rate CAD to EUR",
         "through": [
           "openapi:exchangerate-api:get-latest-base-currency"
         ],
         "run": true,
-        "publish": "CAD to EUR",
         "verify": [
           {
-            "op": "contains",
-            "value": "EUR"
+            "op": "gt",
+            "path": "rates.EUR",
+            "value": 0
           }
-        ]
+        ],
+        "publish": "CAD to EUR"
       }
     }
   ],
@@ -179,17 +181,17 @@
         "provinceId": "id.province"
       },
       "want": "json",
-      "intent": "next upcoming public holiday in Ontario",
+      "intent": "next upcoming public holiday in Ontario province",
       "verify": [
         {
-          "op": "contains",
-          "value": "nextHoliday"
+          "op": "exists",
+          "path": "province.nextHoliday.date"
         }
       ],
       "through": [
         "openapi:canada-holidays-api:province"
       ],
-      "publishedAt": "2026-10-16T06:50:24.382Z",
+      "publishedAt": "2026-10-16T07:20:36.162Z",
       "calls": 0,
       "lastPipeline": [
         "Get a province or territory by abbreviation"
@@ -205,17 +207,18 @@
         "base_currency": "currency"
       },
       "want": "json",
-      "intent": "CAD to EUR exchange rate",
+      "intent": "latest exchange rate CAD to EUR",
       "verify": [
         {
-          "op": "contains",
-          "value": "EUR"
+          "op": "gt",
+          "path": "rates.EUR",
+          "value": 0
         }
       ],
       "through": [
         "openapi:exchangerate-api:get-latest-base-currency"
       ],
-      "publishedAt": "2026-10-16T06:50:25.582Z",
+      "publishedAt": "2026-10-16T07:20:37.703Z",
       "calls": 0,
       "lastPipeline": [
         "Returns latest exchange rates in parameter-supplied base currency."
@@ -226,5 +229,5 @@
     }
   ],
   "verdict": "PASS",
-  "finalText": "I found both answers through two free public services listed in the APIs.guru directory. No keys were needed.\n\n1. **Next Ontario holiday: Christmas Day, Friday 2026-12-25.** This comes from the Canada Holidays API (canada-holidays.ca), which reads Ontario's official public-holiday list. Thanksgiving (2026-10-12) has already passed. Remembrance Day on November 11 isn't a statutory holiday in Ontario, so the service doesn't list it. Boxing Day comes right after, on 2026-12-26, but the day off is Monday 2026-12-28.\n2. **CAD to EUR rate: 1 CAD = 0.628 EUR**, dated 2026-10-16, from ExchangeRate-API (`/v4/latest/CAD`). The API only gives three significant figures, and its response says this free version is being phased out in favour of a newer one.\n\nBoth workflows are saved as reusable capabilities. Each re-ran successfully and passed its check:\n- **Next Ontario holiday** at `/x/next-ontario-holiday` (input: `provinceId=ON`)\n- **CAD to EUR** at `/x/cad-to-eur` (input: `base_currency=CAD`; the rate is in `rates.EUR`)\n\nANSWER: Christmas Day | 2026-12-25 | 0.628"
+  "finalText": "I found two free public APIs that need no key through rightclick-x's directory search, added them, and both returned answers that passed their checks.\n\n**1. Next Ontario public holiday: Christmas Day, Friday 2026-12-25**\n- **Source:** Canada Holidays API (canada-holidays.ca), found in the APIs.guru directory and queried for province `ON`.\n- **Why Christmas is next:** Thanksgiving (2026-10-12) has already passed. Remembrance Day (Nov 11) isn't a statutory holiday in Ontario, so the next one is Christmas.\n- **Boxing Day:** it falls on Saturday 2026-12-26 and is observed on Monday 2026-12-28.\n\n**2. CAD to EUR: 1 CAD = 0.628 EUR** (rate dated 2026-10-16)\n- **Source:** ExchangeRate-API's free v4 endpoint (api.exchangerate-api.com), also from APIs.guru, queried with CAD as the base currency.\n- **Precision:** the free tier gives only three significant figures, and it doesn't say what time the rate is from.\n\n**Saved capabilities** (each was re-run with a check before saving):\n- **Next Ontario holiday** at `/x/next-ontario-holiday`: takes `provinceId` = `ON`. The result's `province.nextHoliday` holds the answer.\n- **CAD to EUR** at `/x/cad-to-eur`: takes `base_currency` = `CAD`. The result's `rates.EUR` holds the answer.\n\nBoth saved workflows return the provider's full JSON, not a single value. You read the field yourself: `nextHoliday` for the holiday and `rates.EUR` for the rate.\n\nANSWER: Christmas Day | 2026-12-25 | 0.628"
 }
