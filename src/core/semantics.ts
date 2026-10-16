@@ -106,7 +106,7 @@ const NAME_RULES: Array<[RegExp, SemType]> = [
   [/(^|_)(lat|latitude)$/, "geo.lat"],
   [/(^|_)(lon|lng|long|longitude)$/, "geo.lon"],
   [/(lang|language|locale)(code)?$/, "language"],
-  [/^(target|source|to|from)(lang|language)?$/, "language"],
+  [/^(target|source|to|from)(lang|language)$/, "language"],
   [/(^|_)(country|countrycode|countryiso|iso2|iso3)$/, "country"],
   [/(^|_)(currency|currencycode)$/, "currency"],
   [/(^|_)(city|place|location|address|town|placename|region|capital)$/, "place"],
@@ -137,6 +137,28 @@ export interface SchemaLike {
   items?: SchemaLike;
   enum?: unknown[];
   description?: string;
+  example?: unknown;
+  examples?: unknown;
+  default?: unknown;
+}
+
+/** Bare directions name a role, not a kind of value: "to" may be a language, a currency or a date. */
+const DIRECTIONAL = /^(to|from|source|target)$/;
+
+/**
+ * Types that published example values establish (OpenAPI example/examples/default/enum,
+ * JSON Schema examples). Only specific types with high value confidence count, and all
+ * examples must agree; otherwise the examples say nothing.
+ */
+function typeFromExamples(schema: SchemaLike): SemType | undefined {
+  const ex = schema.examples;
+  const values = [schema.example, ...(Array.isArray(ex) ? ex : ex && typeof ex === "object" ? Object.values(ex).map((e: any) => e?.value ?? e) : []), schema.default, ...(Array.isArray(schema.enum) ? schema.enum : [])]
+    .filter((v) => typeof v === "string" && v.trim() !== "");
+  if (!values.length) return undefined;
+  const found = values.map((v) => inspectValue(v));
+  const t = found[0].type;
+  if (["text", "number", "json", "markdown"].includes(t) || found.some((f) => f.type !== t || f.confidence < 0.8)) return undefined;
+  return t;
 }
 
 /** Infer a semantic type for a named value with an (optional) JSON-schema-ish shape. */
@@ -185,10 +207,19 @@ export function inferType(name: string, schema: SchemaLike = {}, description = "
   // Resource identifiers described in prose: "name of the Namespace" -> id.namespace.
   const of = /\bname of the ([A-Za-z]+)\b/i.exec(description);
   if (of && (n === "name" || n.endsWith("_name"))) return `id.${of[1].toLowerCase()}`;
+  const d = description.toLowerCase();
+  // An ambiguous direction is settled by what the contract says, then by its examples.
+  if (DIRECTIONAL.test(n)) {
+    if (/\biso ?4217\b|\bcurrenc(y|ies)\b/.test(d)) return "currency";
+    if (/\biso ?3166\b|\bcountry\b/.test(d)) return "country";
+    const fromExamples = typeFromExamples(schema);
+    if (fromExamples) return fromExamples;
+    if (/\biso ?639\b|\blanguage\b|\blocale\b|\bbcp ?47\b/.test(d)) return "language";
+    return "language";
+  }
   for (const [re, t] of NAME_RULES) {
     if (re.test(n) || re.test(compact)) return t;
   }
-  const d = description.toLowerCase();
   if (/\b(iso ?639|language code|bcp ?47)\b/.test(d)) return "language";
   if (/\biso ?3166\b|country code/.test(d)) return "country";
   if (/\biso ?4217\b|currency code/.test(d)) return "currency";
@@ -198,7 +229,8 @@ export function inferType(name: string, schema: SchemaLike = {}, description = "
   const ident = /\b([a-z]+)\s+(?:reference|identifier|id)\b/.exec(d);
   if (ident && !ID_FILLER.has(ident[1]) && rawType !== "array" && rawType !== "object") return `id.${ident[1]}`;
   if (rawType === undefined && !schema.format && compact === "") return "json";
-  return "text";
+  // Names and descriptions said nothing specific: published example values may.
+  return typeFromExamples(schema) ?? "text";
 }
 
 /** Words that precede "identifier"/"id" without naming an entity. */

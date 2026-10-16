@@ -8,7 +8,7 @@
 // arguments given as variables or literals. Not supported: mutations,
 // fragments, aliases, multiple root fields.
 
-import type { RightClick } from "../runtime.ts";
+import { goalParams, type RightClick } from "../runtime.ts";
 
 const named = (kind: string, name: string) => ({ kind, name, ofType: null });
 const nonNull = (t: unknown) => ({ kind: "NON_NULL", name: null, ofType: t });
@@ -43,7 +43,7 @@ export function introspection(rc: RightClick) {
           camel(g.slug),
           `${g.title}. Synthesized by RightClick X (${(g.lastPipeline ?? []).join(" → ")}). [rightclick:goal]`,
           named("OBJECT", `${pascal(g.slug)}Result`),
-          Object.entries(g.have).map(([n, t]) => ({ name: n, description: `[rightclick:${t}]`, type: nonNull(named("SCALAR", scalarFor(t))), defaultValue: null })),
+          goalParams(g).map(([n, t]) => ({ name: n, description: `[rightclick:${t}]`, type: nonNull(named("SCALAR", scalarFor(t))), defaultValue: null })),
         ),
       ),
       inputFields: null,

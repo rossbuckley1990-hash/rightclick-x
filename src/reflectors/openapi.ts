@@ -52,7 +52,9 @@ export function reflectOpenAPI(spec: Obj, specUrl: string): Reflection {
 
       for (const p of params) {
         if (!p?.name) continue;
-        const schema = resolve(p.schema ?? p) as SchemaLike;
+        const resolved = resolve(p.schema ?? p) as SchemaLike;
+        // Examples may sit on the parameter rather than its schema; both describe the value.
+        const schema: SchemaLike = p.example !== undefined || p.examples !== undefined ? { ...resolved, example: resolved?.example ?? p.example, examples: resolved?.examples ?? p.examples } : resolved;
         if (p.in === "path") {
           if (addInput(p.name, schema, true, p.description)) pathParams.push(p.name);
           if (p["x-multi-segment"]) multiSegment.push(p.name);

@@ -75,3 +75,23 @@ test("stemming joins word families", () => {
   assert.equal(stem("weather"), stem("weathers"));
   assert.deepEqual(tokenize("Translate the weatherForecast"), [stem("translate"), stem("weather"), stem("forecast")]);
 });
+
+test("published example values type a value when its name and description do not (OW7 attempt 1)", () => {
+  // Frankfurter's /rate/{base}/{quote}: no descriptions, only examples.
+  assert.equal(inferType("quote", { type: "string", example: "USD" }), "currency");
+  assert.equal(inferType("base", { type: "string", example: "EUR", default: "EUR" }), "currency");
+  // Examples that disagree, or are weak evidence, say nothing.
+  assert.equal(inferType("quote", { type: "string", examples: ["USD", "hello"] }), "text");
+  assert.equal(inferType("code", { type: "string", example: "en" }), "text");
+  // A specific name still wins over examples.
+  assert.equal(inferType("city", { type: "string", example: "USD" }), "place");
+});
+
+test("a bare direction (to/from/source/target) is settled by the contract, not assumed to be a language", () => {
+  assert.equal(inferType("to", { type: "string" }, "Target currency code, e.g. EUR"), "currency");
+  assert.equal(inferType("from", { type: "string", example: "USD" }), "currency");
+  assert.equal(inferType("from", { type: "string", format: "date" }, "Start of date range"), "datetime");
+  assert.equal(inferType("target", { type: "string" }, "Target language"), "language");
+  assert.equal(inferType("to", { type: "string" }), "language");
+  assert.equal(inferType("targetLanguage", { type: "string" }), "language");
+});

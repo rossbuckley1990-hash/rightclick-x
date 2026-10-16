@@ -1,0 +1,44 @@
+{
+  "experiment": "OW7 ship it without code",
+  "attempt": 1,
+  "verdict": "FAIL",
+  "build": "c3a902e (gauntlet-freeze-5)",
+  "instance": "rcx-c (HKG, apac); held 2 providers before the run",
+  "log": [
+    "instance rcx-c (Asia-Pacific) (HKG (apac)); providers before: 2",
+    "",
+    "1. builder: Claude Code -> rcx-c only…",
+    "   250.9s · slug euro-value-of-a-country-currency",
+    "",
+    "2. developer: GET /x/euro-value-of-a-country-currency params [\"code\"]",
+    "   MX (MXN): API NaN · truth 0.048324 · MISMATCH",
+    "file:///Users/ross/src/rightclick-x/experiments/open-world/ow7-ship.ts:46",
+    "  return { currency, eur: r.rates.EUR };",
+    "                                  ^",
+    "",
+    "TypeError: Cannot read properties of undefined (reading 'EUR')",
+    "    at truth (file:///Users/ross/src/rightclick-x/experiments/open-world/ow7-ship.ts:46:35)",
+    "    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)",
+    "    at async file:///Users/ross/src/rightclick-x/experiments/open-world/ow7-ship.ts:91:13",
+    "",
+    "Node.js v24.16.0",
+    ""
+  ],
+  "observed": {
+    "builder": "Claude Code with only rcx-c published goal euro-value-of-a-country-currency in 250.9 s. It learned ExchangeRate-API, Frankfurter (OpenAPI and MCP), an MCP currency server and a trading API from public directories; the only address it was given was the countries GraphQL API.",
+    "requirementMet": false,
+    "publishedApi": "GET /x/euro-value-of-a-country-currency?code=MX returned the whole ExchangeRate-API rates table (result typed json), not the euro value of one unit.",
+    "harnessDefects": [
+      "truth() took the first listed currency code; for CH (CHE,CHF,CHW) the rate source has no CHE and the harness crashed before writing evidence",
+      "evidence was written only at the end, so the builder transcript was lost"
+    ],
+    "consumerPhase": "not reached"
+  },
+  "diagnosis": [
+    "Frankfurter /rate/{base}/{quote} params have no descriptions, only examples (EUR, USD), so they were typed text and country -> currency could not bind into the single-rate operation",
+    "from/to on the Frankfurter MCP convert tool and an MCP currency server were typed language by name alone",
+    "a one-parameter API needs EUR pinned inside the goal; published goals exposed every input as a parameter"
+  ],
+  "fixes": "gauntlet-freeze-6: example-value typing, ambiguous-direction rule, fixed goal inputs; regression tests in test/semantics.test.ts and test/fixed-inputs.test.ts. Harness fixed separately.",
+  "note": "After attempt 1, a syntax-check command accidentally re-ran the harness against rcx-c for under 2 minutes before it was stopped. rcx-c is not used for the re-run (fresh rcx-d)."
+}

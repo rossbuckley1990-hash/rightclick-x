@@ -10,7 +10,7 @@ import { resolve } from "node:path";
 export type Client = "claude" | "codex";
 
 export type McpTarget =
-  | { kind: "stdio"; stateFile: string; logFile: string }
+  | { kind: "stdio"; stateFile: string; logFile: string; env?: Record<string, string> }
   | { kind: "http"; url: string; token: string };
 
 export interface AgentRun {
@@ -46,7 +46,7 @@ export async function runAgent(client: Client, target: McpTarget, prompt: string
   if (client === "claude") {
     const server =
       target.kind === "stdio"
-        ? { command: process.execPath, args: [RCX, "mcp"], env: { RCX_STATE_FILE: target.stateFile, RCX_MCP_LOG: target.logFile, RCX_WORKSPACE: dir } }
+        ? { command: process.execPath, args: [RCX, "mcp"], env: { ...target.env, RCX_STATE_FILE: target.stateFile, RCX_MCP_LOG: target.logFile, RCX_WORKSPACE: dir } }
         : { type: "http", url: `${target.url}/mcp`, headers: { Authorization: `Bearer ${target.token}` } };
     writeFileSync(`${dir}/mcp.json`, JSON.stringify({ mcpServers: { "rightclick-x": server } }));
     const r = await run(
@@ -67,7 +67,7 @@ export async function runAgent(client: Client, target: McpTarget, prompt: string
         ? [
             "-c", `mcp_servers.rightclick-x.command=${JSON.stringify(process.execPath)}`,
             "-c", `mcp_servers.rightclick-x.args=${JSON.stringify([RCX, "mcp"])}`,
-            "-c", `mcp_servers.rightclick-x.env={RCX_STATE_FILE=${JSON.stringify(target.stateFile)},RCX_MCP_LOG=${JSON.stringify(target.logFile)},RCX_WORKSPACE=${JSON.stringify(dir)}}`,
+            "-c", `mcp_servers.rightclick-x.env={${[...Object.entries(target.env ?? {}), ["RCX_STATE_FILE", target.stateFile], ["RCX_MCP_LOG", target.logFile], ["RCX_WORKSPACE", dir]].map(([k, v]) => `${k}=${JSON.stringify(v)}`).join(",")}}`,
           ]
         : [
             "-c", `mcp_servers.rightclick-x.url=${JSON.stringify(`${target.url}/mcp`)}`,

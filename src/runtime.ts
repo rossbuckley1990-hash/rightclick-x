@@ -18,7 +18,7 @@ import { detectRuntime, platformReflection, type PlatformFn, type RuntimeInfo } 
 
 export const VERSION = "0.1.0";
 /** Bump whenever semantic inference changes: persisted reflections are then re-derived from their sources. */
-export const SEMANTICS = 11;
+export const SEMANTICS = 12;
 
 export interface Store {
   load(): Promise<PersistedState | null>;
@@ -50,6 +50,8 @@ export interface PublishedGoal {
   intent?: string;
   verify?: Predicate[];
   witnesses?: OutcomeWitness[];
+  /** Inputs pinned when the goal was published; part of the goal, not parameters of its API. */
+  fixed?: Record<string, unknown>;
   risks?: Capability["risk"][];
   through?: string[];
   anchors?: CapabilityAnchor[];
@@ -694,7 +696,13 @@ export class RightClick {
     const witnesses = this.pinWitnesses(opts.witnesses ?? []);
     const values: Record<string, unknown> = {};
     const types: Record<string, SemType> = {};
-    for (const [k, v] of Object.entries(opts.have)) {
+    const fixed: Record<string, unknown> = {};
+    for (let [k, v] of Object.entries(opts.have)) {
+      // {"value": "EUR", "fixed": true}: a constant of the goal rather than a parameter of a published API.
+      if (v && typeof v === "object" && !Array.isArray(v) && (v as any).fixed === true && "value" in (v as any)) {
+        fixed[k] = (v as any).value;
+        v = "type" in (v as any) ? { type: (v as any).type, value: (v as any).value } : (v as any).value;
+      }
       if (v && typeof v === "object" && !Array.isArray(v) && "type" in (v as any) && "value" in (v as any)) {
         types[k] = (v as any).type;
         values[k] = (v as any).value;
@@ -798,6 +806,7 @@ export class RightClick {
             intent: opts.intent,
             verify: structuredClone(opts.verify),
             witnesses,
+            ...(Object.keys(fixed).length ? { fixed: structuredClone(fixed) } : {}),
             risks: structuredClone(opts.risks ?? [...new Set(p.steps.map((s) => this.graph.get(s.capability)!.risk))]),
             through: structuredClone(opts.through),
             anchors: structuredClone(anchors),
@@ -902,7 +911,7 @@ export class RightClick {
     this.graph.addCapability({
       id: `goal:${g.slug}`, title: g.title, provider: "goal:published", source: "composite",
       description: `Reusable goal: ${g.intent ?? g.want}. Finds a current implementation on every call, repairs changed APIs, and re-runs its stored checks${g.witnesses?.length ? ` plus ${g.witnesses.length} independent outcome witness(es)` : ""}. Invoke with context_run; no need to reconstruct the pipeline.`,
-      inputs: Object.entries(g.have).map(([name, type]) => ({ name, type, required: true })),
+      inputs: goalParams(g).map(([name, type]) => ({ name, type, required: true })),
       outputs: [{ name: "", type: g.want, required: true }], risk,
       tags: ["saved", "goal", "reusable", ...(g.intent ?? g.title).split(/\s+/)],
       invoke: { kind: "goal", slug: g.slug },
@@ -919,11 +928,12 @@ export class RightClick {
       g.anchors = this.pinAnchors(g.through ?? []);
       this.persist();
     }
-    const missing = Object.keys(g.have).filter((k) => args[k] === undefined || args[k] === "");
+    const missing = goalParams(g).map(([k]) => k).filter((k) => args[k] === undefined || args[k] === "");
     if (missing.length) throw new Error(`missing parameter(s): ${missing.join(", ")}`);
     const have: Record<string, unknown> = {};
     for (const [k, t] of Object.entries(g.have)) {
-      const raw = args[k];
+      // Pinned inputs come from the goal itself; a caller cannot override them.
+      const raw = g.fixed && k in g.fixed ? g.fixed[k] : args[k];
       const value = (t === "number" || t.startsWith("geo.")) && typeof raw === "string" ? Number(raw) : raw;
       have[k] = { type: t, value };
     }
@@ -961,7 +971,7 @@ export class RightClick {
           operationId: camel(g.slug),
           summary: g.title,
           description: `Synthesized by RightClick X from a goal (${g.intent ?? g.want}), not from code. Current pipeline: ${(g.lastPipeline ?? []).join(" → ")}. Providers: ${(g.providers ?? []).join(", ")}. The contract is stable; the pipeline is re-derived from the live capability graph on every call.`,
-          parameters: Object.entries(g.have).map(([name, t]) => ({ name, in: "query", required: true, schema: { ...jsonSchemaFor(t), "x-rightclick-type": t } })),
+          parameters: goalParams(g).map(([name, t]) => ({ name, in: "query", required: true, schema: { ...jsonSchemaFor(t), "x-rightclick-type": t } })),
           responses: {
             "200": {
               description: "Result of the goal",
@@ -1224,6 +1234,11 @@ const EXAMPLES: Record<string, unknown> = {
   domain: "example.com",
   datetime: "2026-10-15T12:00:00Z",
 };
+
+/** A published goal's caller-facing parameters: its inputs minus the ones pinned at publish time. */
+export function goalParams(g: PublishedGoal): Array<[string, SemType]> {
+  return Object.entries(g.have).filter(([k]) => !(g.fixed && k in g.fixed));
+}
 
 function coerceArgs(cap: Capability, args: Record<string, unknown>): Record<string, unknown> {
   const out: Record<string, unknown> = { ...args };

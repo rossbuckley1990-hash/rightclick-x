@@ -73,7 +73,7 @@ export const TOOLS = [
       "Give what you have and the type you want; RightClick X discovers routes across the environment and (with run:true) executes, checks and repairs them. Currency/unit refinements require explicit conversions. Attach witnesses for independent business-outcome checks. publish saves a stable goal:<slug> capability another AI can discover with context_graph and invoke with context_run; its checks survive restart and API changes. A successful multi-step pipeline is also saved for reuse.",
     inputSchema: obj(
       {
-        have: { type: "object", description: 'Named inputs, e.g. {"place":"Lisbon","language":"es"} or {"x":{"type":"url","value":"https://..."}}.' },
+        have: { type: "object", description: 'Named inputs, e.g. {"place":"Lisbon","language":"es"} or {"x":{"type":"url","value":"https://..."}}. With publish, {"to":{"value":"EUR","fixed":true}} pins an input inside the published goal instead of making it a parameter of its API.' },
         want: str("Desired semantic type, e.g. text, language, geo.lat, html, hash."),
         intent: str("Words describing the goal, e.g. 'weather forecast translated'."),
         run: bool("Execute the best plan."),

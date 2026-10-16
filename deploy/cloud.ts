@@ -10,6 +10,8 @@ const INSTANCES = [
   { key: "a", name: "rcx-a", location: "weur", label: "Western Europe" },
   { key: "b", name: "rcx-b", location: "enam", label: "Eastern North America" },
   { key: "c", name: "rcx-c", location: "apac", label: "Asia-Pacific" },
+  // A fresh instance with an empty graph, for experiments that must start from nothing (OW7).
+  { key: "d", name: "rcx-d", location: "apac", label: "Asia-Pacific, fresh" },
 ];
 const DIR = ".rcx-deploy";
 mkdirSync(DIR, { recursive: true });
