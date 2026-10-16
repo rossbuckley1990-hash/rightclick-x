@@ -10,6 +10,7 @@
 - `phase-b-lifesci-freeze-3/` (one file per session, `summary.json`, `rescored.json`);
 - `phase-c-lifesci-freeze-3.json`;
 - `views-check-lifesci-views-1.json`, `phase-b-views-lifesci-views-1/` (post hoc Q09 follow-up);
+- `phase-c-lifesci-rundrift-1.json`, `phase-c-lifesci-rundrift-2.json` (post hoc Phase C re-runs for the `context_run` drift fix);
 - `bodies-manifest.json` (SHA-256 of all 113 MB of raw responses, which are kept outside git).
 
 ## Summary
@@ -26,7 +27,7 @@
 | **Drift: a silent identity shift OLS really made** (June → October 2026) | The drift report exactly matched the true diff (+3 added, ~4 modified). Both operation ids that now name a *different* operation were flagged as modified. **But** a direct call on such an id runs the new operation and returns an empty, successful result. |
 | **Typed automatic chaining across databases** | Essentially none, as predicted. The same UniProt accession is typed three ways by three providers. Agents chained hop by hop with `context_run`; `context_compose` was used in 1 of 28 sessions. |
 
-**Bottom line.** For these five databases RightClick X removed the per-database schema-authoring step entirely. It replaced the manual drift review with an automatic, exact diff, plus self-repair on use in the `context_compose` path. With it, two different AI agents answered 22–25 of 28 multi-hop questions correctly from live data (22 strict, 25 after correcting harness defects). It did **not** remove the need for cross-database identifier knowledge. Like TogoMCP's two-stage workflow, the agent supplies that knowledge by bridging hops itself. BTE's x-bte annotations exist to provide exactly that knowledge. Not every capability self-heals: the healing path covers compose/goals, not plain `context_run`.
+**Bottom line.** For these five databases RightClick X removed the per-database schema-authoring step entirely. It replaced the manual drift review with an automatic, exact diff, plus self-repair on use in the `context_compose` path. With it, two different AI agents answered 22–25 of 28 multi-hop questions correctly from live data (22 strict, 25 after correcting harness defects). It did **not** remove the need for cross-database identifier knowledge. Like TogoMCP's two-stage workflow, the agent supplies that knowledge by bridging hops itself. BTE's x-bte annotations exist to provide exactly that knowledge. Not every capability self-heals: the healing path covers compose/goals, not plain `context_run`. (That was true of the build the experiment ran on. A post hoc fix was checked against the same two real changes: see *Follow-up: drift for plain `context_run`*.)
 
 ## Build
 
@@ -35,6 +36,9 @@
 | `lifesci-freeze-1` | `c3a902e` | HEAD at freeze. GPT 6 Astra's work (money quantities, outcome witnesses, `goal:<slug>`, `proof/`) was uncommitted when this session started, and was committed by another session (`6d6956c`, merge `c3a902e`) before the freeze. This session did not change it. 83/83 tests, `tsc` clean. |
 | `lifesci-freeze-2` | `fbf88bb` | + three general fixes from Phase A (below). 86/86 tests. |
 | `lifesci-freeze-3` | `ea2f6dc` | `-2` + a correction of one of those fixes. 86/86 tests, `tsc` clean. **Phase B and C ran on this build.** It is a tagged commit built from `-2` alone, so it does *not* contain another session's concurrent product commit `8df49c1` (example-value typing, fixed goal inputs). `main` contains both (`d700741`). |
+
+| `lifesci-rundrift-1` | `43aa681` | Post hoc. `main` + plain-`context_run` repair, refusal of shifted ids, anchors pinned to operations. 116/116 tests. **Phase C re-run: C1-b and C1-d FAIL** (see *Follow-up*). |
+| `lifesci-rundrift-2` | `968637a` | Post hoc. `-1` + the operation-identity correction. 116/116 tests, `tsc` clean. |
 
 Every run executed a `git archive` export of the tag, never the shared working tree. Another session edited `src/` in the same checkout during this experiment; that did not affect these runs.
 
@@ -186,12 +190,42 @@ Truth, computed directly at the same time: 393 | 9.
 - **Codex, attempt 1: invalid, preserved** (`codex-Q09-attempt1-remote-app.json`). Codex used an account-level app connector: a different, remote RightClick deployment without these databases. It logged 0 calls to the server under test and answered "unavailable". The harness now runs Codex with `--disable apps` (deviation 8).
 - **Claude Code: not run.** The `claude` CLI's login had expired ("OAuth session expired and could not be refreshed"). The session made no tool call (`claude-Q09-attempt1-auth-failure.json`). Claude Code's original Q09 miss is therefore **not yet re-tested** with an agent.
 
+## Follow-up (post hoc): drift for plain `context_run`
+
+Not pre-registered. This targets the two caveats from Phase C, C1-c and C2. Phase C was re-run in full under the fix policy. C1-d and the C2 refusal check were added to `phase-c.ts` for it.
+
+**Change.**
+- `4c986bc`, `43aa681`, `968637a`. A failed `context_run` of a learned operation re-reads its contract once, at most once a minute per source. If the contract drifted, the run record carries `healing` (the error, the drift report, what was retried), and the run retries the operation the caller meant.
+- "The same operation" means the same method and full path, ignoring host, parameter names and whole version segments; for GraphQL the same field, for MCP the same tool; and the same risk. The run retries under the same id, or under the one capability at that source that now carries the operation.
+- An id that re-learning pointed at a *different* operation is refused without an upstream call. The record says what the id called before and after, and names the successor. `acknowledgeChange: true` runs the new operation.
+- Saved-goal anchors pin the operation too. They follow the successor or fail closed.
+- Regression tests: `test/run-drift.test.ts`.
+
+**Phase C on `lifesci-rundrift-1`: FAIL, preserved.** The first operation rule compared paths *below the server base*. The live RCSB contract moved its version from `servers` (`/rcsbsearch/v1/` + `/query`) into its paths (`/` + `/rcsbsearch/v2/query`), so the rule judged C1 a change of meaning:
+- **C1-d** (plain `context_run`) refused to retry: "no equivalent of GET /query".
+- **C1-b**, which passed on freeze-3, failed closed on its anchor ("required anchor contract changed meaning").
+- **C1-c Codex** was still correct. It read the refusal and called again with `acknowledgeChange: true`.
+
+The rule now compares the full path without version segments (`968637a`), with a synthetic regression for both ways a contract can split the path.
+
+**Phase C on `lifesci-rundrift-2`** (`evidence/phase-c-lifesci-rundrift-2.json`). Same archived contracts and live providers. C1-c starts from the freeze-3 Phase A state.
+
+| Case | Result |
+|---|---|
+| **C1-a** re-learn after the RCSB break | **PASS**, +0 −0 ~7, identical to the true diff. |
+| **C1-b** compose through the stale capability | **PASS**, truth's 10 entries in 1.9 s. |
+| **C1-d** plain `context_run` of the stale 2022 capability (new) | **PASS.** The v1 call got a live 404. RightClick X re-read the contract by itself ("API drift … ~7; retried the same operation") and the v2 call returned truth's 10 entries for P41159, in 1.9 s. |
+| **C1-c Codex** | **✓ correct and grounded, now through RightClick X's repair.** Its first RCSB call (`getmetadata`) got the v1 404. RightClick X re-read the contract without a `context_learn` from the agent and retried on v2. Every later RCSB call went straight to v2. 53 s, 14 calls. (freeze-3: correct, but by bypassing the stale capability with `web.fetch` and a v2 URL it built itself.) |
+| **C1-c Claude Code** | **Not run.** The `claude` CLI's login had expired ("OAuth session expired and could not be refreshed"); the session made no tool call. Claude Code's C1-c is **not re-tested** on this build. |
+| **C2** OLS4 identity shift | Drift report +3 −0 ~5 against the true +3 −0 ~4: **PASS on the pre-registered criterion** (both shifted ids flagged), but no longer an exact diff. The extra modification is OLS's `search`: its `groupField` description changed, and the parameter-typing rules on `main` since `4975352` (another session's) type the old text as `url`, while freeze-3 typed it as `text`. The harness's true diff does not compare parameter types. |
+| **C2 refusal** (new) | **PASS.** After re-learning, the class-children id was refused with no upstream call: "it called GET /ols4/api/ontologies/{}/classes/{}/hierarchicalChildren, it now calls … /individuals/{}/hierarchicalChildren", naming `…-1` as the successor. That successor returned truth's 2 children. With `acknowledgeChange: true` the id ran the individuals operation and returned 0, as before. |
+
 ## Limitations
 
 - **Small and single-run.** 14 questions, 2 clients, 1 run each, 5 databases. No variance estimate.
 - **Friendly targets.** All five publish machine-readable contracts. Databases with only SPARQL/RDF (most of TogoMCP's RDF Portal), or with no contract at all, were not tested.
 - **The agent does the identifier bridging.** Typed composition across databases did not happen (P3). Fixing it needs cross-provider identifier equivalence: learned from observed values, or from annotations such as x-bte. That is not built.
-- **Self-healing covers `context_compose`/goals only.** A failed `context_run` does not re-reflect its source (C1-c). An id-addressed call after an identity shift runs the new operation without an error (C2). These were found, not fixed.
+- **Self-healing covers `context_compose`/goals only** on the builds Phase B and C ran. There, a failed `context_run` does not re-reflect its source (C1-c), and an id-addressed call after an identity shift runs the new operation without an error (C2). Both are fixed post hoc and checked on the same real changes (see *Follow-up*). They are re-tested with Codex but not Claude Code, and single-run. Argument names are not remapped: a retried operation whose parameter was renamed fails.
 - **No server-side projection or aggregation over large outputs** (Q09) on the builds Phase B ran. Output views were added afterwards (see *Follow-up*). They are tested on the real API and with Codex, not yet with Claude Code. There is no filter operator.
 - **The `selection` field list is clipped** at 3,000 characters for very wide GraphQL types.
 - **Contract quirks needed product fixes.** "Zero per-database authoring" held only after three general fixes made during the experiment. More databases will surface more such quirks.
@@ -210,6 +244,8 @@ Truth, computed directly at the same time: 393 | 9.
 7. C1-b composed with `want: json` and the stale capability as anchor, because RCSB's response schema is an external `$ref` and types only as `json`.
 8. The Q09 follow-up is post hoc. Its start state is the freeze-3 Phase A state, re-derived once by the `lifesci-views-1` build. Copied raw, the newer semantics version re-learned all six providers on every startup, so the server took 5.1 s to answer `initialize`; re-derived, it took 0.13 s, with the same providers and capability counts. Codex was run with `--disable apps` so that RightClick X was its only MCP server, as pre-registered. In the harness check and the first, invalid attempts, the harness's own truth queries ran without `polite-fetch.ts`: two direct requests per run.
 
+9. The run-drift follow-up is post hoc. Phase C was re-run in full on `lifesci-rundrift-1` (a FAIL, preserved) and `-2`. C1-d and the C2 refusal check are additions, and C1-c started from the freeze-3 Phase A state (`--state`). In both C1-c runs Codex ran without `--disable apps` (added to `phase-c.ts` afterwards); its MCP log shows all of its 14 calls going to the server under test.
+
 ## Reproduce
 
 ```bash
@@ -220,6 +256,8 @@ RCX_FREEZE=lifesci-freeze-3 node --import ./experiments/life-science/polite-fetc
 # Q09 follow-up (post hoc), on a start state re-derived by the views build (deviation 8)
 RCX_FREEZE=lifesci-views-1 node --import ./experiments/life-science/polite-fetch.ts experiments/life-science/views-check.ts --state <state>
 RCX_FREEZE=lifesci-views-1 node --import ./experiments/life-science/polite-fetch.ts experiments/life-science/phase-b.ts --only Q09 --label phase-b-views --state <state>
+# run-drift follow-up (post hoc, deviation 9)
+RCX_FREEZE=lifesci-rundrift-2 node --import ./experiments/life-science/polite-fetch.ts experiments/life-science/phase-c.ts --parts c1a,c1b,c1d,c1c,c2 --state <freeze-3 phase-a-state.json>
 ```
 
 Needs Node ≥ 22.18 and logged-in `claude` and `codex` CLIs. Results vary with live data; truth is recomputed at the same time.

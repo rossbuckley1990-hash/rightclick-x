@@ -1,0 +1,1335 @@
+{
+  "phase": "C",
+  "build": {
+    "tag": "lifesci-rundrift-1",
+    "commit": "43aa681b4e03169abfb82166c9a58c9b4da44e64"
+  },
+  "startedAt": "2026-10-16T16:27:20.473Z",
+  "replayProxy": "harness-side; contract URL served from the archive (before) or live (after); all other paths forwarded unchanged to the live provider",
+  "c1": {
+    "replay": {
+      "contractUrl": "http://127.0.0.1:62114/openapi.json",
+      "archivedSha256": "ee7df8c1f333c65e17db6df8f8d2733b3443b863f3a0cd65685f268bfc570130"
+    },
+    "archivedLearn": {
+      "capabilities": [
+        {
+          "id": "openapi:rcsb-search-api:getmetadata",
+          "url": "http://127.0.0.1:62114/rcsbsearch/v1/metadata/schema",
+          "method": "GET"
+        },
+        {
+          "id": "openapi:rcsb-search-api:getchemicalmetadata",
+          "url": "http://127.0.0.1:62114/rcsbsearch/v1/metadata/chemical/schema",
+          "method": "GET"
+        },
+        {
+          "id": "openapi:rcsb-search-api:getunreleasedentrymetadata",
+          "url": "http://127.0.0.1:62114/rcsbsearch/v1/metadata/unreleased/schema",
+          "method": "GET"
+        },
+        {
+          "id": "openapi:rcsb-search-api:runjsonqueriesget",
+          "url": "http://127.0.0.1:62114/rcsbsearch/v1/query",
+          "method": "GET"
+        },
+        {
+          "id": "openapi:rcsb-search-api:runjsonqueriespost",
+          "url": "http://127.0.0.1:62114/rcsbsearch/v1/query",
+          "method": "POST"
+        },
+        {
+          "id": "openapi:rcsb-search-api:rununreleasedentryjsonqueries",
+          "url": "http://127.0.0.1:62114/rcsbsearch/v1/query/unreleased",
+          "method": "GET"
+        },
+        {
+          "id": "openapi:rcsb-search-api:getsuggestions",
+          "url": "http://127.0.0.1:62114/rcsbsearch/v1/suggest",
+          "method": "GET"
+        }
+      ],
+      "probes": [
+        {
+          "url": "http://127.0.0.1:62114/openapi.json",
+          "kind": "openapi",
+          "ok": true,
+          "detail": "7 operations"
+        }
+      ]
+    }
+  },
+  "c1a": {
+    "ms": 509,
+    "drift": {
+      "changed": true,
+      "providersBefore": [
+        "openapi:rcsb-search-api"
+      ],
+      "providersAfter": [
+        "openapi:rcsb-search-api"
+      ],
+      "added": [],
+      "removed": [],
+      "modified": [
+        "openapi:rcsb-search-api:runjsonqueriesget",
+        "openapi:rcsb-search-api:runjsonqueriespost",
+        "openapi:rcsb-search-api:getsuggestions",
+        "openapi:rcsb-search-api:rununreleasedentryjsonqueries",
+        "openapi:rcsb-search-api:getunreleasedentrymetadata",
+        "openapi:rcsb-search-api:getmetadata",
+        "openapi:rcsb-search-api:getchemicalmetadata"
+      ],
+      "retired": [],
+      "changedMeaning": [
+        "openapi:rcsb-search-api:runjsonqueriesget",
+        "openapi:rcsb-search-api:runjsonqueriespost",
+        "openapi:rcsb-search-api:getsuggestions",
+        "openapi:rcsb-search-api:rununreleasedentryjsonqueries",
+        "openapi:rcsb-search-api:getunreleasedentrymetadata",
+        "openapi:rcsb-search-api:getmetadata",
+        "openapi:rcsb-search-api:getchemicalmetadata"
+      ]
+    },
+    "trueDiff": {
+      "added": [],
+      "removed": [],
+      "modified": [
+        "getchemicalmetadata",
+        "getmetadata",
+        "getsuggestions",
+        "getunreleasedentrymetadata",
+        "runjsonqueriesget",
+        "runjsonqueriespost",
+        "rununreleasedentryjsonqueries"
+      ],
+      "detail": {
+        "runjsonqueriesget": {
+          "before": {
+            "m": "get",
+            "url": "http://127.0.0.1:62114/rcsbsearch/v1/query",
+            "params": [
+              "query:json*"
+            ],
+            "body": [],
+            "resp": []
+          },
+          "after": {
+            "m": "get",
+            "url": "http://127.0.0.1:62114/rcsbsearch/v2/query",
+            "params": [
+              "query:json*"
+            ],
+            "body": [],
+            "resp": []
+          }
+        },
+        "runjsonqueriespost": {
+          "before": {
+            "m": "post",
+            "url": "http://127.0.0.1:62114/rcsbsearch/v1/query",
+            "params": [],
+            "body": [],
+            "resp": []
+          },
+          "after": {
+            "m": "post",
+            "url": "http://127.0.0.1:62114/rcsbsearch/v2/query",
+            "params": [],
+            "body": [],
+            "resp": []
+          }
+        },
+        "getsuggestions": {
+          "before": {
+            "m": "get",
+            "url": "http://127.0.0.1:62114/rcsbsearch/v1/suggest",
+            "params": [
+              "query:json*"
+            ],
+            "body": [],
+            "resp": []
+          },
+          "after": {
+            "m": "get",
+            "url": "http://127.0.0.1:62114/rcsbsearch/v2/suggest",
+            "params": [
+              "query:json*"
+            ],
+            "body": [],
+            "resp": []
+          }
+        },
+        "rununreleasedentryjsonqueries": {
+          "before": {
+            "m": "get",
+            "url": "http://127.0.0.1:62114/rcsbsearch/v1/query/unreleased",
+            "params": [
+              "query:json*"
+            ],
+            "body": [],
+            "resp": []
+          },
+          "after": {
+            "m": "get",
+            "url": "http://127.0.0.1:62114/rcsbsearch/v2/query/unreleased",
+            "params": [
+              "query:json*"
+            ],
+            "body": [],
+            "resp": []
+          }
+        },
+        "getunreleasedentrymetadata": {
+          "before": {
+            "m": "get",
+            "url": "http://127.0.0.1:62114/rcsbsearch/v1/metadata/unreleased/schema",
+            "params": [],
+            "body": [],
+            "resp": []
+          },
+          "after": {
+            "m": "get",
+            "url": "http://127.0.0.1:62114/rcsbsearch/v2/metadata/unreleased/schema",
+            "params": [],
+            "body": [],
+            "resp": []
+          }
+        },
+        "getmetadata": {
+          "before": {
+            "m": "get",
+            "url": "http://127.0.0.1:62114/rcsbsearch/v1/metadata/schema",
+            "params": [],
+            "body": [],
+            "resp": []
+          },
+          "after": {
+            "m": "get",
+            "url": "http://127.0.0.1:62114/rcsbsearch/v2/metadata/schema",
+            "params": [],
+            "body": [],
+            "resp": []
+          }
+        },
+        "getchemicalmetadata": {
+          "before": {
+            "m": "get",
+            "url": "http://127.0.0.1:62114/rcsbsearch/v1/metadata/chemical/schema",
+            "params": [],
+            "body": [],
+            "resp": []
+          },
+          "after": {
+            "m": "get",
+            "url": "http://127.0.0.1:62114/rcsbsearch/v2/metadata/chemical/schema",
+            "params": [],
+            "body": [],
+            "resp": []
+          }
+        }
+      }
+    },
+    "comparison": {
+      "rightclickx": {
+        "added": [],
+        "removed": [],
+        "modified": [
+          "getchemicalmetadata",
+          "getmetadata",
+          "getsuggestions",
+          "getunreleasedentrymetadata",
+          "runjsonqueriesget",
+          "runjsonqueriespost",
+          "rununreleasedentryjsonqueries"
+        ]
+      },
+      "matches": {
+        "added": true,
+        "removed": true,
+        "modified": true
+      },
+      "match": true
+    },
+    "verdict": "PASS",
+    "liveSha256": "6834e8439f1390fe66ea464e00ea92c0e9bbd51e771309134c7fc8352e731ab4"
+  },
+  "c1b": {
+    "staleCapability": {
+      "id": "openapi:rcsb-search-api:runjsonqueriesget",
+      "url": "http://127.0.0.1:62114/rcsbsearch/v1/query"
+    },
+    "request": {
+      "have": {
+        "json": {
+          "type": "text",
+          "value": "{\"query\":{\"type\":\"group\",\"logical_operator\":\"and\",\"nodes\":[{\"type\":\"terminal\",\"service\":\"text\",\"parameters\":{\"attribute\":\"rcsb_polymer_entity_container_identifiers.reference_sequence_identifiers.database_accession\",\"operator\":\"exact_match\",\"value\":\"P41159\"}},{\"type\":\"terminal\",\"service\":\"text\",\"parameters\":{\"attribute\":\"rcsb_polymer_entity_container_identifiers.reference_sequence_identifiers.database_name\",\"operator\":\"exact_match\",\"value\":\"UniProt\"}}]},\"return_type\":\"entry\",\"request_options\":{\"return_all_hits\":true}}"
+        }
+      },
+      "want": "json",
+      "intent": "RCSB PDB search query entries",
+      "through": [
+        "openapi:rcsb-search-api:runjsonqueriesget"
+      ],
+      "maxSteps": 2
+    },
+    "planned": [
+      {
+        "steps": [
+          {
+            "capability": "openapi:rcsb-search-api:runjsonqueriesget",
+            "bindings": [
+              {
+                "port": "json",
+                "from": "$in.json"
+              }
+            ]
+          }
+        ],
+        "result": "0.",
+        "resultType": "json",
+        "cost": 1.3833333333333333,
+        "intentScore": 5,
+        "fit": 1.25,
+        "resultScore": 5,
+        "providers": [
+          "openapi:rcsb-search-api"
+        ],
+        "summary": "Released data search API endpoint allows you to perform GET requests with textual and scientific searches against current RCSB PDB entries",
+        "titles": [
+          "Released data search API endpoint allows you to perform GET requests with textual and scientific searches against current RCSB PDB entries"
+        ]
+      },
+      {
+        "steps": [
+          {
+            "capability": "builtin:text.summarize",
+            "bindings": [
+              {
+                "port": "text",
+                "from": "$in.json"
+              }
+            ]
+          },
+          {
+            "capability": "openapi:rcsb-search-api:runjsonqueriesget",
+            "bindings": [
+              {
+                "port": "json",
+                "from": "0."
+              }
+            ]
+          }
+        ],
+        "result": "1.",
+        "resultType": "json",
+        "cost": 2.7666666666666666,
+        "intentScore": 5,
+        "fit": 1,
+        "resultScore": 5,
+        "providers": [
+          "builtin:core",
+          "openapi:rcsb-search-api"
+        ],
+        "summary": "Summarize text → Released data search API endpoint allows you to perform GET requests with textual and scientific searches against current RCSB PDB entries",
+        "titles": [
+          "Summarize text",
+          "Released data search API endpoint allows you to perform GET requests with textual and scientific searches against current RCSB PDB entries"
+        ]
+      }
+    ],
+    "ran": {
+      "goal": {
+        "have": {
+          "json": "text"
+        },
+        "want": "json",
+        "intent": "RCSB PDB search query entries",
+        "through": [
+          "openapi:rcsb-search-api:runjsonqueriesget"
+        ]
+      },
+      "plans": [
+        {
+          "steps": [
+            {
+              "capability": "openapi:rcsb-search-api:runjsonqueriesget",
+              "bindings": [
+                {
+                  "port": "json",
+                  "from": "$in.json"
+                }
+              ]
+            }
+          ],
+          "result": "0.",
+          "resultType": "json",
+          "cost": 1.3833333333333333,
+          "intentScore": 5,
+          "fit": 1.25,
+          "resultScore": 5,
+          "providers": [
+            "openapi:rcsb-search-api"
+          ],
+          "summary": "Released data search API endpoint allows you to perform GET requests with textual and scientific searches against current RCSB PDB entries",
+          "titles": [
+            "Released data search API endpoint allows you to perform GET requests with textual and scientific searches against current RCSB PDB entries"
+          ]
+        },
+        {
+          "steps": [
+            {
+              "capability": "builtin:text.summarize",
+              "bindings": [
+                {
+                  "port": "text",
+                  "from": "$in.json"
+                }
+              ]
+            },
+            {
+              "capability": "openapi:rcsb-search-api:runjsonqueriesget",
+              "bindings": [
+                {
+                  "port": "json",
+                  "from": "0."
+                }
+              ]
+            }
+          ],
+          "result": "1.",
+          "resultType": "json",
+          "cost": 2.7666666666666666,
+          "intentScore": 5,
+          "fit": 1,
+          "resultScore": 5,
+          "providers": [
+            "builtin:core",
+            "openapi:rcsb-search-api"
+          ],
+          "summary": "Summarize text → Released data search API endpoint allows you to perform GET requests with textual and scientific searches against current RCSB PDB entries",
+          "titles": [
+            "Summarize text",
+            "Released data search API endpoint allows you to perform GET requests with textual and scientific searches against current RCSB PDB entries"
+          ]
+        }
+      ],
+      "executed": {
+        "summary": "no working pipeline",
+        "titles": [],
+        "output": null,
+        "status": "failed",
+        "verification": {
+          "status": "refuted",
+          "results": []
+        },
+        "runs": [],
+        "attempts": [
+          {
+            "summary": "Released data search API endpoint allows you to perform GET requests with textual and scientific searches against current RCSB PDB entries",
+            "failed": "openapi:rcsb-search-api:runjsonqueriesget",
+            "error": "openapi:rcsb-search-api:runjsonqueriesget: HTTP 404: \"<html><body><h1>Whitelabel Error Page</h1><p>This application has no explicit mapping for /error, so you are seeing this as a fallback.</p><div id='created'>Fri Oct 16 16:27:23 UTC 2026</div><div>There was an unexpected error (type=Not Found, status=404).</div></body></html>\"; required anchor contract changed meaning: openapi:rcsb-search-api:runjsonqueriesget (it called GET /query, it now calls GET /rcsbsearch/v2/query)",
+            "healing": "API drift at http://127.0.0.1:62114/openapi.json: openapi:rcsb-search-api → openapi:rcsb-search-api; +0 −0 ~7 capabilities; 0 pipeline(s) retired"
+          }
+        ],
+        "durationMs": 869,
+        "witnesses": []
+      }
+    },
+    "ok": true,
+    "ms": 871,
+    "independentTruth": {
+      "count": 10,
+      "ids": [
+        "1AX8",
+        "7Z3Q",
+        "8AVE",
+        "8AVF",
+        "8AVO",
+        "8K6Z",
+        "8X80",
+        "8X81",
+        "8X85",
+        "9PUO"
+      ]
+    },
+    "returned": {
+      "ids": []
+    },
+    "attempts": [
+      {
+        "summary": "Released data search API endpoint allows you to perform GET requests with textual and scientific searches against current RCSB PDB entries",
+        "failed": "openapi:rcsb-search-api:runjsonqueriesget",
+        "error": "openapi:rcsb-search-api:runjsonqueriesget: HTTP 404: \"<html><body><h1>Whitelabel Error Page</h1><p>This application has no explicit mapping for /error, so you are seeing this as a fallback.</p><div id='created'>Fri Oct 16 16:27:23 UTC 2026</div><div>There was an unexpected error (type=Not Found, status=404).</div></body></html>\"; required anchor contract changed meaning: openapi:rcsb-search-api:runjsonqueriesget (it called GET /query, it now calls GET /rcsbsearch/v2/query)",
+        "healing": "API drift at http://127.0.0.1:62114/openapi.json: openapi:rcsb-search-api → openapi:rcsb-search-api; +0 −0 ~7 capabilities; 0 pipeline(s) retired"
+      }
+    ],
+    "correct": false,
+    "verdict": "FAIL"
+  },
+  "c1d": {
+    "posthoc": true,
+    "staleCapability": {
+      "id": "openapi:rcsb-search-api:runjsonqueriesget",
+      "url": "http://127.0.0.1:62114/rcsbsearch/v1/query"
+    },
+    "port": "json",
+    "ms": 854,
+    "record": {
+      "runId": "run_mvb6kxqy_1",
+      "capability": "openapi:rcsb-search-api:runjsonqueriesget",
+      "provider": "openapi:rcsb-search-api",
+      "title": "Released data search API endpoint allows you to perform GET requests with textual and scientific searches against current RCSB PDB entries",
+      "status": "failed",
+      "error": "HTTP 404: \"<html><body><h1>Whitelabel Error Page</h1><p>This application has no explicit mapping for /error, so you are seeing this as a fallback.</p><div id='created'>Fri Oct 16 16:27:25 UTC 2026</div><div>There was an unexpected error (type=Not Found, status=404).</div></body></html>\"; API drift at http://127.0.0.1:62114/openapi.json: +0 −0 ~7 capabilities; openapi:rcsb-search-api:runjsonqueriesget now calls GET /rcsbsearch/v2/query, not GET /query; no equivalent of GET /query",
+      "startedAt": "2026-10-16T16:27:25.018Z",
+      "durationMs": 851.4,
+      "verification": {
+        "status": "refuted",
+        "results": []
+      },
+      "receipt": {
+        "runId": "run_mvb6kxqy_1",
+        "capability": "openapi:rcsb-search-api:runjsonqueriesget",
+        "provider": "openapi:rcsb-search-api",
+        "startedAt": "2026-10-16T16:27:25.018Z",
+        "durationMs": 851.4,
+        "status": "failed",
+        "verification": "refuted",
+        "seq": 1,
+        "inputDigest": "b6c8deaf23a5ab1fd7079b62fa72ff064eb5a2c0f748b62d88e954613a0f7411",
+        "outputDigest": "3de67ac42a04ec04ed7ec851e25d65703328285601264cd1d26f49adbfc23052",
+        "prev": "0000000000000000000000000000000000000000000000000000000000000000",
+        "hash": "d020a63132fc657ce8c3f49ae65641239ef744482f4c5420496bd5d6cac8cbf3"
+      },
+      "healing": {
+        "source": "http://127.0.0.1:62114/openapi.json",
+        "error": "HTTP 404: \"<html><body><h1>Whitelabel Error Page</h1><p>This application has no explicit mapping for /error, so you are seeing this as a fallback.</p><div id='created'>Fri Oct 16 16:27:25 UTC 2026</div><div>There was an unexpected error (type=Not Found, status=404).</div></body></html>\"",
+        "note": "API drift at http://127.0.0.1:62114/openapi.json: +0 −0 ~7 capabilities; openapi:rcsb-search-api:runjsonqueriesget now calls GET /rcsbsearch/v2/query, not GET /query; no equivalent of GET /query",
+        "drift": {
+          "changed": true,
+          "providersBefore": [
+            "openapi:rcsb-search-api"
+          ],
+          "providersAfter": [
+            "openapi:rcsb-search-api"
+          ],
+          "added": [],
+          "removed": [],
+          "modified": [
+            "openapi:rcsb-search-api:runjsonqueriesget",
+            "openapi:rcsb-search-api:runjsonqueriespost",
+            "openapi:rcsb-search-api:getsuggestions",
+            "openapi:rcsb-search-api:rununreleasedentryjsonqueries",
+            "openapi:rcsb-search-api:getunreleasedentrymetadata",
+            "openapi:rcsb-search-api:getmetadata",
+            "openapi:rcsb-search-api:getchemicalmetadata"
+          ],
+          "retired": [],
+          "changedMeaning": [
+            "openapi:rcsb-search-api:runjsonqueriesget",
+            "openapi:rcsb-search-api:runjsonqueriespost",
+            "openapi:rcsb-search-api:getsuggestions",
+            "openapi:rcsb-search-api:rununreleasedentryjsonqueries",
+            "openapi:rcsb-search-api:getunreleasedentrymetadata",
+            "openapi:rcsb-search-api:getmetadata",
+            "openapi:rcsb-search-api:getchemicalmetadata"
+          ]
+        }
+      }
+    },
+    "independentTruth": {
+      "count": 10,
+      "ids": [
+        "1AX8",
+        "7Z3Q",
+        "8AVE",
+        "8AVF",
+        "8AVO",
+        "8K6Z",
+        "8X80",
+        "8X81",
+        "8X85",
+        "9PUO"
+      ]
+    },
+    "returned": {
+      "ids": []
+    },
+    "correct": false,
+    "replayLog": [
+      {
+        "at": "2026-10-16T16:27:25.854Z",
+        "forwarded": "GET https://search.rcsb.org/rcsbsearch/v1/query?json=%7B%22query%22%3A%7B%22type%22%3A%22group%22%2C%22logical_operator%22%3A%22and%22%2C%22nodes%22%3A%5B%7B%22type%22%3A%22terminal%22%2C%22service%22%3A%22text%22%2C%22parameters%22%3A%7B%22attribute%22%3A%22rcsb_polymer_entity_container_identifiers",
+        "status": 404
+      },
+      {
+        "at": "2026-10-16T16:27:25.864Z",
+        "contract": "live",
+        "method": "GET",
+        "path": "/openapi.json"
+      }
+    ],
+    "verdict": "FAIL"
+  },
+  "c1cStartState": "/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/rcx-lifesci/lifesci-freeze-3/phase-a-state.json",
+  "c1c": {
+    "preparation": {
+      "forgot": {
+        "forgotten": true,
+        "graph": {
+          "capabilities": 276,
+          "edges": 17292,
+          "chains2": 17292,
+          "chains3": 1135270,
+          "total": 1152838
+        }
+      },
+      "learned": [
+        {
+          "provider": "openapi:rcsb-search-api",
+          "capabilitiesAdded": 7,
+          "powersBefore": 1152838,
+          "powersAfter": 1184865,
+          "newPowers": 32027
+        }
+      ]
+    },
+    "sessions": [
+      {
+        "client": "claude",
+        "truth": [
+          10,
+          [
+            "1AX8",
+            "7Z3Q",
+            "8AVE",
+            "8AVF",
+            "8AVO",
+            "8K6Z",
+            "8X80",
+            "8X81",
+            "8X85",
+            "9PUO"
+          ]
+        ],
+        "perPart": [
+          false,
+          false
+        ],
+        "correct": false,
+        "grounded": false,
+        "seconds": 1.3,
+        "replay": {
+          "contractReadsLive": 0,
+          "agentLearnedReplayUrl": false,
+          "rereadByRightClickX": false,
+          "forwardedQuery": []
+        },
+        "mcpCalls": [],
+        "receipts": [],
+        "agentLearned": [],
+        "finalText": "Failed to authenticate: OAuth session expired and could not be refreshed"
+      },
+      {
+        "client": "codex",
+        "answer": "10 | 1AX8, 7Z3Q, 8AVE, 8AVF, 8AVO, 8K6Z, 8X80, 8X81, 8X85, 9PUO",
+        "truth": [
+          10,
+          [
+            "1AX8",
+            "7Z3Q",
+            "8AVE",
+            "8AVF",
+            "8AVO",
+            "8K6Z",
+            "8X80",
+            "8X81",
+            "8X85",
+            "9PUO"
+          ]
+        ],
+        "perPart": [
+          true,
+          true
+        ],
+        "correct": true,
+        "grounded": true,
+        "seconds": 65.6,
+        "replay": {
+          "contractReadsLive": 1,
+          "agentLearnedReplayUrl": false,
+          "rereadByRightClickX": true,
+          "forwardedQuery": [
+            "GET https://search.rcsb.org/rcsbsearch/v2/query → 200"
+          ]
+        },
+        "mcpCalls": [
+          {
+            "tool": "context_providers",
+            "ok": true,
+            "args": {}
+          },
+          {
+            "tool": "context_graph",
+            "ok": true,
+            "args": {
+              "op": "search",
+              "query": "uniprot",
+              "limit": 15
+            }
+          },
+          {
+            "tool": "context_graph",
+            "ok": true,
+            "args": {
+              "op": "search",
+              "query": "rcsb-search",
+              "limit": 15
+            }
+          },
+          {
+            "tool": "context_graph",
+            "ok": true,
+            "args": {
+              "op": "search",
+              "query": "openapi-definition",
+              "limit": 10
+            }
+          },
+          {
+            "tool": "context_explain",
+            "ok": true,
+            "args": {
+              "id": "openapi:rcsb-search-api:runjsonqueriespost"
+            }
+          },
+          {
+            "tool": "context_explain",
+            "ok": true,
+            "args": {
+              "id": "openapi:rcsb-search-api:runjsonqueriesget"
+            }
+          },
+          {
+            "tool": "context_explain",
+            "ok": true,
+            "args": {
+              "id": "openapi:openapi-definition:searchcursor"
+            }
+          },
+          {
+            "tool": "context_explain",
+            "ok": true,
+            "args": {
+              "id": "openapi:rcsb-search-api:getmetadata"
+            }
+          },
+          {
+            "tool": "context_run",
+            "ok": true,
+            "args": {
+              "id": "openapi:openapi-definition:searchcursor",
+              "args": {
+                "query": "gene_exact:LEP AND organism_name:\"Homo sapiens\" AND reviewed:true",
+                "fields": "accession,id,protein_name,gene_names,organism_name,reviewed",
+                "size": 10
+              }
+            }
+          },
+          {
+            "tool": "context_run",
+            "ok": true,
+            "args": {
+              "id": "openapi:rcsb-search-api:getmetadata",
+              "view": {
+                "select": "properties.rcsb_polymer_entity_container_identifiers"
+              }
+            }
+          },
+          {
+            "tool": "context_explain",
+            "ok": true,
+            "args": {
+              "id": "openapi:rcsb-search-api:getmetadata"
+            }
+          },
+          {
+            "tool": "context_explain",
+            "ok": true,
+            "args": {
+              "id": "openapi:rcsb-search-api:runjsonqueriesget"
+            }
+          },
+          {
+            "tool": "context_run",
+            "ok": true,
+            "args": {
+              "id": "openapi:rcsb-search-api:getmetadata",
+              "acknowledgeChange": true,
+              "view": {
+                "select": "properties.rcsb_polymer_entity_container_identifiers"
+              }
+            }
+          },
+          {
+            "tool": "context_run",
+            "ok": true,
+            "args": {
+              "id": "openapi:rcsb-search-api:runjsonqueriesget",
+              "acknowledgeChange": true,
+              "args": {
+                "json": "{\"query\":{\"type\":\"group\",\"logical_operator\":\"and\",\"nodes\":[{\"type\":\"terminal\",\"service\":\"text\",\"parameters\":{\"attribute\":\"rcsb_polymer_entity_container_identifiers.reference_sequence_identifiers.database_accession\",\"operator\":\"exact_match\",\"value\":\"P41159\"}},{\"type\":\"terminal\",\"service\":\"text\",\"parameters\":{\"attribute\":\"rcsb_polymer_entity_container_identifiers.reference_sequence_identifiers.database_name\",\"operator\":\"exact_match\",\"value\":\"UniProt\"}}]},\"return_type\":\"entry\",\"request_options\":{\"return_all_hits\":true,\"results_content_type\":[\"experimental\"]}}"
+              }
+            }
+          }
+        ],
+        "receipts": [
+          {
+            "capability": "openapi:openapi-definition:searchcursor",
+            "provider": "openapi:openapi-definition",
+            "status": "completed"
+          },
+          {
+            "capability": "openapi:rcsb-search-api:getmetadata",
+            "provider": "openapi:rcsb-search-api",
+            "status": "failed"
+          },
+          {
+            "capability": "openapi:rcsb-search-api:getmetadata",
+            "provider": "openapi:rcsb-search-api",
+            "status": "completed"
+          },
+          {
+            "capability": "openapi:rcsb-search-api:runjsonqueriesget",
+            "provider": "openapi:rcsb-search-api",
+            "status": "completed"
+          }
+        ],
+        "agentLearned": [],
+        "finalText": "UniProt identified **P41159 (LEP_HUMAN)** as the reviewed human LEP accession. RCSB PDB’s search service returned **10 entries** with a protein entity mapped to this UniProt accession.\n\nANSWER: 10 | 1AX8, 7Z3Q, 8AVE, 8AVF, 8AVO, 8K6Z, 8X80, 8X81, 8X85, 9PUO"
+      }
+    ]
+  },
+  "c2": {
+    "replay": {
+      "contractUrl": "http://127.0.0.1:62115/ols4/v3/api-docs",
+      "archivedSha256": "6b8f8310fa58b02abccf56cee68285a4dc95ceddd2aa6bf637f42898cee5aa38",
+      "liveSha256": "43990d89cd3bac72510cdc02b8859eeb74815b7a945e4582d4f227b78cb35551"
+    },
+    "before": {
+      "learnedCapabilities": [
+        {
+          "provider": "openapi:ols-service",
+          "capabilitiesAdded": 109,
+          "powersBefore": 108,
+          "powersAfter": 18778,
+          "newPowers": 18670
+        }
+      ],
+      "capability": {
+        "id": "openapi:ols-service:gethierarchicalchildrenbyontology",
+        "url": "http://127.0.0.1:62115/ols4/api/v2/ontologies/{onto}/classes/{class}/hierarchicalChildren",
+        "inputs": [
+          "page:number",
+          "size:number",
+          "sort:list:text",
+          "onto:id.ontology",
+          "class:url",
+          "includeObsoleteEntities:boolean",
+          "lang:language",
+          "resolveReferences:boolean",
+          "manchesterSyntax:boolean"
+        ]
+      },
+      "run": {
+        "status": "completed",
+        "labels": [
+          [
+            "carbon dioxide transport"
+          ],
+          [
+            "oxygen transport"
+          ]
+        ]
+      }
+    },
+    "after": {
+      "refusal": {
+        "posthoc": true,
+        "error": "openapi:ols-service:gethierarchicalchildrenbyontology changed meaning when http://127.0.0.1:62115/ols4/v3/api-docs was re-learned (2026-10-16T16:28:40.145Z): it called GET /api/v2/ontologies/{}/classes/{}/hierarchicalChildren, it now calls GET /api/v2/ontologies/{}/individuals/{}/hierarchicalChildren. Not run. The operation it used to call is now openapi:ols-service:gethierarchicalchildrenbyontology-1. Call again with acknowledgeChange: true to run the new operation.",
+        "changedMeaning": {
+          "id": "openapi:ols-service:gethierarchicalchildrenbyontology",
+          "source": "http://127.0.0.1:62115/ols4/v3/api-docs",
+          "at": "2026-10-16T16:28:40.145Z",
+          "before": "GET /api/v2/ontologies/{}/classes/{}/hierarchicalChildren",
+          "after": "GET /api/v2/ontologies/{}/individuals/{}/hierarchicalChildren",
+          "successor": "openapi:ols-service:gethierarchicalchildrenbyontology-1"
+        },
+        "upstreamCallsByRefusedRun": 0,
+        "successorRun": {
+          "id": "openapi:ols-service:gethierarchicalchildrenbyontology-1",
+          "status": "completed",
+          "labels": [
+            [
+              "carbon dioxide transport"
+            ],
+            [
+              "oxygen transport"
+            ]
+          ]
+        },
+        "acknowledgedRun": {
+          "status": "completed",
+          "labels": [],
+          "changedMeaning": {
+            "id": "openapi:ols-service:gethierarchicalchildrenbyontology",
+            "source": "http://127.0.0.1:62115/ols4/v3/api-docs",
+            "at": "2026-10-16T16:28:40.145Z",
+            "before": "GET /api/v2/ontologies/{}/classes/{}/hierarchicalChildren",
+            "after": "GET /api/v2/ontologies/{}/individuals/{}/hierarchicalChildren",
+            "successor": "openapi:ols-service:gethierarchicalchildrenbyontology-1"
+          }
+        }
+      },
+      "drift": {
+        "changed": true,
+        "providersBefore": [
+          "openapi:ols-service"
+        ],
+        "providersAfter": [
+          "openapi:ols-service"
+        ],
+        "added": [
+          "openapi:ols-service:getreleases",
+          "openapi:ols-service:gethierarchicalchildrenbyontology-1",
+          "openapi:ols-service:gethierarchicalancestorsbyontology-1"
+        ],
+        "removed": [],
+        "modified": [
+          "openapi:ols-service:gethierarchicalchildrenbyontology",
+          "openapi:ols-service:gethierarchicalancestorsbyontology",
+          "openapi:ols-service:getclassindividuals",
+          "openapi:ols-service:getentities",
+          "openapi:ols-service:search"
+        ],
+        "retired": [],
+        "changedMeaning": [
+          "openapi:ols-service:gethierarchicalchildrenbyontology",
+          "openapi:ols-service:gethierarchicalancestorsbyontology"
+        ]
+      },
+      "sameIdNow": {
+        "id": "openapi:ols-service:gethierarchicalchildrenbyontology",
+        "url": "http://127.0.0.1:62115/ols4/api/v2/ontologies/{onto}/individuals/{individual}/hierarchicalChildren",
+        "inputs": [
+          "page:number",
+          "size:number",
+          "sort:list:text",
+          "onto:id.ontology",
+          "individual:url",
+          "includeObsoleteEntities:boolean",
+          "lang:language",
+          "resolveReferences:boolean",
+          "manchesterSyntax:boolean"
+        ],
+        "title": "Get Hierarchical Children By Ontology"
+      },
+      "renamedClassOp": {
+        "id": "openapi:ols-service:gethierarchicalchildrenbyontology-1",
+        "url": "http://127.0.0.1:62115/ols4/api/v2/ontologies/{onto}/classes/{class}/hierarchicalChildren",
+        "title": "Get Hierarchical Children By Ontology 1"
+      },
+      "runSameIdAfter": {
+        "status": "failed",
+        "labels": [],
+        "error": "openapi:ols-service:gethierarchicalchildrenbyontology changed meaning when http://127.0.0.1:62115/ols4/v3/api-docs was re-learned (2026-10-16T16:28:40.145Z): it called GET /api/v2/ontologies/{}/classes/{}/hierarchicalChildren, it now calls GET /api/v2/ontologies/{}/individuals/{}/hierarchicalChildren. Not run. The operation it used to call is now openapi:ols-service:gethierarchicalchildrenbyontology-1. Call again with acknowledgeChange: true to run the new operation."
+      }
+    },
+    "trueDiff": {
+      "added": [
+        "gethierarchicalancestorsbyontology-1",
+        "gethierarchicalchildrenbyontology-1",
+        "getreleases"
+      ],
+      "removed": [],
+      "modified": [
+        "getclassindividuals",
+        "getentities",
+        "gethierarchicalancestorsbyontology",
+        "gethierarchicalchildrenbyontology"
+      ],
+      "detail": {
+        "gethierarchicalchildrenbyontology": {
+          "before": {
+            "m": "get",
+            "url": "http://127.0.0.1:62115/ols4/api/v2/ontologies/{onto}/classes/{class}/hierarchicalChildren",
+            "params": [
+              "path:class*",
+              "path:onto*",
+              "query:includeObsoleteEntities",
+              "query:lang",
+              "query:manchesterSyntax",
+              "query:page",
+              "query:resolveReferences",
+              "query:size",
+              "query:sort"
+            ],
+            "body": [],
+            "resp": [
+              "elements",
+              "numElements",
+              "page",
+              "totalElements",
+              "totalPages"
+            ]
+          },
+          "after": {
+            "m": "get",
+            "url": "http://127.0.0.1:62115/ols4/api/v2/ontologies/{onto}/individuals/{individual}/hierarchicalChildren",
+            "params": [
+              "path:individual*",
+              "path:onto*",
+              "query:includeObsoleteEntities",
+              "query:lang",
+              "query:manchesterSyntax",
+              "query:page",
+              "query:resolveReferences",
+              "query:size",
+              "query:sort"
+            ],
+            "body": [],
+            "resp": [
+              "elements",
+              "numElements",
+              "page",
+              "totalElements",
+              "totalPages"
+            ]
+          }
+        },
+        "gethierarchicalancestorsbyontology": {
+          "before": {
+            "m": "get",
+            "url": "http://127.0.0.1:62115/ols4/api/v2/ontologies/{onto}/classes/{class}/hierarchicalAncestors",
+            "params": [
+              "path:class*",
+              "path:onto*",
+              "query:includeObsoleteEntities",
+              "query:lang",
+              "query:manchesterSyntax",
+              "query:page",
+              "query:resolveReferences",
+              "query:size",
+              "query:sort"
+            ],
+            "body": [],
+            "resp": [
+              "elements",
+              "numElements",
+              "page",
+              "totalElements",
+              "totalPages"
+            ]
+          },
+          "after": {
+            "m": "get",
+            "url": "http://127.0.0.1:62115/ols4/api/v2/ontologies/{onto}/individuals/{individual}/hierarchicalAncestors",
+            "params": [
+              "path:individual*",
+              "path:onto*",
+              "query:includeObsoleteEntities",
+              "query:lang",
+              "query:manchesterSyntax",
+              "query:page",
+              "query:resolveReferences",
+              "query:size",
+              "query:sort"
+            ],
+            "body": [],
+            "resp": [
+              "elements",
+              "numElements",
+              "page",
+              "totalElements",
+              "totalPages"
+            ]
+          }
+        },
+        "getclassindividuals": {
+          "before": {
+            "m": "get",
+            "url": "http://127.0.0.1:62115/ols4/api/v2/ontologies/{onto}/classes/{class}/individuals",
+            "params": [
+              "path:class*",
+              "path:onto*",
+              "query:lang",
+              "query:manchesterSyntax",
+              "query:page",
+              "query:resolveReferences",
+              "query:size",
+              "query:sort"
+            ],
+            "body": [],
+            "resp": [
+              "elements",
+              "numElements",
+              "page",
+              "totalElements",
+              "totalPages"
+            ]
+          },
+          "after": {
+            "m": "get",
+            "url": "http://127.0.0.1:62115/ols4/api/v2/ontologies/{onto}/classes/{class}/individuals",
+            "params": [
+              "path:class*",
+              "path:onto*",
+              "query:includeObsoleteEntities",
+              "query:lang",
+              "query:manchesterSyntax",
+              "query:page",
+              "query:resolveReferences",
+              "query:size",
+              "query:sort"
+            ],
+            "body": [],
+            "resp": [
+              "elements",
+              "numElements",
+              "page",
+              "totalElements",
+              "totalPages"
+            ]
+          }
+        },
+        "getentities": {
+          "before": {
+            "m": "get",
+            "url": "http://127.0.0.1:62115/ols4/api/v2/entities",
+            "params": [
+              "query:boostFields",
+              "query:exactMatch",
+              "query:excludeOntologyId",
+              "query:facetFields",
+              "query:includeObsoleteEntities",
+              "query:lang",
+              "query:manchesterSyntax",
+              "query:page",
+              "query:resolveReferences",
+              "query:search",
+              "query:searchFields",
+              "query:size",
+              "query:sort"
+            ],
+            "body": [],
+            "resp": [
+              "elements",
+              "facetFieldsToCounts",
+              "numElements",
+              "page",
+              "totalElements",
+              "totalPages"
+            ]
+          },
+          "after": {
+            "m": "get",
+            "url": "http://127.0.0.1:62115/ols4/api/v2/entities",
+            "params": [
+              "query:boostFields",
+              "query:exactMatch",
+              "query:excludeOntologyId",
+              "query:facetFields",
+              "query:includeObsoleteEntities",
+              "query:includeTotal",
+              "query:lang",
+              "query:manchesterSyntax",
+              "query:page",
+              "query:resolveReferences",
+              "query:search",
+              "query:searchFields",
+              "query:size",
+              "query:sort"
+            ],
+            "body": [],
+            "resp": [
+              "elements",
+              "facetFieldsToCounts",
+              "numElements",
+              "page",
+              "totalElements",
+              "totalPages"
+            ]
+          }
+        }
+      }
+    },
+    "comparison": {
+      "rightclickx": {
+        "added": [
+          "gethierarchicalancestorsbyontology-1",
+          "gethierarchicalchildrenbyontology-1",
+          "getreleases"
+        ],
+        "removed": [],
+        "modified": [
+          "getclassindividuals",
+          "getentities",
+          "gethierarchicalancestorsbyontology",
+          "gethierarchicalchildrenbyontology",
+          "search"
+        ]
+      },
+      "matches": {
+        "added": true,
+        "removed": true,
+        "modified": false
+      },
+      "match": false
+    },
+    "shiftedIdsFlaggedModified": true,
+    "verdict": "PASS on the pre-registered criterion (shifted ids flagged); full diff mismatch recorded",
+    "classChildrenTruth": [
+      [
+        "carbon dioxide transport"
+      ],
+      [
+        "oxygen transport"
+      ]
+    ],
+    "beforeRunMatchesTruth": true,
+    "refusalCheck": {
+      "posthoc": true,
+      "refusedWithoutUpstreamCall": true,
+      "successorMatchesTruth": true,
+      "verdict": "PASS"
+    }
+  },
+  "replayLogs": {
+    "rcsb": [
+      {
+        "at": "2026-10-16T16:27:20.480Z",
+        "switch": "archived"
+      },
+      {
+        "at": "2026-10-16T16:27:20.608Z",
+        "contract": "archived",
+        "method": "GET",
+        "path": "/openapi.json"
+      },
+      {
+        "at": "2026-10-16T16:27:20.623Z",
+        "switch": "live"
+      },
+      {
+        "at": "2026-10-16T16:27:21.107Z",
+        "contract": "live",
+        "method": "GET",
+        "path": "/openapi.json"
+      },
+      {
+        "at": "2026-10-16T16:27:21.862Z",
+        "switch": "live"
+      },
+      {
+        "at": "2026-10-16T16:27:23.860Z",
+        "forwarded": "GET https://search.rcsb.org/rcsbsearch/v1/query?json=%7B%22query%22%3A%7B%22type%22%3A%22group%22%2C%22logical_operator%22%3A%22and%22%2C%22nodes%22%3A%5B%7B%22type%22%3A%22terminal%22%2C%22service%22%3A%22text%22%2C%22parameters%22%3A%7B%22attribute%22%3A%22rcsb_polymer_entity_container_identifiers",
+        "status": 404
+      },
+      {
+        "at": "2026-10-16T16:27:23.874Z",
+        "contract": "live",
+        "method": "GET",
+        "path": "/openapi.json"
+      },
+      {
+        "at": "2026-10-16T16:27:23.908Z",
+        "switch": "live"
+      },
+      {
+        "at": "2026-10-16T16:27:25.854Z",
+        "forwarded": "GET https://search.rcsb.org/rcsbsearch/v1/query?json=%7B%22query%22%3A%7B%22type%22%3A%22group%22%2C%22logical_operator%22%3A%22and%22%2C%22nodes%22%3A%5B%7B%22type%22%3A%22terminal%22%2C%22service%22%3A%22text%22%2C%22parameters%22%3A%7B%22attribute%22%3A%22rcsb_polymer_entity_container_identifiers",
+        "status": 404
+      },
+      {
+        "at": "2026-10-16T16:27:25.864Z",
+        "contract": "live",
+        "method": "GET",
+        "path": "/openapi.json"
+      },
+      {
+        "at": "2026-10-16T16:27:25.896Z",
+        "switch": "archived"
+      },
+      {
+        "at": "2026-10-16T16:27:30.094Z",
+        "contract": "archived",
+        "method": "GET",
+        "path": "/openapi.json"
+      },
+      {
+        "at": "2026-10-16T16:27:31.044Z",
+        "switch": "live"
+      },
+      {
+        "at": "2026-10-16T16:28:05.890Z",
+        "forwarded": "GET https://search.rcsb.org/rcsbsearch/v1/metadata/schema",
+        "status": 404
+      },
+      {
+        "at": "2026-10-16T16:28:05.896Z",
+        "contract": "live",
+        "method": "GET",
+        "path": "/openapi.json"
+      },
+      {
+        "at": "2026-10-16T16:28:15.033Z",
+        "forwarded": "GET https://search.rcsb.org/rcsbsearch/v2/metadata/schema",
+        "status": 200
+      },
+      {
+        "at": "2026-10-16T16:28:29.561Z",
+        "forwarded": "GET https://search.rcsb.org/rcsbsearch/v2/query?json=%7B%22query%22%3A%7B%22type%22%3A%22group%22%2C%22logical_operator%22%3A%22and%22%2C%22nodes%22%3A%5B%7B%22type%22%3A%22terminal%22%2C%22service%22%3A%22text%22%2C%22parameters%22%3A%7B%22attribute%22%3A%22rcsb_polymer_entity_container_identifiers",
+        "status": 200
+      }
+    ],
+    "ols": [
+      {
+        "at": "2026-10-16T16:28:38.862Z",
+        "switch": "archived"
+      },
+      {
+        "at": "2026-10-16T16:28:39.007Z",
+        "contract": "archived",
+        "method": "GET",
+        "path": "/ols4/v3/api-docs"
+      },
+      {
+        "at": "2026-10-16T16:28:39.149Z",
+        "forwarded": "GET https://www.ebi.ac.uk/ols4/api/v2/ontologies/go/classes/http%253A%252F%252Fpurl.obolibrary.org%252Fobo%252FGO_0015669/hierarchicalChildren",
+        "status": 200
+      },
+      {
+        "at": "2026-10-16T16:28:39.182Z",
+        "switch": "live"
+      },
+      {
+        "at": "2026-10-16T16:28:40.107Z",
+        "contract": "live",
+        "method": "GET",
+        "path": "/ols4/v3/api-docs"
+      },
+      {
+        "at": "2026-10-16T16:28:41.250Z",
+        "forwarded": "GET https://www.ebi.ac.uk/ols4/api/v2/ontologies/go/classes/http%253A%252F%252Fpurl.obolibrary.org%252Fobo%252FGO_0015669/hierarchicalChildren",
+        "status": 200
+      },
+      {
+        "at": "2026-10-16T16:28:42.145Z",
+        "forwarded": "GET https://www.ebi.ac.uk/ols4/api/v2/ontologies/go/individuals/http%253A%252F%252Fpurl.obolibrary.org%252Fobo%252FGO_0015669/hierarchicalChildren",
+        "status": 200
+      }
+    ]
+  },
+  "finishedAt": "2026-10-16T16:28:44.072Z"
+}

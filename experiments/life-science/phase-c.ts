@@ -9,7 +9,12 @@
 //   C1  RCSB Search 2022-02-05 (v1.13.0, /rcsbsearch/v1/) → today (v2): a breaking change.
 //   C2  OLS4 2026-06-05 → today: operationIds that now name a different operation.
 //
-//   RCX_FREEZE=lifesci-freeze-3 node --import ./experiments/life-science/polite-fetch.ts experiments/life-science/phase-c.ts [--parts c1a,c1b,c1c,c2]
+//   RCX_FREEZE=lifesci-freeze-3 node --import ./experiments/life-science/polite-fetch.ts experiments/life-science/phase-c.ts [--parts c1a,c1b,c1c,c2] [--state <phase-a-state.json>] [--label <evidence name>]
+//
+// Added post hoc for the run-drift fix (lifesci-rundrift-1), not pre-registered:
+//   C1-d  a plain context_run of the stale RCSB capability (no agent, no compose);
+//   C2    additionally records the refusal of the shifted id, the successor run and
+//         an acknowledged run; C1-c records contract re-reads the agent did not ask for.
 
 import { spawn } from "node:child_process";
 import { copyFileSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -19,9 +24,11 @@ import { parseAnswer, QUESTIONS } from "./questions.ts";
 
 const argv = process.argv.slice(2);
 const parts = (argv.includes("--parts") ? argv[argv.indexOf("--parts") + 1] : "c1a,c1b,c1c,c2").split(",");
+const label = argv.includes("--label") ? argv[argv.indexOf("--label") + 1] : `phase-c-${TAG}`;
+const phaseAState = argv.includes("--state") ? argv[argv.indexOf("--state") + 1] : `${WORK}/${TAG}/phase-a-state.json`;
 const build = frozenBuild();
 const log = (...a: unknown[]) => console.log(...a);
-const root = `${WORK}/${TAG}/phase-c`;
+const root = `${WORK}/${TAG}/${label === `phase-c-${TAG}` ? "phase-c" : label}`;
 rmSync(root, { recursive: true, force: true });
 mkdirSync(root, { recursive: true });
 const ev: Record<string, any> = { phase: "C", build: { tag: TAG, commit: build.commit }, startedAt: new Date().toISOString(), replayProxy: "harness-side; contract URL served from the archive (before) or live (after); all other paths forwarded unchanged to the live provider" };
@@ -195,6 +202,31 @@ if (parts.includes("c1b")) {
   if (!out.ok) log(`   error: ${String(out.ran).slice(0, 300)}`);
 }
 
+// ------------------------------------------------------------------ C1-d: plain context_run on the stale graph (post hoc)
+if (parts.includes("c1d")) {
+  rcsb.switchTo("live");
+  const acc = "P41159";
+  const t = await q11.truth();
+  const truthIds = (t.facts as any).rcsbSearch as string[];
+  const logFrom = rcsb.log.length;
+  const out = await withServer(`${root}/c1d`, staleC1, async (m) => {
+    const caps = (await m.tool("context_graph", { op: "export" })).value.capabilities;
+    const stale = caps.find((c: any) => c.invoke?.kind === "http" && c.invoke.method === "GET" && /\/query$/.test(c.invoke.url));
+    const explained = (await m.tool("context_explain", { id: stale.id })).value;
+    const inputPort = explained.capability.inputs.find((p: any) => p.required) ?? explained.capability.inputs[0];
+    const t0 = performance.now();
+    const ran = await m.tool("context_run", { id: stale.id, args: { [inputPort.name]: searchQuery(acc) } });
+    return { staleCapability: { id: stale.id, url: stale.invoke.url }, port: inputPort.name, ran: ran.value, ok: ran.ok, ms: Math.round(performance.now() - t0) };
+  });
+  const output = out.ran?.output;
+  const ids = (output?.result_set ?? []).map((x: any) => String(x.identifier ?? x)).sort();
+  const correct = JSON.stringify(ids) === JSON.stringify(truthIds) && output?.total_count === truthIds.length;
+  const { output: _omit, ...record } = out.ran ?? {};
+  ev.c1d = { posthoc: true, staleCapability: out.staleCapability, port: out.port, ms: out.ms, record, independentTruth: { count: truthIds.length, ids: truthIds }, returned: { count: output?.total_count, ids }, correct, replayLog: rcsb.log.slice(logFrom), verdict: out.ran?.status === "completed" && !!out.ran?.healing?.retried && correct ? "PASS" : "FAIL" };
+  log(`C1-d: plain context_run ${out.ran?.status ?? "error"} · returned ${ids.length} ids (truth ${truthIds.length}) · healing: ${out.ran?.healing?.note ?? "none"} → ${ev.c1d.verdict}`);
+  if (!out.ok || out.ran?.error) log(`   error: ${String(out.ran?.error ?? out.ran).slice(0, 300)}`);
+}
+
 // ------------------------------------------------------------------ C1-c: agents with the stale graph
 function runAgent(client: "claude" | "codex", dir: string, prompt: string): Promise<{ output: string; seconds: number; exit: number | null }> {
   const f = serverFiles(dir);
@@ -209,7 +241,8 @@ function runAgent(client: "claude" | "codex", dir: string, prompt: string): Prom
   } else {
     const env = Object.entries(s.env).map(([k, v]) => `${k}=${JSON.stringify(v)}`).join(",");
     cmd = "codex";
-    args = ["exec", "--skip-git-repo-check", "--approve-for-me", "-c", `mcp_servers.rightclick-x.command=${JSON.stringify(s.command)}`, "-c", `mcp_servers.rightclick-x.args=${JSON.stringify(s.args)}`, "-c", `mcp_servers.rightclick-x.env={${env}}`, "-c", "mcp_servers.rightclick-x.tool_timeout_sec=300", "--output-last-message", `${dir}/last.txt`, prompt];
+    // As in phase-b.ts: account-level app connectors must not add MCP servers other than RightClick X.
+    args = ["exec", "--skip-git-repo-check", "--approve-for-me", "--disable", "apps", "-c", `mcp_servers.rightclick-x.command=${JSON.stringify(s.command)}`, "-c", `mcp_servers.rightclick-x.args=${JSON.stringify(s.args)}`, "-c", `mcp_servers.rightclick-x.env={${env}}`, "-c", "mcp_servers.rightclick-x.tool_timeout_sec=300", "--output-last-message", `${dir}/last.txt`, prompt];
   }
   return new Promise((done) => {
     const p = spawn(cmd, args, { cwd: dir, stdio: ["ignore", "pipe", "pipe"] });
@@ -233,7 +266,8 @@ if (parts.includes("c1c")) {
   // The Phase A graph, but with RCSB Search known only from its 2022 contract.
   rcsb.switchTo("archived");
   const base = `${root}/c1c-base`;
-  const prep = await withServer(base, `${WORK}/${TAG}/phase-a-state.json`, async (m) => {
+  ev.c1cStartState = phaseAState;
+  const prep = await withServer(base, phaseAState, async (m) => {
     const forgot = await m.tool("context_forget", { provider: "openapi:rcsb-search-api" });
     const learned = await m.tool("context_learn", { source: rcsb.contractUrl });
     return { forgot: forgot.value, learned: learned.value?.results?.[0]?.learned };
@@ -253,7 +287,9 @@ if (parts.includes("c1c")) {
       `End your reply with a final line exactly of the form: ${q11.format}`,
     ].join("\n");
     log(`C1-c ${client} …`);
+    const logFrom = rcsb.log.length;
     const a = await runAgent(client, dir, prompt);
+    const replayDuring = rcsb.log.slice(logFrom);
     const t = await q11.truth();
     const answer = [...a.output.matchAll(/ANSWER:\s*([^\n]+)/gi)].at(-1)?.[1]?.trim().replace(/[`*]/g, "");
     const perPart = q11.score(parseAnswer(answer), t);
@@ -263,7 +299,11 @@ if (parts.includes("c1c")) {
     const st = JSON.parse(readFileSync(`${dir}/state.json`, "utf8"));
     const startReceipts = JSON.parse(readFileSync(`${base}/state.json`, "utf8")).receipts?.length ?? 0;
     const receipts = (st.receipts ?? []).slice(startReceipts).map((x: any) => ({ capability: x.capability, provider: x.provider, status: x.status }));
-    const s = { client, answer, truth: t.parts, perPart, correct: perPart.every(Boolean), grounded, seconds: a.seconds, mcpCalls: calls.map((c) => ({ tool: c.tool, ok: c.ok, args: c.args, error: c.error })), receipts, agentLearned: calls.filter((c) => c.tool === "context_learn").map((c) => c.args), finalText: a.output.slice(-2500) };
+    // A live contract read the agent did not request (no context_learn of the replay URL) is RightClick X re-reading it on a failed run.
+    const agentLearnedReplay = calls.some((c) => c.tool === "context_learn" && JSON.stringify(c.args ?? {}).includes(rcsb.url));
+    const contractReads = replayDuring.filter((x: any) => x.contract === "live").length;
+    const forwardedQuery = replayDuring.filter((x: any) => /\/query/.test(x.forwarded ?? "")).map((x: any) => `${x.forwarded.replace(/\?.*$/, "")} → ${x.status}`);
+    const s = { client, answer, truth: t.parts, perPart, correct: perPart.every(Boolean), grounded, seconds: a.seconds, replay: { contractReadsLive: contractReads, agentLearnedReplayUrl: agentLearnedReplay, rereadByRightClickX: contractReads > 0 && !agentLearnedReplay, forwardedQuery }, mcpCalls: calls.map((c) => ({ tool: c.tool, ok: c.ok, args: c.args, error: c.error })), receipts, agentLearned: calls.filter((c) => c.tool === "context_learn").map((c) => c.args), finalText: a.output.slice(-2500) };
     ev.c1c.sessions.push(s);
     log(`  ${s.correct && s.grounded ? "✓" : "✗"} ${client}: ${answer} · truth ${JSON.stringify(t.parts).slice(0, 120)} · ${a.seconds}s · ${calls.length} calls · learned by agent: ${JSON.stringify(s.agentLearned)}`);
   }
@@ -288,7 +328,23 @@ if (parts.includes("c2")) {
     const same = caps.find((c: any) => c.id === before.capability.id);
     const renamed = caps.find((c: any) => c.id.endsWith(":gethierarchicalchildrenbyontology-1"));
     const runSame = (await m.tool("context_run", { id: same.id, args: { onto: "go", individual: gas, class: gas } })).value;
-    return { drift: relearn?.results?.[0]?.drift, sameIdNow: { id: same.id, url: same.invoke.url, inputs: same.inputs.map((p: any) => `${p.name}:${p.type}`), title: same.title }, renamedClassOp: renamed ? { id: renamed.id, url: renamed.invoke.url, title: renamed.title } : null, runSameIdAfter: { status: runSame.status, labels: (runSame.output?.elements ?? []).map((e: any) => e.label).sort(), error: runSame.error } };
+    // Post hoc (run-drift fix): on a build that refuses a shifted id, follow its successor, then acknowledge.
+    let refusal: any = null;
+    if (runSame.changedMeaning && runSame.status === "failed") {
+      const individualsBefore = ols.log.filter((x: any) => /\/individuals\//.test(x.forwarded ?? "")).length;
+      const succ = runSame.changedMeaning.successor ? (await m.tool("context_run", { id: runSame.changedMeaning.successor, args: { onto: "go", class: gas } })).value : null;
+      const ack = (await m.tool("context_run", { id: same.id, args: { onto: "go", individual: gas, class: gas }, acknowledgeChange: true })).value;
+      refusal = {
+        posthoc: true,
+        error: runSame.error,
+        changedMeaning: runSame.changedMeaning,
+        upstreamCallsByRefusedRun: individualsBefore,
+        successorRun: succ ? { id: runSame.changedMeaning.successor, status: succ.status, labels: (succ.output?.elements ?? []).map((e: any) => e.label).sort(), error: succ.error } : null,
+        acknowledgedRun: { status: ack.status, labels: (ack.output?.elements ?? []).map((e: any) => e.label).sort(), changedMeaning: ack.changedMeaning, error: ack.error },
+      };
+    }
+    return {
+      refusal, drift: relearn?.results?.[0]?.drift, sameIdNow: { id: same.id, url: same.invoke.url, inputs: same.inputs.map((p: any) => `${p.name}:${p.type}`), title: same.title }, renamedClassOp: renamed ? { id: renamed.id, url: renamed.invoke.url, title: renamed.title } : null, runSameIdAfter: { status: runSame.status, labels: (runSame.output?.elements ?? []).map((e: any) => e.label).sort(), error: runSame.error } };
   });
   const truth = trueDiff(JSON.parse(readFileSync(`${HERE}/contracts/ols4-v3-api-docs-2026-06-05.json`, "utf8")), await liveDoc(ols, "https://www.ebi.ac.uk/ols4/v3/api-docs"), ols.contractUrl);
   const cmp = compareDrift(after.drift, truth);
@@ -300,11 +356,16 @@ if (parts.includes("c2")) {
   ev.c2 = { replay: { contractUrl: ols.contractUrl, archivedSha256: ols.archivedSha, liveSha256: ols.liveSha }, before, after, trueDiff: truth, comparison: cmp, shiftedIdsFlaggedModified: flagged, verdict: flagged && cmp.match ? "PASS" : flagged ? "PASS on the pre-registered criterion (shifted ids flagged); full diff mismatch recorded" : "FAIL", classChildrenTruth: truthLabels, beforeRunMatchesTruth: JSON.stringify(before.run.labels) === JSON.stringify(truthLabels) };
   log(`C2 drift: +${after.drift?.added?.length ?? 0} −${after.drift?.removed?.length ?? 0} ~${after.drift?.modified?.length ?? 0} (true: +${truth.added.length} −${truth.removed.length} ~${truth.modified.length}); shifted ids flagged modified: ${flagged} → ${ev.c2.verdict}`);
   log(`   before: ${before.capability.url} → ${before.run.status} ${before.run.labels.length} children (truth ${truthLabels.length}); after, same id: ${after.sameIdNow.url} → ${after.runSameIdAfter.status}`);
+  if (after.refusal) {
+    const r = after.refusal;
+    ev.c2.refusalCheck = { posthoc: true, refusedWithoutUpstreamCall: r.upstreamCallsByRefusedRun === 0, successorMatchesTruth: JSON.stringify(r.successorRun?.labels) === JSON.stringify(truthLabels), verdict: r.upstreamCallsByRefusedRun === 0 && JSON.stringify(r.successorRun?.labels) === JSON.stringify(truthLabels) ? "PASS" : "FAIL" };
+    log(`   refusal: ${r.error?.slice(0, 160)}… · successor ${r.successorRun?.id} → ${r.successorRun?.status} ${r.successorRun?.labels?.length} children · acknowledged → ${r.acknowledgedRun.status} ${r.acknowledgedRun.labels.length} → ${ev.c2.refusalCheck.verdict}`);
+  }
 }
 
 ev.replayLogs = { rcsb: rcsb.log, ols: ols.log };
 ev.finishedAt = new Date().toISOString();
 rcsb.server.close();
 ols.server.close();
-writeFileSync(`${HERE}/evidence/phase-c-${TAG}.json`, JSON.stringify(ev, null, 2));
-log(`evidence: experiments/life-science/evidence/phase-c-${TAG}.json`);
+writeFileSync(`${HERE}/evidence/${label}.json`, JSON.stringify(ev, null, 2));
+log(`evidence: experiments/life-science/evidence/${label}.json`);
