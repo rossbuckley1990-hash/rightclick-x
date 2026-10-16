@@ -41,3 +41,26 @@ test("HTTP: rate limiting and body size limits", async () => {
   const big = await h2(new Request("https://h.test/mcp", { method: "POST", body: "x".repeat(2 * 1024 * 1024), headers: { "content-type": "application/json", "content-length": String(2 * 1024 * 1024) } }));
   assert.equal(big.status, 413);
 });
+
+test("credentials stay pinned across multi-hop redirects (A -> B -> C)", async () => {
+  const seen: Array<[string, string | null, string | null]> = [];
+  const f = (async (input: string | URL | Request, init?: RequestInit) => {
+    const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+    const h = new Headers(init?.headers);
+    seen.push([new URL(url).origin, h.get("authorization"), h.get("x-key")]);
+    if (url.startsWith("https://a.test")) return new Response(null, { status: 302, headers: { location: "https://b.test/next" } });
+    if (url.startsWith("https://b.test")) return new Response(null, { status: 302, headers: { location: "https://c.test/final" } });
+    return new Response("ok");
+  }) as typeof fetch;
+  const { Authority, request } = await import("../src/reflectors/net.ts");
+  const auth = new Authority();
+  auth.set("https://a.test", { Authorization: "Bearer secret-a" });
+  auth.set("https://b.test", { "X-Key": "key-b" });
+  const res = await request({ fetch: f, auth, timeoutMs: 5000 }, "https://a.test/start");
+  assert.equal(await res.text(), "ok");
+  assert.deepEqual(seen, [
+    ["https://a.test", "Bearer secret-a", null],
+    ["https://b.test", null, "key-b"],
+    ["https://c.test", null, null],
+  ]);
+});

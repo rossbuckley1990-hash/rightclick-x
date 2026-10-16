@@ -113,15 +113,25 @@ export async function request(net: Net, url: string, init: RequestInit = {}): Pr
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(new Error(`timeout after ${net.timeoutMs}ms: ${url}`)), net.timeoutMs);
   try {
-    // Manual redirects: follow only same-origin hops so pinned credentials stay put.
+    // Manual redirects. Every hop starts from headers with no credentials at all,
+    // then gets only the credentials pinned to its own origin; caller-supplied
+    // Authorization/Cookie never leave the original origin. (A → B → C must not
+    // carry A's credentials to C.)
+    const origin0 = new URL(url).origin;
+    const pinnedNames = new Set(net.auth.origins().flatMap((o) => Object.keys(net.auth.headersFor(o)).map((k) => k.toLowerCase())));
+    const bare = new Headers(init.headers);
+    for (const k of pinnedNames) bare.delete(k);
     let res = await net.fetch(url, { ...init, headers, signal: ctrl.signal, redirect: "manual" });
     let hops = 0;
     while (res.status >= 300 && res.status < 400 && res.headers.get("location") && hops++ < 5) {
       const next = new URL(res.headers.get("location")!, url).toString();
       await checkUrl(net.policy, next);
-      const sameOrigin = new URL(next).origin === new URL(url).origin;
-      const h = new Headers(headers);
-      if (!sameOrigin) for (const k of Object.keys(net.auth.headersFor(url))) h.delete(k);
+      const h = new Headers(bare);
+      if (!h.has("user-agent")) h.set("user-agent", headers.get("user-agent")!);
+      if (new URL(next).origin !== origin0) {
+        h.delete("authorization");
+        h.delete("cookie");
+      }
       for (const [k, v] of Object.entries(net.auth.headersFor(next))) h.set(k, v);
       const method = res.status === 303 ? "GET" : init.method;
       res = await net.fetch(next, { ...init, method, body: method === "GET" ? undefined : init.body, headers: h, signal: ctrl.signal, redirect: "manual" });
