@@ -1,0 +1,286 @@
+{
+  "phase": "C",
+  "build": {
+    "tag": "lifesci-rundrift-2",
+    "commit": "968637a98d86b3b66f0b14e6a7388f84a7c3974c"
+  },
+  "startedAt": "2026-10-16T18:11:38.316Z",
+  "replayProxy": "harness-side; contract URL served from the archive (before) or live (after); all other paths forwarded unchanged to the live provider",
+  "c1": {
+    "replay": {
+      "contractUrl": "http://127.0.0.1:63970/openapi.json",
+      "archivedSha256": "ee7df8c1f333c65e17db6df8f8d2733b3443b863f3a0cd65685f268bfc570130"
+    },
+    "archivedLearn": {
+      "capabilities": [
+        {
+          "id": "openapi:rcsb-search-api:getmetadata",
+          "url": "http://127.0.0.1:63970/rcsbsearch/v1/metadata/schema",
+          "method": "GET"
+        },
+        {
+          "id": "openapi:rcsb-search-api:getchemicalmetadata",
+          "url": "http://127.0.0.1:63970/rcsbsearch/v1/metadata/chemical/schema",
+          "method": "GET"
+        },
+        {
+          "id": "openapi:rcsb-search-api:getunreleasedentrymetadata",
+          "url": "http://127.0.0.1:63970/rcsbsearch/v1/metadata/unreleased/schema",
+          "method": "GET"
+        },
+        {
+          "id": "openapi:rcsb-search-api:runjsonqueriesget",
+          "url": "http://127.0.0.1:63970/rcsbsearch/v1/query",
+          "method": "GET"
+        },
+        {
+          "id": "openapi:rcsb-search-api:runjsonqueriespost",
+          "url": "http://127.0.0.1:63970/rcsbsearch/v1/query",
+          "method": "POST"
+        },
+        {
+          "id": "openapi:rcsb-search-api:rununreleasedentryjsonqueries",
+          "url": "http://127.0.0.1:63970/rcsbsearch/v1/query/unreleased",
+          "method": "GET"
+        },
+        {
+          "id": "openapi:rcsb-search-api:getsuggestions",
+          "url": "http://127.0.0.1:63970/rcsbsearch/v1/suggest",
+          "method": "GET"
+        }
+      ],
+      "probes": [
+        {
+          "url": "http://127.0.0.1:63970/openapi.json",
+          "kind": "openapi",
+          "ok": true,
+          "detail": "7 operations"
+        }
+      ]
+    }
+  },
+  "c1cStartState": "/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/rcx-lifesci/lifesci-freeze-3/phase-a-state.json",
+  "c1c": {
+    "preparation": {
+      "forgot": {
+        "forgotten": true,
+        "graph": {
+          "capabilities": 276,
+          "edges": 17292,
+          "chains2": 17292,
+          "chains3": 1135270,
+          "total": 1152838
+        }
+      },
+      "learned": [
+        {
+          "provider": "openapi:rcsb-search-api",
+          "capabilitiesAdded": 7,
+          "powersBefore": 1152838,
+          "powersAfter": 1184865,
+          "newPowers": 32027
+        }
+      ]
+    },
+    "sessions": [
+      {
+        "client": "claude",
+        "answer": "10 | 1AX8, 7Z3Q, 8AVE, 8AVF, 8AVO, 8K6Z, 8X80, 8X81, 8X85, 9PUO",
+        "truth": [
+          10,
+          [
+            "1AX8",
+            "7Z3Q",
+            "8AVE",
+            "8AVF",
+            "8AVO",
+            "8K6Z",
+            "8X80",
+            "8X81",
+            "8X85",
+            "9PUO"
+          ]
+        ],
+        "perPart": [
+          true,
+          true
+        ],
+        "correct": true,
+        "grounded": true,
+        "seconds": 53.3,
+        "replay": {
+          "contractReadsLive": 1,
+          "agentLearnedReplayUrl": false,
+          "rereadByRightClickX": true,
+          "forwardedQuery": [
+            "POST https://search.rcsb.org/rcsbsearch/v1/query → 404",
+            "POST https://search.rcsb.org/rcsbsearch/v2/query → 200"
+          ]
+        },
+        "mcpCalls": [
+          {
+            "tool": "context_providers",
+            "ok": true,
+            "args": {}
+          },
+          {
+            "tool": "context_research",
+            "ok": true,
+            "args": {
+              "topic": "rcsb search",
+              "limit": 1
+            }
+          },
+          {
+            "tool": "context_graph",
+            "ok": true,
+            "args": {
+              "op": "search",
+              "query": "rcsb search query",
+              "limit": 15
+            }
+          },
+          {
+            "tool": "context_graph",
+            "ok": true,
+            "args": {
+              "op": "search",
+              "query": "uniprotkb search",
+              "limit": 10
+            }
+          },
+          {
+            "tool": "context_explain",
+            "ok": true,
+            "args": {
+              "id": "openapi:openapi-definition:searchcursor"
+            }
+          },
+          {
+            "tool": "context_explain",
+            "ok": true,
+            "args": {
+              "id": "openapi:rcsb-search-api:runjsonqueriespost"
+            }
+          },
+          {
+            "tool": "context_run",
+            "ok": true,
+            "args": {
+              "id": "openapi:openapi-definition:searchcursor",
+              "args": {
+                "query": "gene_exact:LEP AND organism_id:9606 AND reviewed:true",
+                "fields": "accession,gene_names,protein_name"
+              }
+            }
+          },
+          {
+            "tool": "context_run",
+            "ok": true,
+            "args": {
+              "id": "openapi:rcsb-search-api:runjsonqueriespost",
+              "args": {
+                "body": "{\"query\":{\"type\":\"group\",\"logical_operator\":\"and\",\"nodes\":[{\"type\":\"terminal\",\"service\":\"text\",\"parameters\":{\"attribute\":\"rcsb_polymer_entity_container_identifiers.reference_sequence_identifiers.database_accession\",\"operator\":\"exact_match\",\"value\":\"P41159\"}},{\"type\":\"terminal\",\"service\":\"text\",\"parameters\":{\"attribute\":\"rcsb_polymer_entity_container_identifiers.reference_sequence_identifiers.database_name\",\"operator\":\"exact_match\",\"value\":\"UniProt\"}}]},\"return_type\":\"entry\",\"request_options\":{\"return_all_hits\":true}}"
+              }
+            }
+          }
+        ],
+        "receipts": [
+          {
+            "capability": "openapi:openapi-definition:searchcursor",
+            "provider": "openapi:openapi-definition",
+            "status": "completed"
+          },
+          {
+            "capability": "openapi:rcsb-search-api:runjsonqueriespost",
+            "provider": "openapi:rcsb-search-api",
+            "status": "completed"
+          }
+        ],
+        "agentLearned": [],
+        "finalText": "According to RCSB PDB's search service, **10 PDB entries** contain a protein entity mapped to human leptin.\n\n1. **Accession lookup (UniProtKB):** I searched for reviewed human entries with gene name LEP. The only match was **P41159** (Leptin, also called Obese protein / Obesity factor; Swiss-Prot reviewed).\n2. **RCSB search:** I asked for every released entry with a polymer entity whose reference sequence is UniProt P41159, with all hits returned. It reported `total_count: 10`:\n\n| # | PDB ID |\n|---|--------|\n| 1 | 1AX8 |\n| 2 | 7Z3Q |\n| 3 | 8AVE |\n| 4 | 8AVF |\n| 5 | 8AVO |\n| 6 | 8K6Z |\n| 7 | 8X80 |\n| 8 | 8X81 |\n| 9 | 8X85 |\n| 10 | 9PUO |\n\n**Endpoint change:** the RCSB search tool's first attempt failed with a 404. RightClick X re-read the API description, found that all 7 of its search operations had changed, and retried the same POST query, which then succeeded. The result above comes from that retry. The RCSB search endpoint here is served through a local address (`127.0.0.1:63970`), not RCSB's public URL, so the count reflects that service at the time of the query.\n\nANSWER: 10 | 1AX8, 7Z3Q, 8AVE, 8AVF, 8AVO, 8K6Z, 8X80, 8X81, 8X85, 9PUO"
+      },
+      {
+        "client": "codex",
+        "truth": [
+          10,
+          [
+            "1AX8",
+            "7Z3Q",
+            "8AVE",
+            "8AVF",
+            "8AVO",
+            "8K6Z",
+            "8X80",
+            "8X81",
+            "8X85",
+            "9PUO"
+          ]
+        ],
+        "perPart": [
+          false,
+          false
+        ],
+        "correct": false,
+        "grounded": false,
+        "seconds": 3.9,
+        "replay": {
+          "contractReadsLive": 0,
+          "agentLearnedReplayUrl": false,
+          "rereadByRightClickX": false,
+          "forwardedQuery": []
+        },
+        "mcpCalls": [],
+        "receipts": [],
+        "agentLearned": [],
+        "finalText": ""
+      }
+    ]
+  },
+  "replayLogs": {
+    "rcsb": [
+      {
+        "at": "2026-10-16T18:11:38.323Z",
+        "switch": "archived"
+      },
+      {
+        "at": "2026-10-16T18:11:38.449Z",
+        "contract": "archived",
+        "method": "GET",
+        "path": "/openapi.json"
+      },
+      {
+        "at": "2026-10-16T18:11:38.459Z",
+        "switch": "archived"
+      },
+      {
+        "at": "2026-10-16T18:11:43.068Z",
+        "contract": "archived",
+        "method": "GET",
+        "path": "/openapi.json"
+      },
+      {
+        "at": "2026-10-16T18:11:43.922Z",
+        "switch": "live"
+      },
+      {
+        "at": "2026-10-16T18:12:28.220Z",
+        "forwarded": "POST https://search.rcsb.org/rcsbsearch/v1/query",
+        "status": 404
+      },
+      {
+        "at": "2026-10-16T18:12:28.896Z",
+        "contract": "live",
+        "method": "GET",
+        "path": "/openapi.json"
+      },
+      {
+        "at": "2026-10-16T18:12:29.908Z",
+        "forwarded": "POST https://search.rcsb.org/rcsbsearch/v2/query",
+        "status": 200
+      }
+    ],
+    "ols": []
+  },
+  "finishedAt": "2026-10-16T18:12:42.162Z"
+}

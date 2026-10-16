@@ -10,7 +10,7 @@
 - `phase-b-lifesci-freeze-3/` (one file per session, `summary.json`, `rescored.json`);
 - `phase-c-lifesci-freeze-3.json`;
 - `views-check-lifesci-views-1.json`, `phase-b-views-lifesci-views-1/` (post hoc Q09 follow-up);
-- `phase-c-lifesci-rundrift-1.json`, `phase-c-lifesci-rundrift-2.json` (post hoc Phase C re-runs for the `context_run` drift fix);
+- `phase-c-lifesci-rundrift-1.json`, `phase-c-lifesci-rundrift-2.json`, `phase-c-lifesci-rundrift-2-c1c.json` (post hoc Phase C re-runs for the `context_run` drift fix);
 - `bodies-manifest.json` (SHA-256 of all 113 MB of raw responses, which are kept outside git).
 
 ## Summary
@@ -219,7 +219,7 @@ The rule now compares the full path without version segments (`968637a`), with a
 | **C1-b** compose through the stale capability | **PASS**, truth's 10 entries in 1.9 s. |
 | **C1-d** plain `context_run` of the stale 2022 capability (new) | **PASS.** The v1 call got a live 404. RightClick X re-read the contract by itself ("API drift … ~7; retried the same operation") and the v2 call returned truth's 10 entries for P41159, in 1.9 s. |
 | **C1-c Codex** | **✓ correct and grounded, now through RightClick X's repair.** Its first RCSB call (`getmetadata`) got the v1 404. RightClick X re-read the contract without a `context_learn` from the agent and retried on v2. Every later RCSB call went straight to v2. 53 s, 14 calls. (freeze-3: correct, but by bypassing the stale capability with `web.fetch` and a v2 URL it built itself.) |
-| **C1-c Claude Code** | **Not run.** The `claude` CLI's login had expired ("OAuth session expired and could not be refreshed"); the session made no tool call. Claude Code's C1-c is **not re-tested** on this build. |
+| **C1-c Claude Code** | **✓ correct and grounded, through RightClick X's repair** (separate C1-c run, `evidence/phase-c-lifesci-rundrift-2-c1c.json`; in the main run above its CLI login had expired and it made no tool call). Its `runJsonQueriesPost` call got the v1 404. RightClick X re-read the contract without a `context_learn` from the agent and the v2 POST returned truth's 10 entries. Its answer reported the repair. 53 s, 8 calls. (freeze-3: correct, but by re-learning RCSB itself from an address it knew.) In that separate run Codex was **not run**: its account had reached its usage limit (reproduced by hand; the harness discards stderr, so the evidence shows only 0 calls in 3.9 s). |
 | **C2** OLS4 identity shift | Drift report +3 −0 ~5 against the true +3 −0 ~4: **PASS on the pre-registered criterion** (both shifted ids flagged), but no longer an exact diff. The extra modification is OLS's `search`: its `groupField` description changed, and the parameter-typing rules on `main` since `4975352` (another session's) type the old text as `url`, while freeze-3 typed it as `text`. The harness's true diff does not compare parameter types. |
 | **C2 refusal** (new) | **PASS.** After re-learning, the class-children id was refused with no upstream call: "it called GET /ols4/api/ontologies/{}/classes/{}/hierarchicalChildren, it now calls … /individuals/{}/hierarchicalChildren", naming `…-1` as the successor. That successor returned truth's 2 children. With `acknowledgeChange: true` the id ran the individuals operation and returned 0, as before. |
 
@@ -228,7 +228,7 @@ The rule now compares the full path without version segments (`968637a`), with a
 - **Small and single-run.** 14 questions, 2 clients, 1 run each, 5 databases. No variance estimate.
 - **Friendly targets.** All five publish machine-readable contracts. Databases with only SPARQL/RDF (most of TogoMCP's RDF Portal), or with no contract at all, were not tested.
 - **The agent does the identifier bridging.** Typed composition across databases did not happen (P3). Fixing it needs cross-provider identifier equivalence: learned from observed values, or from annotations such as x-bte. That is not built.
-- **Self-healing covers `context_compose`/goals only** on the builds Phase B and C ran. There, a failed `context_run` does not re-reflect its source (C1-c), and an id-addressed call after an identity shift runs the new operation without an error (C2). Both are fixed post hoc and checked on the same real changes (see *Follow-up*). They are re-tested with Codex but not Claude Code, and single-run. Argument names are not remapped: a retried operation whose parameter was renamed fails.
+- **Self-healing covers `context_compose`/goals only** on the builds Phase B and C ran. There, a failed `context_run` does not re-reflect its source (C1-c), and an id-addressed call after an identity shift runs the new operation without an error (C2). Both are fixed post hoc and checked on the same real changes (see *Follow-up*). Both agents passed C1-c through the repair, each in a single run. Argument names are not remapped: a retried operation whose parameter was renamed fails.
 - **No server-side projection or aggregation over large outputs** (Q09) on the builds Phase B ran. Output views were added afterwards (see *Follow-up*). They are tested on the real API and, for Q09 only, with both clients (one run each). There is no filter operator.
 - **The `selection` field list is clipped** at 3,000 characters for very wide GraphQL types.
 - **Contract quirks needed product fixes.** "Zero per-database authoring" held only after three general fixes made during the experiment. More databases will surface more such quirks.
@@ -247,7 +247,7 @@ The rule now compares the full path without version segments (`968637a`), with a
 7. C1-b composed with `want: json` and the stale capability as anchor, because RCSB's response schema is an external `$ref` and types only as `json`.
 8. The Q09 follow-up is post hoc. Its start state is the freeze-3 Phase A state, re-derived once by the `lifesci-views-1` build. Copied raw, the newer semantics version re-learned all six providers on every startup, so the server took 5.1 s to answer `initialize`; re-derived, it took 0.13 s, with the same providers and capability counts. Codex was run with `--disable apps` so that RightClick X was its only MCP server, as pre-registered. Claude Code 2.1.301 was run from the user's login shell. In the harness check and the first, invalid attempts, the harness's own truth queries ran without `polite-fetch.ts`: two direct requests per run.
 
-9. The run-drift follow-up is post hoc. Phase C was re-run in full on `lifesci-rundrift-1` (a FAIL, preserved) and `-2`. C1-d and the C2 refusal check are additions, and C1-c started from the freeze-3 Phase A state (`--state`). In both C1-c runs Codex ran without `--disable apps` (added to `phase-c.ts` afterwards); its MCP log shows all of its 14 calls going to the server under test.
+9. The run-drift follow-up is post hoc. Phase C was re-run in full on `lifesci-rundrift-1` (a FAIL, preserved) and `-2`. C1-d and the C2 refusal check are additions, and C1-c started from the freeze-3 Phase A state (`--state`). In both C1-c runs Codex ran without `--disable apps` (added to `phase-c.ts` afterwards); its MCP log shows all of its 14 calls going to the server under test. The separate C1-c run for Claude Code (`--label phase-c-lifesci-rundrift-2-c1c`) started both agent CLIs without the desktop app's `CLAUDE*`/`ANTHROPIC*` environment variables, so that each used its own login.
 
 ## Reproduce
 
@@ -261,6 +261,7 @@ RCX_FREEZE=lifesci-views-1 node --import ./experiments/life-science/polite-fetch
 RCX_FREEZE=lifesci-views-1 node --import ./experiments/life-science/polite-fetch.ts experiments/life-science/phase-b.ts --only Q09 --label phase-b-views --state <state>
 # run-drift follow-up (post hoc, deviation 9)
 RCX_FREEZE=lifesci-rundrift-2 node --import ./experiments/life-science/polite-fetch.ts experiments/life-science/phase-c.ts --parts c1a,c1b,c1d,c1c,c2 --state <freeze-3 phase-a-state.json>
+RCX_FREEZE=lifesci-rundrift-2 node --import ./experiments/life-science/polite-fetch.ts experiments/life-science/phase-c.ts --parts c1c --state <freeze-3 phase-a-state.json> --label phase-c-lifesci-rundrift-2-c1c
 ```
 
 Needs Node ≥ 22.18 and logged-in `claude` and `codex` CLIs. Results vary with live data; truth is recomputed at the same time.
