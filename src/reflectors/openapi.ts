@@ -85,7 +85,7 @@ export function reflectOpenAPI(spec: Obj, specUrl: string): Reflection {
         }
       }
 
-      const outputs = responsePorts(op, resolve);
+      const { ports: outputs, keyed } = responsePorts(op, resolve);
       const opName: string = op.operationId ?? `${method}-${path}`;
       const risk: Risk = method === "get" ? "read" : method === "delete" ? "destructive" : "write";
       capabilities.push({
@@ -110,6 +110,23 @@ export function reflectOpenAPI(spec: Obj, specUrl: string): Reflection {
           ...(multiSegment.length ? { multiSegment } : {}),
         },
       });
+      // A typed keyed map (JSON Schema additionalProperties, keys from propertyNames or examples)
+      // answers one question per key: offer that as its own operation, keyed by a typed input.
+      const parent = capabilities[capabilities.length - 1];
+      for (const k of keyed) {
+        const keyInput = `${k.map.replace(/\W+/g, "_")}_key`;
+        if (inputs.some((i) => i.name === keyInput)) continue;
+        capabilities.push({
+          ...parent,
+          id: `${parent.id}:entry-${slug(k.map)}`,
+          title: `${parent.title} (one ${k.map} entry)`,
+          description: `${parent.description} Returns the single ${k.map} entry for the given ${k.keyType} key${k.description ? ` (${k.description})` : ""}.`.trim().slice(0, 400),
+          inputs: [...inputs, { name: keyInput, type: k.keyType, required: true, description: `Which ${k.map} entry to return` }],
+          outputs: [{ name: "", type: k.valueType, required: true }],
+          tags: [...parent.tags, k.map, "entry"],
+          invoke: { ...(parent.invoke as any), entry: { map: k.map, keyInput } },
+        });
+      }
     }
   }
 
@@ -201,7 +218,22 @@ function collectBody(
   }
 }
 
-function responsePorts(op: Obj, resolve: (o: any) => any): Port[] {
+interface KeyedMap { map: string; keyType: string; valueType: string; description?: string }
+
+/** A JSON Schema object whose entries are typed values under typed keys (rates keyed by currency code). */
+function keyedMap(name: string, p: Obj, resolve: (o: any) => any): KeyedMap | undefined {
+  const values = p.additionalProperties && typeof p.additionalProperties === "object" ? mergeAllOf(resolve(p.additionalProperties), resolve) : undefined;
+  if (!values || p.properties || !["number", "integer", "string", "boolean"].includes(values.type)) return undefined;
+  const names = p.propertyNames ? mergeAllOf(resolve(p.propertyNames), resolve) : undefined;
+  const exampleKeys = p.example && typeof p.example === "object" && !Array.isArray(p.example) ? Object.keys(p.example) : [];
+  let keyType = names ? inferType("", names) : "text";
+  if ((keyType === "text" || keyType === "json") && exampleKeys.length) keyType = inferType("", { type: "string", examples: exampleKeys });
+  if ((keyType === "text" || keyType === "json") && p.description) keyType = inferType("", { type: "string" }, String(p.description));
+  if (keyType === "text" || keyType === "json") return undefined;
+  return { map: name, keyType, valueType: inferType("", values, values.description ?? ""), description: p.description };
+}
+
+function responsePorts(op: Obj, resolve: (o: any) => any): { ports: Port[]; keyed: KeyedMap[] } {
   const responses: Obj = op.responses ?? {};
   const key = ["200", "201", "202", "2XX", "default"].find((k) => responses[k]);
   const r = key ? resolve(responses[key]) : null;
@@ -214,15 +246,18 @@ function responsePorts(op: Obj, resolve: (o: any) => any): Port[] {
   } else if (r?.schema) {
     schema = resolve(r.schema);
   }
-  if (textual) return [{ name: "", type: Object.keys(r.content).includes("text/html") ? "html" : "text", required: true }];
-  if (!schema) return [{ name: "", type: "json", required: true }];
+  if (textual) return { ports: [{ name: "", type: Object.keys(r.content).includes("text/html") ? "html" : "text", required: true }], keyed: [] };
+  if (!schema) return { ports: [{ name: "", type: "json", required: true }], keyed: [] };
   // The schema's own name is context: `id` on a "release" is an id.release.
   const context = refName(rawRef(r, resolve)) ?? "";
   const merged = mergeAllOf(schema, resolve);
   const ports: Port[] = [{ name: "", type: merged.type === "array" ? inferType("items", merged) : inferType("", merged), required: true }];
+  const keyed: KeyedMap[] = [];
   if (merged.properties) {
     for (const [name, prop] of Object.entries<Obj>(merged.properties)) {
       const p = mergeAllOf(resolve(prop), resolve);
+      const km = keyedMap(name, p, resolve);
+      if (km) keyed.push(km);
       ports.push({ name, type: p["x-rightclick-type"] ?? inferInContext(name, p, p.description ?? "", context), required: true, wire: p.type });
       if (p.properties) {
         for (const [sub, sp] of Object.entries<Obj>(p.properties).slice(0, 12)) {
@@ -232,7 +267,7 @@ function responsePorts(op: Obj, resolve: (o: any) => any): Port[] {
       }
     }
   }
-  return ports;
+  return { ports, keyed };
 }
 
 function rawRef(r: Obj | null, resolve: (o: any) => any): string | undefined {

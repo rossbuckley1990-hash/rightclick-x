@@ -63,6 +63,8 @@ export interface HttpInvoke {
   constants?: Record<string, string>;
   /** Path params whose "/" must stay literal (OpenAPI x-multi-segment, e.g. git refs "heads/main"). */
   multiSegment?: string[];
+  /** Keyed-map projection: the result is response[map][args[keyInput]]; keyInput is never sent. */
+  entry?: { map: string; keyInput: string };
 }
 
 export interface GraphQLInvoke {

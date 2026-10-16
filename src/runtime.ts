@@ -18,7 +18,7 @@ import { detectRuntime, platformReflection, type PlatformFn, type RuntimeInfo } 
 
 export const VERSION = "0.1.0";
 /** Bump whenever semantic inference changes: persisted reflections are then re-derived from their sources. */
-export const SEMANTICS = 12;
+export const SEMANTICS = 13;
 
 export interface Store {
   load(): Promise<PersistedState | null>;
@@ -52,6 +52,8 @@ export interface PublishedGoal {
   witnesses?: OutcomeWitness[];
   /** Inputs pinned when the goal was published; part of the goal, not parameters of its API. */
   fixed?: Record<string, unknown>;
+  /** The customer's egress policy: origins this goal may send data to, in every run and repair. */
+  origins?: string[];
   risks?: Capability["risk"][];
   through?: string[];
   anchors?: CapabilityAnchor[];
@@ -684,6 +686,8 @@ export class RightClick {
     through?: string[];
     /** Internal persisted anchor contracts; callers specify through instead. */
     anchors?: CapabilityAnchor[];
+    /** Egress policy: only use capabilities that send data to these origins, including during repair. */
+    origins?: string[];
     /** If the graph can't do it, research public directories, learn candidates and re-plan. */
     acquire?: boolean;
     /** After a verified run, publish this goal as an API endpoint under this name. */
@@ -725,7 +729,8 @@ export class RightClick {
       return c.invoke.steps.some((s) => { const child = this.graph.get(s.capability); return !!child && containsActive(child, seen); });
     };
     const blocked = new Set(this.graph.list().filter((c) => containsActive(c)).map((c) => c.id));
-    const goal = { have: types, want: opts.want, intent: opts.intent, maxSteps: opts.maxSteps, limit: opts.limit ?? 5, risks: opts.risks, through, exclude: blocked };
+    const origins = opts.origins?.length ? opts.origins.map((o) => new URL(o).origin) : undefined;
+    const goal = { have: types, want: opts.want, intent: opts.intent, maxSteps: opts.maxSteps, limit: opts.limit ?? 5, risks: opts.risks, through, exclude: blocked, origins };
     let plans = plan(this.graph, this.ledger, goal);
     const titles = (p: Plan) => p.steps.map((s) => this.graph.get(s.capability)!.title);
     const result: ComposeResult = {
@@ -807,6 +812,7 @@ export class RightClick {
             verify: structuredClone(opts.verify),
             witnesses,
             ...(Object.keys(fixed).length ? { fixed: structuredClone(fixed) } : {}),
+            ...(origins ? { origins } : {}),
             risks: structuredClone(opts.risks ?? [...new Set(p.steps.map((s) => this.graph.get(s.capability)!.risk))]),
             through: structuredClone(opts.through),
             anchors: structuredClone(anchors),
@@ -844,6 +850,18 @@ export class RightClick {
             : drifted
               ? `API drift at ${source}: ${d!.providersBefore.join(",")} → ${d!.providersAfter.join(",")}; +${d!.added.length} −${d!.removed.length} ~${d!.modified.length} capabilities; ${d!.retired.length} pipeline(s) retired`
               : `re-reflected ${source}: no contract change`;
+          // The contract is gone or unreadable: look for its successor where it lived (same
+          // origin only, so a repair never moves the caller's data somewhere new by itself).
+          if (r.results[0]?.withdrawn || r.results[0]?.error) {
+            const home = `${new URL(source).origin}/`;
+            if (!refreshed.has(home)) {
+              refreshed.add(home);
+              const s = await this.learn({ source: home });
+              const found = s.results[0]?.learned?.length ?? 0;
+              attempt.healing += `; looked for a successor at ${home}: ${found ? `learned ${found} provider(s)` : s.results[0]?.error ?? "nothing found"}`;
+              if (found) drifted = true;
+            }
+          }
         }
         if (!drifted) {
           exclude.add(failed);
@@ -937,7 +955,7 @@ export class RightClick {
       const value = (t === "number" || t.startsWith("geo.")) && typeof raw === "string" ? Number(raw) : raw;
       have[k] = { type: t, value };
     }
-    const r = await this.compose({ have, want: g.want, intent: g.intent, verify: g.verify, witnesses: g.witnesses, risks: g.risks, through: g.through, anchors: g.anchors, maxSteps: g.maxSteps, run: true, confirm, activeGoals: [...activeGoals, slug] });
+    const r = await this.compose({ have, want: g.want, intent: g.intent, verify: g.verify, witnesses: g.witnesses, risks: g.risks, through: g.through, anchors: g.anchors, maxSteps: g.maxSteps, origins: g.origins, run: true, confirm, activeGoals: [...activeGoals, slug] });
     g.calls++;
     if (r.executed?.status === "completed") {
       g.lastPipeline = r.executed.titles;
@@ -1160,6 +1178,13 @@ export class RightClick {
         const res = await request(this.net, u.toString(), { method: inv.method, headers, body });
         const out = await readBody(res);
         if (!res.ok) throw new Error(`HTTP ${res.status}: ${String(JSON.stringify(preview(out))).slice(0, 300)}`);
+        if (inv.entry) {
+          // A keyed map holds many answers; the caller asked for one. A missing key is an error, never a guess.
+          const key = String(args[inv.entry.keyInput] ?? "");
+          const map = pick(out, inv.entry.map);
+          if (!map || typeof map !== "object" || !Object.prototype.hasOwnProperty.call(map, key)) throw new Error(`no ${inv.entry.map} entry for "${key}"`);
+          return (map as Record<string, unknown>)[key];
+        }
         return out;
       }
       case "graphql": {

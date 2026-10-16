@@ -44,6 +44,31 @@ function catalogLinks(body: unknown, base: string): string[] | null {
 
 const CATALOG_LIMIT = 50;
 
+/**
+ * An API's root often answers with a small JSON index pointing at its contracts
+ * ({"versions":{"v2":{"openapi":"/v2/openapi.json"}}}). Collect those links, bounded.
+ */
+function contractLinks(body: unknown, base: string): string[] {
+  const out = new Set<string>();
+  const key = /^(openapi|swagger|spec|api[-_]?docs|service[-_]?desc|schema[-_]?url)$/i;
+  const looksLikeContract = /(openapi|swagger)(\.json)?$|api-docs$/i;
+  const walk = (v: unknown, k: string, depth: number) => {
+    if (out.size >= 10 || depth > 4) return;
+    if (typeof v === "string") {
+      if ((key.test(k) || looksLikeContract.test(v)) && !/\s/.test(v) && v.length < 300) {
+        try {
+          out.add(new URL(v, base).toString());
+        } catch {
+          /* not a URL */
+        }
+      }
+    } else if (Array.isArray(v)) v.slice(0, 20).forEach((x) => walk(x, k, depth + 1));
+    else if (v && typeof v === "object") for (const [kk, vv] of Object.entries(v).slice(0, 40)) walk(vv, kk, depth + 1);
+  };
+  walk(body, "", 0);
+  return [...out];
+}
+
 export async function discover(net: Net, source: string, opts: { deep?: boolean; mcp?: (url: string) => McpClient; kind?: SourceKind; viaCatalog?: boolean } = {}): Promise<Discovery> {
   const url = new URL(source);
   const probes: Discovery["probes"] = [];
@@ -136,6 +161,11 @@ async function probeUrl(
       const body = await readBody(res);
       const listed = catalogLinks(body, url);
       if (listed) return { reflections: [], hints: [], definitive: false, catalog: listed };
+      const linked = body && typeof body === "object" && !(body as any).openapi && !(body as any).swagger ? contractLinks(body, url) : [];
+      if (linked.length && !(body as any).paths && !(body as any).data) {
+        probes.push({ url, kind: "index", ok: true, detail: `links ${linked.length} contract(s)` });
+        return { reflections: [], hints: linked, definitive: false };
+      }
       if (isOpenAPI(body)) {
         const r = await settleUnstatedBase(net, body as any, url, reflectOpenAPI(body as any, url));
         probes.push({ url, kind: "openapi", ok: true, detail: `${r.capabilities.length} operations` });

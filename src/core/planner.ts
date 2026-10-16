@@ -27,6 +27,50 @@ export interface Goal {
   risks?: Risk[];
   /** Anchors: capability ids every returned plan must pass through. The planner wires the rest. */
   through?: string[];
+  /** Egress policy: only capabilities whose network traffic stays on these origins (e.g. "https://api.example.com"). */
+  origins?: string[];
+}
+
+/**
+ * Where a capability sends data, as origins, or "anywhere" when its target comes from its
+ * inputs (a URL-taking fetch). Local transforms and platform bindings send nothing out.
+ */
+export function egressOf(c: Capability, graph: CapabilityGraph, seen = new Set<string>()): string[] | "anywhere" {
+  const inv = c.invoke as any;
+  const origin = (u: string) => {
+    try {
+      return [new URL(u).origin];
+    } catch {
+      return "anywhere" as const;
+    }
+  };
+  switch (inv.kind) {
+    case "http":
+      return origin(inv.url.replace(/\{[^}]+\}/g, "x"));
+    case "graphql":
+    case "mcp":
+    case "peer":
+      return origin(inv.endpoint);
+    case "builtin":
+      return c.inputs.some((p) => ["url", "image.url", "domain", "ip", "email"].includes(p.type)) ? "anywhere" : [];
+    case "platform":
+      return [];
+    case "composite": {
+      if (seen.has(c.id)) return [];
+      seen.add(c.id);
+      const all = new Set<string>();
+      for (const s of inv.steps) {
+        const step = graph.get(s.capability);
+        const e = step ? egressOf(step, graph, seen) : "anywhere";
+        if (e === "anywhere") return e;
+        e.forEach((o) => all.add(o));
+      }
+      return [...all];
+    }
+    default:
+      // Saved goals re-plan on every call; their egress is not fixed in advance.
+      return "anywhere";
+  }
 }
 
 export interface Plan {
@@ -67,11 +111,18 @@ export function plan(graph: CapabilityGraph, ledger: Ledger, goal: Goal): Plan[]
   const excluded = goal.exclude ?? new Set<string>();
   const anchors = new Set(goal.through ?? []);
   const risks = goal.risks?.length ? new Set(goal.risks) : null;
+  const origins = goal.origins?.length ? new Set(goal.origins.map((o) => new URL(o).origin)) : null;
+  const withinPolicy = (c: Capability) => {
+    if (!origins) return true;
+    const e = egressOf(c, graph);
+    return e !== "anywhere" && e.every((o) => origins.has(o));
+  };
   const caps = graph.list().filter(
     (c) =>
       !excluded.has(c.id) &&
       !(c.invoke.kind === "composite" && c.invoke.steps.some((s) => excluded.has(s.capability))) &&
-      (!risks || risks.has(c.risk)),
+      (!risks || risks.has(c.risk)) &&
+      withinPolicy(c),
   );
   const start: Node = {
     values: Object.entries(goal.have).map(([name, type]) => ({ ref: `$in.${name}`, type, step: -1 })),
@@ -139,12 +190,19 @@ export function plan(graph: CapabilityGraph, ledger: Ledger, goal: Goal): Plan[]
       .slice(0, 150);
   }
 
+  // Inputs the caller supplied are part of the question: a plan that ignores one answers a
+  // different question ("USD to EUR" answered without EUR). Fewer ignored inputs rank first.
+  const supplied = Object.keys(goal.have);
+  const ignored = (p: Plan) => {
+    const used = new Set(p.steps.flatMap((s) => s.bindings.map((b) => b.from)).filter((f) => f.startsWith("$in.")).map((f) => f.slice(4).split(".")[0]));
+    return supplied.filter((k) => !used.has(k)).length;
+  };
   const ranked = dedupe(results)
     .filter((p) => !intent.size || p.intentScore > 0 || anchors.size)
     .filter((p) => [...anchors].every((a) => p.steps.some((s) => s.capability === a)))
     .sort(
       (a, b) =>
-        Math.floor(b.fit) - Math.floor(a.fit) || b.intentScore - a.intentScore || b.fit - a.fit || b.resultScore - a.resultScore || a.cost - b.cost || a.steps.length - b.steps.length,
+        Math.floor(b.fit) - Math.floor(a.fit) || ignored(a) - ignored(b) || b.intentScore - a.intentScore || b.fit - a.fit || b.resultScore - a.resultScore || a.cost - b.cost || a.steps.length - b.steps.length,
     );
   // Drop plans that merely extend a kept plan without covering more of the intent.
   const kept: Plan[] = [];
@@ -211,11 +269,14 @@ function bind(cap: Capability, values: Value[], intent: Set<string>, consumed: S
   });
   const used = new Set(consumed);
   const chosen = new Map<string, Value>();
+  // Two ports of one operation are two different questions: given another acceptable value,
+  // do not feed the same value to both ("from USD to USD" while the caller's EUR sits unused).
+  const boundRefs = new Set<string>();
   for (const { port, scored } of [...options].sort((a, b) => a.scored.length - b.scored.length)) {
     let best: Value | undefined;
     let bestScore = Infinity;
     for (const { v, score } of scored) {
-      const s = score - (v.step >= 0 && !used.has(v.step) ? 3 : 0);
+      const s = score - (v.step >= 0 && !used.has(v.step) ? 3 : 0) + (boundRefs.has(v.ref) ? 6 : 0);
       if (s < bestScore) {
         bestScore = s;
         best = v;
@@ -223,6 +284,7 @@ function bind(cap: Capability, values: Value[], intent: Set<string>, consumed: S
     }
     if (best) {
       chosen.set(port.name, best);
+      boundRefs.add(best.ref);
       if (best.step >= 0) used.add(best.step);
     } else if (port.required) return null;
   }

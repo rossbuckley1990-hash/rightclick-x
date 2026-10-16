@@ -1,0 +1,116 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { RightClick } from "../src/runtime.ts";
+
+// Shapes of a real, independently operated API's genuine v1 -> v2 redesign (Frankfurter):
+// v1 GET /v1/latest?base=  -> { amount, base, date, rates: { <currency>: number } }
+// v2 GET /v2/rate/{base}/{quote} -> { base, quote, rate }
+// The operator's root JSON lists both contracts. A second provider on another origin also
+// quotes rates; the customer's egress policy does not allow it.
+const RATE: Record<string, number> = { USD: 0.89, JPY: 0.0057, GBP: 1.15 };
+const CURRENCIES = ["EUR", "USD", "JPY", "GBP"];
+const v1 = {
+  openapi: "3.1.0", info: { title: "FX", version: "1" }, servers: [{ url: "https://fx.test/v1" }],
+  paths: { "/latest": { get: { operationId: "get-latest", summary: "Get the latest rates",
+    parameters: [{ name: "base", in: "query", description: "Base currency to convert from", schema: { type: "string", enum: CURRENCIES } }],
+    responses: { "200": { description: "ok", content: { "application/json": { schema: { type: "object", properties: {
+      amount: { type: "number", description: "The amount to convert" }, base: { type: "string", enum: CURRENCIES }, date: { type: "string", format: "date" },
+      rates: { type: "object", description: "Exchange rates keyed by currency code", propertyNames: { type: "string", enum: CURRENCIES }, additionalProperties: { type: "number" } } } } } } } } } } },
+};
+const v2 = {
+  openapi: "3.1.0", info: { title: "FX", version: "2" }, servers: [{ url: "https://fx.test/v2" }],
+  paths: { "/rate/{base}/{quote}": { get: { operationId: "getRate", summary: "Get a single exchange rate pair", parameters: [
+    { name: "base", in: "path", required: true, schema: { type: "string", example: "EUR" } },
+    { name: "quote", in: "path", required: true, schema: { type: "string", example: "USD" } }],
+    responses: { "200": { description: "ok", content: { "application/json": { schema: { type: "object", properties: { base: { type: "string" }, quote: { type: "string" }, rate: { type: "number" } } } } } } } } } },
+};
+const other = {
+  openapi: "3.0.0", info: { title: "Other FX" }, servers: [{ url: "https://other.test" }],
+  paths: { "/convert/{from}/{to}": { get: { summary: "Exchange rate between two currencies", parameters: [
+    { name: "from", in: "path", required: true, description: "Source currency code", schema: { type: "string" } },
+    { name: "to", in: "path", required: true, description: "Target currency code", schema: { type: "string" } }],
+    responses: { "200": { description: "ok", content: { "application/json": { schema: { type: "object", properties: { rate: { type: "number" } } } } } } } } } },
+};
+
+function world() {
+  const state = { v1Retired: false, calls: [] as string[] };
+  const json = (b: unknown, status = 200) => new Response(JSON.stringify(b), { status, headers: { "content-type": "application/json" } });
+  const fetchMock = (async (input: any) => {
+    const u = new URL(typeof input === "string" ? input : input.url);
+    state.calls.push(`${u.host}${u.pathname}`);
+    if (u.host === "fx.test") {
+      if (u.pathname === "/") return json({ name: "FX", versions: { v1: { openapi: "/v1/openapi.json", status: state.v1Retired ? "retired" : "frozen" }, v2: { openapi: "/v2/openapi.json", status: "current" } } });
+      if (u.pathname.startsWith("/v1/") && state.v1Retired) return json({ error: "v1 has been retired; see /v2" }, 410);
+      if (u.pathname === "/v1/openapi.json") return json(v1);
+      if (u.pathname === "/v2/openapi.json") return json(v2);
+      if (u.pathname === "/v1/latest") {
+        const base = u.searchParams.get("base") ?? "EUR";
+        return json({ amount: 1, base, date: "2026-10-16", rates: Object.fromEntries(CURRENCIES.filter((c) => c !== base).map((c) => [c, c === "EUR" ? RATE[base] : 1])) });
+      }
+      const m = /^\/v2\/rate\/(\w+)\/(\w+)$/.exec(u.pathname);
+      if (m && m[2] === "EUR") return json({ base: m[1], quote: "EUR", rate: RATE[m[1]] });
+    }
+    if (u.host === "other.test") {
+      if (u.pathname === "/openapi.json") return json(other);
+      const m = /^\/convert\/(\w+)\/(\w+)$/.exec(u.pathname);
+      if (m) return json({ rate: RATE[m[1]] });
+    }
+    return json({ error: "not found" }, 404);
+  }) as typeof fetch;
+  return { state, fetchMock };
+}
+
+const requirement = (extra: Record<string, unknown> = {}) => ({
+  have: { base: "USD", quote: { value: "EUR", fixed: true } },
+  want: "number",
+  intent: "exchange rate from base currency to quote currency",
+  verify: [{ op: "gt", value: 0 }, { op: "lt", value: 1000 }] as any,
+  risks: ["read"] as any,
+  run: true,
+  publish: "Euro rate",
+  ...extra,
+});
+
+test("keyed maps: v1's rates map answers one currency, and two ports never share one value when another fits", async () => {
+  const { fetchMock } = world();
+  const rc = await RightClick.create({ name: "v1", fetch: fetchMock, directories: [] });
+  await rc.learn({ source: "https://fx.test/v1/openapi.json" });
+  const r = await rc.compose({ ...requirement(), publish: undefined });
+  assert.equal(r.executed?.status, "completed", JSON.stringify(r.executed?.attempts));
+  assert.equal(r.executed?.output, RATE.USD, "rates[EUR] for base USD, not v1's amount (1) and not rates[USD]");
+});
+
+test("genuine-change shape: v1 retired -> the published goal keeps working via v2 from the same origin, no intervention", async () => {
+  const { state, fetchMock } = world();
+  const rc = await RightClick.create({ name: "customer", fetch: fetchMock, directories: [] });
+  await rc.learn({ source: "https://fx.test/v1/openapi.json" });
+  const built = await rc.compose(requirement({ origins: ["https://fx.test"] }));
+  assert.equal(built.executed?.output, RATE.USD);
+
+  state.v1Retired = true; // the operator retires v1; the customer does nothing
+  const after = await rc.callPublished("euro-rate", { base: "JPY" });
+  assert.equal(after.ok, true, after.error);
+  assert.equal(after.result, RATE.JPY);
+  assert.ok(after.pipeline.some((t) => /single exchange rate pair/i.test(t)), `served by v2: ${after.pipeline}`);
+  assert.ok(!state.calls.some((c) => c.startsWith("other.test")), "never left the approved origin");
+});
+
+test("egress policy: a repair never routes the customer's data to an origin they did not approve; it fails closed", async () => {
+  const { state, fetchMock } = world();
+  const rc = await RightClick.create({ name: "strict", fetch: fetchMock, directories: [] });
+  await rc.learn({ sources: ["https://fx.test/v1/openapi.json", "https://other.test/openapi.json"] });
+  const built = await rc.compose(requirement({ origins: ["https://fx.test"], publish: "Strict euro rate" }));
+  assert.equal(built.executed?.output, RATE.USD);
+  assert.equal(rc.published.get("strict-euro-rate")?.origins?.[0], "https://fx.test");
+
+  state.v1Retired = true;
+  // The successor (v2) is at the approved origin, so it is found and used; other.test is never called.
+  const healed = await rc.callPublished("strict-euro-rate", { base: "GBP" });
+  assert.equal(healed.result, RATE.GBP);
+  assert.ok(!state.calls.some((c) => c.startsWith("other.test/convert")));
+
+  // Policy that allows neither: no route; other.test is still never used.
+  const none = await rc.compose(requirement({ origins: ["https://nowhere.test"], publish: undefined }));
+  assert.equal(none.executed?.status ?? "failed", "failed");
+  assert.ok(!state.calls.some((c) => c.startsWith("other.test/convert")));
+});
