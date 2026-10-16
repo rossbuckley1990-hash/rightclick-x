@@ -141,6 +141,6 @@ node experiments/cloud.ts   # live-internet experiments (read-only)
 
 ## Status
 
-v0.1.0. Verified: 61 tests, typecheck, the Chameleon Lab on a frozen build (10/10 generated environments), Node 24 and Bun 1.3, MCP Inspector over stdio and HTTP, live experiments in `experiments/results/`. Not yet verified: an actual Cloudflare / Deno Deploy deployment, YAML-only OpenAPI specs (not parsed), OAuth-protected remote MCP servers, and npm publishing.
+v0.1.0. Verified: 61 tests, typecheck, the Chameleon Lab on a frozen build (10/10 generated environments), Node 24 and Bun 1.3, MCP Inspector over stdio and HTTP, live experiments in `experiments/results/`. Also verified earlier: region-pinned Cloudflare deployment (E11-cloud, E12, E13). Not yet verified: Deno Deploy, YAML-only OpenAPI specs (not parsed), OAuth-protected remote MCP servers, and npm publishing.
 
 Apache-2.0.
