@@ -38,7 +38,8 @@ export type SourceKind =
   | "web"
   | "platform"
   | "composite"
-  | "peer";
+  | "peer"
+  | "cli";
 
 /** Destructive operations require confirmation; callers can constrain allowed risks. */
 export type Risk = "read" | "write" | "external" | "destructive";
@@ -146,7 +147,23 @@ export interface GoalInvoke {
   slug: string;
 }
 
+/** A local command-line program, run only inside the host sandbox. */
+export interface CliInvoke {
+  kind: "cli";
+  bin: string;
+  /** argv after the program: literal flags, and {input} placeholders materialised as files. */
+  args: Array<string | { input: string }>;
+  /** Input whose value is written to stdin. */
+  stdin?: string;
+  /** Exit codes observed together with real output for valid input. */
+  okExit: number[];
+  output: "text" | "json" | "html" | "xml";
+  /** SHA-256 of the program when it was investigated; a different program is not run as this. */
+  sha256: string;
+}
+
 export type Invoke =
+  | CliInvoke
   | HttpInvoke
   | GraphQLInvoke
   | McpInvoke

@@ -57,6 +57,7 @@ export function egressOf(c: Capability, graph: CapabilityGraph, seen = new Set<s
     case "builtin":
       return c.inputs.some((p) => ["url", "image.url", "domain", "ip", "email"].includes(p.type)) ? "anywhere" : [];
     case "platform":
+    case "cli": // sandboxed: no network at all
       return [];
     case "composite": {
       if (seen.has(c.id)) return [];

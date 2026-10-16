@@ -6,6 +6,8 @@ import { CapabilityGraph, signature, tokenize, type GraphEvent, type LearnDelta 
 import { Ledger, ReceiptChain, sha256, type Receipt } from "./core/ledger.ts";
 import { shapeOf, type IdentityState } from "./core/identities.ts";
 import { egressOf, plan, type Plan } from "./core/planner.ts";
+import { hostSandbox, type Sandbox } from "./core/sandbox.ts";
+import { investigateCli, type Investigation } from "./reflectors/cli.ts";
 import { distance, inferType, inspectValue, type Inspection } from "./core/semantics.ts";
 import type { Capability, CapabilityAnchor, FetchLike, PlanStep, Reflection, SemType } from "./core/types.ts";
 import { check, pick, type Predicate, type PredicateResult, type OutcomeWitness, type WitnessResult } from "./core/verify.ts";
@@ -88,6 +90,8 @@ export interface RuntimeOptions {
   destructive?: "confirm" | "allow";
   /** Operator authority, set outside any agent (configuration or environment), never by a tool call. */
   authority?: OperatorAuthority;
+  /** Override the host sandbox (tests and negative controls); null = no sandbox available. */
+  sandbox?: Sandbox | null;
 }
 
 export interface OperatorAuthority {
@@ -101,6 +105,12 @@ export interface OperatorAuthority {
   destructive?: "operator" | "agent-confirm" | "allow";
   /** Capability ids (or prefixes ending in "*") the operator approved for destructive use. */
   approve?: string[];
+  /**
+   * Discovery authority for local programs: absolute paths of programs (or directories ending
+   * in "/") the operator allows RightClick X to investigate and run, always inside the host
+   * sandbox. Nothing else on the machine is looked at.
+   */
+  investigate?: string[];
   /**
    * Capabilities the operator declares free of side effects, so they may be sent again during
    * repair (POST endpoints that only compute, for example): capability ids, prefixes ending in
@@ -234,11 +244,12 @@ function operationOf(c: Capability): string | undefined {
     op = `${inv.method.toUpperCase()} /${path}`;
   } else if (inv.kind === "graphql") op = `${inv.operation} ${inv.field}`;
   else if (inv.kind === "mcp") op = `tool ${inv.tool}`;
+  else if (inv.kind === "cli") op = `program ${inv.bin.split("/").pop()} ${inv.args.filter((a) => typeof a === "string").join(" ")}`.trim();
   else return undefined;
   return c.risk === "read" ? op : `${op} (${c.risk})`;
 }
 
-const HEALABLE = new Set(["http", "graphql", "mcp"]);
+const HEALABLE = new Set(["http", "graphql", "mcp", "cli"]);
 /** A failed plain run re-reads a contract at most this often (transient 5xx, timeouts and rate limits repeat). */
 const HEAL_REREAD_MS = 60_000;
 
@@ -269,7 +280,12 @@ export class RightClick {
   private runCounter = 0;
   private destructivePolicy: "operator" | "agent-confirm" | "allow" = "operator";
   private approvals: string[] = [];
+  /** The last investigation of each local program (evidence for context_explain / audits). */
+  investigations = new Map<string, Investigation>();
   private retrySafe: string[] = [];
+  private investigable: string[] = [];
+  private sandboxCache?: Promise<Sandbox | null>;
+  private hashCache = new Map<string, { key: string; sha256: string }>();
 
   private constructor(opts: RuntimeOptions) {
     this.net = {
@@ -292,6 +308,8 @@ export class RightClick {
     rc.destructivePolicy = opts.authority?.destructive ?? (opts.destructive === "allow" ? "allow" : opts.destructive === "confirm" ? "agent-confirm" : "operator");
     rc.approvals = [...(opts.authority?.approve ?? [])];
     rc.retrySafe = [...(opts.authority?.retry ?? [])];
+    rc.investigable = [...(opts.authority?.investigate ?? [])];
+    if (opts.sandbox !== undefined) rc.sandboxCache = Promise.resolve(opts.sandbox);
     rc.graph.add(b.reflection);
     const p = await platformReflection(rc.info, { bindings: opts.bindings, workspace: opts.workspace });
     rc.platformFns = p.fns;
@@ -421,7 +439,7 @@ export class RightClick {
       sources.map(async (source) => {
         try {
           const net = opts.net ?? this.net;
-          const d = await discover(net, source, { deep: opts.deep, mcp: (u) => this.mcp(u, net), kind: opts.kinds?.[source] });
+          const d = source.startsWith("cli:") ? await this.investigate(source.slice(4)) : await discover(net, source, { deep: opts.deep, mcp: (u) => this.mcp(u, net), kind: opts.kinds?.[source] });
           // Re-learning a source replaces everything it produced before, even when
           // the provider changed protocol (OpenAPI -> GraphQL -> MCP) and so its id.
           const previous = [...this.graph.providers.values()].filter((p) => p.meta?.source === source);
@@ -743,6 +761,23 @@ export class RightClick {
    * still names that operation, else the one capability that now does. A
    * changed id is never followed, and repair obeys the run's egress policy.
    */
+  /** The host sandbox, or null when this host offers none (then programs are never run). */
+  sandbox(): Promise<Sandbox | null> {
+    return (this.sandboxCache ??= hostSandbox());
+  }
+
+  /** Investigate an operator-authorised local program (source "cli:/path/to/program"). */
+  private async investigate(bin: string): Promise<Discovery> {
+    const allowed = this.investigable.some((a) => (a.endsWith("/") ? bin.startsWith(a) : a === bin));
+    if (!bin.startsWith("/") || !allowed) throw new Error(`not authorised to investigate ${bin}: the operator has not registered it (authority.investigate / RCX_INVESTIGATE)`);
+    const sb = await this.sandbox();
+    if (!sb) throw new Error(`unavailable: no sandbox on this host, so ${bin} is not investigated or run`);
+    const { reflection, investigation } = await investigateCli(bin, sb);
+    this.investigations.set(bin, investigation);
+    const probes = [{ url: `cli:${bin}`, kind: "cli", ok: !!reflection, detail: investigation.summary }];
+    return { reflections: reflection ? [reflection] : [], probes };
+  }
+
   private approved(id: string): boolean {
     return this.approvals.some((a) => (a.endsWith("*") ? id.startsWith(a.slice(0, -1)) : a === id));
   }
@@ -803,7 +838,8 @@ export class RightClick {
     if (!source) return done("no contract source to re-read");
     const allowed = net.policy?.origins;
     if (allowed && !allowed.includes(new URL(source).origin)) return done(`contract source ${new URL(source).origin} is outside the egress policy; not re-read`);
-    const last = this.healReads.get(source);
+    // The rate limit protects remote servers; a local program's presence is a cheap local fact.
+    const last = source.startsWith("cli:") ? undefined : this.healReads.get(source);
     if (last !== undefined && Date.now() - last < HEAL_REREAD_MS) return done(`contract at ${source} was re-read ${Math.round((Date.now() - last) / 1000)}s ago for an earlier failure; not re-read again yet`);
     this.healReads.set(source, Date.now());
     const meant = operationOf(cap);
@@ -1568,6 +1604,41 @@ export class RightClick {
         const j: any = await readBody(res);
         if (!res.ok || j?.status === "failed") throw new Error(`peer: ${j?.error ?? res.status}`);
         return j.output;
+      }
+      case "cli": {
+        const sb = await this.sandbox();
+        if (!sb) throw new Error(`unavailable: no sandbox on this host`);
+        const fs = await import("node:fs");
+        if (!fs.existsSync(inv.bin)) throw new Error(`program not installed: ${inv.bin} (HTTP 404 equivalent: nothing was run)`);
+        // The program must still be the one that was investigated.
+        const st = fs.statSync(inv.bin);
+        const key = `${st.size}:${st.mtimeMs}:${st.ino}`;
+        let cached = this.hashCache.get(inv.bin);
+        if (cached?.key !== key) {
+          const { createHash } = await import("node:crypto");
+          cached = { key, sha256: createHash("sha256").update(fs.readFileSync(inv.bin)).digest("hex") };
+          this.hashCache.set(inv.bin, cached);
+        }
+        if (cached.sha256 !== inv.sha256) throw new Error(`program changed since it was investigated: ${inv.bin} (sha256 ${cached.sha256.slice(0, 12)}, investigated ${inv.sha256.slice(0, 12)}); not run (HTTP 409 equivalent)`);
+        const files: Record<string, string> = {};
+        const argv = inv.args.map((a, i) => {
+          if (typeof a === "string") return a;
+          const name = `in${i}-${a.input.replace(/[^\w]/g, "")}.txt`;
+          files[name] = String(args[a.input] ?? "");
+          return name;
+        });
+        const r = await sb.run(inv.bin, argv, { stdin: inv.stdin ? String(args[inv.stdin] ?? "") : "", files });
+        if (r.timedOut) throw new Error(`${inv.bin} timed out in the sandbox`);
+        if (r.truncated) throw new Error(`${inv.bin} exceeded the output limit`);
+        if (!inv.okExit.includes(r.code ?? -1) || !r.stdout.trim()) throw new Error(`${inv.bin} exited ${r.code}${r.stdout.trim() ? "" : " without output"}: ${r.stderr.slice(0, 300)}`);
+        if (inv.output === "json") {
+          try {
+            return JSON.parse(r.stdout);
+          } catch {
+            throw new Error(`${inv.bin} did not print JSON this time`);
+          }
+        }
+        return r.stdout;
       }
       case "composite":
       case "goal":
