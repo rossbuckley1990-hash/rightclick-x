@@ -71,7 +71,9 @@ async function agent(client: "claude" | "codex", dir: string, prompt: string) {
     const env = Object.entries(s.env).map(([k, v]) => `${k}=${JSON.stringify(v)}`).join(",");
     r = await run(
       "codex",
-      ["exec", "--skip-git-repo-check", "--approve-for-me", "-c", `mcp_servers.rightclick-x.command=${JSON.stringify(s.command)}`, "-c", `mcp_servers.rightclick-x.args=${JSON.stringify(s.args)}`, "-c", `mcp_servers.rightclick-x.env={${env}}`, "-c", "mcp_servers.rightclick-x.tool_timeout_sec=300", "--output-last-message", `${dir}/last.txt`, prompt],
+      // Account-level app connectors would add MCP servers other than RightClick X
+      // (seen in the post hoc Q09 re-run: a remote RightClick app answered instead).
+      ["exec", "--skip-git-repo-check", "--approve-for-me", "--disable", "apps", "-c", `mcp_servers.rightclick-x.command=${JSON.stringify(s.command)}`, "-c", `mcp_servers.rightclick-x.args=${JSON.stringify(s.args)}`, "-c", `mcp_servers.rightclick-x.env={${env}}`, "-c", "mcp_servers.rightclick-x.tool_timeout_sec=300", "--output-last-message", `${dir}/last.txt`, prompt],
       dir,
       900_000,
     );

@@ -1,0 +1,150 @@
+{
+  "client": "codex",
+  "question": "Q09",
+  "prompt": "You are connected to exactly one MCP server, rightclick-x. Use only its tools.\nRightClick X has already learned several public life-science databases (see context_providers).\nAnswer the question using only data you obtain through rightclick-x tools, not from memory.\nIf the tools cannot give you the answer, say so instead of guessing.\nQuestion: For UniProtKB P04637: what is the length of the canonical sequence according to UniProtKB, and how many isoform entries does the EBI Proteins API isoforms endpoint return for it?\nEnd your reply with a final line exactly of the form: ANSWER: <canonical length> | <number of isoform entries>",
+  "answer": "393 | 9",
+  "parts": [
+    "393",
+    "9"
+  ],
+  "truth": [
+    393,
+    9
+  ],
+  "truthFacts": {
+    "length": 393,
+    "isoformEntries": 9,
+    "isoformAccessions": [
+      "P04637-6",
+      "P04637-1",
+      "P04637-9",
+      "P04637-5",
+      "P04637-8",
+      "P04637-7",
+      "P04637-4",
+      "P04637-3",
+      "P04637-2"
+    ],
+    "uniprotAlternativeProductsIsoforms": 9
+  },
+  "witness": null,
+  "perPart": [
+    true,
+    true
+  ],
+  "correct": true,
+  "grounded": true,
+  "correctAndGrounded": true,
+  "groundingChecks": [],
+  "seconds": 33.8,
+  "exit": 0,
+  "timedOut": false,
+  "clientMeta": {},
+  "mcpCalls": 7,
+  "mcpCallsByTool": {
+    "context_providers": 1,
+    "context_graph": 2,
+    "context_explain": 2,
+    "context_run": 2
+  },
+  "mcpCallLog": [
+    {
+      "tool": "context_providers",
+      "ok": true,
+      "ms": 0.7,
+      "args": {}
+    },
+    {
+      "tool": "context_graph",
+      "ok": true,
+      "ms": 21.8,
+      "args": {
+        "op": "search",
+        "query": "isoforms",
+        "limit": 20
+      }
+    },
+    {
+      "tool": "context_graph",
+      "ok": true,
+      "ms": 9.8,
+      "args": {
+        "op": "search",
+        "query": "uniprot",
+        "limit": 20
+      }
+    },
+    {
+      "tool": "context_explain",
+      "ok": true,
+      "ms": 7,
+      "args": {
+        "id": "openapi:openapi-definition:searchcursor"
+      }
+    },
+    {
+      "tool": "context_explain",
+      "ok": true,
+      "ms": 0.3,
+      "args": {
+        "id": "openapi:proteins-rest-api:getentriesforisoforms"
+      }
+    },
+    {
+      "tool": "context_run",
+      "ok": true,
+      "ms": 1205.1,
+      "args": {
+        "id": "openapi:openapi-definition:searchcursor",
+        "args": {
+          "query": "accession:P04637",
+          "fields": "accession,length",
+          "includeIsoform": false
+        },
+        "view": {
+          "select": "results"
+        }
+      }
+    },
+    {
+      "tool": "context_run",
+      "ok": true,
+      "ms": 3672.2,
+      "args": {
+        "id": "openapi:proteins-rest-api:getentriesforisoforms",
+        "args": {
+          "accession": "P04637"
+        },
+        "view": {
+          "count": true
+        }
+      }
+    }
+  ],
+  "learnedByAgent": [],
+  "composeUsed": 0,
+  "receipts": [
+    {
+      "capability": "openapi:openapi-definition:searchcursor",
+      "provider": "openapi:openapi-definition",
+      "status": "completed",
+      "ms": 1200.8
+    },
+    {
+      "capability": "openapi:proteins-rest-api:getentriesforisoforms",
+      "provider": "openapi:proteins-rest-api",
+      "status": "completed",
+      "ms": 3639.3
+    }
+  ],
+  "providersReached": [
+    "openapi:openapi-definition",
+    "openapi:proteins-rest-api"
+  ],
+  "requests": 3,
+  "requestsPerHost": {
+    "rest.uniprot.org": 2,
+    "www.ebi.ac.uk": 1
+  },
+  "finalText": "UniProtKB reports a canonical sequence length of **393 amino acids** for P04637. The [EBI Proteins API isoforms endpoint](https://www.ebi.ac.uk/proteins/api/proteins/P04637/isoforms) returned **9 entries**, queried through rightclick-x.\n\nANSWER: 393 | 9"
+}

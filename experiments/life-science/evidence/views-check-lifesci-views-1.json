@@ -1,0 +1,144 @@
+{
+  "at": "2026-10-16T16:24:18.607Z",
+  "build": {
+    "tag": "lifesci-views-1",
+    "commit": "8d417ea0e693fd2516e9d49a3c244ed0897a7401"
+  },
+  "startState": "/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/rcx-lifesci/lifesci-freeze-3/phase-a-state.json",
+  "posthoc": true,
+  "capability": "openapi:proteins-rest-api:getentriesforisoforms",
+  "args": {
+    "accession": "P04637"
+  },
+  "truth": [
+    393,
+    9
+  ],
+  "truthIsoformAccessions": [
+    "P04637-6",
+    "P04637-1",
+    "P04637-9",
+    "P04637-5",
+    "P04637-8",
+    "P04637-7",
+    "P04637-4",
+    "P04637-3",
+    "P04637-2"
+  ],
+  "withoutView": {
+    "ok": true,
+    "status": "completed",
+    "responseChars": 2805,
+    "outputPresent": false,
+    "outputView": {
+      "chars": 1214686,
+      "total": 9,
+      "omitted": true,
+      "reason": "the output is 1214686 characters of JSON, over the 32000-character response budget; nothing was cut, it was withheld whole",
+      "shape": {
+        "array": 9,
+        "of": {
+          "accession": "string",
+          "id": "string",
+          "proteinExistence": "string",
+          "info": {
+            "type": "string",
+            "created": "string",
+            "modified": "string",
+            "version": "number"
+          },
+          "organism": {
+            "taxonomy": "number",
+            "names": {
+              "array": 2
+            },
+            "lineage": {
+              "array": 14
+            }
+          },
+          "protein": {
+            "recommendedName": {
+              "object": 1
+            },
+            "alternativeName": {
+              "array": 3
+            }
+          },
+          "gene": {
+            "array": 1,
+            "of": {
+              "object": 2
+            }
+          },
+          "comments": {
+            "array": 1,
+            "of": {
+              "object": 3
+            }
+          },
+          "dbReferences": {
+            "array": 5,
+            "of": {
+              "object": 3
+            }
+          },
+          "references": {
+            "array": 238,
+            "of": {
+              "object": 4
+            }
+          },
+          "sequence": {
+            "version": "number",
+            "length": "number",
+            "mass": "number",
+            "modified": "string",
+            "sequence": "string(307)"
+          }
+        }
+      },
+      "hint": "Ask for less with view: {\"count\":true}, {\"select\":\"<path>\"}, {\"fields\":[\"<path>\",…]}, {\"offset\":0,\"limit\":10}; or {\"full\":true} for all of it. To view this output again without re-running: context_run_status {\"runId\":\"run_mvb6gti0_1\",\"view\":{…}}."
+    },
+    "outputDigest": "fd4898911792fa8ea2048157820bef744ea9d15ff77745ec69a88c1af8160b8c"
+  },
+  "countOfRecordedRun": {
+    "ok": true,
+    "responseChars": 1135,
+    "output": 9
+  },
+  "accessionsOfRecordedRun": {
+    "ok": true,
+    "responseChars": 1290,
+    "output": [
+      "P04637-6",
+      "P04637-1",
+      "P04637-9",
+      "P04637-5",
+      "P04637-8",
+      "P04637-7",
+      "P04637-4",
+      "P04637-3",
+      "P04637-2"
+    ]
+  },
+  "countOnFreshRun": {
+    "ok": true,
+    "status": "completed",
+    "responseChars": 1133,
+    "output": 9,
+    "outputDigest": "fd4898911792fa8ea2048157820bef744ea9d15ff77745ec69a88c1af8160b8c"
+  },
+  "fullOnRequest": {
+    "ok": true,
+    "responseChars": 2433932,
+    "length": 9,
+    "outputDigest": "fd4898911792fa8ea2048157820bef744ea9d15ff77745ec69a88c1af8160b8c"
+  },
+  "verdict": {
+    "summaryCountMatchesTruth": true,
+    "countMatchesTruth": true,
+    "accessionsMatchTruth": true,
+    "fullOutputStillAvailable": true,
+    "digestOfRecordedRunUnchangedByViews": true
+  }
+}

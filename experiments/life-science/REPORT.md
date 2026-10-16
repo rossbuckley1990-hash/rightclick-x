@@ -9,6 +9,7 @@
 - `phase-a-*.json`;
 - `phase-b-lifesci-freeze-3/` (one file per session, `summary.json`, `rescored.json`);
 - `phase-c-lifesci-freeze-3.json`;
+- `views-check-lifesci-views-1.json`, `phase-b-views-lifesci-views-1/` (post hoc Q09 follow-up);
 - `bodies-manifest.json` (SHA-256 of all 113 MB of raw responses, which are kept outside git).
 
 ## Summary
@@ -162,13 +163,36 @@ The contracts are byte-for-byte Internet Archive captures, with provenance and d
 
 No claim of a first is made. Only these two systems were checked, and this is not a head-to-head benchmark: different databases, protocols (SPARQL/TRAPI vs REST/GraphQL) and questions.
 
+## Follow-up (post hoc): output views for the Q09 gap
+
+Not pre-registered, single run. It tests one product change against the one miss it targets.
+
+**Change.** `8d417ea`, tagged `lifesci-views-1` (`main` at the time + this change only). `context_run`, `context_run_status` and `context_compose` take an optional `view`: `select`, `fields`, `count`, `offset`, `limit`, `full`. Without a view, an output over 32,000 characters of JSON is withheld whole, never cut. It is replaced by its size, count and shape, plus how to ask for less or for all of it. Run records, receipts and output digests still cover the full output. Regression tests are in `test/output-views.test.ts`.
+
+**Harness check on the real API** (`views-check.ts`, no AI; `evidence/views-check-lifesci-views-1.json`). Same Phase A state, live EBI Proteins:
+
+| Call | Response | Result |
+|---|---|---|
+| `context_run` isoforms P04637, no view | 2,805 chars (output 1,214,686 chars, withheld) | summary `total: 9` |
+| `context_run_status` same run, `count` | 1,135 chars | 9, no second upstream call |
+| `context_run_status` same run, `select: "accession"` | 1,290 chars | the 9 accessions truth lists |
+| `context_run_status` same run, `full: true` | 2,433,932 chars | all 9 entries, same output digest |
+
+Truth, computed directly at the same time: 393 | 9.
+
+**Agents, Q09 only** (`evidence/phase-b-views-lifesci-views-1/`):
+
+- **Codex: ✓ `393 | 9`, grounded, 34 s / 7 calls** (freeze-3: ✓ 45 s / 7). Unprompted, it called the isoforms capability with `view: {"count": true}`.
+- **Codex, attempt 1: invalid, preserved** (`codex-Q09-attempt1-remote-app.json`). Codex used an account-level app connector: a different, remote RightClick deployment without these databases. It logged 0 calls to the server under test and answered "unavailable". The harness now runs Codex with `--disable apps` (deviation 8).
+- **Claude Code: not run.** The `claude` CLI's login had expired ("OAuth session expired and could not be refreshed"). The session made no tool call (`claude-Q09-attempt1-auth-failure.json`). Claude Code's original Q09 miss is therefore **not yet re-tested** with an agent.
+
 ## Limitations
 
 - **Small and single-run.** 14 questions, 2 clients, 1 run each, 5 databases. No variance estimate.
 - **Friendly targets.** All five publish machine-readable contracts. Databases with only SPARQL/RDF (most of TogoMCP's RDF Portal), or with no contract at all, were not tested.
 - **The agent does the identifier bridging.** Typed composition across databases did not happen (P3). Fixing it needs cross-provider identifier equivalence: learned from observed values, or from annotations such as x-bte. That is not built.
 - **Self-healing covers `context_compose`/goals only.** A failed `context_run` does not re-reflect its source (C1-c). An id-addressed call after an identity shift runs the new operation without an error (C2). These were found, not fixed.
-- **No server-side projection or aggregation over large outputs** (Q09).
+- **No server-side projection or aggregation over large outputs** (Q09) on the builds Phase B ran. Output views were added afterwards (see *Follow-up*). They are tested on the real API and with Codex, not yet with Claude Code. There is no filter operator.
 - **The `selection` field list is clipped** at 3,000 characters for very wide GraphQL types.
 - **Contract quirks needed product fixes.** "Zero per-database authoring" held only after three general fixes made during the experiment. More databases will surface more such quirks.
 - **The replay proxy** emulates "the contract at the same URL changed". The old v1 service no longer exists, so C1's pre-change state was learned but never executed successfully.
@@ -184,6 +208,7 @@ No claim of a first is made. Only these two systems were checked, and this is no
 5. After Phase B, `polite-fetch.ts` was changed to also keep bodies relayed by the local replay proxy, which C1-c grounding needed. Phase B had already run with the original version.
 6. C2 planned no goal/anchor test, and none was run. Instead the shifted id was invoked directly before and after re-learning.
 7. C1-b composed with `want: json` and the stale capability as anchor, because RCSB's response schema is an external `$ref` and types only as `json`.
+8. The Q09 follow-up is post hoc. Its start state is the freeze-3 Phase A state, re-derived once by the `lifesci-views-1` build. Copied raw, the newer semantics version re-learned all six providers on every startup, so the server took 5.1 s to answer `initialize`; re-derived, it took 0.13 s, with the same providers and capability counts. Codex was run with `--disable apps` so that RightClick X was its only MCP server, as pre-registered. In the harness check and the first, invalid attempts, the harness's own truth queries ran without `polite-fetch.ts`: two direct requests per run.
 
 ## Reproduce
 
@@ -192,6 +217,9 @@ RCX_FREEZE=lifesci-freeze-3 node experiments/life-science/phase-a.ts
 RCX_FREEZE=lifesci-freeze-3 node --import ./experiments/life-science/polite-fetch.ts experiments/life-science/phase-b.ts --label phase-b
 node --import ./experiments/life-science/polite-fetch.ts experiments/life-science/rescore.ts phase-b-lifesci-freeze-3
 RCX_FREEZE=lifesci-freeze-3 node --import ./experiments/life-science/polite-fetch.ts experiments/life-science/phase-c.ts
+# Q09 follow-up (post hoc), on a start state re-derived by the views build (deviation 8)
+RCX_FREEZE=lifesci-views-1 node --import ./experiments/life-science/polite-fetch.ts experiments/life-science/views-check.ts --state <state>
+RCX_FREEZE=lifesci-views-1 node --import ./experiments/life-science/polite-fetch.ts experiments/life-science/phase-b.ts --only Q09 --label phase-b-views --state <state>
 ```
 
 Needs Node ≥ 22.18 and logged-in `claude` and `codex` CLIs. Results vary with live data; truth is recomputed at the same time.
