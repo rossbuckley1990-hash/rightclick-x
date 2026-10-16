@@ -132,6 +132,10 @@ export function reflectMcpTools(tools: any[], endpoint: string, serverName?: str
       outputs.push({ name: "", type: "json", required: true });
       for (const [name, s] of Object.entries<any>(os.properties)) {
         outputs.push({ name, type: inferType(name, s, s?.description ?? ""), required: true, wire: s?.type });
+        // One level of nesting, as the OpenAPI and GraphQL reflectors do ({ result: { rate } }).
+        for (const [sub, ss] of Object.entries<any>(s?.properties ?? {}).slice(0, 12)) {
+          outputs.push({ name: `${name}.${sub}`, type: inferType(sub, ss, ss?.description ?? ""), required: true, wire: ss?.type });
+        }
       }
     } else {
       outputs.push({ name: "", type: "text", required: true });

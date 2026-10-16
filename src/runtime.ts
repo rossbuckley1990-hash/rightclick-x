@@ -625,6 +625,7 @@ export class RightClick {
     // (and every crystallized pipeline containing it) and re-plan.
     const attempts: Array<{ summary: string; failed: string; error: string; healing?: string }> = [];
     const exclude = new Set<string>();
+    const baselineIntent = plans[0]?.intentScore ?? 0;
     const refreshed = new Set<string>();
     const t0 = performance.now();
     for (let attempt = 0; attempt < 6 && plans.length; attempt++) {
@@ -693,8 +694,13 @@ export class RightClick {
           // A crystallized pipeline in a failed plan is suspect as a whole.
           for (const s of p.steps) if (this.graph.get(s.capability)?.invoke.kind === "composite") exclude.add(s.capability);
         }
-        plans = plan(this.graph, this.ledger, { ...goal, exclude });
-        if (!plans.length && (await acquireMore())) plans = plan(this.graph, this.ledger, { ...goal, exclude });
+        // Healing must preserve the meaning of the goal: a recovery plan may not
+        // cover less of the intent than the plan it replaces (an invoice total
+        // is a number, but it is not a tax rate).
+        const floor = Math.min(p.intentScore, baselineIntent);
+        const keep = (ps: Plan[]) => ps.filter((x) => x.intentScore >= floor);
+        plans = keep(plan(this.graph, this.ledger, { ...goal, exclude }));
+        if (!plans.length && (await acquireMore())) plans = keep(plan(this.graph, this.ledger, { ...goal, exclude }));
       }
     }
     result.executed = {

@@ -21,7 +21,9 @@
     "serve": "node bin/rcx.ts serve --demo",
     "build": "bun build bin/rcx.ts --target node --outfile dist/rcx.mjs && bun build src/entry/edge.ts --target browser --outfile dist/edge.js",
     "build:bin": "bun build bin/rcx.ts --compile --outfile dist/rcx",
-    "prepublishOnly": "npm run build && npm test"
+    "prepublishOnly": "npm run build && npm test",
+    "lab": "node lab/run.ts",
+    "lab:report": "node lab/report.ts 10"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20261015.1",

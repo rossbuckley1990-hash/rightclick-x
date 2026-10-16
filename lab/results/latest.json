@@ -1,0 +1,246 @@
+{
+  "seed": 637888138,
+  "startedAt": "2026-10-16T06:24:08.468Z",
+  "steps": [
+    {
+      "n": 1,
+      "title": "Start disposable services generated from fixtures",
+      "ok": true,
+      "services": 3
+    },
+    {
+      "n": 2,
+      "title": "Connect an MCP client to RightClick X (stdio)",
+      "ok": true,
+      "server": {
+        "name": "rightclick-x",
+        "title": "RightClick X",
+        "version": "0.1.0"
+      },
+      "tools": 13,
+      "startupMs": 117.1
+    },
+    {
+      "n": 3,
+      "title": "Present a business objective: \"For an invoice, find the tax rate that applies in its customer's country.\"",
+      "ok": true,
+      "goal": {
+        "have": {
+          "invoice_id": "<invoice>"
+        },
+        "want": "number",
+        "intent": "tax rate invoice customer country",
+        "verify": [
+          {
+            "op": "type",
+            "value": "number"
+          }
+        ]
+      }
+    },
+    {
+      "n": 4,
+      "title": "Discover contracts from root addresses only (no protocols, no schemas given)",
+      "ok": true,
+      "found": [
+        "graphql",
+        "mcp",
+        "mcp"
+      ],
+      "newCapabilities": 3,
+      "ms": 33.7
+    },
+    {
+      "n": 5,
+      "title": "Identify suitable capabilities",
+      "ok": true,
+      "candidatePlans": 3,
+      "best": [
+        "Fetch invoice details",
+        "Get Customer",
+        "Tax rate by country"
+      ],
+      "providers": [
+        "mcp:fjordsoft",
+        "graphql:127-0-0-1-59653-graphql",
+        "mcp:paperhaus"
+      ],
+      "planningMs": 2.3
+    },
+    {
+      "n": 6,
+      "title": "Compose a multi-provider workflow",
+      "ok": true,
+      "steps": [
+        "Fetch invoice details ← invoiceId=$in.invoice_id",
+        "Get Customer ← customer_number=0.customerId",
+        "Tax rate by country ← country=1.countryCode"
+      ]
+    },
+    {
+      "n": 7,
+      "title": "Execute the workflow",
+      "ok": true,
+      "invoice": "INV-8931-0",
+      "pipeline": [
+        "Fetch invoice details",
+        "Get Customer",
+        "Tax rate by country"
+      ],
+      "ms": 4.3
+    },
+    {
+      "n": 8,
+      "title": "Verify against independently held test data",
+      "ok": true,
+      "expected": 17.9,
+      "got": 17.9
+    },
+    {
+      "n": 9,
+      "title": "Save the successful composition and reuse it",
+      "ok": true,
+      "saved": "Tax rate invoice customer country: Fetch invoice details → Get Customer → Tax rate by country",
+      "reusedAs": [
+        "Tax rate invoice customer country: Fetch invoice details → Get Customer → Tax rate by country"
+      ],
+      "expected": 12.2,
+      "got": 12.2,
+      "ms": 2.6
+    },
+    {
+      "n": 10,
+      "title": "Change the tax provider's interface (Paperhaus)",
+      "ok": true,
+      "before": "mcp \"Tax rate by country\" country → country, standard_rate",
+      "after": "graphql \"Country tax rate\" country_code → result.{country_code, rate}"
+    },
+    {
+      "n": 11,
+      "title": "Recover without changing integration code",
+      "ok": true,
+      "healing": [
+        "API drift at http://127.0.0.1:59655/: mcp:paperhaus → graphql:127-0-0-1-59655-graphql; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+      ],
+      "via": [
+        "mcp:fjordsoft",
+        "graphql:127-0-0-1-59653-graphql",
+        "graphql:127-0-0-1-59655-graphql"
+      ],
+      "expected": 24.7,
+      "got": 24.7,
+      "ms": 8.4
+    },
+    {
+      "n": 12,
+      "title": "Remove the tax provider (Paperhaus)",
+      "ok": true
+    },
+    {
+      "n": 13,
+      "title": "Withdraw its capabilities accurately; report the objective as impossible, not faked",
+      "ok": true,
+      "status": "failed",
+      "healing": [
+        "provider gone at http://127.0.0.1:59655/: withdrew graphql:127-0-0-1-59655-graphql (1 capabilities, 1 pipeline(s) retired)"
+      ],
+      "withdrawn": [
+        "GraphQL 127.0.0.1:59655"
+      ],
+      "capabilities": "21 → 19",
+      "savedPipelines": "1 → 0"
+    },
+    {
+      "n": 14,
+      "title": "Introduce a different tax provider (Fernway, graphql): the objective works again",
+      "ok": true,
+      "learned": [
+        "graphql: 1 fields"
+      ],
+      "via": [
+        "mcp:fjordsoft",
+        "graphql:127-0-0-1-59653-graphql",
+        "graphql:127-0-0-1-59720-graphql"
+      ],
+      "expected": 18.8,
+      "got": 18.8,
+      "ms": 1.8
+    }
+  ],
+  "benchmarks": {
+    "startupMs": 117.1,
+    "mcpLatencyMs": {
+      "p50": 0.04,
+      "p95": 0.12
+    },
+    "discoveryMs": 33.7,
+    "graphStatsMs": 0.1,
+    "graph": {
+      "providers": 5,
+      "capabilities": 20,
+      "edges": 37,
+      "chains2": 37,
+      "chains3": 57,
+      "total": 114
+    },
+    "planningMs": 2.3,
+    "executionMs": 4.3,
+    "recoveryAfterChangeMs": 8.4,
+    "recoveryAfterNewProviderMs": 1.8,
+    "memoryMB": 135
+  },
+  "freeze": {
+    "commit": "da7d8d7cc2f5f4e69df65761528757f925df9609",
+    "tags": [],
+    "productCodeUnchanged": false,
+    "frozen": false
+  },
+  "environment": {
+    "invoices": {
+      "brand": "Fjordsoft",
+      "protocol": "mcp",
+      "operation": "Fetch invoice details",
+      "input": "invoiceId",
+      "outputs": [
+        "invoiceId",
+        "customerId",
+        "net_amount",
+        "currency_code"
+      ]
+    },
+    "customers": {
+      "brand": "Ledgerline",
+      "protocol": "graphql",
+      "operation": "Get customer",
+      "input": "customer_number",
+      "outputs": [
+        "customer_number",
+        "display_name",
+        "countryCode"
+      ]
+    },
+    "taxPrimary": {
+      "brand": "Paperhaus",
+      "protocol": "mcp",
+      "operation": "Tax rate by country",
+      "input": "country",
+      "outputs": [
+        "country",
+        "standard_rate"
+      ]
+    }
+  },
+  "firstRunProviders": [
+    "mcp:fjordsoft",
+    "graphql:127-0-0-1-59653-graphql",
+    "mcp:paperhaus"
+  ],
+  "receipts": {
+    "count": 21,
+    "intact": true,
+    "brokenAt": null,
+    "head": "0d4b773dedda335222523176f52be1c228928f4edf67c51c89789cf47fe1c6f3"
+  },
+  "passed": 14,
+  "total": 14
+}

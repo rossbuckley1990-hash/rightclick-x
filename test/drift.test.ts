@@ -87,3 +87,27 @@ test("a provider that disappears is withdrawn: capabilities removed, pipelines r
   const none = await rc.compose({ ...goal, run: true });
   assert.notEqual(none.executed?.status, "completed");
 });
+
+test("healing preserves the meaning of the goal: no weaker substitute when the real capability is gone", async () => {
+  const tax = async (req: Request) => {
+    const u = new URL(req.url);
+    if (u.pathname === "/openapi.json")
+      return Response.json({ openapi: "3.0.3", info: { title: "Taxes" }, paths: { "/rate": { get: { operationId: "taxRate", summary: "Tax rate by country", parameters: [{ name: "country", in: "query", required: true, schema: { type: "string" } }], responses: { 200: { description: "ok", content: { "application/json": { schema: { type: "object", properties: { tax_rate: { type: "number" } } } } } } } } } } });
+    return Response.json({ tax_rate: 19 });
+  };
+  const orders = async (req: Request) => {
+    const u = new URL(req.url);
+    if (u.pathname === "/openapi.json")
+      return Response.json({ openapi: "3.0.3", info: { title: "Orders" }, paths: { "/order": { get: { operationId: "getOrder", summary: "Get order", parameters: [{ name: "order_id", in: "query", required: true, schema: { type: "string" } }], responses: { 200: { description: "ok", content: { "application/json": { schema: { type: "object", properties: { country: { type: "string" }, total: { type: "number" } } } } } } } } } } });
+    return Response.json({ country: "DE", total: 1234.5 });
+  };
+  let taxUp = true;
+  const rc = await RightClick.create({ fetch: routerFetch({ "https://orders.test": orders, "https://tax.test": (r) => (taxUp ? tax(r) : Promise.resolve(new Response("gone", { status: 404 }))) }), directories: [] });
+  await rc.learn({ sources: ["https://orders.test/openapi.json", "https://tax.test/openapi.json"] });
+  const goal = { have: { order_id: "A-1" }, want: "number", intent: "tax rate order country", run: true };
+  const ok = await rc.compose(goal);
+  assert.equal(ok.executed?.output, 19);
+  taxUp = false;
+  const gone = await rc.compose(goal);
+  assert.notEqual(gone.executed?.status, "completed", `must not answer with the order total: ${JSON.stringify(gone.executed?.output)}`);
+});

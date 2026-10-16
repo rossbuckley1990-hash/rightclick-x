@@ -1,0 +1,23 @@
+{
+  "description": "Vocabulary pools for the Chameleon Lab. Each run draws names, field spellings and protocols from these pools with a fresh seed. RightClick X has no knowledge of this file.",
+  "brands": ["Ledgerline", "Paperhaus", "Fernway", "Quillbase", "Tallyport", "Northwind Billing", "Ashgrove", "Brightmark", "Cobaltix", "Duneworks", "Emberlane", "Fjordsoft"],
+  "protocols": ["openapi", "graphql", "mcp"],
+  "services": {
+    "invoices": {
+      "operation": ["Retrieve invoice", "Get invoice", "Fetch invoice details", "Invoice lookup"],
+      "input": { "invoice": ["invoice_id", "invoiceId", "invoice_number"] },
+      "output": { "invoice": ["invoice_id", "invoiceId", "invoice_number"], "customer": ["customer_id", "customerId", "customer_number"], "amount": ["amount", "total", "net_amount"], "currency": ["currency", "currency_code"] }
+    },
+    "customers": {
+      "operation": ["Look up customer", "Get customer", "Customer profile", "Fetch customer record"],
+      "input": { "customer": ["customer_id", "customerId", "customer_number"] },
+      "output": { "customer": ["customer_id", "customerId", "customer_number"], "name": ["display_name", "company_name", "legal_name"], "country": ["country", "country_code", "countryCode"] }
+    },
+    "tax": {
+      "operation": ["Tax rate by country", "Country tax rate", "Get tax rate", "Lookup tax rate for a country"],
+      "input": { "country": ["country", "country_code", "countryCode"] },
+      "output": { "country": ["country", "country_code", "countryCode"], "rate": ["tax_rate", "vat_rate", "rate", "standard_rate"] }
+    }
+  },
+  "countries": ["DE", "FR", "IE", "JP", "BR", "KE", "NZ", "CA"]
+}
