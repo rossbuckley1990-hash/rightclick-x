@@ -24,16 +24,20 @@ const contract = (servers: string, paths: Record<string, unknown>) => ({ openapi
 function catalog(initial: { spec: unknown; routes: Record<string, () => Response> }) {
   let current = initial;
   const calls: string[] = [];
+  const contract = { reads: 0 };
   const handler = async (req: Request) => {
     const { pathname } = new URL(req.url);
-    if (pathname === "/openapi.json") return json(current.spec);
+    if (pathname === "/openapi.json") {
+      contract.reads++;
+      return json(current.spec);
+    }
     calls.push(pathname);
     for (const [pattern, fn] of Object.entries(current.routes)) {
       if (new RegExp(`^${pattern.replace(/\{[^}]+\}/g, "[^/]+")}$`).test(pathname)) return fn();
     }
     return json({ error: "not found" }, 404);
   };
-  return { handler, calls, release: (next: typeof initial) => (current = next) };
+  return { handler, calls, contract, release: (next: typeof initial) => (current = next) };
 }
 
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -181,4 +185,49 @@ test("plan steps are chosen by their current contract: compose is not refused by
   const r = await rc.compose({ have: { term: "T1" }, want: "json", through: [id], run: true, crystallize: false });
   assert.equal(r.executed?.status, "completed", JSON.stringify(r.executed?.attempts));
   assert.ok(rc.meaningChanges.has(id), "a plan step does not acknowledge the change for id-addressed callers");
+});
+
+test("repeated failures re-read the contract once, not on every call", async () => {
+  const svc = catalog({ spec: contract("/svc/v1", { "/items/{item}/parts": op("listParts", "item") }), routes: { "/svc/v1/items/{item}/parts": () => json({ error: "busy" }, 503) } });
+  const rc = await RightClick.create({ fetch: routerFetch({ [ORIGIN]: svc.handler }), directories: [] });
+  await rc.learn({ source: SOURCE });
+  const id = idOf(rc, "listParts");
+  const reads = svc.contract.reads;
+  const first = await rc.run(id, { item: "a1" });
+  const second = await rc.run(id, { item: "a1" });
+  assert.equal(svc.contract.reads, reads + 1);
+  assert.match(first.healing!.note, /no contract change/);
+  assert.match(second.healing!.note, /re-read \d+s ago for an earlier failure; not re-read again yet/);
+  assert.match(second.error!, /503/);
+});
+
+test("a saved goal anchored on an id follows the operation it was built on when the id is reassigned", async () => {
+  const classes = () => json(["child-a", "child-b"]);
+  const v1 = { spec: contract("/api", { "/classes/{term}/children": op("getChildren", "term") }), routes: { "/api/classes/{term}/children": classes } };
+  for (const successor of [true, false]) {
+    const svc = catalog(v1);
+    const rc = await RightClick.create({ fetch: routerFetch({ [ORIGIN]: svc.handler }), directories: [] });
+    await rc.learn({ source: SOURCE });
+    const id = idOf(rc, "getChildren");
+    const published = await rc.compose({ have: { term: "T1" }, want: "json", through: [id], run: true, publish: "Term children" });
+    assert.equal(published.executed?.status, "completed");
+    assert.equal(rc.published.get("term-children")!.anchors![0].operation, "GET /classes/{}/children");
+
+    // Same id, same title, same input types: only the operation tells them apart.
+    svc.release({
+      spec: contract("/api", { "/individuals/{term}/children": op("getChildren", "term"), ...(successor ? { "/classes/{term}/children": op("getChildren_1", "term") } : {}) }),
+      routes: { "/api/classes/{term}/children": classes, "/api/individuals/{term}/children": () => json([]) },
+    });
+    await rc.learn({ source: SOURCE });
+    const r = await rc.run("goal:term-children", { term: "T1" });
+    assert.ok(!svc.calls.some((p) => p.startsWith("/api/individuals")), "the reassigned id's new operation is never called");
+    if (successor) {
+      assert.equal(r.status, "completed", r.error);
+      assert.deepEqual(r.output, ["child-a", "child-b"]);
+      assert.ok(r.steps!.some((s) => rc.runs.get(s)?.capability === idOf(rc, "getChildren_1")));
+    } else {
+      assert.equal(r.status, "failed");
+      assert.match(r.error!, /required anchor contract changed meaning: .*getchildren \(it called GET \/classes\/\{\}\/children, it now calls GET \/individuals\/\{\}\/children\)/);
+    }
+  }
 });

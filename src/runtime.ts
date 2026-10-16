@@ -191,6 +191,8 @@ function operationOf(c: Capability, base?: unknown): string | undefined {
 }
 
 const HEALABLE = new Set(["http", "graphql", "mcp"]);
+/** A failed plain run re-reads a contract at most this often (transient 5xx, timeouts and rate limits repeat). */
+const HEAL_REREAD_MS = 60_000;
 
 const RUN_BUFFER = 500;
 
@@ -204,6 +206,8 @@ export class RightClick {
   readonly name: string;
   readonly startedAt = new Date();
   readonly published = new Map<string, PublishedGoal>();
+  /** When a failed plain run last re-read each contract source, so repeated failures do not re-read it on every call. */
+  private healReads = new Map<string, number>();
   /** Ids re-learning pointed at a different operation; id-addressed runs refuse them until acknowledged. */
   readonly meaningChanges = new Map<string, MeaningChange>();
   /** Optional sink for an audit log of MCP tool calls (set by hosts, e.g. RCX_MCP_LOG). */
@@ -693,6 +697,9 @@ export class RightClick {
     if (!source) return done("no contract source to re-read");
     const allowed = net.policy?.origins;
     if (allowed && !allowed.includes(new URL(source).origin)) return done(`contract source ${new URL(source).origin} is outside the egress policy; not re-read`);
+    const last = this.healReads.get(source);
+    if (last !== undefined && Date.now() - last < HEAL_REREAD_MS) return done(`contract at ${source} was re-read ${Math.round((Date.now() - last) / 1000)}s ago for an earlier failure; not re-read again yet`);
+    this.healReads.set(source, Date.now());
     const meant = operationOf(cap, provider?.meta?.base);
     const r = (await this.learn({ source, deep: true, net })).results[0];
     const d = r?.drift;
@@ -792,7 +799,13 @@ export class RightClick {
       risk: cap.risk,
       inputTypes: cap.inputs.filter((p) => p.required).map((p) => p.type).sort(),
       outputTypes: leaves.map((p) => p.type).sort(),
+      ...this.operationField(cap),
     };
+  }
+
+  private operationField(cap: Capability): { operation?: string } {
+    const operation = operationOf(cap, this.graph.providers.get(cap.provider)?.meta?.base);
+    return operation ? { operation } : {};
   }
 
   private pinAnchors(through: string[]): CapabilityAnchor[] {
@@ -807,17 +820,27 @@ export class RightClick {
 
   private resolveAnchors(anchors: CapabilityAnchor[]): string[] {
     return anchors.map((anchor) => {
-      const equivalent = (cap: Capability) => {
+      const sameRole = (cap: Capability) => {
         const candidate = this.describeAnchor(cap);
-        return candidate.source === anchor.source && candidate.title === anchor.title && candidate.risk === anchor.risk &&
+        return candidate.source === anchor.source && candidate.risk === anchor.risk &&
           JSON.stringify(candidate.inputTypes) === JSON.stringify(anchor.inputTypes) && JSON.stringify(candidate.outputTypes) === JSON.stringify(anchor.outputTypes);
       };
+      const equivalent = (cap: Capability) => sameRole(cap) && this.describeAnchor(cap).title === anchor.title;
+      // What the anchor invoked when pinned; an older pin learns it from a recorded change of meaning.
+      const pinned = anchor.operation ?? this.meaningChanges.get(anchor.id)?.before;
+      const carriesPinned = (cap: Capability) => !!pinned && sameRole(cap) && this.operationField(cap).operation === pinned;
       const exact = this.graph.get(anchor.id);
       if (exact) {
-        if (!equivalent(exact)) throw new Error(`required anchor contract changed meaning: ${anchor.id}`);
-        return exact.id;
+        if (pinned ? carriesPinned(exact) : equivalent(exact)) return exact.id;
+        // The id now names something else (an operationId reassigned between releases,
+        // same title and types). Follow the operation the goal was built on, if exactly
+        // one capability at that source still carries it; never the id.
+        const successors = pinned && anchor.source ? this.graph.list().filter((c) => c.id !== exact.id && carriesPinned(c)) : [];
+        if (successors.length === 1) return successors[0].id;
+        throw new Error(`required anchor contract changed meaning: ${anchor.id}${pinned && this.operationField(exact).operation !== pinned ? ` (it called ${pinned}, it now calls ${this.operationField(exact).operation})` : ""}`);
       }
-      const candidates = anchor.source ? this.graph.list().filter(equivalent) : [];
+      let candidates = anchor.source ? this.graph.list().filter(equivalent) : [];
+      if (!candidates.length && anchor.source) candidates = this.graph.list().filter(carriesPinned);
       if (candidates.length !== 1) throw new Error(`${candidates.length ? "ambiguous" : "unresolved"} required anchor: ${anchor.id}; expected one equivalent operation at ${anchor.source ?? "its original identity"}, found ${candidates.length}`);
       return candidates[0].id;
     });

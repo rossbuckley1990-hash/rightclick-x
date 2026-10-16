@@ -53,6 +53,8 @@ export interface CapabilityAnchor {
   risk: Risk;
   inputTypes: SemType[];
   outputTypes: SemType[];
+  /** What the id invoked when pinned (method and path below the base, GraphQL field or MCP tool). Absent on older pins. */
+  operation?: string;
 }
 
 export interface HttpInvoke {
