@@ -188,7 +188,11 @@ export function plan(graph: CapabilityGraph, ledger: Ledger, goal: Goal): Plan[]
         const finishes = produced.some((v) => satisfies(goal.want, v.type));
         // Required information is progress even without a new type (json -> json carrying "resolution").
         const informs = !!goal.require?.length && goal.require.some((t) => [...cap.outputs.map((o) => o.name), ...(cap.fields ?? []).map((f) => f.path)].some((path) => carries(path, t)));
-        const novel = informs || produced.some((v) => !node.values.some((h) => h.type === v.type && (v.schemes ?? []).every((s) => h.schemes?.includes(s))));
+        // So is intent: a type-preserving transformation (html -> corrected html) that covers intent
+        // words the plan has not covered yet is progress, even as an intermediate step.
+        const covered = new Set(node.steps.flatMap((st) => [...tokensOf(graph.get(st.capability)!)]).filter((t) => intent.has(t)));
+        const advances = [...tokensOf(cap)].some((t) => intent.has(t) && !covered.has(t));
+        const novel = informs || advances || produced.some((v) => !node.values.some((h) => h.type === v.type && (v.schemes ?? []).every((s) => h.schemes?.includes(s))));
         if (!novel && !finishes && !anchors.has(cap.id)) continue;
         const child: Node = {
           values: [...node.values, ...produced],
@@ -283,7 +287,7 @@ function fanOut(cap: Capability, port: Port, v: Value, shapes: Map<string, strin
     const seen = [...new Set(port.schemes!.filter((s) => v.schemes!.includes(s)).flatMap((s) => shapes.get(s) ?? []))].sort();
     return { max: FANOUT_MAX, ...(seen.length ? { shapes: seen } : {}) };
   }
-  if (UNSPECIFIC.test(port.type) || !accepts(port.name, port.type, item)) return undefined;
+  if (UNSPECIFIC.test(port.type) || !accepts(port.name, port.type, item, port.anyText)) return undefined;
   return { max: FANOUT_MAX };
 }
 
@@ -300,7 +304,7 @@ function bind(cap: Capability, values: Value[], intent: Set<string>, consumed: S
       // Observed to carry the same identifiers, whatever each contract calls them.
       const linked = schemeFits(port, v.type, v.schemes);
       let each: Binding["each"] | undefined;
-      if (!bridged && !linked && !accepts(port.name, port.type, v.type) && !(each = fanOut(cap, port, v, shapes))) continue;
+      if (!bridged && !linked && !accepts(port.name, port.type, v.type, port.anyText) && !(each = fanOut(cap, port, v, shapes))) continue;
       if (!linked && !each && v.step >= 0 && schemeOnly(port)) continue;
       // Optional ports are only filled when the caller supplied them by name.
       if (!port.required && v.ref !== `$in.${port.name}`) continue;
@@ -341,6 +345,9 @@ function bind(cap: Capability, values: Value[], intent: Set<string>, consumed: S
     for (const { v, score, each } of scored) {
       // One list per step: two fanned ports would ask for a cross product nobody chose.
       if (each && fanned) continue;
+      // Two required inputs of one operation fed the same value is degenerate (a file compared
+      // with itself): refused, not merely discouraged.
+      if (port.required && boundRefs.has(v.ref)) continue;
       const s = score - (v.step >= 0 && !used.has(v.step) ? 3 : 0) + (boundRefs.has(v.ref) ? 6 : 0);
       if (s < bestScore) {
         bestScore = s;

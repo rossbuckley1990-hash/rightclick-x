@@ -1,8 +1,8 @@
 {
-  "seed": 659419510,
+  "seed": 157634417,
   "domain": "accounts",
   "gateway": false,
-  "startedAt": "2026-10-16T21:43:11.411Z",
+  "startedAt": "2026-10-16T22:01:03.409Z",
   "steps": [
     {
       "n": 1,
@@ -17,7 +17,7 @@
       "title": "Connect an MCP client to RightClick X (stdio)",
       "ok": true,
       "tools": 13,
-      "startupMs": 122.9
+      "startupMs": 170.4
     },
     {
       "n": 3,
@@ -43,23 +43,23 @@
       "ok": true,
       "found": [
         "openapi",
-        "graphql",
-        "mcp"
+        "openapi",
+        "openapi"
       ],
       "newCapabilities": 3,
-      "ms": 37.4
+      "ms": 53.3
     },
     {
       "n": 5,
       "title": "Identify suitable capabilities",
       "ok": true,
-      "candidatePlans": 2,
+      "candidatePlans": 3,
       "best": [
         "Account inquiry",
-        "Customer inquiry",
-        "Vat Rate Lookup"
+        "Get account holder",
+        "Get VAT rate"
       ],
-      "planningMs": 3.4
+      "planningMs": 5.7
     },
     {
       "n": 6,
@@ -67,67 +67,67 @@
       "ok": true,
       "steps": [
         "Account inquiry ← acctno=$in.account_id",
-        "Customer inquiry ← cref=0.hldr",
-        "Vat Rate Lookup ← cc=1.ctry"
+        "Get account holder ← cust_ref=0.hldr",
+        "Get VAT rate ← cc=1.cc"
       ]
     },
     {
       "n": 7,
       "title": "Execute the workflow",
       "ok": true,
-      "input": "ACC-1001",
+      "input": "ACC-1004",
       "pipeline": [
         "Account inquiry",
-        "Customer inquiry",
-        "Vat Rate Lookup"
+        "Get account holder",
+        "Get VAT rate"
       ],
-      "ms": 5.6
+      "ms": 7.8
     },
     {
       "n": 8,
       "title": "Verify against independently held test data",
       "ok": true,
-      "expected": 14.4,
-      "got": 14.4
+      "expected": 22.9,
+      "got": 22.9
     },
     {
       "n": 9,
       "title": "Save the successful composition and reuse it",
       "ok": true,
-      "saved": "Vat rate account holder country: Account inquiry → Customer inquiry → Vat Rate Lookup",
+      "saved": "Vat rate account holder country: Account inquiry → Get account holder → Get VAT rate",
       "reusedAs": [
-        "Vat rate account holder country: Account inquiry → Customer inquiry → Vat Rate Lookup"
+        "Vat rate account holder country: Account inquiry → Get account holder → Get VAT rate"
       ],
-      "expected": 14.4,
-      "got": 14.4,
-      "ms": 2.6
+      "expected": 6.3,
+      "got": 6.3,
+      "ms": 3.6
     },
     {
       "n": 10,
-      "title": "Change the interface of the last provider in the chain (Ledgerline)",
+      "title": "Change the interface of the last provider in the chain (Fjordsoft)",
       "ok": true,
-      "before": "graphql \"VAT rate lookup\" cc → cc, vr",
-      "after": "mcp \"VAT rate inquiry\" jur → result.{jur, vatpct}"
+      "before": "openapi \"Get VAT rate\" cc → cc, vr",
+      "after": "graphql \"VAT rate inquiry\" ctry → result.{ctry, vatpct}"
     },
     {
       "n": 11,
       "title": "Recover without changing integration code",
       "ok": true,
       "healing": [
-        "API drift at http://127.0.0.1:50527/: graphql:127-0-0-1-50527-graphql → mcp:ledgerline; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:56394/: openapi:fjordsoft → graphql:127-0-0-1-56394-graphql; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "via": [
-        "openapi:fernway",
-        "mcp:northwind-billing",
-        "mcp:ledgerline"
+        "openapi:ashgrove",
+        "openapi:duneworks",
+        "graphql:127-0-0-1-56394-graphql"
       ],
-      "expected": 13.3,
-      "got": 13.3,
-      "ms": 9.3
+      "expected": 19.2,
+      "got": 19.2,
+      "ms": 11.3
     },
     {
       "n": 12,
-      "title": "Remove that provider (Ledgerline)",
+      "title": "Remove that provider (Fjordsoft)",
       "ok": true
     },
     {
@@ -136,38 +136,38 @@
       "ok": true,
       "status": "failed",
       "healing": [
-        "provider gone at http://127.0.0.1:50527/: withdrew mcp:ledgerline (1 capabilities, 1 pipeline(s) retired)"
+        "provider gone at http://127.0.0.1:56394/: withdrew graphql:127-0-0-1-56394-graphql (1 capabilities, 1 pipeline(s) retired)"
       ],
       "withdrawn": [
-        "Ledgerline"
+        "GraphQL 127.0.0.1:56394"
       ],
       "capabilities": "27 → 25",
       "savedPipelines": "1 → 0"
     },
     {
       "n": 14,
-      "title": "Introduce a different provider (Quillbase, openapi): the objective works again",
+      "title": "Introduce a different provider (Kestrel Freight, mcp): the objective works again",
       "ok": true,
       "learned": [
-        "openapi: 1 operations"
+        "mcp: 1 tools"
       ],
       "via": [
-        "openapi:fernway",
-        "mcp:northwind-billing",
-        "openapi:quillbase"
+        "openapi:ashgrove",
+        "openapi:duneworks",
+        "mcp:kestrel-freight"
       ],
-      "expected": 12.1,
-      "got": 12.1,
-      "ms": 2
+      "expected": 22.9,
+      "got": 22.9,
+      "ms": 3.1
     }
   ],
   "benchmarks": {
-    "startupMs": 122.9,
+    "startupMs": 170.4,
     "mcpLatencyMs": {
-      "p50": 0.03,
-      "p95": 0.12
+      "p50": 0.07,
+      "p95": 0.21
     },
-    "discoveryMs": 37.4,
+    "discoveryMs": 53.3,
     "graph": {
       "providers": 5,
       "capabilities": 26,
@@ -176,24 +176,24 @@
       "chains3": 63,
       "total": 132
     },
-    "graphStatsMs": 0.1,
-    "planningMs": 3.4,
-    "executionMs": 5.6,
-    "recoveryAfterChangeMs": 9.3,
-    "recoveryAfterNewProviderMs": 2,
+    "graphStatsMs": 0.2,
+    "planningMs": 5.7,
+    "executionMs": 7.8,
+    "recoveryAfterChangeMs": 11.3,
+    "recoveryAfterNewProviderMs": 3.1,
     "memoryMB": 140
   },
   "freeze": {
-    "commit": "6f94a40ba17a4c258e5c5cdfe00ffcef07c63cbd",
+    "commit": "899a7b9e2774eb91b6921fdae6794276e81b1e39",
     "tag": "lab-freeze-9",
-    "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/core/authority.ts\nsrc/core/graph.ts\nsrc/core/identities.ts\nsrc/core/planner.ts\nsrc/core/sandbox.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/entry/durable.ts\nsrc/entry/edge.ts\nsrc/interface/http.ts\nsrc/interface/tools.ts\nsrc/reflectors/cli.ts\nsrc/reflectors/mcp.ts\nsrc/reflectors/net.ts\nsrc/reflectors/platform.ts\nsrc/runtime.ts",
-    "uncommittedProductChanges": "M src/core/planner.ts\n M src/core/types.ts\n M src/interface/tools.ts\n M src/reflectors/graphql.ts\n M src/reflectors/openapi.ts\n M src/runtime.ts\n?? src/core/fields.ts\n?? src/core/satisfaction.ts",
+    "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/core/authority.ts\nsrc/core/fields.ts\nsrc/core/graph.ts\nsrc/core/identities.ts\nsrc/core/planner.ts\nsrc/core/sandbox.ts\nsrc/core/satisfaction.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/core/yaml.ts\nsrc/entry/durable.ts\nsrc/entry/edge.ts\nsrc/interface/http.ts\nsrc/interface/tools.ts\nsrc/reflectors/cli.ts\nsrc/reflectors/discover.ts\nsrc/reflectors/graphql.ts\nsrc/reflectors/mcp.ts\nsrc/reflectors/net.ts\nsrc/reflectors/openapi.ts\nsrc/reflectors/platform.ts\nsrc/runtime.ts",
+    "uncommittedProductChanges": "",
     "frozen": false
   },
   "environment": [
     {
       "service": "ledger",
-      "brand": "Fernway",
+      "brand": "Ashgrove",
       "protocol": "openapi",
       "operation": "Account inquiry",
       "input": "acctno",
@@ -205,21 +205,21 @@
     },
     {
       "service": "kyc",
-      "brand": "Northwind Billing",
-      "protocol": "mcp",
-      "operation": "Customer inquiry",
-      "input": "cref",
+      "brand": "Duneworks",
+      "protocol": "openapi",
+      "operation": "Get account holder",
+      "input": "cust_ref",
       "outputs": [
-        "cref",
-        "lglnm",
-        "ctry"
+        "cust_ref",
+        "nm",
+        "cc"
       ]
     },
     {
       "service": "vat",
-      "brand": "Ledgerline",
-      "protocol": "graphql",
-      "operation": "VAT rate lookup",
+      "brand": "Fjordsoft",
+      "protocol": "openapi",
+      "operation": "Get VAT rate",
       "input": "cc",
       "outputs": [
         "cc",
@@ -228,15 +228,15 @@
     }
   ],
   "firstRunProviders": [
-    "openapi:fernway",
-    "mcp:northwind-billing",
-    "graphql:127-0-0-1-50527-graphql"
+    "openapi:ashgrove",
+    "openapi:duneworks",
+    "openapi:fjordsoft"
   ],
   "receipts": {
     "count": 21,
     "intact": true,
     "brokenAt": null,
-    "head": "a56a806231396b60efe1fe3744b37581a01f98dc80a4d7fd12e3bb1efe840091"
+    "head": "ac612c6023999a17e0e2bb0d63ad2555a2f38cab7bc4e420fe7be70406f48483"
   },
   "passed": 14,
   "total": 14

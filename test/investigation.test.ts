@@ -171,3 +171,26 @@ test("a step that only matches the requested type's name is not added (Stage D o
   assert.deepEqual(r.executed?.titles, ["upper -u: print the input in upper case"]);
   assert.equal(String(r.executed?.output).trim(), "ONE TWO THREE. FOUR FIVE SIX. SEVEN EIGHT NINE.");
 });
+
+test("usage text is not output: a program that answers anything with its usage yields no capability (cups-config, holdout on uce-freeze-2)", { skip }, async () => {
+  const dir = realpathSync(mkdtempSync(join(tmpdir(), "rcx-prog-")));
+  const p = program(dir, "confish", `echo "Usage: confish --api-version"; echo "       confish --cflags"; exit 1`);
+  const rc = await RightClick.create({ name: "u", directories: [], authority: { investigate: [p] } });
+  await rc.learn({ source: `cli:${p}` });
+  assert.equal(rc.graph.list().filter((c) => c.provider === "cli:confish").length, 0);
+});
+
+test("a type-preserving correction feeds a comparison of two distinct inputs (Stage C on uce-freeze-2)", { skip }, async () => {
+  const dir = realpathSync(mkdtempSync(join(tmpdir(), "rcx-prog-")));
+  // fixhtml: closes paragraphs (HTML -> corrected HTML). twocol: shows two files side by side.
+  const fix = program(dir, "fixhtml", `if [ "$1" = "--help" ]; then echo "usage: fixhtml [file]"; echo "  correct and close html paragraphs"; exit 0; fi\nsed 's#<p>\\([^<]*\\)$#<p>\\1</p>#'`);
+  const two = program(dir, "twocol", `if [ "$1" = "--help" ]; then echo "usage: twocol file1 file2"; echo "  side by side comparison of two files"; exit 0; fi\npaste -d '|' "$1" "$2"`);
+  const rc = await RightClick.create({ name: "c", directories: [], authority: { investigate: [`${dir}/`] } });
+  await rc.learn({ sources: [`cli:${fix}`, `cli:${two}`] });
+  const doc = "<html><body>\n<p>soup\n<p>bread\n</body></html>\n";
+  const r = await rc.compose({ have: { html: { type: "html", value: doc } }, want: "text", intent: "side by side comparison of an html document before and after correction", run: true, maxSteps: 3 });
+  assert.equal(r.executed?.status, "completed", JSON.stringify(r.plans?.slice(0, 3).map((p) => p.summary)));
+  assert.ok(r.executed!.titles[0].startsWith("fixhtml"), r.executed!.titles.join(" → "));
+  const lines = String(r.executed?.output).trim().split("\n");
+  assert.ok(lines.some((l) => l.includes("<p>soup</p>|<p>soup") || l.includes("<p>soup|<p>soup</p>")), String(r.executed?.output));
+});

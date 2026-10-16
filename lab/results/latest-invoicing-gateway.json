@@ -1,8 +1,8 @@
 {
-  "seed": 782776373,
+  "seed": 43986414,
   "domain": "invoicing",
   "gateway": true,
-  "startedAt": "2026-10-16T21:43:15.467Z",
+  "startedAt": "2026-10-16T22:01:08.473Z",
   "steps": [
     {
       "n": 1,
@@ -17,7 +17,7 @@
       "title": "Connect an MCP client to RightClick X (stdio)",
       "ok": true,
       "tools": 13,
-      "startupMs": 117.9
+      "startupMs": 160.8
     },
     {
       "n": 3,
@@ -42,12 +42,12 @@
       "title": "Discover the environment's services from its catalog only (no service addresses, protocols or schemas given)",
       "ok": true,
       "found": [
-        "graphql",
-        "graphql",
+        "mcp",
+        "openapi",
         "openapi"
       ],
       "newCapabilities": 3,
-      "ms": 35.8
+      "ms": 57.6
     },
     {
       "n": 5,
@@ -55,79 +55,79 @@
       "ok": true,
       "candidatePlans": 3,
       "best": [
-        "Invoice Lookup",
-        "Get Customer",
-        "Tax rate by country"
+        "Fetch invoice details",
+        "Customer profile",
+        "Country tax rate"
       ],
-      "planningMs": 3.3
+      "planningMs": 3.7
     },
     {
       "n": 6,
       "title": "Compose a multi-provider workflow",
       "ok": true,
       "steps": [
-        "Invoice Lookup ← invoiceId=$in.invoice_id",
-        "Get Customer ← customer_number=0.customer_id",
-        "Tax rate by country ← country_code=1.country_code"
+        "Fetch invoice details ← invoice_number=$in.invoice_id",
+        "Customer profile ← customer_number=0.customer_number",
+        "Country tax rate ← country=1.country_code"
       ]
     },
     {
       "n": 7,
       "title": "Execute the workflow",
       "ok": true,
-      "input": "INV-1005",
+      "input": "INV-1003",
       "pipeline": [
-        "Invoice Lookup",
-        "Get Customer",
-        "Tax rate by country"
+        "Fetch invoice details",
+        "Customer profile",
+        "Country tax rate"
       ],
-      "ms": 5.6
+      "ms": 7.1
     },
     {
       "n": 8,
       "title": "Verify against independently held test data",
       "ok": true,
-      "expected": 8.2,
-      "got": 8.2
+      "expected": 9.5,
+      "got": 9.5
     },
     {
       "n": 9,
       "title": "Save the successful composition and reuse it",
       "ok": true,
-      "saved": "Tax rate invoice customer country: Invoice Lookup → Get Customer → Tax rate by country",
+      "saved": "Tax rate invoice customer country: Fetch invoice details → Customer profile → Country tax rate",
       "reusedAs": [
-        "Tax rate invoice customer country: Invoice Lookup → Get Customer → Tax rate by country"
+        "Tax rate invoice customer country: Fetch invoice details → Customer profile → Country tax rate"
       ],
-      "expected": 15.8,
-      "got": 15.8,
-      "ms": 2.9
+      "expected": 14.8,
+      "got": 14.8,
+      "ms": 3.6
     },
     {
       "n": 10,
-      "title": "Change the interface of the last provider in the chain (Ledgerline)",
+      "title": "Change the interface of the last provider in the chain (Duneworks)",
       "ok": true,
-      "before": "openapi \"Tax rate by country\" country_code → country_code, vat_rate",
-      "after": "graphql \"Country tax rate\" country → result.{country, rate}"
+      "before": "openapi \"Country tax rate\" country → country, rate",
+      "after": "mcp \"Tax rate by country\" countryCode → result.{countryCode, tax_rate}"
     },
     {
       "n": 11,
       "title": "Recover without changing integration code",
       "ok": true,
       "healing": [
-        "API drift at http://127.0.0.1:51344/: graphql:127-0-0-1-51341-graphql,graphql:127-0-0-1-51342-graphql,openapi:ledgerline → graphql:127-0-0-1-51341-graphql,graphql:127-0-0-1-51342-graphql,graphql:127-0-0-1-51343-graphql; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:57207/: mcp:harbourly,openapi:emberlane,openapi:duneworks → mcp:harbourly,openapi:emberlane,mcp:duneworks; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "via": [
-        "graphql:127-0-0-1-51341-graphql",
-        "graphql:127-0-0-1-51342-graphql",
-        "graphql:127-0-0-1-51343-graphql"
+        "mcp:harbourly",
+        "openapi:emberlane",
+        "mcp:duneworks"
       ],
-      "expected": 8,
-      "got": 8,
-      "ms": 17.4
+      "expected": 14.8,
+      "got": 14.8,
+      "ms": 26.6
     },
     {
       "n": 12,
-      "title": "Remove that provider (Ledgerline)",
+      "title": "Remove that provider (Duneworks)",
       "ok": true
     },
     {
@@ -136,41 +136,41 @@
       "ok": true,
       "status": "failed",
       "healing": [
-        "API drift at http://127.0.0.1:51344/: graphql:127-0-0-1-51341-graphql,graphql:127-0-0-1-51342-graphql,graphql:127-0-0-1-51343-graphql → graphql:127-0-0-1-51341-graphql,graphql:127-0-0-1-51342-graphql; +0 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:57207/: mcp:harbourly,openapi:emberlane,mcp:duneworks → mcp:harbourly,openapi:emberlane; +0 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "withdrawn": [
-        "GraphQL 127.0.0.1:51343"
+        "Duneworks"
       ],
       "capabilities": "27 → 25",
       "savedPipelines": "1 → 0"
     },
     {
       "n": 14,
-      "title": "Introduce a different provider (Lumen Cargo, mcp): the objective works again",
+      "title": "Introduce a different provider (Ledgerline, mcp): the objective works again",
       "ok": true,
       "learned": [
         "api-catalog: 3 services listed",
-        "graphql: 1 fields",
-        "graphql: 1 fields",
+        "mcp: 1 tools",
+        "openapi: 1 operations",
         "mcp: 1 tools"
       ],
       "via": [
-        "graphql:127-0-0-1-51341-graphql",
-        "graphql:127-0-0-1-51342-graphql",
-        "mcp:lumen-cargo"
+        "mcp:harbourly",
+        "openapi:emberlane",
+        "mcp:ledgerline"
       ],
-      "expected": 8,
-      "got": 8,
-      "ms": 2.2
+      "expected": 17.6,
+      "got": 17.6,
+      "ms": 2.7
     }
   ],
   "benchmarks": {
-    "startupMs": 117.9,
+    "startupMs": 160.8,
     "mcpLatencyMs": {
       "p50": 0.04,
-      "p95": 0.12
+      "p95": 0.17
     },
-    "discoveryMs": 35.8,
+    "discoveryMs": 57.6,
     "graph": {
       "providers": 5,
       "capabilities": 26,
@@ -180,67 +180,67 @@
       "total": 132
     },
     "graphStatsMs": 0.1,
-    "planningMs": 3.3,
-    "executionMs": 5.6,
-    "recoveryAfterChangeMs": 17.4,
-    "recoveryAfterNewProviderMs": 2.2,
-    "memoryMB": 148
+    "planningMs": 3.7,
+    "executionMs": 7.1,
+    "recoveryAfterChangeMs": 26.6,
+    "recoveryAfterNewProviderMs": 2.7,
+    "memoryMB": 149
   },
   "freeze": {
-    "commit": "6f94a40ba17a4c258e5c5cdfe00ffcef07c63cbd",
+    "commit": "899a7b9e2774eb91b6921fdae6794276e81b1e39",
     "tag": "lab-freeze-9",
-    "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/core/authority.ts\nsrc/core/graph.ts\nsrc/core/identities.ts\nsrc/core/planner.ts\nsrc/core/sandbox.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/entry/durable.ts\nsrc/entry/edge.ts\nsrc/interface/http.ts\nsrc/interface/tools.ts\nsrc/reflectors/cli.ts\nsrc/reflectors/mcp.ts\nsrc/reflectors/net.ts\nsrc/reflectors/platform.ts\nsrc/runtime.ts",
-    "uncommittedProductChanges": "M src/core/planner.ts\n M src/core/types.ts\n M src/interface/tools.ts\n M src/reflectors/graphql.ts\n M src/reflectors/openapi.ts\n M src/runtime.ts\n?? src/core/fields.ts\n?? src/core/satisfaction.ts",
+    "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/core/authority.ts\nsrc/core/fields.ts\nsrc/core/graph.ts\nsrc/core/identities.ts\nsrc/core/planner.ts\nsrc/core/sandbox.ts\nsrc/core/satisfaction.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/core/yaml.ts\nsrc/entry/durable.ts\nsrc/entry/edge.ts\nsrc/interface/http.ts\nsrc/interface/tools.ts\nsrc/reflectors/cli.ts\nsrc/reflectors/discover.ts\nsrc/reflectors/graphql.ts\nsrc/reflectors/mcp.ts\nsrc/reflectors/net.ts\nsrc/reflectors/openapi.ts\nsrc/reflectors/platform.ts\nsrc/runtime.ts",
+    "uncommittedProductChanges": "",
     "frozen": false
   },
   "environment": [
     {
       "service": "invoices",
-      "brand": "Brightmark",
-      "protocol": "graphql",
-      "operation": "Invoice lookup",
-      "input": "invoiceId",
+      "brand": "Harbourly",
+      "protocol": "mcp",
+      "operation": "Fetch invoice details",
+      "input": "invoice_number",
       "outputs": [
-        "invoiceId",
-        "customer_id",
-        "total",
-        "currency_code"
+        "invoice_number",
+        "customer_number",
+        "amount",
+        "currency"
       ]
     },
     {
       "service": "customers",
-      "brand": "Ashgrove",
-      "protocol": "graphql",
-      "operation": "Get customer",
+      "brand": "Emberlane",
+      "protocol": "openapi",
+      "operation": "Customer profile",
       "input": "customer_number",
       "outputs": [
         "customer_number",
-        "legal_name",
+        "company_name",
         "country_code"
       ]
     },
     {
       "service": "tax",
-      "brand": "Ledgerline",
+      "brand": "Duneworks",
       "protocol": "openapi",
-      "operation": "Tax rate by country",
-      "input": "country_code",
+      "operation": "Country tax rate",
+      "input": "country",
       "outputs": [
-        "country_code",
-        "vat_rate"
+        "country",
+        "rate"
       ]
     }
   ],
   "firstRunProviders": [
-    "graphql:127-0-0-1-51341-graphql",
-    "graphql:127-0-0-1-51342-graphql",
-    "openapi:ledgerline"
+    "mcp:harbourly",
+    "openapi:emberlane",
+    "openapi:duneworks"
   ],
   "receipts": {
     "count": 21,
     "intact": true,
     "brokenAt": null,
-    "head": "f55c9f36ba616012f156c14f387efc79c28fb267bdd5aa83ffa49f2b0f19f7e6"
+    "head": "7c09cef5c1fc2f2a14b0be4eedc9c640be3e1c6b112d8a299b777d03553e154c"
   },
   "passed": 14,
   "total": 14

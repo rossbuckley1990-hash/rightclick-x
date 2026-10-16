@@ -131,7 +131,8 @@ log(`build ${TAG} (${build.commit.slice(0, 10)}) · A=${A} · C=${C}`);
 const PROMPT_B = [
   "You are connected to exactly one MCP server, rightclick-x. Use only its tools.",
   "A colleague needs the HTML document below cleaned up and corrected (every element properly closed) and neatly formatted.",
-  "Produce the corrected document. Reply with the corrected document between a line containing only BEGIN and a line containing only END.",
+  "Do the correction with the rightclick-x tools; do not rewrite the document yourself. (Deviation from runs 1-2, recorded: their prompt let the agent answer without tools, and Claude Code did.)".replace(/ \(Deviation[^)]*\)/, ""),
+  "Reply with the corrected document between a line containing only BEGIN and a line containing only END.",
   "",
   docB,
 ].join("\n");
@@ -140,13 +141,15 @@ for (const client of ["claude", "codex"] as const) {
   mkdirSync(dir, { recursive: true });
   const state = `${dir}/state.json`;
   copyFileSync(ev.stages.A.stateFile, state);
+  const receiptsBefore = (() => { try { return (JSON.parse(readFileSync(state, "utf8")).receipts ?? []).length; } catch { return 0; } })();
   const logFile = `${dir}/mcp.jsonl`;
   const r = await runAgent(client, { kind: "stdio", stateFile: state, logFile, rcx: build.rcx, env: { RCX_INVESTIGATE: `${BIN}/` } }, PROMPT_B, 600_000);
   const calls = readJsonl(logFile);
   const tools = calls.map((c: any) => c.tool ?? c.name);
   const relearned = calls.some((c: any) => (c.tool ?? c.name) === "context_learn" && JSON.stringify(c.args ?? c.arguments ?? {}).includes("cli:"));
   const receipts = (() => { try { return JSON.parse(readFileSync(state, "utf8")).receipts ?? []; } catch { return []; } })();
-  const usedCli = receipts.some((x: any) => String(x.provider).startsWith(`cli:${A}`) || String(x.capability).startsWith(`cli:${A}`) || String(x.capability) === "goal:correct-html");
+  // Only receipts created during this agent's session count (runs 1-2 read Stage A's copied receipts).
+  const usedCli = tools.length > 0 && receipts.slice(receiptsBefore).some((x: any) => String(x.provider).startsWith(`cli:${A}`) || String(x.capability).startsWith(`cli:${A}`) || String(x.capability) === "goal:correct-html");
   const answer = /^BEGIN\s*$([\s\S]*?)^END\s*$/m.exec(r.output)?.[1]?.trim();
   const check = htmlCorrected(docB, answer);
   const stage = { client, seconds: r.seconds, turns: r.meta?.turns, usage: r.meta?.usage, toolCalls: tools.length, tools, relearnedProgram: relearned, executedThroughCapability: usedCli, independentCheck: check, pass: !relearned && usedCli && check.pass, tail: r.output.slice(-600) };

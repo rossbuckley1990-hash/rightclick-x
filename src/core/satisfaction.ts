@@ -77,7 +77,9 @@ export function assess(graph: CapabilityGraph, steps: PlanStep[], result: string
       covered[term] = any.path;
       // Ask for every declared field that carries the term (bounded): which one has a value can
       // depend on the record (an EM-only field is empty for an X-ray entry).
-      if (projectable) needProjection.push(...unselected.slice(0, 8).map((f) => f.path));
+      // Shallow fields first: a summary field (rcsb_entry_info.resolution_combined) before deep specifics.
+      if (projectable) needProjection.push(...[...unselected].sort((a, b) => a.path.split(".").length - b.path.split(".").length || a.path.length - b.path.length).slice(0, 24).map((f) => f.path));
+      // (also when a selected field carries the term: it may be empty for this record)
     }
     if (needProjection.length) projection.push({ step: resultStep, fields: needProjection });
   }

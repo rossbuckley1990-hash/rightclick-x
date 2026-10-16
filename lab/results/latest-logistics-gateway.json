@@ -1,8 +1,8 @@
 {
-  "seed": 935836705,
+  "seed": 258018372,
   "domain": "logistics",
   "gateway": true,
-  "startedAt": "2026-10-16T21:43:19.319Z",
+  "startedAt": "2026-10-16T22:01:13.732Z",
   "steps": [
     {
       "n": 1,
@@ -17,7 +17,7 @@
       "title": "Connect an MCP client to RightClick X (stdio)",
       "ok": true,
       "tools": 13,
-      "startupMs": 112.9
+      "startupMs": 152.9
     },
     {
       "n": 3,
@@ -42,12 +42,12 @@
       "title": "Discover the environment's services from its catalog only (no service addresses, protocols or schemas given)",
       "ok": true,
       "found": [
-        "openapi",
-        "openapi",
+        "mcp",
+        "graphql",
         "mcp"
       ],
       "newCapabilities": 3,
-      "ms": 35.6
+      "ms": 47.1
     },
     {
       "n": 5,
@@ -55,79 +55,79 @@
       "ok": true,
       "candidatePlans": 2,
       "best": [
-        "Track shipment",
-        "Look up warehouse",
+        "Get shipment",
+        "Fetch Warehouse",
         "City shipping rate"
       ],
-      "planningMs": 2.4
+      "planningMs": 2.8
     },
     {
       "n": 6,
       "title": "Compose a multi-provider workflow",
       "ok": true,
       "steps": [
-        "Track shipment ← shipment_number=$in.shipment_id",
-        "Look up warehouse ← warehouseId=0.warehouse_id",
-        "City shipping rate ← town=1.city"
+        "Get shipment ← shipment_number=$in.shipment_id",
+        "Fetch Warehouse ← warehouse_id=0.warehouse_number",
+        "City shipping rate ← city=1.town"
       ]
     },
     {
       "n": 7,
       "title": "Execute the workflow",
       "ok": true,
-      "input": "SHP-1006",
+      "input": "SHP-1002",
       "pipeline": [
-        "Track shipment",
-        "Look up warehouse",
+        "Get shipment",
+        "Fetch Warehouse",
         "City shipping rate"
       ],
-      "ms": 5
+      "ms": 6.1
     },
     {
       "n": 8,
       "title": "Verify against independently held test data",
       "ok": true,
-      "expected": 31.5,
-      "got": 31.5
+      "expected": 25.8,
+      "got": 25.8
     },
     {
       "n": 9,
       "title": "Save the successful composition and reuse it",
       "ok": true,
-      "saved": "Shipping rate shipment warehouse city: Track shipment → Look up warehouse → City shipping rate",
+      "saved": "Shipping rate shipment warehouse city: Get shipment → Fetch Warehouse → City shipping rate",
       "reusedAs": [
-        "Shipping rate shipment warehouse city: Track shipment → Look up warehouse → City shipping rate"
+        "Shipping rate shipment warehouse city: Get shipment → Fetch Warehouse → City shipping rate"
       ],
-      "expected": 26.5,
-      "got": 26.5,
-      "ms": 2.1
+      "expected": 17.9,
+      "got": 17.9,
+      "ms": 2.6
     },
     {
       "n": 10,
-      "title": "Change the interface of the last provider in the chain (Paperhaus)",
+      "title": "Change the interface of the last provider in the chain (Kestrel Freight)",
       "ok": true,
-      "before": "mcp \"City shipping rate\" town → town, rate",
-      "after": "openapi \"Shipping rate by city\" location → result.{location, shipping_rate}"
+      "before": "mcp \"City shipping rate\" city → city, freight_rate",
+      "after": "graphql \"Lookup shipping rate for a city\" town → result.{town, shipping_rate}"
     },
     {
       "n": 11,
       "title": "Recover without changing integration code",
       "ok": true,
       "healing": [
-        "API drift at http://127.0.0.1:52147/: openapi:fernway,openapi:tallyport,mcp:paperhaus → openapi:fernway,openapi:tallyport,openapi:paperhaus; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:57994/: mcp:fjordsoft,graphql:127-0-0-1-57992-graphql,mcp:kestrel-freight → mcp:fjordsoft,graphql:127-0-0-1-57992-graphql,graphql:127-0-0-1-57993-graphql; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "via": [
-        "openapi:fernway",
-        "openapi:tallyport",
-        "openapi:paperhaus"
+        "mcp:fjordsoft",
+        "graphql:127-0-0-1-57992-graphql",
+        "graphql:127-0-0-1-57993-graphql"
       ],
-      "expected": 11.9,
-      "got": 11.9,
-      "ms": 15.5
+      "expected": 17.9,
+      "got": 17.9,
+      "ms": 34.6
     },
     {
       "n": 12,
-      "title": "Remove that provider (Paperhaus)",
+      "title": "Remove that provider (Kestrel Freight)",
       "ok": true
     },
     {
@@ -136,41 +136,41 @@
       "ok": true,
       "status": "failed",
       "healing": [
-        "API drift at http://127.0.0.1:52147/: openapi:fernway,openapi:tallyport,openapi:paperhaus → openapi:fernway,openapi:tallyport; +0 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:57994/: mcp:fjordsoft,graphql:127-0-0-1-57992-graphql,graphql:127-0-0-1-57993-graphql → mcp:fjordsoft,graphql:127-0-0-1-57992-graphql; +0 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "withdrawn": [
-        "Paperhaus"
+        "GraphQL 127.0.0.1:57993"
       ],
       "capabilities": "27 → 25",
       "savedPipelines": "1 → 0"
     },
     {
       "n": 14,
-      "title": "Introduce a different provider (Northwind Billing, graphql): the objective works again",
+      "title": "Introduce a different provider (Mistral Depot, openapi): the objective works again",
       "ok": true,
       "learned": [
         "api-catalog: 3 services listed",
-        "openapi: 1 operations",
-        "openapi: 1 operations",
-        "graphql: 1 fields"
+        "mcp: 1 tools",
+        "graphql: 1 fields",
+        "openapi: 1 operations"
       ],
       "via": [
-        "openapi:fernway",
-        "openapi:tallyport",
-        "graphql:127-0-0-1-52207-graphql"
+        "mcp:fjordsoft",
+        "graphql:127-0-0-1-57992-graphql",
+        "openapi:mistral-depot"
       ],
-      "expected": 31.5,
-      "got": 31.5,
-      "ms": 2.2
+      "expected": 33,
+      "got": 33,
+      "ms": 3.9
     }
   ],
   "benchmarks": {
-    "startupMs": 112.9,
+    "startupMs": 152.9,
     "mcpLatencyMs": {
       "p50": 0.04,
       "p95": 0.12
     },
-    "discoveryMs": 35.6,
+    "discoveryMs": 47.1,
     "graph": {
       "providers": 5,
       "capabilities": 26,
@@ -179,67 +179,67 @@
       "chains3": 51,
       "total": 114
     },
-    "graphStatsMs": 0.1,
-    "planningMs": 2.4,
-    "executionMs": 5,
-    "recoveryAfterChangeMs": 15.5,
-    "recoveryAfterNewProviderMs": 2.2,
-    "memoryMB": 145
+    "graphStatsMs": 0.2,
+    "planningMs": 2.8,
+    "executionMs": 6.1,
+    "recoveryAfterChangeMs": 34.6,
+    "recoveryAfterNewProviderMs": 3.9,
+    "memoryMB": 151
   },
   "freeze": {
-    "commit": "6f94a40ba17a4c258e5c5cdfe00ffcef07c63cbd",
+    "commit": "899a7b9e2774eb91b6921fdae6794276e81b1e39",
     "tag": "lab-freeze-9",
-    "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/core/authority.ts\nsrc/core/graph.ts\nsrc/core/identities.ts\nsrc/core/planner.ts\nsrc/core/sandbox.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/entry/durable.ts\nsrc/entry/edge.ts\nsrc/interface/http.ts\nsrc/interface/tools.ts\nsrc/reflectors/cli.ts\nsrc/reflectors/mcp.ts\nsrc/reflectors/net.ts\nsrc/reflectors/platform.ts\nsrc/runtime.ts",
-    "uncommittedProductChanges": "M src/core/planner.ts\n M src/core/types.ts\n M src/interface/tools.ts\n M src/reflectors/graphql.ts\n M src/reflectors/openapi.ts\n M src/runtime.ts\n?? src/core/fields.ts\n?? src/core/satisfaction.ts",
+    "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/core/authority.ts\nsrc/core/fields.ts\nsrc/core/graph.ts\nsrc/core/identities.ts\nsrc/core/planner.ts\nsrc/core/sandbox.ts\nsrc/core/satisfaction.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/core/yaml.ts\nsrc/entry/durable.ts\nsrc/entry/edge.ts\nsrc/interface/http.ts\nsrc/interface/tools.ts\nsrc/reflectors/cli.ts\nsrc/reflectors/discover.ts\nsrc/reflectors/graphql.ts\nsrc/reflectors/mcp.ts\nsrc/reflectors/net.ts\nsrc/reflectors/openapi.ts\nsrc/reflectors/platform.ts\nsrc/runtime.ts",
+    "uncommittedProductChanges": "",
     "frozen": false
   },
   "environment": [
     {
       "service": "shipments",
-      "brand": "Fernway",
-      "protocol": "openapi",
-      "operation": "Track shipment",
+      "brand": "Fjordsoft",
+      "protocol": "mcp",
+      "operation": "Get shipment",
       "input": "shipment_number",
       "outputs": [
         "shipment_number",
-        "warehouse_id",
-        "weight"
+        "warehouse_number",
+        "gross_weight"
       ]
     },
     {
       "service": "warehouses",
-      "brand": "Tallyport",
-      "protocol": "openapi",
-      "operation": "Look up warehouse",
-      "input": "warehouseId",
+      "brand": "Ledgerline",
+      "protocol": "graphql",
+      "operation": "Fetch warehouse",
+      "input": "warehouse_id",
       "outputs": [
-        "warehouseId",
-        "city",
-        "contact_email"
+        "warehouse_id",
+        "town",
+        "email"
       ]
     },
     {
       "service": "rates",
-      "brand": "Paperhaus",
+      "brand": "Kestrel Freight",
       "protocol": "mcp",
       "operation": "City shipping rate",
-      "input": "town",
+      "input": "city",
       "outputs": [
-        "town",
-        "rate"
+        "city",
+        "freight_rate"
       ]
     }
   ],
   "firstRunProviders": [
-    "openapi:fernway",
-    "openapi:tallyport",
-    "mcp:paperhaus"
+    "mcp:fjordsoft",
+    "graphql:127-0-0-1-57992-graphql",
+    "mcp:kestrel-freight"
   ],
   "receipts": {
     "count": 21,
     "intact": true,
     "brokenAt": null,
-    "head": "4f1b85f93a29ce3d7e10401e89f4eea34a72975651da96e749d330d0f103ef09"
+    "head": "0e4778d3b77ea8ed2a3f78e1c9a4334eed00dab412eca6cc5328f7510059a8ba"
   },
   "passed": 14,
   "total": 14

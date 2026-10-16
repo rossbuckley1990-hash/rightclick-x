@@ -194,7 +194,8 @@ async function runBuild(tag: string) {
   log(`  ${tag} H1: ${h1.outcome?.status ?? "(no outcome)"} · executed ${h1.executed?.status ?? "-"} · ${h1.score.pass ? "score PASS" : `score FAIL (${JSON.stringify(h1.score).slice(0, 160)})`}`);
   await ho.close();
   ev.network = { dev: readJsonl(devFiles.netlog).length, holdout: readJsonl(hoFiles.netlog).length };
-  ev.fanOutLimitsHeld = [...ev.tasks, h1].every((t: any) => (t.executed?.fanOuts ?? []).every((f: any) => (f.items ?? f.count ?? 0) <= (f.max ?? Infinity)));
+  // Executed items (ran), as pre-registered; lifesci-satisfy-3 was first scored on listed items.
+  ev.fanOutLimitsHeld = [...ev.tasks, h1].every((t: any) => (t.executed?.fanOuts ?? []).every((f: any) => (f.ran ?? 0) <= (f.max ?? Infinity)));
   writeFileSync(`${OUT}/${tag}.json`, JSON.stringify(ev, null, 2));
   return ev;
 }

@@ -28,6 +28,8 @@ export interface Port {
   schemes?: string[];
   /** An output path the contract does not declare, observed in real results; not part of the contract signature. */
   observed?: boolean;
+  /** Input established (by experiment) to accept any kind of text, markup included. */
+  anyText?: boolean;
 }
 
 export type SourceKind =

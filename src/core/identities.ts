@@ -181,7 +181,9 @@ export class IdentityEvidence {
     const declared = new Set(cap.outputs.filter((p) => !p.observed).map((p) => p.name));
     // Optional inputs (a GraphQL selection, a `fields` list) reshape the response: paths seen only
     // then are not outputs of the operation. Declared ports stay valid whatever the request.
-    const customised = cap.inputs.some((p) => !p.required && args[p.name] !== undefined);
+    // Only inputs that choose fields reshape it; an optional filter (purl OR repository_url) does not.
+    const RESHAPES = /^(selection|select|fields?|include|includes|expand|embed|view|projection|properties|columns|attributes|format)$/i;
+    const customised = cap.inputs.some((p) => !p.required && args[p.name] !== undefined && (RESHAPES.test(p.name) || (cap.invoke as any).selectPort === p.name));
     const source = (l: Leaf): Source | null => {
       if (declared.has(l.path)) return { key: portKey(cap.id, "out", l.path), observed: null };
       // Up to two array levels (records in a list, each with a list of identifiers): fan-out

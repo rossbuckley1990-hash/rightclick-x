@@ -91,13 +91,17 @@ export function samplesFor(docs: string, seed: number): Sample[] {
   const words = ["alpha", "bravo", "charlie", "delta", "echo", "foxtrot", "golf", "hotel", "india", "juliet", "kilo", "lima"];
   const sentence = (i: number) => `${pick(words, i)} ${pick(words, i + 3)} ${pick(words, i + 7)} line ${i + seed % 7}`;
   const out: Sample[] = [];
-  if (/\bx?html\b/.test(d)) {
+  const all = /./.test(d); // every generic kind is tried; documentation words only add emphasis
+  if (all || /\bx?html\b/.test(d)) {
     out.push({ kind: "html", content: `<html><head><title>${sentence(1)}</title></head><body><h1>${sentence(2)}</h1><p>${sentence(3)}<p>${sentence(4)}<ul><li>${pick(words, 5)}<li>${pick(words, 6)}</ul></body></html>\n` });
     out.push({ kind: "html", content: `<!DOCTYPE html>\n<html>\n<head><title>${sentence(5)}</title></head>\n<body>\n<div><b>${sentence(6)}</div>\n<table><tr><td>${pick(words, 8)}<td>${pick(words, 9)}</table>\n</body>\n</html>\n` });
   }
-  if (/\bxml\b/.test(d)) out.push({ kind: "xml", content: `<?xml version="1.0"?>\n<items><item id="${seed % 97}">${sentence(1)}</item><item id="${(seed + 1) % 97}">${sentence(2)}</item></items>\n` });
-  if (/\bjson\b/.test(d)) out.push({ kind: "json", content: JSON.stringify({ name: pick(words, 1), count: seed % 50, tags: [pick(words, 2), pick(words, 3)] }) + "\n" });
-  if (/\bcsv\b|comma.separated/.test(d)) out.push({ kind: "csv", content: `name,count\n${pick(words, 1)},${seed % 9}\n${pick(words, 2)},${(seed + 3) % 9}\n` });
+  if (all || /\bxml\b/.test(d)) out.push({ kind: "xml", content: `<?xml version="1.0"?>\n<items><item id="${seed % 97}">${sentence(1)}</item><item id="${(seed + 1) % 97}">${sentence(2)}</item></items>\n` });
+  if (all || /\bjson\b/.test(d)) out.push({ kind: "json", content: JSON.stringify({ name: pick(words, 1), count: seed % 50, tags: [pick(words, 2), pick(words, 3)] }) + "\n" });
+  if (all || /\bcsv\b|comma.separated/.test(d)) out.push({ kind: "csv", content: `name,count\n${pick(words, 1)},${seed % 9}\n${pick(words, 2)},${(seed + 3) % 9}\n` });
+  // A feature-rich text that exercises common behaviours (tabs, repeats, blank lines, case,
+  // numbers, runs of spaces), so a program's operative transformation is actually observed.
+  out.push({ kind: "text", content: `${pick(words, 2)}\t${seed % 90 + 10}\t${pick(words, 4).toUpperCase()}\n${pick(words, 5)}  ${pick(words, 6)}   end\n\n${pick(words, 2)}\t${seed % 90 + 10}\t${pick(words, 4).toUpperCase()}\nZeta 3\nalpha 21\n` });
   // Plain text, in related pairs that differ in some lines (useful to compare/merge tools).
   for (const v of [0, 11]) {
     const base = Array.from({ length: 6 + (v % 3) }, (_, i) => sentence(i + v));
@@ -255,7 +259,14 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
     trials.push(t);
     return t;
   };
-  const works = (t: Trial | null) => !!t && !t.r.timedOut && !t.r.truncated && t.r.stdout.trim().length > 0;
+  // Output that is the program's usage or help text is an error report, not a result.
+  const usageLike = (out: string) => {
+    const o = out.trim();
+    if (!o) return false;
+    if (usage.trim() && (o === usage.trim() || usage.includes(o.split("\n")[0].trim()) && /usage/i.test(o.split("\n")[0]))) return true;
+    return /^\s*usage:/i.test(o);
+  };
+  const works = (t: Trial | null) => !!t && !t.r.timedOut && !t.r.truncated && t.r.stdout.trim().length > 0 && !usageLike(t.r.stdout);
 
   // Default mode on every channel and kind; keep the channels that work.
   const okChannels: Array<{ id: string; arity: number }> = [];
@@ -272,7 +283,11 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
   }
   // Modes: flags without arguments whose own description is about the output.
   const candidates = inv.options.filter((o) => !o.arg && OUTPUT_WORDS.test(o.description) && !/version|help|usage|modify|in.place|write|output file|outfile|overwrite|save/i.test(o.description)).slice(0, 8);
-  const primaryKind = kinds.find((k) => trials.some((t) => t.mode === "default" && t.channel === best.id && t.kind === k && works(t))) ?? kinds[0];
+  const defaultWorks = (k: string) => trials.some((t) => t.mode === "default" && t.channel === best.id && t.kind === k && works(t));
+  // Options are probed with plain text when the program takes it: the most general kind.
+  const primaryKind = (defaultWorks("text") ? "text" : kinds.find(defaultWorks)) ?? kinds[0];
+  // The channel took several kinds of text (plain, markup, JSON, CSV): every mode reads any text.
+  const channelAnyText = defaultWorks("text") && kinds.filter(defaultWorks).length >= 2;
   for (const o of candidates) {
     const flag = o.flags[o.flags.length - 1];
     if (works(await attempt(flag.replace(/^-+/, ""), [flag], best, primaryKind, 0))) await attempt(flag.replace(/^-+/, ""), [flag], best, primaryKind, 1);
@@ -295,9 +310,24 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
     }
     if (mode !== "default" && mt.every((t) => t.r.stdout === defaultOut)) {
       claim(`${providerId}:${slug(mode)}`, `option ${mt[0].flags.join(" ")} changes the output`, "contradicted", "output identical to the default mode");
+      // The option is equivalent to the default: its description still describes what the default
+      // does, so keep it there (otherwise the only account of the behaviour is lost).
+      const opt = inv.options.find((o) => o.flags.some((f) => f.replace(/^-+/, "") === mode));
+      const def = capabilities.find((c) => c.id === `${providerId}:default`);
+      if (opt && def) {
+        def.tags = [...new Set([...def.tags, ...(opt.description.toLowerCase().match(/[a-z]{3,}/g) ?? [])])].slice(0, 40);
+        def.description = `${def.description} Equivalent to ${mt[0].flags.join(" ")}: ${opt.description}`.slice(0, 400);
+        claim(def.id, `equivalent to ${mt[0].flags.join(" ")} (${opt.description})`, "experimentally-supported", "identical output for the same inputs");
+      }
       continue;
     }
     // Determinism: repeat the first working trial.
+    // Output that ignores the input is not a transformation of it (a program printing its
+    // configuration, or an error, for anything it is given).
+    // Recorded, not dropped: a predicate (valid/invalid) can legitimately give one answer for every
+    // sample. Usage and error text are already excluded above.
+    const distinctInputs = new Set(mt.map((t) => t.inputs.join("\u0000"))).size;
+    const constant = distinctInputs >= 2 && new Set(mt.map((t) => t.r.stdout)).size === 1;
     const first = mt[0];
     const again = await run(`repeat for determinism (${mode})`, [...first.flags, ...(first.channel === "files" ? first.inputs.map((_, i) => `input${i + 1}.${first.kind === "text" ? "txt" : first.kind}`) : [])], first.channel === "stdin" ? { stdin: first.inputs[0] } : { files: Object.fromEntries(first.inputs.map((t, i) => [`input${i + 1}.${first.kind === "text" ? "txt" : first.kind}`, t])) });
     const deterministic = !!again && again.stdout === first.r.stdout;
@@ -315,12 +345,19 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
     const echoes = mt.every((t) => t.r.stdout.trim() === t.inputs[0].trim());
     const option = inv.options.find((o) => o.flags.some((f) => f.replace(/^-+/, "") === mode));
     const portNames = best.id === "stdin" ? [inType === "html" ? "html" : inType === "json" ? "json" : "input"] : (inv.operands.required.length ? inv.operands.required : ["file"]).slice(0, best.arity).map((n, i) => (/^[a-z][\w]*$/i.test(n) ? n : `file${i + 1}`));
-    const inputs: Port[] = portNames.map((n) => ({ name: n, type: inType, required: true, description: best.id === "stdin" ? "Content given on standard input" : "Content passed as a file operand" }));
+    // Several kinds of text worked (plain, markup, JSON, CSV): the input takes any text.
+    const anyText = channelAnyText || (inKinds.length >= 2 && inKinds.includes("text"));
+    // Typed by what the program says it is for (its documentation names one kind that worked, e.g.
+    // HTML), still taking other text where experiments showed it does.
+    const documented = ["html", "xml", "json", "csv"].filter((k) => new RegExp(`\\b${k === "html" ? "x?html" : k}\\b`, "i").test(docs) && defaultWorks(k));
+    const portType: SemType = documented.length === 1 && SEM[documented[0]] !== "text" ? SEM[documented[0]] : anyText ? "text" : inType;
+    const names = best.id === "stdin" ? [portType === "html" ? "html" : portType === "json" ? "json" : "input"] : portNames;
+    const inputs: Port[] = names.map((n) => ({ name: n, type: portType, required: true, ...(anyText ? { anyText: true } : {}), description: best.id === "stdin" ? "Content given on standard input" : "Content passed as a file operand" }));
     const invoke: CliInvoke = {
       kind: "cli",
       bin,
       args: [...first.flags, ...(best.id === "files" ? portNames.map((n) => ({ input: n })) : [])],
-      ...(best.id === "stdin" ? { stdin: portNames[0] } : {}),
+      ...(best.id === "stdin" ? { stdin: names[0] } : {}),
       // Exit 0 is success by convention; other codes count only where observed with real output
       // (diff-like programs exit 1 when inputs differ).
       okExit: [...new Set([0, ...mt.map((t) => t.r.code ?? -1)])].sort(),
@@ -348,6 +385,10 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
     if (mt.some((t) => t.r.created.length)) claim(id, `creates files: ${[...new Set(mt.flatMap((t) => t.r.created))].join(", ")}`, "observed", "contained in the sandbox's temporary directory");
     claim(id, "side effects outside the sandbox", "unknown", "the sandbox prevents them; not observable");
     if (!deterministic) (capabilities[capabilities.length - 1].tags as string[]).push("nondeterministic");
+    if (constant) {
+      claim(id, "output did not vary across the distinct inputs tried", "observed", `${distinctInputs} distinct inputs gave identical output`);
+      (capabilities[capabilities.length - 1].tags as string[]).push("input-independent-in-samples");
+    }
   }
   if (empty) claim(name, `on empty input exits ${empty.code}${empty.stdout.trim() ? " with output" : " without output"}`, "observed", empty.stderr.slice(0, 120));
   inv.summary = `${capabilities.length} capabilit${capabilities.length === 1 ? "y" : "ies"} from ${inv.runs.length} sandboxed runs (${okChannels.map((c) => c.id).join(", ")}; ok exit ${okExit.join("/")})`;

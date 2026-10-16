@@ -183,3 +183,24 @@ test("identifier evidence two array levels deep links records-of-lists to a look
   assert.match(out, /Prototype pollution/);
   assert.match(out, /Command injection/);
 });
+
+test("an optional filter parameter does not block identifier evidence (H1 on lifesci-satisfy-3: purl is optional)", async () => {
+  const HA = { openapi: "3.0.0", info: { title: "Advisories" }, servers: [{ url: "https://adv2.test" }], paths: { "/lookup": { get: { operationId: "lookupAdvisories", summary: "Lookup advisories", parameters: [{ name: "purl", in: "query", required: false, schema: { type: "string" } }, { name: "repository_url", in: "query", required: false, schema: { type: "string" } }], responses: ok({ type: "array", items: { type: "object", properties: { identifiers: { type: "array", items: { type: "string" } } } } }) } } } };
+  const HB = { openapi: "3.0.0", info: { title: "Vulns" }, servers: [{ url: "https://vuln2.test" }], paths: { "/vulns/{id}": { get: { operationId: "getVuln", summary: "Return a vulnerability for a given ID", parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }], responses: ok({ type: "object", properties: { id: { type: "string" }, summary: { type: "string" } } }) } } } };
+  const f = (async (input: any) => {
+    const u = new URL(typeof input === "string" ? input : input.url);
+    if (u.pathname === "/openapi.json") return json(u.host === "adv2.test" ? HA : HB);
+    if (u.pathname === "/lookup") return json([{ identifiers: [u.searchParams.get("purl") === "pkg:npm/seed@1" ? "GHSA-cccc-3333-zzzz" : "GHSA-aaaa-1111-xxxx"] }]);
+    const m = /^\/vulns\/(.+)$/.exec(u.pathname);
+    return m ? json({ id: decodeURIComponent(m[1]), summary: `summary of ${decodeURIComponent(m[1])}` }) : json({}, 404);
+  }) as typeof fetch;
+  const rc = await RightClick.create({ name: "gs9", fetch: f, directories: [] });
+  await rc.learn({ sources: ["https://adv2.test/openapi.json", "https://vuln2.test/openapi.json"] });
+  const lookup = rc.graph.list().find((c) => c.title === "Lookup advisories")!;
+  const vuln = rc.graph.list().find((c) => c.title.startsWith("Return a vulnerability"))!;
+  const seed = await rc.run(lookup.id, { purl: "pkg:npm/seed@1" });
+  await rc.run(vuln.id, { id: (seed.output as any)[0].identifiers[0] });
+  const r = await rc.compose({ have: { purl: "pkg:npm/lodash@4.17.20" }, want: "json", intent: "vulnerability summary", run: true, require: ["summary"] });
+  assert.equal(r.outcome?.status, "established", JSON.stringify(r.outcome));
+  assert.match(JSON.stringify(r.executed?.output), /summary of GHSA-aaaa-1111-xxxx/);
+});

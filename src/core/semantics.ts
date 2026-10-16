@@ -87,8 +87,10 @@ const NOMINAL = /^(title|q|query|search|term|keyword|topic|subject)$/i;
 const NOT_NOMINAL = new Set(["html", "markdown", "text"]);
 
 /** Can a value of type `value` flow into port (`name`, `type`)? */
-export function accepts(portName: string, portType: SemType, value: SemType): boolean {
+export function accepts(portName: string, portType: SemType, value: SemType, anyText = false): boolean {
   if (strongly(portType, value)) return true;
+  // A port shown to take any text (a program reading files) takes markup and other text kinds.
+  if (anyText && (value === "text" || (distance("text", value) >= 1 && distance("text", value) <= 2)) && distance("text", portType) >= 0) return true;
   return portType === "text" && NOMINAL.test(portName) && !NOT_NOMINAL.has(value) && distance("text", value) === 1;
 }
 

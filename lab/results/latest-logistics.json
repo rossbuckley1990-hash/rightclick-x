@@ -1,8 +1,8 @@
 {
-  "seed": 902708158,
+  "seed": 871855553,
   "domain": "logistics",
   "gateway": false,
-  "startedAt": "2026-10-16T21:43:07.573Z",
+  "startedAt": "2026-10-16T22:00:58.891Z",
   "steps": [
     {
       "n": 1,
@@ -17,7 +17,7 @@
       "title": "Connect an MCP client to RightClick X (stdio)",
       "ok": true,
       "tools": 13,
-      "startupMs": 147.7
+      "startupMs": 130.8
     },
     {
       "n": 3,
@@ -44,10 +44,10 @@
       "found": [
         "graphql",
         "graphql",
-        "graphql"
+        "mcp"
       ],
       "newCapabilities": 3,
-      "ms": 38.7
+      "ms": 38.6
     },
     {
       "n": 5,
@@ -55,79 +55,79 @@
       "ok": true,
       "candidatePlans": 2,
       "best": [
-        "Get Shipment",
+        "Get shipment",
         "Fetch Warehouse",
-        "Lookup Shipping Rate For A City"
+        "City Shipping Rate"
       ],
-      "planningMs": 3.2
+      "planningMs": 2.8
     },
     {
       "n": 6,
       "title": "Compose a multi-provider workflow",
       "ok": true,
       "steps": [
-        "Get Shipment ← shipmentId=$in.shipment_id",
-        "Fetch Warehouse ← warehouse_number=0.warehouseId",
-        "Lookup Shipping Rate For A City ← town=1.city"
+        "Get shipment ← shipment_number=$in.shipment_id",
+        "Fetch Warehouse ← warehouse_number=0.warehouse_number",
+        "City Shipping Rate ← city=1.location"
       ]
     },
     {
       "n": 7,
       "title": "Execute the workflow",
       "ok": true,
-      "input": "SHP-1004",
+      "input": "SHP-1003",
       "pipeline": [
-        "Get Shipment",
+        "Get shipment",
         "Fetch Warehouse",
-        "Lookup Shipping Rate For A City"
+        "City Shipping Rate"
       ],
-      "ms": 6.2
+      "ms": 5.5
     },
     {
       "n": 8,
       "title": "Verify against independently held test data",
       "ok": true,
-      "expected": 17.4,
-      "got": 17.4
+      "expected": 15.2,
+      "got": 15.2
     },
     {
       "n": 9,
       "title": "Save the successful composition and reuse it",
       "ok": true,
-      "saved": "Shipping rate shipment warehouse city: Get Shipment → Fetch Warehouse → Lookup Shipping Rate For A City",
+      "saved": "Shipping rate shipment warehouse city: Get shipment → Fetch Warehouse → City Shipping Rate",
       "reusedAs": [
-        "Shipping rate shipment warehouse city: Get Shipment → Fetch Warehouse → Lookup Shipping Rate For A City"
+        "Shipping rate shipment warehouse city: Get shipment → Fetch Warehouse → City Shipping Rate"
       ],
-      "expected": 38.5,
-      "got": 38.5,
-      "ms": 3
+      "expected": 15.2,
+      "got": 15.2,
+      "ms": 3.2
     },
     {
       "n": 10,
-      "title": "Change the interface of the last provider in the chain (Mistral Depot)",
+      "title": "Change the interface of the last provider in the chain (Northwind Billing)",
       "ok": true,
-      "before": "graphql \"Lookup shipping rate for a city\" town → town, rate",
-      "after": "mcp \"Shipping rate by city\" location → result.{location, price_per_kg}"
+      "before": "graphql \"City shipping rate\" city → city, price_per_kg",
+      "after": "openapi \"Shipping rate by city\" town → result.{town, rate}"
     },
     {
       "n": 11,
       "title": "Recover without changing integration code",
       "ok": true,
       "healing": [
-        "API drift at http://127.0.0.1:49642/: graphql:127-0-0-1-49642-graphql → mcp:mistral-depot; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:55483/: graphql:127-0-0-1-55483-graphql → openapi:northwind-billing; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "via": [
-        "graphql:127-0-0-1-49640-graphql",
-        "graphql:127-0-0-1-49641-graphql",
-        "mcp:mistral-depot"
+        "mcp:cobaltix",
+        "graphql:127-0-0-1-55482-graphql",
+        "openapi:northwind-billing"
       ],
-      "expected": 23,
-      "got": 23,
-      "ms": 9.9
+      "expected": 29.4,
+      "got": 29.4,
+      "ms": 8.9
     },
     {
       "n": 12,
-      "title": "Remove that provider (Mistral Depot)",
+      "title": "Remove that provider (Northwind Billing)",
       "ok": true
     },
     {
@@ -136,38 +136,38 @@
       "ok": true,
       "status": "failed",
       "healing": [
-        "provider gone at http://127.0.0.1:49642/: withdrew mcp:mistral-depot (1 capabilities, 1 pipeline(s) retired)"
+        "provider gone at http://127.0.0.1:55483/: withdrew openapi:northwind-billing (1 capabilities, 1 pipeline(s) retired)"
       ],
       "withdrawn": [
-        "Mistral Depot"
+        "Northwind Billing"
       ],
       "capabilities": "27 → 25",
       "savedPipelines": "1 → 0"
     },
     {
       "n": 14,
-      "title": "Introduce a different provider (Fernway, mcp): the objective works again",
+      "title": "Introduce a different provider (Brightmark, mcp): the objective works again",
       "ok": true,
       "learned": [
         "mcp: 1 tools"
       ],
       "via": [
-        "graphql:127-0-0-1-49640-graphql",
-        "graphql:127-0-0-1-49641-graphql",
-        "mcp:fernway"
+        "mcp:cobaltix",
+        "graphql:127-0-0-1-55482-graphql",
+        "mcp:brightmark"
       ],
-      "expected": 31.3,
-      "got": 31.3,
-      "ms": 2.5
+      "expected": 35.7,
+      "got": 35.7,
+      "ms": 2.3
     }
   ],
   "benchmarks": {
-    "startupMs": 147.7,
+    "startupMs": 130.8,
     "mcpLatencyMs": {
-      "p50": 0.04,
-      "p95": 0.15
+      "p50": 0.03,
+      "p95": 0.12
     },
-    "discoveryMs": 38.7,
+    "discoveryMs": 38.6,
     "graph": {
       "providers": 5,
       "capabilities": 26,
@@ -177,66 +177,66 @@
       "total": 114
     },
     "graphStatsMs": 0.1,
-    "planningMs": 3.2,
-    "executionMs": 6.2,
-    "recoveryAfterChangeMs": 9.9,
-    "recoveryAfterNewProviderMs": 2.5,
-    "memoryMB": 139
+    "planningMs": 2.8,
+    "executionMs": 5.5,
+    "recoveryAfterChangeMs": 8.9,
+    "recoveryAfterNewProviderMs": 2.3,
+    "memoryMB": 138
   },
   "freeze": {
-    "commit": "6f94a40ba17a4c258e5c5cdfe00ffcef07c63cbd",
+    "commit": "899a7b9e2774eb91b6921fdae6794276e81b1e39",
     "tag": "lab-freeze-9",
-    "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/core/authority.ts\nsrc/core/graph.ts\nsrc/core/identities.ts\nsrc/core/planner.ts\nsrc/core/sandbox.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/entry/durable.ts\nsrc/entry/edge.ts\nsrc/interface/http.ts\nsrc/interface/tools.ts\nsrc/reflectors/cli.ts\nsrc/reflectors/mcp.ts\nsrc/reflectors/net.ts\nsrc/reflectors/platform.ts\nsrc/runtime.ts",
-    "uncommittedProductChanges": "M src/core/planner.ts\n M src/core/types.ts\n M src/interface/tools.ts\n M src/reflectors/graphql.ts\n M src/reflectors/openapi.ts\n M src/runtime.ts\n?? src/core/fields.ts\n?? src/core/satisfaction.ts",
+    "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/core/authority.ts\nsrc/core/fields.ts\nsrc/core/graph.ts\nsrc/core/identities.ts\nsrc/core/planner.ts\nsrc/core/sandbox.ts\nsrc/core/satisfaction.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/core/yaml.ts\nsrc/entry/durable.ts\nsrc/entry/edge.ts\nsrc/interface/http.ts\nsrc/interface/tools.ts\nsrc/reflectors/cli.ts\nsrc/reflectors/discover.ts\nsrc/reflectors/graphql.ts\nsrc/reflectors/mcp.ts\nsrc/reflectors/net.ts\nsrc/reflectors/openapi.ts\nsrc/reflectors/platform.ts\nsrc/runtime.ts",
+    "uncommittedProductChanges": "",
     "frozen": false
   },
   "environment": [
     {
       "service": "shipments",
-      "brand": "Lumen Cargo",
-      "protocol": "graphql",
+      "brand": "Cobaltix",
+      "protocol": "mcp",
       "operation": "Get shipment",
-      "input": "shipmentId",
+      "input": "shipment_number",
       "outputs": [
-        "shipmentId",
-        "warehouseId",
-        "weight"
+        "shipment_number",
+        "warehouse_number",
+        "weight_kg"
       ]
     },
     {
       "service": "warehouses",
-      "brand": "Quillbase",
+      "brand": "Ashgrove",
       "protocol": "graphql",
       "operation": "Fetch warehouse",
       "input": "warehouse_number",
       "outputs": [
         "warehouse_number",
-        "city",
+        "location",
         "manager_email"
       ]
     },
     {
       "service": "rates",
-      "brand": "Mistral Depot",
+      "brand": "Northwind Billing",
       "protocol": "graphql",
-      "operation": "Lookup shipping rate for a city",
-      "input": "town",
+      "operation": "City shipping rate",
+      "input": "city",
       "outputs": [
-        "town",
-        "rate"
+        "city",
+        "price_per_kg"
       ]
     }
   ],
   "firstRunProviders": [
-    "graphql:127-0-0-1-49640-graphql",
-    "graphql:127-0-0-1-49641-graphql",
-    "graphql:127-0-0-1-49642-graphql"
+    "mcp:cobaltix",
+    "graphql:127-0-0-1-55482-graphql",
+    "graphql:127-0-0-1-55483-graphql"
   ],
   "receipts": {
     "count": 21,
     "intact": true,
     "brokenAt": null,
-    "head": "5b893e370c1576529b230b1cbbf4ef2f3103fee26fa6bed1f0a19c2ee451ae16"
+    "head": "a0158e8a5360229fb72804ff9895c0bf547119a9015a8eacd1fefe8a8b9319eb"
   },
   "passed": 14,
   "total": 14
