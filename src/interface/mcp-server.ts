@@ -2,7 +2,7 @@
 // Streamable HTTP transports both feed messages through handle().
 
 import { VERSION, type RightClick } from "../runtime.ts";
-import { TOOLS, dispatch } from "./tools.ts";
+import { ANNOTATED_TOOLS, TOOLS, dispatch } from "./tools.ts";
 
 const SUPPORTED = ["2025-06-18", "2025-03-26", "2024-11-05"];
 
@@ -33,7 +33,7 @@ export async function handle(rc: RightClick, msg: JsonRpc): Promise<JsonRpc | nu
     case "ping":
       return reply({});
     case "tools/list":
-      return reply({ tools: TOOLS });
+      return reply({ tools: ANNOTATED_TOOLS });
     case "tools/call": {
       const name = msg.params?.name;
       if (!TOOLS.some((t) => t.name === name)) return fail(-32602, `unknown tool: ${name}`);

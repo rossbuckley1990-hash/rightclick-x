@@ -1,7 +1,7 @@
 {
-  "seed": 972785027,
+  "seed": 287149341,
   "domain": "invoicing",
-  "startedAt": "2026-10-16T06:29:37.517Z",
+  "startedAt": "2026-10-16T06:30:11.128Z",
   "steps": [
     {
       "n": 1,
@@ -15,7 +15,7 @@
       "title": "Connect an MCP client to RightClick X (stdio)",
       "ok": true,
       "tools": 13,
-      "startupMs": 107
+      "startupMs": 115.5
     },
     {
       "n": 3,
@@ -40,12 +40,12 @@
       "title": "Discover contracts from root addresses only (no protocols, no schemas given)",
       "ok": true,
       "found": [
-        "graphql",
-        "graphql",
-        "openapi"
+        "openapi",
+        "mcp",
+        "mcp"
       ],
       "newCapabilities": 3,
-      "ms": 29.2
+      "ms": 32.4
     },
     {
       "n": 5,
@@ -53,8 +53,8 @@
       "ok": true,
       "candidatePlans": 3,
       "best": [
-        "Retrieve Invoice",
-        "Look Up Customer",
+        "Retrieve invoice",
+        "Get customer",
         "Lookup tax rate for a country"
       ],
       "planningMs": 2.2
@@ -64,8 +64,8 @@
       "title": "Compose a multi-provider workflow",
       "ok": true,
       "steps": [
-        "Retrieve Invoice ← invoice_id=$in.invoice_id",
-        "Look Up Customer ← customer_number=0.customerId",
+        "Retrieve invoice ← invoiceId=$in.invoice_id",
+        "Get customer ← customer_id=0.customer_id",
         "Lookup tax rate for a country ← countryCode=1.country"
       ]
     },
@@ -73,59 +73,59 @@
       "n": 7,
       "title": "Execute the workflow",
       "ok": true,
-      "input": "INV-1004",
+      "input": "INV-1000",
       "pipeline": [
-        "Retrieve Invoice",
-        "Look Up Customer",
+        "Retrieve invoice",
+        "Get customer",
         "Lookup tax rate for a country"
       ],
-      "ms": 4.4
+      "ms": 4.5
     },
     {
       "n": 8,
       "title": "Verify against independently held test data",
       "ok": true,
-      "expected": 17.6,
-      "got": 17.6
+      "expected": 21.8,
+      "got": 21.8
     },
     {
       "n": 9,
       "title": "Save the successful composition and reuse it",
       "ok": true,
-      "saved": "Tax rate invoice customer country: Retrieve Invoice → Look Up Customer → Lookup tax rate for a country",
+      "saved": "Tax rate invoice customer country: Retrieve invoice → Get customer → Lookup tax rate for a country",
       "reusedAs": [
-        "Tax rate invoice customer country: Retrieve Invoice → Look Up Customer → Lookup tax rate for a country"
+        "Tax rate invoice customer country: Retrieve invoice → Get customer → Lookup tax rate for a country"
       ],
-      "expected": 17.6,
-      "got": 17.6,
-      "ms": 2.2
+      "expected": 17.5,
+      "got": 17.5,
+      "ms": 2.4
     },
     {
       "n": 10,
-      "title": "Change the interface of the last provider in the chain (Quillbase)",
+      "title": "Change the interface of the last provider in the chain (Tallyport)",
       "ok": true,
-      "before": "openapi \"Lookup tax rate for a country\" countryCode → countryCode, vat_rate",
-      "after": "graphql \"Tax rate by country\" country_code → result.{country_code, standard_rate}"
+      "before": "mcp \"Lookup tax rate for a country\" countryCode → countryCode, tax_rate",
+      "after": "openapi \"Tax rate by country\" country → result.{country, rate}"
     },
     {
       "n": 11,
       "title": "Recover without changing integration code",
       "ok": true,
       "healing": [
-        "API drift at http://127.0.0.1:62468/: openapi:quillbase → graphql:127-0-0-1-62468-graphql; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:64827/: mcp:tallyport → openapi:tallyport; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "via": [
-        "graphql:127-0-0-1-62466-graphql",
-        "graphql:127-0-0-1-62467-graphql",
-        "graphql:127-0-0-1-62468-graphql"
+        "mcp:fernway",
+        "openapi:northwind-billing",
+        "openapi:tallyport"
       ],
-      "expected": 17.6,
-      "got": 17.6,
-      "ms": 7.9
+      "expected": 15.4,
+      "got": 15.4,
+      "ms": 7.4
     },
     {
       "n": 12,
-      "title": "Remove that provider (Quillbase)",
+      "title": "Remove that provider (Tallyport)",
       "ok": true
     },
     {
@@ -134,38 +134,38 @@
       "ok": true,
       "status": "failed",
       "healing": [
-        "provider gone at http://127.0.0.1:62468/: withdrew graphql:127-0-0-1-62468-graphql (1 capabilities, 1 pipeline(s) retired)"
+        "provider gone at http://127.0.0.1:64827/: withdrew openapi:tallyport (1 capabilities, 1 pipeline(s) retired)"
       ],
       "withdrawn": [
-        "GraphQL 127.0.0.1:62468"
+        "Tallyport"
       ],
       "capabilities": "21 → 19",
       "savedPipelines": "1 → 0"
     },
     {
       "n": 14,
-      "title": "Introduce a different provider (Duneworks, graphql): the objective works again",
+      "title": "Introduce a different provider (Quillbase, openapi): the objective works again",
       "ok": true,
       "learned": [
-        "graphql: 1 fields"
+        "openapi: 1 operations"
       ],
       "via": [
-        "graphql:127-0-0-1-62466-graphql",
-        "graphql:127-0-0-1-62467-graphql",
-        "graphql:127-0-0-1-62530-graphql"
+        "mcp:fernway",
+        "openapi:northwind-billing",
+        "openapi:quillbase"
       ],
-      "expected": 19.6,
-      "got": 19.6,
-      "ms": 1.9
+      "expected": 17.5,
+      "got": 17.5,
+      "ms": 1.6
     }
   ],
   "benchmarks": {
-    "startupMs": 107,
+    "startupMs": 115.5,
     "mcpLatencyMs": {
-      "p50": 0.04,
+      "p50": 0.03,
       "p95": 0.11
     },
-    "discoveryMs": 29.2,
+    "discoveryMs": 32.4,
     "graph": {
       "providers": 5,
       "capabilities": 20,
@@ -174,68 +174,68 @@
       "chains3": 57,
       "total": 114
     },
-    "graphStatsMs": 0.4,
+    "graphStatsMs": 0.1,
     "planningMs": 2.2,
-    "executionMs": 4.4,
-    "recoveryAfterChangeMs": 7.9,
-    "recoveryAfterNewProviderMs": 1.9,
-    "memoryMB": 134
+    "executionMs": 4.5,
+    "recoveryAfterChangeMs": 7.4,
+    "recoveryAfterNewProviderMs": 1.6,
+    "memoryMB": 135
   },
   "freeze": {
-    "commit": "4c8b5a39791f4658f08ab52b3692ffd8f4038307",
-    "tag": "lab-freeze-1",
+    "commit": "c15655ad2259a368c16a542016474039affd4f8d",
+    "tag": "lab-freeze-2",
     "productCodeChangedSinceTag": "",
-    "uncommittedProductChanges": "M src/core/graph.ts\n M src/reflectors/graphql.ts\n M src/reflectors/openapi.ts\n M src/runtime.ts",
-    "frozen": false
+    "uncommittedProductChanges": "",
+    "frozen": true
   },
   "environment": [
     {
       "service": "invoices",
-      "brand": "Paperhaus",
-      "protocol": "graphql",
+      "brand": "Fernway",
+      "protocol": "mcp",
       "operation": "Retrieve invoice",
-      "input": "invoice_id",
+      "input": "invoiceId",
       "outputs": [
-        "invoice_id",
-        "customerId",
+        "invoiceId",
+        "customer_id",
         "total",
         "currency"
       ]
     },
     {
       "service": "customers",
-      "brand": "Fernway",
-      "protocol": "graphql",
-      "operation": "Look up customer",
-      "input": "customer_number",
+      "brand": "Northwind Billing",
+      "protocol": "openapi",
+      "operation": "Get customer",
+      "input": "customer_id",
       "outputs": [
-        "customer_number",
+        "customer_id",
         "company_name",
         "country"
       ]
     },
     {
       "service": "tax",
-      "brand": "Quillbase",
-      "protocol": "openapi",
+      "brand": "Tallyport",
+      "protocol": "mcp",
       "operation": "Lookup tax rate for a country",
       "input": "countryCode",
       "outputs": [
         "countryCode",
-        "vat_rate"
+        "tax_rate"
       ]
     }
   ],
   "firstRunProviders": [
-    "graphql:127-0-0-1-62466-graphql",
-    "graphql:127-0-0-1-62467-graphql",
-    "openapi:quillbase"
+    "mcp:fernway",
+    "openapi:northwind-billing",
+    "mcp:tallyport"
   ],
   "receipts": {
     "count": 21,
     "intact": true,
     "brokenAt": null,
-    "head": "1b05486c564ad588ca38e3501a05967a1ed0e5006c818a2bc85a63e6d185ff4f"
+    "head": "50f1b6bf6f6bf6a8843ed35147038778b1ec378b934f2916e5e9846e3a5ff851"
   },
   "passed": 14,
   "total": 14

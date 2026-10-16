@@ -16,6 +16,12 @@ test("MCP: thirteen context_* tools, stable no matter how the graph grows", asyn
   const list = async () => ((await handle(rc, { jsonrpc: "2.0", id: 2, method: "tools/list" })) as any).result.tools.map((t: any) => t.name);
   const before = await list();
   assert.equal(before.length, 13);
+  const annotated: any = await handle(rc, { jsonrpc: "2.0", id: 9, method: "tools/list" });
+  const ann = Object.fromEntries(annotated.result.tools.map((t: any) => [t.name, t.annotations]));
+  assert.equal(ann.context_inspect.readOnlyHint, true);
+  assert.equal(ann.context_learn.readOnlyHint, false);
+  assert.equal(ann.context_run.destructiveHint, true);
+  assert.ok(annotated.result.tools.every((t: any) => t.annotations && t.title), "every tool declares annotations and a title");
   assert.ok(before.every((n: string) => n.startsWith("context_")));
   await learnAll(rc);
   assert.deepEqual(await list(), before);

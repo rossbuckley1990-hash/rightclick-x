@@ -100,6 +100,30 @@ export const TOOLS = [
   },
 ] as const;
 
+/**
+ * MCP tool annotations, so clients can make informed approval decisions.
+ * Inspection tools only read RightClick X's own state; learn/research/forget
+ * change the graph; run/compose reach other systems and may be destructive
+ * (destructive capabilities additionally require confirm: true).
+ */
+const ANNOTATIONS: Record<string, { title: string; readOnlyHint: boolean; destructiveHint: boolean; idempotentHint: boolean; openWorldHint: boolean }> = {
+  context_runtime: { title: "Identify this RightClick X instance", readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+  context_inspect: { title: "Classify a value", readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+  context_actions: { title: "What can be done with a value", readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+  context_explain: { title: "Explain a capability", readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+  context_graph: { title: "Query the capability graph", readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+  context_providers: { title: "List providers", readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+  context_run_status: { title: "Read run receipts", readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+  context_watch: { title: "Follow graph changes", readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+  context_research: { title: "Survey the environment and directories", readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
+  context_learn: { title: "Learn a source's capabilities", readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true },
+  context_forget: { title: "Forget a provider", readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+  context_run: { title: "Run a capability", readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: true },
+  context_compose: { title: "Compose and run a workflow", readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: true },
+};
+
+export const ANNOTATED_TOOLS = TOOLS.map((t) => ({ ...t, title: ANNOTATIONS[t.name].title, annotations: ANNOTATIONS[t.name] }));
+
 export type ToolName = (typeof TOOLS)[number]["name"];
 
 export async function dispatch(rc: RightClick, name: string, a: Record<string, any> = {}): Promise<unknown> {

@@ -1,7 +1,7 @@
 {
-  "seed": 963786426,
+  "seed": 684434823,
   "domain": "logistics",
-  "startedAt": "2026-10-16T06:29:44.222Z",
+  "startedAt": "2026-10-16T06:30:14.383Z",
   "steps": [
     {
       "n": 1,
@@ -15,7 +15,7 @@
       "title": "Connect an MCP client to RightClick X (stdio)",
       "ok": true,
       "tools": 13,
-      "startupMs": 108.5
+      "startupMs": 110.7
     },
     {
       "n": 3,
@@ -41,11 +41,11 @@
       "ok": true,
       "found": [
         "graphql",
-        "openapi",
-        "openapi"
+        "graphql",
+        "mcp"
       ],
       "newCapabilities": 3,
-      "ms": 27.6
+      "ms": 29.3
     },
     {
       "n": 5,
@@ -53,79 +53,79 @@
       "ok": true,
       "candidatePlans": 2,
       "best": [
-        "Shipment Details",
-        "Fetch warehouse",
-        "Lookup shipping rate for a city"
+        "Get shipment",
+        "Fetch Warehouse",
+        "Get Shipping Rate"
       ],
-      "planningMs": 1.6
+      "planningMs": 1.7
     },
     {
       "n": 6,
       "title": "Compose a multi-provider workflow",
       "ok": true,
       "steps": [
-        "Shipment Details ← shipment_id=$in.shipment_id",
-        "Fetch warehouse ← warehouse_id=0.warehouseId",
-        "Lookup shipping rate for a city ← location=1.city"
+        "Get shipment ← shipment_number=$in.shipment_id",
+        "Fetch Warehouse ← warehouse_number=0.warehouse_number",
+        "Get Shipping Rate ← city=1.location"
       ]
     },
     {
       "n": 7,
       "title": "Execute the workflow",
       "ok": true,
-      "input": "SHP-1003",
+      "input": "SHP-1005",
       "pipeline": [
-        "Shipment Details",
-        "Fetch warehouse",
-        "Lookup shipping rate for a city"
+        "Get shipment",
+        "Fetch Warehouse",
+        "Get Shipping Rate"
       ],
-      "ms": 3.8
+      "ms": 4
     },
     {
       "n": 8,
       "title": "Verify against independently held test data",
       "ok": true,
-      "expected": 29.2,
-      "got": 29.2
+      "expected": 7.8,
+      "got": 7.8
     },
     {
       "n": 9,
       "title": "Save the successful composition and reuse it",
       "ok": true,
-      "saved": "Shipping rate shipment warehouse city: Shipment Details → Fetch warehouse → Lookup shipping rate for a city",
+      "saved": "Shipping rate shipment warehouse city: Get shipment → Fetch Warehouse → Get Shipping Rate",
       "reusedAs": [
-        "Shipping rate shipment warehouse city: Shipment Details → Fetch warehouse → Lookup shipping rate for a city"
+        "Shipping rate shipment warehouse city: Get shipment → Fetch Warehouse → Get Shipping Rate"
       ],
-      "expected": 20,
-      "got": 20,
+      "expected": 25.7,
+      "got": 25.7,
       "ms": 1.9
     },
     {
       "n": 10,
-      "title": "Change the interface of the last provider in the chain (Harbourly)",
+      "title": "Change the interface of the last provider in the chain (Cobaltix)",
       "ok": true,
-      "before": "openapi \"Lookup shipping rate for a city\" location → location, price_per_kg",
-      "after": "mcp \"Shipping rate by city\" city → result.{city, rate}"
+      "before": "graphql \"Get shipping rate\" city → city, price_per_kg",
+      "after": "openapi \"Lookup shipping rate for a city\" location → result.{location, rate}"
     },
     {
       "n": 11,
       "title": "Recover without changing integration code",
       "ok": true,
       "healing": [
-        "API drift at http://127.0.0.1:64026/: openapi:harbourly → mcp:harbourly; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:49213/: graphql:127-0-0-1-49213-graphql → openapi:cobaltix; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "via": [
-        "graphql:127-0-0-1-64024-graphql",
-        "openapi:brightmark",
-        "mcp:harbourly"
+        "mcp:duneworks",
+        "graphql:127-0-0-1-49212-graphql",
+        "openapi:cobaltix"
       ],
-      "expected": 18.1,
-      "got": 18.1,
-      "ms": 8.6
+      "expected": 25.7,
+      "got": 25.7,
+      "ms": 7.4
     },
     {
       "n": 12,
-      "title": "Remove that provider (Harbourly)",
+      "title": "Remove that provider (Cobaltix)",
       "ok": true
     },
     {
@@ -134,38 +134,38 @@
       "ok": true,
       "status": "failed",
       "healing": [
-        "provider gone at http://127.0.0.1:64026/: withdrew mcp:harbourly (1 capabilities, 1 pipeline(s) retired)"
+        "provider gone at http://127.0.0.1:49213/: withdrew openapi:cobaltix (1 capabilities, 1 pipeline(s) retired)"
       ],
       "withdrawn": [
-        "Harbourly"
+        "Cobaltix"
       ],
       "capabilities": "21 → 19",
       "savedPipelines": "1 → 0"
     },
     {
       "n": 14,
-      "title": "Introduce a different provider (Quillbase, mcp): the objective works again",
+      "title": "Introduce a different provider (Ashgrove, mcp): the objective works again",
       "ok": true,
       "learned": [
         "mcp: 1 tools"
       ],
       "via": [
-        "graphql:127-0-0-1-64024-graphql",
-        "openapi:brightmark",
-        "mcp:quillbase"
+        "mcp:duneworks",
+        "graphql:127-0-0-1-49212-graphql",
+        "mcp:ashgrove"
       ],
-      "expected": 29.2,
-      "got": 29.2,
-      "ms": 1.4
+      "expected": 30,
+      "got": 30,
+      "ms": 1.6
     }
   ],
   "benchmarks": {
-    "startupMs": 108.5,
+    "startupMs": 110.7,
     "mcpLatencyMs": {
       "p50": 0.04,
       "p95": 0.11
     },
-    "discoveryMs": 27.6,
+    "discoveryMs": 29.3,
     "graph": {
       "providers": 5,
       "capabilities": 20,
@@ -174,67 +174,67 @@
       "chains3": 45,
       "total": 96
     },
-    "graphStatsMs": 0.4,
-    "planningMs": 1.6,
-    "executionMs": 3.8,
-    "recoveryAfterChangeMs": 8.6,
-    "recoveryAfterNewProviderMs": 1.4,
-    "memoryMB": 131
+    "graphStatsMs": 0.1,
+    "planningMs": 1.7,
+    "executionMs": 4,
+    "recoveryAfterChangeMs": 7.4,
+    "recoveryAfterNewProviderMs": 1.6,
+    "memoryMB": 133
   },
   "freeze": {
-    "commit": "4c8b5a39791f4658f08ab52b3692ffd8f4038307",
-    "tag": "lab-freeze-1",
+    "commit": "c15655ad2259a368c16a542016474039affd4f8d",
+    "tag": "lab-freeze-2",
     "productCodeChangedSinceTag": "",
-    "uncommittedProductChanges": "M src/core/graph.ts\n M src/reflectors/graphql.ts\n M src/reflectors/openapi.ts\n M src/runtime.ts",
-    "frozen": false
+    "uncommittedProductChanges": "",
+    "frozen": true
   },
   "environment": [
     {
       "service": "shipments",
-      "brand": "Cobaltix",
-      "protocol": "graphql",
-      "operation": "Shipment details",
-      "input": "shipment_id",
+      "brand": "Duneworks",
+      "protocol": "mcp",
+      "operation": "Get shipment",
+      "input": "shipment_number",
       "outputs": [
-        "shipment_id",
-        "warehouseId",
-        "weight_kg"
+        "shipment_number",
+        "warehouse_number",
+        "gross_weight"
       ]
     },
     {
       "service": "warehouses",
-      "brand": "Brightmark",
-      "protocol": "openapi",
+      "brand": "Harbourly",
+      "protocol": "graphql",
       "operation": "Fetch warehouse",
-      "input": "warehouse_id",
+      "input": "warehouse_number",
       "outputs": [
-        "warehouse_id",
-        "city",
-        "manager_email"
+        "warehouse_number",
+        "location",
+        "email"
       ]
     },
     {
       "service": "rates",
-      "brand": "Harbourly",
-      "protocol": "openapi",
-      "operation": "Lookup shipping rate for a city",
-      "input": "location",
+      "brand": "Cobaltix",
+      "protocol": "graphql",
+      "operation": "Get shipping rate",
+      "input": "city",
       "outputs": [
-        "location",
+        "city",
         "price_per_kg"
       ]
     }
   ],
   "firstRunProviders": [
-    "graphql:127-0-0-1-64024-graphql",
-    "openapi:brightmark",
-    "openapi:harbourly"
+    "mcp:duneworks",
+    "graphql:127-0-0-1-49212-graphql",
+    "graphql:127-0-0-1-49213-graphql"
   ],
   "receipts": {
     "count": 21,
     "intact": true,
     "brokenAt": null,
-    "head": "cf0a6aae598013a7731dd4226067628c84bc3285e841b0bfa2e518a4d2831e95"
+    "head": "500dbfc0b566b368a58bf2a4dbf1c239e42d3f662924f259fd4514c65a62696e"
   },
   "passed": 14,
   "total": 14
