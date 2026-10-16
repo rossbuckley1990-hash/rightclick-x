@@ -37,12 +37,19 @@ export async function handle(rc: RightClick, msg: JsonRpc): Promise<JsonRpc | nu
     case "tools/call": {
       const name = msg.params?.name;
       if (!TOOLS.some((t) => t.name === name)) return fail(-32602, `unknown tool: ${name}`);
+      const t0 = performance.now();
+      const args = msg.params?.arguments ?? {};
+      const audit = (ok: boolean, error?: string) =>
+        rc.toolCallSink?.({ at: new Date().toISOString(), tool: name, args, ok, ms: Math.round((performance.now() - t0) * 10) / 10, ...(error ? { error: error.slice(0, 300) } : {}) });
       try {
-        const out = await dispatch(rc, name, msg.params?.arguments ?? {});
+        const out = await dispatch(rc, name, args);
+        audit(true);
         const structured = out && typeof out === "object" && !Array.isArray(out) ? out : { result: out };
         return reply({ content: [{ type: "text", text: JSON.stringify(out, null, 2) }], structuredContent: structured, isError: false });
       } catch (e) {
-        return reply({ content: [{ type: "text", text: String((e as Error)?.message ?? e) }], isError: true });
+        const error = String((e as Error)?.message ?? e);
+        audit(false, error);
+        return reply({ content: [{ type: "text", text: error }], isError: true });
       }
     }
     default:

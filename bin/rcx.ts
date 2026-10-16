@@ -76,6 +76,11 @@ async function main() {
     store: demoMode ? undefined : new FileStore(stateFile),
   });
 
+  if (env.RCX_MCP_LOG) {
+    const { appendFileSync } = await import("node:fs");
+    const file = env.RCX_MCP_LOG;
+    rc.toolCallSink = (e) => appendFileSync(file, JSON.stringify(e) + "\n");
+  }
   if (cmd === "mcp") return serveStdio(rc);
 
   if (cmd === "serve") {

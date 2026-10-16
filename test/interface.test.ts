@@ -38,6 +38,16 @@ test("MCP: thirteen context_* tools, stable no matter how the graph grows", asyn
   assert.equal(await handle(rc, { jsonrpc: "2.0", method: "notifications/initialized" }), null);
 });
 
+test("MCP tool calls can be audited by the host", async () => {
+  const { rc } = await world();
+  const log: any[] = [];
+  rc.toolCallSink = (e) => log.push(e);
+  await handle(rc, { jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "context_inspect", arguments: { value: "https://a.test" } } });
+  await handle(rc, { jsonrpc: "2.0", id: 2, method: "tools/call", params: { name: "context_run", arguments: { id: "nope" } } });
+  assert.deepEqual(log.map((e) => [e.tool, e.ok]), [["context_inspect", true], ["context_run", false]]);
+  assert.match(log[1].error, /unknown capability/);
+});
+
 test("HTTP: public manifest, token lock, API and MCP routes", async () => {
   const { rc } = await world();
   const locked = createHandler(rc, {});

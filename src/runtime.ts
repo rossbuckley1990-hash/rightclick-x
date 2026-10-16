@@ -150,6 +150,8 @@ export class RightClick {
   readonly name: string;
   readonly startedAt = new Date();
   readonly published = new Map<string, PublishedGoal>();
+  /** Optional sink for an audit log of MCP tool calls (set by hosts, e.g. RCX_MCP_LOG). */
+  toolCallSink?: (entry: { at: string; tool: string; args: unknown; ok: boolean; ms: number; error?: string }) => void;
   private directories: Directory[];
   private builtins = new Map<string, BuiltinFn>();
   private platformFns = new Map<string, PlatformFn>();
