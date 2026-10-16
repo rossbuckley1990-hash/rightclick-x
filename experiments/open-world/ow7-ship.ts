@@ -108,7 +108,8 @@ for (const code of devCountries) {
     if (method === "GET") url.searchParams.set(params[0], code);
     else init.body = JSON.stringify({ [params[0]]: code });
     raw = await (await fetch(url, init)).json().catch(() => null);
-    got = typeof raw?.result === "number" ? raw.result : Number(raw?.result);
+    // Never coerce: Number(null) is 0, which once turned a refused call into a "wrong answer".
+    got = typeof raw?.result === "number" ? raw.result : NaN;
   }
   ev.developer.push({ country: code, currency: t.currency, truthEUR: t.eur, got, ok: close(got, t.eur), verification: raw?.verification, pipeline: raw?.pipeline });
   log(`   ${code} (${t.currency}): API ${got} · truth ${t.eur} · ${close(got, t.eur) ? "ok" : "MISMATCH"}`);

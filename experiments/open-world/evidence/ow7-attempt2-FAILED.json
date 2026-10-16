@@ -49,7 +49,7 @@
       "country": "CH",
       "currency": "CHF",
       "truthEUR": 1.076216,
-      "got": 0,
+      "got": null,
       "ok": false,
       "verification": "refuted",
       "pipeline": []
@@ -132,5 +132,5 @@
   "verdict": "FAIL",
   "attempt": 2,
   "instanceNote": "Ran on fresh rcx-d (SIN). The harness log line says \"-> rcx-c only\"; that label is a stale string, the builder connected only to rcx-d.",
-  "diagnosis": "CH: the countries API lists CHE,CHF,CHW; the published API returned 0 for CH, a silently wrong answer. The goal had no customer-owned correctness check that would reject it."
+  "diagnosis": "CH: the published API FAILED CLOSED (ok false, verification refuted, no pipeline); it did not return a wrong value. The harness converted the null result to 0 with Number(null), and the first report called this a silently wrong answer; that was a harness artifact, corrected here. Cause of the failure: the countries API lists CHE,CHF,CHW; the list reached the converter and the run was refused. Verdict stays FAIL: the pre-registered criterion is 3/3 correct answers."
 }
