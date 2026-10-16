@@ -11,7 +11,7 @@ import { schemeFits, schemeOnly } from "./identities.ts";
 import { accepts, distance, isNominal } from "./semantics.ts";
 import { tokenize, type CapabilityGraph } from "./graph.ts";
 import type { Ledger } from "./ledger.ts";
-import type { Binding, Capability, PlanStep, Risk, SemType } from "./types.ts";
+import type { Binding, Capability, PlanStep, Port, Risk, SemType } from "./types.ts";
 
 export interface Goal {
   /** Named inputs the caller can supply, with semantic types. */
@@ -109,6 +109,13 @@ interface Node {
 /** Expansion budget per search depth, so wide graphs (GitHub: 1,200+ ops) still get searched deep. */
 const DEPTH_BUDGET = 8000;
 
+/** Items one fan-out step may run over (sequentially); a longer list refuses the step at run time. */
+export const FANOUT_MAX = 20;
+/** A fan-out step makes up to FANOUT_MAX calls: price it above a single call. */
+const FANOUT_COST = 1;
+/** A list of these says nothing about what each item is, so it never fans out by type alone. */
+const UNSPECIFIC = /^(text|json|number|boolean|id)$/;
+
 export function plan(graph: CapabilityGraph, ledger: Ledger, goal: Goal): Plan[] {
   const maxSteps = Math.min(goal.maxSteps ?? 4, 6);
   const limit = goal.limit ?? 5;
@@ -136,6 +143,9 @@ export function plan(graph: CapabilityGraph, ledger: Ledger, goal: Goal): Plan[]
     cost: 0,
   };
 
+  // Identifier shapes each learned scheme was seen with: a fan-out through a scheme uses only those items.
+  const shapes = new Map(graph.identities.evidence().length ? graph.identities.schemes(graph.list()).map((s) => [s.id, s.shapes]) : []);
+
   const results: Plan[] = [];
   const seen = new Set<string>();
   let frontier: Node[] = [start];
@@ -146,7 +156,7 @@ export function plan(graph: CapabilityGraph, ledger: Ledger, goal: Goal): Plan[]
       if (expansions > DEPTH_BUDGET) break;
       for (const cap of caps) {
         if (node.used.has(cap.id)) continue;
-        const bindings = bind(cap, node.values, intent, consumedSteps(node));
+        const bindings = bind(cap, node.values, intent, consumedSteps(node), shapes);
         if (!bindings) continue;
         if (++expansions > DEPTH_BUDGET) break;
         // A step must consume something produced or supplied, not only constants,
@@ -156,11 +166,14 @@ export function plan(graph: CapabilityGraph, ledger: Ledger, goal: Goal): Plan[]
         if (cap.inputs.length && !bindings.length) continue;
         if (node.steps.length && !anchors.has(cap.id) && !bindings.some((b) => !b.from.startsWith("$in."))) continue;
         const stepIndex = node.steps.length;
+        // A fan-out step yields, for each output, the list of what every item produced.
+        const fans = bindings.some((b) => b.each);
         const produced: Value[] = cap.outputs.map((o) => ({
           ref: `${stepIndex}.${o.name}`,
-          type: o.type,
+          type: fans ? `list:${o.type}` : o.type,
           step: stepIndex,
-          ...(o.schemes?.length ? { schemes: o.schemes } : {}),
+          // Schemes describe one level of list: a list of lists carries none.
+          ...(o.schemes?.length && !(fans && o.type.startsWith("list:")) ? { schemes: o.schemes } : {}),
         }));
         // Prune steps that add no new type to the state, unless they finish the goal.
         const finishes = produced.some((v) => satisfies(goal.want, v.type));
@@ -170,9 +183,9 @@ export function plan(graph: CapabilityGraph, ledger: Ledger, goal: Goal): Plan[]
           values: [...node.values, ...produced],
           steps: [...node.steps, { capability: cap.id, bindings }],
           used: new Set([...node.used, cap.id]),
-          cost: node.cost + ledger.cost(cap.id),
+          cost: node.cost + ledger.cost(cap.id) + (fans ? FANOUT_COST : 0),
         };
-        const key = child.steps.map((s) => `${s.capability}(${s.bindings.map((b) => b.from).join(",")})`).join(">");
+        const key = child.steps.map((s) => `${s.capability}(${s.bindings.map((b) => (b.each ? "*" : "") + b.from).join(",")})`).join(">");
         if (seen.has(key)) continue;
         seen.add(key);
 
@@ -241,20 +254,38 @@ function outputScore(ref: string, intent: Set<string>, want?: SemType): number {
   return s - path.split(".").length * 0.1;
 }
 
-/** Bind every required input of `cap` to the best available value, or null. */
-function bind(cap: Capability, values: Value[], intent: Set<string>, consumed: Set<number> = new Set()): Binding[] | null {
+/**
+ * Can `port` take the items of list value `v` one at a time? Only for read-only capabilities and
+ * required single-value ports, and only when each item is known to fit: through a shared learned
+ * scheme (then only items of the scheme's observed shapes are used), or through a specific type.
+ * Everywhere else a list still never fills a single-value port.
+ */
+function fanOut(cap: Capability, port: Port, v: Value, shapes: Map<string, string[]>): Binding["each"] | undefined {
+  if (cap.risk !== "read" || !port.required || port.enum || port.type.startsWith("list:") || !v.type.startsWith("list:")) return undefined;
+  const item = v.type.slice(5);
+  if (schemeFits(port, item, v.schemes)) {
+    const seen = [...new Set(port.schemes!.filter((s) => v.schemes!.includes(s)).flatMap((s) => shapes.get(s) ?? []))].sort();
+    return { max: FANOUT_MAX, ...(seen.length ? { shapes: seen } : {}) };
+  }
+  if (UNSPECIFIC.test(port.type) || !accepts(port.name, port.type, item)) return undefined;
+  return { max: FANOUT_MAX };
+}
+
+/** Bind every required input of `cap` to the best available value, or null. At most one port fans out. */
+function bind(cap: Capability, values: Value[], intent: Set<string>, consumed: Set<number> = new Set(), shapes: Map<string, string[]> = new Map()): Binding[] | null {
   // Score every acceptable value for every port first, then bind the most
   // constrained ports first, preferring values from branches nobody has used
   // yet, so a join draws each input from a different upstream system.
   const options = cap.inputs.map((port) => {
-    const scored: Array<{ v: Value; score: number }> = [];
+    const scored: Array<{ v: Value; score: number; each?: Binding["each"] }> = [];
     for (const v of values) {
       // A caller input named after an entity ("province") identifies it: it can fill id.province.
       const bridged = v.step === -1 && port.type === `id.${v.ref.slice(4).toLowerCase().replace(/[^a-z0-9]/g, "")}`;
       // Observed to carry the same identifiers, whatever each contract calls them.
       const linked = schemeFits(port, v.type, v.schemes);
-      if (!bridged && !linked && !accepts(port.name, port.type, v.type)) continue;
-      if (!linked && v.step >= 0 && schemeOnly(port)) continue;
+      let each: Binding["each"] | undefined;
+      if (!bridged && !linked && !accepts(port.name, port.type, v.type) && !(each = fanOut(cap, port, v, shapes))) continue;
+      if (!linked && !each && v.step >= 0 && schemeOnly(port)) continue;
       // Optional ports are only filled when the caller supplied them by name.
       if (!port.required && v.ref !== `$in.${port.name}`) continue;
       // A port with a fixed set of allowed values takes a caller's choice, never another step's output.
@@ -263,7 +294,7 @@ function bind(cap: Capability, values: Value[], intent: Set<string>, consumed: S
       // Name-like ports (title, name, q) take names, not prose fields like body/description.
       if (isNominal(port.name, port.type) && CONTENT.test(leaf)) continue;
       // Prefer exact types, recent values, the caller's names, and values named like the intent.
-      const d = bridged || linked ? 0 : distance(port.type, v.type);
+      const d = bridged || linked ? 0 : distance(port.type, each ? v.type.slice(5) : v.type);
       const nameBonus = v.ref === `$in.${port.name}` ? (port.type === "text" ? 1.5 : 5) : 0;
       const leafToks = tokenize(leaf);
       // Intent words often name the caller's own inputs ("question"); only produced values earn this.
@@ -272,32 +303,45 @@ function bind(cap: Capability, values: Value[], intent: Set<string>, consumed: S
       // The caller's own value of the exact type beats one derived through a detour.
       // (Identities only: free text is meant to be transformed, so the latest version wins.)
       const callerBonus = v.step === -1 && d === 0 && port.type !== "text" ? 3 : 0;
-      scored.push({ v, score: d * 3 - 2 * v.step - nameBonus - intentBonus - contentBonus - callerBonus });
+      // A single value that fits beats mapping over a list.
+      const fanPenalty = each ? 4 : 0;
+      scored.push({ v, score: d * 3 - 2 * v.step - nameBonus - intentBonus - contentBonus - callerBonus + fanPenalty, ...(each ? { each } : {}) });
     }
     return { port, scored };
   });
   const used = new Set(consumed);
-  const chosen = new Map<string, Value>();
+  const chosen = new Map<string, { v: Value; each?: Binding["each"] }>();
+  let fanned = false;
   // Two ports of one operation are two different questions: given another acceptable value,
   // do not feed the same value to both ("from USD to USD" while the caller's EUR sits unused).
   const boundRefs = new Set<string>();
   for (const { port, scored } of [...options].sort((a, b) => a.scored.length - b.scored.length)) {
     let best: Value | undefined;
+    let bestEach: Binding["each"] | undefined;
     let bestScore = Infinity;
-    for (const { v, score } of scored) {
+    for (const { v, score, each } of scored) {
+      // One list per step: two fanned ports would ask for a cross product nobody chose.
+      if (each && fanned) continue;
       const s = score - (v.step >= 0 && !used.has(v.step) ? 3 : 0) + (boundRefs.has(v.ref) ? 6 : 0);
       if (s < bestScore) {
         bestScore = s;
         best = v;
+        bestEach = each;
       }
     }
     if (best) {
-      chosen.set(port.name, best);
+      chosen.set(port.name, { v: best, ...(bestEach ? { each: bestEach } : {}) });
+      if (bestEach) fanned = true;
       boundRefs.add(best.ref);
       if (best.step >= 0) used.add(best.step);
     } else if (port.required) return null;
   }
-  return cap.inputs.filter((p) => chosen.has(p.name)).map((p) => ({ port: p.name, from: chosen.get(p.name)!.ref }));
+  return cap.inputs
+    .filter((p) => chosen.has(p.name))
+    .map((p) => {
+      const { v, each } = chosen.get(p.name)!;
+      return { port: p.name, from: v.ref, ...(each ? { each } : {}) };
+    });
 }
 
 /** Steps whose outputs some later step already uses. */
@@ -375,7 +419,7 @@ function finalize(graph: CapabilityGraph, node: Node, v: Value, d: number, inten
   }
   if (needed.size !== node.steps.length) return null; // a shorter plan covers this
   const providers = [...new Set(node.steps.map((s) => graph.get(s.capability)!.provider))];
-  const titles = node.steps.map((s) => graph.get(s.capability)!.title);
+  const titles = node.steps.map((s) => graph.get(s.capability)!.title + (s.bindings.some((b) => b.each) ? " (each)" : ""));
   const intentScore = intentOf(graph, node, intent, v.ref);
   const last = graph.get(node.steps[v.step].capability)!;
   // A crystallized pipeline is judged by the result it was proven on.
