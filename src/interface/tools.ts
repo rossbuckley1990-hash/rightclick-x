@@ -3,6 +3,7 @@
 // compose and run through these thirteen.
 
 import type { RightClick } from "../runtime.ts";
+import { applyView, parseView, OUTPUT_BUDGET, type OutputView } from "../core/view.ts";
 
 const obj = (properties: Record<string, unknown>, required: string[] = []) => ({ type: "object", properties, required, additionalProperties: false });
 const str = (description: string) => ({ type: "string", description });
@@ -17,6 +18,18 @@ const witnesses = {
   type: "array",
   description: 'Independent outcome checks, repeated for every saved invocation. Discover a read-only checker in the environment. Example: [{"capability":"<checker id>","args":{"order_id":{"input":"order_id"},"tax_amount":{"output":""}},"verify":[{"op":"equals","path":"valid","value":true}]}]. input paths read this invocation\'s have values; output paths read the candidate result (empty string = whole result); value supplies a literal. The checker must be a separate provider and must pass its predicates. Its contract is pinned on save; a changed checker fails closed.',
   items: obj({ capability: str("Exact read-only checker capability id."), args: { type: "object", additionalProperties: { oneOf: [obj({ input: str("Path in the invocation inputs.") }, ["input"]), obj({ output: str("Path in the candidate output; empty string selects all of it.") }, ["output"]), obj({ value: {} }, ["value"])] } }, verify: predicates }, ["capability", "args", "verify"]),
+};
+
+const view = {
+  ...obj({
+    select: str('Path into the output, e.g. "items", "0.sequence.length", or "isoforms.accession" to map over an array.'),
+    fields: { type: "array", items: { type: "string" }, description: 'Project each element onto these paths, e.g. ["accession","sequence.length"].' },
+    count: bool("Return only the number of elements, keys or characters of the selected value."),
+    offset: num("Start of a slice of the selected array (default 0)."),
+    limit: num("Length of a slice of the selected array."),
+    full: bool("Return the selected value whole, even when it is over the response budget."),
+  }),
+  description: `What to return of the output: a count, a projection or a slice. Without a view, an output over ${OUTPUT_BUDGET} characters of JSON is withheld whole (never cut) and summarised by size, count and shape. The run record and receipt digest always cover the full output.`,
 };
 
 export const TOOLS = [
@@ -59,13 +72,13 @@ export const TOOLS = [
   },
   {
     name: "context_run",
-    description: "Run one capability now. Saved goal:<slug> capabilities re-plan against the current environment, heal API changes and repeat their stored result checks and independent witnesses. Returns output, timing, receipt, verification and witness evidence. Optional predicates add checks; they never remove stored checks.",
-    inputSchema: obj({ id: str("Capability id."), args: { type: "object", description: "Input arguments by port name." }, verify: predicates, confirm: bool("Required for capabilities labelled destructive.") }, ["id"]),
+    description: "Run one capability now. Saved goal:<slug> capabilities re-plan against the current environment, heal API changes and repeat their stored result checks and independent witnesses. Returns output, timing, receipt, verification and witness evidence. Optional predicates add checks; they never remove stored checks. A failed call to a learned API re-reads its contract once and retries the same operation if the API moved; an id that re-learning pointed at a different operation is refused until called with acknowledgeChange: true. Large outputs: pass view to get a count, field projection or slice instead of the whole payload.",
+    inputSchema: obj({ id: str("Capability id."), args: { type: "object", description: "Input arguments by port name." }, verify: predicates, confirm: bool("Required for capabilities labelled destructive."), acknowledgeChange: bool("Run an id whose operation changed when its API was re-learned, after reading the change."), view }, ["id"]),
   },
   {
     name: "context_run_status",
-    description: "Read a previous run by runId, or list recent runs. Also reports whether the receipt chain is intact.",
-    inputSchema: obj({ runId: str("Run id."), limit: num("Recent runs to list.") }),
+    description: "Read a previous run by runId, or list recent runs. Also reports whether the receipt chain is intact. With runId, view counts, projects or slices that run's recorded output without running it again.",
+    inputSchema: obj({ runId: str("Run id."), limit: num("Recent runs to list."), view }),
   },
   {
     name: "context_compose",
@@ -86,6 +99,7 @@ export const TOOLS = [
         through: { type: "array", items: { type: "string" }, description: "Anchors: capability ids or search phrases the pipeline must pass through; the planner wires the types between them." },
         risks: { type: "array", items: { type: "string", enum: ["read", "write", "external", "destructive"] }, description: 'Optional constraint: plan only with these risk labels, e.g. ["read"].' },
         origins: { type: "array", items: { type: "string" }, description: 'Optional egress policy, e.g. ["https://api.example.com"]: use only capabilities that send data to these origins, now and in every automatic repair. Saved with publish.' },
+        view,
       },
       ["have", "want"],
     ),
@@ -133,6 +147,15 @@ export const ANNOTATED_TOOLS = TOOLS.map((t) => ({ ...t, title: ANNOTATIONS[t.na
 
 export type ToolName = (typeof TOOLS)[number]["name"];
 
+/** Shape what the client receives of an output; the stored run and its receipt keep all of it. */
+function viewed<T extends { output?: unknown }>(rec: T, v: OutputView | undefined, again: string): T {
+  if (rec.output === undefined) return rec;
+  const { value, report } = applyView(rec.output, v, again);
+  return report ? { ...rec, output: value, outputView: report } : rec;
+}
+
+const rerun = (runId: string) => `To view this output again without re-running: context_run_status {"runId":"${runId}","view":{…}}.`;
+
 export async function dispatch(rc: RightClick, name: string, a: Record<string, any> = {}): Promise<unknown> {
   switch (name) {
     case "context_runtime":
@@ -149,12 +172,23 @@ export async function dispatch(rc: RightClick, name: string, a: Record<string, a
       return rc.actions({ value: a.value, type: a.type, limit: a.limit });
     case "context_explain":
       return rc.explain(a.id);
-    case "context_run":
-      return rc.run(a.id, a.args ?? {}, { verify: a.verify, confirm: a.confirm });
-    case "context_run_status":
-      return a.runId ? rc.runStatus({ runId: a.runId }) : { ...(rc.runStatus({ limit: a.limit }) as object), chain: await rc.verifyReceipts() };
-    case "context_compose":
-      return rc.compose({ have: a.have ?? {}, want: a.want, intent: a.intent, run: a.run, verify: a.verify, witnesses: a.witnesses, maxSteps: a.maxSteps, risks: a.risks, through: a.through, origins: a.origins, acquire: a.acquire, publish: a.publish, confirm: a.confirm });
+    case "context_run": {
+      // Validate the view before running: a malformed view must not cost a side effect.
+      const v = parseView(a.view);
+      const r = await rc.run(a.id, a.args ?? {}, { verify: a.verify, confirm: a.confirm, acknowledgeChange: a.acknowledgeChange });
+      return viewed(r, v, rerun(r.runId));
+    }
+    case "context_run_status": {
+      const v = parseView(a.view);
+      if (!a.runId) return { ...(rc.runStatus({ limit: a.limit }) as object), chain: await rc.verifyReceipts() };
+      return viewed(rc.runStatus({ runId: a.runId }) as { runId: string; output?: unknown }, v, rerun(a.runId));
+    }
+    case "context_compose": {
+      const v = parseView(a.view);
+      const r = await rc.compose({ have: a.have ?? {}, want: a.want, intent: a.intent, run: a.run, verify: a.verify, witnesses: a.witnesses, maxSteps: a.maxSteps, risks: a.risks, through: a.through, origins: a.origins, acquire: a.acquire, publish: a.publish, confirm: a.confirm });
+      if (!r.executed) return r;
+      return { ...r, executed: viewed(r.executed, v, "To view a step's recorded output without re-running: context_run_status with a runId from executed.runs and a view.") };
+    }
     case "context_graph":
       return rc.graphQuery(a as any);
     case "context_providers":

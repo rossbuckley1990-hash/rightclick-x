@@ -87,5 +87,10 @@ export function check(value: unknown, predicates: Predicate[]): { status: "verif
 
 function summarize(v: unknown): unknown {
   if (typeof v === "string" && v.length > 200) return v.slice(0, 200) + "…";
+  // A path-less predicate must not echo a large output back once per check.
+  if (v && typeof v === "object") {
+    const chars = JSON.stringify(v).length;
+    if (chars > 1000) return Array.isArray(v) ? { omitted: "array", length: v.length, chars } : { omitted: "object", keys: Object.keys(v).length, chars };
+  }
   return v;
 }
