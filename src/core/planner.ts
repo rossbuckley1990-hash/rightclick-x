@@ -305,7 +305,10 @@ function bind(cap: Capability, values: Value[], intent: Set<string>, consumed: S
       const callerBonus = v.step === -1 && d === 0 && port.type !== "text" ? 3 : 0;
       // A single value that fits beats mapping over a list.
       const fanPenalty = each ? 4 : 0;
-      scored.push({ v, score: d * 3 - 2 * v.step - nameBonus - intentBonus - contentBonus - callerBonus + fanPenalty, ...(each ? { each } : {}) });
+      // Evidence beats a guess: values seen to carry a port's identifiers (one, or a list of them)
+      // outrank values that only share its declared type, which lexical inference can get wrong.
+      const evidenceBonus = linked || (each && schemeFits(port, v.type.slice(5), v.schemes)) ? 5 : 0;
+      scored.push({ v, score: d * 3 - 2 * v.step - nameBonus - intentBonus - contentBonus - callerBonus - evidenceBonus + fanPenalty, ...(each ? { each } : {}) });
     }
     return { port, scored };
   });

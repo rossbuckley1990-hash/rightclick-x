@@ -196,3 +196,16 @@ test("fan-out rules: specific types only, read-only steps only, one list per ste
   assert.deepEqual(single[0].steps.map((s) => s.capability), ["first", "lookup"]);
   assert.ok(!single[0].steps[1].bindings[0].each);
 });
+
+test("fan-out rules: a list seen to carry a port's identifiers beats a single value that only shares its declared type", () => {
+  // Found on real contracts: a registry record has a single `id` that lexical inference typed like
+  // a structure id, and a cross-reference list that evidence showed to carry structure ids.
+  const record = cap("record", [port("accession", "id.stable")], [port("id", "id.entry"), { ...port("xrefs.id", "list:id.entry"), schemes: ["scheme:entry_id"] }]);
+  const entry = cap("entry", [{ ...port("entry_id", "id.entry"), schemes: ["scheme:entry_id"] }], [port("resolution", "number")]);
+  const [best] = plan(graph(record, entry), new Ledger(), { have: { accession: "id.stable" }, want: "list:number" });
+  assert.deepEqual(best?.steps[1].bindings, [{ port: "entry_id", from: "0.xrefs.id", each: { max: FANOUT_MAX } }], JSON.stringify(best));
+  // Without that evidence the single typed value is still preferred over mapping the list.
+  const plain = cap("entry", [port("entry_id", "id.entry")], [port("resolution", "number")]);
+  const [single] = plan(graph(record, plain), new Ledger(), { have: { accession: "id.stable" }, want: "number" });
+  assert.deepEqual(single?.steps[1].bindings, [{ port: "entry_id", from: "0.id" }]);
+});
