@@ -4,6 +4,7 @@
 
 import { CapabilityGraph, signature, tokenize, type GraphEvent, type LearnDelta } from "./core/graph.ts";
 import { Ledger, ReceiptChain, sha256, type Receipt } from "./core/ledger.ts";
+import type { IdentityState } from "./core/identities.ts";
 import { egressOf, plan, type Plan } from "./core/planner.ts";
 import { distance, inferType, inspectValue, type Inspection } from "./core/semantics.ts";
 import type { Capability, CapabilityAnchor, FetchLike, PlanStep, Reflection, SemType } from "./core/types.ts";
@@ -35,6 +36,8 @@ export interface PersistedState {
   authFingerprints?: Record<string, string>;
   /** Semantic-inference version the reflections were typed with. */
   semantics?: number;
+  /** Identifier-scheme evidence learned from observed values (core/identities.ts). */
+  identities?: IdentityState;
   /** Capability ids that changed meaning on re-learning and are not yet acknowledged. */
   meaningChanges?: MeaningChange[];
 }
@@ -239,6 +242,7 @@ export class RightClick {
     const saved = await opts.store?.load().catch(() => null);
     if (saved?.version === 1) {
       const stale = saved.semantics !== SEMANTICS;
+      rc.graph.identities.load(saved.identities);
       for (const r of saved.reflections) rc.graph.add(r);
       rc.ledger.load(saved.ledger);
       rc.chain.restore(saved.receipts ?? []);
@@ -640,6 +644,8 @@ export class RightClick {
     const ok = !error && verification.status !== "refuted";
     // A refusal says nothing about how the operation behaves.
     if (!refused) this.ledger.record(cap.id, ok, durationMs, error);
+    // Identifier values a successful call accepted and returned link ports across providers.
+    if (ok && cap.invoke.kind !== "composite" && cap.invoke.kind !== "goal" && this.graph.identities.observe(cap, args, output)) this.graph.relink();
     const receipt = await this.chain.append(
       { runId, capability: cap.id, provider: cap.provider, startedAt, durationMs, status: error ? "failed" : "completed", verification: verification.status },
       args,
@@ -881,7 +887,9 @@ export class RightClick {
     // Everything this goal does on the network - its steps, checks and repairs, including
     // every redirect hop - goes through a handle that enforces the caller's origins.
     const net: Net = origins ? { ...this.net, policy: { blockPrivate: false, ...this.net.policy, origins } } : this.net;
-    const goal = { have: types, want: opts.want, intent: opts.intent, maxSteps: opts.maxSteps, limit: opts.limit ?? 5, risks: opts.risks, through, exclude: blocked, origins };
+    // A caller's value named and shaped like a learned identifier scheme's carries that scheme.
+    const schemes = Object.fromEntries(Object.entries(values).map(([k, v]) => [k, this.graph.identities.schemesFor(this.graph.capabilities.values(), k, v)]).filter(([, s]) => s.length));
+    const goal = { have: types, want: opts.want, intent: opts.intent, maxSteps: opts.maxSteps, limit: opts.limit ?? 5, risks: opts.risks, through, exclude: blocked, origins, schemes };
     let plans = plan(this.graph, this.ledger, goal);
     const titles = (p: Plan) => p.steps.map((s) => this.graph.get(s.capability)!.title);
     const result: ComposeResult = {
@@ -1417,7 +1425,7 @@ export class RightClick {
     const reflections: Reflection[] = [...this.graph.providers.values()]
       .filter((p) => p.source !== "builtin" && p.source !== "platform")
       .map((p) => ({ provider: p, capabilities: p.capabilityIds.map((id) => this.graph.get(id)!).filter(Boolean) }));
-    await this.store.save({ version: 1, reflections, ledger: this.ledger.toJSON(), receipts: this.chain.receipts.slice(-300), published: [...this.published.values()], meaningChanges: [...this.meaningChanges.values()], authFingerprints: await this.net.auth.fingerprints(), semantics: SEMANTICS });
+    await this.store.save({ version: 1, reflections, ledger: this.ledger.toJSON(), receipts: this.chain.receipts.slice(-300), published: [...this.published.values()], meaningChanges: [...this.meaningChanges.values()], authFingerprints: await this.net.auth.fingerprints(), semantics: SEMANTICS, identities: this.graph.identities.toJSON() });
   }
 }
 

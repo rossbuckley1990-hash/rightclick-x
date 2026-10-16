@@ -21,6 +21,13 @@ export interface Port {
   wire?: string;
   /** Allowed values, when the source declares an enum. Only the caller can choose one. */
   enum?: string[];
+  /**
+   * Identifier schemes this port was observed to carry (see core/identities.ts): an input
+   * accepts a value from any output that feeds one of its schemes. Learned, never declared.
+   */
+  schemes?: string[];
+  /** An output path the contract does not declare, observed in real results; not part of the contract signature. */
+  observed?: boolean;
 }
 
 export type SourceKind =

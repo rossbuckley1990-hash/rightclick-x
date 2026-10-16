@@ -7,6 +7,7 @@
 // ledger, yields ranked multi-provider pipelines. Nobody wrote the glue: the
 // types did.
 
+import { schemeFits } from "./identities.ts";
 import { accepts, distance, isNominal } from "./semantics.ts";
 import { tokenize, type CapabilityGraph } from "./graph.ts";
 import type { Ledger } from "./ledger.ts";
@@ -29,6 +30,8 @@ export interface Goal {
   through?: string[];
   /** Egress policy: only capabilities whose network traffic stays on these origins (e.g. "https://api.example.com"). */
   origins?: string[];
+  /** Identifier schemes the caller's named inputs were recognised as (see core/identities.ts). */
+  schemes?: Record<string, string[]>;
 }
 
 /**
@@ -92,6 +95,8 @@ interface Value {
   type: SemType;
   /** Step index that produced it, -1 for goal inputs. */
   step: number;
+  /** Identifier schemes the value is known to carry. */
+  schemes?: string[];
 }
 
 interface Node {
@@ -125,7 +130,7 @@ export function plan(graph: CapabilityGraph, ledger: Ledger, goal: Goal): Plan[]
       withinPolicy(c),
   );
   const start: Node = {
-    values: Object.entries(goal.have).map(([name, type]) => ({ ref: `$in.${name}`, type, step: -1 })),
+    values: Object.entries(goal.have).map(([name, type]) => ({ ref: `$in.${name}`, type, step: -1, ...(goal.schemes?.[name]?.length ? { schemes: goal.schemes[name] } : {}) })),
     steps: [],
     used: new Set(),
     cost: 0,
@@ -155,10 +160,11 @@ export function plan(graph: CapabilityGraph, ledger: Ledger, goal: Goal): Plan[]
           ref: `${stepIndex}.${o.name}`,
           type: o.type,
           step: stepIndex,
+          ...(o.schemes?.length ? { schemes: o.schemes } : {}),
         }));
         // Prune steps that add no new type to the state, unless they finish the goal.
         const finishes = produced.some((v) => satisfies(goal.want, v.type));
-        const novel = produced.some((v) => !node.values.some((h) => h.type === v.type));
+        const novel = produced.some((v) => !node.values.some((h) => h.type === v.type && (v.schemes ?? []).every((s) => h.schemes?.includes(s))));
         if (!novel && !finishes && !anchors.has(cap.id)) continue;
         const child: Node = {
           values: [...node.values, ...produced],
@@ -245,7 +251,9 @@ function bind(cap: Capability, values: Value[], intent: Set<string>, consumed: S
     for (const v of values) {
       // A caller input named after an entity ("province") identifies it: it can fill id.province.
       const bridged = v.step === -1 && port.type === `id.${v.ref.slice(4).toLowerCase().replace(/[^a-z0-9]/g, "")}`;
-      if (!bridged && !accepts(port.name, port.type, v.type)) continue;
+      // Observed to carry the same identifiers, whatever each contract calls them.
+      const linked = schemeFits(port, v.type, v.schemes);
+      if (!bridged && !linked && !accepts(port.name, port.type, v.type)) continue;
       // Optional ports are only filled when the caller supplied them by name.
       if (!port.required && v.ref !== `$in.${port.name}`) continue;
       // A port with a fixed set of allowed values takes a caller's choice, never another step's output.
@@ -254,7 +262,7 @@ function bind(cap: Capability, values: Value[], intent: Set<string>, consumed: S
       // Name-like ports (title, name, q) take names, not prose fields like body/description.
       if (isNominal(port.name, port.type) && CONTENT.test(leaf)) continue;
       // Prefer exact types, recent values, the caller's names, and values named like the intent.
-      const d = bridged ? 0 : distance(port.type, v.type);
+      const d = bridged || linked ? 0 : distance(port.type, v.type);
       const nameBonus = v.ref === `$in.${port.name}` ? (port.type === "text" ? 1.5 : 5) : 0;
       const leafToks = tokenize(leaf);
       // Intent words often name the caller's own inputs ("question"); only produced values earn this.
@@ -308,7 +316,10 @@ function anchorsIn(node: Node, anchors: Set<string>): number {
   return n;
 }
 
-/** Plans should use what the caller supplied: +1 per distinct input used, +0.25 per input that lands in a same-named port. */
+/**
+ * Plans should use what the caller supplied: +1 per distinct input used, +0.25 per input that
+ * lands in a same-named port or in a port of the identifier scheme the input was recognised as.
+ */
 function fitOf(graph: CapabilityGraph, node: Node): number {
   const used = new Set<string>();
   const named = new Set<string>();
@@ -317,8 +328,10 @@ function fitOf(graph: CapabilityGraph, node: Node): number {
       if (b.from.startsWith("$in.")) {
         used.add(b.from);
         if (b.from.slice(4).toLowerCase() === b.port.toLowerCase()) named.add(b.from);
+        const v = node.values.find((x) => x.ref === b.from);
+        const port = graph.get(s.capability)?.inputs.find((p) => p.name === b.port);
+        if (v && port && schemeFits(port, v.type, v.schemes)) named.add(b.from);
       }
-  void graph;
   return used.size + named.size * 0.25;
 }
 

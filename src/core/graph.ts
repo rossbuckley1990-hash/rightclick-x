@@ -11,6 +11,7 @@
 // add far more powers than capabilities, because its nodes connect to
 // everything already present. That is the number the dashboard shows.
 
+import { IdentityEvidence } from "./identities.ts";
 import { accepts, distance, isNominal, parentOf, strongly } from "./semantics.ts";
 import type { Capability, Provider, Reflection, SemType } from "./types.ts";
 
@@ -62,6 +63,8 @@ export class CapabilityGraph {
   private events: GraphEvent[] = [];
   private seq = 0;
   private listeners = new Set<(e: GraphEvent) => void>();
+  /** Identifier schemes learned from observed values; applied to every capability the graph holds. */
+  readonly identities = new IdentityEvidence();
 
   add(reflection: Reflection): LearnDelta {
     const before = this.measure ? this.powers().total : 0;
@@ -79,7 +82,7 @@ export class CapabilityGraph {
     }
     for (const cap of capabilities) this.capabilities.set(cap.id, cap);
     this.providers.set(provider.id, { ...provider, capabilityIds: capabilities.map((c) => c.id) });
-    this.invalidate();
+    this.relink();
     const retired = this.retireBroken();
     const after = this.measure ? this.powers().total : 0;
     const delta: LearnDelta = {
@@ -103,7 +106,7 @@ export class CapabilityGraph {
     ids.add(cap.id);
     this.providers.set(provider.id, { ...(existing ?? provider), capabilityIds: [...ids] });
     this.capabilities.set(cap.id, cap);
-    this.invalidate();
+    this.relink();
     const after = this.measure ? this.powers().total : 0;
     return { provider: provider.id, capabilitiesAdded: 1, powersBefore: before, powersAfter: after, newPowers: after - before };
   }
@@ -147,6 +150,13 @@ export class CapabilityGraph {
     this.providers.delete(id);
   }
 
+  /** Re-apply learned identifier schemes to every capability (after new evidence or new capabilities). */
+  relink(): void {
+    this.identities.refresh();
+    if (this.identities.evidence().length) this.identities.apply(this.capabilities.values());
+    this.invalidate();
+  }
+
   private invalidate(): void {
     this.adjacency = null;
     this.powersCache = null;
@@ -179,30 +189,38 @@ export class CapabilityGraph {
     return this.list().filter((c) => c.outputs.some((p) => strongly(type, p.type)));
   }
 
-  private index: { byInputType: Map<SemType, Set<string>>; nominal: Set<string> } | null = null;
+  private index: { byInputType: Map<SemType, Set<string>>; nominal: Set<string>; byScheme: Map<string, Set<string>> } | null = null;
 
   /** Required inputs indexed by exact type, plus name-like ports; built once per graph version. */
   private inputIndex() {
     if (this.index) return this.index;
     const byInputType = new Map<SemType, Set<string>>();
     const nominal = new Set<string>();
+    const byScheme = new Map<string, Set<string>>();
     for (const c of this.capabilities.values()) {
       for (const p of c.inputs) {
         if (!p.required) continue;
+        for (const s of p.schemes ?? []) {
+          const k = schemeSlot(s, p.type);
+          if (!byScheme.has(k)) byScheme.set(k, new Set());
+          byScheme.get(k)!.add(c.id);
+        }
         let set = byInputType.get(p.type);
         if (!set) byInputType.set(p.type, (set = new Set()));
         set.add(c.id);
         if (isNominal(p.name, p.type)) nominal.add(c.id);
       }
     }
-    return (this.index = { byInputType, nominal });
+    return (this.index = { byInputType, nominal, byScheme });
   }
 
   /** Capabilities that an output of `a` can feed. Walks each produced type up the lattice. */
   outSet(a: Capability): Set<string> {
-    const { byInputType, nominal } = this.inputIndex();
+    const { byInputType, nominal, byScheme } = this.inputIndex();
     const out = new Set<string>();
     for (const port of a.outputs) {
+      // Identifier schemes learned from observed values link ports whose declared types differ.
+      for (const s of port.schemes ?? []) for (const b of byScheme.get(schemeSlot(s, port.type)) ?? []) if (b !== a.id) out.add(b);
       let t: SemType | undefined = port.type;
       while (t !== undefined) {
         if (strongly(t, port.type)) for (const b of byInputType.get(t) ?? []) if (b !== a.id) out.add(b);
@@ -338,13 +356,18 @@ export class CapabilityGraph {
 
 /** Contract signature of a capability: its typed ports and how it is invoked (FNV-1a). */
 export function signature(c: Capability): string {
-  const text = JSON.stringify([c.inputs.map((p) => [p.name, p.type, p.required]), c.outputs.map((p) => [p.name, p.type]), c.invoke]);
+  const text = JSON.stringify([c.inputs.map((p) => [p.name, p.type, p.required]), c.outputs.filter((p) => !p.observed).map((p) => [p.name, p.type]), c.invoke]);
   let h = 0x811c9dc5;
   for (let i = 0; i < text.length; i++) {
     h ^= text.charCodeAt(i);
     h = Math.imul(h, 0x01000193) >>> 0;
   }
   return h.toString(16).padStart(8, "0");
+}
+
+/** Scheme links keep cardinality: a list of identifiers fills a list port, one identifier a single port. */
+function schemeSlot(scheme: string, type: SemType): string {
+  return `${scheme}|${type.startsWith("list:") ? "list" : "one"}`;
 }
 
 const STOP = new Set(["the", "a", "an", "of", "to", "and", "or", "for", "in", "on", "by", "with", "is", "it", "this", "that", "from", "as", "be"]);
