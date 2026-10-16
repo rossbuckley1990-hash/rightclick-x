@@ -57,7 +57,8 @@ test("OpenAPI 3 without servers: the base is settled by probing, origin first, t
   const prefixed = async (r: Request) => {
     const p = new URL(r.url).pathname;
     if (p === "/svc/api/openapi.json") return json(contract("Prefixed"));
-    if (p === "/svc/api/status") return json({ up: true });
+    // Like many search endpoints: declared parameterless, but it insists on a filter.
+    if (p === "/svc/api/status") return json({ errorMessage: ["At least one filter is required"] }, 400);
     if (p.startsWith("/svc/api/records/")) return json({ accession: p.split("/").pop() });
     return html(404);
   };

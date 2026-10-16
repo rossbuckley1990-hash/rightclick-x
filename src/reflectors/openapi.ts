@@ -130,8 +130,10 @@ export function reflectOpenAPI(spec: Obj, specUrl: string): Reflection {
  * origin. Contracts served below a path prefix (…/api/openapi.json) often mean
  * their own directory instead. When the contract leaves the base unstated and
  * those two differ, try one or two parameterless JSON GET operations against
- * each (origin first, as the standard says) and keep the base that answers with
- * JSON. The outcome is recorded on the provider either way.
+ * each (origin first, as the standard says) and keep the base where the API
+ * routes the request: a JSON answer that is neither 404 nor a server error. (A
+ * 400 naming a missing filter still shows the operation exists there.) The
+ * outcome is recorded on the provider either way.
  */
 export async function settleUnstatedBase(net: Net, spec: Obj, specUrl: string, r: Reflection): Promise<Reflection> {
   if (!spec.openapi || spec.servers?.length) return r;
@@ -155,9 +157,11 @@ export async function settleUnstatedBase(net: Net, spec: Obj, specUrl: string, r
     for (const path of probes) {
       try {
         const res = await request(net, joinUrl(base, path), { headers: { accept: "application/json" } });
-        const body = res.ok ? await readBody(res) : (await res.body?.cancel(), null);
-        tried.push(`GET ${joinUrl(base, path)} → ${res.status}${res.ok ? (body && typeof body === "object" ? " json" : " not json") : ""}`);
-        if (!res.ok || !body || typeof body !== "object") continue;
+        const routed = res.status !== 404 && res.status < 500;
+        const body = routed ? await readBody(res) : (await res.body?.cancel(), null);
+        const isJson = !!body && typeof body === "object";
+        tried.push(`GET ${joinUrl(base, path)} → ${res.status}${routed ? (isJson ? " json" : " not json") : ""}`);
+        if (!routed || !isJson) continue;
       } catch (e) {
         tried.push(`GET ${joinUrl(base, path)} → ${String((e as Error)?.message ?? e).slice(0, 80)}`);
         continue;
