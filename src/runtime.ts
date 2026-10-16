@@ -293,6 +293,7 @@ export class RightClick {
           const previous = [...this.graph.providers.values()].filter((p) => p.meta?.source === source);
           const before = new Map(previous.flatMap((p) => p.capabilityIds.map((id) => [id, this.graph.get(id) ? signature(this.graph.get(id)!) : ""] as const)));
           if (!d.reflections.length && previous.length) throw new Error(`no supported contract found at ${source} any more`);
+          d.reflections = d.reflections.map((r) => this.distinctIdentity(r, source));
           const ids = new Set(d.reflections.map((r) => r.provider.id));
           const compositesBefore = this.graph.list().filter((c) => c.source === "composite").map((c) => c.id);
           for (const p of previous) if (!ids.has(p.id)) this.graph.forget(p.id);
@@ -326,6 +327,29 @@ export class RightClick {
       totalNewCapabilities: results.flatMap((r) => r.learned).reduce((s, l) => s + l.capabilitiesAdded, 0),
       totalNewPowers: powers.total - batchBefore,
       graph: { providers: this.graph.providers.size, ...powers },
+    };
+  }
+
+  /**
+   * Provider ids come from what a source calls itself ("openapi:polyglot").
+   * Two different sources with the same name must not overwrite each other, so
+   * a name already held by another source is qualified with this source's host.
+   */
+  private distinctIdentity(r: Reflection, source: string): Reflection {
+    const holder = (id: string) => this.graph.providers.get(id);
+    const ownedElsewhere = (id: string) => {
+      const p = holder(id);
+      return !!p && (p.meta?.source as string | undefined) !== source;
+    };
+    if (!ownedElsewhere(r.provider.id)) return r;
+    const host = new URL(source).host.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+    let id = `${r.provider.id}@${host}`;
+    for (let n = 2; ownedElsewhere(id); n++) id = `${r.provider.id}@${host}-${n}`;
+    const old = r.provider.id;
+    const rename = (cid: string) => (cid.startsWith(`${old}:`) ? `${id}:${cid.slice(old.length + 1)}` : cid);
+    return {
+      provider: { ...r.provider, id, capabilityIds: r.provider.capabilityIds.map(rename) },
+      capabilities: r.capabilities.map((c) => ({ ...c, id: rename(c.id), provider: id })),
     };
   }
 

@@ -127,3 +127,17 @@ test("credentials are origin-pinned", async () => {
   assert.ok(seen.some(([o, a]) => o === "https://a.test" && a === "Bearer secret-a"));
   assert.ok(seen.filter(([o]) => o === "https://b.test").every(([, a]) => a === null));
 });
+
+test("provider identity: two sources with the same API name do not overwrite each other", async () => {
+  const { routerFetch, SERVICES } = await import("../demo/services.ts");
+  const rc = await RightClick.create({ fetch: routerFetch({ "https://eu.polyglot.test": SERVICES.polyglot, "https://us.polyglot.test": SERVICES.polyglot }), directories: [] });
+  await rc.learn({ source: "https://eu.polyglot.test/openapi.json" });
+  await rc.learn({ source: "https://us.polyglot.test/openapi.json" });
+  const ids = [...rc.graph.providers.keys()].filter((id) => id.startsWith("openapi:polyglot"));
+  assert.deepEqual(ids.sort(), ["openapi:polyglot", "openapi:polyglot@us-polyglot-test"]);
+  const us = rc.graph.list().find((c) => c.id === "openapi:polyglot@us-polyglot-test:translatetext")!;
+  assert.equal(us.invoke.kind === "http" && us.invoke.url, "https://us.polyglot.test/translate");
+  // Re-learning a source keeps its own identity rather than minting a new one.
+  await rc.learn({ source: "https://us.polyglot.test/openapi.json" });
+  assert.equal([...rc.graph.providers.keys()].filter((id) => id.startsWith("openapi:polyglot")).length, 2);
+});
