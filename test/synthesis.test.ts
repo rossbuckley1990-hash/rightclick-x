@@ -81,7 +81,7 @@ test("universal interface: an MCP-only tool answers GraphQL queries, and a peer 
   const l = await b.learn({ source: "https://a.test/graphql" });
   assert.equal(l.results[0].probes.find((p) => p.ok)?.kind, "graphql");
   const cap = b.graph.list().find((c) => c.id.endsWith("query:forecastForAPlace"))!;
-  assert.deepEqual(cap.inputs.map((p) => [p.name, p.type]), [["place", "place"]]);
+  assert.deepEqual(cap.inputs.filter((p) => p.required).map((p) => [p.name, p.type]), [["place", "place"]]);
   assert.ok(cap.outputs.some((o) => o.name === "result" && o.type === "text"));
   const r = await b.run(cap.id, { place: "Nairobi" }, { verify: [{ op: "contains", path: "result", value: "°C" }] });
   assert.equal(r.verification.status, "verified");

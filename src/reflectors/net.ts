@@ -105,7 +105,26 @@ export async function checkUrl(policy: NetworkPolicy | undefined, raw: string): 
   }
 }
 
+/**
+ * Some servers fail content negotiation when Accept lists several media types
+ * (HTTP 406, or a 5xx error page) yet answer the first type alone. For safe
+ * methods only, retry once with just the first listed type.
+ */
 export async function request(net: Net, url: string, init: RequestInit = {}): Promise<Response> {
+  const res = await requestOnce(net, url, init);
+  const method = (init.method ?? "GET").toUpperCase();
+  const accept = new Headers(init.headers).get("accept") ?? "";
+  const first = accept.split(",")[0].split(";")[0].trim();
+  if ((method === "GET" || method === "HEAD") && accept.includes(",") && first && first !== "*/*" && (res.status === 406 || res.status >= 500)) {
+    await res.body?.cancel();
+    const headers = new Headers(init.headers);
+    headers.set("accept", first);
+    return requestOnce(net, url, { ...init, headers });
+  }
+  return res;
+}
+
+async function requestOnce(net: Net, url: string, init: RequestInit = {}): Promise<Response> {
   const headers = new Headers(init.headers);
   for (const [k, v] of Object.entries(net.auth.headersFor(url))) if (!headers.has(k)) headers.set(k, v);
   if (!headers.has("user-agent")) headers.set("user-agent", "rightclick-x/0.1 (+https://github.com/rossbuckley1990-hash/rightclick)");

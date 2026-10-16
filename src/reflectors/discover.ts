@@ -8,7 +8,7 @@ import type { Capability, Reflection } from "../core/types.ts";
 import { INTROSPECTION_QUERIES, isIntrospection, reflectGraphQL } from "./graphql.ts";
 import { McpClient, reflectMcpTools } from "./mcp.ts";
 import { readBody, request, slug, type Net } from "./net.ts";
-import { isOpenAPI, reflectOpenAPI } from "./openapi.ts";
+import { isOpenAPI, reflectOpenAPI, settleUnstatedBase } from "./openapi.ts";
 import { reflectWeb } from "./web.ts";
 
 export interface Discovery {
@@ -108,7 +108,7 @@ async function probeKind(net: Net, url: string, kind: SourceKind, probes: Discov
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const body = await readBody(res);
     if (kind === "openapi" && isOpenAPI(body)) {
-      const r = reflectOpenAPI(body as any, url);
+      const r = await settleUnstatedBase(net, body as any, url, reflectOpenAPI(body as any, url));
       probes.push({ url, kind, ok: true, detail: `${r.capabilities.length} operations` });
       return [r];
     }
@@ -137,7 +137,7 @@ async function probeUrl(
       const listed = catalogLinks(body, url);
       if (listed) return { reflections: [], hints: [], definitive: false, catalog: listed };
       if (isOpenAPI(body)) {
-        const r = reflectOpenAPI(body as any, url);
+        const r = await settleUnstatedBase(net, body as any, url, reflectOpenAPI(body as any, url));
         probes.push({ url, kind: "openapi", ok: true, detail: `${r.capabilities.length} operations` });
         return { reflections: [r], hints: [], definitive: true };
       }

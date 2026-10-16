@@ -58,7 +58,7 @@ test("GraphQL: introspected fields become capabilities with generated documents"
   const { rc } = await world();
   await rc.learn({ source: URLS.atlas });
   const geo = rc.graph.list().find((c) => c.id.endsWith("query:geocode"))!;
-  assert.deepEqual(geo.inputs.map((p) => [p.name, p.type]), [["place", "place"]]);
+  assert.deepEqual(geo.inputs.map((p) => [p.name, p.type, p.required]), [["place", "place", true], ["selection", "text", false]]);
   assert.deepEqual(
     geo.outputs.filter((o) => o.name).map((o) => [o.name, o.type]),
     [["name", "text"], ["latitude", "geo.lat"], ["longitude", "geo.lon"], ["countryCode", "country"]],

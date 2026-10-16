@@ -73,6 +73,8 @@ export interface GraphQLInvoke {
   /** Argument name -> GraphQL type literal, e.g. { code: "ID!" }. */
   args: Record<string, string>;
   selection: string;
+  /** Optional input port through which a caller replaces the default selection set. */
+  selectPort?: string;
 }
 
 export interface McpInvoke {

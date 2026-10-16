@@ -11,14 +11,14 @@ import { check, pick, type Predicate, type PredicateResult, type OutcomeWitness,
 import { builtinReflection, type BuiltinFn } from "./reflectors/builtins.ts";
 import { DEFAULT_DIRECTORIES, type Candidate, type Directory } from "./reflectors/directories.ts";
 import { discover, type Discovery, type SourceKind } from "./reflectors/discover.ts";
-import { buildDocument } from "./reflectors/graphql.ts";
+import { buildDocument, checkSelection } from "./reflectors/graphql.ts";
 import { McpClient } from "./reflectors/mcp.ts";
 import { Authority, readBody, request, type Net, type NetworkPolicy } from "./reflectors/net.ts";
 import { detectRuntime, platformReflection, type PlatformFn, type RuntimeInfo } from "./reflectors/platform.ts";
 
 export const VERSION = "0.1.0";
 /** Bump whenever semantic inference changes: persisted reflections are then re-derived from their sources. */
-export const SEMANTICS = 9;
+export const SEMANTICS = 11;
 
 export interface Store {
   load(): Promise<PersistedState | null>;
@@ -1153,7 +1153,9 @@ export class RightClick {
         return out;
       }
       case "graphql": {
-        const provided = Object.keys(args).filter((k) => args[k] !== undefined);
+        const sel = inv.selectPort ? args[inv.selectPort] : undefined;
+        const doc = sel !== undefined && sel !== null && sel !== "" ? { ...inv, selection: checkSelection(sel) } : inv;
+        const provided = Object.keys(args).filter((k) => args[k] !== undefined && k !== inv.selectPort);
         const variables: Record<string, unknown> = {};
         for (const k of provided) {
           const t = inv.args[k] ?? "";
@@ -1162,7 +1164,7 @@ export class RightClick {
         const res = await request(this.net, inv.endpoint, {
           method: "POST",
           headers: { "content-type": "application/json", accept: "application/json" },
-          body: JSON.stringify({ query: buildDocument(inv, provided), variables }),
+          body: JSON.stringify({ query: buildDocument(doc, provided), variables }),
         });
         const j: any = await readBody(res);
         if (!res.ok || (j?.errors?.length && !j?.data?.[inv.field])) throw new Error(`GraphQL: ${JSON.stringify(j?.errors ?? j).slice(0, 300)}`);

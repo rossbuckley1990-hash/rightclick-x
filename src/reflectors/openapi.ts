@@ -2,7 +2,7 @@
 
 import { inferInContext, inferType, type SchemaLike } from "../core/semantics.ts";
 import type { Capability, Port, Reflection, Risk } from "../core/types.ts";
-import { slug } from "./net.ts";
+import { readBody, request, slug, type Net } from "./net.ts";
 
 type Obj = Record<string, any>;
 
@@ -123,6 +123,54 @@ export function reflectOpenAPI(spec: Obj, specUrl: string): Reflection {
     },
     capabilities,
   };
+}
+
+/**
+ * OpenAPI 3 without `servers` means "/" relative to the document, i.e. the
+ * origin. Contracts served below a path prefix (…/api/openapi.json) often mean
+ * their own directory instead. When the contract leaves the base unstated and
+ * those two differ, try one or two parameterless JSON GET operations against
+ * each (origin first, as the standard says) and keep the base that answers with
+ * JSON. The outcome is recorded on the provider either way.
+ */
+export async function settleUnstatedBase(net: Net, spec: Obj, specUrl: string, r: Reflection): Promise<Reflection> {
+  if (!spec.openapi || spec.servers?.length) return r;
+  const origin = new URL(specUrl).origin;
+  const dir = new URL(".", specUrl).toString().replace(/\/$/, "");
+  if (dir === origin) return r;
+  const resolve = makeResolver(spec);
+  const probes: string[] = [];
+  for (const [path, rawItem] of Object.entries<Obj>(spec.paths ?? {})) {
+    const op = resolve(resolve(rawItem)?.get);
+    if (!op || path.includes("{")) continue;
+    const params = [...(resolve(rawItem).parameters ?? []), ...(op.parameters ?? [])].map(resolve);
+    if (params.some((p: Obj) => p?.required)) continue;
+    const ok = resolve(op.responses?.["200"] ?? op.responses?.default);
+    if (!Object.keys(ok?.content ?? {}).some((k) => k.includes("json"))) continue;
+    probes.push(path);
+    if (probes.length === 2) break;
+  }
+  const tried: string[] = [];
+  for (const base of [origin, dir]) {
+    for (const path of probes) {
+      try {
+        const res = await request(net, joinUrl(base, path), { headers: { accept: "application/json" } });
+        const body = res.ok ? await readBody(res) : (await res.body?.cancel(), null);
+        tried.push(`GET ${joinUrl(base, path)} → ${res.status}${res.ok ? (body && typeof body === "object" ? " json" : " not json") : ""}`);
+        if (!res.ok || !body || typeof body !== "object") continue;
+      } catch (e) {
+        tried.push(`GET ${joinUrl(base, path)} → ${String((e as Error)?.message ?? e).slice(0, 80)}`);
+        continue;
+      }
+      if (base !== origin) {
+        for (const c of r.capabilities) if (c.invoke.kind === "http" && c.invoke.url.startsWith(origin + "/")) c.invoke.url = base + c.invoke.url.slice(origin.length);
+      }
+      r.provider.meta = { ...r.provider.meta, base, baseResolution: { stated: false, chosen: base, tried } };
+      return r;
+    }
+  }
+  r.provider.meta = { ...r.provider.meta, baseResolution: { stated: false, chosen: origin, unverified: true, tried } };
+  return r;
 }
 
 function collectBody(

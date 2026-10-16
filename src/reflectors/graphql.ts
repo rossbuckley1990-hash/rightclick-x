@@ -101,7 +101,13 @@ export function reflectGraphQL(introspection: any, endpoint: string, title?: str
         description: a.description ?? undefined,
         wire: printType(a.type),
       }));
-      const { selection, ports } = buildSelection(field, types);
+      const { selection, ports, omitted, total } = buildSelection(field, types);
+      // The default selection is bounded; say what it leaves out and let the caller choose.
+      const selectPort = ports.length > 1 && !field.args.some((a) => a.name === "selection") ? "selection" : undefined;
+      if (selectPort) {
+        const shown = omitted.length ? ` Default selects ${total - omitted.length} of ${total} fields; also available: ${clip(omitted.join(", "), 3000)}.` : "";
+        inputs.push({ name: selectPort, type: "text", required: false, wire: "selection set", description: `Optional GraphQL selection set for the returned ${named(field.type).name}, e.g. "{ id name nested { field } }"; replaces the default selection.${shown}` });
+      }
       capabilities.push({
         id: `${providerId}:${operation}:${field.name}`,
         title: humanize(field.name) + (operation === "mutation" ? " (mutation)" : ""),
@@ -119,6 +125,7 @@ export function reflectGraphQL(introspection: any, endpoint: string, title?: str
           field: field.name,
           args: Object.fromEntries(field.args.map((a) => [a.name, printType(a.type)])),
           selection,
+          ...(selectPort ? { selectPort } : {}),
         },
       });
     }
@@ -137,16 +144,24 @@ export function reflectGraphQL(introspection: any, endpoint: string, title?: str
   };
 }
 
-function buildSelection(field: Field, types: Map<string, FullType>): { selection: string; ports: Port[] } {
+function buildSelection(field: Field, types: Map<string, FullType>): { selection: string; ports: Port[]; omitted: string[]; total: number } {
   const ret = named(field.type);
   const wrap = (t: SemType) => (ret.list ? `list:${t}` : t);
   const target = ret.name ? types.get(ret.name) : undefined;
   if (!target || target.kind === "SCALAR" || target.kind === "ENUM") {
-    return { selection: "", ports: [{ name: "", type: semantic(field.name, field.type), required: true }] };
+    return { selection: "", ports: [{ name: "", type: semantic(field.name, field.type), required: true }], omitted: [], total: 0 };
   }
   const ports: Port[] = [{ name: "", type: ret.list ? "list:json" : "json", required: true }];
   const parts: string[] = [];
-  for (const f of (target.fields ?? []).filter((f) => !f.args.some((a) => a.type.kind === "NON_NULL")).slice(0, 25)) {
+  const selectable = (target.fields ?? []).filter((f) => !f.args.some((a) => a.type.kind === "NON_NULL"));
+  // Fields beyond the default selection, with their scalar subfields, so a caller can ask for them.
+  const omitted = selectable.slice(25).map((f) => {
+    const ft = named(f.type).name ? types.get(named(f.type).name!) : undefined;
+    if (!ft || ft.kind !== "OBJECT") return f.name;
+    const subs = (ft.fields ?? []).filter((x) => !x.args.length && ["SCALAR", "ENUM"].includes(types.get(named(x.type).name ?? "")?.kind ?? "")).map((x) => x.name);
+    return subs.length ? `${f.name} { ${subs.slice(0, 8).join(" ")}${subs.length > 8 ? " …" : ""} }` : `${f.name} { … }`;
+  });
+  for (const f of selectable.slice(0, 25)) {
     const n = named(f.type);
     if (!n.name) continue; // truncated type: can't build a valid selection
     const ft = types.get(n.name);
@@ -169,12 +184,30 @@ function buildSelection(field: Field, types: Map<string, FullType>): { selection
       }
     }
   }
-  return { selection: parts.length ? `{ ${parts.join(" ")} }` : "{ __typename }", ports };
+  return { selection: parts.length ? `{ ${parts.join(" ")} }` : "{ __typename }", ports, omitted, total: selectable.length };
+}
+
+function clip(s: string, n: number): string {
+  return s.length <= n ? s : `${s.slice(0, s.lastIndexOf(",", n))}, … (truncated)`;
 }
 
 function humanize(s: string): string {
   const t = s.replace(/([a-z0-9])([A-Z])/g, "$1 $2").replace(/([A-Z])([A-Z][a-z])/g, "$1 $2").replace(/_/g, " ");
   return t.charAt(0).toUpperCase() + t.slice(1);
+}
+
+/** A caller-supplied selection set: one braced block, balanced, no operation keywords or arguments of its own. */
+export function checkSelection(sel: unknown): string {
+  const s = String(sel ?? "").trim();
+  let depth = 0;
+  for (const ch of s) {
+    if (ch === "{") depth++;
+    else if (ch === "}" && --depth < 0) break;
+  }
+  if (!/^\{[\s\S]*\}$/.test(s) || depth !== 0 || /[()$@#"]/.test(s) || /\b(mutation|subscription|fragment)\b/.test(s)) {
+    throw new Error(`selection must be a GraphQL selection set such as "{ id name nested { field } }" (no arguments, variables or operations)`);
+  }
+  return s;
 }
 
 export function buildDocument(inv: { operation: string; field: string; args: Record<string, string>; selection: string }, provided: string[]): string {
