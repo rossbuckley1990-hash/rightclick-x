@@ -56,7 +56,7 @@ export function carries(path: string, term: string): boolean {
   return want.length > 0 && want.every((w) => have.has(w));
 }
 
-export function assess(graph: CapabilityGraph, steps: PlanStep[], result: string, require: string[]): Satisfaction {
+export function assess(graph: CapabilityGraph, steps: PlanStep[], result: string, require: string[], have: Record<string, string> = {}, haveSchemes: Record<string, string[]> = {}): Satisfaction {
   const covered: Record<string, string> = {};
   const projection: Satisfaction["projection"] = [];
   const last = steps.length - 1;
@@ -86,8 +86,18 @@ export function assess(graph: CapabilityGraph, steps: PlanStep[], result: string
       if (b.value !== undefined) continue;
       const port = c?.inputs.find((p) => p.name === b.port);
       let kind: JoinKind;
-      if (b.from.startsWith("$in.")) kind = "caller";
-      else {
+      if (b.from.startsWith("$in.")) {
+        // The caller's own value is a trusted join only where it fits the port: the same name, the
+        // same specific type, or a learned scheme. An accession poured into an ontology-name port
+        // (or a gene symbol into an accession port) is plumbing, not a caller join.
+        const name = b.from.slice(4).split(".")[0];
+        const t = have[name] ?? "json";
+        const norm = (x: string) => x.toLowerCase().replace(/[^a-z0-9]/g, "");
+        const sameName = !!port && norm(port.name) === norm(name);
+        const sameType = !!port && !GENERIC.has(port.type) && port.type.replace(/^list:/, "") === t.replace(/^list:/, "");
+        const scheme = !!port?.schemes?.some((sc) => haveSchemes[name]?.includes(sc));
+        kind = sameName || sameType || scheme ? "caller" : "generic";
+      } else {
         const [si, ...pp] = b.from.split(".");
         const src = graph.get(steps[Number(si)]?.capability ?? "");
         const out = src?.outputs.find((o) => o.name === pp.join("."));

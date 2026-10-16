@@ -202,7 +202,7 @@ export function plan(graph: CapabilityGraph, ledger: Ledger, goal: Goal): Plan[]
           .filter((x) => satisfies(goal.want, x.v.type))
           .sort((a, b) => a.d - b.d || b.s - a.s)[0];
         if (hit) {
-          const p = finalize(graph, child, hit.v, hit.d, intent, goal.want, goal.require);
+          const p = finalize(graph, child, hit.v, hit.d, intent, goal.want, goal.require, goal.have, goal.schemes ?? {});
           if (p) results.push(p);
         }
         next.push(child);
@@ -423,7 +423,7 @@ function intentOf(graph: CapabilityGraph, node: Node, intent: Set<string>, resul
   return covered.size;
 }
 
-function finalize(graph: CapabilityGraph, node: Node, v: Value, d: number, intent: Set<string>, want?: SemType, require?: string[]): Plan | null {
+function finalize(graph: CapabilityGraph, node: Node, v: Value, d: number, intent: Set<string>, want?: SemType, require?: string[], have: Record<string, SemType> = {}, haveSchemes: Record<string, string[]> = {}): Plan | null {
   // Drop trailing steps that don't contribute to the result.
   const needed = new Set<number>([v.step]);
   for (let i = node.steps.length - 1; i >= 0; i--) {
@@ -452,7 +452,7 @@ function finalize(graph: CapabilityGraph, node: Node, v: Value, d: number, inten
     resultScore,
     providers,
     summary: titles.join(" → "),
-    ...(require?.length ? { satisfaction: assess(graph, node.steps, v.ref, require) } : {}),
+    ...(require?.length ? { satisfaction: assess(graph, node.steps, v.ref, require, have, haveSchemes) } : {}),
   };
 }
 

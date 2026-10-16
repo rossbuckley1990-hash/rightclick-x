@@ -118,3 +118,23 @@ test("GraphQL: a required field declared but outside the default selection is re
   assert.match(lastQuery, /resolution_combined/);
   assert.match(JSON.stringify(r.executed?.output), /2\.4/);
 });
+
+test("a caller's value in a port it does not fit is a generic join (Q07/Q08g on lifesci-satisfy-1)", async () => {
+  const calls: string[] = [];
+  const SPEC = { openapi: "3.0.0", info: { title: "Coords" }, servers: [{ url: "https://coords.test" }], paths: { "/coordinates/{accession}": { get: { operationId: "byAccession", summary: "Get genomic coordinates for an accession", parameters: [{ name: "accession", in: "path", required: true, schema: { type: "string" } }], responses: ok({ type: "object", properties: { chromosome: { type: "string" } } }) } } } };
+  const f = (async (input: any) => {
+    const u = new URL(typeof input === "string" ? input : input.url);
+    calls.push(u.pathname);
+    return u.pathname === "/openapi.json" ? json(SPEC) : json({ chromosome: "17" });
+  }) as typeof fetch;
+  const rc = await RightClick.create({ name: "gs6", fetch: f, directories: [] });
+  await rc.learn({ source: "https://coords.test/openapi.json" });
+  const before = calls.length;
+  // A gene symbol is not an accession: binding it there is plumbing, not the caller's join.
+  const bad = await rc.compose({ have: { gene: "BRCA1" }, want: "json", intent: "genomic coordinates", run: true, require: ["chromosome"] });
+  assert.notEqual(bad.outcome?.status, "established", JSON.stringify(bad.outcome));
+  assert.equal(calls.length, before, "nothing ran");
+  // The same name is the caller's own join.
+  const good = await rc.compose({ have: { accession: "P38398" }, want: "json", intent: "genomic coordinates", run: true, require: ["chromosome"] });
+  assert.equal(good.outcome?.status, "established", JSON.stringify(good.outcome));
+});

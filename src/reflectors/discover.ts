@@ -4,6 +4,7 @@
 // peer? a web page with forms?), plus well-known locations at the origin.
 // Everything found is reflected; page hints are followed one level deep.
 
+import { parseYaml } from "../core/yaml.ts";
 import type { Capability, Reflection } from "../core/types.ts";
 import { INTROSPECTION_QUERIES, isIntrospection, reflectGraphQL } from "./graphql.ts";
 import { McpClient, reflectMcpTools } from "./mcp.ts";
@@ -43,6 +44,17 @@ function catalogLinks(body: unknown, base: string): string[] | null {
 }
 
 const CATALOG_LIMIT = 50;
+
+/** A contract published as YAML (OpenAPI / Swagger) is read as the same document. */
+function yamlContract(body: unknown): unknown {
+  if (typeof body !== "string" || !/^\s*(---\s*\n)?\s*(openapi|swagger)\s*:/.test(body)) return body;
+  try {
+    const doc = parseYaml(body);
+    return doc && typeof doc === "object" ? doc : body;
+  } catch {
+    return body;
+  }
+}
 
 /**
  * An API's root often answers with a small JSON index pointing at its contracts
@@ -131,7 +143,7 @@ async function probeKind(net: Net, url: string, kind: SourceKind, probes: Discov
     }
     const res = await request(net, url, { headers: { accept: "application/json, text/html;q=0.9" } });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const body = await readBody(res);
+    const body = yamlContract(await readBody(res));
     if (kind === "openapi" && isOpenAPI(body)) {
       const r = await settleUnstatedBase(net, body as any, url, reflectOpenAPI(body as any, url));
       probes.push({ url, kind, ok: true, detail: `${r.capabilities.length} operations` });
@@ -158,7 +170,7 @@ async function probeUrl(
   try {
     const res = await request(net, url, { headers: { accept: "application/json, text/html;q=0.9, */*;q=0.5" } });
     if (res.ok) {
-      const body = await readBody(res);
+      const body = yamlContract(await readBody(res));
       const listed = catalogLinks(body, url);
       if (listed) return { reflections: [], hints: [], definitive: false, catalog: listed };
       const linked = body && typeof body === "object" && !(body as any).openapi && !(body as any).swagger ? contractLinks(body, url) : [];

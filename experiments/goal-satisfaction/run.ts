@@ -124,7 +124,9 @@ async function runBuild(tag: string) {
   const dir = `${WORK}/${tag}/goal-satisfaction`;
   mkdirSync(dir, { recursive: true });
   const runCompose = async (mcp: Mcp, task: any) => {
-    const args = { have: task.have, want: "json", intent: task.intent, require: task.require, run: true, limit: 25, maxSteps: 3 };
+    // view.full: the tool response otherwise withholds outputs over its size budget (the run record
+    // keeps them); lifesci-satisfy-1's first run scored a withheld output as empty (Q08).
+    const args = { have: task.have, want: "json", intent: task.intent, require: task.require, run: true, limit: 25, maxSteps: 3, view: { full: true } };
     const r = await mcp.tool("context_compose", args);
     const v = r.ok ? r.value : { error: r.value };
     return { args, ms: r.ms, ranking: (v.plans ?? []).map((p: any) => ({ summary: p.summary, satisfaction: p.satisfaction ?? null })), outcome: v.outcome ?? null, executed: v.executed ? { status: v.executed.status, titles: v.executed.titles, runs: v.executed.runs, attempts: v.executed.attempts, fanOuts: v.executed.fanOuts } : null, output: v.executed?.output ?? null, error: r.ok ? undefined : r.value };
