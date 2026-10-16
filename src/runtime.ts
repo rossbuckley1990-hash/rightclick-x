@@ -69,6 +69,8 @@ export interface RuntimeOptions {
   store?: Store;
   /** Outbound network policy. Default: allow everything (local use); servers exposed beyond loopback block private addresses. */
   network?: NetworkPolicy;
+  /** Destructive capabilities need `confirm: true` from the caller ("confirm", default) or run directly ("allow"). */
+  destructive?: "confirm" | "allow";
 }
 
 export interface RunRecord {
@@ -86,6 +88,14 @@ export interface RunRecord {
   steps?: string[];
   /** For failed composite runs: the innermost capability that failed. */
   failedCapability?: string;
+}
+
+export class ConfirmationRequired extends Error {
+  capability: string;
+  constructor(capability: string, title: string) {
+    super(`"${title}" (${capability}) is destructive: call again with confirm: true to run it`);
+    this.capability = capability;
+  }
 }
 
 class StepError extends Error {
@@ -147,6 +157,7 @@ export class RightClick {
   private store?: Store;
   private saveTimer: ReturnType<typeof setTimeout> | null = null;
   private runCounter = 0;
+  private destructivePolicy: "confirm" | "allow" = "confirm";
 
   private constructor(opts: RuntimeOptions) {
     this.net = {
@@ -165,6 +176,7 @@ export class RightClick {
     const rc = new RightClick(opts);
     const b = builtinReflection();
     rc.builtins = b.fns;
+    rc.destructivePolicy = opts.destructive ?? "confirm";
     rc.graph.add(b.reflection);
     const p = await platformReflection(rc.info, { bindings: opts.bindings, workspace: opts.workspace });
     rc.platformFns = p.fns;
@@ -225,6 +237,7 @@ export class RightClick {
       runs: this.runs.size,
       receipts: { count: this.chain.receipts.length, head: this.chain.headHash },
       eventCursor: this.graph.cursor,
+      memoryMB: typeof (globalThis as any).process?.memoryUsage === "function" ? Math.round((globalThis as any).process.memoryUsage().rss / 1e6) : undefined,
     };
   }
 
@@ -282,7 +295,7 @@ export class RightClick {
     // Batch learning measures powers once for the whole batch, not per provider.
     const batchBefore = this.graph.powers().total;
     this.graph.measuring = sources.length <= 3;
-    const results: Array<{ source: string; probes: Discovery["probes"]; learned: LearnDelta[]; drift?: SourceDrift; error?: string }> = [];
+    const results: Array<{ source: string; probes: Discovery["probes"]; learned: LearnDelta[]; drift?: SourceDrift; withdrawn?: string[]; error?: string }> = [];
     if (opts.spec) results.push({ source: opts.spec.provider.origin, probes: [], learned: [this.graph.add(opts.spec)] });
     await Promise.all(
       sources.map(async (source) => {
@@ -292,7 +305,24 @@ export class RightClick {
           // the provider changed protocol (OpenAPI -> GraphQL -> MCP) and so its id.
           const previous = [...this.graph.providers.values()].filter((p) => p.meta?.source === source);
           const before = new Map(previous.flatMap((p) => p.capabilityIds.map((id) => [id, this.graph.get(id) ? signature(this.graph.get(id)!) : ""] as const)));
-          if (!d.reflections.length && previous.length) throw new Error(`no supported contract found at ${source} any more`);
+          if (!d.reflections.length && previous.length) {
+            // The provider is gone: withdraw what it offered and retire anything built on it.
+            const compositesBefore = this.graph.list().filter((c) => c.source === "composite").map((c) => c.id);
+            const removed = previous.flatMap((p) => p.capabilityIds);
+            for (const p of previous) this.graph.forget(p.id);
+            const drift: SourceDrift = {
+              changed: true,
+              providersBefore: previous.map((p) => p.id),
+              providersAfter: [],
+              added: [],
+              removed,
+              modified: [],
+              retired: compositesBefore.filter((id) => !this.graph.get(id)),
+            };
+            this.graph.emit("provider.withdrawn", { source, providers: drift.providersBefore, capabilities: removed.length, retired: drift.retired });
+            results.push({ source, probes: d.probes, learned: [], drift, withdrawn: drift.providersBefore });
+            return;
+          }
           d.reflections = d.reflections.map((r) => this.distinctIdentity(r, source));
           const ids = new Set(d.reflections.map((r) => r.provider.id));
           const compositesBefore = this.graph.list().filter((c) => c.source === "composite").map((c) => c.id);
@@ -442,9 +472,13 @@ export class RightClick {
 
   // ================================================================ context_run
 
-  async run(id: string, args: Record<string, unknown> = {}, opts: { verify?: Predicate[] } = {}): Promise<RunRecord> {
+  async run(id: string, args: Record<string, unknown> = {}, opts: { verify?: Predicate[]; confirm?: boolean } = {}): Promise<RunRecord> {
     const cap = this.graph.get(id);
     if (!cap) throw new Error(`unknown capability: ${id}`);
+    // Destructive effects keep the user's authority: they need an explicit confirmation.
+    if (cap.risk === "destructive" && this.destructivePolicy === "confirm" && !opts.confirm) {
+      throw new ConfirmationRequired(cap.id, cap.title);
+    }
     const runId = `run_${Date.now().toString(36)}_${(++this.runCounter).toString(36)}`;
     const startedAt = new Date().toISOString();
     const t0 = performance.now();
@@ -455,7 +489,7 @@ export class RightClick {
     try {
       const coerced = coerceArgs(cap, args);
       if (cap.invoke.kind === "composite") {
-        const r = await this.runSteps(cap.invoke.steps, cap.invoke.result, coerced);
+        const r = await this.runSteps(cap.invoke.steps, cap.invoke.result, coerced, opts.confirm);
         output = r.output;
         steps = r.runs;
       } else {
@@ -528,6 +562,8 @@ export class RightClick {
     acquire?: boolean;
     /** After a verified run, publish this goal as an API endpoint under this name. */
     publish?: string;
+    /** Required to run plans that contain destructive capabilities. */
+    confirm?: boolean;
   }): Promise<ComposeResult> {
     const values: Record<string, unknown> = {};
     const types: Record<string, SemType> = {};
@@ -594,7 +630,7 @@ export class RightClick {
     for (let attempt = 0; attempt < 6 && plans.length; attempt++) {
       const p = plans[0];
       try {
-        const r = await this.runSteps(p.steps, p.result, values);
+        const r = await this.runSteps(p.steps, p.result, values, opts.confirm);
         const verification = check(r.output, opts.verify ?? []);
         if (verification.status === "refuted") throw new StepError(p.steps[p.steps.length - 1].capability, `verification refuted: ${JSON.stringify(verification.results.filter((x) => !x.ok))}`);
         result.executed = {
@@ -630,7 +666,7 @@ export class RightClick {
         }
         return result;
       } catch (e) {
-        const failed = e instanceof StepError ? e.capability : p.steps[0].capability;
+        const failed = e instanceof StepError || e instanceof ConfirmationRequired ? e.capability : p.steps[0].capability;
         const attempt: { summary: string; failed: string; error: string; healing?: string } = { summary: p.summary, failed, error: String((e as Error)?.message ?? e) };
         attempts.push(attempt);
         // Self-maintenance: the provider may have changed its API. Re-reflect its
@@ -638,12 +674,15 @@ export class RightClick {
         // API and stale crystallized pipelines are retired, so just re-plan.
         const source = this.graph.providers.get(this.graph.get(failed)?.provider ?? "")?.meta?.source as string | undefined;
         let drifted = false;
-        if (source && !refreshed.has(source) && !(e instanceof StepError && /verification refuted/.test(attempt.error))) {
+        if (e instanceof ConfirmationRequired) attempt.healing = "not run: destructive step needs confirm: true; looking for a non-destructive route";
+        else if (source && !refreshed.has(source) && !(e instanceof StepError && /verification refuted/.test(attempt.error))) {
           refreshed.add(source);
           const r = await this.learn({ source, deep: true });
           const d = r.results[0]?.drift;
           drifted = !!d?.changed;
-          attempt.healing = r.results[0]?.error
+          attempt.healing = r.results[0]?.withdrawn
+            ? `provider gone at ${source}: withdrew ${r.results[0].withdrawn.join(", ")} (${d!.removed.length} capabilities, ${d!.retired.length} pipeline(s) retired)`
+            : r.results[0]?.error
             ? `re-reflected ${source}: ${r.results[0].error}`
             : drifted
               ? `API drift at ${source}: ${d!.providersBefore.join(",")} → ${d!.providersAfter.join(",")}; +${d!.added.length} −${d!.removed.length} ~${d!.modified.length} capabilities; ${d!.retired.length} pipeline(s) retired`
@@ -777,7 +816,7 @@ export class RightClick {
     return { id, title, newPowers: delta.newPowers };
   }
 
-  private async runSteps(steps: PlanStep[], resultRef: string, inputs: Record<string, unknown>) {
+  private async runSteps(steps: PlanStep[], resultRef: string, inputs: Record<string, unknown>, confirm?: boolean) {
     const outputs: unknown[] = [];
     const runs: string[] = [];
     const resolve = (ref: string) => {
@@ -788,7 +827,7 @@ export class RightClick {
     for (const step of steps) {
       const args: Record<string, unknown> = {};
       for (const b of step.bindings) args[b.port] = resolve(b.from);
-      const r = await this.run(step.capability, args);
+      const r = await this.run(step.capability, args, { confirm });
       runs.push(r.runId);
       if (r.status === "failed") throw new StepError(r.failedCapability ?? step.capability, `${step.capability}: ${r.error}`);
       outputs.push(r.output);

@@ -56,3 +56,34 @@ test("a contract change under the same operation id still retires the crystalliz
   });
   assert.equal(rc.graph.get(id), undefined);
 });
+
+test("a provider that disappears is withdrawn: capabilities removed, pipelines retired, alternative used", async () => {
+  const { SERVICES } = await import("../demo/services.ts");
+  let primaryUp = true;
+  const routes: Record<string, (r: Request) => Promise<Response>> = {
+    "https://primary.test": (req) => (primaryUp ? SERVICES.polyglot(req) : Promise.resolve(new Response("gone", { status: 404 }))),
+    "https://backup.test": SERVICES.polyglot,
+  };
+  const rc = await RightClick.create({ fetch: routerFetch(routes), directories: [] });
+  await rc.learn({ source: "https://primary.test/openapi.json" });
+  const goal = { have: { text: "Hello world. The weather is sunny today.", language: "es" }, want: "text", intent: "summary translated", verify: [{ op: "contains" as const, value: "Hola mundo" }] };
+  const first = await rc.compose({ ...goal, run: true });
+  const pipeline = first.crystallized!.id;
+  await rc.learn({ source: "https://backup.test/openapi.json" });
+
+  primaryUp = false;
+  const r = await rc.compose({ ...goal, run: true });
+  assert.equal(r.executed?.status, "completed");
+  assert.ok(r.executed!.attempts.some((a) => /provider gone/.test(a.healing ?? "")), JSON.stringify(r.executed!.attempts));
+  assert.equal(rc.graph.providers.has("openapi:polyglot"), false, "the vanished provider is withdrawn");
+  assert.equal(rc.graph.list().some((c) => c.id.startsWith("openapi:polyglot:")), false);
+  assert.equal(rc.graph.get(pipeline), undefined, "the pipeline built on it is retired");
+  const via = r.executed!.runs.map((id) => rc.runs.get(id)!.provider);
+  assert.ok(via.includes("openapi:polyglot@backup-test"), via.join(","));
+
+  // With no alternative left, the honest answer is "cannot", not a stale success.
+  await rc.learn({ source: "https://backup.test/openapi.json" });
+  routes["https://backup.test"] = async () => new Response("gone", { status: 404 });
+  const none = await rc.compose({ ...goal, run: true });
+  assert.notEqual(none.executed?.status, "completed");
+});

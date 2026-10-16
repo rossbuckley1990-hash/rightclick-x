@@ -139,7 +139,7 @@ test("verification: refuted predicates fail the run honestly", async () => {
   assert.equal(rc.ledger.get("builtin:url.domain")?.failed, 1);
 });
 
-test("no approval gates: write and destructive capabilities run directly", async () => {
+test("consent: writes run directly; destructive capabilities need confirm: true", async () => {
   const deleted: string[] = [];
   const api = async (req: Request) => {
     const u = new URL(req.url);
@@ -147,18 +147,28 @@ test("no approval gates: write and destructive capabilities run directly", async
       return Response.json({
         openapi: "3.0.0",
         info: { title: "Notes" },
-        paths: { "/notes/{noteId}": { delete: { operationId: "deleteNote", parameters: [{ name: "noteId", in: "path", required: true, schema: { type: "string" } }], responses: { 204: { description: "gone" } } } } },
+        paths: {
+          "/notes/{noteId}": {
+            delete: { operationId: "deleteNote", parameters: [{ name: "noteId", in: "path", required: true, schema: { type: "string" } }], responses: { 204: { description: "gone" } } },
+            put: { operationId: "putNote", parameters: [{ name: "noteId", in: "path", required: true, schema: { type: "string" } }], responses: { 200: { description: "ok", content: { "application/json": { schema: { type: "object" } } } } } },
+          },
+        },
       });
-    deleted.push(u.pathname);
-    return new Response(null, { status: 204 });
+    if (req.method === "DELETE") deleted.push(u.pathname);
+    return req.method === "DELETE" ? new Response(null, { status: 204 }) : Response.json({ ok: true });
   };
   const { rc } = await world({ "https://notes.test": api });
   await rc.learn({ source: "https://notes.test/openapi.json" });
-  const cap = rc.graph.list().find((c) => c.id.endsWith("deletenote"))!;
-  assert.equal(cap.risk, "destructive");
-  const r = await rc.run(cap.id, { noteId: "42" });
-  assert.equal(r.status, "completed");
+  const del = rc.graph.list().find((c) => c.id.endsWith("deletenote"))!;
+  const put = rc.graph.list().find((c) => c.id.endsWith("putnote"))!;
+  assert.equal((await rc.run(put.id, { noteId: "1" })).status, "completed", "writes are not gated");
+  await assert.rejects(rc.run(del.id, { noteId: "42" }), /confirm: true/);
+  assert.deepEqual(deleted, [], "nothing was deleted without confirmation");
+  assert.equal((await rc.run(del.id, { noteId: "42" }, { confirm: true })).status, "completed");
   assert.deepEqual(deleted, ["/notes/42"]);
+  const open = await RightClick.create({ fetch: (await world({ "https://notes.test": api })).rc.net.fetch, directories: [], destructive: "allow" });
+  await open.learn({ source: "https://notes.test/openapi.json" });
+  assert.equal((await open.run(del.id, { noteId: "7" })).status, "completed", "an operator can opt out for their own environment");
 });
 
 test("research: environment survey, gaps, directory search and auto-learn", async () => {

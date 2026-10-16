@@ -55,7 +55,7 @@ export const TOOLS = [
   {
     name: "context_run",
     description: "Run one capability now. Returns the output, timing, a hash-chained receipt, and verification status (verified/refuted/unverified) against optional predicates.",
-    inputSchema: obj({ id: str("Capability id."), args: { type: "object", description: "Input arguments by port name." }, verify: predicates }, ["id"]),
+    inputSchema: obj({ id: str("Capability id."), args: { type: "object", description: "Input arguments by port name." }, verify: predicates, confirm: bool("Required for capabilities labelled destructive.") }, ["id"]),
   },
   {
     name: "context_run_status",
@@ -74,6 +74,7 @@ export const TOOLS = [
         run: bool("Execute the best plan."),
         verify: predicates,
         maxSteps: num("Max pipeline length (default 4)."),
+        confirm: bool("Required to run plans containing destructive capabilities."),
         publish: str("After a verified run, publish this goal as a stable API endpoint under this name (served at /x/<name>, described in /openapi.json)."),
         acquire: bool("If nothing in the graph can do it: research public directories (APIs.guru, MCP Registry), learn the best candidates and re-plan."),
         through: { type: "array", items: { type: "string" }, description: "Anchors: capability ids or search phrases the pipeline must pass through; the planner wires the types between them." },
@@ -118,11 +119,11 @@ export async function dispatch(rc: RightClick, name: string, a: Record<string, a
     case "context_explain":
       return rc.explain(a.id);
     case "context_run":
-      return rc.run(a.id, a.args ?? {}, { verify: a.verify });
+      return rc.run(a.id, a.args ?? {}, { verify: a.verify, confirm: a.confirm });
     case "context_run_status":
       return a.runId ? rc.runStatus({ runId: a.runId }) : { ...(rc.runStatus({ limit: a.limit }) as object), chain: await rc.verifyReceipts() };
     case "context_compose":
-      return rc.compose({ have: a.have ?? {}, want: a.want, intent: a.intent, run: a.run, verify: a.verify, maxSteps: a.maxSteps, risks: a.risks, through: a.through, acquire: a.acquire, publish: a.publish });
+      return rc.compose({ have: a.have ?? {}, want: a.want, intent: a.intent, run: a.run, verify: a.verify, maxSteps: a.maxSteps, risks: a.risks, through: a.through, acquire: a.acquire, publish: a.publish, confirm: a.confirm });
     case "context_graph":
       return rc.graphQuery(a as any);
     case "context_providers":

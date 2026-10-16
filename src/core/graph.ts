@@ -21,6 +21,7 @@ export type GraphEventKind =
   | "capability.retired"
   | "goal.published"
   | "provider.drifted"
+  | "provider.withdrawn"
   | "run.completed"
   | "research";
 
