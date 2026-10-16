@@ -1,0 +1,86 @@
+{
+  "at": "2026-10-16T00:04:02.091Z",
+  "repo": "modelcontextprotocol/typescript-sdk",
+  "driver": "MCP tools/call only",
+  "compose": {
+    "ok": true,
+    "pipeline": [
+      "Get an issue",
+      "Get a repository",
+      "ask_wiki_question"
+    ],
+    "bindings": [
+      [
+        {
+          "port": "owner",
+          "from": "$in.owner"
+        },
+        {
+          "port": "repo",
+          "from": "$in.repo"
+        },
+        {
+          "port": "issue_number",
+          "from": "$in.issue_number"
+        }
+      ],
+      [
+        {
+          "port": "owner",
+          "from": "$in.owner"
+        },
+        {
+          "port": "repo",
+          "from": "$in.repo"
+        }
+      ],
+      [
+        {
+          "port": "repoName",
+          "from": "1.full_name"
+        },
+        {
+          "port": "question",
+          "from": "0.body"
+        }
+      ]
+    ],
+    "issue": {
+      "number": 3037,
+      "title": "[v2] Last-Event-ID resumability on modern createMcpHandler path"
+    },
+    "answer": "Resumability based on `Last-Event-ID` is intentionally out of scope for the modern (2026-07-28) `createMcpHandler` path. The modern protocol is designed for stateless, per-request exchanges, which fundamentally differs from the session-oriented nature of the legacy protocol that supported resumability. ## Resumability in Modern `createMcpHandler` Path 1. **Intentional Omission**: Resumability, including `Last-Event-ID` replay, is explicitly *not* carried over to the modern `PerRequestHTTPServerTransport` used by `createMcpHandler` . The modern era (2026-07-28) is characterized by stateless, per-request exchanges, where each HTTP request is served by a fresh server instance and a single-use transport . This design contrasts with the session-oriented nature of the 2025 legacy protocol, which supported resumability through an `EventStore` . 2. **No Event Store Seam**: The `CreateMcpHandlerOptions` interface does not expose an `eventStore` option . The `PerRequestHTTPServerTransport` is a micro-transport designed for single-exchange request/response cycles and does not have a mechanism for an event store . ## Approximation for Long-Lived Streams For long-lived `subscriptions/listen` streams, where mid-stream drops are more likely, the modern protocol does not offer a direct resumability mechanism like `Last-Event-ID`. Instead, the `subscriptions/listen` mechanism is designed to be robust to disconnections by allowing clients to re-establish a new subscription stream. * **Client-Side Re-subscription**: If a `subscriptions/listen` stream disconnects unexpectedly, the client is expected to re-listen to receive further events . The server-side `ServerEventBus` continues to publish events, and a new subscription will receive events from the point it connects. There is no built-in mechanism to replay missed events from before the re-connection. * **Graceful Close**: When the server deliberately closes a listen stream, it sends an empty `subscriptions/listen` JSON-RPC result b",
+    "published": {
+      "slug": "issue-oracle",
+      "path": "/x/issue-oracle"
+    }
+  },
+  "fromB": {
+    "ok": true,
+    "learned": 4,
+    "issue": {
+      "number": 3036,
+      "title": "[v2] createMcpHandler maxSubscriptions is handler-wide, no per-session cap option"
+    },
+    "pipeline": [
+      "Get an issue",
+      "Get a repository",
+      "ask_wiki_question"
+    ],
+    "answer": "You are requesting to add a `maxSubscriptionsPerSession` option to the `CreateMcpHandlerOptions` interface, which is used by the `createMcpHandler` function. This new option will work in conjunction with the existing `maxSubscriptions` option to provide both a handler-wide subscription ceiling and a per-session limit for `subscriptions/listen` streams. The implementation will involve modifying the `createListenRouter` function in `packages/server/src/server/listenRouter.ts` to track subscriptions per session. ## Proposed Changes ### `CreateMcpHandlerOptions` Interface The `CreateMcpHandlerOptions` interface, defined in `packages/server/src/server/createMcpHandler.ts`, will be extended to include `maxSubscriptionsPerSession` . This new option will be an optional number, similar to `maxSubscriptions` . ```ts interface CreateMcpHandlerOptions { maxSubscriptions?: number; // existing: handler-wide ceiling, default 1024 maxSubscriptionsPerSession?: number; // new: counted per transport-managed session id } ``` ### `createListenRouter` Function The `createListenRouter` function in `packages/server/src/server/listenRouter.ts` is responsible for managing `subscriptions/listen` streams . Currently, it uses a single `Set` named `open` to track all active subscriptions . To implement the per-session limit, the `createListenRouter` function will need to be modified as follows: 1. **New Data Structure**: A `Map` named `openBySession` will be introduced to store subscriptions grouped by session ID . Each value in this map will be a `Set` of teardown functions, similar to the existing `open` set . 2. **`serve` Signature Update**: The `serve` method of the `ListenRouter` interface and its implementation in `createListenRouter` will need to accept an optional `sessionId` parameter . 3. **Capacity Guards**: * The existing handler-wide capacity guard (`if (open.size >= maxSubscriptions)`) will remain . * A new per-session capacity guard will be added. If `sessionId` is provided and `m"
+  },
+  "receipts": [
+    {
+      "count": 86,
+      "intact": true,
+      "brokenAt": null,
+      "head": "54545d11240f53ae6ddbcf52eebcf2be15ef207aa2d4d25a477aa52ab38b0a5f"
+    },
+    {
+      "count": 22,
+      "intact": true,
+      "brokenAt": null,
+      "head": "c902fde4bd321c1c7e5abac28043a30436de9fee238268aab4af93232a1e7699"
+    }
+  ]
+}

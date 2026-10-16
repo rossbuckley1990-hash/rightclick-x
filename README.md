@@ -58,6 +58,7 @@ From the live-internet experiments in [`experiments/`](experiments/EXPERIMENTS.m
 - **GraphQL → REST**: `{country: "PT"}` → countries GraphQL API → `capital` → Wikipedia → verified summary of Lisbon, for five countries; then reused as one crystallized capability.
 - **Kubernetes, with no MCP server written**: the live cluster's whole API (799 operations) reflected in 210 ms; RightClick X installed a new CRD through a capability it had just reflected, then grew that resource's 8 operations into its own graph 1.2 s later, and filled it with live internet knowledge (countries GraphQL → Wikipedia → `Insight` objects), confirmed independently by kubectl.
 - **APIs that write themselves**: publish a goal (`context_compose` with `publish`) and it becomes an endpoint in the instance's own OpenAPI API, with no handler or schema written. In E11, instance A fused the countries GraphQL API with an exchange-rate API it found on its own into a *Country money* endpoint; instance B learned A's API and published one on top of it; instance C called B: C → B → A → the internet, driven only through MCP. Then the same across three continents on Cloudflare: A in Amsterdam, B in Newark, C in Hong Kong, each pinned by location hint and authenticated to the next ([E11, E11-cloud](experiments/EXPERIMENTS.md)).
+- **Joining systems that never met**: *Issue Oracle* fuses GitHub's REST API and DeepWiki's MCP server into one published endpoint with no integration code: an issue and its repository are fetched in parallel and joined into a question about the codebase. Live on Cloudflare, called from another region ([E12](experiments/EXPERIMENTS.md)).
 - **Integrations that maintain themselves**: an integration is a goal plus a check, not hard-coded calls. When a provider ships a breaking release, RightClick X re-reflects it, detects the drift, retires stale pipelines, re-plans and re-verifies. Across REST v1 → renamed REST v2 → GraphQL → MCP → rollback, a hand-written client broke three times; the RightClick X integration stayed verified with 0 lines changed ([E10](experiments/EXPERIMENTS.md)).
 - **It published itself**: through capabilities reflected from GitHub's spec, RightClick X created [`rossbuckley1990-hash/rightclick-x`](https://github.com/rossbuckley1990-hash/rightclick-x) and uploaded its own source; GitHub's tree hash is identical to the checkout's `git write-tree`.
 - **Acquisition on demand**: start with nothing, ask for something it can't do (`acquire: true`), and it researches APIs.guru and the MCP Registry, learns an API or MCP server it has never seen, and completes the goal: live EUR exchange rates, a Wikipedia summary through a third-party MCP server, Ontario's public holidays ([X5](experiments/STRESS.md)).
@@ -114,7 +115,7 @@ There are no approval gates: write and destructive capabilities run when called,
 
 ```bash
 npm install
-npm test             # 40 offline tests (node:test)
+npm test             # 43 offline tests (node:test)
 npm run typecheck
 npm run demo         # seven-act offline demo
 node experiments/cloud.ts   # live-internet experiments (read-only)
