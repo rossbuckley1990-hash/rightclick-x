@@ -1,15 +1,5 @@
 # RightClick X
 
-**One connection gives an AI agent the capabilities its environment exposes.**
-
-Plug it into any AI client once. Point it at anything with a contract — an OpenAPI or Swagger spec, a GraphQL endpoint, another MCP server, a web page with forms, another RightClick X instance, the platform it is running on — and those capabilities become typed nodes in one live graph. The agent never gets a new tool. It gets the same thirteen `context_*` tools, and the graph behind them changes shape to match wherever it is.
-
-Because every capability's inputs and outputs carry *semantic* types (a `place`, a `geo.lat`, an `account`, an `id.release`, not just "string"), capabilities from unrelated providers and protocols connect to each other. Ask for what you have and what you want; RightClick X finds the pipeline, runs it, verifies it, heals it when a provider dies, and saves it as a new capability when it works.
-
-The goal is an environment capability l<div align="center">
-
-# RightClick X
-
 ### Your AI should adapt to software. Not the other way around.
 
 **One MCP connection. Thirteen tools. A living map of what your environment can do.**
