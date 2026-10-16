@@ -81,7 +81,7 @@ const builderPrompt = [
   "SLUG: <published slug>",
   "PATH: <published path>",
 ].join("\n");
-log("\n1. builder: Claude Code -> rcx-c only…");
+log(`\n1. builder: Claude Code -> ${new URL(C.url).host} only…`);
 const b = await runAgent("claude", { kind: "http", url: C.url, token: C.token }, builderPrompt);
 const slug = /^\s*SLUG:\s*`?([\w-]+)`?/im.exec(b.output)?.[1];
 ev.builder = { client: "claude", prompt: builderPrompt, seconds: b.seconds, slug, finalText: b.output.slice(-1500) };

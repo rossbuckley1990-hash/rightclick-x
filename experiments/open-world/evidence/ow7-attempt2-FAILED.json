@@ -1,0 +1,136 @@
+{
+  "experiment": "OW7 ship it without code",
+  "hypothesis": "An AI agent whose only tool is RightClick X can turn a one-sentence requirement into a live API over real public services, which a developer and another vendor's AI then use with no integration code.",
+  "build": "8df49c13d647cfdec5944f712293cced64ab46ff",
+  "criteria": [
+    "builder publishes a goal listed in /openapi.json",
+    "developer 3/3 within 2% of truth",
+    "consumer AI 3/3 within 2%, reached the origin, instance recorded goal runs",
+    "agents had no tool except RightClick X"
+  ],
+  "instance": {
+    "url": "https://rcx-d.ross-buckley1990.workers.dev",
+    "name": "rcx-d (Asia-Pacific, fresh)",
+    "datacenter": "SIN (apac)"
+  },
+  "providersBefore": [
+    "RightClick X core transforms"
+  ],
+  "builder": {
+    "client": "claude",
+    "prompt": "You are connected to exactly one MCP server, rightclick-x (a remote instance in the cloud). Use only its tools.\nProduct requirement from a developer: \"I need an HTTP API that, given an ISO 3166 country code (for example JP), returns how many euros one unit of that country's currency is worth today. I will not write any integration code.\"\nOne service you may use is the countries GraphQL API at https://countries.trevorblades.com/ . You are given no other addresses; find anything else you need with the tools.\nBuild it with the rightclick-x tools, check that it returns a sensible number for at least one country, and publish it under the name 'euro value of a country currency'.\nEnd your reply with exactly two lines:\nSLUG: <published slug>\nPATH: <published path>",
+    "seconds": 113,
+    "slug": "euro-value-of-a-country-currency",
+    "finalText": "The API is published and works: you send a country code and get back today's value of one unit of that country's currency in euros.\n\n- **Only input:** `country`, an ISO code such as `JP`. The amount (1) and the target currency (EUR) are fixed inside the API, so callers can't change them.\n- **How it works:** it looks up the country's currency in the countries GraphQL API, then converts 1 unit to EUR with the datakoot FX service (found in the MCP Registry). That service uses the latest European Central Bank reference rate and needs no API key.\n- **Test results:** `JP` returned 0.00565 (1 yen ≈ €0.0057) and `GB` returned 1.1819 (1 pound ≈ €1.18). Both are realistic.\n- **Built-in check:** every call checks that the result is greater than 0. There is no independent cross-check against a second rate source.\n\n**Limitations:**\n- **Uncovered currencies:** the European Central Bank only quotes about 30 currencies. A country whose currency it doesn't cover will get an error, not a number.\n- **Multiple currencies:** some countries list more than one in the countries API (for example `US` is \"USD,USN,USI\"). Those may also fail. I only tested JP and GB.\n\nSLUG: euro-value-of-a-country-currency\nPATH: /x/euro-value-of-a-country-currency"
+  },
+  "published": {
+    "inOpenApi": true,
+    "path": "/x/euro-value-of-a-country-currency",
+    "method": "GET",
+    "params": [
+      "country"
+    ],
+    "summary": "euro value of a country currency"
+  },
+  "developer": [
+    {
+      "country": "MX",
+      "currency": "MXN",
+      "truthEUR": 0.048324,
+      "got": 0.04817,
+      "ok": true,
+      "verification": "verified",
+      "pipeline": [
+        "Country",
+        "FX Convert"
+      ]
+    },
+    {
+      "country": "CH",
+      "currency": "CHF",
+      "truthEUR": 1.076216,
+      "got": 0,
+      "ok": false,
+      "verification": "refuted",
+      "pipeline": []
+    },
+    {
+      "country": "AU",
+      "currency": "AUD",
+      "truthEUR": 0.616734,
+      "got": 0.6166,
+      "ok": true,
+      "verification": "verified",
+      "pipeline": [
+        "Country",
+        "FX Convert"
+      ]
+    }
+  ],
+  "consumer": {
+    "client": "codex",
+    "prompt": "You are connected to exactly one MCP server, rightclick-x. Use only its tools; no shell, files or web.\nA colleague published an API at https://rcx-d.ross-buckley1990.workers.dev/ . You are authorised to use it; credentials are already configured inside rightclick-x, so you never handle them.\nUsing that API through rightclick-x, find how many euros one unit of the currency of each of these countries is worth today: BR, KE, IN.\nEnd your reply with exactly one line per country, e.g. BR: <number>",
+    "seconds": 57.7,
+    "toolCalls": [
+      "context_learn",
+      "context_graph",
+      "context_explain",
+      "context_run",
+      "context_run",
+      "context_run",
+      "context_explain",
+      "context_run",
+      "context_run",
+      "context_run"
+    ],
+    "receiptProviders": [
+      "peer:rcx-d-ross-buckley1990-workers-dev"
+    ],
+    "reachedOrigin": true,
+    "instanceRunsDuringConsumer": 12,
+    "finalText": "Euros per unit, using API rates dated 16 October 2026:\n\nBR: 0.176\nKE: 0.00688\nIN: 0.00939",
+    "answers": [
+      {
+        "country": "BR",
+        "currency": "BRL",
+        "truthEUR": 0.176475,
+        "got": 0.176,
+        "ok": true
+      },
+      {
+        "country": "KE",
+        "currency": "KES",
+        "truthEUR": 0.006876,
+        "got": 0.00688,
+        "ok": true
+      },
+      {
+        "country": "IN",
+        "currency": "INR",
+        "truthEUR": 0.009385,
+        "got": 0.00939,
+        "ok": true
+      }
+    ]
+  },
+  "providersAfter": [
+    "RightClick X core transforms",
+    "GraphQL countries.trevorblades.com",
+    "ExchangeRate-API",
+    "mcp-currency",
+    "Crystallized pipelines",
+    "Reusable environmental capabilities",
+    "market-intel"
+  ],
+  "checks": {
+    "published": true,
+    "developer3of3": false,
+    "consumer3of3": true,
+    "consumerReachedOrigin": true,
+    "onlyRightClickX": true
+  },
+  "verdict": "FAIL",
+  "attempt": 2,
+  "instanceNote": "Ran on fresh rcx-d (SIN). The harness log line says \"-> rcx-c only\"; that label is a stale string, the builder connected only to rcx-d.",
+  "diagnosis": "CH: the countries API lists CHE,CHF,CHW; the published API returned 0 for CH, a silently wrong answer. The goal had no customer-owned correctness check that would reject it."
+}
