@@ -1,0 +1,40 @@
+{
+  "at": "2026-10-16T06:41:35.214Z",
+  "build": "eb757bdebefcd439b5c21bf41ecf82d25e8c871c",
+  "domain": "invoicing",
+  "seed": 850002589,
+  "results": [
+    {
+      "client": "claude",
+      "start": "INV-1004",
+      "expected": 14.4,
+      "answer": "14.4",
+      "correct": true,
+      "seconds": 19.7,
+      "receipts": 5,
+      "providers": [
+        "graphql:127-0-0-1-51527-graphql",
+        "mcp:quillbase",
+        "graphql:127-0-0-1-51529-graphql"
+      ],
+      "reachedAll": false,
+      "tail": "is 735.70 USD.\n2. **Customer record** (an MCP server called \"quillbase\" at port 51528): customer C-1007 is in country BR (Brazil).\n3. **Tax rate** (GraphQL at port 51529): the rate for BR is 14.4.\n\nI ran the first two steps a second time on their own and got the same customer and country. The service returns the rate as a bare number with no unit, so 14.4 is most likely a percentage.\n\nANSWER: 14.4"
+    },
+    {
+      "client": "codex",
+      "start": "INV-1010",
+      "expected": 11,
+      "answer": "11",
+      "correct": true,
+      "seconds": 53.7,
+      "receipts": 6,
+      "providers": [
+        "graphql:127-0-0-1-51527-graphql",
+        "mcp:quillbase",
+        "graphql:127-0-0-1-51529-graphql"
+      ],
+      "reachedAll": false,
+      "tail": "INV-1010 belongs to customer C-1054 in France (FR). The tax service returned a rate of 11.\n\nANSWER: 11"
+    }
+  ]
+}

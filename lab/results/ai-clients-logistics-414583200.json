@@ -1,0 +1,40 @@
+{
+  "at": "2026-10-16T06:43:09.988Z",
+  "build": "eb757bdebefcd439b5c21bf41ecf82d25e8c871c",
+  "domain": "logistics",
+  "seed": 414583200,
+  "results": [
+    {
+      "client": "claude",
+      "start": "SHP-1003",
+      "expected": 37.3,
+      "answer": "37.3",
+      "correct": true,
+      "seconds": 42.2,
+      "receipts": 3,
+      "providers": [
+        "openapi:fjordsoft",
+        "graphql:127-0-0-1-51712-graphql",
+        "mcp:quillbase"
+      ],
+      "reachedAll": false,
+      "tail": "ent** (the OpenAPI service on port 51711): SHP-1003 ships from warehouse WH-1031 and weighs 797.2 kg.\n2. **Warehouse** (the GraphQL service on port 51712): WH-1031 is in Osaka.\n3. **City rate** (the MCP service on port 51713): Osaka's rate is 37.3 per kg.\n\nI took \"rate\" to mean this per-kg price. If you meant the total charge for this shipment, that would be 797.2 × 37.3 = 29,735.56.\n\nANSWER: 37.3"
+    },
+    {
+      "client": "codex",
+      "start": "SHP-1007",
+      "expected": 11.2,
+      "answer": "11.2",
+      "correct": true,
+      "seconds": 52.4,
+      "receipts": 6,
+      "providers": [
+        "openapi:fjordsoft",
+        "graphql:127-0-0-1-51712-graphql",
+        "mcp:quillbase"
+      ],
+      "reachedAll": false,
+      "tail": "SHP-1007 → warehouse WH-1051 → Santos. The shipping rate is 11.2 per kg; no currency was specified.\n\nANSWER: 11.2"
+    }
+  ]
+}

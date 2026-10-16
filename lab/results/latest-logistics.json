@@ -1,7 +1,7 @@
 {
-  "seed": 684434823,
+  "seed": 775165636,
   "domain": "logistics",
-  "startedAt": "2026-10-16T06:30:14.383Z",
+  "startedAt": "2026-10-16T06:40:16.588Z",
   "steps": [
     {
       "n": 1,
@@ -15,7 +15,7 @@
       "title": "Connect an MCP client to RightClick X (stdio)",
       "ok": true,
       "tools": 13,
-      "startupMs": 110.7
+      "startupMs": 112.4
     },
     {
       "n": 3,
@@ -42,10 +42,10 @@
       "found": [
         "graphql",
         "graphql",
-        "mcp"
+        "openapi"
       ],
       "newCapabilities": 3,
-      "ms": 29.3
+      "ms": 29.1
     },
     {
       "n": 5,
@@ -53,9 +53,9 @@
       "ok": true,
       "candidatePlans": 2,
       "best": [
-        "Get shipment",
-        "Fetch Warehouse",
-        "Get Shipping Rate"
+        "Get Shipment",
+        "Get Warehouse",
+        "City shipping rate"
       ],
       "planningMs": 1.7
     },
@@ -64,68 +64,68 @@
       "title": "Compose a multi-provider workflow",
       "ok": true,
       "steps": [
-        "Get shipment ← shipment_number=$in.shipment_id",
-        "Fetch Warehouse ← warehouse_number=0.warehouse_number",
-        "Get Shipping Rate ← city=1.location"
+        "Get Shipment ← shipment_number=$in.shipment_id",
+        "Get Warehouse ← warehouse_id=0.warehouse_number",
+        "City shipping rate ← town=1.location"
       ]
     },
     {
       "n": 7,
       "title": "Execute the workflow",
       "ok": true,
-      "input": "SHP-1005",
+      "input": "SHP-1000",
       "pipeline": [
-        "Get shipment",
-        "Fetch Warehouse",
-        "Get Shipping Rate"
+        "Get Shipment",
+        "Get Warehouse",
+        "City shipping rate"
       ],
-      "ms": 4
+      "ms": 4.2
     },
     {
       "n": 8,
       "title": "Verify against independently held test data",
       "ok": true,
-      "expected": 7.8,
-      "got": 7.8
+      "expected": 11,
+      "got": 11
     },
     {
       "n": 9,
       "title": "Save the successful composition and reuse it",
       "ok": true,
-      "saved": "Shipping rate shipment warehouse city: Get shipment → Fetch Warehouse → Get Shipping Rate",
+      "saved": "Shipping rate shipment warehouse city: Get Shipment → Get Warehouse → City shipping rate",
       "reusedAs": [
-        "Shipping rate shipment warehouse city: Get shipment → Fetch Warehouse → Get Shipping Rate"
+        "Shipping rate shipment warehouse city: Get Shipment → Get Warehouse → City shipping rate"
       ],
-      "expected": 25.7,
-      "got": 25.7,
-      "ms": 1.9
+      "expected": 11,
+      "got": 11,
+      "ms": 2
     },
     {
       "n": 10,
-      "title": "Change the interface of the last provider in the chain (Cobaltix)",
+      "title": "Change the interface of the last provider in the chain (Kestrel Freight)",
       "ok": true,
-      "before": "graphql \"Get shipping rate\" city → city, price_per_kg",
-      "after": "openapi \"Lookup shipping rate for a city\" location → result.{location, rate}"
+      "before": "openapi \"City shipping rate\" town → town, shipping_rate",
+      "after": "mcp \"Shipping rate by city\" location → result.{location, rate}"
     },
     {
       "n": 11,
       "title": "Recover without changing integration code",
       "ok": true,
       "healing": [
-        "API drift at http://127.0.0.1:49213/: graphql:127-0-0-1-49213-graphql → openapi:cobaltix; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:51451/: openapi:kestrel-freight → mcp:kestrel-freight; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "via": [
-        "mcp:duneworks",
-        "graphql:127-0-0-1-49212-graphql",
-        "openapi:cobaltix"
+        "graphql:127-0-0-1-51449-graphql",
+        "graphql:127-0-0-1-51450-graphql",
+        "mcp:kestrel-freight"
       ],
-      "expected": 25.7,
-      "got": 25.7,
-      "ms": 7.4
+      "expected": 14.1,
+      "got": 14.1,
+      "ms": 8.3
     },
     {
       "n": 12,
-      "title": "Remove that provider (Cobaltix)",
+      "title": "Remove that provider (Kestrel Freight)",
       "ok": true
     },
     {
@@ -134,38 +134,38 @@
       "ok": true,
       "status": "failed",
       "healing": [
-        "provider gone at http://127.0.0.1:49213/: withdrew openapi:cobaltix (1 capabilities, 1 pipeline(s) retired)"
+        "provider gone at http://127.0.0.1:51451/: withdrew mcp:kestrel-freight (1 capabilities, 1 pipeline(s) retired)"
       ],
       "withdrawn": [
-        "Cobaltix"
+        "Kestrel Freight"
       ],
       "capabilities": "21 → 19",
       "savedPipelines": "1 → 0"
     },
     {
       "n": 14,
-      "title": "Introduce a different provider (Ashgrove, mcp): the objective works again",
+      "title": "Introduce a different provider (Tallyport, mcp): the objective works again",
       "ok": true,
       "learned": [
         "mcp: 1 tools"
       ],
       "via": [
-        "mcp:duneworks",
-        "graphql:127-0-0-1-49212-graphql",
-        "mcp:ashgrove"
+        "graphql:127-0-0-1-51449-graphql",
+        "graphql:127-0-0-1-51450-graphql",
+        "mcp:tallyport"
       ],
-      "expected": 30,
-      "got": 30,
-      "ms": 1.6
+      "expected": 11,
+      "got": 11,
+      "ms": 1.4
     }
   ],
   "benchmarks": {
-    "startupMs": 110.7,
+    "startupMs": 112.4,
     "mcpLatencyMs": {
       "p50": 0.04,
       "p95": 0.11
     },
-    "discoveryMs": 29.3,
+    "discoveryMs": 29.1,
     "graph": {
       "providers": 5,
       "capabilities": 20,
@@ -174,16 +174,16 @@
       "chains3": 45,
       "total": 96
     },
-    "graphStatsMs": 0.1,
+    "graphStatsMs": 0.5,
     "planningMs": 1.7,
-    "executionMs": 4,
-    "recoveryAfterChangeMs": 7.4,
-    "recoveryAfterNewProviderMs": 1.6,
-    "memoryMB": 133
+    "executionMs": 4.2,
+    "recoveryAfterChangeMs": 8.3,
+    "recoveryAfterNewProviderMs": 1.4,
+    "memoryMB": 132
   },
   "freeze": {
-    "commit": "c15655ad2259a368c16a542016474039affd4f8d",
-    "tag": "lab-freeze-2",
+    "commit": "eb757bdebefcd439b5c21bf41ecf82d25e8c871c",
+    "tag": "lab-freeze-3",
     "productCodeChangedSinceTag": "",
     "uncommittedProductChanges": "",
     "frozen": true
@@ -191,8 +191,8 @@
   "environment": [
     {
       "service": "shipments",
-      "brand": "Duneworks",
-      "protocol": "mcp",
+      "brand": "Lumen Cargo",
+      "protocol": "graphql",
       "operation": "Get shipment",
       "input": "shipment_number",
       "outputs": [
@@ -205,36 +205,36 @@
       "service": "warehouses",
       "brand": "Harbourly",
       "protocol": "graphql",
-      "operation": "Fetch warehouse",
-      "input": "warehouse_number",
+      "operation": "Get warehouse",
+      "input": "warehouse_id",
       "outputs": [
-        "warehouse_number",
+        "warehouse_id",
         "location",
-        "email"
+        "contact_email"
       ]
     },
     {
       "service": "rates",
-      "brand": "Cobaltix",
-      "protocol": "graphql",
-      "operation": "Get shipping rate",
-      "input": "city",
+      "brand": "Kestrel Freight",
+      "protocol": "openapi",
+      "operation": "City shipping rate",
+      "input": "town",
       "outputs": [
-        "city",
-        "price_per_kg"
+        "town",
+        "shipping_rate"
       ]
     }
   ],
   "firstRunProviders": [
-    "mcp:duneworks",
-    "graphql:127-0-0-1-49212-graphql",
-    "graphql:127-0-0-1-49213-graphql"
+    "graphql:127-0-0-1-51449-graphql",
+    "graphql:127-0-0-1-51450-graphql",
+    "openapi:kestrel-freight"
   ],
   "receipts": {
     "count": 21,
     "intact": true,
     "brokenAt": null,
-    "head": "500dbfc0b566b368a58bf2a4dbf1c239e42d3f662924f259fd4514c65a62696e"
+    "head": "5fce046b40f6614fc11bb0fa24caa911a71e2a783285e28ecbe3ae5fab36b5ff"
   },
   "passed": 14,
   "total": 14
