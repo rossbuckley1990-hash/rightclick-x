@@ -114,3 +114,28 @@ test("egress policy: a repair never routes the customer's data to an origin they
   assert.equal(none.executed?.status ?? "failed", "failed");
   assert.ok(!state.calls.some((c) => c.startsWith("other.test/convert")));
 });
+
+test("egress policy covers repair traffic too: a contract mirrored elsewhere is not re-read; the successor is found at the API's own origin (OW8b attempt 1)", async () => {
+  const { state, fetchMock } = world();
+  // The customer built from a third-party mirror of the operator's v1 contract.
+  const mirrored = (async (input: any, init?: any) => {
+    const u = new URL(typeof input === "string" ? input : input.url);
+    if (u.host === "mirror.test") {
+      state.calls.push(`${u.host}${u.pathname}`);
+      return new Response(JSON.stringify(v1), { headers: { "content-type": "application/json" } });
+    }
+    return fetchMock(input, init);
+  }) as typeof fetch;
+  const rc = await RightClick.create({ name: "mirror", fetch: mirrored, directories: [] });
+  await rc.learn({ source: "https://mirror.test/specs/fx/1/openapi.json" });
+  const built = await rc.compose(requirement({ origins: ["https://fx.test"] }));
+  assert.equal(built.executed?.output, RATE.USD);
+
+  state.v1Retired = true;
+  const before = state.calls.length;
+  const after = await rc.callPublished("euro-rate", { base: "GBP" });
+  const during = state.calls.slice(before);
+  assert.ok(!during.some((c) => c.startsWith("mirror.test")), `repair stayed inside the policy: ${during.join(", ")}`);
+  assert.equal(after.ok, true, after.error);
+  assert.equal(after.result, RATE.GBP);
+});

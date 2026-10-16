@@ -4,7 +4,7 @@
 
 import { CapabilityGraph, signature, tokenize, type GraphEvent, type LearnDelta } from "./core/graph.ts";
 import { Ledger, ReceiptChain, sha256, type Receipt } from "./core/ledger.ts";
-import { plan, type Plan } from "./core/planner.ts";
+import { egressOf, plan, type Plan } from "./core/planner.ts";
 import { distance, inferType, inspectValue, type Inspection } from "./core/semantics.ts";
 import type { Capability, CapabilityAnchor, FetchLike, PlanStep, Reflection, SemType } from "./core/types.ts";
 import { check, pick, type Predicate, type PredicateResult, type OutcomeWitness, type WitnessResult } from "./core/verify.ts";
@@ -741,8 +741,18 @@ export class RightClick {
     // Acquisition on demand: nothing in the graph can do this yet, so go and
     // find something in the world that can, learn it, and plan again.
     let candidates: Candidate[] | null = null;
+    // Under an egress policy, self-maintenance traffic (re-reading contracts, looking for
+    // successors, searching directories) obeys the same origins as the data itself.
+    const allowedOrigin = (url: string) => {
+      if (!origins) return true;
+      try {
+        return origins.includes(new URL(url).origin);
+      } catch {
+        return false;
+      }
+    };
     const acquireMore = async (): Promise<boolean> => {
-      if (!opts.acquire) return false;
+      if (!opts.acquire || origins) return false;
       if (!candidates) {
         const topic = [opts.intent ?? "", opts.want].join(" ").trim();
         const r = await this.research({ topic, limit: 6 });
@@ -836,9 +846,15 @@ export class RightClick {
         // source once; if the contract drifted, the graph now describes the new
         // API and stale crystallized pipelines are retired, so just re-plan.
         const source = this.graph.providers.get(this.graph.get(failed)?.provider ?? "")?.meta?.source as string | undefined;
+        const failedEgress = this.graph.get(failed) ? egressOf(this.graph.get(failed)!, this.graph) : "anywhere";
         let drifted = false;
+        let gone = false;
         if (e instanceof ConfirmationRequired) attempt.healing = "not run: destructive step needs confirm: true; looking for a non-destructive route";
-        else if (source && !refreshed.has(source) && !(e instanceof StepError && /verification refuted/.test(attempt.error))) {
+        else if (source && !allowedOrigin(source) && !refreshed.has(source)) {
+          refreshed.add(source);
+          attempt.healing = `contract source ${new URL(source).origin} is outside the egress policy; not re-read`;
+          gone = /HTTP (404|410)\b/.test(attempt.error);
+        } else if (source && !refreshed.has(source) && !(e instanceof StepError && /verification refuted/.test(attempt.error))) {
           refreshed.add(source);
           const r = await this.learn({ source, deep: true });
           const d = r.results[0]?.drift;
@@ -852,15 +868,21 @@ export class RightClick {
               : `re-reflected ${source}: no contract change`;
           // The contract is gone or unreadable: look for its successor where it lived (same
           // origin only, so a repair never moves the caller's data somewhere new by itself).
-          if (r.results[0]?.withdrawn || r.results[0]?.error) {
-            const home = `${new URL(source).origin}/`;
-            if (!refreshed.has(home)) {
-              refreshed.add(home);
-              const s = await this.learn({ source: home });
-              const found = s.results[0]?.learned?.length ?? 0;
-              attempt.healing += `; looked for a successor at ${home}: ${found ? `learned ${found} provider(s)` : s.results[0]?.error ?? "nothing found"}`;
-              if (found) drifted = true;
-            }
+          gone = !!(r.results[0]?.withdrawn || r.results[0]?.error);
+        }
+        // The operation or its contract is gone: look for the successor where it lived - the
+        // contract's origin and the API's own origin - never anywhere the policy does not allow.
+        if (gone) {
+          const homes = new Set<string>();
+          if (source) homes.add(`${new URL(source).origin}/`);
+          if (failedEgress !== "anywhere") for (const o of failedEgress) homes.add(`${o}/`);
+          for (const home of homes) {
+            if (refreshed.has(home) || !allowedOrigin(home)) continue;
+            refreshed.add(home);
+            const s = await this.learn({ source: home });
+            const found = s.results[0]?.learned?.length ?? 0;
+            attempt.healing = `${attempt.healing ? attempt.healing + "; " : ""}looked for a successor at ${home}: ${found ? `learned ${found} provider(s)` : s.results[0]?.error ?? "nothing found"}`;
+            if (found) drifted = true;
           }
         }
         if (!drifted) {

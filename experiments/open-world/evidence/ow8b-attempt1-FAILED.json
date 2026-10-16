@@ -1,0 +1,597 @@
+{
+  "experiment": "OW8b genuine upstream change, successor without a contract",
+  "build": "ba22941527c3d25d112079a8574945d1bc51928e",
+  "customer": {
+    "integration": "Convert a currency to EUR (built against ExchangeRate-API v4)",
+    "builtAgainst": "https://api.apis.guru/v2/specs/exchangerate-api.com/4/openapi.json",
+    "correctness": {
+      "predicates": [
+        {
+          "op": "gt",
+          "value": 0
+        },
+        {
+          "op": "lt",
+          "value": 1000
+        }
+      ],
+      "independentCheck": "within 1.5% of Frankfurter v2, queried directly by the harness"
+    },
+    "security": {
+      "risks": [
+        "read"
+      ],
+      "origins": [
+        "https://api.exchangerate-api.com",
+        "https://open.er-api.com"
+      ],
+      "credentials": "none"
+    },
+    "bases": [
+      "USD",
+      "JPY",
+      "GBP",
+      "CHF",
+      "AUD"
+    ]
+  },
+  "truthRates": {
+    "USD": 0.89204,
+    "JPY": 0.00564,
+    "GBP": 1.1832,
+    "CHF": 1.0762,
+    "AUD": 0.61907
+  },
+  "trials": [
+    {
+      "label": "trial-1",
+      "built": {
+        "status": "completed",
+        "pipeline": [
+          "Returns latest exchange rates in parameter-supplied base currency. (one rates entry)"
+        ]
+      },
+      "phases": [
+        {
+          "phase": "before change",
+          "calls": [
+            {
+              "base": "USD",
+              "ok": true,
+              "result": 0.892,
+              "truth": 0.89204,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Returns latest exchange rates in parameter-supplied base currency. (one rates entry)"
+              ],
+              "egress": [
+                "https://api.exchangerate-api.com"
+              ],
+              "outsidePolicy": []
+            },
+            {
+              "base": "JPY",
+              "ok": true,
+              "result": 0.00564,
+              "truth": 0.00564,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Returns latest exchange rates in parameter-supplied base currency. (one rates entry)"
+              ],
+              "egress": [
+                "https://api.exchangerate-api.com"
+              ],
+              "outsidePolicy": []
+            },
+            {
+              "base": "GBP",
+              "ok": true,
+              "result": 1.18,
+              "truth": 1.1832,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Returns latest exchange rates in parameter-supplied base currency. (one rates entry)"
+              ],
+              "egress": [
+                "https://api.exchangerate-api.com"
+              ],
+              "outsidePolicy": []
+            },
+            {
+              "base": "CHF",
+              "ok": true,
+              "result": 1.08,
+              "truth": 1.0762,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Returns latest exchange rates in parameter-supplied base currency. (one rates entry)"
+              ],
+              "egress": [
+                "https://api.exchangerate-api.com"
+              ],
+              "outsidePolicy": []
+            },
+            {
+              "base": "AUD",
+              "ok": true,
+              "result": 0.617,
+              "truth": 0.61907,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Returns latest exchange rates in parameter-supplied base currency. (one rates entry)"
+              ],
+              "egress": [
+                "https://api.exchangerate-api.com"
+              ],
+              "outsidePolicy": []
+            }
+          ]
+        },
+        {
+          "phase": "after change, no intervention",
+          "calls": [
+            {
+              "base": "USD",
+              "ok": false,
+              "result": null,
+              "truth": 0.89204,
+              "correct": false,
+              "wrong": false,
+              "pipeline": [],
+              "egress": [
+                "https://api.exchangerate-api.com",
+                "https://api.apis.guru"
+              ],
+              "outsidePolicy": [
+                "https://api.apis.guru"
+              ],
+              "error": "openapi:exchangerate-api:get-latest-base-currency:entry-rates: HTTP 410: {\"result\":\"error\",\"error-type\":\"retired\"}; openapi:exchangerate-api:get-latest-base-currency: HTTP 410: {\"result\":\"error\",\"error-type\":\"retired\"}"
+            },
+            {
+              "base": "JPY",
+              "ok": false,
+              "result": null,
+              "truth": 0.00564,
+              "correct": false,
+              "wrong": false,
+              "pipeline": [],
+              "egress": [
+                "https://api.exchangerate-api.com",
+                "https://api.apis.guru"
+              ],
+              "outsidePolicy": [
+                "https://api.apis.guru"
+              ],
+              "error": "openapi:exchangerate-api:get-latest-base-currency:entry-rates: HTTP 410: {\"result\":\"error\",\"error-type\":\"retired\"}; openapi:exchangerate-api:get-latest-base-currency: HTTP 410: {\"result\":\"error\",\"error-type\":\"retired\"}"
+            },
+            {
+              "base": "GBP",
+              "ok": false,
+              "result": null,
+              "truth": 1.1832,
+              "correct": false,
+              "wrong": false,
+              "pipeline": [],
+              "egress": [
+                "https://api.exchangerate-api.com",
+                "https://api.apis.guru"
+              ],
+              "outsidePolicy": [
+                "https://api.apis.guru"
+              ],
+              "error": "openapi:exchangerate-api:get-latest-base-currency:entry-rates: HTTP 410: {\"result\":\"error\",\"error-type\":\"retired\"}; openapi:exchangerate-api:get-latest-base-currency: HTTP 410: {\"result\":\"error\",\"error-type\":\"retired\"}"
+            },
+            {
+              "base": "CHF",
+              "ok": false,
+              "result": null,
+              "truth": 1.0762,
+              "correct": false,
+              "wrong": false,
+              "pipeline": [],
+              "egress": [
+                "https://api.exchangerate-api.com",
+                "https://api.apis.guru"
+              ],
+              "outsidePolicy": [
+                "https://api.apis.guru"
+              ],
+              "error": "openapi:exchangerate-api:get-latest-base-currency:entry-rates: HTTP 410: {\"result\":\"error\",\"error-type\":\"retired\"}; openapi:exchangerate-api:get-latest-base-currency: HTTP 410: {\"result\":\"error\",\"error-type\":\"retired\"}"
+            },
+            {
+              "base": "AUD",
+              "ok": false,
+              "result": null,
+              "truth": 0.61907,
+              "correct": false,
+              "wrong": false,
+              "pipeline": [],
+              "egress": [
+                "https://api.exchangerate-api.com",
+                "https://api.apis.guru"
+              ],
+              "outsidePolicy": [
+                "https://api.apis.guru"
+              ],
+              "error": "openapi:exchangerate-api:get-latest-base-currency:entry-rates: HTTP 410: {\"result\":\"error\",\"error-type\":\"retired\"}; openapi:exchangerate-api:get-latest-base-currency: HTTP 410: {\"result\":\"error\",\"error-type\":\"retired\"}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "trial-2",
+      "built": {
+        "status": "completed",
+        "pipeline": [
+          "Returns latest exchange rates in parameter-supplied base currency. (one rates entry)"
+        ]
+      },
+      "phases": [
+        {
+          "phase": "before change",
+          "calls": [
+            {
+              "base": "USD",
+              "ok": true,
+              "result": 0.892,
+              "truth": 0.89204,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Returns latest exchange rates in parameter-supplied base currency. (one rates entry)"
+              ],
+              "egress": [
+                "https://api.exchangerate-api.com"
+              ],
+              "outsidePolicy": []
+            },
+            {
+              "base": "JPY",
+              "ok": true,
+              "result": 0.00564,
+              "truth": 0.00564,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Returns latest exchange rates in parameter-supplied base currency. (one rates entry)"
+              ],
+              "egress": [
+                "https://api.exchangerate-api.com"
+              ],
+              "outsidePolicy": []
+            },
+            {
+              "base": "GBP",
+              "ok": true,
+              "result": 1.18,
+              "truth": 1.1832,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Returns latest exchange rates in parameter-supplied base currency. (one rates entry)"
+              ],
+              "egress": [
+                "https://api.exchangerate-api.com"
+              ],
+              "outsidePolicy": []
+            },
+            {
+              "base": "CHF",
+              "ok": true,
+              "result": 1.08,
+              "truth": 1.0762,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Returns latest exchange rates in parameter-supplied base currency. (one rates entry)"
+              ],
+              "egress": [
+                "https://api.exchangerate-api.com"
+              ],
+              "outsidePolicy": []
+            },
+            {
+              "base": "AUD",
+              "ok": true,
+              "result": 0.617,
+              "truth": 0.61907,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Returns latest exchange rates in parameter-supplied base currency. (one rates entry)"
+              ],
+              "egress": [
+                "https://api.exchangerate-api.com"
+              ],
+              "outsidePolicy": []
+            }
+          ]
+        },
+        {
+          "phase": "after change, no intervention",
+          "calls": [
+            {
+              "base": "USD",
+              "ok": false,
+              "result": null,
+              "truth": 0.89204,
+              "correct": false,
+              "wrong": false,
+              "pipeline": [],
+              "egress": [
+                "https://api.exchangerate-api.com",
+                "https://api.apis.guru"
+              ],
+              "outsidePolicy": [
+                "https://api.apis.guru"
+              ],
+              "error": "openapi:exchangerate-api:get-latest-base-currency:entry-rates: HTTP 410: {\"result\":\"error\",\"error-type\":\"retired\"}; openapi:exchangerate-api:get-latest-base-currency: HTTP 410: {\"result\":\"error\",\"error-type\":\"retired\"}"
+            },
+            {
+              "base": "JPY",
+              "ok": false,
+              "result": null,
+              "truth": 0.00564,
+              "correct": false,
+              "wrong": false,
+              "pipeline": [],
+              "egress": [
+                "https://api.exchangerate-api.com",
+                "https://api.apis.guru"
+              ],
+              "outsidePolicy": [
+                "https://api.apis.guru"
+              ],
+              "error": "openapi:exchangerate-api:get-latest-base-currency:entry-rates: HTTP 410: {\"result\":\"error\",\"error-type\":\"retired\"}; openapi:exchangerate-api:get-latest-base-currency: HTTP 410: {\"result\":\"error\",\"error-type\":\"retired\"}"
+            },
+            {
+              "base": "GBP",
+              "ok": false,
+              "result": null,
+              "truth": 1.1832,
+              "correct": false,
+              "wrong": false,
+              "pipeline": [],
+              "egress": [
+                "https://api.exchangerate-api.com",
+                "https://api.apis.guru"
+              ],
+              "outsidePolicy": [
+                "https://api.apis.guru"
+              ],
+              "error": "openapi:exchangerate-api:get-latest-base-currency:entry-rates: HTTP 410: {\"result\":\"error\",\"error-type\":\"retired\"}; openapi:exchangerate-api:get-latest-base-currency: HTTP 410: {\"result\":\"error\",\"error-type\":\"retired\"}"
+            },
+            {
+              "base": "CHF",
+              "ok": false,
+              "result": null,
+              "truth": 1.0762,
+              "correct": false,
+              "wrong": false,
+              "pipeline": [],
+              "egress": [
+                "https://api.exchangerate-api.com",
+                "https://api.apis.guru"
+              ],
+              "outsidePolicy": [
+                "https://api.apis.guru"
+              ],
+              "error": "openapi:exchangerate-api:get-latest-base-currency:entry-rates: HTTP 410: {\"result\":\"error\",\"error-type\":\"retired\"}; openapi:exchangerate-api:get-latest-base-currency: HTTP 410: {\"result\":\"error\",\"error-type\":\"retired\"}"
+            },
+            {
+              "base": "AUD",
+              "ok": false,
+              "result": null,
+              "truth": 0.61907,
+              "correct": false,
+              "wrong": false,
+              "pipeline": [],
+              "egress": [
+                "https://api.exchangerate-api.com",
+                "https://api.apis.guru"
+              ],
+              "outsidePolicy": [
+                "https://api.apis.guru"
+              ],
+              "error": "openapi:exchangerate-api:get-latest-base-currency:entry-rates: HTTP 410: {\"result\":\"error\",\"error-type\":\"retired\"}; openapi:exchangerate-api:get-latest-base-currency: HTTP 410: {\"result\":\"error\",\"error-type\":\"retired\"}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "trial-3",
+      "built": {
+        "status": "completed",
+        "pipeline": [
+          "Returns latest exchange rates in parameter-supplied base currency. (one rates entry)"
+        ]
+      },
+      "phases": [
+        {
+          "phase": "before change",
+          "calls": [
+            {
+              "base": "USD",
+              "ok": true,
+              "result": 0.892,
+              "truth": 0.89204,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Returns latest exchange rates in parameter-supplied base currency. (one rates entry)"
+              ],
+              "egress": [
+                "https://api.exchangerate-api.com"
+              ],
+              "outsidePolicy": []
+            },
+            {
+              "base": "JPY",
+              "ok": true,
+              "result": 0.00564,
+              "truth": 0.00564,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Returns latest exchange rates in parameter-supplied base currency. (one rates entry)"
+              ],
+              "egress": [
+                "https://api.exchangerate-api.com"
+              ],
+              "outsidePolicy": []
+            },
+            {
+              "base": "GBP",
+              "ok": true,
+              "result": 1.18,
+              "truth": 1.1832,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Returns latest exchange rates in parameter-supplied base currency. (one rates entry)"
+              ],
+              "egress": [
+                "https://api.exchangerate-api.com"
+              ],
+              "outsidePolicy": []
+            },
+            {
+              "base": "CHF",
+              "ok": true,
+              "result": 1.08,
+              "truth": 1.0762,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Returns latest exchange rates in parameter-supplied base currency. (one rates entry)"
+              ],
+              "egress": [
+                "https://api.exchangerate-api.com"
+              ],
+              "outsidePolicy": []
+            },
+            {
+              "base": "AUD",
+              "ok": true,
+              "result": 0.617,
+              "truth": 0.61907,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Returns latest exchange rates in parameter-supplied base currency. (one rates entry)"
+              ],
+              "egress": [
+                "https://api.exchangerate-api.com"
+              ],
+              "outsidePolicy": []
+            }
+          ]
+        },
+        {
+          "phase": "after change, no intervention",
+          "calls": [
+            {
+              "base": "USD",
+              "ok": false,
+              "result": null,
+              "truth": 0.89204,
+              "correct": false,
+              "wrong": false,
+              "pipeline": [],
+              "egress": [
+                "https://api.exchangerate-api.com",
+                "https://api.apis.guru"
+              ],
+              "outsidePolicy": [
+                "https://api.apis.guru"
+              ],
+              "error": "openapi:exchangerate-api:get-latest-base-currency:entry-rates: HTTP 410: {\"result\":\"error\",\"error-type\":\"retired\"}; openapi:exchangerate-api:get-latest-base-currency: HTTP 410: {\"result\":\"error\",\"error-type\":\"retired\"}"
+            },
+            {
+              "base": "JPY",
+              "ok": false,
+              "result": null,
+              "truth": 0.00564,
+              "correct": false,
+              "wrong": false,
+              "pipeline": [],
+              "egress": [
+                "https://api.exchangerate-api.com",
+                "https://api.apis.guru"
+              ],
+              "outsidePolicy": [
+                "https://api.apis.guru"
+              ],
+              "error": "openapi:exchangerate-api:get-latest-base-currency:entry-rates: HTTP 410: {\"result\":\"error\",\"error-type\":\"retired\"}; openapi:exchangerate-api:get-latest-base-currency: HTTP 410: {\"result\":\"error\",\"error-type\":\"retired\"}"
+            },
+            {
+              "base": "GBP",
+              "ok": false,
+              "result": null,
+              "truth": 1.1832,
+              "correct": false,
+              "wrong": false,
+              "pipeline": [],
+              "egress": [
+                "https://api.exchangerate-api.com",
+                "https://api.apis.guru"
+              ],
+              "outsidePolicy": [
+                "https://api.apis.guru"
+              ],
+              "error": "openapi:exchangerate-api:get-latest-base-currency:entry-rates: HTTP 410: {\"result\":\"error\",\"error-type\":\"retired\"}; openapi:exchangerate-api:get-latest-base-currency: HTTP 410: {\"result\":\"error\",\"error-type\":\"retired\"}"
+            },
+            {
+              "base": "CHF",
+              "ok": false,
+              "result": null,
+              "truth": 1.0762,
+              "correct": false,
+              "wrong": false,
+              "pipeline": [],
+              "egress": [
+                "https://api.exchangerate-api.com",
+                "https://api.apis.guru"
+              ],
+              "outsidePolicy": [
+                "https://api.apis.guru"
+              ],
+              "error": "openapi:exchangerate-api:get-latest-base-currency:entry-rates: HTTP 410: {\"result\":\"error\",\"error-type\":\"retired\"}; openapi:exchangerate-api:get-latest-base-currency: HTTP 410: {\"result\":\"error\",\"error-type\":\"retired\"}"
+            },
+            {
+              "base": "AUD",
+              "ok": false,
+              "result": null,
+              "truth": 0.61907,
+              "correct": false,
+              "wrong": false,
+              "pipeline": [],
+              "egress": [
+                "https://api.exchangerate-api.com",
+                "https://api.apis.guru"
+              ],
+              "outsidePolicy": [
+                "https://api.apis.guru"
+              ],
+              "error": "openapi:exchangerate-api:get-latest-base-currency:entry-rates: HTTP 410: {\"result\":\"error\",\"error-type\":\"retired\"}; openapi:exchangerate-api:get-latest-base-currency: HTTP 410: {\"result\":\"error\",\"error-type\":\"retired\"}"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "checks": {
+    "beforeAllCorrect": true,
+    "failedClosedAfter": true,
+    "zeroWrongAnswers": true,
+    "noEgressOutsidePolicy": false
+  },
+  "verdict": "FAIL"
+}
