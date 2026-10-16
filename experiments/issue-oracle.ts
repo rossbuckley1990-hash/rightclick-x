@@ -77,6 +77,12 @@ log(`   answer: ${show(r.executed?.output, 600)}`);
 if (r.published) log(`   published → ${A}${r.published.path}`);
 out.compose = { ok, pipeline: r.executed?.titles, bindings: p?.steps.map((s: any) => s.bindings), issue: { number: issues[0].number, title: issues[0].title }, answer: show(r.executed?.output, 2000), published: r.published };
 
+if (!r.published) {
+  mkdirSync("experiments/results", { recursive: true });
+  writeFileSync("experiments/results/E12-issue-oracle.json", JSON.stringify(out, null, 2));
+  throw new Error("A did not publish the Issue oracle; see the attempts above");
+}
+
 // 4. B, in another region, learns A's API and uses it for a different issue.
 const lb = await mcp(B, "context_learn", { source: `${A}/openapi.json` });
 const capId = (await mcp(B, "context_graph", { op: "search", query: "issue oracle", limit: 1 })).result[0].id;

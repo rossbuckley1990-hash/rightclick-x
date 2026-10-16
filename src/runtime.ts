@@ -17,6 +17,8 @@ import { Authority, readBody, request, type Net, type NetworkPolicy } from "./re
 import { detectRuntime, platformReflection, type PlatformFn, type RuntimeInfo } from "./reflectors/platform.ts";
 
 export const VERSION = "0.1.0";
+/** Bump whenever semantic inference changes: persisted reflections are then re-derived from their sources. */
+export const SEMANTICS = 7;
 
 export interface Store {
   load(): Promise<PersistedState | null>;
@@ -31,6 +33,8 @@ export interface PersistedState {
   published?: PublishedGoal[];
   /** Credential fingerprints per origin when this state was saved (never the credentials). */
   authFingerprints?: Record<string, string>;
+  /** Semantic-inference version the reflections were typed with. */
+  semantics?: number;
 }
 
 /**
@@ -167,6 +171,7 @@ export class RightClick {
     if (p.reflection.capabilities.length) rc.graph.add(p.reflection);
     const saved = await opts.store?.load().catch(() => null);
     if (saved?.version === 1) {
+      const stale = saved.semantics !== SEMANTICS;
       for (const r of saved.reflections) rc.graph.add(r);
       rc.ledger.load(saved.ledger);
       rc.chain.restore(saved.receipts ?? []);
@@ -185,6 +190,16 @@ export class RightClick {
           }
         };
         rc.ledger.forgive((id, e) => changed.has(originOf(id)) && /\b(401|403|429)\b|rate limit/i.test(e.lastError ?? ""));
+      }
+      // Reflections typed by older inference rules are re-derived from their sources,
+      // one targeted probe each (the kind is known), so upgrades reach persisted graphs.
+      if (stale) {
+        const kinds: Record<string, SourceKind> = {};
+        for (const p of rc.graph.providers.values()) {
+          if (["openapi", "graphql", "mcp", "web", "peer"].includes(p.source)) kinds[(p.meta?.source as string | undefined) ?? p.origin] = p.source as SourceKind;
+        }
+        if (Object.keys(kinds).length) await rc.learn({ sources: Object.keys(kinds), kinds });
+        rc.persist();
       }
     }
     return rc;
@@ -894,7 +909,7 @@ export class RightClick {
 
   // ================================================================ persistence
 
-  private persist(): void {
+  persist(): void {
     if (!this.store || this.saveTimer) return;
     this.saveTimer = setTimeout(() => {
       this.saveTimer = null;
@@ -911,7 +926,7 @@ export class RightClick {
     const reflections: Reflection[] = [...this.graph.providers.values()]
       .filter((p) => p.source !== "builtin" && p.source !== "platform")
       .map((p) => ({ provider: p, capabilities: p.capabilityIds.map((id) => this.graph.get(id)!).filter(Boolean) }));
-    await this.store.save({ version: 1, reflections, ledger: this.ledger.toJSON(), receipts: this.chain.receipts.slice(-300), published: [...this.published.values()], authFingerprints: await this.net.auth.fingerprints() });
+    await this.store.save({ version: 1, reflections, ledger: this.ledger.toJSON(), receipts: this.chain.receipts.slice(-300), published: [...this.published.values()], authFingerprints: await this.net.auth.fingerprints(), semantics: SEMANTICS });
   }
 }
 

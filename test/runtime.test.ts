@@ -103,6 +103,22 @@ test("new credentials for an origin forgive its past auth and rate-limit failure
   assert.equal(same.ledger.get(id)?.failed, 3, "without a credential change, history stands");
 });
 
+test("persisted reflections typed by older inference rules are re-derived on boot", async () => {
+  const store = new MemoryStore();
+  const { rc } = await world({}, { store });
+  await rc.learn({ source: URLS.polyglot });
+  await rc.flush();
+  // Simulate state written by an older release whose inference typed `target` as plain text.
+  const old = structuredClone(store.state!);
+  old.semantics = 1;
+  for (const r of old.reflections) for (const c of r.capabilities) for (const p of c.inputs) if (p.name === "target") p.type = "text";
+  store.state = old;
+  const { routerFetch, SERVICES } = await import("../demo/services.ts");
+  const again = await RightClick.create({ store, fetch: routerFetch({ "https://polyglot.test": SERVICES.polyglot }), directories: [] });
+  const t = again.graph.list().find((c) => c.id.endsWith("translatetext"))!.inputs.find((p) => p.name === "target")!;
+  assert.equal(t.type, "language");
+});
+
 test("receipt chain stays linear under 200 concurrent runs", async () => {
   const { rc } = await world();
   await Promise.all(Array.from({ length: 200 }, (_, i) => rc.run("builtin:text.sha256", { text: String(i) })));
