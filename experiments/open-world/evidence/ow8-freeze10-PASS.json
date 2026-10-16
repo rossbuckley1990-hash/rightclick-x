@@ -1,0 +1,1676 @@
+{
+  "experiment": "OW8 genuine upstream change under the customer's own requirements",
+  "build": "0559ae4b8367db7d252c7e455b98393b05f52ff8",
+  "customer": {
+    "integration": "Convert a currency to EUR (built against Frankfurter v1)",
+    "builtAgainst": "https://api.frankfurter.dev/v1/openapi.json",
+    "correctness": {
+      "predicates": [
+        {
+          "op": "gt",
+          "value": 0
+        },
+        {
+          "op": "lt",
+          "value": 1000
+        }
+      ],
+      "independentCheck": "within 1.5% of ExchangeRate-API v6 (open.er-api.com), queried directly by the harness"
+    },
+    "security": {
+      "risks": [
+        "read"
+      ],
+      "origins": [
+        "https://api.frankfurter.dev"
+      ],
+      "credentials": "none"
+    },
+    "bases": [
+      "USD",
+      "JPY",
+      "GBP",
+      "CHF",
+      "AUD"
+    ]
+  },
+  "truthRates": {
+    "USD": 0.89165,
+    "JPY": 0.005643,
+    "GBP": 1.182845,
+    "CHF": 1.076216,
+    "AUD": 0.616734
+  },
+  "trials": [
+    {
+      "label": "trial-1",
+      "policy": true,
+      "retireAfter": {
+        "v1": true,
+        "v2": false
+      },
+      "built": {
+        "status": "completed",
+        "pipeline": [
+          "Get the latest rates (one rates entry)"
+        ],
+        "published": {
+          "id": "goal:euro-rate",
+          "slug": "euro-rate",
+          "path": "/x/euro-rate"
+        }
+      },
+      "phases": [
+        {
+          "phase": "before change",
+          "calls": [
+            {
+              "base": "USD",
+              "ok": true,
+              "result": 0.89222,
+              "truth": 0.89165,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Get the latest rates (one rates entry)"
+              ],
+              "healed": 0,
+              "egress": [
+                "https://api.frankfurter.dev"
+              ],
+              "outsidePolicy": []
+            },
+            {
+              "base": "JPY",
+              "ok": true,
+              "result": 0.00565,
+              "truth": 0.005643,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Get the latest rates (one rates entry)"
+              ],
+              "healed": 0,
+              "egress": [
+                "https://api.frankfurter.dev"
+              ],
+              "outsidePolicy": []
+            },
+            {
+              "base": "GBP",
+              "ok": true,
+              "result": 1.1819,
+              "truth": 1.182845,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Get the latest rates (one rates entry)"
+              ],
+              "healed": 0,
+              "egress": [
+                "https://api.frankfurter.dev"
+              ],
+              "outsidePolicy": []
+            },
+            {
+              "base": "CHF",
+              "ok": true,
+              "result": 1.0747,
+              "truth": 1.076216,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Get the latest rates (one rates entry)"
+              ],
+              "healed": 0,
+              "egress": [
+                "https://api.frankfurter.dev"
+              ],
+              "outsidePolicy": []
+            },
+            {
+              "base": "AUD",
+              "ok": true,
+              "result": 0.6166,
+              "truth": 0.616734,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Get the latest rates (one rates entry)"
+              ],
+              "healed": 0,
+              "egress": [
+                "https://api.frankfurter.dev"
+              ],
+              "outsidePolicy": []
+            }
+          ]
+        },
+        {
+          "phase": "after change, no intervention",
+          "calls": [
+            {
+              "base": "USD",
+              "ok": true,
+              "result": 0.89204,
+              "truth": 0.89165,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Get a single exchange rate pair"
+              ],
+              "healed": 2,
+              "egress": [
+                "https://api.frankfurter.dev"
+              ],
+              "outsidePolicy": []
+            },
+            {
+              "base": "JPY",
+              "ok": true,
+              "result": 0.00564,
+              "truth": 0.005643,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Get a single exchange rate pair"
+              ],
+              "healed": 1,
+              "egress": [
+                "https://api.frankfurter.dev"
+              ],
+              "outsidePolicy": []
+            },
+            {
+              "base": "GBP",
+              "ok": true,
+              "result": 1.1832,
+              "truth": 1.182845,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Get a single exchange rate pair"
+              ],
+              "healed": 1,
+              "egress": [
+                "https://api.frankfurter.dev"
+              ],
+              "outsidePolicy": []
+            },
+            {
+              "base": "CHF",
+              "ok": true,
+              "result": 1.0762,
+              "truth": 1.076216,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Get a single exchange rate pair"
+              ],
+              "healed": 1,
+              "egress": [
+                "https://api.frankfurter.dev"
+              ],
+              "outsidePolicy": []
+            },
+            {
+              "base": "AUD",
+              "ok": true,
+              "result": 0.61907,
+              "truth": 0.616734,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Get a single exchange rate pair"
+              ],
+              "healed": 1,
+              "egress": [
+                "https://api.frankfurter.dev"
+              ],
+              "outsidePolicy": []
+            }
+          ]
+        }
+      ],
+      "publishedGoal": {
+        "slug": "euro-rate",
+        "title": "Euro rate",
+        "have": {
+          "base": "currency",
+          "quote": "currency"
+        },
+        "want": "number",
+        "intent": "exchange rate from base currency to quote currency",
+        "verify": [
+          {
+            "op": "gt",
+            "value": 0
+          },
+          {
+            "op": "lt",
+            "value": 1000
+          }
+        ],
+        "witnesses": [],
+        "fixed": {
+          "quote": "EUR"
+        },
+        "origins": [
+          "https://api.frankfurter.dev"
+        ],
+        "risks": [
+          "read"
+        ],
+        "anchors": [],
+        "publishedAt": "2026-10-16T11:51:45.183Z",
+        "calls": 10,
+        "lastPipeline": [
+          "Get a single exchange rate pair"
+        ],
+        "providers": [
+          "openapi:frankfurter-api"
+        ]
+      }
+    },
+    {
+      "label": "trial-2",
+      "policy": true,
+      "retireAfter": {
+        "v1": true,
+        "v2": false
+      },
+      "built": {
+        "status": "completed",
+        "pipeline": [
+          "Get the latest rates (one rates entry)"
+        ],
+        "published": {
+          "id": "goal:euro-rate",
+          "slug": "euro-rate",
+          "path": "/x/euro-rate"
+        }
+      },
+      "phases": [
+        {
+          "phase": "before change",
+          "calls": [
+            {
+              "base": "USD",
+              "ok": true,
+              "result": 0.89222,
+              "truth": 0.89165,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Get the latest rates (one rates entry)"
+              ],
+              "healed": 0,
+              "egress": [
+                "https://api.frankfurter.dev"
+              ],
+              "outsidePolicy": []
+            },
+            {
+              "base": "JPY",
+              "ok": true,
+              "result": 0.00565,
+              "truth": 0.005643,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Get the latest rates (one rates entry)"
+              ],
+              "healed": 0,
+              "egress": [
+                "https://api.frankfurter.dev"
+              ],
+              "outsidePolicy": []
+            },
+            {
+              "base": "GBP",
+              "ok": true,
+              "result": 1.1819,
+              "truth": 1.182845,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Get the latest rates (one rates entry)"
+              ],
+              "healed": 0,
+              "egress": [
+                "https://api.frankfurter.dev"
+              ],
+              "outsidePolicy": []
+            },
+            {
+              "base": "CHF",
+              "ok": true,
+              "result": 1.0747,
+              "truth": 1.076216,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Get the latest rates (one rates entry)"
+              ],
+              "healed": 0,
+              "egress": [
+                "https://api.frankfurter.dev"
+              ],
+              "outsidePolicy": []
+            },
+            {
+              "base": "AUD",
+              "ok": true,
+              "result": 0.6166,
+              "truth": 0.616734,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Get the latest rates (one rates entry)"
+              ],
+              "healed": 0,
+              "egress": [
+                "https://api.frankfurter.dev"
+              ],
+              "outsidePolicy": []
+            }
+          ]
+        },
+        {
+          "phase": "after change, no intervention",
+          "calls": [
+            {
+              "base": "USD",
+              "ok": true,
+              "result": 0.89204,
+              "truth": 0.89165,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Get a single exchange rate pair"
+              ],
+              "healed": 2,
+              "egress": [
+                "https://api.frankfurter.dev"
+              ],
+              "outsidePolicy": []
+            },
+            {
+              "base": "JPY",
+              "ok": true,
+              "result": 0.00564,
+              "truth": 0.005643,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Get a single exchange rate pair"
+              ],
+              "healed": 1,
+              "egress": [
+                "https://api.frankfurter.dev"
+              ],
+              "outsidePolicy": []
+            },
+            {
+              "base": "GBP",
+              "ok": true,
+              "result": 1.1832,
+              "truth": 1.182845,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Get a single exchange rate pair"
+              ],
+              "healed": 1,
+              "egress": [
+                "https://api.frankfurter.dev"
+              ],
+              "outsidePolicy": []
+            },
+            {
+              "base": "CHF",
+              "ok": true,
+              "result": 1.0762,
+              "truth": 1.076216,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Get a single exchange rate pair"
+              ],
+              "healed": 1,
+              "egress": [
+                "https://api.frankfurter.dev"
+              ],
+              "outsidePolicy": []
+            },
+            {
+              "base": "AUD",
+              "ok": true,
+              "result": 0.61907,
+              "truth": 0.616734,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Get a single exchange rate pair"
+              ],
+              "healed": 1,
+              "egress": [
+                "https://api.frankfurter.dev"
+              ],
+              "outsidePolicy": []
+            }
+          ]
+        }
+      ],
+      "publishedGoal": {
+        "slug": "euro-rate",
+        "title": "Euro rate",
+        "have": {
+          "base": "currency",
+          "quote": "currency"
+        },
+        "want": "number",
+        "intent": "exchange rate from base currency to quote currency",
+        "verify": [
+          {
+            "op": "gt",
+            "value": 0
+          },
+          {
+            "op": "lt",
+            "value": 1000
+          }
+        ],
+        "witnesses": [],
+        "fixed": {
+          "quote": "EUR"
+        },
+        "origins": [
+          "https://api.frankfurter.dev"
+        ],
+        "risks": [
+          "read"
+        ],
+        "anchors": [],
+        "publishedAt": "2026-10-16T11:52:25.863Z",
+        "calls": 10,
+        "lastPipeline": [
+          "Get a single exchange rate pair"
+        ],
+        "providers": [
+          "openapi:frankfurter-api"
+        ]
+      }
+    },
+    {
+      "label": "trial-3",
+      "policy": true,
+      "retireAfter": {
+        "v1": true,
+        "v2": false
+      },
+      "built": {
+        "status": "completed",
+        "pipeline": [
+          "Get the latest rates (one rates entry)"
+        ],
+        "published": {
+          "id": "goal:euro-rate",
+          "slug": "euro-rate",
+          "path": "/x/euro-rate"
+        }
+      },
+      "phases": [
+        {
+          "phase": "before change",
+          "calls": [
+            {
+              "base": "USD",
+              "ok": true,
+              "result": 0.89222,
+              "truth": 0.89165,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Get the latest rates (one rates entry)"
+              ],
+              "healed": 0,
+              "egress": [
+                "https://api.frankfurter.dev"
+              ],
+              "outsidePolicy": []
+            },
+            {
+              "base": "JPY",
+              "ok": true,
+              "result": 0.00565,
+              "truth": 0.005643,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Get the latest rates (one rates entry)"
+              ],
+              "healed": 0,
+              "egress": [
+                "https://api.frankfurter.dev"
+              ],
+              "outsidePolicy": []
+            },
+            {
+              "base": "GBP",
+              "ok": true,
+              "result": 1.1819,
+              "truth": 1.182845,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Get the latest rates (one rates entry)"
+              ],
+              "healed": 0,
+              "egress": [
+                "https://api.frankfurter.dev"
+              ],
+              "outsidePolicy": []
+            },
+            {
+              "base": "CHF",
+              "ok": true,
+              "result": 1.0747,
+              "truth": 1.076216,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Get the latest rates (one rates entry)"
+              ],
+              "healed": 0,
+              "egress": [
+                "https://api.frankfurter.dev"
+              ],
+              "outsidePolicy": []
+            },
+            {
+              "base": "AUD",
+              "ok": true,
+              "result": 0.6166,
+              "truth": 0.616734,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Get the latest rates (one rates entry)"
+              ],
+              "healed": 0,
+              "egress": [
+                "https://api.frankfurter.dev"
+              ],
+              "outsidePolicy": []
+            }
+          ]
+        },
+        {
+          "phase": "after change, no intervention",
+          "calls": [
+            {
+              "base": "USD",
+              "ok": true,
+              "result": 0.89204,
+              "truth": 0.89165,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Get a single exchange rate pair"
+              ],
+              "healed": 2,
+              "egress": [
+                "https://api.frankfurter.dev"
+              ],
+              "outsidePolicy": []
+            },
+            {
+              "base": "JPY",
+              "ok": true,
+              "result": 0.00564,
+              "truth": 0.005643,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Get a single exchange rate pair"
+              ],
+              "healed": 1,
+              "egress": [
+                "https://api.frankfurter.dev"
+              ],
+              "outsidePolicy": []
+            },
+            {
+              "base": "GBP",
+              "ok": true,
+              "result": 1.1832,
+              "truth": 1.182845,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Get a single exchange rate pair"
+              ],
+              "healed": 1,
+              "egress": [
+                "https://api.frankfurter.dev"
+              ],
+              "outsidePolicy": []
+            },
+            {
+              "base": "CHF",
+              "ok": true,
+              "result": 1.0762,
+              "truth": 1.076216,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Get a single exchange rate pair"
+              ],
+              "healed": 1,
+              "egress": [
+                "https://api.frankfurter.dev"
+              ],
+              "outsidePolicy": []
+            },
+            {
+              "base": "AUD",
+              "ok": true,
+              "result": 0.61907,
+              "truth": 0.616734,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Get a single exchange rate pair"
+              ],
+              "healed": 1,
+              "egress": [
+                "https://api.frankfurter.dev"
+              ],
+              "outsidePolicy": []
+            }
+          ]
+        }
+      ],
+      "publishedGoal": {
+        "slug": "euro-rate",
+        "title": "Euro rate",
+        "have": {
+          "base": "currency",
+          "quote": "currency"
+        },
+        "want": "number",
+        "intent": "exchange rate from base currency to quote currency",
+        "verify": [
+          {
+            "op": "gt",
+            "value": 0
+          },
+          {
+            "op": "lt",
+            "value": 1000
+          }
+        ],
+        "witnesses": [],
+        "fixed": {
+          "quote": "EUR"
+        },
+        "origins": [
+          "https://api.frankfurter.dev"
+        ],
+        "risks": [
+          "read"
+        ],
+        "anchors": [],
+        "publishedAt": "2026-10-16T11:53:04.541Z",
+        "calls": 10,
+        "lastPipeline": [
+          "Get a single exchange rate pair"
+        ],
+        "providers": [
+          "openapi:frankfurter-api"
+        ]
+      }
+    },
+    {
+      "label": "trial-4",
+      "policy": true,
+      "retireAfter": {
+        "v1": true,
+        "v2": false
+      },
+      "built": {
+        "status": "completed",
+        "pipeline": [
+          "Get the latest rates (one rates entry)"
+        ],
+        "published": {
+          "id": "goal:euro-rate",
+          "slug": "euro-rate",
+          "path": "/x/euro-rate"
+        }
+      },
+      "phases": [
+        {
+          "phase": "before change",
+          "calls": [
+            {
+              "base": "USD",
+              "ok": true,
+              "result": 0.89222,
+              "truth": 0.89165,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Get the latest rates (one rates entry)"
+              ],
+              "healed": 0,
+              "egress": [
+                "https://api.frankfurter.dev"
+              ],
+              "outsidePolicy": []
+            },
+            {
+              "base": "JPY",
+              "ok": true,
+              "result": 0.00565,
+              "truth": 0.005643,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Get the latest rates (one rates entry)"
+              ],
+              "healed": 0,
+              "egress": [
+                "https://api.frankfurter.dev"
+              ],
+              "outsidePolicy": []
+            },
+            {
+              "base": "GBP",
+              "ok": true,
+              "result": 1.1819,
+              "truth": 1.182845,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Get the latest rates (one rates entry)"
+              ],
+              "healed": 0,
+              "egress": [
+                "https://api.frankfurter.dev"
+              ],
+              "outsidePolicy": []
+            },
+            {
+              "base": "CHF",
+              "ok": true,
+              "result": 1.0747,
+              "truth": 1.076216,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Get the latest rates (one rates entry)"
+              ],
+              "healed": 0,
+              "egress": [
+                "https://api.frankfurter.dev"
+              ],
+              "outsidePolicy": []
+            },
+            {
+              "base": "AUD",
+              "ok": true,
+              "result": 0.6166,
+              "truth": 0.616734,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Get the latest rates (one rates entry)"
+              ],
+              "healed": 0,
+              "egress": [
+                "https://api.frankfurter.dev"
+              ],
+              "outsidePolicy": []
+            }
+          ]
+        },
+        {
+          "phase": "after change, no intervention",
+          "calls": [
+            {
+              "base": "USD",
+              "ok": true,
+              "result": 0.89204,
+              "truth": 0.89165,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Get a single exchange rate pair"
+              ],
+              "healed": 2,
+              "egress": [
+                "https://api.frankfurter.dev"
+              ],
+              "outsidePolicy": []
+            },
+            {
+              "base": "JPY",
+              "ok": true,
+              "result": 0.00564,
+              "truth": 0.005643,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Get a single exchange rate pair"
+              ],
+              "healed": 1,
+              "egress": [
+                "https://api.frankfurter.dev"
+              ],
+              "outsidePolicy": []
+            },
+            {
+              "base": "GBP",
+              "ok": true,
+              "result": 1.1832,
+              "truth": 1.182845,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Get a single exchange rate pair"
+              ],
+              "healed": 1,
+              "egress": [
+                "https://api.frankfurter.dev"
+              ],
+              "outsidePolicy": []
+            },
+            {
+              "base": "CHF",
+              "ok": true,
+              "result": 1.0762,
+              "truth": 1.076216,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Get a single exchange rate pair"
+              ],
+              "healed": 1,
+              "egress": [
+                "https://api.frankfurter.dev"
+              ],
+              "outsidePolicy": []
+            },
+            {
+              "base": "AUD",
+              "ok": true,
+              "result": 0.61907,
+              "truth": 0.616734,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Get a single exchange rate pair"
+              ],
+              "healed": 1,
+              "egress": [
+                "https://api.frankfurter.dev"
+              ],
+              "outsidePolicy": []
+            }
+          ]
+        }
+      ],
+      "publishedGoal": {
+        "slug": "euro-rate",
+        "title": "Euro rate",
+        "have": {
+          "base": "currency",
+          "quote": "currency"
+        },
+        "want": "number",
+        "intent": "exchange rate from base currency to quote currency",
+        "verify": [
+          {
+            "op": "gt",
+            "value": 0
+          },
+          {
+            "op": "lt",
+            "value": 1000
+          }
+        ],
+        "witnesses": [],
+        "fixed": {
+          "quote": "EUR"
+        },
+        "origins": [
+          "https://api.frankfurter.dev"
+        ],
+        "risks": [
+          "read"
+        ],
+        "anchors": [],
+        "publishedAt": "2026-10-16T11:53:45.164Z",
+        "calls": 10,
+        "lastPipeline": [
+          "Get a single exchange rate pair"
+        ],
+        "providers": [
+          "openapi:frankfurter-api"
+        ]
+      }
+    },
+    {
+      "label": "trial-5",
+      "policy": true,
+      "retireAfter": {
+        "v1": true,
+        "v2": false
+      },
+      "built": {
+        "status": "completed",
+        "pipeline": [
+          "Get the latest rates (one rates entry)"
+        ],
+        "published": {
+          "id": "goal:euro-rate",
+          "slug": "euro-rate",
+          "path": "/x/euro-rate"
+        }
+      },
+      "phases": [
+        {
+          "phase": "before change",
+          "calls": [
+            {
+              "base": "USD",
+              "ok": true,
+              "result": 0.89222,
+              "truth": 0.89165,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Get the latest rates (one rates entry)"
+              ],
+              "healed": 0,
+              "egress": [
+                "https://api.frankfurter.dev"
+              ],
+              "outsidePolicy": []
+            },
+            {
+              "base": "JPY",
+              "ok": true,
+              "result": 0.00565,
+              "truth": 0.005643,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Get the latest rates (one rates entry)"
+              ],
+              "healed": 0,
+              "egress": [
+                "https://api.frankfurter.dev"
+              ],
+              "outsidePolicy": []
+            },
+            {
+              "base": "GBP",
+              "ok": true,
+              "result": 1.1819,
+              "truth": 1.182845,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Get the latest rates (one rates entry)"
+              ],
+              "healed": 0,
+              "egress": [
+                "https://api.frankfurter.dev"
+              ],
+              "outsidePolicy": []
+            },
+            {
+              "base": "CHF",
+              "ok": true,
+              "result": 1.0747,
+              "truth": 1.076216,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Get the latest rates (one rates entry)"
+              ],
+              "healed": 0,
+              "egress": [
+                "https://api.frankfurter.dev"
+              ],
+              "outsidePolicy": []
+            },
+            {
+              "base": "AUD",
+              "ok": true,
+              "result": 0.6166,
+              "truth": 0.616734,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Get the latest rates (one rates entry)"
+              ],
+              "healed": 0,
+              "egress": [
+                "https://api.frankfurter.dev"
+              ],
+              "outsidePolicy": []
+            }
+          ]
+        },
+        {
+          "phase": "after change, no intervention",
+          "calls": [
+            {
+              "base": "USD",
+              "ok": true,
+              "result": 0.89204,
+              "truth": 0.89165,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Get a single exchange rate pair"
+              ],
+              "healed": 2,
+              "egress": [
+                "https://api.frankfurter.dev"
+              ],
+              "outsidePolicy": []
+            },
+            {
+              "base": "JPY",
+              "ok": true,
+              "result": 0.00564,
+              "truth": 0.005643,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Get a single exchange rate pair"
+              ],
+              "healed": 1,
+              "egress": [
+                "https://api.frankfurter.dev"
+              ],
+              "outsidePolicy": []
+            },
+            {
+              "base": "GBP",
+              "ok": true,
+              "result": 1.1832,
+              "truth": 1.182845,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Get a single exchange rate pair"
+              ],
+              "healed": 1,
+              "egress": [
+                "https://api.frankfurter.dev"
+              ],
+              "outsidePolicy": []
+            },
+            {
+              "base": "CHF",
+              "ok": true,
+              "result": 1.0762,
+              "truth": 1.076216,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Get a single exchange rate pair"
+              ],
+              "healed": 1,
+              "egress": [
+                "https://api.frankfurter.dev"
+              ],
+              "outsidePolicy": []
+            },
+            {
+              "base": "AUD",
+              "ok": true,
+              "result": 0.61907,
+              "truth": 0.616734,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Get a single exchange rate pair"
+              ],
+              "healed": 1,
+              "egress": [
+                "https://api.frankfurter.dev"
+              ],
+              "outsidePolicy": []
+            }
+          ]
+        }
+      ],
+      "publishedGoal": {
+        "slug": "euro-rate",
+        "title": "Euro rate",
+        "have": {
+          "base": "currency",
+          "quote": "currency"
+        },
+        "want": "number",
+        "intent": "exchange rate from base currency to quote currency",
+        "verify": [
+          {
+            "op": "gt",
+            "value": 0
+          },
+          {
+            "op": "lt",
+            "value": 1000
+          }
+        ],
+        "witnesses": [],
+        "fixed": {
+          "quote": "EUR"
+        },
+        "origins": [
+          "https://api.frankfurter.dev"
+        ],
+        "risks": [
+          "read"
+        ],
+        "anchors": [],
+        "publishedAt": "2026-10-16T11:54:24.460Z",
+        "calls": 10,
+        "lastPipeline": [
+          "Get a single exchange rate pair"
+        ],
+        "providers": [
+          "openapi:frankfurter-api"
+        ]
+      }
+    }
+  ],
+  "controls": {
+    "noPolicy": {
+      "label": "no-policy",
+      "policy": false,
+      "retireAfter": {
+        "v1": true,
+        "v2": false
+      },
+      "built": {
+        "status": "completed",
+        "pipeline": [
+          "Returns latest exchange rates in parameter-supplied base currency. (one rates entry)"
+        ],
+        "published": {
+          "id": "goal:euro-rate",
+          "slug": "euro-rate",
+          "path": "/x/euro-rate"
+        }
+      },
+      "phases": [
+        {
+          "phase": "before change",
+          "calls": [
+            {
+              "base": "USD",
+              "ok": true,
+              "result": 0.892,
+              "truth": 0.89165,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Returns latest exchange rates in parameter-supplied base currency. (one rates entry)"
+              ],
+              "healed": 0,
+              "egress": [
+                "https://api.exchangerate-api.com"
+              ],
+              "outsidePolicy": [
+                "https://api.exchangerate-api.com"
+              ]
+            },
+            {
+              "base": "JPY",
+              "ok": true,
+              "result": 0.00564,
+              "truth": 0.005643,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Returns latest exchange rates in parameter-supplied base currency. (one rates entry)"
+              ],
+              "healed": 0,
+              "egress": [
+                "https://api.exchangerate-api.com"
+              ],
+              "outsidePolicy": [
+                "https://api.exchangerate-api.com"
+              ]
+            },
+            {
+              "base": "GBP",
+              "ok": true,
+              "result": 1.18,
+              "truth": 1.182845,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Returns latest exchange rates in parameter-supplied base currency. (one rates entry)"
+              ],
+              "healed": 0,
+              "egress": [
+                "https://api.exchangerate-api.com"
+              ],
+              "outsidePolicy": [
+                "https://api.exchangerate-api.com"
+              ]
+            },
+            {
+              "base": "CHF",
+              "ok": true,
+              "result": 1.08,
+              "truth": 1.076216,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Returns latest exchange rates in parameter-supplied base currency. (one rates entry)"
+              ],
+              "healed": 0,
+              "egress": [
+                "https://api.exchangerate-api.com"
+              ],
+              "outsidePolicy": [
+                "https://api.exchangerate-api.com"
+              ]
+            },
+            {
+              "base": "AUD",
+              "ok": true,
+              "result": 0.617,
+              "truth": 0.616734,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Returns latest exchange rates in parameter-supplied base currency. (one rates entry)"
+              ],
+              "healed": 0,
+              "egress": [
+                "https://api.exchangerate-api.com"
+              ],
+              "outsidePolicy": [
+                "https://api.exchangerate-api.com"
+              ]
+            }
+          ]
+        },
+        {
+          "phase": "after change, no intervention",
+          "calls": [
+            {
+              "base": "USD",
+              "ok": true,
+              "result": 0.892,
+              "truth": 0.89165,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Returns latest exchange rates in parameter-supplied base currency. (one rates entry)"
+              ],
+              "healed": 0,
+              "egress": [
+                "https://api.exchangerate-api.com"
+              ],
+              "outsidePolicy": [
+                "https://api.exchangerate-api.com"
+              ]
+            },
+            {
+              "base": "JPY",
+              "ok": true,
+              "result": 0.00564,
+              "truth": 0.005643,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Returns latest exchange rates in parameter-supplied base currency. (one rates entry)"
+              ],
+              "healed": 0,
+              "egress": [
+                "https://api.exchangerate-api.com"
+              ],
+              "outsidePolicy": [
+                "https://api.exchangerate-api.com"
+              ]
+            },
+            {
+              "base": "GBP",
+              "ok": true,
+              "result": 1.18,
+              "truth": 1.182845,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Returns latest exchange rates in parameter-supplied base currency. (one rates entry)"
+              ],
+              "healed": 0,
+              "egress": [
+                "https://api.exchangerate-api.com"
+              ],
+              "outsidePolicy": [
+                "https://api.exchangerate-api.com"
+              ]
+            },
+            {
+              "base": "CHF",
+              "ok": true,
+              "result": 1.08,
+              "truth": 1.076216,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Returns latest exchange rates in parameter-supplied base currency. (one rates entry)"
+              ],
+              "healed": 0,
+              "egress": [
+                "https://api.exchangerate-api.com"
+              ],
+              "outsidePolicy": [
+                "https://api.exchangerate-api.com"
+              ]
+            },
+            {
+              "base": "AUD",
+              "ok": true,
+              "result": 0.617,
+              "truth": 0.616734,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Returns latest exchange rates in parameter-supplied base currency. (one rates entry)"
+              ],
+              "healed": 0,
+              "egress": [
+                "https://api.exchangerate-api.com"
+              ],
+              "outsidePolicy": [
+                "https://api.exchangerate-api.com"
+              ]
+            }
+          ]
+        }
+      ],
+      "publishedGoal": {
+        "slug": "euro-rate",
+        "title": "Euro rate",
+        "have": {
+          "base": "currency",
+          "quote": "currency"
+        },
+        "want": "number",
+        "intent": "exchange rate from base currency to quote currency",
+        "verify": [
+          {
+            "op": "gt",
+            "value": 0
+          },
+          {
+            "op": "lt",
+            "value": 1000
+          }
+        ],
+        "witnesses": [],
+        "fixed": {
+          "quote": "EUR"
+        },
+        "risks": [
+          "read"
+        ],
+        "anchors": [],
+        "publishedAt": "2026-10-16T11:55:00.792Z",
+        "calls": 10,
+        "lastPipeline": [
+          "Returns latest exchange rates in parameter-supplied base currency. (one rates entry)"
+        ],
+        "providers": [
+          "openapi:exchangerate-api"
+        ]
+      }
+    },
+    "failClosed": {
+      "label": "fail-closed",
+      "policy": true,
+      "retireAfter": {
+        "v1": true,
+        "v2": true
+      },
+      "built": {
+        "status": "completed",
+        "pipeline": [
+          "Get the latest rates (one rates entry)"
+        ],
+        "published": {
+          "id": "goal:euro-rate",
+          "slug": "euro-rate",
+          "path": "/x/euro-rate"
+        }
+      },
+      "phases": [
+        {
+          "phase": "before change",
+          "calls": [
+            {
+              "base": "USD",
+              "ok": true,
+              "result": 0.89222,
+              "truth": 0.89165,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Get the latest rates (one rates entry)"
+              ],
+              "healed": 0,
+              "egress": [
+                "https://api.frankfurter.dev"
+              ],
+              "outsidePolicy": []
+            },
+            {
+              "base": "JPY",
+              "ok": true,
+              "result": 0.00565,
+              "truth": 0.005643,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Get the latest rates (one rates entry)"
+              ],
+              "healed": 0,
+              "egress": [
+                "https://api.frankfurter.dev"
+              ],
+              "outsidePolicy": []
+            },
+            {
+              "base": "GBP",
+              "ok": true,
+              "result": 1.1819,
+              "truth": 1.182845,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Get the latest rates (one rates entry)"
+              ],
+              "healed": 0,
+              "egress": [
+                "https://api.frankfurter.dev"
+              ],
+              "outsidePolicy": []
+            },
+            {
+              "base": "CHF",
+              "ok": true,
+              "result": 1.0747,
+              "truth": 1.076216,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Get the latest rates (one rates entry)"
+              ],
+              "healed": 0,
+              "egress": [
+                "https://api.frankfurter.dev"
+              ],
+              "outsidePolicy": []
+            },
+            {
+              "base": "AUD",
+              "ok": true,
+              "result": 0.6166,
+              "truth": 0.616734,
+              "correct": true,
+              "wrong": false,
+              "pipeline": [
+                "Get the latest rates (one rates entry)"
+              ],
+              "healed": 0,
+              "egress": [
+                "https://api.frankfurter.dev"
+              ],
+              "outsidePolicy": []
+            }
+          ]
+        },
+        {
+          "phase": "after change, no intervention",
+          "calls": [
+            {
+              "base": "USD",
+              "ok": false,
+              "result": null,
+              "truth": 0.89165,
+              "correct": false,
+              "wrong": false,
+              "pipeline": [],
+              "healed": 1,
+              "egress": [
+                "https://api.frankfurter.dev"
+              ],
+              "outsidePolicy": [],
+              "error": "openapi:frankfurter-api:get-latest:entry-rates: HTTP 410: {\"status\":410,\"message\":\"this version has been retired; see https://api.frankfurter.dev/\"}"
+            },
+            {
+              "base": "JPY",
+              "ok": false,
+              "result": null,
+              "truth": 0.005643,
+              "correct": false,
+              "wrong": false,
+              "pipeline": [],
+              "healed": 0,
+              "egress": [],
+              "outsidePolicy": [],
+              "error": "no pipeline found"
+            },
+            {
+              "base": "GBP",
+              "ok": false,
+              "result": null,
+              "truth": 1.182845,
+              "correct": false,
+              "wrong": false,
+              "pipeline": [],
+              "healed": 0,
+              "egress": [],
+              "outsidePolicy": [],
+              "error": "no pipeline found"
+            },
+            {
+              "base": "CHF",
+              "ok": false,
+              "result": null,
+              "truth": 1.076216,
+              "correct": false,
+              "wrong": false,
+              "pipeline": [],
+              "healed": 0,
+              "egress": [],
+              "outsidePolicy": [],
+              "error": "no pipeline found"
+            },
+            {
+              "base": "AUD",
+              "ok": false,
+              "result": null,
+              "truth": 0.616734,
+              "correct": false,
+              "wrong": false,
+              "pipeline": [],
+              "healed": 0,
+              "egress": [],
+              "outsidePolicy": [],
+              "error": "no pipeline found"
+            }
+          ]
+        }
+      ],
+      "publishedGoal": {
+        "slug": "euro-rate",
+        "title": "Euro rate",
+        "have": {
+          "base": "currency",
+          "quote": "currency"
+        },
+        "want": "number",
+        "intent": "exchange rate from base currency to quote currency",
+        "verify": [
+          {
+            "op": "gt",
+            "value": 0
+          },
+          {
+            "op": "lt",
+            "value": 1000
+          }
+        ],
+        "witnesses": [],
+        "fixed": {
+          "quote": "EUR"
+        },
+        "origins": [
+          "https://api.frankfurter.dev"
+        ],
+        "risks": [
+          "read"
+        ],
+        "anchors": [],
+        "publishedAt": "2026-10-16T11:55:04.849Z",
+        "calls": 10,
+        "lastPipeline": [
+          "Get the latest rates (one rates entry)"
+        ],
+        "providers": [
+          "openapi:frankfurter-api"
+        ]
+      }
+    }
+  },
+  "checks": {
+    "beforeAllCorrect": true,
+    "afterAllCorrect": true,
+    "afterServedByV2": true,
+    "noEgressOutsidePolicy": true,
+    "zeroWrongAnswers": true,
+    "failClosed": true
+  },
+  "counts": {
+    "callsBefore": 25,
+    "callsAfter": 25,
+    "correctAfter": 25
+  },
+  "verdict": "PASS"
+}

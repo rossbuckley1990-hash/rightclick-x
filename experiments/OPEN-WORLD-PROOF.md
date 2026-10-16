@@ -186,6 +186,47 @@ Note: the harness first scored answers with a strict `Number()`, which rejected 
 
 **What this does and does not show.** RightClick X can enter an environment knowing only its front door and assemble the environment's capabilities from a published standard catalog. It does not find services the environment does not list, and it does not scan networks. The environments here are local and synthetic; no real organisation's RFC 9727 catalog was tested.
 
+## OW8: a customer's integration through a genuine upstream change, under the customer's own rules (`gauntlet-freeze-10`)
+
+**Question.** Can RightClick X keep an independently operated customer's integration working through a genuine upstream API change, without intervention, while satisfying the customer's own correctness and security requirements?
+
+**Short answer.** Yes, in the cases tested here, with stated limits. Where the operator publishes a machine-readable successor at its own origin, the integration kept working with no intervention, inside the customer's egress policy, with zero wrong answers. Where it does not, the integration failed closed, inside the same policy, again with zero wrong answers. It took three failed attempts and five general fixes to get there; every failure is preserved.
+
+**Setup ([`ow8-upstream-change.ts`](open-world/ow8-upstream-change.ts), [`ow8b-no-successor-contract.ts`](open-world/ow8b-no-successor-contract.ts)).**
+- **Operator:** Frankfurter, which is open source and independently operated.
+- **Genuine change:** its own v1 → v2 redesign. v1's `/latest` returns a currency-keyed `rates` map; v2's `/rate/{base}/{quote}` returns one number.
+- **What is real:** both contracts are the operator's own published ones, every response is live, and the operator's real root index links both versions.
+- **What is simulated:** only the moment of v1's retirement. The operator still serves v1 as "frozen", so v1 returns 410 inside the customer's environment only.
+- **The customer's requirements,** fixed in the file before any run:
+  - correctness: a value in range, independently within 1.5% of ExchangeRate-API v6;
+  - security: read-only, with data sent only to `https://api.frankfurter.dev`.
+- **Second case (OW8b):** ExchangeRate-API's own v4 → v6 move. Its successor has no published contract and sits on another host. The pre-registered expectation was to fail closed.
+
+| Run | Build | Result |
+|---|---|---|
+| OW8, 5 trials × 5 currencies, plus controls | freeze-8, -9, -10 | **PASS** each time. Before the change: 25/25. After it, with no intervention: 25/25, served by the operator's v2 (found from its root index). 0 requests outside the policy; 0 wrong answers. Fail-closed control (v1 and v2 both retired): 5/5 refused. |
+| OW8 no-policy control | freeze-8, -9, -10 | Correct answers, but RightClick X routed the customer's requests to another operator (ExchangeRate-API), even before the change. That is why the customer's policy has to be enforceable. |
+| OW8b attempt 1 | freeze-8 | **FAIL.** It failed closed correctly, but repair re-read the customer's contract on its APIs.guru mirror and probed that host. No customer data was sent, but this was outside the policy: the policy covered only the data plane. |
+| OW8b attempt 2 | freeze-9 | **FAIL.** The successor search at the approved API origin got a 301 to `www.exchangerate-api.com`, and the client followed it. |
+| OW8b | freeze-10 | **PASS (the expected limit).** 15/15 correct before; after the change, no answers, 0 wrong, 0 requests outside the policy. |
+
+**General fixes this question forced (each with a regression test):**
+1. **Keyed maps.** A typed JSON Schema map (`additionalProperties` + `propertyNames`) gets a "(one entry)" operation. On v1, "USD → EUR" had returned v1's `amount` field (1): a plausible, wrong answer.
+2. **Distinct bindings.** Two ports of one operation no longer share one value when another fits ("USD → USD").
+3. **Successor discovery.** Discovery follows contract links in a JSON root index. When an operation or contract is gone, repair looks for the successor at the contract's origin and at the API's own origin.
+4. **Customer egress policy.** `origins` on compose and publish restricts every plan and repair, and is saved with the goal.
+5. **Policy enforcement everywhere.** The policy covers repair traffic and every redirect hop, through a scoped network handle that also covers witness checks and MCP sessions.
+
+Earlier, also found while answering this: example-value typing and fixed goal inputs (OW7, freeze-7).
+
+**Corroboration from the life-science study ([report](life-science/REPORT.md)).** RCSB Search's real 2022 v1 → v2 breaking change: from a stale 2022 graph, `context_compose` self-healed on first use and returned exactly the independent truth, in 1.7 s. It also found a gap that matters here. OLS really did repoint an operation id at a different operation. A direct call then returns a *successful, empty* result, and only the drift report signals it. A customer-owned check (for example `length_gt 0`) would refuse it; without one, it is silent.
+
+**What this does not show.**
+- **No live change was observed.** The retirement moments were simulated; the operators have not retired v1/v4. Seeing a genuine change happen live needs a standing monitor over weeks, which was deliberately not set up.
+- **The customer is not independent.** The requirements were written by us, in the customer's role. No independent developer has used RightClick X, and none has been asked to pay.
+- **Two operators, one domain (exchange rates),** plus the RCSB and OLS cases in the life-science study. That is consistent behaviour across a small number of real changes, not a rate across many.
+- **Unsupported change kinds:** a change whose successor has no machine-readable contract can only fail closed, as can a change that moves to an unapproved host. Silent semantic repointing (the OLS case) needs customer-owned checks.
+
 ## Limitations (verified, not hypothetical)
 
 - **Two AI clients, four models.** Claude Code (default model, Sonnet 5.5, Haiku 5.5) and Codex (`gpt-6-astra`). Other MCP clients (Cursor, VS Code, Gemini CLI) were not available here, and Codex with a ChatGPT login offers only its default model. A third vendor, Mistral Vibe, is installed and now supported by the lab harness (`--clients vibe`), but its run is **BLOCKED**: the Mistral account returns HTTP 429 to every request, so no Mistral model reached RightClick X ([evidence](open-world/evidence/vibe-third-vendor-blocked.json)).
