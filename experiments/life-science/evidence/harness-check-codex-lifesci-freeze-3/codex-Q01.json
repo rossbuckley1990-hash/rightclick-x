@@ -1,0 +1,116 @@
+{
+  "client": "codex",
+  "question": "Q01",
+  "prompt": "You are connected to exactly one MCP server, rightclick-x. Use only its tools.\nRightClick X has already learned several public life-science databases (see context_providers).\nAnswer the question using only data you obtain through rightclick-x tools, not from memory.\nIf the tools cannot give you the answer, say so instead of guessing.\nQuestion: What is the reviewed (Swiss-Prot) UniProtKB accession of the human gene TP53?\nEnd your reply with a final line exactly of the form: ANSWER: <accession>",
+  "answer": "P04637",
+  "parts": [
+    "P04637"
+  ],
+  "truth": [
+    [
+      "P04637"
+    ]
+  ],
+  "truthFacts": {
+    "uniprot": [
+      "P04637"
+    ]
+  },
+  "witness": {
+    "source": "EBI Proteins API /proteins?exact_gene",
+    "agrees": true,
+    "detail": "P04637"
+  },
+  "perPart": [
+    true
+  ],
+  "correct": true,
+  "grounded": true,
+  "correctAndGrounded": true,
+  "groundingChecks": [
+    {
+      "value": "P04637",
+      "found": true
+    }
+  ],
+  "seconds": 35.3,
+  "exit": 0,
+  "timedOut": false,
+  "clientMeta": {},
+  "mcpCalls": 5,
+  "mcpCallsByTool": {
+    "context_providers": 1,
+    "context_graph": 2,
+    "context_explain": 1,
+    "context_run": 1
+  },
+  "mcpCallLog": [
+    {
+      "tool": "context_providers",
+      "ok": true,
+      "ms": 0.7,
+      "args": {}
+    },
+    {
+      "tool": "context_graph",
+      "ok": true,
+      "ms": 17.9,
+      "args": {
+        "op": "search",
+        "query": "uniprot",
+        "limit": 10
+      }
+    },
+    {
+      "tool": "context_explain",
+      "ok": true,
+      "ms": 4.4,
+      "args": {
+        "id": "openapi:proteins-rest-api:search-2"
+      }
+    },
+    {
+      "tool": "context_graph",
+      "ok": true,
+      "ms": 13.6,
+      "args": {
+        "op": "search",
+        "query": "search",
+        "limit": 30
+      }
+    },
+    {
+      "tool": "context_run",
+      "ok": true,
+      "ms": 499.6,
+      "args": {
+        "id": "openapi:proteins-rest-api:search-2",
+        "args": {
+          "exact_gene": "TP53",
+          "organism": "Homo sapiens",
+          "reviewed": "true",
+          "isoform": 0,
+          "size": 10
+        }
+      }
+    }
+  ],
+  "learnedByAgent": [],
+  "composeUsed": 0,
+  "receipts": [
+    {
+      "capability": "openapi:proteins-rest-api:search-2",
+      "provider": "openapi:proteins-rest-api",
+      "status": "completed",
+      "ms": 482.3
+    }
+  ],
+  "providersReached": [
+    "openapi:proteins-rest-api"
+  ],
+  "requests": 1,
+  "requestsPerHost": {
+    "www.ebi.ac.uk": 1
+  },
+  "finalText": "RightClick X returned **P04637** (P53_HUMAN), a Swiss-Prot entry for **TP53** in **Homo sapiens**.\n\nANSWER: P04637"
+}

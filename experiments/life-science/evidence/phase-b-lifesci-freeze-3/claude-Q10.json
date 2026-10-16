@@ -1,0 +1,209 @@
+{
+  "client": "claude",
+  "question": "Q10",
+  "prompt": "You are connected to exactly one MCP server, rightclick-x. Use only its tools.\nRightClick X has already learned several public life-science databases (see context_providers).\nAnswer the question using only data you obtain through rightclick-x tools, not from memory.\nIf the tools cannot give you the answer, say so instead of guessing.\nQuestion: PDB entry 1HSG contains a bound small-molecule ligand (ignore water). What is its chemical component ID, and what are its chemical formula and formula weight according to the RCSB PDB chemical component dictionary?\nEnd your reply with a final line exactly of the form: ANSWER: <component ID> | <formula> | <formula weight>",
+  "answer": "MK1 | C36 H47 N5 O4 | 613.789",
+  "parts": [
+    "MK1",
+    "C36 H47 N5 O4",
+    "613.789"
+  ],
+  "truth": [
+    [
+      "MK1"
+    ],
+    "C36 H47 N5 O4",
+    613.789
+  ],
+  "truthFacts": {
+    "comps": [
+      "MK1"
+    ],
+    "chem_comp": {
+      "id": "MK1",
+      "formula": "C36 H47 N5 O4",
+      "formula_weight": 613.789,
+      "name": "N-[2(R)-HYDROXY-1(S)-INDANYL]-5-[(2(S)-TERTIARY\nBUTYLAMINOCARBONYL)-4(3-PYRIDYLMETHYL)PIPERAZINO]-4(S)-HYDROXY-2(R)-PHENYLMETHYLPENTANAMIDE"
+    }
+  },
+  "witness": null,
+  "perPart": [
+    true,
+    true,
+    true
+  ],
+  "correct": true,
+  "grounded": true,
+  "correctAndGrounded": true,
+  "groundingChecks": [
+    {
+      "value": "MK1",
+      "found": true
+    },
+    {
+      "value": "C36 H47 N5 O4",
+      "found": true
+    }
+  ],
+  "seconds": 62.2,
+  "exit": 0,
+  "timedOut": false,
+  "clientMeta": {
+    "turns": 13,
+    "costUsd": 0.4575544,
+    "isError": false,
+    "subtype": "success"
+  },
+  "mcpCalls": 10,
+  "mcpCallsByTool": {
+    "context_research": 1,
+    "context_actions": 2,
+    "context_providers": 1,
+    "context_run": 5,
+    "context_graph": 1
+  },
+  "mcpCallLog": [
+    {
+      "tool": "context_research",
+      "ok": true,
+      "ms": 20018.4,
+      "args": {
+        "topic": "RCSB PDB entry chemical component"
+      }
+    },
+    {
+      "tool": "context_actions",
+      "ok": true,
+      "ms": 28.3,
+      "args": {
+        "value": "1HSG",
+        "limit": 40
+      }
+    },
+    {
+      "tool": "context_providers",
+      "ok": true,
+      "ms": 0.1,
+      "args": {}
+    },
+    {
+      "tool": "context_run",
+      "ok": false,
+      "ms": 0.7,
+      "args": {
+        "id": "graphql:data-rcsb-org-graphql:entry",
+        "args": {
+          "entry_id": "1HSG"
+        }
+      },
+      "error": "unknown capability: graphql:data-rcsb-org-graphql:entry"
+    },
+    {
+      "tool": "context_actions",
+      "ok": true,
+      "ms": 24,
+      "args": {
+        "type": "id.rcsb",
+        "limit": 40
+      }
+    },
+    {
+      "tool": "context_graph",
+      "ok": true,
+      "ms": 19.2,
+      "args": {
+        "op": "search",
+        "query": "graphql rcsb entry chem_comp",
+        "limit": 30
+      }
+    },
+    {
+      "tool": "context_run",
+      "ok": true,
+      "ms": 372.3,
+      "args": {
+        "id": "graphql:data-rcsb-org-graphql:query:entry",
+        "args": {
+          "entry_id": "1HSG"
+        }
+      }
+    },
+    {
+      "tool": "context_run",
+      "ok": true,
+      "ms": 124.1,
+      "args": {
+        "id": "graphql:data-rcsb-org-graphql:query:nonpolymer_entity",
+        "args": {
+          "entry_id": "1HSG",
+          "entity_id": "2"
+        }
+      }
+    },
+    {
+      "tool": "context_run",
+      "ok": true,
+      "ms": 119.1,
+      "args": {
+        "id": "graphql:data-rcsb-org-graphql:query:chem_comp",
+        "args": {
+          "comp_id": "MK1"
+        }
+      }
+    },
+    {
+      "tool": "context_run",
+      "ok": true,
+      "ms": 553.9,
+      "args": {
+        "id": "graphql:data-rcsb-org-graphql:query:nonpolymer_entity",
+        "args": {
+          "entry_id": "1HSG",
+          "entity_id": "3"
+        }
+      }
+    }
+  ],
+  "learnedByAgent": [
+    {
+      "topic": "RCSB PDB entry chemical component"
+    }
+  ],
+  "composeUsed": 0,
+  "receipts": [
+    {
+      "capability": "graphql:data-rcsb-org-graphql:query:entry",
+      "provider": "graphql:data-rcsb-org-graphql",
+      "status": "completed",
+      "ms": 368.1
+    },
+    {
+      "capability": "graphql:data-rcsb-org-graphql:query:nonpolymer_entity",
+      "provider": "graphql:data-rcsb-org-graphql",
+      "status": "completed",
+      "ms": 123.7
+    },
+    {
+      "capability": "graphql:data-rcsb-org-graphql:query:chem_comp",
+      "provider": "graphql:data-rcsb-org-graphql",
+      "status": "completed",
+      "ms": 118.5
+    },
+    {
+      "capability": "graphql:data-rcsb-org-graphql:query:nonpolymer_entity",
+      "provider": "graphql:data-rcsb-org-graphql",
+      "status": "completed",
+      "ms": 553.7
+    }
+  ],
+  "providersReached": [
+    "graphql:data-rcsb-org-graphql"
+  ],
+  "requests": 9,
+  "requestsPerHost": {
+    "api.apis.guru": 1,
+    "registry.modelcontextprotocol.io": 4,
+    "data.rcsb.org": 4
+  },
+  "finalText": "The ligand in PDB entry 1HSG is **MK1**, which is the HIV protease inhibitor indinavir. I looked this up with the RCSB PDB GraphQL tools on rightclick-x.\n\n- **What's bound:** non-polymer entity 2 of 1HSG is a single molecule of component MK1, sitting in chain B (label_asym C). Its full name is N-[2(R)-hydroxy-1(S)-indanyl]-5-[(2(S)-tertiary butylaminocarbonyl)-4(3-pyridylmethyl)piperazino]-4(S)-hydroxy-2(R)-phenylmethylpentanamide. Looking up entity 3 as a non-polymer returned nothing, so MK1 is the only non-water small molecule I found.\n- **Chemical component dictionary entry for MK1:**\n  - Formula: C36 H47 N5 O4\n  - Formula weight: 613.789 g/mol\n  - The dictionary links this component to indinavir (ATC code J05AE02, matched by InChIKey in DrugBank).\n\nThe entity record lists the formula weight as 0.614 because it's given in kDa. It's the same value.\n\nANSWER: MK1 | C36 H47 N5 O4 | 613.789"
+}

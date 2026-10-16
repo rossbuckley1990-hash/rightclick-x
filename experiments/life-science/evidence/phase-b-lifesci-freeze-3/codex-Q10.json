@@ -1,0 +1,188 @@
+{
+  "client": "codex",
+  "question": "Q10",
+  "prompt": "You are connected to exactly one MCP server, rightclick-x. Use only its tools.\nRightClick X has already learned several public life-science databases (see context_providers).\nAnswer the question using only data you obtain through rightclick-x tools, not from memory.\nIf the tools cannot give you the answer, say so instead of guessing.\nQuestion: PDB entry 1HSG contains a bound small-molecule ligand (ignore water). What is its chemical component ID, and what are its chemical formula and formula weight according to the RCSB PDB chemical component dictionary?\nEnd your reply with a final line exactly of the form: ANSWER: <component ID> | <formula> | <formula weight>",
+  "answer": "MK1 | C36 H47 N5 O4 | 613.789",
+  "parts": [
+    "MK1",
+    "C36 H47 N5 O4",
+    "613.789"
+  ],
+  "truth": [
+    [
+      "MK1"
+    ],
+    "C36 H47 N5 O4",
+    613.789
+  ],
+  "truthFacts": {
+    "comps": [
+      "MK1"
+    ],
+    "chem_comp": {
+      "id": "MK1",
+      "formula": "C36 H47 N5 O4",
+      "formula_weight": 613.789,
+      "name": "N-[2(R)-HYDROXY-1(S)-INDANYL]-5-[(2(S)-TERTIARY\nBUTYLAMINOCARBONYL)-4(3-PYRIDYLMETHYL)PIPERAZINO]-4(S)-HYDROXY-2(R)-PHENYLMETHYLPENTANAMIDE"
+    }
+  },
+  "witness": null,
+  "perPart": [
+    true,
+    true,
+    true
+  ],
+  "correct": true,
+  "grounded": true,
+  "correctAndGrounded": true,
+  "groundingChecks": [
+    {
+      "value": "MK1",
+      "found": true
+    },
+    {
+      "value": "C36 H47 N5 O4",
+      "found": true
+    }
+  ],
+  "seconds": 48.5,
+  "exit": 0,
+  "timedOut": false,
+  "clientMeta": {},
+  "mcpCalls": 10,
+  "mcpCallsByTool": {
+    "context_providers": 1,
+    "context_graph": 3,
+    "context_explain": 3,
+    "context_run": 3
+  },
+  "mcpCallLog": [
+    {
+      "tool": "context_providers",
+      "ok": true,
+      "ms": 0.5,
+      "args": {}
+    },
+    {
+      "tool": "context_graph",
+      "ok": true,
+      "ms": 20,
+      "args": {
+        "op": "search",
+        "query": "RCSB",
+        "limit": 12
+      }
+    },
+    {
+      "tool": "context_graph",
+      "ok": true,
+      "ms": 7.7,
+      "args": {
+        "op": "search",
+        "query": "chem_comp",
+        "limit": 10
+      }
+    },
+    {
+      "tool": "context_graph",
+      "ok": true,
+      "ms": 7.8,
+      "args": {
+        "op": "search",
+        "query": "entry",
+        "limit": 10
+      }
+    },
+    {
+      "tool": "context_explain",
+      "ok": true,
+      "ms": 2.3,
+      "args": {
+        "id": "graphql:data-rcsb-org-graphql:query:entry"
+      }
+    },
+    {
+      "tool": "context_explain",
+      "ok": true,
+      "ms": 0.1,
+      "args": {
+        "id": "graphql:data-rcsb-org-graphql:query:chem_comp"
+      }
+    },
+    {
+      "tool": "context_explain",
+      "ok": true,
+      "ms": 1.2,
+      "args": {
+        "id": "graphql:data-rcsb-org-graphql:query:nonpolymer_entity"
+      }
+    },
+    {
+      "tool": "context_run",
+      "ok": true,
+      "ms": 402.2,
+      "args": {
+        "id": "graphql:data-rcsb-org-graphql:query:entry",
+        "args": {
+          "entry_id": "1HSG",
+          "selection": "{ entry { id } nonpolymer_entities { rcsb_id } }"
+        }
+      }
+    },
+    {
+      "tool": "context_run",
+      "ok": true,
+      "ms": 351.8,
+      "args": {
+        "id": "graphql:data-rcsb-org-graphql:query:nonpolymer_entity",
+        "args": {
+          "entry_id": "1HSG",
+          "entity_id": "2",
+          "selection": "{ pdbx_entity_nonpoly { comp_id entity_id name } }"
+        }
+      }
+    },
+    {
+      "tool": "context_run",
+      "ok": true,
+      "ms": 329.3,
+      "args": {
+        "id": "graphql:data-rcsb-org-graphql:query:chem_comp",
+        "args": {
+          "comp_id": "MK1",
+          "selection": "{ chem_comp { id formula formula_weight } }"
+        }
+      }
+    }
+  ],
+  "learnedByAgent": [],
+  "composeUsed": 0,
+  "receipts": [
+    {
+      "capability": "graphql:data-rcsb-org-graphql:query:entry",
+      "provider": "graphql:data-rcsb-org-graphql",
+      "status": "completed",
+      "ms": 399
+    },
+    {
+      "capability": "graphql:data-rcsb-org-graphql:query:nonpolymer_entity",
+      "provider": "graphql:data-rcsb-org-graphql",
+      "status": "completed",
+      "ms": 351.1
+    },
+    {
+      "capability": "graphql:data-rcsb-org-graphql:query:chem_comp",
+      "provider": "graphql:data-rcsb-org-graphql",
+      "status": "completed",
+      "ms": 328.9
+    }
+  ],
+  "providersReached": [
+    "graphql:data-rcsb-org-graphql"
+  ],
+  "requests": 3,
+  "requestsPerHost": {
+    "data.rcsb.org": 3
+  },
+  "finalText": "ANSWER: MK1 | C36 H47 N5 O4 | 613.789"
+}

@@ -1,0 +1,112 @@
+{
+  "client": "claude",
+  "question": "Q12",
+  "prompt": "You are connected to exactly one MCP server, rightclick-x. Use only its tools.\nRightClick X has already learned several public life-science databases (see context_providers).\nAnswer the question using only data you obtain through rightclick-x tools, not from memory.\nIf the tools cannot give you the answer, say so instead of guessing.\nQuestion: For the human gene EGFR: give its reviewed UniProtKB accession, and, according to the EBI Proteins API sequence features, how many transmembrane regions (feature type TRANSMEM) it has and their start-end positions.\nEnd your reply with a final line exactly of the form: ANSWER: <accession> | <count> | <start-end, comma-separated>",
+  "answer": "P00533 | 1 | 646-668",
+  "parts": [
+    "P00533",
+    "1",
+    "646-668"
+  ],
+  "truth": [
+    "P00533",
+    1,
+    [
+      "646-668"
+    ]
+  ],
+  "truthFacts": {
+    "accession": "P00533",
+    "transmembrane": [
+      "646-668"
+    ]
+  },
+  "witness": {
+    "source": "UniProtKB entry features (Transmembrane)",
+    "agrees": true,
+    "detail": "646-668"
+  },
+  "perPart": [
+    true,
+    true,
+    true
+  ],
+  "correct": true,
+  "grounded": false,
+  "correctAndGrounded": false,
+  "groundingChecks": [
+    {
+      "value": "P00533",
+      "found": true
+    },
+    {
+      "value": "646-668",
+      "found": false
+    }
+  ],
+  "seconds": 19.2,
+  "exit": 0,
+  "timedOut": false,
+  "clientMeta": {
+    "turns": 6,
+    "costUsd": 0.1985556,
+    "isError": false,
+    "subtype": "success"
+  },
+  "mcpCalls": 3,
+  "mcpCallsByTool": {
+    "context_providers": 1,
+    "context_graph": 1,
+    "context_run": 1
+  },
+  "mcpCallLog": [
+    {
+      "tool": "context_providers",
+      "ok": true,
+      "ms": 0.8,
+      "args": {}
+    },
+    {
+      "tool": "context_graph",
+      "ok": true,
+      "ms": 24.4,
+      "args": {
+        "op": "search",
+        "query": "proteins features search gene accession",
+        "limit": 15
+      }
+    },
+    {
+      "tool": "context_run",
+      "ok": true,
+      "ms": 202.2,
+      "args": {
+        "id": "openapi:proteins-rest-api:search-4",
+        "args": {
+          "gene": "EGFR",
+          "taxid": "9606",
+          "reviewed": "true",
+          "types": "TRANSMEM"
+        }
+      }
+    }
+  ],
+  "learnedByAgent": [],
+  "composeUsed": 0,
+  "receipts": [
+    {
+      "capability": "openapi:proteins-rest-api:search-4",
+      "provider": "openapi:proteins-rest-api",
+      "status": "completed",
+      "ms": 197.2
+    }
+  ],
+  "providersReached": [
+    "openapi:proteins-rest-api"
+  ],
+  "requests": 1,
+  "requestsPerHost": {
+    "www.ebi.ac.uk": 1
+  },
+  "finalText": "The human EGFR gene's reviewed UniProtKB entry is **P00533** (EGFR_HUMAN). The EBI Proteins API lists **one** transmembrane region (feature type TRANSMEM) for it, a helical segment at **positions 646–668**.\n\nI searched the Proteins API sequence features for gene \"EGFR\", human (taxid 9606), reviewed entries only, with feature type TRANSMEM.\n\nThat search also returned a second reviewed entry, Q86T13 (CLC14_HUMAN, with one TRANSMEM at 398–418). Its entry name shows it is the CLEC14A protein, not EGFR, so I left it out. It most likely matched on a gene synonym, but the API output doesn't say why.\n\nThe 646–668 position is predicted from sequence rather than measured: its evidence code, ECO:0000255, means \"match to sequence model\".\n\nANSWER: P00533 | 1 | 646-668"
+}

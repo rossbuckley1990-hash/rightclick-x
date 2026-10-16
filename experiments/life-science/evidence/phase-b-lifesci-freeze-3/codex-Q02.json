@@ -1,0 +1,199 @@
+{
+  "client": "codex",
+  "question": "Q02",
+  "prompt": "You are connected to exactly one MCP server, rightclick-x. Use only its tools.\nRightClick X has already learned several public life-science databases (see context_providers).\nAnswer the question using only data you obtain through rightclick-x tools, not from memory.\nIf the tools cannot give you the answer, say so instead of guessing.\nQuestion: For human leptin (gene LEP): give its reviewed UniProtKB accession, the number of PDB entries that UniProtKB cross-references for it, and those PDB IDs.\nEnd your reply with a final line exactly of the form: ANSWER: <accession> | <count> | <comma-separated PDB IDs>",
+  "answer": "P41159 | 10 | 1AX8,7Z3Q,8AVE,8AVF,8AVO,8K6Z,8X80,8X81,8X85,9PUO",
+  "parts": [
+    "P41159",
+    "10",
+    "1AX8,7Z3Q,8AVE,8AVF,8AVO,8K6Z,8X80,8X81,8X85,9PUO"
+  ],
+  "truth": [
+    "P41159",
+    10,
+    [
+      "1AX8",
+      "7Z3Q",
+      "8AVE",
+      "8AVF",
+      "8AVO",
+      "8K6Z",
+      "8X80",
+      "8X81",
+      "8X85",
+      "9PUO"
+    ]
+  ],
+  "truthFacts": {
+    "accession": "P41159",
+    "uniprotPdbXrefs": [
+      "1AX8",
+      "7Z3Q",
+      "8AVE",
+      "8AVF",
+      "8AVO",
+      "8K6Z",
+      "8X80",
+      "8X81",
+      "8X85",
+      "9PUO"
+    ],
+    "rcsbSearch": [
+      "1AX8",
+      "7Z3Q",
+      "8AVE",
+      "8AVF",
+      "8AVO",
+      "8K6Z",
+      "8X80",
+      "8X81",
+      "8X85",
+      "9PUO"
+    ]
+  },
+  "witness": {
+    "source": "RCSB Search (entries mapped to the accession)",
+    "agrees": true,
+    "detail": "10 entries: 1AX8,7Z3Q,8AVE,8AVF,8AVO,8K6Z,8X80,8X81,8X85,9PUO"
+  },
+  "perPart": [
+    true,
+    true,
+    true
+  ],
+  "correct": true,
+  "grounded": true,
+  "correctAndGrounded": true,
+  "groundingChecks": [
+    {
+      "value": "P41159",
+      "found": true
+    },
+    {
+      "value": "1AX8",
+      "found": true
+    },
+    {
+      "value": "7Z3Q",
+      "found": true
+    },
+    {
+      "value": "8AVE",
+      "found": true
+    },
+    {
+      "value": "8AVF",
+      "found": true
+    },
+    {
+      "value": "8AVO",
+      "found": true
+    },
+    {
+      "value": "8K6Z",
+      "found": true
+    },
+    {
+      "value": "8X80",
+      "found": true
+    },
+    {
+      "value": "8X81",
+      "found": true
+    },
+    {
+      "value": "8X85",
+      "found": true
+    },
+    {
+      "value": "9PUO",
+      "found": true
+    }
+  ],
+  "seconds": 31.3,
+  "exit": 0,
+  "timedOut": false,
+  "clientMeta": {},
+  "mcpCalls": 6,
+  "mcpCallsByTool": {
+    "context_providers": 1,
+    "context_graph": 2,
+    "context_explain": 2,
+    "context_run": 1
+  },
+  "mcpCallLog": [
+    {
+      "tool": "context_providers",
+      "ok": true,
+      "ms": 0.4,
+      "args": {}
+    },
+    {
+      "tool": "context_graph",
+      "ok": true,
+      "ms": 21.8,
+      "args": {
+        "op": "search",
+        "query": "UniProt",
+        "limit": 20
+      }
+    },
+    {
+      "tool": "context_graph",
+      "ok": true,
+      "ms": 11.5,
+      "args": {
+        "op": "search",
+        "query": "openapi-definition",
+        "limit": 10
+      }
+    },
+    {
+      "tool": "context_explain",
+      "ok": true,
+      "ms": 2.2,
+      "args": {
+        "id": "openapi:proteins-rest-api:search-2"
+      }
+    },
+    {
+      "tool": "context_explain",
+      "ok": true,
+      "ms": 2,
+      "args": {
+        "id": "openapi:openapi-definition:searchcursor"
+      }
+    },
+    {
+      "tool": "context_run",
+      "ok": true,
+      "ms": 1157.3,
+      "args": {
+        "id": "openapi:openapi-definition:searchcursor",
+        "args": {
+          "query": "(gene_exact:LEP) AND (organism_name:\"Homo sapiens\") AND (reviewed:true)",
+          "fields": "accession,id,reviewed,gene_names,organism_name,xref_pdb",
+          "size": 10
+        }
+      }
+    }
+  ],
+  "learnedByAgent": [],
+  "composeUsed": 0,
+  "receipts": [
+    {
+      "capability": "openapi:openapi-definition:searchcursor",
+      "provider": "openapi:openapi-definition",
+      "status": "completed",
+      "ms": 1153.4
+    }
+  ],
+  "providersReached": [
+    "openapi:openapi-definition"
+  ],
+  "requests": 2,
+  "requestsPerHost": {
+    "rest.uniprot.org": 2
+  },
+  "finalText": "RightClick X returned **P41159 (LEP_HUMAN)** as the reviewed UniProtKB entry for human LEP, with **10 PDB cross-references**.\n\nANSWER: P41159 | 10 | 1AX8,7Z3Q,8AVE,8AVF,8AVO,8K6Z,8X80,8X81,8X85,9PUO"
+}

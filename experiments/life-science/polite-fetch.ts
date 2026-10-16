@@ -8,7 +8,8 @@
 //    queries, search queries and MCP JSON-RPC, which do not change data);
 //  - a descriptive user-agent when the caller set none;
 //  - every request is appended to RCX_NETLOG (JSONL) as evidence;
-//  - with RCX_BODYDIR, every response body received is kept (grounding check).
+//  - with RCX_BODYDIR, every response body received is kept (grounding check),
+//    including those relayed by the local replay proxy in Phase C.
 //
 // This is not product code: it wraps globalThis.fetch from outside.
 
@@ -54,7 +55,7 @@ globalThis.fetch = async function politeFetch(input: any, init?: RequestInit): P
     if (LOG) appendFileSync(LOG, JSON.stringify({ at: new Date().toISOString(), tag, seq, method, url: url.href.slice(0, 500), status: res.status, ms: Math.round(performance.now() - t0) }) + "\n");
     // Keep what the process actually received, for the grounding check (answers
     // must come from fetched data, not from a model's memory).
-    if (BODIES && !local) res.clone().text().then((t) => writeFileSync(`${BODIES}/${process.pid}-${seq}.txt`, `${method} ${url.href}\n\n${t}`), () => {});
+    if (BODIES) res.clone().text().then((t) => writeFileSync(`${BODIES}/${process.pid}-${seq}.txt`, `${method} ${url.href}\n\n${t}`), () => {});
     return res;
   } catch (e) {
     if (LOG) appendFileSync(LOG, JSON.stringify({ at: new Date().toISOString(), tag, method, url: url.href.slice(0, 500), error: String((e as Error)?.message ?? e).slice(0, 200) }) + "\n");

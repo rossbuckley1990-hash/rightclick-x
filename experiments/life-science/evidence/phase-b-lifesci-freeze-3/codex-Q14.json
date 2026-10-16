@@ -1,0 +1,189 @@
+{
+  "client": "codex",
+  "question": "Q14",
+  "prompt": "You are connected to exactly one MCP server, rightclick-x. Use only its tools.\nRightClick X has already learned several public life-science databases (see context_providers).\nAnswer the question using only data you obtain through rightclick-x tools, not from memory.\nIf the tools cannot give you the answer, say so instead of guessing.\nQuestion: For UniProtKB P04637 (human p53): how many PDB entries does UniProtKB cross-reference, and how many PDB entries does RCSB PDB's search service map to that accession? Report exact totals, not page sizes.\nEnd your reply with a final line exactly of the form: ANSWER: <UniProtKB PDB cross-reference count> | <RCSB entry count>",
+  "answer": "311 | 323",
+  "parts": [
+    "311",
+    "323"
+  ],
+  "truth": [
+    311,
+    323
+  ],
+  "truthFacts": {
+    "uniprotCount": 311,
+    "rcsbCount": 323,
+    "onlyInUniprot": [
+      "2F1X"
+    ],
+    "onlyInRcsb": [
+      "21EX",
+      "37ZA",
+      "37ZR",
+      "8ZZN",
+      "9A9W",
+      "9EIQ",
+      "9EJD",
+      "9EK4",
+      "9OBF",
+      "9SUK",
+      "9SZZ",
+      "9U4D",
+      "9YZH"
+    ]
+  },
+  "witness": null,
+  "perPart": [
+    true,
+    true
+  ],
+  "correct": true,
+  "grounded": true,
+  "correctAndGrounded": true,
+  "groundingChecks": [],
+  "seconds": 60.5,
+  "exit": 0,
+  "timedOut": false,
+  "clientMeta": {},
+  "mcpCalls": 11,
+  "mcpCallsByTool": {
+    "context_providers": 1,
+    "context_graph": 3,
+    "context_explain": 4,
+    "context_run": 3
+  },
+  "mcpCallLog": [
+    {
+      "tool": "context_providers",
+      "ok": true,
+      "ms": 0.3,
+      "args": {}
+    },
+    {
+      "tool": "context_graph",
+      "ok": true,
+      "ms": 18.8,
+      "args": {
+        "op": "search",
+        "query": "uniprot",
+        "limit": 10
+      }
+    },
+    {
+      "tool": "context_graph",
+      "ok": true,
+      "ms": 8,
+      "args": {
+        "op": "search",
+        "query": "rcsb-search",
+        "limit": 10
+      }
+    },
+    {
+      "tool": "context_graph",
+      "ok": true,
+      "ms": 11.1,
+      "args": {
+        "op": "search",
+        "query": "openapi-definition",
+        "limit": 10
+      }
+    },
+    {
+      "tool": "context_explain",
+      "ok": true,
+      "ms": 3.8,
+      "args": {
+        "id": "openapi:rcsb-search-api:runjsonqueriesget"
+      }
+    },
+    {
+      "tool": "context_explain",
+      "ok": true,
+      "ms": 0.8,
+      "args": {
+        "id": "openapi:rcsb-search-api:getmetadata"
+      }
+    },
+    {
+      "tool": "context_explain",
+      "ok": true,
+      "ms": 0.1,
+      "args": {
+        "id": "openapi:openapi-definition:getbyaccession"
+      }
+    },
+    {
+      "tool": "context_explain",
+      "ok": true,
+      "ms": 0.1,
+      "args": {
+        "id": "openapi:rcsb-search-api:runjsonqueriespost"
+      }
+    },
+    {
+      "tool": "context_run",
+      "ok": true,
+      "ms": 1848,
+      "args": {
+        "id": "openapi:openapi-definition:getbyaccession",
+        "args": {
+          "accession": "P04637"
+        }
+      }
+    },
+    {
+      "tool": "context_run",
+      "ok": true,
+      "ms": 690.9,
+      "args": {
+        "id": "openapi:rcsb-search-api:getmetadata",
+        "args": {}
+      }
+    },
+    {
+      "tool": "context_run",
+      "ok": true,
+      "ms": 343.6,
+      "args": {
+        "id": "openapi:rcsb-search-api:runjsonqueriesget",
+        "args": {
+          "json": "{\"query\":{\"type\":\"group\",\"logical_operator\":\"and\",\"nodes\":[{\"type\":\"terminal\",\"service\":\"text\",\"parameters\":{\"attribute\":\"rcsb_polymer_entity_container_identifiers.reference_sequence_identifiers.database_accession\",\"operator\":\"exact_match\",\"value\":\"P04637\"}},{\"type\":\"terminal\",\"service\":\"text\",\"parameters\":{\"attribute\":\"rcsb_polymer_entity_container_identifiers.reference_sequence_identifiers.database_name\",\"operator\":\"exact_match\",\"value\":\"UniProt\"}}]},\"return_type\":\"entry\",\"request_options\":{\"paginate\":{\"start\":0,\"rows\":1}}}"
+        }
+      }
+    }
+  ],
+  "learnedByAgent": [],
+  "composeUsed": 0,
+  "receipts": [
+    {
+      "capability": "openapi:openapi-definition:getbyaccession",
+      "provider": "openapi:openapi-definition",
+      "status": "completed",
+      "ms": 1825.9
+    },
+    {
+      "capability": "openapi:rcsb-search-api:getmetadata",
+      "provider": "openapi:rcsb-search-api",
+      "status": "completed",
+      "ms": 675.4
+    },
+    {
+      "capability": "openapi:rcsb-search-api:runjsonqueriesget",
+      "provider": "openapi:rcsb-search-api",
+      "status": "completed",
+      "ms": 342.7
+    }
+  ],
+  "providersReached": [
+    "openapi:openapi-definition",
+    "openapi:rcsb-search-api"
+  ],
+  "requests": 4,
+  "requestsPerHost": {
+    "rest.uniprot.org": 2,
+    "search.rcsb.org": 2
+  },
+  "finalText": "Using only rightclick-x data:\n\n- **UniProtKB: 311** distinct PDB cross-references in the complete P04637 record.\n- **RCSB PDB: 323** entries, from `total_count` for an exact P04637/UniProt mapping query with `return_type: \"entry\"`.\n\nANSWER: 311 | 323"
+}

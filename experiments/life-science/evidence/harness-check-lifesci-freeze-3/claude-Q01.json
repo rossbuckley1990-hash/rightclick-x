@@ -1,0 +1,114 @@
+{
+  "client": "claude",
+  "question": "Q01",
+  "prompt": "You are connected to exactly one MCP server, rightclick-x. Use only its tools.\nRightClick X has already learned several public life-science databases (see context_providers).\nAnswer the question using only data you obtain through rightclick-x tools, not from memory.\nIf the tools cannot give you the answer, say so instead of guessing.\nQuestion: What is the reviewed (Swiss-Prot) UniProtKB accession of the human gene TP53?\nEnd your reply with a final line exactly of the form: ANSWER: <accession>",
+  "answer": "P04637",
+  "parts": [
+    "P04637"
+  ],
+  "truth": [
+    [
+      "P04637"
+    ]
+  ],
+  "truthFacts": {
+    "uniprot": [
+      "P04637"
+    ]
+  },
+  "witness": {
+    "source": "EBI Proteins API /proteins?exact_gene",
+    "agrees": true,
+    "detail": "P04637"
+  },
+  "perPart": [
+    true
+  ],
+  "correct": true,
+  "grounded": true,
+  "correctAndGrounded": true,
+  "groundingChecks": [
+    {
+      "value": "P04637",
+      "found": true
+    }
+  ],
+  "seconds": 36.6,
+  "exit": 0,
+  "timedOut": false,
+  "clientMeta": {
+    "turns": 6,
+    "costUsd": 0.26353139999999997,
+    "isError": false,
+    "subtype": "success"
+  },
+  "mcpCalls": 4,
+  "mcpCallsByTool": {
+    "context_providers": 1,
+    "context_research": 1,
+    "context_actions": 1,
+    "context_run": 1
+  },
+  "mcpCallLog": [
+    {
+      "tool": "context_providers",
+      "ok": true,
+      "ms": 0.7,
+      "args": {}
+    },
+    {
+      "tool": "context_research",
+      "ok": true,
+      "ms": 11915.7,
+      "args": {
+        "topic": "uniprotkb search gene"
+      }
+    },
+    {
+      "tool": "context_actions",
+      "ok": true,
+      "ms": 29.2,
+      "args": {
+        "value": "TP53",
+        "limit": 60
+      }
+    },
+    {
+      "tool": "context_run",
+      "ok": true,
+      "ms": 1206.3,
+      "args": {
+        "id": "openapi:openapi-definition:searchcursor",
+        "args": {
+          "query": "gene_exact:TP53 AND organism_id:9606 AND reviewed:true",
+          "fields": "accession,id,gene_names,organism_name,reviewed",
+          "size": 5
+        }
+      }
+    }
+  ],
+  "learnedByAgent": [
+    {
+      "topic": "uniprotkb search gene"
+    }
+  ],
+  "composeUsed": 0,
+  "receipts": [
+    {
+      "capability": "openapi:openapi-definition:searchcursor",
+      "provider": "openapi:openapi-definition",
+      "status": "completed",
+      "ms": 1202.8
+    }
+  ],
+  "providersReached": [
+    "openapi:openapi-definition"
+  ],
+  "requests": 7,
+  "requestsPerHost": {
+    "api.apis.guru": 1,
+    "registry.modelcontextprotocol.io": 4,
+    "rest.uniprot.org": 2
+  },
+  "finalText": "The reviewed (Swiss-Prot) UniProtKB accession for human TP53 is **P04637**.\n\nI searched UniProtKB through rightclick-x for entries with the exact gene name TP53, organism Homo sapiens (taxon 9606), and reviewed status only. The search returned one entry:\n\n- **Primary accession:** P04637\n- **Entry name:** P53_HUMAN\n- **Gene:** TP53 (also called P53)\n- **Status:** UniProtKB reviewed (Swiss-Prot)\n\nANSWER: P04637"
+}
