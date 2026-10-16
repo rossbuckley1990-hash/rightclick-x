@@ -1,7 +1,8 @@
 // OpenAPI 3.x and Swagger 2.0 -> typed capabilities.
 
 import { inferInContext, inferType, type SchemaLike } from "../core/semantics.ts";
-import type { Capability, Port, Reflection, Risk } from "../core/types.ts";
+import type { Capability, DeclaredField, Port, Reflection, Risk } from "../core/types.ts";
+import { schemaFields } from "../core/fields.ts";
 import { readBody, request, slug, type Net } from "./net.ts";
 
 type Obj = Record<string, any>;
@@ -85,7 +86,7 @@ export function reflectOpenAPI(spec: Obj, specUrl: string): Reflection {
         }
       }
 
-      const { ports: outputs, keyed } = responsePorts(op, resolve);
+      const { ports: outputs, keyed, fields } = responsePorts(op, resolve);
       const opName: string = op.operationId ?? `${method}-${path}`;
       const risk: Risk = method === "get" ? "read" : method === "delete" ? "destructive" : "write";
       capabilities.push({
@@ -98,6 +99,7 @@ export function reflectOpenAPI(spec: Obj, specUrl: string): Reflection {
         outputs,
         risk,
         tags: [...(op.tags ?? []), title, method, ...path.split("/").filter((seg) => seg && !seg.startsWith("{"))],
+        ...(fields.length ? { fields } : {}),
         invoke: {
           kind: "http",
           method: method.toUpperCase(),
@@ -123,6 +125,7 @@ export function reflectOpenAPI(spec: Obj, specUrl: string): Reflection {
           description: `${parent.description} Returns the single ${k.map} entry for the given ${k.keyType} key${k.description ? ` (${k.description})` : ""}.`.trim().slice(0, 400),
           inputs: [...inputs, { name: keyInput, type: k.keyType, required: true, description: `Which ${k.map} entry to return` }],
           outputs: [{ name: "", type: k.valueType, required: true }],
+          fields: [],
           tags: [...parent.tags, k.map, "entry"],
           invoke: { ...(parent.invoke as any), entry: { map: k.map, keyInput } },
         });
@@ -233,7 +236,7 @@ function keyedMap(name: string, p: Obj, resolve: (o: any) => any): KeyedMap | un
   return { map: name, keyType, valueType: inferType("", values, values.description ?? ""), description: p.description };
 }
 
-function responsePorts(op: Obj, resolve: (o: any) => any): { ports: Port[]; keyed: KeyedMap[] } {
+function responsePorts(op: Obj, resolve: (o: any) => any): { ports: Port[]; keyed: KeyedMap[]; fields: DeclaredField[] } {
   const responses: Obj = op.responses ?? {};
   const key = ["200", "201", "202", "2XX", "default"].find((k) => responses[k]);
   const r = key ? resolve(responses[key]) : null;
@@ -246,8 +249,8 @@ function responsePorts(op: Obj, resolve: (o: any) => any): { ports: Port[]; keye
   } else if (r?.schema) {
     schema = resolve(r.schema);
   }
-  if (textual) return { ports: [{ name: "", type: Object.keys(r.content).includes("text/html") ? "html" : "text", required: true }], keyed: [] };
-  if (!schema) return { ports: [{ name: "", type: "json", required: true }], keyed: [] };
+  if (textual) return { ports: [{ name: "", type: Object.keys(r.content).includes("text/html") ? "html" : "text", required: true }], keyed: [], fields: [] };
+  if (!schema) return { ports: [{ name: "", type: "json", required: true }], keyed: [], fields: [] };
   // The schema's own name is context: `id` on a "release" is an id.release.
   const context = refName(rawRef(r, resolve)) ?? "";
   const merged = mergeAllOf(schema, resolve);
@@ -267,7 +270,7 @@ function responsePorts(op: Obj, resolve: (o: any) => any): { ports: Port[]; keye
       }
     }
   }
-  return { ports, keyed };
+  return { ports, keyed, fields: schemaFields(schema, resolve) };
 }
 
 function rawRef(r: Obj | null, resolve: (o: any) => any): string | undefined {

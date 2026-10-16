@@ -1,8 +1,8 @@
 {
-  "seed": 348775771,
+  "seed": 659419510,
   "domain": "accounts",
   "gateway": false,
-  "startedAt": "2026-10-16T21:24:12.595Z",
+  "startedAt": "2026-10-16T21:43:11.411Z",
   "steps": [
     {
       "n": 1,
@@ -17,7 +17,7 @@
       "title": "Connect an MCP client to RightClick X (stdio)",
       "ok": true,
       "tools": 13,
-      "startupMs": 156
+      "startupMs": 122.9
     },
     {
       "n": 3,
@@ -42,12 +42,12 @@
       "title": "Discover contracts from root addresses only (no protocols, no schemas given)",
       "ok": true,
       "found": [
-        "graphql",
+        "openapi",
         "graphql",
         "mcp"
       ],
       "newCapabilities": 3,
-      "ms": 43.8
+      "ms": 37.4
     },
     {
       "n": 5,
@@ -55,20 +55,20 @@
       "ok": true,
       "candidatePlans": 2,
       "best": [
-        "Get Account",
-        "Customer Inquiry",
-        "VAT rate lookup"
+        "Account inquiry",
+        "Customer inquiry",
+        "Vat Rate Lookup"
       ],
-      "planningMs": 4.5
+      "planningMs": 3.4
     },
     {
       "n": 6,
       "title": "Compose a multi-provider workflow",
       "ok": true,
       "steps": [
-        "Get Account ← a_ref=$in.account_id",
-        "Customer Inquiry ← cust_ref=0.cust_ref",
-        "VAT rate lookup ← ctry=1.jur"
+        "Account inquiry ← acctno=$in.account_id",
+        "Customer inquiry ← cref=0.hldr",
+        "Vat Rate Lookup ← cc=1.ctry"
       ]
     },
     {
@@ -77,57 +77,57 @@
       "ok": true,
       "input": "ACC-1001",
       "pipeline": [
-        "Get Account",
-        "Customer Inquiry",
-        "VAT rate lookup"
+        "Account inquiry",
+        "Customer inquiry",
+        "Vat Rate Lookup"
       ],
-      "ms": 6.2
+      "ms": 5.6
     },
     {
       "n": 8,
       "title": "Verify against independently held test data",
       "ok": true,
-      "expected": 8.5,
-      "got": 8.5
+      "expected": 14.4,
+      "got": 14.4
     },
     {
       "n": 9,
       "title": "Save the successful composition and reuse it",
       "ok": true,
-      "saved": "Vat rate account holder country: Get Account → Customer Inquiry → VAT rate lookup",
+      "saved": "Vat rate account holder country: Account inquiry → Customer inquiry → Vat Rate Lookup",
       "reusedAs": [
-        "Vat rate account holder country: Get Account → Customer Inquiry → VAT rate lookup"
+        "Vat rate account holder country: Account inquiry → Customer inquiry → Vat Rate Lookup"
       ],
-      "expected": 13.9,
-      "got": 13.9,
-      "ms": 3.6
+      "expected": 14.4,
+      "got": 14.4,
+      "ms": 2.6
     },
     {
       "n": 10,
-      "title": "Change the interface of the last provider in the chain (Fernway)",
+      "title": "Change the interface of the last provider in the chain (Ledgerline)",
       "ok": true,
-      "before": "mcp \"VAT rate lookup\" ctry → ctry, vatpct",
-      "after": "openapi \"Get VAT rate\" jur → result.{jur, vr}"
+      "before": "graphql \"VAT rate lookup\" cc → cc, vr",
+      "after": "mcp \"VAT rate inquiry\" jur → result.{jur, vatpct}"
     },
     {
       "n": 11,
       "title": "Recover without changing integration code",
       "ok": true,
       "healing": [
-        "API drift at http://127.0.0.1:61182/: mcp:fernway → openapi:fernway; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:50527/: graphql:127-0-0-1-50527-graphql → mcp:ledgerline; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "via": [
-        "graphql:127-0-0-1-61180-graphql",
-        "graphql:127-0-0-1-61181-graphql",
-        "openapi:fernway"
+        "openapi:fernway",
+        "mcp:northwind-billing",
+        "mcp:ledgerline"
       ],
-      "expected": 21.4,
-      "got": 21.4,
-      "ms": 13.9
+      "expected": 13.3,
+      "got": 13.3,
+      "ms": 9.3
     },
     {
       "n": 12,
-      "title": "Remove that provider (Fernway)",
+      "title": "Remove that provider (Ledgerline)",
       "ok": true
     },
     {
@@ -136,38 +136,38 @@
       "ok": true,
       "status": "failed",
       "healing": [
-        "provider gone at http://127.0.0.1:61182/: withdrew openapi:fernway (1 capabilities, 1 pipeline(s) retired)"
+        "provider gone at http://127.0.0.1:50527/: withdrew mcp:ledgerline (1 capabilities, 1 pipeline(s) retired)"
       ],
       "withdrawn": [
-        "Fernway"
+        "Ledgerline"
       ],
       "capabilities": "27 → 25",
       "savedPipelines": "1 → 0"
     },
     {
       "n": 14,
-      "title": "Introduce a different provider (Ashgrove, graphql): the objective works again",
+      "title": "Introduce a different provider (Quillbase, openapi): the objective works again",
       "ok": true,
       "learned": [
-        "graphql: 1 fields"
+        "openapi: 1 operations"
       ],
       "via": [
-        "graphql:127-0-0-1-61180-graphql",
-        "graphql:127-0-0-1-61181-graphql",
-        "graphql:127-0-0-1-61254-graphql"
+        "openapi:fernway",
+        "mcp:northwind-billing",
+        "openapi:quillbase"
       ],
-      "expected": 21.4,
-      "got": 21.4,
-      "ms": 3.1
+      "expected": 12.1,
+      "got": 12.1,
+      "ms": 2
     }
   ],
   "benchmarks": {
-    "startupMs": 156,
+    "startupMs": 122.9,
     "mcpLatencyMs": {
-      "p50": 0.04,
-      "p95": 0.17
+      "p50": 0.03,
+      "p95": 0.12
     },
-    "discoveryMs": 43.8,
+    "discoveryMs": 37.4,
     "graph": {
       "providers": 5,
       "capabilities": 26,
@@ -177,66 +177,66 @@
       "total": 132
     },
     "graphStatsMs": 0.1,
-    "planningMs": 4.5,
-    "executionMs": 6.2,
-    "recoveryAfterChangeMs": 13.9,
-    "recoveryAfterNewProviderMs": 3.1,
+    "planningMs": 3.4,
+    "executionMs": 5.6,
+    "recoveryAfterChangeMs": 9.3,
+    "recoveryAfterNewProviderMs": 2,
     "memoryMB": 140
   },
   "freeze": {
-    "commit": "3f1fbcc80dc47180a996bf08ba0cf5dadf31f72c",
+    "commit": "6f94a40ba17a4c258e5c5cdfe00ffcef07c63cbd",
     "tag": "lab-freeze-9",
-    "productCodeChangedSinceTag": "src/core/graph.ts\nsrc/core/identities.ts\nsrc/core/planner.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/interface/http.ts\nsrc/interface/tools.ts\nsrc/reflectors/net.ts\nsrc/runtime.ts",
-    "uncommittedProductChanges": "M bin/rcx.ts\n M src/entry/durable.ts\n M src/entry/edge.ts\n M src/interface/http.ts\n M src/reflectors/mcp.ts\n M src/reflectors/platform.ts\n M src/runtime.ts\n?? src/core/authority.ts",
+    "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/core/authority.ts\nsrc/core/graph.ts\nsrc/core/identities.ts\nsrc/core/planner.ts\nsrc/core/sandbox.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/entry/durable.ts\nsrc/entry/edge.ts\nsrc/interface/http.ts\nsrc/interface/tools.ts\nsrc/reflectors/cli.ts\nsrc/reflectors/mcp.ts\nsrc/reflectors/net.ts\nsrc/reflectors/platform.ts\nsrc/runtime.ts",
+    "uncommittedProductChanges": "M src/core/planner.ts\n M src/core/types.ts\n M src/interface/tools.ts\n M src/reflectors/graphql.ts\n M src/reflectors/openapi.ts\n M src/runtime.ts\n?? src/core/fields.ts\n?? src/core/satisfaction.ts",
     "frozen": false
   },
   "environment": [
     {
       "service": "ledger",
-      "brand": "Kestrel Freight",
-      "protocol": "graphql",
-      "operation": "Get account",
-      "input": "a_ref",
+      "brand": "Fernway",
+      "protocol": "openapi",
+      "operation": "Account inquiry",
+      "input": "acctno",
       "outputs": [
-        "a_ref",
-        "cust_ref",
+        "acctno",
+        "hldr",
         "curbal"
       ]
     },
     {
       "service": "kyc",
-      "brand": "Cobaltix",
-      "protocol": "graphql",
+      "brand": "Northwind Billing",
+      "protocol": "mcp",
       "operation": "Customer inquiry",
-      "input": "cust_ref",
+      "input": "cref",
       "outputs": [
-        "cust_ref",
+        "cref",
         "lglnm",
-        "jur"
+        "ctry"
       ]
     },
     {
       "service": "vat",
-      "brand": "Fernway",
-      "protocol": "mcp",
+      "brand": "Ledgerline",
+      "protocol": "graphql",
       "operation": "VAT rate lookup",
-      "input": "ctry",
+      "input": "cc",
       "outputs": [
-        "ctry",
-        "vatpct"
+        "cc",
+        "vr"
       ]
     }
   ],
   "firstRunProviders": [
-    "graphql:127-0-0-1-61180-graphql",
-    "graphql:127-0-0-1-61181-graphql",
-    "mcp:fernway"
+    "openapi:fernway",
+    "mcp:northwind-billing",
+    "graphql:127-0-0-1-50527-graphql"
   ],
   "receipts": {
     "count": 21,
     "intact": true,
     "brokenAt": null,
-    "head": "791cbe7051b7ed7cc89c275d13914f534a57ce9eb2838e095a585a63f43d7c0a"
+    "head": "a56a806231396b60efe1fe3744b37581a01f98dc80a4d7fd12e3bb1efe840091"
   },
   "passed": 14,
   "total": 14

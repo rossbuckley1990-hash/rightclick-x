@@ -7,6 +7,7 @@
 // ledger, yields ranked multi-provider pipelines. Nobody wrote the glue: the
 // types did.
 
+import { assess, carries, STATUS_RANK, type Satisfaction } from "./satisfaction.ts";
 import { schemeFits, schemeOnly } from "./identities.ts";
 import { accepts, distance, isNominal } from "./semantics.ts";
 import { tokenize, type CapabilityGraph } from "./graph.ts";
@@ -30,6 +31,8 @@ export interface Goal {
   through?: string[];
   /** Egress policy: only capabilities whose network traffic stays on these origins (e.g. "https://api.example.com"). */
   origins?: string[];
+  /** Required output information (terms such as "resolution"): plans are judged by what their result carries. */
+  require?: string[];
   /** Identifier schemes the caller's named inputs were recognised as (see core/identities.ts). */
   schemes?: Record<string, string[]>;
 }
@@ -89,6 +92,8 @@ export interface Plan {
   resultScore: number;
   providers: string[];
   summary: string;
+  /** With `require`: what the result carries, how each join is supported, and the status. */
+  satisfaction?: Satisfaction;
 }
 
 interface Value {
@@ -178,7 +183,9 @@ export function plan(graph: CapabilityGraph, ledger: Ledger, goal: Goal): Plan[]
         }));
         // Prune steps that add no new type to the state, unless they finish the goal.
         const finishes = produced.some((v) => satisfies(goal.want, v.type));
-        const novel = produced.some((v) => !node.values.some((h) => h.type === v.type && (v.schemes ?? []).every((s) => h.schemes?.includes(s))));
+        // Required information is progress even without a new type (json -> json carrying "resolution").
+        const informs = !!goal.require?.length && goal.require.some((t) => [...cap.outputs.map((o) => o.name), ...(cap.fields ?? []).map((f) => f.path)].some((path) => carries(path, t)));
+        const novel = informs || produced.some((v) => !node.values.some((h) => h.type === v.type && (v.schemes ?? []).every((s) => h.schemes?.includes(s))));
         if (!novel && !finishes && !anchors.has(cap.id)) continue;
         const child: Node = {
           values: [...node.values, ...produced],
@@ -195,7 +202,7 @@ export function plan(graph: CapabilityGraph, ledger: Ledger, goal: Goal): Plan[]
           .filter((x) => satisfies(goal.want, x.v.type))
           .sort((a, b) => a.d - b.d || b.s - a.s)[0];
         if (hit) {
-          const p = finalize(graph, child, hit.v, hit.d, intent, goal.want);
+          const p = finalize(graph, child, hit.v, hit.d, intent, goal.want, goal.require);
           if (p) results.push(p);
         }
         next.push(child);
@@ -217,18 +224,23 @@ export function plan(graph: CapabilityGraph, ledger: Ledger, goal: Goal): Plan[]
     const used = new Set(p.steps.flatMap((s) => s.bindings.map((b) => b.from)).filter((f) => f.startsWith("$in.")).map((f) => f.slice(4).split(".")[0]));
     return supplied.filter((k) => !used.has(k)).length;
   };
+  // With required information: established beats unverified beats incomplete, then coverage.
+  const rank = (p: Plan) => (p.satisfaction ? STATUS_RANK[p.satisfaction.status] : 0);
+  const coverage = (p: Plan) => (p.satisfaction ? Object.keys(p.satisfaction.covered).length : 0);
   const ranked = dedupe(results)
-    .filter((p) => !intent.size || p.intentScore > 0 || anchors.size)
+    .filter((p) => !intent.size || p.intentScore > 0 || anchors.size || coverage(p) > 0)
     .filter((p) => [...anchors].every((a) => p.steps.some((s) => s.capability === a)))
     .sort(
       (a, b) =>
+        rank(b) - rank(a) || coverage(b) - coverage(a) ||
         Math.floor(b.fit) - Math.floor(a.fit) || ignored(a) - ignored(b) || b.intentScore - a.intentScore || b.fit - a.fit || b.resultScore - a.resultScore || a.cost - b.cost || a.steps.length - b.steps.length,
     );
   // Drop plans that merely extend a kept plan without covering more of the intent.
   const kept: Plan[] = [];
   for (const p of ranked) {
     const ids = p.steps.map((s) => s.capability).join(">");
-    const redundant = kept.some((k) => k.intentScore >= p.intentScore && ids.startsWith(k.steps.map((s) => s.capability).join(">") + ">"));
+    // ...unless it carries more of the required information or reaches a better status.
+    const redundant = kept.some((k) => k.intentScore >= p.intentScore && rank(k) >= rank(p) && coverage(k) >= coverage(p) && ids.startsWith(k.steps.map((s) => s.capability).join(">") + ">"));
     if (!redundant) kept.push(p);
     if (kept.length >= limit) break;
   }
@@ -411,7 +423,7 @@ function intentOf(graph: CapabilityGraph, node: Node, intent: Set<string>, resul
   return covered.size;
 }
 
-function finalize(graph: CapabilityGraph, node: Node, v: Value, d: number, intent: Set<string>, want?: SemType): Plan | null {
+function finalize(graph: CapabilityGraph, node: Node, v: Value, d: number, intent: Set<string>, want?: SemType, require?: string[]): Plan | null {
   // Drop trailing steps that don't contribute to the result.
   const needed = new Set<number>([v.step]);
   for (let i = node.steps.length - 1; i >= 0; i--) {
@@ -440,6 +452,7 @@ function finalize(graph: CapabilityGraph, node: Node, v: Value, d: number, inten
     resultScore,
     providers,
     summary: titles.join(" → "),
+    ...(require?.length ? { satisfaction: assess(graph, node.steps, v.ref, require) } : {}),
   };
 }
 

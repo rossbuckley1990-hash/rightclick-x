@@ -2,7 +2,7 @@
 // becomes a capability; the reflector builds the selection set itself.
 
 import { graphqlScalar, inferInContext } from "../core/semantics.ts";
-import type { Capability, Port, Reflection, SemType } from "../core/types.ts";
+import type { Capability, DeclaredField, Port, Reflection, SemType } from "../core/types.ts";
 import { slug } from "./net.ts";
 
 /** Introspection query with a type-reference nesting depth (servers often cap query depth). */
@@ -108,8 +108,10 @@ export function reflectGraphQL(introspection: any, endpoint: string, title?: str
         const shown = omitted.length ? ` Default selects ${total - omitted.length} of ${total} fields; also available: ${clip(omitted.join(", "), 3000)}.` : "";
         inputs.push({ name: selectPort, type: "text", required: false, wire: "selection set", description: `Optional GraphQL selection set for the returned ${named(field.type).name}, e.g. "{ id name nested { field } }"; replaces the default selection.${shown}` });
       }
+      const declared = declaredFields(field, types, ports);
       capabilities.push({
         id: `${providerId}:${operation}:${field.name}`,
+        ...(declared.length ? { fields: declared } : {}),
         title: humanize(field.name) + (operation === "mutation" ? " (mutation)" : ""),
         description: (field.description ?? `${operation} ${field.name} on ${host}`).slice(0, 400),
         provider: providerId,
@@ -185,6 +187,59 @@ function buildSelection(field: Field, types: Map<string, FullType>): { selection
     }
   }
   return { selection: parts.length ? `{ ${parts.join(" ")} }` : "{ __typename }", ports, omitted, total: selectable.length };
+}
+
+/**
+ * Every field the return type declares, three levels deep (lists included), each marked with
+ * whether the default selection asks for it. Fields that need arguments are not selectable.
+ */
+function declaredFields(field: Field, types: Map<string, FullType>, ports: Port[]): DeclaredField[] {
+  const selected = new Set(ports.map((p) => p.name).filter(Boolean));
+  const out: DeclaredField[] = [];
+  const walk = (typeName: string | null | undefined, prefix: string, depth: number, seen: Set<string>) => {
+    const t = typeName ? types.get(typeName) : undefined;
+    if (!t || t.kind !== "OBJECT" || depth > 3 || seen.has(t.name!) || out.length > 400) return;
+    for (const f of t.fields ?? []) {
+      if (f.args.some((a) => a.type.kind === "NON_NULL")) continue;
+      const path = prefix ? `${prefix}.${f.name}` : f.name;
+      out.push({ path, selected: selected.has(path) });
+      walk(named(f.type).name, path, depth + 1, new Set([...seen, t.name!]));
+    }
+  };
+  walk(named(field.type).name, "", 1, new Set());
+  return out;
+}
+
+/** A selection set: the default one plus the given field paths (merged as a tree). */
+export function selectionWith(defaultSelection: string, paths: string[]): string {
+  type Tree = Map<string, Tree>;
+  const root: Tree = new Map();
+  const add = (parts: string[]) => {
+    let t = root;
+    for (const p of parts) {
+      if (!t.has(p)) t.set(p, new Map());
+      t = t.get(p)!;
+    }
+  };
+  // Parse the default selection into the tree.
+  const tokens = defaultSelection.match(/[A-Za-z_][\w]*|[{}]/g) ?? [];
+  const stack: string[] = [];
+  let last = "";
+  for (const tok of tokens) {
+    if (tok === "{") {
+      if (last) stack.push(last);
+      last = "";
+    } else if (tok === "}") {
+      stack.pop();
+      last = "";
+    } else {
+      add([...stack, tok]);
+      last = tok;
+    }
+  }
+  for (const p of paths) add(p.split("."));
+  const print = (t: Tree): string => [...t].map(([k, sub]) => (sub.size ? `${k} { ${print(sub)} }` : k)).join(" ");
+  return `{ ${print(root)} }`;
 }
 
 function clip(s: string, n: number): string {

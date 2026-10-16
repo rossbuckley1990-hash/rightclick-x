@@ -1,8 +1,8 @@
 {
-  "seed": 399236775,
+  "seed": 459188053,
   "domain": "invoicing",
   "gateway": false,
-  "startedAt": "2026-10-16T21:24:02.113Z",
+  "startedAt": "2026-10-16T21:43:03.675Z",
   "steps": [
     {
       "n": 1,
@@ -17,7 +17,7 @@
       "title": "Connect an MCP client to RightClick X (stdio)",
       "ok": true,
       "tools": 13,
-      "startupMs": 196.4
+      "startupMs": 132
     },
     {
       "n": 3,
@@ -42,12 +42,12 @@
       "title": "Discover contracts from root addresses only (no protocols, no schemas given)",
       "ok": true,
       "found": [
+        "graphql",
         "openapi",
-        "openapi",
-        "mcp"
+        "openapi"
       ],
       "newCapabilities": 3,
-      "ms": 60.9
+      "ms": 36.3
     },
     {
       "n": 5,
@@ -55,79 +55,79 @@
       "ok": true,
       "candidatePlans": 3,
       "best": [
-        "Get invoice",
-        "Get customer",
-        "Lookup tax rate for a country"
+        "Invoice Lookup",
+        "Customer profile",
+        "Tax rate by country"
       ],
-      "planningMs": 5.1
+      "planningMs": 3.8
     },
     {
       "n": 6,
       "title": "Compose a multi-provider workflow",
       "ok": true,
       "steps": [
-        "Get invoice ← invoice_id=$in.invoice_id",
-        "Get customer ← customer_number=0.customer_number",
-        "Lookup tax rate for a country ← countryCode=1.country"
+        "Invoice Lookup ← invoiceId=$in.invoice_id",
+        "Customer profile ← customer_number=0.customer_number",
+        "Tax rate by country ← countryCode=1.countryCode"
       ]
     },
     {
       "n": 7,
       "title": "Execute the workflow",
       "ok": true,
-      "input": "INV-1003",
+      "input": "INV-1000",
       "pipeline": [
-        "Get invoice",
-        "Get customer",
-        "Lookup tax rate for a country"
+        "Invoice Lookup",
+        "Customer profile",
+        "Tax rate by country"
       ],
-      "ms": 9.8
+      "ms": 6.6
     },
     {
       "n": 8,
       "title": "Verify against independently held test data",
       "ok": true,
-      "expected": 6.5,
-      "got": 6.5
+      "expected": 11.6,
+      "got": 11.6
     },
     {
       "n": 9,
       "title": "Save the successful composition and reuse it",
       "ok": true,
-      "saved": "Tax rate invoice customer country: Get invoice → Get customer → Lookup tax rate for a country",
+      "saved": "Tax rate invoice customer country: Invoice Lookup → Customer profile → Tax rate by country",
       "reusedAs": [
-        "Tax rate invoice customer country: Get invoice → Get customer → Lookup tax rate for a country"
+        "Tax rate invoice customer country: Invoice Lookup → Customer profile → Tax rate by country"
       ],
-      "expected": 25.9,
-      "got": 25.9,
-      "ms": 4.3
+      "expected": 11.6,
+      "got": 11.6,
+      "ms": 3.1
     },
     {
       "n": 10,
-      "title": "Change the interface of the last provider in the chain (Tallyport)",
+      "title": "Change the interface of the last provider in the chain (Fjordsoft)",
       "ok": true,
-      "before": "openapi \"Lookup tax rate for a country\" countryCode → countryCode, standard_rate",
-      "after": "graphql \"Get tax rate\" country_code → result.{country_code, vat_rate}"
+      "before": "openapi \"Tax rate by country\" countryCode → countryCode, vat_rate",
+      "after": "graphql \"Country tax rate\" country → result.{country, rate}"
     },
     {
       "n": 11,
       "title": "Recover without changing integration code",
       "ok": true,
       "healing": [
-        "API drift at http://127.0.0.1:59391/: openapi:tallyport → graphql:127-0-0-1-59391-graphql; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:65141/: openapi:fjordsoft → graphql:127-0-0-1-65141-graphql; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "via": [
-        "openapi:emberlane",
-        "mcp:northwind-billing",
-        "graphql:127-0-0-1-59391-graphql"
+        "graphql:127-0-0-1-65139-graphql",
+        "openapi:ledgerline",
+        "graphql:127-0-0-1-65141-graphql"
       ],
-      "expected": 6.5,
-      "got": 6.5,
-      "ms": 14.6
+      "expected": 11.6,
+      "got": 11.6,
+      "ms": 11.1
     },
     {
       "n": 12,
-      "title": "Remove that provider (Tallyport)",
+      "title": "Remove that provider (Fjordsoft)",
       "ok": true
     },
     {
@@ -136,38 +136,38 @@
       "ok": true,
       "status": "failed",
       "healing": [
-        "provider gone at http://127.0.0.1:59391/: withdrew graphql:127-0-0-1-59391-graphql (1 capabilities, 1 pipeline(s) retired)"
+        "provider gone at http://127.0.0.1:65141/: withdrew graphql:127-0-0-1-65141-graphql (1 capabilities, 1 pipeline(s) retired)"
       ],
       "withdrawn": [
-        "GraphQL 127.0.0.1:59391"
+        "GraphQL 127.0.0.1:65141"
       ],
       "capabilities": "27 → 25",
       "savedPipelines": "1 → 0"
     },
     {
       "n": 14,
-      "title": "Introduce a different provider (Quillbase, graphql): the objective works again",
+      "title": "Introduce a different provider (Tallyport, graphql): the objective works again",
       "ok": true,
       "learned": [
         "graphql: 1 fields"
       ],
       "via": [
-        "openapi:emberlane",
-        "mcp:northwind-billing",
-        "graphql:127-0-0-1-59463-graphql"
+        "graphql:127-0-0-1-65139-graphql",
+        "openapi:ledgerline",
+        "graphql:127-0-0-1-65212-graphql"
       ],
-      "expected": 6.5,
-      "got": 6.5,
-      "ms": 3
+      "expected": 26,
+      "got": 26,
+      "ms": 3.3
     }
   ],
   "benchmarks": {
-    "startupMs": 196.4,
+    "startupMs": 132,
     "mcpLatencyMs": {
-      "p50": 0.05,
-      "p95": 0.2
+      "p50": 0.04,
+      "p95": 0.12
     },
-    "discoveryMs": 60.9,
+    "discoveryMs": 36.3,
     "graph": {
       "providers": 5,
       "capabilities": 26,
@@ -176,68 +176,68 @@
       "chains3": 63,
       "total": 132
     },
-    "graphStatsMs": 0.2,
-    "planningMs": 5.1,
-    "executionMs": 9.8,
-    "recoveryAfterChangeMs": 14.6,
-    "recoveryAfterNewProviderMs": 3,
-    "memoryMB": 138
+    "graphStatsMs": 0.1,
+    "planningMs": 3.8,
+    "executionMs": 6.6,
+    "recoveryAfterChangeMs": 11.1,
+    "recoveryAfterNewProviderMs": 3.3,
+    "memoryMB": 139
   },
   "freeze": {
-    "commit": "3f1fbcc80dc47180a996bf08ba0cf5dadf31f72c",
+    "commit": "6f94a40ba17a4c258e5c5cdfe00ffcef07c63cbd",
     "tag": "lab-freeze-9",
-    "productCodeChangedSinceTag": "src/core/graph.ts\nsrc/core/identities.ts\nsrc/core/planner.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/interface/http.ts\nsrc/interface/tools.ts\nsrc/reflectors/net.ts\nsrc/runtime.ts",
-    "uncommittedProductChanges": "M bin/rcx.ts\n M src/entry/durable.ts\n M src/entry/edge.ts\n M src/interface/http.ts\n M src/reflectors/mcp.ts\n M src/reflectors/platform.ts\n M src/runtime.ts\n?? src/core/authority.ts",
+    "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/core/authority.ts\nsrc/core/graph.ts\nsrc/core/identities.ts\nsrc/core/planner.ts\nsrc/core/sandbox.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/entry/durable.ts\nsrc/entry/edge.ts\nsrc/interface/http.ts\nsrc/interface/tools.ts\nsrc/reflectors/cli.ts\nsrc/reflectors/mcp.ts\nsrc/reflectors/net.ts\nsrc/reflectors/platform.ts\nsrc/runtime.ts",
+    "uncommittedProductChanges": "M src/core/planner.ts\n M src/core/types.ts\n M src/interface/tools.ts\n M src/reflectors/graphql.ts\n M src/reflectors/openapi.ts\n M src/runtime.ts\n?? src/core/fields.ts\n?? src/core/satisfaction.ts",
     "frozen": false
   },
   "environment": [
     {
       "service": "invoices",
-      "brand": "Emberlane",
-      "protocol": "openapi",
-      "operation": "Get invoice",
-      "input": "invoice_id",
+      "brand": "Duneworks",
+      "protocol": "graphql",
+      "operation": "Invoice lookup",
+      "input": "invoiceId",
       "outputs": [
-        "invoice_id",
+        "invoiceId",
         "customer_number",
-        "amount",
+        "net_amount",
         "currency"
       ]
     },
     {
       "service": "customers",
-      "brand": "Northwind Billing",
-      "protocol": "mcp",
-      "operation": "Get customer",
+      "brand": "Ledgerline",
+      "protocol": "openapi",
+      "operation": "Customer profile",
       "input": "customer_number",
       "outputs": [
         "customer_number",
-        "company_name",
-        "country"
+        "legal_name",
+        "countryCode"
       ]
     },
     {
       "service": "tax",
-      "brand": "Tallyport",
+      "brand": "Fjordsoft",
       "protocol": "openapi",
-      "operation": "Lookup tax rate for a country",
+      "operation": "Tax rate by country",
       "input": "countryCode",
       "outputs": [
         "countryCode",
-        "standard_rate"
+        "vat_rate"
       ]
     }
   ],
   "firstRunProviders": [
-    "openapi:emberlane",
-    "mcp:northwind-billing",
-    "openapi:tallyport"
+    "graphql:127-0-0-1-65139-graphql",
+    "openapi:ledgerline",
+    "openapi:fjordsoft"
   ],
   "receipts": {
     "count": 21,
     "intact": true,
     "brokenAt": null,
-    "head": "43fed6683c33af9c9ca580da7881f61c6f858c55eb1965426606819ac042fad7"
+    "head": "a5fb34ffe0f8258d52e232d8020aa562ce88e0732ab3a3727dce1063a6a76d7c"
   },
   "passed": 14,
   "total": 14

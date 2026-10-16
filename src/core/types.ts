@@ -114,6 +114,8 @@ export interface PeerInvoke {
 export interface Binding {
   /** Input port of this step. */
   port: string;
+  /** A constant chosen by the planner (e.g. a GraphQL selection for required fields); `from` is "$const". */
+  value?: unknown;
   /** Either a goal input ("$in.<name>") or "<stepIndex>.<outputPath>". */
   from: string;
   /**
@@ -173,6 +175,13 @@ export type Invoke =
   | GoalInvoke
   | CompositeInvoke;
 
+/** A field the provider's contract declares in this capability's result (paths may cross arrays). */
+export interface DeclaredField {
+  path: string;
+  /** For providers that choose what to return (GraphQL): whether the default request selects it. */
+  selected?: boolean;
+}
+
 export interface Capability {
   id: string;
   title: string;
@@ -184,6 +193,8 @@ export interface Capability {
   risk: Risk;
   tags: string[];
   invoke: Invoke;
+  /** Result fields the contract declares (deeper than the output ports); used to judge goal satisfaction. */
+  fields?: DeclaredField[];
 }
 
 export interface Provider {

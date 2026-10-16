@@ -6,6 +6,8 @@ import { CapabilityGraph, signature, tokenize, type GraphEvent, type LearnDelta 
 import { Ledger, ReceiptChain, sha256, type Receipt } from "./core/ledger.ts";
 import { shapeOf, type IdentityState } from "./core/identities.ts";
 import { egressOf, plan, type Plan } from "./core/planner.ts";
+import { outputCarries, type Satisfaction } from "./core/satisfaction.ts";
+import { selectionWith } from "./reflectors/graphql.ts";
 import { hostSandbox, type Sandbox } from "./core/sandbox.ts";
 import { investigateCli, type Investigation } from "./reflectors/cli.ts";
 import { distance, inferType, inspectValue, type Inspection } from "./core/semantics.ts";
@@ -201,6 +203,8 @@ export interface ComposeResult {
   published?: { id: string; slug: string; path: string; trust?: "verified" | "unverified" };
   /** Present when publication was refused by the operator's publication authority. */
   publishRefused?: string;
+  /** With `require`: whether the requested information was established, before and after running. */
+  outcome?: { status: "established" | "unverified" | "unavailable" | "incomplete"; require: string[]; covered: Record<string, string>; missing: string[]; joins: Satisfaction["joins"]; reason?: string; checkedAfterRun?: boolean };
   /** Present when compose had to go and find new capabilities in the world. */
   acquisition?: { topic: string; considered: string[]; learned: Array<{ title: string; kind: string; source: string; capabilities: number; error?: string }> };
 }
@@ -1074,6 +1078,8 @@ export class RightClick {
     anchors?: CapabilityAnchor[];
     /** Egress policy: only use capabilities that send data to these origins, including during repair. */
     origins?: string[];
+    /** Required output information (e.g. ["resolution"]): only plans established to carry it run. */
+    require?: string[];
     /** If the graph can't do it, research public directories, learn candidates and re-plan. */
     acquire?: boolean;
     /** After a verified run, publish this goal as an API endpoint under this name. */
@@ -1121,7 +1127,8 @@ export class RightClick {
     const net: Net = origins ? { ...this.net, policy: { blockPrivate: false, ...this.net.policy, origins } } : this.net;
     // A caller's value named and shaped like a learned identifier scheme's carries that scheme.
     const schemes = Object.fromEntries(Object.entries(values).map(([k, v]) => [k, this.graph.identities.schemesFor(this.graph.capabilities.values(), k, v)]).filter(([, s]) => s.length));
-    const goal = { have: types, want: opts.want, intent: opts.intent, maxSteps: opts.maxSteps, limit: opts.limit ?? 5, risks: opts.risks, through, exclude: blocked, origins, schemes };
+    const require = (opts.require ?? []).map((t) => String(t).trim()).filter(Boolean);
+    const goal = { have: types, want: opts.want, intent: opts.intent, maxSteps: opts.maxSteps, limit: opts.limit ?? 5, risks: opts.risks, through, exclude: blocked, origins, schemes, ...(require.length ? { require } : {}) };
     let plans = plan(this.graph, this.ledger, goal);
     const titles = (p: Plan) => p.steps.map((s) => this.graph.get(s.capability)!.title + (s.bindings.some((b) => b.each) ? " (each)" : ""));
     const result: ComposeResult = {
@@ -1170,6 +1177,17 @@ export class RightClick {
     const covered = () => plans[0]?.intentScore ?? 0;
     const enough = () => plans.length > 0 && (!intentTerms || covered() >= Math.ceil(intentTerms * 0.75));
     for (let round = 0; !enough() && round < 3; round++) if (!(await acquireMore())) break;
+    // Required information: only a plan established to carry it, with no generic join, runs.
+    // Otherwise say so explicitly, and run nothing.
+    const established = (ps: Plan[]) => (require.length ? ps.filter((p) => p.satisfaction?.status === "established") : ps);
+    if (require.length) {
+      const best = plans[0]?.satisfaction;
+      const top = established(plans)[0]?.satisfaction;
+      result.outcome = top
+        ? { status: "established", require, covered: top.covered, missing: [], joins: top.joins }
+        : { status: best?.status === "unverified" ? "unverified" : "unavailable", require, covered: best?.covered ?? {}, missing: best?.missing ?? require, joins: best?.joins ?? [], reason: !plans.length ? "no plan reaches the requested type" : best?.status === "unverified" ? "the required information is reachable only through a generic join (no evidence that the values link)" : `no plan's result carries: ${(best?.missing ?? require).join(", ")}` };
+      plans = established(plans);
+    }
     if (!opts.run || !plans.length) return result;
 
     // Self-healing execution: when a step fails, route around that capability
@@ -1184,12 +1202,26 @@ export class RightClick {
     for (let attempt = 0; attempt < 6 && plans.length; attempt++) {
       const p = plans[0];
       try {
-        const r = await this.runSteps(p.steps, p.result, values, opts.confirm, opts.activeGoals, net);
+        // Ask providers for required fields they declare but do not return by default.
+        const steps = p.steps.map((st, i) => {
+          const proj = p.satisfaction?.projection.find((x) => x.step === i);
+          const gi = this.graph.get(st.capability)?.invoke as any;
+          if (!proj || gi?.kind !== "graphql" || !gi.selectPort) return st;
+          return { ...st, bindings: [...st.bindings.filter((b) => b.port !== gi.selectPort), { port: gi.selectPort, from: "$const", value: selectionWith(gi.selection, proj.fields) }] };
+        });
+        const r = await this.runSteps(steps, p.result, values, opts.confirm, opts.activeGoals, net);
         let verification = check(r.output, opts.verify ?? []);
         if (verification.status === "refuted") throw new StepError(p.steps[p.steps.length - 1].capability, `verification refuted: ${JSON.stringify(verification.results.filter((x) => !x.ok))}`);
         lastWitnesses = await this.checkWitnesses(witnesses, values, r.output, r.runs, net);
         if (lastWitnesses.some((w) => w.status !== "completed")) throw new StepError(p.steps[p.steps.length - 1].capability, `verification refuted by independent outcome witness: ${lastWitnesses.filter((w) => w.status !== "completed").map((w) => w.error ?? w.capability).join("; ")}`);
         if (lastWitnesses.length) verification = { ...verification, status: "verified" };
+        if (require.length) {
+          // The contract said the result carries it; check that this result actually does.
+          const seen = outputCarries(r.output, require);
+          result.outcome = seen.absent.length
+            ? { status: "incomplete", require, covered: Object.fromEntries(seen.present.map((t) => [t, p.satisfaction?.covered[t] ?? ""])), missing: seen.absent, joins: p.satisfaction?.joins ?? [], reason: `the executed result lacks: ${seen.absent.join(", ")}` }
+            : { status: "established", require, covered: p.satisfaction?.covered ?? {}, missing: [], joins: p.satisfaction?.joins ?? [], checkedAfterRun: true };
+        }
         result.executed = {
           summary: p.summary,
           titles: titles(p),
@@ -1316,8 +1348,8 @@ export class RightClick {
         // title repeats the goal's words, which must not raise the bar.
         const floor = Math.ceil(baselineCoverage * 0.75);
         const keep = (ps: Plan[]) => ps.filter((x) => x.intentScore >= floor);
-        plans = keep(plan(this.graph, this.ledger, { ...goal, exclude }));
-        if (!plans.length && (await acquireMore())) plans = keep(plan(this.graph, this.ledger, { ...goal, exclude }));
+        plans = established(keep(plan(this.graph, this.ledger, { ...goal, exclude })));
+        if (!plans.length && (await acquireMore())) plans = established(keep(plan(this.graph, this.ledger, { ...goal, exclude })));
       }
     }
     result.executed = {
@@ -1504,7 +1536,7 @@ export class RightClick {
     };
     for (const [index, step] of steps.entries()) {
       const args: Record<string, unknown> = {};
-      for (const b of step.bindings) if (!b.each) args[b.port] = resolve(b.from);
+      for (const b of step.bindings) if (!b.each) args[b.port] = b.value !== undefined ? b.value : resolve(b.from);
       const fan = step.bindings.find((b) => b.each);
       if (!fan) {
         const r = await this.run(step.capability, args, { confirm, activeGoals, net, planned: true });

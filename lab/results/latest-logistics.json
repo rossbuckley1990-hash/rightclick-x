@@ -1,8 +1,8 @@
 {
-  "seed": 660900905,
+  "seed": 902708158,
   "domain": "logistics",
   "gateway": false,
-  "startedAt": "2026-10-16T21:24:07.280Z",
+  "startedAt": "2026-10-16T21:43:07.573Z",
   "steps": [
     {
       "n": 1,
@@ -17,7 +17,7 @@
       "title": "Connect an MCP client to RightClick X (stdio)",
       "ok": true,
       "tools": 13,
-      "startupMs": 158.7
+      "startupMs": 147.7
     },
     {
       "n": 3,
@@ -42,12 +42,12 @@
       "title": "Discover contracts from root addresses only (no protocols, no schemas given)",
       "ok": true,
       "found": [
-        "openapi",
-        "openapi",
-        "mcp"
+        "graphql",
+        "graphql",
+        "graphql"
       ],
       "newCapabilities": 3,
-      "ms": 42.9
+      "ms": 38.7
     },
     {
       "n": 5,
@@ -55,79 +55,79 @@
       "ok": true,
       "candidatePlans": 2,
       "best": [
-        "Track shipment",
-        "Get warehouse",
-        "City shipping rate"
+        "Get Shipment",
+        "Fetch Warehouse",
+        "Lookup Shipping Rate For A City"
       ],
-      "planningMs": 4
+      "planningMs": 3.2
     },
     {
       "n": 6,
       "title": "Compose a multi-provider workflow",
       "ok": true,
       "steps": [
-        "Track shipment ← shipment_number=$in.shipment_id",
-        "Get warehouse ← warehouseId=0.warehouse_id",
-        "City shipping rate ← city=1.city"
+        "Get Shipment ← shipmentId=$in.shipment_id",
+        "Fetch Warehouse ← warehouse_number=0.warehouseId",
+        "Lookup Shipping Rate For A City ← town=1.city"
       ]
     },
     {
       "n": 7,
       "title": "Execute the workflow",
       "ok": true,
-      "input": "SHP-1000",
+      "input": "SHP-1004",
       "pipeline": [
-        "Track shipment",
-        "Get warehouse",
-        "City shipping rate"
+        "Get Shipment",
+        "Fetch Warehouse",
+        "Lookup Shipping Rate For A City"
       ],
-      "ms": 6.5
+      "ms": 6.2
     },
     {
       "n": 8,
       "title": "Verify against independently held test data",
       "ok": true,
-      "expected": 2.3,
-      "got": 2.3
+      "expected": 17.4,
+      "got": 17.4
     },
     {
       "n": 9,
       "title": "Save the successful composition and reuse it",
       "ok": true,
-      "saved": "Shipping rate shipment warehouse city: Track shipment → Get warehouse → City shipping rate",
+      "saved": "Shipping rate shipment warehouse city: Get Shipment → Fetch Warehouse → Lookup Shipping Rate For A City",
       "reusedAs": [
-        "Shipping rate shipment warehouse city: Track shipment → Get warehouse → City shipping rate"
+        "Shipping rate shipment warehouse city: Get Shipment → Fetch Warehouse → Lookup Shipping Rate For A City"
       ],
-      "expected": 20.3,
-      "got": 20.3,
-      "ms": 2.6
+      "expected": 38.5,
+      "got": 38.5,
+      "ms": 3
     },
     {
       "n": 10,
-      "title": "Change the interface of the last provider in the chain (Duneworks)",
+      "title": "Change the interface of the last provider in the chain (Mistral Depot)",
       "ok": true,
-      "before": "mcp \"City shipping rate\" city → city, shipping_rate",
-      "after": "openapi \"Shipping rate by city\" town → result.{town, rate}"
+      "before": "graphql \"Lookup shipping rate for a city\" town → town, rate",
+      "after": "mcp \"Shipping rate by city\" location → result.{location, price_per_kg}"
     },
     {
       "n": 11,
       "title": "Recover without changing integration code",
       "ok": true,
       "healing": [
-        "API drift at http://127.0.0.1:60283/: mcp:duneworks → openapi:duneworks; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:49642/: graphql:127-0-0-1-49642-graphql → mcp:mistral-depot; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "via": [
-        "openapi:harbourly",
-        "openapi:brightmark",
-        "openapi:duneworks"
+        "graphql:127-0-0-1-49640-graphql",
+        "graphql:127-0-0-1-49641-graphql",
+        "mcp:mistral-depot"
       ],
-      "expected": 20.3,
-      "got": 20.3,
-      "ms": 11
+      "expected": 23,
+      "got": 23,
+      "ms": 9.9
     },
     {
       "n": 12,
-      "title": "Remove that provider (Duneworks)",
+      "title": "Remove that provider (Mistral Depot)",
       "ok": true
     },
     {
@@ -136,38 +136,38 @@
       "ok": true,
       "status": "failed",
       "healing": [
-        "provider gone at http://127.0.0.1:60283/: withdrew openapi:duneworks (1 capabilities, 1 pipeline(s) retired)"
+        "provider gone at http://127.0.0.1:49642/: withdrew mcp:mistral-depot (1 capabilities, 1 pipeline(s) retired)"
       ],
       "withdrawn": [
-        "Duneworks"
+        "Mistral Depot"
       ],
       "capabilities": "27 → 25",
       "savedPipelines": "1 → 0"
     },
     {
       "n": 14,
-      "title": "Introduce a different provider (Kestrel Freight, graphql): the objective works again",
+      "title": "Introduce a different provider (Fernway, mcp): the objective works again",
       "ok": true,
       "learned": [
-        "graphql: 1 fields"
+        "mcp: 1 tools"
       ],
       "via": [
-        "openapi:harbourly",
-        "openapi:brightmark",
-        "graphql:127-0-0-1-60355-graphql"
+        "graphql:127-0-0-1-49640-graphql",
+        "graphql:127-0-0-1-49641-graphql",
+        "mcp:fernway"
       ],
-      "expected": 5.3,
-      "got": 5.3,
-      "ms": 2.2
+      "expected": 31.3,
+      "got": 31.3,
+      "ms": 2.5
     }
   ],
   "benchmarks": {
-    "startupMs": 158.7,
+    "startupMs": 147.7,
     "mcpLatencyMs": {
       "p50": 0.04,
-      "p95": 0.14
+      "p95": 0.15
     },
-    "discoveryMs": 42.9,
+    "discoveryMs": 38.7,
     "graph": {
       "providers": 5,
       "capabilities": 26,
@@ -177,66 +177,66 @@
       "total": 114
     },
     "graphStatsMs": 0.1,
-    "planningMs": 4,
-    "executionMs": 6.5,
-    "recoveryAfterChangeMs": 11,
-    "recoveryAfterNewProviderMs": 2.2,
-    "memoryMB": 136
+    "planningMs": 3.2,
+    "executionMs": 6.2,
+    "recoveryAfterChangeMs": 9.9,
+    "recoveryAfterNewProviderMs": 2.5,
+    "memoryMB": 139
   },
   "freeze": {
-    "commit": "3f1fbcc80dc47180a996bf08ba0cf5dadf31f72c",
+    "commit": "6f94a40ba17a4c258e5c5cdfe00ffcef07c63cbd",
     "tag": "lab-freeze-9",
-    "productCodeChangedSinceTag": "src/core/graph.ts\nsrc/core/identities.ts\nsrc/core/planner.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/interface/http.ts\nsrc/interface/tools.ts\nsrc/reflectors/net.ts\nsrc/runtime.ts",
-    "uncommittedProductChanges": "M bin/rcx.ts\n M src/entry/durable.ts\n M src/entry/edge.ts\n M src/interface/http.ts\n M src/reflectors/mcp.ts\n M src/reflectors/platform.ts\n M src/runtime.ts\n?? src/core/authority.ts",
+    "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/core/authority.ts\nsrc/core/graph.ts\nsrc/core/identities.ts\nsrc/core/planner.ts\nsrc/core/sandbox.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/entry/durable.ts\nsrc/entry/edge.ts\nsrc/interface/http.ts\nsrc/interface/tools.ts\nsrc/reflectors/cli.ts\nsrc/reflectors/mcp.ts\nsrc/reflectors/net.ts\nsrc/reflectors/platform.ts\nsrc/runtime.ts",
+    "uncommittedProductChanges": "M src/core/planner.ts\n M src/core/types.ts\n M src/interface/tools.ts\n M src/reflectors/graphql.ts\n M src/reflectors/openapi.ts\n M src/runtime.ts\n?? src/core/fields.ts\n?? src/core/satisfaction.ts",
     "frozen": false
   },
   "environment": [
     {
       "service": "shipments",
-      "brand": "Harbourly",
-      "protocol": "openapi",
-      "operation": "Track shipment",
-      "input": "shipment_number",
+      "brand": "Lumen Cargo",
+      "protocol": "graphql",
+      "operation": "Get shipment",
+      "input": "shipmentId",
       "outputs": [
-        "shipment_number",
-        "warehouse_id",
-        "weight_kg"
+        "shipmentId",
+        "warehouseId",
+        "weight"
       ]
     },
     {
       "service": "warehouses",
-      "brand": "Brightmark",
-      "protocol": "openapi",
-      "operation": "Get warehouse",
-      "input": "warehouseId",
+      "brand": "Quillbase",
+      "protocol": "graphql",
+      "operation": "Fetch warehouse",
+      "input": "warehouse_number",
       "outputs": [
-        "warehouseId",
+        "warehouse_number",
         "city",
-        "contact_email"
+        "manager_email"
       ]
     },
     {
       "service": "rates",
-      "brand": "Duneworks",
-      "protocol": "mcp",
-      "operation": "City shipping rate",
-      "input": "city",
+      "brand": "Mistral Depot",
+      "protocol": "graphql",
+      "operation": "Lookup shipping rate for a city",
+      "input": "town",
       "outputs": [
-        "city",
-        "shipping_rate"
+        "town",
+        "rate"
       ]
     }
   ],
   "firstRunProviders": [
-    "openapi:harbourly",
-    "openapi:brightmark",
-    "mcp:duneworks"
+    "graphql:127-0-0-1-49640-graphql",
+    "graphql:127-0-0-1-49641-graphql",
+    "graphql:127-0-0-1-49642-graphql"
   ],
   "receipts": {
     "count": 21,
     "intact": true,
     "brokenAt": null,
-    "head": "8ed9d78ab4b55931a776fccc8d0f61e17a5424340dd7a57056e8fc8ce903122e"
+    "head": "5b893e370c1576529b230b1cbbf4ef2f3103fee26fa6bed1f0a19c2ee451ae16"
   },
   "passed": 14,
   "total": 14
