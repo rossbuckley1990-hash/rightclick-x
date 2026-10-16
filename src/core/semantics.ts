@@ -184,9 +184,16 @@ export function inferType(name: string, schema: SchemaLike = {}, description = "
   if (/\biso ?3166\b|country code/.test(d)) return "country";
   if (/\biso ?4217\b|currency code/.test(d)) return "currency";
   if (/\burl\b|\buri\b/.test(d) && rawType === "string") return "url";
+  // Cryptic names with meaningful descriptions ("acctno": "Account reference",
+  // "hldr": "Customer reference of the account holder") identify an entity.
+  const ident = /\b([a-z]+)\s+(?:reference|identifier|id)\b/.exec(d);
+  if (ident && !ID_FILLER.has(ident[1]) && rawType !== "array" && rawType !== "object") return `id.${ident[1]}`;
   if (rawType === undefined && !schema.format && compact === "") return "json";
   return "text";
 }
+
+/** Words that precede "identifier"/"id" without naming an entity. */
+const ID_FILLER = new Set(["the", "a", "an", "unique", "internal", "external", "its", "their", "this", "global", "opaque", "public", "system", "primary"]);
 
 const GENERIC = new Set(["text", "id", "json", "number"]);
 

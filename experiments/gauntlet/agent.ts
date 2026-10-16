@@ -38,7 +38,7 @@ function run(cmd: string, argv: string[], cwd: string, timeoutMs: number): Promi
 
 const RCX = resolve("bin/rcx.ts");
 
-export async function runAgent(client: Client, target: McpTarget, prompt: string, timeoutMs = 900_000): Promise<AgentRun> {
+export async function runAgent(client: Client, target: McpTarget, prompt: string, timeoutMs = 900_000, model?: string): Promise<AgentRun> {
   const dir = mkdtempSync(`${tmpdir()}/rcx-agent-${client}-`);
   const t0 = performance.now();
   let output = "";
@@ -51,7 +51,7 @@ export async function runAgent(client: Client, target: McpTarget, prompt: string
     writeFileSync(`${dir}/mcp.json`, JSON.stringify({ mcpServers: { "rightclick-x": server } }));
     const r = await run(
       "claude",
-      ["-p", prompt, "--mcp-config", `${dir}/mcp.json`, "--strict-mcp-config", "--allowedTools", "mcp__rightclick-x", "--disallowedTools", "Bash,Read,Write,Edit,WebFetch,WebSearch,Glob,Grep,Task,NotebookEdit", "--output-format", "json", "--max-turns", "40"],
+      ["-p", prompt, ...(model ? ["--model", model] : []), "--mcp-config", `${dir}/mcp.json`, "--strict-mcp-config", "--allowedTools", "mcp__rightclick-x", "--disallowedTools", "Bash,Read,Write,Edit,WebFetch,WebSearch,Glob,Grep,Task,NotebookEdit", "--output-format", "json", "--max-turns", "40"],
       dir,
       timeoutMs,
     );
@@ -74,7 +74,7 @@ export async function runAgent(client: Client, target: McpTarget, prompt: string
             "-c", `mcp_servers.rightclick-x.http_headers={Authorization=${JSON.stringify(`Bearer ${target.token}`)}}`,
           ];
     // Codex's own automatic reviewer handles approval requests; shell commands are sandboxed in a temp dir.
-    const r = await run("codex", ["exec", "--skip-git-repo-check", "--approve-for-me", ...cfg, "--output-last-message", `${dir}/last.txt`, prompt], dir, timeoutMs);
+    const r = await run("codex", ["exec", "--skip-git-repo-check", "--approve-for-me", ...(model ? ["-m", model] : []), ...cfg, "--output-last-message", `${dir}/last.txt`, prompt], dir, timeoutMs);
     exit = r.code;
     try {
       output = readFileSync(`${dir}/last.txt`, "utf8");

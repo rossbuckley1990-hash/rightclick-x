@@ -1,7 +1,7 @@
 {
-  "seed": 361917237,
+  "seed": 14377121,
   "domain": "invoicing",
-  "startedAt": "2026-10-16T06:40:13.341Z",
+  "startedAt": "2026-10-16T07:19:14.639Z",
   "steps": [
     {
       "n": 1,
@@ -15,7 +15,7 @@
       "title": "Connect an MCP client to RightClick X (stdio)",
       "ok": true,
       "tools": 13,
-      "startupMs": 108.9
+      "startupMs": 109.4
     },
     {
       "n": 3,
@@ -40,12 +40,12 @@
       "title": "Discover contracts from root addresses only (no protocols, no schemas given)",
       "ok": true,
       "found": [
-        "openapi",
-        "openapi",
-        "openapi"
+        "graphql",
+        "mcp",
+        "mcp"
       ],
       "newCapabilities": 3,
-      "ms": 27.7
+      "ms": 30.6
     },
     {
       "n": 5,
@@ -53,79 +53,79 @@
       "ok": true,
       "candidatePlans": 3,
       "best": [
-        "Get invoice",
-        "Fetch customer record",
-        "Lookup tax rate for a country"
+        "Retrieve invoice",
+        "Look up customer",
+        "Country Tax Rate"
       ],
-      "planningMs": 2.3
+      "planningMs": 2.2
     },
     {
       "n": 6,
       "title": "Compose a multi-provider workflow",
       "ok": true,
       "steps": [
-        "Get invoice ← invoice_number=$in.invoice_id",
-        "Fetch customer record ← customer_number=0.customer_number",
-        "Lookup tax rate for a country ← country=1.country"
+        "Retrieve invoice ← invoice_number=$in.invoice_id",
+        "Look up customer ← customer_number=0.customer_number",
+        "Country Tax Rate ← countryCode=1.country_code"
       ]
     },
     {
       "n": 7,
       "title": "Execute the workflow",
       "ok": true,
-      "input": "INV-1005",
+      "input": "INV-1003",
       "pipeline": [
-        "Get invoice",
-        "Fetch customer record",
-        "Lookup tax rate for a country"
+        "Retrieve invoice",
+        "Look up customer",
+        "Country Tax Rate"
       ],
-      "ms": 5.7
+      "ms": 3.7
     },
     {
       "n": 8,
       "title": "Verify against independently held test data",
       "ok": true,
-      "expected": 18.8,
-      "got": 18.8
+      "expected": 19.4,
+      "got": 19.4
     },
     {
       "n": 9,
       "title": "Save the successful composition and reuse it",
       "ok": true,
-      "saved": "Tax rate invoice customer country: Get invoice → Fetch customer record → Lookup tax rate for a country",
+      "saved": "Tax rate invoice customer country: Retrieve invoice → Look up customer → Country Tax Rate",
       "reusedAs": [
-        "Tax rate invoice customer country: Get invoice → Fetch customer record → Lookup tax rate for a country"
+        "Tax rate invoice customer country: Retrieve invoice → Look up customer → Country Tax Rate"
       ],
-      "expected": 12.5,
-      "got": 12.5,
-      "ms": 2.3
+      "expected": 19.4,
+      "got": 19.4,
+      "ms": 2.5
     },
     {
       "n": 10,
-      "title": "Change the interface of the last provider in the chain (Fjordsoft)",
+      "title": "Change the interface of the last provider in the chain (Cobaltix)",
       "ok": true,
-      "before": "openapi \"Lookup tax rate for a country\" country → country, tax_rate",
-      "after": "graphql \"Get tax rate\" countryCode → result.{countryCode, rate}"
+      "before": "graphql \"Country tax rate\" countryCode → countryCode, standard_rate",
+      "after": "openapi \"Lookup tax rate for a country\" country → result.{country, rate}"
     },
     {
       "n": 11,
       "title": "Recover without changing integration code",
       "ok": true,
       "healing": [
-        "API drift at http://127.0.0.1:50670/: openapi:fjordsoft → graphql:127-0-0-1-50670-graphql; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:56209/: graphql:127-0-0-1-56209-graphql → openapi:cobaltix; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "via": [
-        "openapi:mistral-depot",
-        "openapi:harbourly",
-        "graphql:127-0-0-1-50670-graphql"
+        "mcp:tallyport",
+        "mcp:quillbase",
+        "openapi:cobaltix"
       ],
-      "expected": 18.8,
-      "got": 18.8,
-      "ms": 8.1
+      "expected": 19.4,
+      "got": 19.4,
+      "ms": 7.7
     },
     {
       "n": 12,
-      "title": "Remove that provider (Fjordsoft)",
+      "title": "Remove that provider (Cobaltix)",
       "ok": true
     },
     {
@@ -134,38 +134,38 @@
       "ok": true,
       "status": "failed",
       "healing": [
-        "provider gone at http://127.0.0.1:50670/: withdrew graphql:127-0-0-1-50670-graphql (1 capabilities, 1 pipeline(s) retired)"
+        "provider gone at http://127.0.0.1:56209/: withdrew openapi:cobaltix (1 capabilities, 1 pipeline(s) retired)"
       ],
       "withdrawn": [
-        "GraphQL 127.0.0.1:50670"
+        "Cobaltix"
       ],
       "capabilities": "21 → 19",
       "savedPipelines": "1 → 0"
     },
     {
       "n": 14,
-      "title": "Introduce a different provider (Lumen Cargo, graphql): the objective works again",
+      "title": "Introduce a different provider (Kestrel Freight, openapi): the objective works again",
       "ok": true,
       "learned": [
-        "graphql: 1 fields"
+        "openapi: 1 operations"
       ],
       "via": [
-        "openapi:mistral-depot",
-        "openapi:harbourly",
-        "graphql:127-0-0-1-50732-graphql"
+        "mcp:tallyport",
+        "mcp:quillbase",
+        "openapi:kestrel-freight"
       ],
-      "expected": 16.5,
-      "got": 16.5,
-      "ms": 1.6
+      "expected": 10.3,
+      "got": 10.3,
+      "ms": 1.9
     }
   ],
   "benchmarks": {
-    "startupMs": 108.9,
+    "startupMs": 109.4,
     "mcpLatencyMs": {
       "p50": 0.04,
-      "p95": 0.11
+      "p95": 0.12
     },
-    "discoveryMs": 27.7,
+    "discoveryMs": 30.6,
     "graph": {
       "providers": 5,
       "capabilities": 20,
@@ -174,68 +174,68 @@
       "chains3": 57,
       "total": 114
     },
-    "graphStatsMs": 0.4,
-    "planningMs": 2.3,
-    "executionMs": 5.7,
-    "recoveryAfterChangeMs": 8.1,
-    "recoveryAfterNewProviderMs": 1.6,
-    "memoryMB": 134
+    "graphStatsMs": 0.1,
+    "planningMs": 2.2,
+    "executionMs": 3.7,
+    "recoveryAfterChangeMs": 7.7,
+    "recoveryAfterNewProviderMs": 1.9,
+    "memoryMB": 135
   },
   "freeze": {
-    "commit": "eb757bdebefcd439b5c21bf41ecf82d25e8c871c",
+    "commit": "0ddedff92fb43a2dc22bedb18f94f48492809a15",
     "tag": "lab-freeze-3",
-    "productCodeChangedSinceTag": "",
-    "uncommittedProductChanges": "",
-    "frozen": true
+    "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/interface/mcp-server.ts\nsrc/runtime.ts",
+    "uncommittedProductChanges": "M src/core/semantics.ts\n M src/runtime.ts",
+    "frozen": false
   },
   "environment": [
     {
       "service": "invoices",
-      "brand": "Mistral Depot",
-      "protocol": "openapi",
-      "operation": "Get invoice",
+      "brand": "Tallyport",
+      "protocol": "mcp",
+      "operation": "Retrieve invoice",
       "input": "invoice_number",
       "outputs": [
         "invoice_number",
         "customer_number",
         "total",
-        "currency_code"
+        "currency"
       ]
     },
     {
       "service": "customers",
-      "brand": "Harbourly",
-      "protocol": "openapi",
-      "operation": "Fetch customer record",
+      "brand": "Quillbase",
+      "protocol": "mcp",
+      "operation": "Look up customer",
       "input": "customer_number",
       "outputs": [
         "customer_number",
         "display_name",
-        "country"
+        "country_code"
       ]
     },
     {
       "service": "tax",
-      "brand": "Fjordsoft",
-      "protocol": "openapi",
-      "operation": "Lookup tax rate for a country",
-      "input": "country",
+      "brand": "Cobaltix",
+      "protocol": "graphql",
+      "operation": "Country tax rate",
+      "input": "countryCode",
       "outputs": [
-        "country",
-        "tax_rate"
+        "countryCode",
+        "standard_rate"
       ]
     }
   ],
   "firstRunProviders": [
-    "openapi:mistral-depot",
-    "openapi:harbourly",
-    "openapi:fjordsoft"
+    "mcp:tallyport",
+    "mcp:quillbase",
+    "graphql:127-0-0-1-56209-graphql"
   ],
   "receipts": {
     "count": 21,
     "intact": true,
     "brokenAt": null,
-    "head": "eead049a7eefc187f996b081ed8304f8809bfb8dfb7504f7e9920491a4be1936"
+    "head": "c4cda04d6a69dcb78cf200289672cd372d371ab52760f16a8be13ce007c80802"
   },
   "passed": 14,
   "total": 14

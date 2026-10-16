@@ -1,0 +1,241 @@
+{
+  "seed": 781091703,
+  "domain": "accounts",
+  "startedAt": "2026-10-16T07:19:10.568Z",
+  "steps": [
+    {
+      "n": 1,
+      "title": "Start disposable services generated from fixtures",
+      "ok": true,
+      "domain": "accounts",
+      "services": 3
+    },
+    {
+      "n": 2,
+      "title": "Connect an MCP client to RightClick X (stdio)",
+      "ok": true,
+      "tools": 13,
+      "startupMs": 107
+    },
+    {
+      "n": 3,
+      "title": "Present a business objective: \"For a bank account, find the VAT rate that applies in its holder's country.\"",
+      "ok": true,
+      "goal": {
+        "have": {
+          "account_id": "<id>"
+        },
+        "want": "number",
+        "intent": "vat rate account holder country",
+        "verify": [
+          {
+            "op": "type",
+            "value": "number"
+          }
+        ]
+      }
+    },
+    {
+      "n": 4,
+      "title": "Discover contracts from root addresses only (no protocols, no schemas given)",
+      "ok": true,
+      "found": [
+        "graphql",
+        "openapi",
+        "mcp"
+      ],
+      "newCapabilities": 3,
+      "ms": 30.1
+    },
+    {
+      "n": 5,
+      "title": "Identify suitable capabilities",
+      "ok": true,
+      "candidatePlans": 3,
+      "best": [
+        "Get Account",
+        "Get account holder",
+        "VAT rate lookup"
+      ],
+      "planningMs": 2
+    },
+    {
+      "n": 6,
+      "title": "Compose a multi-provider workflow",
+      "ok": true,
+      "steps": [
+        "Get Account ← acct_ref=$in.account_id",
+        "Get account holder ← cust_ref=0.cust_ref",
+        "VAT rate lookup ← ctry=1.ctry"
+      ]
+    },
+    {
+      "n": 7,
+      "title": "Execute the workflow",
+      "ok": true,
+      "input": "ACC-1000",
+      "pipeline": [
+        "Get Account",
+        "Get account holder",
+        "VAT rate lookup"
+      ],
+      "ms": 4.4
+    },
+    {
+      "n": 8,
+      "title": "Verify against independently held test data",
+      "ok": true,
+      "expected": 5.3,
+      "got": 5.3
+    },
+    {
+      "n": 9,
+      "title": "Save the successful composition and reuse it",
+      "ok": true,
+      "saved": "Vat rate account holder country: Get Account → Get account holder → VAT rate lookup",
+      "reusedAs": [
+        "Vat rate account holder country: Get Account → Get account holder → VAT rate lookup"
+      ],
+      "expected": 25.8,
+      "got": 25.8,
+      "ms": 2.1
+    },
+    {
+      "n": 10,
+      "title": "Change the interface of the last provider in the chain (Brightmark)",
+      "ok": true,
+      "before": "mcp \"VAT rate lookup\" ctry → ctry, vatpct",
+      "after": "openapi \"VAT rate inquiry\" jur → result.{jur, vr}"
+    },
+    {
+      "n": 11,
+      "title": "Recover without changing integration code",
+      "ok": true,
+      "healing": [
+        "API drift at http://127.0.0.1:55276/: mcp:brightmark → openapi:brightmark; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+      ],
+      "via": [
+        "graphql:127-0-0-1-55274-graphql",
+        "openapi:quillbase",
+        "openapi:brightmark"
+      ],
+      "expected": 25.8,
+      "got": 25.8,
+      "ms": 7.3
+    },
+    {
+      "n": 12,
+      "title": "Remove that provider (Brightmark)",
+      "ok": true
+    },
+    {
+      "n": 13,
+      "title": "Withdraw its capabilities accurately; report the objective as impossible, not faked",
+      "ok": true,
+      "status": "failed",
+      "healing": [
+        "provider gone at http://127.0.0.1:55276/: withdrew openapi:brightmark (1 capabilities, 1 pipeline(s) retired)"
+      ],
+      "withdrawn": [
+        "Brightmark"
+      ],
+      "capabilities": "21 → 19",
+      "savedPipelines": "1 → 0"
+    },
+    {
+      "n": 14,
+      "title": "Introduce a different provider (Kestrel Freight, openapi): the objective works again",
+      "ok": true,
+      "learned": [
+        "openapi: 1 operations"
+      ],
+      "via": [
+        "graphql:127-0-0-1-55274-graphql",
+        "openapi:quillbase",
+        "openapi:kestrel-freight"
+      ],
+      "expected": 5.3,
+      "got": 5.3,
+      "ms": 1.6
+    }
+  ],
+  "benchmarks": {
+    "startupMs": 107,
+    "mcpLatencyMs": {
+      "p50": 0.04,
+      "p95": 0.11
+    },
+    "discoveryMs": 30.1,
+    "graph": {
+      "providers": 5,
+      "capabilities": 20,
+      "edges": 37,
+      "chains2": 37,
+      "chains3": 57,
+      "total": 114
+    },
+    "graphStatsMs": 0.1,
+    "planningMs": 2,
+    "executionMs": 4.4,
+    "recoveryAfterChangeMs": 7.3,
+    "recoveryAfterNewProviderMs": 1.6,
+    "memoryMB": 134
+  },
+  "freeze": {
+    "commit": "0ddedff92fb43a2dc22bedb18f94f48492809a15",
+    "tag": "lab-freeze-3",
+    "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/interface/mcp-server.ts\nsrc/runtime.ts",
+    "uncommittedProductChanges": "M src/core/semantics.ts\n M src/runtime.ts",
+    "frozen": false
+  },
+  "environment": [
+    {
+      "service": "ledger",
+      "brand": "Emberlane",
+      "protocol": "graphql",
+      "operation": "Get account",
+      "input": "acct_ref",
+      "outputs": [
+        "acct_ref",
+        "cust_ref",
+        "bal"
+      ]
+    },
+    {
+      "service": "kyc",
+      "brand": "Quillbase",
+      "protocol": "openapi",
+      "operation": "Get account holder",
+      "input": "cust_ref",
+      "outputs": [
+        "cust_ref",
+        "lglnm",
+        "ctry"
+      ]
+    },
+    {
+      "service": "vat",
+      "brand": "Brightmark",
+      "protocol": "mcp",
+      "operation": "VAT rate lookup",
+      "input": "ctry",
+      "outputs": [
+        "ctry",
+        "vatpct"
+      ]
+    }
+  ],
+  "firstRunProviders": [
+    "graphql:127-0-0-1-55274-graphql",
+    "openapi:quillbase",
+    "mcp:brightmark"
+  ],
+  "receipts": {
+    "count": 21,
+    "intact": true,
+    "brokenAt": null,
+    "head": "b0991cb522031bc52c19e6d4d6899d7652fe455d0e496dbc6fe7fcb3b0f705f3"
+  },
+  "passed": 14,
+  "total": 14
+}

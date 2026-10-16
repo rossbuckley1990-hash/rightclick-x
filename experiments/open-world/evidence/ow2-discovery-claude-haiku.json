@@ -1,0 +1,345 @@
+{
+  "experiment": 1,
+  "hypothesis": "Given no addresses, an AI can acquire useful capabilities from unfamiliar real services via public directories, without SDKs or integration code.",
+  "build": "0ddedff92fb43a2dc22bedb18f94f48492809a15",
+  "client": "claude",
+  "model": "haiku",
+  "prompt": "You are connected to exactly one MCP server, rightclick-x. Use only its tools. You are not given any service addresses.\nResearch objective, for someone planning a trip to Toronto:\n  1. What is the next upcoming public holiday in the Canadian province of Ontario (province code ON), and on what date?\n  2. What is today's exchange rate from Canadian dollars (CAD) to euros (EUR)?\nUse rightclick-x's research and acquisition abilities to find suitable public services in public directories, learn them, and use them to answer.\nSave each working workflow as a reusable capability (names: 'Next Ontario holiday' and 'CAD to EUR').\nEnd with a final line: ANSWER: <holiday name> | <YYYY-MM-DD> | <CAD to EUR rate>",
+  "answer": "Christmas Day | 2026-12-25 | 0.628",
+  "independentTruth": {
+    "holiday": "Christmas Day",
+    "date": "2026-12-25",
+    "cadToEur": 0.628,
+    "fxDate": "2026-10-16"
+  },
+  "check": {
+    "dateOk": true,
+    "nameOk": true,
+    "rateOk": true
+  },
+  "seconds": 115.1,
+  "mcpCalls": [
+    {
+      "tool": "context_research",
+      "ok": true,
+      "ms": 11598.3,
+      "args": {
+        "topic": "public holidays"
+      }
+    },
+    {
+      "tool": "context_research",
+      "ok": true,
+      "ms": 20064.4,
+      "args": {
+        "topic": "currency exchange rates"
+      }
+    },
+    {
+      "tool": "context_learn",
+      "ok": true,
+      "ms": 153.3,
+      "args": {
+        "sources": [
+          "https://api.apis.guru/v2/specs/canada-holidays.ca/1.8.0/openapi.json",
+          "https://api.apis.guru/v2/specs/exchangerate-api.com/4/openapi.json"
+        ]
+      }
+    },
+    {
+      "tool": "context_compose",
+      "ok": true,
+      "ms": 26595.6,
+      "args": {
+        "intent": "next upcoming public holiday for province ON",
+        "have": {
+          "country": "CA",
+          "province": "ON",
+          "year": "2026"
+        },
+        "want": "json",
+        "acquire": true,
+        "run": true
+      }
+    },
+    {
+      "tool": "context_compose",
+      "ok": true,
+      "ms": 29446.7,
+      "args": {
+        "intent": "latest exchange rate from CAD to EUR",
+        "have": {
+          "base": "CAD",
+          "target": "EUR"
+        },
+        "want": "json",
+        "acquire": true,
+        "run": true
+      }
+    },
+    {
+      "tool": "context_actions",
+      "ok": true,
+      "ms": 14.7,
+      "args": {
+        "value": "ON",
+        "limit": 40
+      }
+    },
+    {
+      "tool": "context_actions",
+      "ok": true,
+      "ms": 27.5,
+      "args": {
+        "value": "CAD",
+        "limit": 40
+      }
+    },
+    {
+      "tool": "context_run",
+      "ok": true,
+      "ms": 535.1,
+      "args": {
+        "id": "openapi:exchangerate-api:get-latest-base-currency",
+        "args": {
+          "base_currency": "CAD"
+        },
+        "verify": [
+          {
+            "op": "contains",
+            "value": "EUR"
+          }
+        ]
+      }
+    },
+    {
+      "tool": "context_run",
+      "ok": true,
+      "ms": 324.4,
+      "args": {
+        "id": "openapi:canada-holidays-api:province",
+        "args": {
+          "provinceId": "ON",
+          "year": 2026
+        }
+      }
+    },
+    {
+      "tool": "context_compose",
+      "ok": true,
+      "ms": 244.9,
+      "args": {
+        "intent": "next upcoming public holiday for Ontario",
+        "have": {
+          "provinceId": "ON",
+          "year": 2026
+        },
+        "want": "json",
+        "through": [
+          "openapi:canada-holidays-api:province"
+        ],
+        "maxSteps": 1,
+        "run": true,
+        "verify": [
+          {
+            "op": "contains",
+            "value": "nextHoliday"
+          }
+        ],
+        "publish": "Next Ontario holiday"
+      }
+    },
+    {
+      "tool": "context_compose",
+      "ok": true,
+      "ms": 536,
+      "args": {
+        "intent": "latest exchange rate from CAD to EUR",
+        "have": {
+          "base_currency": "CAD"
+        },
+        "want": "json",
+        "through": [
+          "openapi:exchangerate-api:get-latest-base-currency"
+        ],
+        "maxSteps": 1,
+        "run": true,
+        "verify": [
+          {
+            "op": "contains",
+            "value": "EUR"
+          }
+        ],
+        "publish": "CAD to EUR"
+      }
+    }
+  ],
+  "discoveryCalls": 4,
+  "providersLearned": [
+    {
+      "id": "openapi:canada-holidays-api",
+      "protocol": "openapi",
+      "origin": "https://api.apis.guru/v2/specs/canada-holidays.ca/1.8.0/openapi.json",
+      "source": "https://api.apis.guru/v2/specs/canada-holidays.ca/1.8.0/openapi.json",
+      "capabilities": 6
+    },
+    {
+      "id": "openapi:swiss-nextgen-banking-api-framework",
+      "protocol": "openapi",
+      "origin": "https://api.apis.guru/v2/specs/openbankingproject.ch/1.3.8_2020-12-14%20-%20Swiss%20edition%201.3.8.1-CH/openapi.json",
+      "source": "https://api.apis.guru/v2/specs/openbankingproject.ch/1.3.8_2020-12-14 - Swiss edition 1.3.8.1-CH/openapi.json",
+      "capabilities": 34
+    },
+    {
+      "id": "mcp:colaunched-public",
+      "protocol": "mcp",
+      "origin": "https://mcp.colaunched.ai/public",
+      "source": "https://mcp.colaunched.ai/public",
+      "capabilities": 4
+    },
+    {
+      "id": "mcp:flamel-public-content",
+      "protocol": "mcp",
+      "origin": "https://www.flamel.ai/mcp",
+      "source": "https://www.flamel.ai/mcp",
+      "capabilities": 9
+    },
+    {
+      "id": "mcp:root-data-public-directory",
+      "protocol": "mcp",
+      "origin": "https://rootdata.ai/api/mcp",
+      "source": "https://rootdata.ai/api/mcp",
+      "capabilities": 8
+    },
+    {
+      "id": "openapi:exchangerate-api",
+      "protocol": "openapi",
+      "origin": "https://api.apis.guru/v2/specs/exchangerate-api.com/4/openapi.json",
+      "source": "https://api.apis.guru/v2/specs/exchangerate-api.com/4/openapi.json",
+      "capabilities": 1
+    },
+    {
+      "id": "openapi:ad-exchange-buyer-api-ii",
+      "protocol": "openapi",
+      "origin": "https://api.apis.guru/v2/specs/googleapis.com/adexchangebuyer2/v2beta1/openapi.json",
+      "source": "https://api.apis.guru/v2/specs/googleapis.com/adexchangebuyer2/v2beta1/openapi.json",
+      "capabilities": 50
+    },
+    {
+      "id": "mcp:duami",
+      "protocol": "mcp",
+      "origin": "https://duami.ai/mcp",
+      "source": "https://duami.ai/mcp",
+      "capabilities": 31
+    },
+    {
+      "id": "openapi:betfair-exchange-streaming-api",
+      "protocol": "openapi",
+      "origin": "https://api.apis.guru/v2/specs/betfair.com/1.0.1423/openapi.json",
+      "source": "https://api.apis.guru/v2/specs/betfair.com/1.0.1423/openapi.json",
+      "capabilities": 1
+    },
+    {
+      "id": "openapi:interzoid-convert-currency-rate-api",
+      "protocol": "openapi",
+      "origin": "https://api.apis.guru/v2/specs/interzoid.com/convertcurrency/1.0.0/openapi.json",
+      "source": "https://api.apis.guru/v2/specs/interzoid.com/convertcurrency/1.0.0/openapi.json",
+      "capabilities": 1
+    },
+    {
+      "id": "openapi:interzoid-get-currency-rate-api",
+      "protocol": "openapi",
+      "origin": "https://api.apis.guru/v2/specs/interzoid.com/getcurrencyrate/1.0.0/openapi.json",
+      "source": "https://api.apis.guru/v2/specs/interzoid.com/getcurrencyrate/1.0.0/openapi.json",
+      "capabilities": 1
+    },
+    {
+      "id": "mcp:datoqa",
+      "protocol": "mcp",
+      "origin": "https://datoqa.bhazarstudio.workers.dev/mcp/fx",
+      "source": "https://datoqa.bhazarstudio.workers.dev/mcp/fx",
+      "capabilities": 7
+    },
+    {
+      "id": "openapi:nextauth-api",
+      "protocol": "openapi",
+      "origin": "https://api.apis.guru/v2/specs/n-auth.com/2.2/swagger.json",
+      "source": "https://api.apis.guru/v2/specs/n-auth.com/2.2/swagger.json",
+      "capabilities": 55
+    },
+    {
+      "id": "mcp:market-intel",
+      "protocol": "mcp",
+      "origin": "https://market.datakoot.com/mcp",
+      "source": "https://market.datakoot.com/mcp",
+      "capabilities": 5
+    }
+  ],
+  "providersExecuted": [
+    "openapi:canada-holidays-api",
+    "openapi:nextauth-api",
+    "openapi:exchangerate-api",
+    "mcp:colaunched-public",
+    "openapi:interzoid-convert-currency-rate-api",
+    "mcp:market-intel",
+    "openapi:interzoid-get-currency-rate-api",
+    "mcp:datoqa"
+  ],
+  "published": [
+    {
+      "slug": "next-ontario-holiday",
+      "title": "Next Ontario holiday",
+      "have": {
+        "provinceId": "id.province",
+        "year": "number"
+      },
+      "want": "json",
+      "intent": "next upcoming public holiday for Ontario",
+      "verify": [
+        {
+          "op": "contains",
+          "value": "nextHoliday"
+        }
+      ],
+      "through": [
+        "openapi:canada-holidays-api:province"
+      ],
+      "publishedAt": "2026-10-16T07:16:43.413Z",
+      "calls": 0,
+      "lastPipeline": [
+        "Get a province or territory by abbreviation"
+      ],
+      "providers": [
+        "openapi:canada-holidays-api"
+      ]
+    },
+    {
+      "slug": "cad-to-eur",
+      "title": "CAD to EUR",
+      "have": {
+        "base_currency": "currency"
+      },
+      "want": "json",
+      "intent": "latest exchange rate from CAD to EUR",
+      "verify": [
+        {
+          "op": "contains",
+          "value": "EUR"
+        }
+      ],
+      "through": [
+        "openapi:exchangerate-api:get-latest-base-currency"
+      ],
+      "publishedAt": "2026-10-16T07:16:44.363Z",
+      "calls": 0,
+      "lastPipeline": [
+        "Returns latest exchange rates in parameter-supplied base currency."
+      ],
+      "providers": [
+        "openapi:exchangerate-api"
+      ]
+    }
+  ],
+  "verdict": "PASS",
+  "finalText": "Both answers came from verified live lookups, and both workflows are saved as capabilities.\n\n- **Next Ontario holiday:** Christmas Day, 2026-12-25. The Canada Holidays API lists Thanksgiving (2026-10-12) as already passed. Boxing Day falls on 2026-12-26, observed 2026-12-28, so Christmas is the next one.\n- **CAD to EUR:** 1 CAD = 0.628 EUR, from ExchangeRate-API dated 2026-10-16. The rate is rounded to three decimals by the source.\n\nSaved capabilities:\n- **Next Ontario holiday** is at `/x/next-ontario-holiday`, built on the Canada Holidays API (`openapi:canada-holidays-api:province`).\n- **CAD to EUR** is at `/x/cad-to-eur`, built on ExchangeRate-API (`openapi:exchangerate-api:get-latest-base-currency`).\n\nBoth were published with `context_compose`, which the server treats as saving the route under that name. I did not check whether the saved route can be run again later.\n\nANSWER: Christmas Day | 2026-12-25 | 0.628"
+}

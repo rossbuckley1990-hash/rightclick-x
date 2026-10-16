@@ -10,6 +10,8 @@ import { tmpdir } from "node:os";
 import { readJsonl, runAgent, type Client } from "./agent.ts";
 
 const client = (process.argv[2] ?? "claude") as Client;
+const model = process.argv[3];
+const tag = model ? `${client}-${model}` : client;
 const log = (...a: unknown[]) => console.log(...a);
 const dir = mkdtempSync(`${tmpdir()}/rcx-exp1-`);
 const stateFile = `${dir}/state.json`;
@@ -26,8 +28,8 @@ const prompt = [
   "End with a final line: ANSWER: <holiday name> | <YYYY-MM-DD> | <CAD to EUR rate>",
 ].join("\n");
 
-log(`Experiment 1 · ${client} · no addresses given…`);
-const r = await runAgent(client, { kind: "stdio", stateFile, logFile }, prompt);
+log(`Experiment 1 · ${tag} · no addresses given…`);
+const r = await runAgent(client, { kind: "stdio", stateFile, logFile }, prompt, 900_000, model);
 const calls = readJsonl(logFile);
 
 // ---- independent verification (harness-side, direct to the original sources) ----
@@ -58,13 +60,14 @@ log(`VERDICT: ${verdict}`);
 
 mkdirSync("experiments/open-world/evidence", { recursive: true });
 writeFileSync(
-  `experiments/open-world/evidence/ow2-discovery-${client}.json`,
+  `experiments/open-world/evidence/ow2-discovery-${tag}.json`,
   JSON.stringify(
     {
       experiment: 1,
       hypothesis: "Given no addresses, an AI can acquire useful capabilities from unfamiliar real services via public directories, without SDKs or integration code.",
       build,
       client,
+      model: model ?? "client default",
       prompt,
       answer: r.answer,
       independentTruth: truth,

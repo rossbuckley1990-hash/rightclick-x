@@ -26,6 +26,16 @@ test("inferType reads meaning from names, formats and descriptions", () => {
   assert.equal(inferType("repo", { type: "string" }), "repo");
 });
 
+test("cryptic names: identity and meaning come from descriptions", () => {
+  assert.equal(inferType("acctno", { type: "string" }, "Account reference"), "id.account");
+  assert.equal(inferType("hldr", { type: "string" }, "Customer reference of the account holder"), "id.customer");
+  assert.equal(inferType("a_ref", { type: "string" }, "Order ID"), "id.order");
+  assert.equal(inferType("ctry", { type: "string" }, "ISO 3166 country code"), "country");
+  assert.equal(inferType("ph", { type: "string" }, "Phone number"), "text", "a phone number is not an identity");
+  assert.equal(inferType("x", { type: "string" }, "A unique identifier"), "text", "filler words do not name an entity");
+  assert.equal(inferType("refs", { type: "array", items: { type: "string" } }, "Customer reference list"), "list:id.customer");
+});
+
 test("type lattice: exact, widening, and incompatible", () => {
   assert.equal(distance("url", "url"), 0);
   assert.equal(distance("url", "image.url"), 1);

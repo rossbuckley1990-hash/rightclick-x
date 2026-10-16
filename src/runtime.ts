@@ -627,7 +627,8 @@ export class RightClick {
     // (and every crystallized pipeline containing it) and re-plan.
     const attempts: Array<{ summary: string; failed: string; error: string; healing?: string }> = [];
     const exclude = new Set<string>();
-    const baselineIntent = plans[0]?.intentScore ?? 0;
+    // Measured before anything runs: withdrawal during healing would otherwise erase the evidence.
+    const baselineCoverage = plans[0] ? this.leafCoverage(plans[0], opts.intent) : 0;
     const refreshed = new Set<string>();
     const t0 = performance.now();
     for (let attempt = 0; attempt < 6 && plans.length; attempt++) {
@@ -702,7 +703,9 @@ export class RightClick {
         // Naming varies between providers, so allow losing up to a quarter of the
         // intent's terms, never more (an invoice total covers far less of
         // "tax rate invoice customer country" than any real tax-rate route).
-        const floor = Math.ceil(Math.min(p.intentScore, baselineIntent) * 0.75);
+        // Judge by what the underlying capabilities cover: a saved pipeline's
+        // title repeats the goal's words, which must not raise the bar.
+        const floor = Math.ceil(baselineCoverage * 0.75);
         const keep = (ps: Plan[]) => ps.filter((x) => x.intentScore >= floor);
         plans = keep(plan(this.graph, this.ledger, { ...goal, exclude }));
         if (!plans.length && (await acquireMore())) plans = keep(plan(this.graph, this.ledger, { ...goal, exclude }));
@@ -719,6 +722,21 @@ export class RightClick {
       durationMs: Math.round(performance.now() - t0),
     };
     return result;
+  }
+
+  /** Distinct intent terms covered by the titles and tags of a plan's leaf capabilities (saved pipelines expanded). */
+  private leafCoverage(p: Plan, intent?: string): number {
+    const want = new Set(tokenize(intent ?? ""));
+    if (!want.size) return 0;
+    const covered = new Set<string>();
+    const visit = (id: string, depth = 0) => {
+      const c = this.graph.get(id);
+      if (!c) return;
+      if (c.invoke.kind === "composite" && depth < 4) return c.invoke.steps.forEach((s) => visit(s.capability, depth + 1));
+      for (const t of tokenize(`${c.title} ${c.tags.join(" ")}`)) if (want.has(t)) covered.add(t);
+    };
+    for (const s of p.steps) visit(s.capability);
+    return covered.size;
   }
 
   /** Serve a published goal: fixed contract, implementation re-derived from the live graph. */

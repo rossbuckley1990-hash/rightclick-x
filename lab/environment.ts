@@ -12,6 +12,8 @@ export interface Field {
   role: string;
   name: string;
   kind: "string" | "number";
+  /** Published in the contract when the domain provides one. */
+  description?: string;
 }
 
 export interface ServiceSpec {
@@ -41,6 +43,7 @@ export interface Domain {
   chain: Array<{ service: string; key: string; next?: string; answer?: string; operation: string[]; fields: Record<string, string[]> }>;
   values: Record<string, string | string[]>;
   numbers: Record<string, [number, number]>;
+  descriptions?: Record<string, string>;
 }
 
 const fixtures = JSON.parse(readFileSync(new URL("./fixtures.json", import.meta.url), "utf8"));
@@ -82,8 +85,8 @@ export function generate(seed: number, domainName = "invoicing") {
       protocol: protocol ?? pick(fixtures.protocols as Protocol[]),
       operation,
       slug: slugify(operation),
-      input: { role: def.key, name: names[def.key], kind: kind(def.key) },
-      outputs: Object.keys(def.fields).map((role) => ({ role, name: names[role], kind: kind(role) })),
+      input: { role: def.key, name: names[def.key], kind: kind(def.key), description: domain.descriptions?.[def.key] },
+      outputs: Object.keys(def.fields).map((role) => ({ role, name: names[role], kind: kind(role), description: domain.descriptions?.[role] })),
     };
   };
 
@@ -151,8 +154,10 @@ const camel = (s: string) => s.replace(/-([a-z0-9])/g, (_, c) => c.toUpperCase()
 const pascal = (s: string) => camel(s).charAt(0).toUpperCase() + camel(s).slice(1);
 const jsonType = (f: Field) => (f.kind === "number" ? "number" : "string");
 
+const desc = (f: Field) => (f.description ? { description: f.description } : {});
+
 function openapi(spec: ServiceSpec) {
-  const props = Object.fromEntries(spec.outputs.map((f) => [f.name, { type: jsonType(f) }]));
+  const props = Object.fromEntries(spec.outputs.map((f) => [f.name, { type: jsonType(f), ...desc(f) }]));
   const schema = spec.nest ? { type: "object", properties: { [spec.nest]: { type: "object", properties: props } } } : { type: "object", properties: props };
   return {
     openapi: "3.0.3",
@@ -162,7 +167,7 @@ function openapi(spec: ServiceSpec) {
         get: {
           operationId: camel(spec.slug),
           summary: spec.operation,
-          parameters: [{ name: spec.input.name, in: "query", required: true, schema: { type: "string" } }],
+          parameters: [{ name: spec.input.name, in: "query", required: true, schema: { type: "string" }, ...desc(spec.input) }],
           responses: { "200": { description: "ok", content: { "application/json": { schema } } } },
         },
       },
@@ -174,13 +179,13 @@ function graphqlSchema(spec: ServiceSpec) {
   const T = (kind: string, name: string | null, ofType: any = null) => ({ kind, name, ofType });
   const scalar = (f: Field) => T("SCALAR", f.kind === "number" ? "Float" : "String");
   const typeName = pascal(spec.slug);
-  const fields = spec.outputs.map((f) => ({ name: f.name, description: null, args: [], type: scalar(f) }));
+  const fields = spec.outputs.map((f) => ({ name: f.name, description: f.description ?? null, args: [], type: scalar(f) }));
   const types: any[] = [
     {
       kind: "OBJECT",
       name: "Query",
       description: null,
-      fields: [{ name: camel(spec.slug), description: spec.operation, args: [{ name: spec.input.name, description: null, type: T("NON_NULL", null, T("SCALAR", "String")), defaultValue: null }], type: T("OBJECT", spec.nest ? `${typeName}Envelope` : typeName) }],
+      fields: [{ name: camel(spec.slug), description: spec.operation, args: [{ name: spec.input.name, description: spec.input.description ?? null, type: T("NON_NULL", null, T("SCALAR", "String")), defaultValue: null }], type: T("OBJECT", spec.nest ? `${typeName}Envelope` : typeName) }],
     },
     { kind: "OBJECT", name: typeName, description: null, fields },
     { kind: "SCALAR", name: "String", description: null, fields: null },
@@ -191,12 +196,12 @@ function graphqlSchema(spec: ServiceSpec) {
 }
 
 function mcpTool(spec: ServiceSpec) {
-  const props = Object.fromEntries(spec.outputs.map((f) => [f.name, { type: jsonType(f) }]));
+  const props = Object.fromEntries(spec.outputs.map((f) => [f.name, { type: jsonType(f), ...desc(f) }]));
   return {
     name: spec.slug.replace(/-/g, "_"),
     title: spec.operation,
     description: `${spec.operation} (${spec.brand})`,
-    inputSchema: { type: "object", properties: { [spec.input.name]: { type: "string" } }, required: [spec.input.name] },
+    inputSchema: { type: "object", properties: { [spec.input.name]: { type: "string", ...desc(spec.input) } }, required: [spec.input.name] },
     outputSchema: spec.nest ? { type: "object", properties: { [spec.nest]: { type: "object", properties: props } } } : { type: "object", properties: props },
     annotations: { readOnlyHint: true },
   };

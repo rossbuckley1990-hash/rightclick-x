@@ -1,0 +1,198 @@
+{
+  "seed": 55,
+  "domain": "accounts",
+  "startedAt": "2026-10-16T07:17:34.024Z",
+  "steps": [
+    {
+      "n": 1,
+      "title": "Start disposable services generated from fixtures",
+      "ok": true,
+      "domain": "accounts",
+      "services": 3
+    },
+    {
+      "n": 2,
+      "title": "Connect an MCP client to RightClick X (stdio)",
+      "ok": true,
+      "tools": 13,
+      "startupMs": 108
+    },
+    {
+      "n": 3,
+      "title": "Present a business objective: \"For a bank account, find the VAT rate that applies in its holder's country.\"",
+      "ok": true,
+      "goal": {
+        "have": {
+          "account_id": "<id>"
+        },
+        "want": "number",
+        "intent": "vat rate account holder country",
+        "verify": [
+          {
+            "op": "type",
+            "value": "number"
+          }
+        ]
+      }
+    },
+    {
+      "n": 4,
+      "title": "Discover contracts from root addresses only (no protocols, no schemas given)",
+      "ok": true,
+      "found": [
+        "graphql",
+        "openapi",
+        "mcp"
+      ],
+      "newCapabilities": 3,
+      "ms": 29.8
+    },
+    {
+      "n": 5,
+      "title": "Identify suitable capabilities",
+      "ok": false,
+      "candidatePlans": 0,
+      "planningMs": 1
+    },
+    {
+      "n": 6,
+      "title": "Compose a multi-provider workflow",
+      "ok": false
+    },
+    {
+      "n": 7,
+      "title": "Execute the workflow",
+      "ok": false,
+      "input": "ACC-1000",
+      "ms": 0.3
+    },
+    {
+      "n": 8,
+      "title": "Verify against independently held test data",
+      "ok": false,
+      "expected": 22.9
+    },
+    {
+      "n": 9,
+      "title": "Save the successful composition and reuse it",
+      "ok": false,
+      "expected": 18.3,
+      "ms": 0.1
+    },
+    {
+      "n": 10,
+      "title": "Change the interface of the last provider in the chain (Harbourly)",
+      "ok": true,
+      "before": "openapi \"Get VAT rate\" cc → cc, txr",
+      "after": "graphql \"VAT rate inquiry\" ctry → result.{ctry, vatpct}"
+    },
+    {
+      "n": 11,
+      "title": "Recover without changing integration code",
+      "ok": false,
+      "via": [],
+      "expected": 21.6,
+      "ms": 0.1
+    },
+    {
+      "n": 12,
+      "title": "Remove that provider (Harbourly)",
+      "ok": true
+    },
+    {
+      "n": 13,
+      "title": "Withdraw its capabilities accurately; report the objective as impossible, not faked",
+      "ok": false,
+      "status": "no plan",
+      "withdrawn": [],
+      "capabilities": "20 → 20",
+      "savedPipelines": "0 → 0"
+    },
+    {
+      "n": 14,
+      "title": "Introduce a different provider (Tallyport, graphql): the objective works again",
+      "ok": false,
+      "learned": [
+        "graphql: 1 fields"
+      ],
+      "via": [],
+      "expected": 14.4,
+      "ms": 0.1
+    }
+  ],
+  "benchmarks": {
+    "startupMs": 108,
+    "mcpLatencyMs": {
+      "p50": 0.03,
+      "p95": 0.11
+    },
+    "discoveryMs": 29.8,
+    "graph": {
+      "providers": 5,
+      "capabilities": 20,
+      "edges": 50,
+      "chains2": 50,
+      "chains3": 130,
+      "total": 200
+    },
+    "graphStatsMs": 0.1,
+    "planningMs": 1,
+    "executionMs": 0.3,
+    "recoveryAfterChangeMs": 0.1,
+    "recoveryAfterNewProviderMs": 0.1,
+    "memoryMB": 127
+  },
+  "freeze": {
+    "commit": "0ddedff92fb43a2dc22bedb18f94f48492809a15",
+    "tag": "lab-freeze-3",
+    "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/interface/mcp-server.ts\nsrc/runtime.ts",
+    "uncommittedProductChanges": "",
+    "frozen": false
+  },
+  "environment": [
+    {
+      "service": "ledger",
+      "brand": "Fernway",
+      "protocol": "mcp",
+      "operation": "Account inquiry",
+      "input": "acctno",
+      "outputs": [
+        "acctno",
+        "cref",
+        "amt"
+      ]
+    },
+    {
+      "service": "kyc",
+      "brand": "Quillbase",
+      "protocol": "graphql",
+      "operation": "Get account holder",
+      "input": "hldr",
+      "outputs": [
+        "hldr",
+        "nm",
+        "ctry"
+      ]
+    },
+    {
+      "service": "vat",
+      "brand": "Harbourly",
+      "protocol": "openapi",
+      "operation": "Get VAT rate",
+      "input": "cc",
+      "outputs": [
+        "cc",
+        "txr"
+      ]
+    }
+  ],
+  "firstRunProviders": [],
+  "receipts": {
+    "count": 0,
+    "intact": true,
+    "brokenAt": null,
+    "head": "0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "passed": 6,
+  "total": 14
+}

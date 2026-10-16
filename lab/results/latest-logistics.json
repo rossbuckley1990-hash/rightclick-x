@@ -1,7 +1,7 @@
 {
-  "seed": 775165636,
+  "seed": 170396922,
   "domain": "logistics",
-  "startedAt": "2026-10-16T06:40:16.588Z",
+  "startedAt": "2026-10-16T07:19:18.671Z",
   "steps": [
     {
       "n": 1,
@@ -15,7 +15,7 @@
       "title": "Connect an MCP client to RightClick X (stdio)",
       "ok": true,
       "tools": 13,
-      "startupMs": 112.4
+      "startupMs": 113.7
     },
     {
       "n": 3,
@@ -41,11 +41,11 @@
       "ok": true,
       "found": [
         "graphql",
-        "graphql",
-        "openapi"
+        "openapi",
+        "mcp"
       ],
       "newCapabilities": 3,
-      "ms": 29.1
+      "ms": 31.1
     },
     {
       "n": 5,
@@ -53,79 +53,79 @@
       "ok": true,
       "candidatePlans": 2,
       "best": [
-        "Get Shipment",
-        "Get Warehouse",
-        "City shipping rate"
+        "Track shipment",
+        "Fetch Warehouse",
+        "Lookup shipping rate for a city"
       ],
-      "planningMs": 1.7
+      "planningMs": 1.6
     },
     {
       "n": 6,
       "title": "Compose a multi-provider workflow",
       "ok": true,
       "steps": [
-        "Get Shipment ← shipment_number=$in.shipment_id",
-        "Get Warehouse ← warehouse_id=0.warehouse_number",
-        "City shipping rate ← town=1.location"
+        "Track shipment ← shipment_id=$in.shipment_id",
+        "Fetch Warehouse ← warehouse_id=0.warehouse_id",
+        "Lookup shipping rate for a city ← location=1.city"
       ]
     },
     {
       "n": 7,
       "title": "Execute the workflow",
       "ok": true,
-      "input": "SHP-1000",
+      "input": "SHP-1001",
       "pipeline": [
-        "Get Shipment",
-        "Get Warehouse",
-        "City shipping rate"
+        "Track shipment",
+        "Fetch Warehouse",
+        "Lookup shipping rate for a city"
       ],
-      "ms": 4.2
+      "ms": 6.1
     },
     {
       "n": 8,
       "title": "Verify against independently held test data",
       "ok": true,
-      "expected": 11,
-      "got": 11
+      "expected": 23.6,
+      "got": 23.6
     },
     {
       "n": 9,
       "title": "Save the successful composition and reuse it",
       "ok": true,
-      "saved": "Shipping rate shipment warehouse city: Get Shipment → Get Warehouse → City shipping rate",
+      "saved": "Shipping rate shipment warehouse city: Track shipment → Fetch Warehouse → Lookup shipping rate for a city",
       "reusedAs": [
-        "Shipping rate shipment warehouse city: Get Shipment → Get Warehouse → City shipping rate"
+        "Shipping rate shipment warehouse city: Track shipment → Fetch Warehouse → Lookup shipping rate for a city"
       ],
-      "expected": 11,
-      "got": 11,
-      "ms": 2
+      "expected": 39,
+      "got": 39,
+      "ms": 1.8
     },
     {
       "n": 10,
-      "title": "Change the interface of the last provider in the chain (Kestrel Freight)",
+      "title": "Change the interface of the last provider in the chain (Mistral Depot)",
       "ok": true,
-      "before": "openapi \"City shipping rate\" town → town, shipping_rate",
-      "after": "mcp \"Shipping rate by city\" location → result.{location, rate}"
+      "before": "openapi \"Lookup shipping rate for a city\" location → location, price_per_kg",
+      "after": "mcp \"Shipping rate by city\" town → result.{town, rate}"
     },
     {
       "n": 11,
       "title": "Recover without changing integration code",
       "ok": true,
       "healing": [
-        "API drift at http://127.0.0.1:51451/: openapi:kestrel-freight → mcp:kestrel-freight; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:57128/: openapi:mistral-depot → mcp:mistral-depot; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "via": [
-        "graphql:127-0-0-1-51449-graphql",
-        "graphql:127-0-0-1-51450-graphql",
-        "mcp:kestrel-freight"
+        "mcp:kestrel-freight",
+        "graphql:127-0-0-1-57127-graphql",
+        "mcp:mistral-depot"
       ],
-      "expected": 14.1,
-      "got": 14.1,
-      "ms": 8.3
+      "expected": 39,
+      "got": 39,
+      "ms": 7.8
     },
     {
       "n": 12,
-      "title": "Remove that provider (Kestrel Freight)",
+      "title": "Remove that provider (Mistral Depot)",
       "ok": true
     },
     {
@@ -134,38 +134,38 @@
       "ok": true,
       "status": "failed",
       "healing": [
-        "provider gone at http://127.0.0.1:51451/: withdrew mcp:kestrel-freight (1 capabilities, 1 pipeline(s) retired)"
+        "provider gone at http://127.0.0.1:57128/: withdrew mcp:mistral-depot (1 capabilities, 1 pipeline(s) retired)"
       ],
       "withdrawn": [
-        "Kestrel Freight"
+        "Mistral Depot"
       ],
       "capabilities": "21 → 19",
       "savedPipelines": "1 → 0"
     },
     {
       "n": 14,
-      "title": "Introduce a different provider (Tallyport, mcp): the objective works again",
+      "title": "Introduce a different provider (Emberlane, graphql): the objective works again",
       "ok": true,
       "learned": [
-        "mcp: 1 tools"
+        "graphql: 1 fields"
       ],
       "via": [
-        "graphql:127-0-0-1-51449-graphql",
-        "graphql:127-0-0-1-51450-graphql",
-        "mcp:tallyport"
+        "mcp:kestrel-freight",
+        "graphql:127-0-0-1-57127-graphql",
+        "graphql:127-0-0-1-57191-graphql"
       ],
-      "expected": 11,
-      "got": 11,
-      "ms": 1.4
+      "expected": 29.5,
+      "got": 29.5,
+      "ms": 1.7
     }
   ],
   "benchmarks": {
-    "startupMs": 112.4,
+    "startupMs": 113.7,
     "mcpLatencyMs": {
-      "p50": 0.04,
+      "p50": 0.03,
       "p95": 0.11
     },
-    "discoveryMs": 29.1,
+    "discoveryMs": 31.1,
     "graph": {
       "providers": 5,
       "capabilities": 20,
@@ -174,67 +174,67 @@
       "chains3": 45,
       "total": 96
     },
-    "graphStatsMs": 0.5,
-    "planningMs": 1.7,
-    "executionMs": 4.2,
-    "recoveryAfterChangeMs": 8.3,
-    "recoveryAfterNewProviderMs": 1.4,
-    "memoryMB": 132
+    "graphStatsMs": 0.1,
+    "planningMs": 1.6,
+    "executionMs": 6.1,
+    "recoveryAfterChangeMs": 7.8,
+    "recoveryAfterNewProviderMs": 1.7,
+    "memoryMB": 135
   },
   "freeze": {
-    "commit": "eb757bdebefcd439b5c21bf41ecf82d25e8c871c",
+    "commit": "0ddedff92fb43a2dc22bedb18f94f48492809a15",
     "tag": "lab-freeze-3",
-    "productCodeChangedSinceTag": "",
-    "uncommittedProductChanges": "",
-    "frozen": true
+    "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/interface/mcp-server.ts\nsrc/runtime.ts",
+    "uncommittedProductChanges": "M src/core/semantics.ts\n M src/runtime.ts",
+    "frozen": false
   },
   "environment": [
     {
       "service": "shipments",
-      "brand": "Lumen Cargo",
-      "protocol": "graphql",
-      "operation": "Get shipment",
-      "input": "shipment_number",
+      "brand": "Kestrel Freight",
+      "protocol": "mcp",
+      "operation": "Track shipment",
+      "input": "shipment_id",
       "outputs": [
-        "shipment_number",
-        "warehouse_number",
-        "gross_weight"
+        "shipment_id",
+        "warehouse_id",
+        "weight"
       ]
     },
     {
       "service": "warehouses",
       "brand": "Harbourly",
       "protocol": "graphql",
-      "operation": "Get warehouse",
+      "operation": "Fetch warehouse",
       "input": "warehouse_id",
       "outputs": [
         "warehouse_id",
-        "location",
-        "contact_email"
+        "city",
+        "manager_email"
       ]
     },
     {
       "service": "rates",
-      "brand": "Kestrel Freight",
+      "brand": "Mistral Depot",
       "protocol": "openapi",
-      "operation": "City shipping rate",
-      "input": "town",
+      "operation": "Lookup shipping rate for a city",
+      "input": "location",
       "outputs": [
-        "town",
-        "shipping_rate"
+        "location",
+        "price_per_kg"
       ]
     }
   ],
   "firstRunProviders": [
-    "graphql:127-0-0-1-51449-graphql",
-    "graphql:127-0-0-1-51450-graphql",
-    "openapi:kestrel-freight"
+    "mcp:kestrel-freight",
+    "graphql:127-0-0-1-57127-graphql",
+    "openapi:mistral-depot"
   ],
   "receipts": {
     "count": 21,
     "intact": true,
     "brokenAt": null,
-    "head": "5fce046b40f6614fc11bb0fa24caa911a71e2a783285e28ecbe3ae5fab36b5ff"
+    "head": "efbb1b59f7a9713c4a7583708c823612c4e74a6c97c7b2c901ca79437fdabb0a"
   },
   "passed": 14,
   "total": 14
