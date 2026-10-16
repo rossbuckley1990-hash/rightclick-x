@@ -150,6 +150,22 @@ Two gaps from the first round were tested further.
 
 On `gauntlet-freeze-2`: **30/30 freshly generated environments across three domains** (10 each, including cryptic names), 64/64 tests, 6/6 negative controls, and OW2 re-run against the real services: PASS.
 
+## OW6 — A task that depends on two separate real machines · **PASS** (`gauntlet-freeze-3`)
+
+`gauntlet-freeze-3` (`7b78eb6`) differs from `-2` only by bumping the semantics version so persisted graphs re-derive types after the inference fix (an omission found before deploying); re-validated: 64/64 tests, lab 30/30, negative controls 6/6.
+
+Two Cloudflare Durable Object instances of the frozen build, on separate machines: **A** in AMS (weur) holds an origin-pinned GitHub credential; **B** in EWR (enam) does not. Provisioning (operator, harness-side, labelled): A learned GitHub's OpenAPI description; B learned Wikipedia REST and was wired to A as a federation peer. **Claude Code connected only to B** (Streamable HTTP MCP) with the task: *the real name of GitHub user `gvanrossum`, and the first sentence of the Wikipedia summary about that person.*
+
+| Check | Result |
+|---|---|
+| Name | Guido van Rossum (GitHub API, queried directly: Guido van Rossum) |
+| Summary grounded in Wikipedia's own summary | yes |
+| GitHub step executed **on A** (A's receipts) | openapi:github-v3-rest-api:users-get-by-username |
+| B reached A through federation (B's receipts) | 1 peer run(s); 1 local Wikipedia run(s) |
+| Credential stayed on A | B's credentialed origins: https://rcx-a.ross-buckley1990.workers.dev (A's endpoint only) |
+
+Agent time 46.8 s. The peer was wired by the operator; RightClick X does not search networks for peers. Evidence: [`ow6-federation.json`](open-world/evidence/ow6-federation.json).
+
 ## Limitations (verified, not hypothetical)
 
 - **Two AI clients, four models.** Claude Code (default model, Sonnet 5.5, Haiku 5.5) and Codex (`gpt-6-astra`). Other MCP clients (Cursor, VS Code, Gemini CLI) were not available here, and Codex with a ChatGPT login offers only its default model.
@@ -157,6 +173,6 @@ On `gauntlet-freeze-2`: **30/30 freshly generated environments across three doma
 - **Keys limit acquisition.** In OW5 phase 3, RightClick X found real alternative translation services, but they required credentials it did not have. It reported unavailability correctly; it did not obtain access.
 - **Directory quality.** Discovery without addresses depends on what APIs.guru and the MCP Registry list and how well their descriptions match the objective.
 - **Prompts name the shape of the output** (and, in OW1/OW5, ask for a Wikipedia MCP server from the registry, to ensure protocol diversity). The workflow itself was never given.
-- **Cross-host federation was not re-run on this build.** Earlier region-pinned Cloudflare runs (E11-cloud, E12, E13) are on older builds.
+- **Peers are configured, not discovered.** Cross-host federation (OW6) works between instances an operator connects; RightClick X does not search networks for peers.
 - **Single runs.** Each experiment ran once (plus the recorded re-runs); no statistics across many runs.
 - **No claim of a first.** No prior-art review was done.

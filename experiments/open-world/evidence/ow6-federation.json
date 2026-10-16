@@ -1,0 +1,75 @@
+{
+  "experiment": "OW6 cross-host federation",
+  "hypothesis": "An AI connected to one RightClick X endpoint can complete a verified task that depends on capabilities only available on a different real machine, without the credential leaving that machine.",
+  "build": "7b78eb66fb3d7612ec8ce694bd3f6a0485e330de",
+  "provisioning": [
+    "A: context_learn GitHub's OpenAPI description (A holds an origin-pinned GitHub credential as a Cloudflare secret)",
+    "B: context_learn Wikipedia REST",
+    "B: context_learn https://rcx-a.ross-buckley1990.workers.dev/ (peer federation): openapi 7 operations, graphql 7 fields, peer 1302 federated capabilities"
+  ],
+  "hosts": {
+    "A": {
+      "url": "https://rcx-a.ross-buckley1990.workers.dev",
+      "name": "rcx-a (Western Europe)",
+      "datacenter": "AMS (weur)",
+      "runtime": "cloudflare-workers",
+      "version": "0.1.0"
+    },
+    "B": {
+      "url": "https://rcx-b.ross-buckley1990.workers.dev",
+      "name": "rcx-b (Eastern North America)",
+      "datacenter": "EWR (enam)",
+      "runtime": "cloudflare-workers",
+      "version": "0.1.0"
+    }
+  },
+  "credentialLocality": {
+    "B_credentialedOrigins": [
+      "https://rcx-a.ross-buckley1990.workers.dev"
+    ],
+    "B_holdsGitHubCredential": false
+  },
+  "agent": {
+    "client": "claude",
+    "connectedTo": "https://rcx-b.ross-buckley1990.workers.dev",
+    "prompt": "You are connected to exactly one MCP server, rightclick-x (a remote instance). Use only its tools.\nSome capabilities may be available to this instance only through other connected RightClick X instances (peers); you can find out with its tools.\nTask: find the real name of the GitHub user 'gvanrossum', then give the first sentence of the English Wikipedia summary about that person.\nEnd with exactly two lines:\nNAME: <real name>\nSUMMARY: <first sentence of the Wikipedia summary>",
+    "seconds": 46.8,
+    "finalText": "This instance has no GitHub tools of its own, so I looked up the user through the connected peer, rcx-a (Western Europe). Its GitHub profile for `gvanrossum` gives the name \"Guido van Rossum\". The English Wikipedia summary came from this instance's own Wikimedia tool.\n\nThe automatic pipeline builder only suggested unrelated chains, such as org membership and runner images. So I skipped it and called the two lookups directly.\n\nNAME: Guido van Rossum\nSUMMARY: Guido van Rossum is a Dutch programmer.",
+    "name": "Guido van Rossum",
+    "summary": "Guido van Rossum is a Dutch programmer."
+  },
+  "independentTruth": {
+    "githubName": "Guido van Rossum",
+    "wikipediaExtract": "Guido van Rossum is a Dutch programmer. He is the creator of the Python programming language, for which he was the \"benevolent dictator for life\" (BDFL) until he stepped down from the position on 12 July 2018. He remained a member of the Python Steering Council through 2019, and withdrew from nomina"
+  },
+  "execution": {
+    "A_receiptsAddedDuringTask": 1,
+    "A_githubRuns": [
+      {
+        "capability": "openapi:github-v3-rest-api:users-get-by-username",
+        "status": "completed",
+        "startedAt": "2026-10-16T07:24:37.621Z"
+      }
+    ],
+    "B_peerRuns": [
+      {
+        "capability": "peer:rcx-a-ross-buckley1990-workers-dev:openapi:github-v3-rest-api:users-get-by-username",
+        "status": "completed"
+      }
+    ],
+    "B_localWikipediaRuns": [
+      {
+        "capability": "openapi:wikimedia-rest-api:get-page-summary-title",
+        "status": "completed"
+      }
+    ]
+  },
+  "checks": {
+    "nameOk": true,
+    "summaryGrounded": true,
+    "githubStepRanOnA": true,
+    "B_reachedAThroughFederation": true,
+    "credentialStayedOnA": true
+  },
+  "verdict": "PASS"
+}

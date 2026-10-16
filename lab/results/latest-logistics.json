@@ -1,7 +1,7 @@
 {
-  "seed": 938126229,
+  "seed": 739557648,
   "domain": "logistics",
-  "startedAt": "2026-10-16T07:19:36.972Z",
+  "startedAt": "2026-10-16T07:25:11.134Z",
   "steps": [
     {
       "n": 1,
@@ -15,7 +15,7 @@
       "title": "Connect an MCP client to RightClick X (stdio)",
       "ok": true,
       "tools": 13,
-      "startupMs": 120.5
+      "startupMs": 109.8
     },
     {
       "n": 3,
@@ -40,12 +40,12 @@
       "title": "Discover contracts from root addresses only (no protocols, no schemas given)",
       "ok": true,
       "found": [
-        "openapi",
-        "openapi",
+        "graphql",
+        "graphql",
         "mcp"
       ],
       "newCapabilities": 3,
-      "ms": 32.7
+      "ms": 32
     },
     {
       "n": 5,
@@ -54,78 +54,78 @@
       "candidatePlans": 2,
       "best": [
         "Look up shipment",
-        "Warehouse details",
-        "Get shipping rate"
+        "Fetch Warehouse",
+        "Get Shipping Rate"
       ],
-      "planningMs": 1.7
+      "planningMs": 1.6
     },
     {
       "n": 6,
       "title": "Compose a multi-provider workflow",
       "ok": true,
       "steps": [
-        "Look up shipment ← shipmentId=$in.shipment_id",
-        "Warehouse details ← warehouse_id=0.warehouse_number",
-        "Get shipping rate ← town=1.city"
+        "Look up shipment ← shipment_number=$in.shipment_id",
+        "Fetch Warehouse ← warehouse_id=0.warehouse_id",
+        "Get Shipping Rate ← city=1.town"
       ]
     },
     {
       "n": 7,
       "title": "Execute the workflow",
       "ok": true,
-      "input": "SHP-1004",
+      "input": "SHP-1006",
       "pipeline": [
         "Look up shipment",
-        "Warehouse details",
-        "Get shipping rate"
+        "Fetch Warehouse",
+        "Get Shipping Rate"
       ],
-      "ms": 4.5
+      "ms": 4
     },
     {
       "n": 8,
       "title": "Verify against independently held test data",
       "ok": true,
-      "expected": 11,
-      "got": 11
+      "expected": 11.6,
+      "got": 11.6
     },
     {
       "n": 9,
       "title": "Save the successful composition and reuse it",
       "ok": true,
-      "saved": "Shipping rate shipment warehouse city: Look up shipment → Warehouse details → Get shipping rate",
+      "saved": "Shipping rate shipment warehouse city: Look up shipment → Fetch Warehouse → Get Shipping Rate",
       "reusedAs": [
-        "Shipping rate shipment warehouse city: Look up shipment → Warehouse details → Get shipping rate"
+        "Shipping rate shipment warehouse city: Look up shipment → Fetch Warehouse → Get Shipping Rate"
       ],
-      "expected": 11,
-      "got": 11,
-      "ms": 1.7
+      "expected": 14.1,
+      "got": 14.1,
+      "ms": 1.9
     },
     {
       "n": 10,
-      "title": "Change the interface of the last provider in the chain (Brightmark)",
+      "title": "Change the interface of the last provider in the chain (Emberlane)",
       "ok": true,
-      "before": "mcp \"Get shipping rate\" town → town, price_per_kg",
-      "after": "openapi \"City shipping rate\" city → result.{city, freight_rate}"
+      "before": "graphql \"Get shipping rate\" city → city, price_per_kg",
+      "after": "mcp \"Lookup shipping rate for a city\" town → result.{town, shipping_rate}"
     },
     {
       "n": 11,
       "title": "Recover without changing integration code",
       "ok": true,
       "healing": [
-        "API drift at http://127.0.0.1:58701/: mcp:brightmark → openapi:brightmark; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:61955/: graphql:127-0-0-1-61955-graphql → mcp:emberlane; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "via": [
-        "openapi:lumen-cargo",
-        "openapi:duneworks",
-        "openapi:brightmark"
+        "mcp:cobaltix",
+        "graphql:127-0-0-1-61954-graphql",
+        "mcp:emberlane"
       ],
-      "expected": 13.8,
-      "got": 13.8,
-      "ms": 6.6
+      "expected": 14.1,
+      "got": 14.1,
+      "ms": 7.5
     },
     {
       "n": 12,
-      "title": "Remove that provider (Brightmark)",
+      "title": "Remove that provider (Emberlane)",
       "ok": true
     },
     {
@@ -134,38 +134,38 @@
       "ok": true,
       "status": "failed",
       "healing": [
-        "provider gone at http://127.0.0.1:58701/: withdrew openapi:brightmark (1 capabilities, 1 pipeline(s) retired)"
+        "provider gone at http://127.0.0.1:61955/: withdrew mcp:emberlane (1 capabilities, 1 pipeline(s) retired)"
       ],
       "withdrawn": [
-        "Brightmark"
+        "Emberlane"
       ],
       "capabilities": "21 → 19",
       "savedPipelines": "1 → 0"
     },
     {
       "n": 14,
-      "title": "Introduce a different provider (Emberlane, openapi): the objective works again",
+      "title": "Introduce a different provider (Duneworks, mcp): the objective works again",
       "ok": true,
       "learned": [
-        "openapi: 1 operations"
+        "mcp: 1 tools"
       ],
       "via": [
-        "openapi:lumen-cargo",
-        "openapi:duneworks",
-        "openapi:emberlane"
+        "mcp:cobaltix",
+        "graphql:127-0-0-1-61954-graphql",
+        "mcp:duneworks"
       ],
-      "expected": 13.8,
-      "got": 13.8,
-      "ms": 1.4
+      "expected": 11.6,
+      "got": 11.6,
+      "ms": 1.9
     }
   ],
   "benchmarks": {
-    "startupMs": 120.5,
+    "startupMs": 109.8,
     "mcpLatencyMs": {
-      "p50": 0.03,
-      "p95": 0.12
+      "p50": 0.04,
+      "p95": 0.11
     },
-    "discoveryMs": 32.7,
+    "discoveryMs": 32,
     "graph": {
       "providers": 5,
       "capabilities": 20,
@@ -174,15 +174,15 @@
       "chains3": 45,
       "total": 96
     },
-    "graphStatsMs": 0.2,
-    "planningMs": 1.7,
-    "executionMs": 4.5,
-    "recoveryAfterChangeMs": 6.6,
-    "recoveryAfterNewProviderMs": 1.4,
-    "memoryMB": 133
+    "graphStatsMs": 0.1,
+    "planningMs": 1.6,
+    "executionMs": 4,
+    "recoveryAfterChangeMs": 7.5,
+    "recoveryAfterNewProviderMs": 1.9,
+    "memoryMB": 134
   },
   "freeze": {
-    "commit": "3739ddf7263c05abc40a463a0f80700d2b989175",
+    "commit": "7b78eb66fb3d7612ec8ce694bd3f6a0485e330de",
     "tag": "lab-freeze-3",
     "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/core/semantics.ts\nsrc/interface/mcp-server.ts\nsrc/runtime.ts",
     "uncommittedProductChanges": "",
@@ -191,50 +191,50 @@
   "environment": [
     {
       "service": "shipments",
-      "brand": "Lumen Cargo",
-      "protocol": "openapi",
+      "brand": "Cobaltix",
+      "protocol": "mcp",
       "operation": "Look up shipment",
-      "input": "shipmentId",
+      "input": "shipment_number",
       "outputs": [
-        "shipmentId",
-        "warehouse_number",
-        "weight_kg"
+        "shipment_number",
+        "warehouse_id",
+        "gross_weight"
       ]
     },
     {
       "service": "warehouses",
-      "brand": "Duneworks",
-      "protocol": "openapi",
-      "operation": "Warehouse details",
+      "brand": "Quillbase",
+      "protocol": "graphql",
+      "operation": "Fetch warehouse",
       "input": "warehouse_id",
       "outputs": [
         "warehouse_id",
-        "city",
-        "contact_email"
+        "town",
+        "manager_email"
       ]
     },
     {
       "service": "rates",
-      "brand": "Brightmark",
-      "protocol": "mcp",
+      "brand": "Emberlane",
+      "protocol": "graphql",
       "operation": "Get shipping rate",
-      "input": "town",
+      "input": "city",
       "outputs": [
-        "town",
+        "city",
         "price_per_kg"
       ]
     }
   ],
   "firstRunProviders": [
-    "openapi:lumen-cargo",
-    "openapi:duneworks",
-    "mcp:brightmark"
+    "mcp:cobaltix",
+    "graphql:127-0-0-1-61954-graphql",
+    "graphql:127-0-0-1-61955-graphql"
   ],
   "receipts": {
     "count": 21,
     "intact": true,
     "brokenAt": null,
-    "head": "7e4d3ef8c983b7b313005ae18251dcaab5edf280efd48c9e876078abd5381489"
+    "head": "fa994331f530deb3169199c5ae83663a516a596e4b13a21afa7285bebaaa260a"
   },
   "passed": 14,
   "total": 14

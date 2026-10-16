@@ -89,6 +89,7 @@ Against real, independently operated services, with a frozen build and two AI cl
 - **Discovery without addresses:** given only an objective, both agents had RightClick X find the Canada Holidays API and an exchange-rate API in public directories and answer correctly.
 - **Three providers, three protocols:** countries GraphQL + an exchange-rate REST API + a Wikipedia **MCP server from the official MCP Registry**, combined and saved; after a restart, the other agent reused the saved capabilities for a new country in 8 MCP calls.
 - **Real network adaptation:** an owned service on Cloudflare changed contract four times (renamed REST, GraphQL, MCP, rollback); RightClick X recovered each time in ~0.3 s, withdrew it honestly when deleted, and rediscovered it when restored.
+- **Across real machines:** an agent connected only to an instance in Newark completed a task whose GitHub step ran on a peer instance in Amsterdam, using a credential that never left Amsterdam.
 - **Negative controls:** 6/6, e.g. it will not return an order total as a tax rate, or plan a write in a read-only task.
 - 0 lines of product code changed during the experiments. Limitations are listed in the report.
 
@@ -100,7 +101,7 @@ One command answers the product's central question: *can an unchanged MCP server
 npm run lab
 ```
 
-The product build is frozen (git tag `gauntlet-freeze-2`). Each run then generates a new environment from `lab/fixtures.json` with a fresh seed: service names, operation titles, field spellings and the protocol of every service (OpenAPI, GraphQL or MCP) are random, and RightClick X knows none of it. The harness starts RightClick X as a separate process and talks to it only as an MCP client. It gives it the services' root addresses and a business objective (*for an invoice, find the tax rate that applies in its customer's country*), then checks every answer against its own copy of the data. Mid-run, the tax service ships a breaking release on a different protocol, is removed, and is replaced by a different provider.
+The product build is frozen (git tag `gauntlet-freeze-3`). Each run then generates a new environment from `lab/fixtures.json` with a fresh seed: service names, operation titles, field spellings and the protocol of every service (OpenAPI, GraphQL or MCP) are random, and RightClick X knows none of it. The harness starts RightClick X as a separate process and talks to it only as an MCP client. It gives it the services' root addresses and a business objective (*for an invoice, find the tax rate that applies in its customer's country*), then checks every answer against its own copy of the data. Mid-run, the tax service ships a breaking release on a different protocol, is removed, and is replaced by a different provider.
 
 **Real AI agents, not just a harness** ([lab/AI-CLIENTS.md](lab/AI-CLIENTS.md)): Claude Code (Anthropic) and Codex (OpenAI), each given only RightClick X as their MCP server, the addresses and the objective, solved freshly generated environments in both domains: 4/4 correct against ground truth, every service reached through RightClick X.
 
