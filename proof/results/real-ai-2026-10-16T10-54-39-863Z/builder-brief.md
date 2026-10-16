@@ -1,0 +1,5 @@
+# Destination brief: Lisbon
+
+Lisbon is the capital and most populous city of Portugal, with an estimated population of 658,236 as of 2025, within its administrative limits and 3,353,000 within the metropolis, as of 2025. The city lies in the western part of the Iberian Peninsula, fronting the northern shore of the River Tagus.
+
+Source: [Wikipedia — Lisbon](https://en.wikipedia.org/wiki/Lisbon)

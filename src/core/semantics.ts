@@ -7,6 +7,7 @@
 // lattice that says which values can flow into which ports.
 
 import type { SemType } from "./types.ts";
+import { inferMoneyType, isQuantityType, isResolvedQuantity } from "./quantities.ts";
 
 /** child -> parent. Everything string-like is ultimately "text"; everything is "json". */
 const PARENT: Record<string, SemType> = {
@@ -41,6 +42,7 @@ export const SEMANTIC_TYPES = Object.keys(PARENT);
 
 export function parentOf(t: SemType): SemType | undefined {
   if (t.startsWith("list:")) return "json";
+  if (isQuantityType(t)) return "number";
   if (t.startsWith("id.")) return "id";
   const p = PARENT[t];
   return p === undefined ? "json" : p || undefined;
@@ -69,6 +71,11 @@ export function distance(wanted: SemType, produced: SemType): number {
 /** A "strong" link carries meaning: exact type or one specific step up, never into bare json. */
 export function strongly(wanted: SemType, produced: SemType): boolean {
   if (wanted === "json") return false;
+  // Quantity widening is useful for a broad numeric goal, but must not erase
+  // currency/units when binding an input. Ambiguous quantities never bind.
+  if (wanted.startsWith("list:") && produced.startsWith("list:") &&
+      [wanted, produced].some((t) => isQuantityType(t.replace(/^(?:list:)+/, "")))) return strongly(wanted.slice(5), produced.slice(5));
+  if (isQuantityType(wanted) || isQuantityType(produced)) return wanted === produced && isResolvedQuantity(wanted);
   const d = distance(wanted, produced);
   if (d < 0) return false;
   if (wanted === "text") return d === 0;
@@ -150,6 +157,8 @@ export function inferType(name: string, schema: SchemaLike = {}, description = "
   if (rawType === "integer" || rawType === "number") {
     if (/(^|_)(lat|latitude)$/.test(n)) return "geo.lat";
     if (/(^|_)(lon|lng|long|longitude)$/.test(n)) return "geo.lon";
+    const quantity = inferMoneyType(name, [schema.description, description].filter(Boolean).join(" "));
+    if (quantity) return quantity;
     return "number";
   }
   if (rawType === "object") return "json";

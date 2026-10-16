@@ -3,6 +3,7 @@
 // tool feed a web form: html -> text, url -> domain, text -> language, ...
 
 import type { Capability, Port, Reflection, SemType } from "../core/types.ts";
+import { convertMoney, MONEY_CURRENCIES, moneyType } from "../core/quantities.ts";
 import { readBody, request, type Net } from "./net.ts";
 
 export type BuiltinFn = (args: Record<string, any>, net: Net) => Promise<unknown> | unknown;
@@ -21,6 +22,18 @@ interface Def {
 const p = (name: string, type: SemType, required = true): Port => ({ name, type, required });
 
 const DEFS: Def[] = [
+  ...MONEY_CURRENCIES.flatMap((currency): Def[] => (["minor", "major"] as const).map((from): Def => {
+    const to = from === "minor" ? "major" : "minor";
+    return {
+      fn: `quantity.money.${currency.code.toLowerCase()}.${from}-to-${to}`,
+      title: `Convert ${currency.code} ${from} units to ${to} units`,
+      description: `Convert ${currency.label} without changing currency. Major to minor units rounds half away from zero; minor units must be integers.`,
+      inputs: [["amount", moneyType(currency.code, from)]],
+      outputs: [["", moneyType(currency.code, to)]],
+      tags: ["quantity", "money", "convert", currency.code],
+      run: ({ amount }) => convertMoney(amount, currency.code, from, to),
+    };
+  })),
   {
     fn: "web.fetch",
     title: "Fetch web page",

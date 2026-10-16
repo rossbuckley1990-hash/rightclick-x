@@ -1,0 +1,2018 @@
+{
+  "at": "2026-10-16T10:19:52.796Z",
+  "seed": 472901,
+  "buildBefore": {
+    "commit": "5e4b4a03d57439c3f56ef936f853795a6c9a6a1b",
+    "workingTree": "M README.md\n M lab/ai-clients.ts\n M package.json\n M src/core/semantics.ts\n M src/core/types.ts\n M src/core/verify.ts\n M src/index.ts\n M src/interface/graphql-server.ts\n M src/interface/tools.ts\n M src/reflectors/builtins.ts\n M src/runtime.ts\n M test/synthesis.test.ts\n M tsconfig.json\n?? proof/\n?? src/core/quantities.ts\n?? test/outcomes.test.ts\n?? test/quantities.test.ts",
+    "productSha256": "2662563dc3019b9f745ed40aba430037e833b85e5217bb9b6d98266315b9f473",
+    "node": "v24.16.0"
+  },
+  "outputDirectory": "/Users/ross/src/rightclick-x/proof/results/ai-clients-2026-10-16T10-19-52-759Z-472901",
+  "clients": {
+    "builder": "codex",
+    "reuser": "codex"
+  },
+  "crossVendor": false,
+  "scenario": "Controlled synthetic order-tax workflow, saved by an isolated codex session, reused after restart by another isolated codex session following REST-to-MCP provider drift",
+  "limits": {
+    "timeoutSeconds": 480,
+    "maxCalls": 60
+  },
+  "passed": true,
+  "builder": {
+    "client": "codex",
+    "phase": "builder",
+    "exit": 0,
+    "signal": null,
+    "timedOut": false,
+    "seconds": 30.4,
+    "transcript": "/Users/ross/src/rightclick-x/proof/results/ai-clients-2026-10-16T10-19-52-759Z-472901/builder-codex-transcript.jsonl",
+    "stderr": "/Users/ross/src/rightclick-x/proof/results/ai-clients-2026-10-16T10-19-52-759Z-472901/builder-codex-stderr.txt",
+    "audit": "/Users/ross/src/rightclick-x/proof/results/ai-clients-2026-10-16T10-19-52-759Z-472901/builder-codex-mcp.jsonl",
+    "final": "/Users/ross/src/rightclick-x/proof/results/ai-clients-2026-10-16T10-19-52-759Z-472901/builder-codex-final.txt",
+    "nonRcxActions": [],
+    "serverStopped": true,
+    "callBudgetExceeded": false,
+    "codeModeTrace": {
+      "file": "/Users/ross/src/rightclick-x/proof/results/ai-clients-2026-10-16T10-19-52-759Z-472901/builder-codex-code-mode.jsonl",
+      "source": "/Users/ross/.codex/sessions/2026/10/16/rollout-2026-10-16T11-19-53-01a14439-ad5e-79d1-8c45-cf72f059a32e.jsonl",
+      "threadId": "01a14439-ad5e-79d1-8c45-cf72f059a32e",
+      "calls": 6,
+      "violations": []
+    },
+    "checks": {
+      "clientExited": true,
+      "serverStopped": true,
+      "withinCallBudget": true,
+      "onlyRcxActions": true,
+      "codeModeSourceChecked": true,
+      "gatewayDiscovered": true,
+      "publishedStableGoal": true,
+      "witnessInputIsRelative": true,
+      "successfulMcpResponse": true,
+      "runtimeCompleted": true,
+      "runtimeVerified": true,
+      "exactIndependentTruth": true,
+      "witnessCompletedAndVerified": true,
+      "ordersReadObserved": true,
+      "taxQuoteObserved": true,
+      "independentAuditObserved": true
+    },
+    "calls": [
+      {
+        "id": 2,
+        "name": "context_learn",
+        "args": {
+          "source": "http://127.0.0.1:61590/"
+        },
+        "response": {
+          "jsonrpc": "2.0",
+          "id": 2,
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\n  \"results\": [\n    {\n      \"source\": \"http://127.0.0.1:61590/\",\n      \"probes\": [\n        {\n          \"url\": \"http://127.0.0.1:61590/\",\n          \"kind\": \"unknown\",\n          \"ok\": false,\n          \"detail\": \"no supported contract found\"\n        },\n        {\n          \"url\": \"http://127.0.0.1:61590/.well-known/api-catalog\",\n          \"kind\": \"api-catalog\",\n          \"ok\": true,\n          \"detail\": \"3 services listed\"\n        },\n        {\n          \"url\": \"http://127.0.0.1:61587/\",\n          \"kind\": \"unknown\",\n          \"ok\": false,\n          \"detail\": \"no supported contract found\"\n        },\n        {\n          \"url\": \"http://127.0.0.1:61587/openapi.json\",\n          \"kind\": \"openapi\",\n          \"ok\": true,\n          \"detail\": \"1 operations\"\n        },\n        {\n          \"url\": \"http://127.0.0.1:61588/\",\n          \"kind\": \"unknown\",\n          \"ok\": false,\n          \"detail\": \"no supported contract found\"\n        },\n        {\n          \"url\": \"http://127.0.0.1:61588/openapi.json\",\n          \"kind\": \"openapi\",\n          \"ok\": true,\n          \"detail\": \"1 operations\"\n        },\n        {\n          \"url\": \"http://127.0.0.1:61589/\",\n          \"kind\": \"unknown\",\n          \"ok\": false,\n          \"detail\": \"no supported contract found\"\n        },\n        {\n          \"url\": \"http://127.0.0.1:61589/mcp\",\n          \"kind\": \"mcp\",\n          \"ok\": true,\n          \"detail\": \"1 tools\"\n        }\n      ],\n      \"learned\": [\n        {\n          \"provider\": \"openapi:proof-orders\",\n          \"capabilitiesAdded\": 1,\n          \"powersBefore\": 108,\n          \"powersAfter\": 111,\n          \"newPowers\": 3\n        },\n        {\n          \"provider\": \"openapi:proof-tax\",\n          \"capabilitiesAdded\": 1,\n          \"powersBefore\": 111,\n          \"powersAfter\": 118,\n          \"newPowers\": 7\n        },\n        {\n          \"provider\": \"mcp:proof-independent-auditor\",\n          \"capabilitiesAdded\": 1,\n          \"powersBefore\": 118,\n          \"powersAfter\": 124,\n          \"newPowers\": 6\n        }\n      ]\n    }\n  ],\n  \"totalNewCapabilities\": 3,\n  \"totalNewPowers\": 16,\n  \"graph\": {\n    \"providers\": 5,\n    \"capabilities\": 26,\n    \"edges\": 40,\n    \"chains2\": 40,\n    \"chains3\": 58,\n    \"total\": 124\n  }\n}"
+              }
+            ],
+            "structuredContent": {
+              "results": [
+                {
+                  "source": "http://127.0.0.1:61590/",
+                  "probes": [
+                    {
+                      "url": "http://127.0.0.1:61590/",
+                      "kind": "unknown",
+                      "ok": false,
+                      "detail": "no supported contract found"
+                    },
+                    {
+                      "url": "http://127.0.0.1:61590/.well-known/api-catalog",
+                      "kind": "api-catalog",
+                      "ok": true,
+                      "detail": "3 services listed"
+                    },
+                    {
+                      "url": "http://127.0.0.1:61587/",
+                      "kind": "unknown",
+                      "ok": false,
+                      "detail": "no supported contract found"
+                    },
+                    {
+                      "url": "http://127.0.0.1:61587/openapi.json",
+                      "kind": "openapi",
+                      "ok": true,
+                      "detail": "1 operations"
+                    },
+                    {
+                      "url": "http://127.0.0.1:61588/",
+                      "kind": "unknown",
+                      "ok": false,
+                      "detail": "no supported contract found"
+                    },
+                    {
+                      "url": "http://127.0.0.1:61588/openapi.json",
+                      "kind": "openapi",
+                      "ok": true,
+                      "detail": "1 operations"
+                    },
+                    {
+                      "url": "http://127.0.0.1:61589/",
+                      "kind": "unknown",
+                      "ok": false,
+                      "detail": "no supported contract found"
+                    },
+                    {
+                      "url": "http://127.0.0.1:61589/mcp",
+                      "kind": "mcp",
+                      "ok": true,
+                      "detail": "1 tools"
+                    }
+                  ],
+                  "learned": [
+                    {
+                      "provider": "openapi:proof-orders",
+                      "capabilitiesAdded": 1,
+                      "powersBefore": 108,
+                      "powersAfter": 111,
+                      "newPowers": 3
+                    },
+                    {
+                      "provider": "openapi:proof-tax",
+                      "capabilitiesAdded": 1,
+                      "powersBefore": 111,
+                      "powersAfter": 118,
+                      "newPowers": 7
+                    },
+                    {
+                      "provider": "mcp:proof-independent-auditor",
+                      "capabilitiesAdded": 1,
+                      "powersBefore": 118,
+                      "powersAfter": 124,
+                      "newPowers": 6
+                    }
+                  ]
+                }
+              ],
+              "totalNewCapabilities": 3,
+              "totalNewPowers": 16,
+              "graph": {
+                "providers": 5,
+                "capabilities": 26,
+                "edges": 40,
+                "chains2": 40,
+                "chains3": 58,
+                "total": 124
+              }
+            },
+            "isError": false
+          }
+        },
+        "value": {
+          "results": [
+            {
+              "source": "http://127.0.0.1:61590/",
+              "probes": [
+                {
+                  "url": "http://127.0.0.1:61590/",
+                  "kind": "unknown",
+                  "ok": false,
+                  "detail": "no supported contract found"
+                },
+                {
+                  "url": "http://127.0.0.1:61590/.well-known/api-catalog",
+                  "kind": "api-catalog",
+                  "ok": true,
+                  "detail": "3 services listed"
+                },
+                {
+                  "url": "http://127.0.0.1:61587/",
+                  "kind": "unknown",
+                  "ok": false,
+                  "detail": "no supported contract found"
+                },
+                {
+                  "url": "http://127.0.0.1:61587/openapi.json",
+                  "kind": "openapi",
+                  "ok": true,
+                  "detail": "1 operations"
+                },
+                {
+                  "url": "http://127.0.0.1:61588/",
+                  "kind": "unknown",
+                  "ok": false,
+                  "detail": "no supported contract found"
+                },
+                {
+                  "url": "http://127.0.0.1:61588/openapi.json",
+                  "kind": "openapi",
+                  "ok": true,
+                  "detail": "1 operations"
+                },
+                {
+                  "url": "http://127.0.0.1:61589/",
+                  "kind": "unknown",
+                  "ok": false,
+                  "detail": "no supported contract found"
+                },
+                {
+                  "url": "http://127.0.0.1:61589/mcp",
+                  "kind": "mcp",
+                  "ok": true,
+                  "detail": "1 tools"
+                }
+              ],
+              "learned": [
+                {
+                  "provider": "openapi:proof-orders",
+                  "capabilitiesAdded": 1,
+                  "powersBefore": 108,
+                  "powersAfter": 111,
+                  "newPowers": 3
+                },
+                {
+                  "provider": "openapi:proof-tax",
+                  "capabilitiesAdded": 1,
+                  "powersBefore": 111,
+                  "powersAfter": 118,
+                  "newPowers": 7
+                },
+                {
+                  "provider": "mcp:proof-independent-auditor",
+                  "capabilitiesAdded": 1,
+                  "powersBefore": 118,
+                  "powersAfter": 124,
+                  "newPowers": 6
+                }
+              ]
+            }
+          ],
+          "totalNewCapabilities": 3,
+          "totalNewPowers": 16,
+          "graph": {
+            "providers": 5,
+            "capabilities": 26,
+            "edges": 40,
+            "chains2": 40,
+            "chains3": 58,
+            "total": 124
+          }
+        }
+      },
+      {
+        "id": 3,
+        "name": "context_graph",
+        "args": {
+          "op": "search",
+          "query": "proof",
+          "limit": 30
+        },
+        "response": {
+          "jsonrpc": "2.0",
+          "id": 3,
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "[\n  {\n    \"id\": \"openapi:proof-orders:retrieveordersubtotal\",\n    \"title\": \"Retrieve order subtotal\",\n    \"provider\": \"openapi:proof-orders\",\n    \"source\": \"openapi\",\n    \"score\": 2.502\n  },\n  {\n    \"id\": \"openapi:proof-tax:calculateordertax\",\n    \"title\": \"Calculate order tax\",\n    \"provider\": \"openapi:proof-tax\",\n    \"source\": \"openapi\",\n    \"score\": 2.453\n  },\n  {\n    \"id\": \"platform:node:fs.list\",\n    \"title\": \"List workspace files\",\n    \"provider\": \"platform:node\",\n    \"source\": \"platform\",\n    \"score\": 1.78\n  },\n  {\n    \"id\": \"mcp:proof-independent-auditor:audit-order-tax\",\n    \"title\": \"Audit order tax independently\",\n    \"provider\": \"mcp:proof-independent-auditor\",\n    \"source\": \"mcp\",\n    \"score\": 1.355\n  }\n]"
+              }
+            ],
+            "structuredContent": {
+              "result": [
+                {
+                  "id": "openapi:proof-orders:retrieveordersubtotal",
+                  "title": "Retrieve order subtotal",
+                  "provider": "openapi:proof-orders",
+                  "source": "openapi",
+                  "score": 2.502
+                },
+                {
+                  "id": "openapi:proof-tax:calculateordertax",
+                  "title": "Calculate order tax",
+                  "provider": "openapi:proof-tax",
+                  "source": "openapi",
+                  "score": 2.453
+                },
+                {
+                  "id": "platform:node:fs.list",
+                  "title": "List workspace files",
+                  "provider": "platform:node",
+                  "source": "platform",
+                  "score": 1.78
+                },
+                {
+                  "id": "mcp:proof-independent-auditor:audit-order-tax",
+                  "title": "Audit order tax independently",
+                  "provider": "mcp:proof-independent-auditor",
+                  "source": "mcp",
+                  "score": 1.355
+                }
+              ]
+            },
+            "isError": false
+          }
+        },
+        "value": {
+          "result": [
+            {
+              "id": "openapi:proof-orders:retrieveordersubtotal",
+              "title": "Retrieve order subtotal",
+              "provider": "openapi:proof-orders",
+              "source": "openapi",
+              "score": 2.502
+            },
+            {
+              "id": "openapi:proof-tax:calculateordertax",
+              "title": "Calculate order tax",
+              "provider": "openapi:proof-tax",
+              "source": "openapi",
+              "score": 2.453
+            },
+            {
+              "id": "platform:node:fs.list",
+              "title": "List workspace files",
+              "provider": "platform:node",
+              "source": "platform",
+              "score": 1.78
+            },
+            {
+              "id": "mcp:proof-independent-auditor:audit-order-tax",
+              "title": "Audit order tax independently",
+              "provider": "mcp:proof-independent-auditor",
+              "source": "mcp",
+              "score": 1.355
+            }
+          ]
+        }
+      },
+      {
+        "id": 5,
+        "name": "context_explain",
+        "args": {
+          "id": "mcp:proof-independent-auditor:audit-order-tax"
+        },
+        "response": {
+          "jsonrpc": "2.0",
+          "id": 5,
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\n  \"capability\": {\n    \"id\": \"mcp:proof-independent-auditor:audit-order-tax\",\n    \"title\": \"Audit order tax independently\",\n    \"description\": \"Validate the proposed tax amount against separately held order records and a fixed synthetic 20 percent rule. Returns a boolean, never an expected monetary answer.\",\n    \"provider\": \"mcp:proof-independent-auditor\",\n    \"source\": \"mcp\",\n    \"inputs\": [\n      {\n        \"name\": \"order_id\",\n        \"type\": \"id.order\",\n        \"required\": true,\n        \"description\": \"Order identifier\",\n        \"wire\": \"string\"\n      },\n      {\n        \"name\": \"tax_amount\",\n        \"type\": \"quantity:money:USD:major\",\n        \"required\": true,\n        \"description\": \"Tax amount in USD dollars\",\n        \"wire\": \"number\"\n      }\n    ],\n    \"outputs\": [\n      {\n        \"name\": \"\",\n        \"type\": \"json\",\n        \"required\": true\n      },\n      {\n        \"name\": \"valid\",\n        \"type\": \"boolean\",\n        \"required\": true,\n        \"wire\": \"boolean\"\n      }\n    ],\n    \"risk\": \"read\",\n    \"tags\": [\n      \"mcp\",\n      \"127.0.0.1:61589\",\n      \"audit_order_tax\"\n    ],\n    \"invoke\": {\n      \"kind\": \"mcp\",\n      \"endpoint\": \"http://127.0.0.1:61589/mcp\",\n      \"tool\": \"audit_order_tax\"\n    }\n  },\n  \"provider\": {\n    \"id\": \"mcp:proof-independent-auditor\",\n    \"title\": \"Proof Independent Auditor\",\n    \"source\": \"mcp\",\n    \"origin\": \"http://127.0.0.1:61589/mcp\",\n    \"learnedAt\": \"2026-10-16T10:20:03.251Z\",\n    \"capabilityIds\": [\n      \"mcp:proof-independent-auditor:audit-order-tax\"\n    ],\n    \"meta\": {\n      \"source\": \"http://127.0.0.1:61590/\"\n    }\n  },\n  \"graph\": {\n    \"feedsFrom\": 2,\n    \"feedsInto\": 0,\n    \"upstream\": [\n      \"builtin:quantity.money.usd.minor-to-major\",\n      \"openapi:proof-tax:calculateordertax\"\n    ],\n    \"downstream\": []\n  },\n  \"experience\": null,\n  \"reliability\": 0.75,\n  \"exampleArgs\": {\n    \"order_id\": \"<id.order>\",\n    \"tax_amount\": \"<quantity:money:USD:major>\"\n  }\n}"
+              }
+            ],
+            "structuredContent": {
+              "capability": {
+                "id": "mcp:proof-independent-auditor:audit-order-tax",
+                "title": "Audit order tax independently",
+                "description": "Validate the proposed tax amount against separately held order records and a fixed synthetic 20 percent rule. Returns a boolean, never an expected monetary answer.",
+                "provider": "mcp:proof-independent-auditor",
+                "source": "mcp",
+                "inputs": [
+                  {
+                    "name": "order_id",
+                    "type": "id.order",
+                    "required": true,
+                    "description": "Order identifier",
+                    "wire": "string"
+                  },
+                  {
+                    "name": "tax_amount",
+                    "type": "quantity:money:USD:major",
+                    "required": true,
+                    "description": "Tax amount in USD dollars",
+                    "wire": "number"
+                  }
+                ],
+                "outputs": [
+                  {
+                    "name": "",
+                    "type": "json",
+                    "required": true
+                  },
+                  {
+                    "name": "valid",
+                    "type": "boolean",
+                    "required": true,
+                    "wire": "boolean"
+                  }
+                ],
+                "risk": "read",
+                "tags": [
+                  "mcp",
+                  "127.0.0.1:61589",
+                  "audit_order_tax"
+                ],
+                "invoke": {
+                  "kind": "mcp",
+                  "endpoint": "http://127.0.0.1:61589/mcp",
+                  "tool": "audit_order_tax"
+                }
+              },
+              "provider": {
+                "id": "mcp:proof-independent-auditor",
+                "title": "Proof Independent Auditor",
+                "source": "mcp",
+                "origin": "http://127.0.0.1:61589/mcp",
+                "learnedAt": "2026-10-16T10:20:03.251Z",
+                "capabilityIds": [
+                  "mcp:proof-independent-auditor:audit-order-tax"
+                ],
+                "meta": {
+                  "source": "http://127.0.0.1:61590/"
+                }
+              },
+              "graph": {
+                "feedsFrom": 2,
+                "feedsInto": 0,
+                "upstream": [
+                  "builtin:quantity.money.usd.minor-to-major",
+                  "openapi:proof-tax:calculateordertax"
+                ],
+                "downstream": []
+              },
+              "experience": null,
+              "reliability": 0.75,
+              "exampleArgs": {
+                "order_id": "<id.order>",
+                "tax_amount": "<quantity:money:USD:major>"
+              }
+            },
+            "isError": false
+          }
+        },
+        "value": {
+          "capability": {
+            "id": "mcp:proof-independent-auditor:audit-order-tax",
+            "title": "Audit order tax independently",
+            "description": "Validate the proposed tax amount against separately held order records and a fixed synthetic 20 percent rule. Returns a boolean, never an expected monetary answer.",
+            "provider": "mcp:proof-independent-auditor",
+            "source": "mcp",
+            "inputs": [
+              {
+                "name": "order_id",
+                "type": "id.order",
+                "required": true,
+                "description": "Order identifier",
+                "wire": "string"
+              },
+              {
+                "name": "tax_amount",
+                "type": "quantity:money:USD:major",
+                "required": true,
+                "description": "Tax amount in USD dollars",
+                "wire": "number"
+              }
+            ],
+            "outputs": [
+              {
+                "name": "",
+                "type": "json",
+                "required": true
+              },
+              {
+                "name": "valid",
+                "type": "boolean",
+                "required": true,
+                "wire": "boolean"
+              }
+            ],
+            "risk": "read",
+            "tags": [
+              "mcp",
+              "127.0.0.1:61589",
+              "audit_order_tax"
+            ],
+            "invoke": {
+              "kind": "mcp",
+              "endpoint": "http://127.0.0.1:61589/mcp",
+              "tool": "audit_order_tax"
+            }
+          },
+          "provider": {
+            "id": "mcp:proof-independent-auditor",
+            "title": "Proof Independent Auditor",
+            "source": "mcp",
+            "origin": "http://127.0.0.1:61589/mcp",
+            "learnedAt": "2026-10-16T10:20:03.251Z",
+            "capabilityIds": [
+              "mcp:proof-independent-auditor:audit-order-tax"
+            ],
+            "meta": {
+              "source": "http://127.0.0.1:61590/"
+            }
+          },
+          "graph": {
+            "feedsFrom": 2,
+            "feedsInto": 0,
+            "upstream": [
+              "builtin:quantity.money.usd.minor-to-major",
+              "openapi:proof-tax:calculateordertax"
+            ],
+            "downstream": []
+          },
+          "experience": null,
+          "reliability": 0.75,
+          "exampleArgs": {
+            "order_id": "<id.order>",
+            "tax_amount": "<quantity:money:USD:major>"
+          }
+        }
+      },
+      {
+        "id": 4,
+        "name": "context_explain",
+        "args": {
+          "id": "openapi:proof-tax:calculateordertax"
+        },
+        "response": {
+          "jsonrpc": "2.0",
+          "id": 4,
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\n  \"capability\": {\n    \"id\": \"openapi:proof-tax:calculateordertax\",\n    \"title\": \"Calculate order tax\",\n    \"description\": \"Calculate order tax\",\n    \"provider\": \"openapi:proof-tax\",\n    \"source\": \"openapi\",\n    \"inputs\": [\n      {\n        \"name\": \"amount_dollars\",\n        \"type\": \"quantity:money:USD:major\",\n        \"required\": true,\n        \"wire\": \"number\"\n      }\n    ],\n    \"outputs\": [\n      {\n        \"name\": \"\",\n        \"type\": \"json\",\n        \"required\": true\n      },\n      {\n        \"name\": \"tax_amount\",\n        \"type\": \"quantity:money:USD:major\",\n        \"required\": true,\n        \"wire\": \"number\"\n      }\n    ],\n    \"risk\": \"read\",\n    \"tags\": [\n      \"Proof Tax\",\n      \"get\",\n      \"quote\"\n    ],\n    \"invoke\": {\n      \"kind\": \"http\",\n      \"method\": \"GET\",\n      \"url\": \"http://127.0.0.1:61588/quote\",\n      \"pathParams\": [],\n      \"queryParams\": [\n        \"amount_dollars\"\n      ],\n      \"headerParams\": [],\n      \"body\": null,\n      \"bodyParams\": []\n    }\n  },\n  \"provider\": {\n    \"id\": \"openapi:proof-tax\",\n    \"title\": \"Proof Tax\",\n    \"source\": \"openapi\",\n    \"origin\": \"http://127.0.0.1:61588/openapi.json\",\n    \"learnedAt\": \"2026-10-16T10:20:03.238Z\",\n    \"capabilityIds\": [\n      \"openapi:proof-tax:calculateordertax\"\n    ],\n    \"meta\": {\n      \"base\": \"http://127.0.0.1:61588\",\n      \"version\": \"1\",\n      \"security\": [],\n      \"source\": \"http://127.0.0.1:61590/\"\n    }\n  },\n  \"graph\": {\n    \"feedsFrom\": 1,\n    \"feedsInto\": 2,\n    \"upstream\": [\n      \"builtin:quantity.money.usd.minor-to-major\"\n    ],\n    \"downstream\": [\n      \"builtin:quantity.money.usd.major-to-minor\",\n      \"mcp:proof-independent-auditor:audit-order-tax\"\n    ]\n  },\n  \"experience\": null,\n  \"reliability\": 0.75,\n  \"exampleArgs\": {\n    \"amount_dollars\": \"<quantity:money:USD:major>\"\n  }\n}"
+              }
+            ],
+            "structuredContent": {
+              "capability": {
+                "id": "openapi:proof-tax:calculateordertax",
+                "title": "Calculate order tax",
+                "description": "Calculate order tax",
+                "provider": "openapi:proof-tax",
+                "source": "openapi",
+                "inputs": [
+                  {
+                    "name": "amount_dollars",
+                    "type": "quantity:money:USD:major",
+                    "required": true,
+                    "wire": "number"
+                  }
+                ],
+                "outputs": [
+                  {
+                    "name": "",
+                    "type": "json",
+                    "required": true
+                  },
+                  {
+                    "name": "tax_amount",
+                    "type": "quantity:money:USD:major",
+                    "required": true,
+                    "wire": "number"
+                  }
+                ],
+                "risk": "read",
+                "tags": [
+                  "Proof Tax",
+                  "get",
+                  "quote"
+                ],
+                "invoke": {
+                  "kind": "http",
+                  "method": "GET",
+                  "url": "http://127.0.0.1:61588/quote",
+                  "pathParams": [],
+                  "queryParams": [
+                    "amount_dollars"
+                  ],
+                  "headerParams": [],
+                  "body": null,
+                  "bodyParams": []
+                }
+              },
+              "provider": {
+                "id": "openapi:proof-tax",
+                "title": "Proof Tax",
+                "source": "openapi",
+                "origin": "http://127.0.0.1:61588/openapi.json",
+                "learnedAt": "2026-10-16T10:20:03.238Z",
+                "capabilityIds": [
+                  "openapi:proof-tax:calculateordertax"
+                ],
+                "meta": {
+                  "base": "http://127.0.0.1:61588",
+                  "version": "1",
+                  "security": [],
+                  "source": "http://127.0.0.1:61590/"
+                }
+              },
+              "graph": {
+                "feedsFrom": 1,
+                "feedsInto": 2,
+                "upstream": [
+                  "builtin:quantity.money.usd.minor-to-major"
+                ],
+                "downstream": [
+                  "builtin:quantity.money.usd.major-to-minor",
+                  "mcp:proof-independent-auditor:audit-order-tax"
+                ]
+              },
+              "experience": null,
+              "reliability": 0.75,
+              "exampleArgs": {
+                "amount_dollars": "<quantity:money:USD:major>"
+              }
+            },
+            "isError": false
+          }
+        },
+        "value": {
+          "capability": {
+            "id": "openapi:proof-tax:calculateordertax",
+            "title": "Calculate order tax",
+            "description": "Calculate order tax",
+            "provider": "openapi:proof-tax",
+            "source": "openapi",
+            "inputs": [
+              {
+                "name": "amount_dollars",
+                "type": "quantity:money:USD:major",
+                "required": true,
+                "wire": "number"
+              }
+            ],
+            "outputs": [
+              {
+                "name": "",
+                "type": "json",
+                "required": true
+              },
+              {
+                "name": "tax_amount",
+                "type": "quantity:money:USD:major",
+                "required": true,
+                "wire": "number"
+              }
+            ],
+            "risk": "read",
+            "tags": [
+              "Proof Tax",
+              "get",
+              "quote"
+            ],
+            "invoke": {
+              "kind": "http",
+              "method": "GET",
+              "url": "http://127.0.0.1:61588/quote",
+              "pathParams": [],
+              "queryParams": [
+                "amount_dollars"
+              ],
+              "headerParams": [],
+              "body": null,
+              "bodyParams": []
+            }
+          },
+          "provider": {
+            "id": "openapi:proof-tax",
+            "title": "Proof Tax",
+            "source": "openapi",
+            "origin": "http://127.0.0.1:61588/openapi.json",
+            "learnedAt": "2026-10-16T10:20:03.238Z",
+            "capabilityIds": [
+              "openapi:proof-tax:calculateordertax"
+            ],
+            "meta": {
+              "base": "http://127.0.0.1:61588",
+              "version": "1",
+              "security": [],
+              "source": "http://127.0.0.1:61590/"
+            }
+          },
+          "graph": {
+            "feedsFrom": 1,
+            "feedsInto": 2,
+            "upstream": [
+              "builtin:quantity.money.usd.minor-to-major"
+            ],
+            "downstream": [
+              "builtin:quantity.money.usd.major-to-minor",
+              "mcp:proof-independent-auditor:audit-order-tax"
+            ]
+          },
+          "experience": null,
+          "reliability": 0.75,
+          "exampleArgs": {
+            "amount_dollars": "<quantity:money:USD:major>"
+          }
+        }
+      },
+      {
+        "id": 6,
+        "name": "context_explain",
+        "args": {
+          "id": "openapi:proof-orders:retrieveordersubtotal"
+        },
+        "response": {
+          "jsonrpc": "2.0",
+          "id": 6,
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\n  \"capability\": {\n    \"id\": \"openapi:proof-orders:retrieveordersubtotal\",\n    \"title\": \"Retrieve order subtotal\",\n    \"description\": \"Retrieve order subtotal\",\n    \"provider\": \"openapi:proof-orders\",\n    \"source\": \"openapi\",\n    \"inputs\": [\n      {\n        \"name\": \"order_id\",\n        \"type\": \"id.order\",\n        \"required\": true,\n        \"wire\": \"string\"\n      }\n    ],\n    \"outputs\": [\n      {\n        \"name\": \"\",\n        \"type\": \"json\",\n        \"required\": true\n      },\n      {\n        \"name\": \"amount_cents\",\n        \"type\": \"quantity:money:USD:minor\",\n        \"required\": true,\n        \"wire\": \"integer\"\n      }\n    ],\n    \"risk\": \"read\",\n    \"tags\": [\n      \"Proof Orders\",\n      \"get\",\n      \"order\"\n    ],\n    \"invoke\": {\n      \"kind\": \"http\",\n      \"method\": \"GET\",\n      \"url\": \"http://127.0.0.1:61587/order\",\n      \"pathParams\": [],\n      \"queryParams\": [\n        \"order_id\"\n      ],\n      \"headerParams\": [],\n      \"body\": null,\n      \"bodyParams\": []\n    }\n  },\n  \"provider\": {\n    \"id\": \"openapi:proof-orders\",\n    \"title\": \"Proof Orders\",\n    \"source\": \"openapi\",\n    \"origin\": \"http://127.0.0.1:61587/openapi.json\",\n    \"learnedAt\": \"2026-10-16T10:20:03.235Z\",\n    \"capabilityIds\": [\n      \"openapi:proof-orders:retrieveordersubtotal\"\n    ],\n    \"meta\": {\n      \"base\": \"http://127.0.0.1:61587\",\n      \"version\": \"1\",\n      \"security\": [],\n      \"source\": \"http://127.0.0.1:61590/\"\n    }\n  },\n  \"graph\": {\n    \"feedsFrom\": 0,\n    \"feedsInto\": 1,\n    \"upstream\": [],\n    \"downstream\": [\n      \"builtin:quantity.money.usd.minor-to-major\"\n    ]\n  },\n  \"experience\": null,\n  \"reliability\": 0.75,\n  \"exampleArgs\": {\n    \"order_id\": \"<id.order>\"\n  }\n}"
+              }
+            ],
+            "structuredContent": {
+              "capability": {
+                "id": "openapi:proof-orders:retrieveordersubtotal",
+                "title": "Retrieve order subtotal",
+                "description": "Retrieve order subtotal",
+                "provider": "openapi:proof-orders",
+                "source": "openapi",
+                "inputs": [
+                  {
+                    "name": "order_id",
+                    "type": "id.order",
+                    "required": true,
+                    "wire": "string"
+                  }
+                ],
+                "outputs": [
+                  {
+                    "name": "",
+                    "type": "json",
+                    "required": true
+                  },
+                  {
+                    "name": "amount_cents",
+                    "type": "quantity:money:USD:minor",
+                    "required": true,
+                    "wire": "integer"
+                  }
+                ],
+                "risk": "read",
+                "tags": [
+                  "Proof Orders",
+                  "get",
+                  "order"
+                ],
+                "invoke": {
+                  "kind": "http",
+                  "method": "GET",
+                  "url": "http://127.0.0.1:61587/order",
+                  "pathParams": [],
+                  "queryParams": [
+                    "order_id"
+                  ],
+                  "headerParams": [],
+                  "body": null,
+                  "bodyParams": []
+                }
+              },
+              "provider": {
+                "id": "openapi:proof-orders",
+                "title": "Proof Orders",
+                "source": "openapi",
+                "origin": "http://127.0.0.1:61587/openapi.json",
+                "learnedAt": "2026-10-16T10:20:03.235Z",
+                "capabilityIds": [
+                  "openapi:proof-orders:retrieveordersubtotal"
+                ],
+                "meta": {
+                  "base": "http://127.0.0.1:61587",
+                  "version": "1",
+                  "security": [],
+                  "source": "http://127.0.0.1:61590/"
+                }
+              },
+              "graph": {
+                "feedsFrom": 0,
+                "feedsInto": 1,
+                "upstream": [],
+                "downstream": [
+                  "builtin:quantity.money.usd.minor-to-major"
+                ]
+              },
+              "experience": null,
+              "reliability": 0.75,
+              "exampleArgs": {
+                "order_id": "<id.order>"
+              }
+            },
+            "isError": false
+          }
+        },
+        "value": {
+          "capability": {
+            "id": "openapi:proof-orders:retrieveordersubtotal",
+            "title": "Retrieve order subtotal",
+            "description": "Retrieve order subtotal",
+            "provider": "openapi:proof-orders",
+            "source": "openapi",
+            "inputs": [
+              {
+                "name": "order_id",
+                "type": "id.order",
+                "required": true,
+                "wire": "string"
+              }
+            ],
+            "outputs": [
+              {
+                "name": "",
+                "type": "json",
+                "required": true
+              },
+              {
+                "name": "amount_cents",
+                "type": "quantity:money:USD:minor",
+                "required": true,
+                "wire": "integer"
+              }
+            ],
+            "risk": "read",
+            "tags": [
+              "Proof Orders",
+              "get",
+              "order"
+            ],
+            "invoke": {
+              "kind": "http",
+              "method": "GET",
+              "url": "http://127.0.0.1:61587/order",
+              "pathParams": [],
+              "queryParams": [
+                "order_id"
+              ],
+              "headerParams": [],
+              "body": null,
+              "bodyParams": []
+            }
+          },
+          "provider": {
+            "id": "openapi:proof-orders",
+            "title": "Proof Orders",
+            "source": "openapi",
+            "origin": "http://127.0.0.1:61587/openapi.json",
+            "learnedAt": "2026-10-16T10:20:03.235Z",
+            "capabilityIds": [
+              "openapi:proof-orders:retrieveordersubtotal"
+            ],
+            "meta": {
+              "base": "http://127.0.0.1:61587",
+              "version": "1",
+              "security": [],
+              "source": "http://127.0.0.1:61590/"
+            }
+          },
+          "graph": {
+            "feedsFrom": 0,
+            "feedsInto": 1,
+            "upstream": [],
+            "downstream": [
+              "builtin:quantity.money.usd.minor-to-major"
+            ]
+          },
+          "experience": null,
+          "reliability": 0.75,
+          "exampleArgs": {
+            "order_id": "<id.order>"
+          }
+        }
+      },
+      {
+        "id": 7,
+        "name": "context_compose",
+        "args": {
+          "have": {
+            "order_id": {
+              "type": "id.order",
+              "value": "ORD-1001"
+            }
+          },
+          "want": "quantity:money:USD:major",
+          "intent": "Calculate order tax in USD dollars from order subtotal with explicit cents to dollars conversion",
+          "through": [
+            "openapi:proof-orders:retrieveordersubtotal",
+            "builtin:quantity.money.usd.minor-to-major",
+            "openapi:proof-tax:calculateordertax"
+          ],
+          "risks": [
+            "read"
+          ],
+          "run": true,
+          "publish": "order-tax-usd",
+          "witnesses": [
+            {
+              "capability": "mcp:proof-independent-auditor:audit-order-tax",
+              "args": {
+                "order_id": {
+                  "input": "order_id"
+                },
+                "tax_amount": {
+                  "output": ""
+                }
+              },
+              "verify": [
+                {
+                  "op": "equals",
+                  "path": "valid",
+                  "value": true
+                }
+              ]
+            }
+          ]
+        },
+        "response": {
+          "jsonrpc": "2.0",
+          "id": 7,
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\n  \"goal\": {\n    \"have\": {\n      \"order_id\": \"id.order\"\n    },\n    \"want\": \"quantity:money:USD:major\",\n    \"intent\": \"Calculate order tax in USD dollars from order subtotal with explicit cents to dollars conversion\",\n    \"through\": [\n      \"openapi:proof-orders:retrieveordersubtotal\",\n      \"builtin:quantity.money.usd.minor-to-major\",\n      \"openapi:proof-tax:calculateordertax\"\n    ]\n  },\n  \"plans\": [\n    {\n      \"steps\": [\n        {\n          \"capability\": \"openapi:proof-orders:retrieveordersubtotal\",\n          \"bindings\": [\n            {\n              \"port\": \"order_id\",\n              \"from\": \"$in.order_id\"\n            }\n          ]\n        },\n        {\n          \"capability\": \"builtin:quantity.money.usd.minor-to-major\",\n          \"bindings\": [\n            {\n              \"port\": \"amount\",\n              \"from\": \"0.amount_cents\"\n            }\n          ]\n        },\n        {\n          \"capability\": \"openapi:proof-tax:calculateordertax\",\n          \"bindings\": [\n            {\n              \"port\": \"amount_dollars\",\n              \"from\": \"1.\"\n            }\n          ]\n        }\n      ],\n      \"result\": \"2.tax_amount\",\n      \"resultType\": \"quantity:money:USD:major\",\n      \"cost\": 4.15,\n      \"intentScore\": 6,\n      \"fit\": 1.25,\n      \"resultScore\": 0.9,\n      \"providers\": [\n        \"openapi:proof-orders\",\n        \"builtin:core\",\n        \"openapi:proof-tax\"\n      ],\n      \"summary\": \"Retrieve order subtotal → Convert USD minor units to major units → Calculate order tax\",\n      \"titles\": [\n        \"Retrieve order subtotal\",\n        \"Convert USD minor units to major units\",\n        \"Calculate order tax\"\n      ]\n    }\n  ],\n  \"executed\": {\n    \"summary\": \"Retrieve order subtotal → Convert USD minor units to major units → Calculate order tax\",\n    \"titles\": [\n      \"Retrieve order subtotal\",\n      \"Convert USD minor units to major units\",\n      \"Calculate order tax\"\n    ],\n    \"output\": 61.8,\n    \"status\": \"completed\",\n    \"verification\": {\n      \"status\": \"verified\",\n      \"results\": []\n    },\n    \"runs\": [\n      \"run_mvatgt26_1\",\n      \"run_mvatgt2c_2\",\n      \"run_mvatgt2d_3\"\n    ],\n    \"attempts\": [],\n    \"durationMs\": 9,\n    \"witnesses\": [\n      {\n        \"capability\": \"mcp:proof-independent-auditor:audit-order-tax\",\n        \"runId\": \"run_mvatgt2e_4\",\n        \"status\": \"completed\",\n        \"verification\": {\n          \"status\": \"verified\",\n          \"results\": [\n            {\n              \"predicate\": {\n                \"op\": \"equals\",\n                \"path\": \"valid\",\n                \"value\": true\n              },\n              \"ok\": true,\n              \"actual\": true\n            }\n          ]\n        },\n        \"output\": {\n          \"valid\": true\n        }\n      }\n    ]\n  },\n  \"crystallized\": {\n    \"id\": \"composite:41ba4845efef\",\n    \"title\": \"Calculate order tax in USD dollars from order subtotal with explicit cents to dollars conversion: Retrieve order subtotal → Convert USD minor units to major units → Calculate order tax\",\n    \"newPowers\": 7\n  },\n  \"published\": {\n    \"id\": \"goal:order-tax-usd\",\n    \"slug\": \"order-tax-usd\",\n    \"path\": \"/x/order-tax-usd\"\n  }\n}"
+              }
+            ],
+            "structuredContent": {
+              "goal": {
+                "have": {
+                  "order_id": "id.order"
+                },
+                "want": "quantity:money:USD:major",
+                "intent": "Calculate order tax in USD dollars from order subtotal with explicit cents to dollars conversion",
+                "through": [
+                  "openapi:proof-orders:retrieveordersubtotal",
+                  "builtin:quantity.money.usd.minor-to-major",
+                  "openapi:proof-tax:calculateordertax"
+                ]
+              },
+              "plans": [
+                {
+                  "steps": [
+                    {
+                      "capability": "openapi:proof-orders:retrieveordersubtotal",
+                      "bindings": [
+                        {
+                          "port": "order_id",
+                          "from": "$in.order_id"
+                        }
+                      ]
+                    },
+                    {
+                      "capability": "builtin:quantity.money.usd.minor-to-major",
+                      "bindings": [
+                        {
+                          "port": "amount",
+                          "from": "0.amount_cents"
+                        }
+                      ]
+                    },
+                    {
+                      "capability": "openapi:proof-tax:calculateordertax",
+                      "bindings": [
+                        {
+                          "port": "amount_dollars",
+                          "from": "1."
+                        }
+                      ]
+                    }
+                  ],
+                  "result": "2.tax_amount",
+                  "resultType": "quantity:money:USD:major",
+                  "cost": 4.15,
+                  "intentScore": 6,
+                  "fit": 1.25,
+                  "resultScore": 0.9,
+                  "providers": [
+                    "openapi:proof-orders",
+                    "builtin:core",
+                    "openapi:proof-tax"
+                  ],
+                  "summary": "Retrieve order subtotal → Convert USD minor units to major units → Calculate order tax",
+                  "titles": [
+                    "Retrieve order subtotal",
+                    "Convert USD minor units to major units",
+                    "Calculate order tax"
+                  ]
+                }
+              ],
+              "executed": {
+                "summary": "Retrieve order subtotal → Convert USD minor units to major units → Calculate order tax",
+                "titles": [
+                  "Retrieve order subtotal",
+                  "Convert USD minor units to major units",
+                  "Calculate order tax"
+                ],
+                "output": 61.8,
+                "status": "completed",
+                "verification": {
+                  "status": "verified",
+                  "results": []
+                },
+                "runs": [
+                  "run_mvatgt26_1",
+                  "run_mvatgt2c_2",
+                  "run_mvatgt2d_3"
+                ],
+                "attempts": [],
+                "durationMs": 9,
+                "witnesses": [
+                  {
+                    "capability": "mcp:proof-independent-auditor:audit-order-tax",
+                    "runId": "run_mvatgt2e_4",
+                    "status": "completed",
+                    "verification": {
+                      "status": "verified",
+                      "results": [
+                        {
+                          "predicate": {
+                            "op": "equals",
+                            "path": "valid",
+                            "value": true
+                          },
+                          "ok": true,
+                          "actual": true
+                        }
+                      ]
+                    },
+                    "output": {
+                      "valid": true
+                    }
+                  }
+                ]
+              },
+              "crystallized": {
+                "id": "composite:41ba4845efef",
+                "title": "Calculate order tax in USD dollars from order subtotal with explicit cents to dollars conversion: Retrieve order subtotal → Convert USD minor units to major units → Calculate order tax",
+                "newPowers": 7
+              },
+              "published": {
+                "id": "goal:order-tax-usd",
+                "slug": "order-tax-usd",
+                "path": "/x/order-tax-usd"
+              }
+            },
+            "isError": false
+          }
+        },
+        "value": {
+          "goal": {
+            "have": {
+              "order_id": "id.order"
+            },
+            "want": "quantity:money:USD:major",
+            "intent": "Calculate order tax in USD dollars from order subtotal with explicit cents to dollars conversion",
+            "through": [
+              "openapi:proof-orders:retrieveordersubtotal",
+              "builtin:quantity.money.usd.minor-to-major",
+              "openapi:proof-tax:calculateordertax"
+            ]
+          },
+          "plans": [
+            {
+              "steps": [
+                {
+                  "capability": "openapi:proof-orders:retrieveordersubtotal",
+                  "bindings": [
+                    {
+                      "port": "order_id",
+                      "from": "$in.order_id"
+                    }
+                  ]
+                },
+                {
+                  "capability": "builtin:quantity.money.usd.minor-to-major",
+                  "bindings": [
+                    {
+                      "port": "amount",
+                      "from": "0.amount_cents"
+                    }
+                  ]
+                },
+                {
+                  "capability": "openapi:proof-tax:calculateordertax",
+                  "bindings": [
+                    {
+                      "port": "amount_dollars",
+                      "from": "1."
+                    }
+                  ]
+                }
+              ],
+              "result": "2.tax_amount",
+              "resultType": "quantity:money:USD:major",
+              "cost": 4.15,
+              "intentScore": 6,
+              "fit": 1.25,
+              "resultScore": 0.9,
+              "providers": [
+                "openapi:proof-orders",
+                "builtin:core",
+                "openapi:proof-tax"
+              ],
+              "summary": "Retrieve order subtotal → Convert USD minor units to major units → Calculate order tax",
+              "titles": [
+                "Retrieve order subtotal",
+                "Convert USD minor units to major units",
+                "Calculate order tax"
+              ]
+            }
+          ],
+          "executed": {
+            "summary": "Retrieve order subtotal → Convert USD minor units to major units → Calculate order tax",
+            "titles": [
+              "Retrieve order subtotal",
+              "Convert USD minor units to major units",
+              "Calculate order tax"
+            ],
+            "output": 61.8,
+            "status": "completed",
+            "verification": {
+              "status": "verified",
+              "results": []
+            },
+            "runs": [
+              "run_mvatgt26_1",
+              "run_mvatgt2c_2",
+              "run_mvatgt2d_3"
+            ],
+            "attempts": [],
+            "durationMs": 9,
+            "witnesses": [
+              {
+                "capability": "mcp:proof-independent-auditor:audit-order-tax",
+                "runId": "run_mvatgt2e_4",
+                "status": "completed",
+                "verification": {
+                  "status": "verified",
+                  "results": [
+                    {
+                      "predicate": {
+                        "op": "equals",
+                        "path": "valid",
+                        "value": true
+                      },
+                      "ok": true,
+                      "actual": true
+                    }
+                  ]
+                },
+                "output": {
+                  "valid": true
+                }
+              }
+            ]
+          },
+          "crystallized": {
+            "id": "composite:41ba4845efef",
+            "title": "Calculate order tax in USD dollars from order subtotal with explicit cents to dollars conversion: Retrieve order subtotal → Convert USD minor units to major units → Calculate order tax",
+            "newPowers": 7
+          },
+          "published": {
+            "id": "goal:order-tax-usd",
+            "slug": "order-tax-usd",
+            "path": "/x/order-tax-usd"
+          }
+        }
+      },
+      {
+        "id": 8,
+        "name": "context_explain",
+        "args": {
+          "id": "goal:order-tax-usd"
+        },
+        "response": {
+          "jsonrpc": "2.0",
+          "id": 8,
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\n  \"capability\": {\n    \"id\": \"goal:order-tax-usd\",\n    \"title\": \"order-tax-usd\",\n    \"provider\": \"goal:published\",\n    \"source\": \"composite\",\n    \"description\": \"Reusable goal: Calculate order tax in USD dollars from order subtotal with explicit cents to dollars conversion. Finds a current implementation on every call, repairs changed APIs, and re-runs its stored checks plus 1 independent outcome witness(es). Invoke with context_run; no need to reconstruct the pipeline.\",\n    \"inputs\": [\n      {\n        \"name\": \"order_id\",\n        \"type\": \"id.order\",\n        \"required\": true\n      }\n    ],\n    \"outputs\": [\n      {\n        \"name\": \"\",\n        \"type\": \"quantity:money:USD:major\",\n        \"required\": true\n      }\n    ],\n    \"risk\": \"read\",\n    \"tags\": [\n      \"saved\",\n      \"goal\",\n      \"reusable\",\n      \"Calculate\",\n      \"order\",\n      \"tax\",\n      \"in\",\n      \"USD\",\n      \"dollars\",\n      \"from\",\n      \"order\",\n      \"subtotal\",\n      \"with\",\n      \"explicit\",\n      \"cents\",\n      \"to\",\n      \"dollars\",\n      \"conversion\"\n    ],\n    \"invoke\": {\n      \"kind\": \"goal\",\n      \"slug\": \"order-tax-usd\"\n    }\n  },\n  \"provider\": {\n    \"id\": \"goal:published\",\n    \"title\": \"Reusable environmental capabilities\",\n    \"source\": \"composite\",\n    \"origin\": \"rightclick-x\",\n    \"learnedAt\": \"2026-10-16T10:20:17.319Z\",\n    \"capabilityIds\": [\n      \"goal:order-tax-usd\"\n    ]\n  },\n  \"graph\": {\n    \"feedsFrom\": 0,\n    \"feedsInto\": 3,\n    \"upstream\": [],\n    \"downstream\": [\n      \"builtin:quantity.money.usd.major-to-minor\",\n      \"openapi:proof-tax:calculateordertax\",\n      \"mcp:proof-independent-auditor:audit-order-tax\"\n    ]\n  },\n  \"experience\": null,\n  \"reliability\": 0.75,\n  \"exampleArgs\": {\n    \"order_id\": \"<id.order>\"\n  }\n}"
+              }
+            ],
+            "structuredContent": {
+              "capability": {
+                "id": "goal:order-tax-usd",
+                "title": "order-tax-usd",
+                "provider": "goal:published",
+                "source": "composite",
+                "description": "Reusable goal: Calculate order tax in USD dollars from order subtotal with explicit cents to dollars conversion. Finds a current implementation on every call, repairs changed APIs, and re-runs its stored checks plus 1 independent outcome witness(es). Invoke with context_run; no need to reconstruct the pipeline.",
+                "inputs": [
+                  {
+                    "name": "order_id",
+                    "type": "id.order",
+                    "required": true
+                  }
+                ],
+                "outputs": [
+                  {
+                    "name": "",
+                    "type": "quantity:money:USD:major",
+                    "required": true
+                  }
+                ],
+                "risk": "read",
+                "tags": [
+                  "saved",
+                  "goal",
+                  "reusable",
+                  "Calculate",
+                  "order",
+                  "tax",
+                  "in",
+                  "USD",
+                  "dollars",
+                  "from",
+                  "order",
+                  "subtotal",
+                  "with",
+                  "explicit",
+                  "cents",
+                  "to",
+                  "dollars",
+                  "conversion"
+                ],
+                "invoke": {
+                  "kind": "goal",
+                  "slug": "order-tax-usd"
+                }
+              },
+              "provider": {
+                "id": "goal:published",
+                "title": "Reusable environmental capabilities",
+                "source": "composite",
+                "origin": "rightclick-x",
+                "learnedAt": "2026-10-16T10:20:17.319Z",
+                "capabilityIds": [
+                  "goal:order-tax-usd"
+                ]
+              },
+              "graph": {
+                "feedsFrom": 0,
+                "feedsInto": 3,
+                "upstream": [],
+                "downstream": [
+                  "builtin:quantity.money.usd.major-to-minor",
+                  "openapi:proof-tax:calculateordertax",
+                  "mcp:proof-independent-auditor:audit-order-tax"
+                ]
+              },
+              "experience": null,
+              "reliability": 0.75,
+              "exampleArgs": {
+                "order_id": "<id.order>"
+              }
+            },
+            "isError": false
+          }
+        },
+        "value": {
+          "capability": {
+            "id": "goal:order-tax-usd",
+            "title": "order-tax-usd",
+            "provider": "goal:published",
+            "source": "composite",
+            "description": "Reusable goal: Calculate order tax in USD dollars from order subtotal with explicit cents to dollars conversion. Finds a current implementation on every call, repairs changed APIs, and re-runs its stored checks plus 1 independent outcome witness(es). Invoke with context_run; no need to reconstruct the pipeline.",
+            "inputs": [
+              {
+                "name": "order_id",
+                "type": "id.order",
+                "required": true
+              }
+            ],
+            "outputs": [
+              {
+                "name": "",
+                "type": "quantity:money:USD:major",
+                "required": true
+              }
+            ],
+            "risk": "read",
+            "tags": [
+              "saved",
+              "goal",
+              "reusable",
+              "Calculate",
+              "order",
+              "tax",
+              "in",
+              "USD",
+              "dollars",
+              "from",
+              "order",
+              "subtotal",
+              "with",
+              "explicit",
+              "cents",
+              "to",
+              "dollars",
+              "conversion"
+            ],
+            "invoke": {
+              "kind": "goal",
+              "slug": "order-tax-usd"
+            }
+          },
+          "provider": {
+            "id": "goal:published",
+            "title": "Reusable environmental capabilities",
+            "source": "composite",
+            "origin": "rightclick-x",
+            "learnedAt": "2026-10-16T10:20:17.319Z",
+            "capabilityIds": [
+              "goal:order-tax-usd"
+            ]
+          },
+          "graph": {
+            "feedsFrom": 0,
+            "feedsInto": 3,
+            "upstream": [],
+            "downstream": [
+              "builtin:quantity.money.usd.major-to-minor",
+              "openapi:proof-tax:calculateordertax",
+              "mcp:proof-independent-auditor:audit-order-tax"
+            ]
+          },
+          "experience": null,
+          "reliability": 0.75,
+          "exampleArgs": {
+            "order_id": "<id.order>"
+          }
+        }
+      }
+    ],
+    "serviceEvents": [
+      {
+        "sequence": 1,
+        "service": "gateway",
+        "action": "catalog",
+        "detail": {
+          "listed": [
+            "http://127.0.0.1:61587",
+            "http://127.0.0.1:61588",
+            "http://127.0.0.1:61589"
+          ]
+        }
+      },
+      {
+        "sequence": 2,
+        "service": "orders",
+        "action": "read",
+        "detail": {
+          "order_id": "ORD-1001",
+          "amount_cents": 30900
+        }
+      },
+      {
+        "sequence": 3,
+        "service": "tax",
+        "action": "quote",
+        "detail": {
+          "version": 1,
+          "amount_dollars": 309,
+          "tax_amount": 61.8,
+          "badArithmetic": false
+        }
+      },
+      {
+        "sequence": 4,
+        "service": "auditor",
+        "action": "check",
+        "detail": {
+          "order_id": "ORD-1001",
+          "proposed": 61.8,
+          "expected": 61.8,
+          "valid": true
+        }
+      }
+    ]
+  },
+  "stateAfterBuilderSha256": "30300f02bb0d336f690de4531bde4d0cfedb582e2a95f135a809eec9d1aa94c0",
+  "reuser": {
+    "client": "codex",
+    "phase": "reuser",
+    "exit": 0,
+    "signal": null,
+    "timedOut": false,
+    "seconds": 17,
+    "transcript": "/Users/ross/src/rightclick-x/proof/results/ai-clients-2026-10-16T10-19-52-759Z-472901/reuser-codex-transcript.jsonl",
+    "stderr": "/Users/ross/src/rightclick-x/proof/results/ai-clients-2026-10-16T10-19-52-759Z-472901/reuser-codex-stderr.txt",
+    "audit": "/Users/ross/src/rightclick-x/proof/results/ai-clients-2026-10-16T10-19-52-759Z-472901/reuser-codex-mcp.jsonl",
+    "final": "/Users/ross/src/rightclick-x/proof/results/ai-clients-2026-10-16T10-19-52-759Z-472901/reuser-codex-final.txt",
+    "nonRcxActions": [],
+    "serverStopped": true,
+    "callBudgetExceeded": false,
+    "codeModeTrace": {
+      "file": "/Users/ross/src/rightclick-x/proof/results/ai-clients-2026-10-16T10-19-52-759Z-472901/reuser-codex-code-mode.jsonl",
+      "source": "/Users/ross/.codex/sessions/2026/10/16/rollout-2026-10-16T11-20-23-01a1443a-238c-7ae2-bcf6-9eaf9483206f.jsonl",
+      "threadId": "01a1443a-238c-7ae2-bcf6-9eaf9483206f",
+      "calls": 4,
+      "violations": []
+    },
+    "checks": {
+      "clientExited": true,
+      "serverStopped": true,
+      "withinCallBudget": true,
+      "onlyRcxActions": true,
+      "codeModeSourceChecked": true,
+      "invokedPersistedGoal": true,
+      "singleGoalInvocation": true,
+      "differentServerProcess": true,
+      "samePersistedState": true,
+      "noManualReconstruction": true,
+      "previouslyUnseenOrder": true,
+      "newMcpProviderUsed": true,
+      "successfulMcpResponse": true,
+      "runtimeCompleted": true,
+      "runtimeVerified": true,
+      "exactIndependentTruth": true,
+      "witnessCompletedAndVerified": true,
+      "ordersReadObserved": true,
+      "taxQuoteObserved": true,
+      "independentAuditObserved": true
+    },
+    "goalInvocations": [
+      {
+        "orderId": "ORD-1002",
+        "status": "completed",
+        "verification": "verified",
+        "attempts": [
+          {
+            "summary": "Retrieve order subtotal → Convert USD minor units to major units → Calculate order tax",
+            "failed": "openapi:proof-tax:calculateordertax",
+            "error": "openapi:proof-tax:calculateordertax: HTTP 404: {\"error\":\"not found\"}",
+            "healing": "API drift at http://127.0.0.1:61590/: openapi:proof-orders,openapi:proof-tax,mcp:proof-independent-auditor → openapi:proof-orders,mcp:proof-tax-mcp,mcp:proof-independent-auditor; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+          }
+        ]
+      }
+    ],
+    "requiredAgentRetry": false,
+    "calls": [
+      {
+        "id": 2,
+        "name": "context_graph",
+        "args": {
+          "op": "search",
+          "query": "tax",
+          "limit": 30
+        },
+        "response": {
+          "jsonrpc": "2.0",
+          "id": 2,
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "[\n  {\n    \"id\": \"openapi:proof-tax:calculateordertax\",\n    \"title\": \"Calculate order tax\",\n    \"provider\": \"openapi:proof-tax\",\n    \"source\": \"openapi\",\n    \"score\": 7.46\n  },\n  {\n    \"id\": \"mcp:proof-independent-auditor:audit-order-tax\",\n    \"title\": \"Audit order tax independently\",\n    \"provider\": \"mcp:proof-independent-auditor\",\n    \"source\": \"mcp\",\n    \"score\": 6.8\n  },\n  {\n    \"id\": \"goal:order-tax-usd\",\n    \"title\": \"order-tax-usd\",\n    \"provider\": \"goal:published\",\n    \"source\": \"composite\",\n    \"score\": 6.647\n  },\n  {\n    \"id\": \"composite:41ba4845efef\",\n    \"title\": \"Calculate order tax in USD dollars from order subtotal with explicit cents to dollars conversion: Retrieve order subtotal → Convert USD minor units to major units → Calculate order tax\",\n    \"provider\": \"composite:crystallized\",\n    \"source\": \"composite\",\n    \"score\": 5.964\n  }\n]"
+              }
+            ],
+            "structuredContent": {
+              "result": [
+                {
+                  "id": "openapi:proof-tax:calculateordertax",
+                  "title": "Calculate order tax",
+                  "provider": "openapi:proof-tax",
+                  "source": "openapi",
+                  "score": 7.46
+                },
+                {
+                  "id": "mcp:proof-independent-auditor:audit-order-tax",
+                  "title": "Audit order tax independently",
+                  "provider": "mcp:proof-independent-auditor",
+                  "source": "mcp",
+                  "score": 6.8
+                },
+                {
+                  "id": "goal:order-tax-usd",
+                  "title": "order-tax-usd",
+                  "provider": "goal:published",
+                  "source": "composite",
+                  "score": 6.647
+                },
+                {
+                  "id": "composite:41ba4845efef",
+                  "title": "Calculate order tax in USD dollars from order subtotal with explicit cents to dollars conversion: Retrieve order subtotal → Convert USD minor units to major units → Calculate order tax",
+                  "provider": "composite:crystallized",
+                  "source": "composite",
+                  "score": 5.964
+                }
+              ]
+            },
+            "isError": false
+          }
+        },
+        "value": {
+          "result": [
+            {
+              "id": "openapi:proof-tax:calculateordertax",
+              "title": "Calculate order tax",
+              "provider": "openapi:proof-tax",
+              "source": "openapi",
+              "score": 7.46
+            },
+            {
+              "id": "mcp:proof-independent-auditor:audit-order-tax",
+              "title": "Audit order tax independently",
+              "provider": "mcp:proof-independent-auditor",
+              "source": "mcp",
+              "score": 6.8
+            },
+            {
+              "id": "goal:order-tax-usd",
+              "title": "order-tax-usd",
+              "provider": "goal:published",
+              "source": "composite",
+              "score": 6.647
+            },
+            {
+              "id": "composite:41ba4845efef",
+              "title": "Calculate order tax in USD dollars from order subtotal with explicit cents to dollars conversion: Retrieve order subtotal → Convert USD minor units to major units → Calculate order tax",
+              "provider": "composite:crystallized",
+              "source": "composite",
+              "score": 5.964
+            }
+          ]
+        }
+      },
+      {
+        "id": 3,
+        "name": "context_explain",
+        "args": {
+          "id": "goal:order-tax-usd"
+        },
+        "response": {
+          "jsonrpc": "2.0",
+          "id": 3,
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\n  \"capability\": {\n    \"id\": \"goal:order-tax-usd\",\n    \"title\": \"order-tax-usd\",\n    \"provider\": \"goal:published\",\n    \"source\": \"composite\",\n    \"description\": \"Reusable goal: Calculate order tax in USD dollars from order subtotal with explicit cents to dollars conversion. Finds a current implementation on every call, repairs changed APIs, and re-runs its stored checks plus 1 independent outcome witness(es). Invoke with context_run; no need to reconstruct the pipeline.\",\n    \"inputs\": [\n      {\n        \"name\": \"order_id\",\n        \"type\": \"id.order\",\n        \"required\": true\n      }\n    ],\n    \"outputs\": [\n      {\n        \"name\": \"\",\n        \"type\": \"quantity:money:USD:major\",\n        \"required\": true\n      }\n    ],\n    \"risk\": \"read\",\n    \"tags\": [\n      \"saved\",\n      \"goal\",\n      \"reusable\",\n      \"Calculate\",\n      \"order\",\n      \"tax\",\n      \"in\",\n      \"USD\",\n      \"dollars\",\n      \"from\",\n      \"order\",\n      \"subtotal\",\n      \"with\",\n      \"explicit\",\n      \"cents\",\n      \"to\",\n      \"dollars\",\n      \"conversion\"\n    ],\n    \"invoke\": {\n      \"kind\": \"goal\",\n      \"slug\": \"order-tax-usd\"\n    }\n  },\n  \"provider\": {\n    \"id\": \"goal:published\",\n    \"title\": \"Reusable environmental capabilities\",\n    \"source\": \"composite\",\n    \"origin\": \"rightclick-x\",\n    \"learnedAt\": \"2026-10-16T10:20:17.319Z\",\n    \"capabilityIds\": [\n      \"goal:order-tax-usd\"\n    ]\n  },\n  \"graph\": {\n    \"feedsFrom\": 0,\n    \"feedsInto\": 3,\n    \"upstream\": [],\n    \"downstream\": [\n      \"builtin:quantity.money.usd.major-to-minor\",\n      \"openapi:proof-tax:calculateordertax\",\n      \"mcp:proof-independent-auditor:audit-order-tax\"\n    ]\n  },\n  \"experience\": null,\n  \"reliability\": 0.75,\n  \"exampleArgs\": {\n    \"order_id\": \"<id.order>\"\n  }\n}"
+              }
+            ],
+            "structuredContent": {
+              "capability": {
+                "id": "goal:order-tax-usd",
+                "title": "order-tax-usd",
+                "provider": "goal:published",
+                "source": "composite",
+                "description": "Reusable goal: Calculate order tax in USD dollars from order subtotal with explicit cents to dollars conversion. Finds a current implementation on every call, repairs changed APIs, and re-runs its stored checks plus 1 independent outcome witness(es). Invoke with context_run; no need to reconstruct the pipeline.",
+                "inputs": [
+                  {
+                    "name": "order_id",
+                    "type": "id.order",
+                    "required": true
+                  }
+                ],
+                "outputs": [
+                  {
+                    "name": "",
+                    "type": "quantity:money:USD:major",
+                    "required": true
+                  }
+                ],
+                "risk": "read",
+                "tags": [
+                  "saved",
+                  "goal",
+                  "reusable",
+                  "Calculate",
+                  "order",
+                  "tax",
+                  "in",
+                  "USD",
+                  "dollars",
+                  "from",
+                  "order",
+                  "subtotal",
+                  "with",
+                  "explicit",
+                  "cents",
+                  "to",
+                  "dollars",
+                  "conversion"
+                ],
+                "invoke": {
+                  "kind": "goal",
+                  "slug": "order-tax-usd"
+                }
+              },
+              "provider": {
+                "id": "goal:published",
+                "title": "Reusable environmental capabilities",
+                "source": "composite",
+                "origin": "rightclick-x",
+                "learnedAt": "2026-10-16T10:20:17.319Z",
+                "capabilityIds": [
+                  "goal:order-tax-usd"
+                ]
+              },
+              "graph": {
+                "feedsFrom": 0,
+                "feedsInto": 3,
+                "upstream": [],
+                "downstream": [
+                  "builtin:quantity.money.usd.major-to-minor",
+                  "openapi:proof-tax:calculateordertax",
+                  "mcp:proof-independent-auditor:audit-order-tax"
+                ]
+              },
+              "experience": null,
+              "reliability": 0.75,
+              "exampleArgs": {
+                "order_id": "<id.order>"
+              }
+            },
+            "isError": false
+          }
+        },
+        "value": {
+          "capability": {
+            "id": "goal:order-tax-usd",
+            "title": "order-tax-usd",
+            "provider": "goal:published",
+            "source": "composite",
+            "description": "Reusable goal: Calculate order tax in USD dollars from order subtotal with explicit cents to dollars conversion. Finds a current implementation on every call, repairs changed APIs, and re-runs its stored checks plus 1 independent outcome witness(es). Invoke with context_run; no need to reconstruct the pipeline.",
+            "inputs": [
+              {
+                "name": "order_id",
+                "type": "id.order",
+                "required": true
+              }
+            ],
+            "outputs": [
+              {
+                "name": "",
+                "type": "quantity:money:USD:major",
+                "required": true
+              }
+            ],
+            "risk": "read",
+            "tags": [
+              "saved",
+              "goal",
+              "reusable",
+              "Calculate",
+              "order",
+              "tax",
+              "in",
+              "USD",
+              "dollars",
+              "from",
+              "order",
+              "subtotal",
+              "with",
+              "explicit",
+              "cents",
+              "to",
+              "dollars",
+              "conversion"
+            ],
+            "invoke": {
+              "kind": "goal",
+              "slug": "order-tax-usd"
+            }
+          },
+          "provider": {
+            "id": "goal:published",
+            "title": "Reusable environmental capabilities",
+            "source": "composite",
+            "origin": "rightclick-x",
+            "learnedAt": "2026-10-16T10:20:17.319Z",
+            "capabilityIds": [
+              "goal:order-tax-usd"
+            ]
+          },
+          "graph": {
+            "feedsFrom": 0,
+            "feedsInto": 3,
+            "upstream": [],
+            "downstream": [
+              "builtin:quantity.money.usd.major-to-minor",
+              "openapi:proof-tax:calculateordertax",
+              "mcp:proof-independent-auditor:audit-order-tax"
+            ]
+          },
+          "experience": null,
+          "reliability": 0.75,
+          "exampleArgs": {
+            "order_id": "<id.order>"
+          }
+        }
+      },
+      {
+        "id": 4,
+        "name": "context_run",
+        "args": {
+          "id": "goal:order-tax-usd",
+          "args": {
+            "order_id": "ORD-1002"
+          }
+        },
+        "response": {
+          "jsonrpc": "2.0",
+          "id": 4,
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\n  \"runId\": \"run_mvath888_1\",\n  \"capability\": \"goal:order-tax-usd\",\n  \"provider\": \"goal:published\",\n  \"title\": \"order-tax-usd\",\n  \"status\": \"completed\",\n  \"output\": 154.43,\n  \"startedAt\": \"2026-10-16T10:20:36.968Z\",\n  \"durationMs\": 67.4,\n  \"verification\": {\n    \"status\": \"verified\",\n    \"results\": []\n  },\n  \"receipt\": {\n    \"runId\": \"run_mvath888_1\",\n    \"capability\": \"goal:order-tax-usd\",\n    \"provider\": \"goal:published\",\n    \"startedAt\": \"2026-10-16T10:20:36.968Z\",\n    \"durationMs\": 67.4,\n    \"status\": \"completed\",\n    \"verification\": \"verified\",\n    \"seq\": 12,\n    \"inputDigest\": \"607c2fe3feb08ca2d22c6248dd10484c8a9e2a0b239284ca9ca612819fe9cebd\",\n    \"outputDigest\": \"8db03d698c174e0f6d94fec46ac90365c4f875cd8cdc768cf65682d1bf06b2fc\",\n    \"prev\": \"539d311b68235f6eaec2abd29e33c92bf023328c2ef3d3c51c0e92a9a6d1a7db\",\n    \"hash\": \"761899a8ea270bccdcb19cbbb44397a4f232418252f3b07b08d81ebbedf83bec\"\n  },\n  \"steps\": [\n    \"run_mvath8a1_5\",\n    \"run_mvath8a2_6\",\n    \"run_mvath8a2_7\"\n  ],\n  \"witnesses\": [\n    {\n      \"capability\": \"mcp:proof-independent-auditor:audit-order-tax\",\n      \"runId\": \"run_mvath8a3_8\",\n      \"status\": \"completed\",\n      \"verification\": {\n        \"status\": \"verified\",\n        \"results\": [\n          {\n            \"predicate\": {\n              \"op\": \"equals\",\n              \"path\": \"valid\",\n              \"value\": true\n            },\n            \"ok\": true,\n            \"actual\": true\n          }\n        ]\n      },\n      \"output\": {\n        \"valid\": true\n      }\n    }\n  ],\n  \"attempts\": [\n    {\n      \"summary\": \"Retrieve order subtotal → Convert USD minor units to major units → Calculate order tax\",\n      \"failed\": \"openapi:proof-tax:calculateordertax\",\n      \"error\": \"openapi:proof-tax:calculateordertax: HTTP 404: {\\\"error\\\":\\\"not found\\\"}\",\n      \"healing\": \"API drift at http://127.0.0.1:61590/: openapi:proof-orders,openapi:proof-tax,mcp:proof-independent-auditor → openapi:proof-orders,mcp:proof-tax-mcp,mcp:proof-independent-auditor; +1 −1 ~0 capabilities; 1 pipeline(s) retired\"\n    }\n  ]\n}"
+              }
+            ],
+            "structuredContent": {
+              "runId": "run_mvath888_1",
+              "capability": "goal:order-tax-usd",
+              "provider": "goal:published",
+              "title": "order-tax-usd",
+              "status": "completed",
+              "output": 154.43,
+              "startedAt": "2026-10-16T10:20:36.968Z",
+              "durationMs": 67.4,
+              "verification": {
+                "status": "verified",
+                "results": []
+              },
+              "receipt": {
+                "runId": "run_mvath888_1",
+                "capability": "goal:order-tax-usd",
+                "provider": "goal:published",
+                "startedAt": "2026-10-16T10:20:36.968Z",
+                "durationMs": 67.4,
+                "status": "completed",
+                "verification": "verified",
+                "seq": 12,
+                "inputDigest": "607c2fe3feb08ca2d22c6248dd10484c8a9e2a0b239284ca9ca612819fe9cebd",
+                "outputDigest": "8db03d698c174e0f6d94fec46ac90365c4f875cd8cdc768cf65682d1bf06b2fc",
+                "prev": "539d311b68235f6eaec2abd29e33c92bf023328c2ef3d3c51c0e92a9a6d1a7db",
+                "hash": "761899a8ea270bccdcb19cbbb44397a4f232418252f3b07b08d81ebbedf83bec"
+              },
+              "steps": [
+                "run_mvath8a1_5",
+                "run_mvath8a2_6",
+                "run_mvath8a2_7"
+              ],
+              "witnesses": [
+                {
+                  "capability": "mcp:proof-independent-auditor:audit-order-tax",
+                  "runId": "run_mvath8a3_8",
+                  "status": "completed",
+                  "verification": {
+                    "status": "verified",
+                    "results": [
+                      {
+                        "predicate": {
+                          "op": "equals",
+                          "path": "valid",
+                          "value": true
+                        },
+                        "ok": true,
+                        "actual": true
+                      }
+                    ]
+                  },
+                  "output": {
+                    "valid": true
+                  }
+                }
+              ],
+              "attempts": [
+                {
+                  "summary": "Retrieve order subtotal → Convert USD minor units to major units → Calculate order tax",
+                  "failed": "openapi:proof-tax:calculateordertax",
+                  "error": "openapi:proof-tax:calculateordertax: HTTP 404: {\"error\":\"not found\"}",
+                  "healing": "API drift at http://127.0.0.1:61590/: openapi:proof-orders,openapi:proof-tax,mcp:proof-independent-auditor → openapi:proof-orders,mcp:proof-tax-mcp,mcp:proof-independent-auditor; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+                }
+              ]
+            },
+            "isError": false
+          }
+        },
+        "value": {
+          "runId": "run_mvath888_1",
+          "capability": "goal:order-tax-usd",
+          "provider": "goal:published",
+          "title": "order-tax-usd",
+          "status": "completed",
+          "output": 154.43,
+          "startedAt": "2026-10-16T10:20:36.968Z",
+          "durationMs": 67.4,
+          "verification": {
+            "status": "verified",
+            "results": []
+          },
+          "receipt": {
+            "runId": "run_mvath888_1",
+            "capability": "goal:order-tax-usd",
+            "provider": "goal:published",
+            "startedAt": "2026-10-16T10:20:36.968Z",
+            "durationMs": 67.4,
+            "status": "completed",
+            "verification": "verified",
+            "seq": 12,
+            "inputDigest": "607c2fe3feb08ca2d22c6248dd10484c8a9e2a0b239284ca9ca612819fe9cebd",
+            "outputDigest": "8db03d698c174e0f6d94fec46ac90365c4f875cd8cdc768cf65682d1bf06b2fc",
+            "prev": "539d311b68235f6eaec2abd29e33c92bf023328c2ef3d3c51c0e92a9a6d1a7db",
+            "hash": "761899a8ea270bccdcb19cbbb44397a4f232418252f3b07b08d81ebbedf83bec"
+          },
+          "steps": [
+            "run_mvath8a1_5",
+            "run_mvath8a2_6",
+            "run_mvath8a2_7"
+          ],
+          "witnesses": [
+            {
+              "capability": "mcp:proof-independent-auditor:audit-order-tax",
+              "runId": "run_mvath8a3_8",
+              "status": "completed",
+              "verification": {
+                "status": "verified",
+                "results": [
+                  {
+                    "predicate": {
+                      "op": "equals",
+                      "path": "valid",
+                      "value": true
+                    },
+                    "ok": true,
+                    "actual": true
+                  }
+                ]
+              },
+              "output": {
+                "valid": true
+              }
+            }
+          ],
+          "attempts": [
+            {
+              "summary": "Retrieve order subtotal → Convert USD minor units to major units → Calculate order tax",
+              "failed": "openapi:proof-tax:calculateordertax",
+              "error": "openapi:proof-tax:calculateordertax: HTTP 404: {\"error\":\"not found\"}",
+              "healing": "API drift at http://127.0.0.1:61590/: openapi:proof-orders,openapi:proof-tax,mcp:proof-independent-auditor → openapi:proof-orders,mcp:proof-tax-mcp,mcp:proof-independent-auditor; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+            }
+          ]
+        }
+      }
+    ],
+    "serviceEvents": [
+      {
+        "sequence": 6,
+        "service": "orders",
+        "action": "read",
+        "detail": {
+          "order_id": "ORD-1002",
+          "amount_cents": 77215
+        }
+      },
+      {
+        "sequence": 7,
+        "service": "gateway",
+        "action": "catalog",
+        "detail": {
+          "listed": [
+            "http://127.0.0.1:61587",
+            "http://127.0.0.1:61588",
+            "http://127.0.0.1:61589"
+          ]
+        }
+      },
+      {
+        "sequence": 8,
+        "service": "orders",
+        "action": "read",
+        "detail": {
+          "order_id": "ORD-1002",
+          "amount_cents": 77215
+        }
+      },
+      {
+        "sequence": 9,
+        "service": "tax",
+        "action": "quote",
+        "detail": {
+          "version": 3,
+          "amount_dollars": 772.15,
+          "tax_amount": 154.43,
+          "badArithmetic": false
+        }
+      },
+      {
+        "sequence": 10,
+        "service": "auditor",
+        "action": "check",
+        "detail": {
+          "order_id": "ORD-1002",
+          "proposed": 154.43,
+          "expected": 154.43,
+          "valid": true
+        }
+      }
+    ]
+  },
+  "buildAfter": {
+    "commit": "5e4b4a03d57439c3f56ef936f853795a6c9a6a1b",
+    "workingTree": "M README.md\n M lab/ai-clients.ts\n M package.json\n M src/core/semantics.ts\n M src/core/types.ts\n M src/core/verify.ts\n M src/index.ts\n M src/interface/graphql-server.ts\n M src/interface/tools.ts\n M src/reflectors/builtins.ts\n M src/runtime.ts\n M test/synthesis.test.ts\n M tsconfig.json\n?? proof/\n?? src/core/quantities.ts\n?? test/outcomes.test.ts\n?? test/quantities.test.ts",
+    "productSha256": "2662563dc3019b9f745ed40aba430037e833b85e5217bb9b6d98266315b9f473",
+    "node": "v24.16.0"
+  },
+  "productUnchanged": true,
+  "serviceEvents": [
+    {
+      "sequence": 1,
+      "service": "gateway",
+      "action": "catalog",
+      "detail": {
+        "listed": [
+          "http://127.0.0.1:61587",
+          "http://127.0.0.1:61588",
+          "http://127.0.0.1:61589"
+        ]
+      }
+    },
+    {
+      "sequence": 2,
+      "service": "orders",
+      "action": "read",
+      "detail": {
+        "order_id": "ORD-1001",
+        "amount_cents": 30900
+      }
+    },
+    {
+      "sequence": 3,
+      "service": "tax",
+      "action": "quote",
+      "detail": {
+        "version": 1,
+        "amount_dollars": 309,
+        "tax_amount": 61.8,
+        "badArithmetic": false
+      }
+    },
+    {
+      "sequence": 4,
+      "service": "auditor",
+      "action": "check",
+      "detail": {
+        "order_id": "ORD-1001",
+        "proposed": 61.8,
+        "expected": 61.8,
+        "valid": true
+      }
+    },
+    {
+      "sequence": 5,
+      "service": "operator",
+      "action": "tax-contract",
+      "detail": {
+        "version": 3
+      }
+    },
+    {
+      "sequence": 6,
+      "service": "orders",
+      "action": "read",
+      "detail": {
+        "order_id": "ORD-1002",
+        "amount_cents": 77215
+      }
+    },
+    {
+      "sequence": 7,
+      "service": "gateway",
+      "action": "catalog",
+      "detail": {
+        "listed": [
+          "http://127.0.0.1:61587",
+          "http://127.0.0.1:61588",
+          "http://127.0.0.1:61589"
+        ]
+      }
+    },
+    {
+      "sequence": 8,
+      "service": "orders",
+      "action": "read",
+      "detail": {
+        "order_id": "ORD-1002",
+        "amount_cents": 77215
+      }
+    },
+    {
+      "sequence": 9,
+      "service": "tax",
+      "action": "quote",
+      "detail": {
+        "version": 3,
+        "amount_dollars": 772.15,
+        "tax_amount": 154.43,
+        "badArithmetic": false
+      }
+    },
+    {
+      "sequence": 10,
+      "service": "auditor",
+      "action": "check",
+      "detail": {
+        "order_id": "ORD-1002",
+        "proposed": 154.43,
+        "expected": 154.43,
+        "valid": true
+      }
+    }
+  ]
+}

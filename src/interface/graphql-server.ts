@@ -22,7 +22,7 @@ function pascal(slug: string): string {
   return c.charAt(0).toUpperCase() + c.slice(1);
 }
 function scalarFor(t: string): string {
-  if (t === "number" || t.startsWith("geo.")) return "Float";
+  if (t === "number" || t.startsWith("geo.") || t.startsWith("quantity:")) return "Float";
   if (t === "boolean") return "Boolean";
   if (t === "json" || t.startsWith("list:")) return "JSON";
   return "String";
@@ -59,6 +59,7 @@ export function introspection(rc: RightClick) {
         field("result", `[rightclick:${g.want}]`, named("SCALAR", scalarFor(g.want))),
         field("ok", "", named("SCALAR", "Boolean")),
         field("verification", "", named("SCALAR", "String")),
+        field("witnesses", "Independent outcome-check evidence", named("SCALAR", "JSON")),
         field("pipeline", "", list(named("SCALAR", "String"))),
         field("receipt", "Head of the receipt hash chain", named("SCALAR", "String")),
       ],
@@ -98,7 +99,7 @@ export async function executeGraphQL(rc: RightClick, body: { query?: string; var
     const goal = [...rc.published.values()].find((g) => camel(g.slug) === field);
     if (!goal) return { data: null, errors: [{ message: `Cannot query field "${field}" on type "Query".` }] };
     const out = await rc.callPublished(goal.slug, args);
-    const full: Record<string, unknown> = { result: out.result, ok: out.ok, verification: out.verification, pipeline: out.pipeline, receipt: out.receipt };
+    const full: Record<string, unknown> = { result: out.result, ok: out.ok, verification: out.verification, witnesses: out.witnesses, pipeline: out.pipeline, receipt: out.receipt };
     const picked = Object.fromEntries(selection.map((k) => [k, full[k] ?? null]));
     return out.ok ? { data: { [field]: picked } } : { data: { [field]: picked }, errors: [{ message: out.error ?? "goal failed" }] };
   } catch (e) {

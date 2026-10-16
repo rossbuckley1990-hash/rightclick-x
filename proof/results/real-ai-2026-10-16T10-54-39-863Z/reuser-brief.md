@@ -1,0 +1,5 @@
+# Destination brief: Reykjavik
+
+Reykjavík is the capital and largest city of Iceland. It is located on the southern shore of the Faxaflói bay in southwest Iceland and has a latitude of 64°08′ N, making it the world's northernmost capital of a sovereign state. Reykjavík has a population of around 140,000 as of 2026, and the surrounding Capital Region has a population of around 252,000, constituting approximately 64% of Iceland's population.
+
+Source: [Wikipedia — Reykjavik](https://en.wikipedia.org/wiki/Reykjavik)

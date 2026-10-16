@@ -1,0 +1,65 @@
+{
+  "label": "formatter-mcp",
+  "record": {
+    "startedAt": "2026-10-16T10:55:13.662Z",
+    "finishedAt": "2026-10-16T10:55:13.749Z",
+    "url": "https://rcx-real-fmt-mvaul9ee-1bdc46.ross-buckley1990.workers.dev/formatter",
+    "method": "POST",
+    "requestBody": {
+      "jsonrpc": "2.0",
+      "id": 71,
+      "method": "tools/list",
+      "params": {}
+    },
+    "authenticated": false,
+    "status": 200,
+    "body": "{\"jsonrpc\":\"2.0\",\"id\":71,\"result\":{\"tools\":[{\"name\":\"render_destination_document\",\"title\":\"Render sourced destination brief\",\"description\":\"Render a sourced Markdown destination brief from a place and its complete Wikipedia summary. This operation does not fetch or invent facts.\",\"inputSchema\":{\"type\":\"object\",\"properties\":{\"city\":{\"type\":\"string\",\"description\":\"Capital city or place name\"},\"content\":{\"type\":\"string\",\"description\":\"Complete plain text Wikipedia summary for this place\"}},\"required\":[\"city\",\"content\"]},\"outputSchema\":{\"type\":\"object\",\"properties\":{\"artifact\":{\"type\":\"object\",\"properties\":{\"markdown\":{\"type\":\"string\",\"description\":\"Sourced destination brief in Markdown\"}}}}},\"annotations\":{\"readOnlyHint\":true}}]}}"
+  },
+  "value": {
+    "jsonrpc": "2.0",
+    "id": 71,
+    "result": {
+      "tools": [
+        {
+          "name": "render_destination_document",
+          "title": "Render sourced destination brief",
+          "description": "Render a sourced Markdown destination brief from a place and its complete Wikipedia summary. This operation does not fetch or invent facts.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "city": {
+                "type": "string",
+                "description": "Capital city or place name"
+              },
+              "content": {
+                "type": "string",
+                "description": "Complete plain text Wikipedia summary for this place"
+              }
+            },
+            "required": [
+              "city",
+              "content"
+            ]
+          },
+          "outputSchema": {
+            "type": "object",
+            "properties": {
+              "artifact": {
+                "type": "object",
+                "properties": {
+                  "markdown": {
+                    "type": "string",
+                    "description": "Sourced destination brief in Markdown"
+                  }
+                }
+              }
+            }
+          },
+          "annotations": {
+            "readOnlyHint": true
+          }
+        }
+      ]
+    }
+  }
+}

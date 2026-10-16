@@ -1,0 +1,26 @@
+The goal is published as **`goal:destination-brief`**, and every run passed both its own checks and the independent audit. The capital of PT is **Lisbon**.
+
+## Destination brief (PT), as returned by the destination-formatting service
+
+```markdown
+# Destination brief: Lisbon
+
+Lisbon is the capital and most populous city of Portugal, with an estimated population of 658,236 as of 2025, within its administrative limits and 3,353,000 within the metropolis, as of 2025. The city lies in the western part of the Iberian Peninsula, fronting the northern shore of the River Tagus.
+
+Source: [Wikipedia — Lisbon](https://en.wikipedia.org/wiki/Lisbon)
+```
+
+The summary is the full `extract` from Wikipedia's live page-summary data, passed to the formatter unchanged.
+
+## How the goal works
+- **Steps:** a live countries data source looks up the code PT and returns capital "Lisbon". Wikipedia's page summary for that capital is then fetched. Finally, the environment's formatter (`renderdestinationbrief`) gets the capital as `place` and the summary as `text`.
+- **Input:** only `country` (type `country`). No capital, summary, URL or expected answer is fixed in the goal. **Output:** `markdown`.
+- **Permissions:** limited to read-only operations.
+- **Audit:** the independent auditor (`openapi:independent-live-destination-auditor:auditdestinationbrief`) is a separate service. It is saved as a required check on every run, with `country` taken from the goal's input and `candidate` taken from the goal's full output. It must return `valid` equal to `true`.
+
+## Verification status
+1. **First run, not published (PT):** completed and verified. The audit returned `valid: true` (run `run_mvaupc73_4`).
+2. **Publishing run (PT):** ran again and gave the same brief. The audit passed again (`run_mvaupfsz_8`), and only then was the goal published as `goal:destination-brief` (path `/x/destination-brief`).
+3. **Reuse test (FR):** I ran the saved goal with `country: "FR"`. It produced a brief for Paris, and the audit ran again for FR and returned `valid: true` (`run_mvaupie0_d`). The audit does follow the country you pass in.
+
+Nothing failed. Besides the published goal, RightClick X also saved the pipeline in its local graph as `composite:923da73c42ee`.

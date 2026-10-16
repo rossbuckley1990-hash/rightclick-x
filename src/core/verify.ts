@@ -17,6 +17,26 @@ export interface PredicateResult {
   actual: unknown;
 }
 
+/** A read-only environmental capability that independently checks an outcome.
+ * Bindings are relative to each invocation, never frozen to the first example.
+ */
+export interface OutcomeWitness {
+  capability: string;
+  /** Runtime-pinned checker contract. Changed checkers require a new explicit proof. */
+  contract?: string;
+  args: Record<string, { input: string } | { output: string } | { value: unknown }>;
+  verify: Predicate[];
+}
+
+export interface WitnessResult {
+  capability: string;
+  runId: string;
+  status: "completed" | "failed";
+  verification: ReturnType<typeof check>;
+  output?: unknown;
+  error?: string;
+}
+
 export function pick(value: unknown, path?: string): unknown {
   if (!path) return value;
   let cur: unknown = value;

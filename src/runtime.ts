@@ -6,8 +6,8 @@ import { CapabilityGraph, signature, tokenize, type GraphEvent, type LearnDelta 
 import { Ledger, ReceiptChain, sha256, type Receipt } from "./core/ledger.ts";
 import { plan, type Plan } from "./core/planner.ts";
 import { distance, inferType, inspectValue, type Inspection } from "./core/semantics.ts";
-import type { Capability, FetchLike, PlanStep, Reflection, SemType } from "./core/types.ts";
-import { check, pick, type Predicate, type PredicateResult } from "./core/verify.ts";
+import type { Capability, CapabilityAnchor, FetchLike, PlanStep, Reflection, SemType } from "./core/types.ts";
+import { check, pick, type Predicate, type PredicateResult, type OutcomeWitness, type WitnessResult } from "./core/verify.ts";
 import { builtinReflection, type BuiltinFn } from "./reflectors/builtins.ts";
 import { DEFAULT_DIRECTORIES, type Candidate, type Directory } from "./reflectors/directories.ts";
 import { discover, type Discovery, type SourceKind } from "./reflectors/discover.ts";
@@ -18,7 +18,7 @@ import { detectRuntime, platformReflection, type PlatformFn, type RuntimeInfo } 
 
 export const VERSION = "0.1.0";
 /** Bump whenever semantic inference changes: persisted reflections are then re-derived from their sources. */
-export const SEMANTICS = 8;
+export const SEMANTICS = 9;
 
 export interface Store {
   load(): Promise<PersistedState | null>;
@@ -49,8 +49,11 @@ export interface PublishedGoal {
   want: SemType;
   intent?: string;
   verify?: Predicate[];
+  witnesses?: OutcomeWitness[];
   risks?: Capability["risk"][];
   through?: string[];
+  anchors?: CapabilityAnchor[];
+  maxSteps?: number;
   publishedAt: string;
   calls: number;
   lastPipeline?: string[];
@@ -88,6 +91,8 @@ export interface RunRecord {
   steps?: string[];
   /** For failed composite runs: the innermost capability that failed. */
   failedCapability?: string;
+  witnesses?: WitnessResult[];
+  attempts?: Array<{ summary: string; failed: string; error: string; healing?: string }>;
 }
 
 export class ConfirmationRequired extends Error {
@@ -119,10 +124,11 @@ export interface ComposeResult {
     /** Failed attempts the runtime routed around before succeeding. */
     attempts: Array<{ summary: string; failed: string; error: string; healing?: string }>;
     durationMs: number;
+    witnesses?: WitnessResult[];
   };
   crystallized?: { id: string; title: string; newPowers: number };
   /** Present when the goal was published as an endpoint. */
-  published?: { slug: string; path: string };
+  published?: { id: string; slug: string; path: string };
   /** Present when compose had to go and find new capabilities in the world. */
   acquisition?: { topic: string; considered: string[]; learned: Array<{ title: string; kind: string; source: string; capabilities: number; error?: string }> };
 }
@@ -189,7 +195,10 @@ export class RightClick {
       for (const r of saved.reflections) rc.graph.add(r);
       rc.ledger.load(saved.ledger);
       rc.chain.restore(saved.receipts ?? []);
-      for (const g of saved.published ?? []) rc.published.set(g.slug, g);
+      for (const g of saved.published ?? []) {
+        rc.published.set(g.slug, g);
+        rc.registerGoal(g);
+      }
       // Credentials changed for an origin: its past auth and rate-limit failures no longer apply.
       const now = await rc.net.auth.fingerprints();
       const changed = new Set(Object.keys(now).filter((o) => saved.authFingerprints?.[o] !== now[o]));
@@ -474,7 +483,7 @@ export class RightClick {
 
   // ================================================================ context_run
 
-  async run(id: string, args: Record<string, unknown> = {}, opts: { verify?: Predicate[]; confirm?: boolean } = {}): Promise<RunRecord> {
+  async run(id: string, args: Record<string, unknown> = {}, opts: { verify?: Predicate[]; confirm?: boolean; activeGoals?: string[] } = {}): Promise<RunRecord> {
     const cap = this.graph.get(id);
     if (!cap) throw new Error(`unknown capability: ${id}`);
     // Destructive effects keep the user's authority: they need an explicit confirmation.
@@ -488,21 +497,40 @@ export class RightClick {
     let error: string | undefined;
     let steps: string[] | undefined;
     let failedCapability: string | undefined;
+    let verification: RunRecord["verification"] = { status: "unverified", results: [] };
+    let witnesses: WitnessResult[] = [];
+    let attempts: RunRecord["attempts"];
     try {
       const coerced = coerceArgs(cap, args);
-      if (cap.invoke.kind === "composite") {
-        const r = await this.runSteps(cap.invoke.steps, cap.invoke.result, coerced, opts.confirm);
+      if (cap.invoke.kind === "goal") {
+        const r = await this.executeGoal(cap.invoke.slug, coerced, opts.confirm, opts.activeGoals);
+        output = r.executed?.output;
+        steps = r.executed?.runs;
+        witnesses = r.executed?.witnesses ?? [];
+        attempts = r.executed?.attempts;
+        verification = r.executed?.verification ?? { status: "refuted", results: [] };
+        if (r.executed?.status !== "completed") throw new Error(attempts?.map((a) => a.error).join("; ") || "no pipeline found for saved goal");
+      } else if (cap.invoke.kind === "composite") {
+        const r = await this.runSteps(cap.invoke.steps, cap.invoke.result, coerced, opts.confirm, opts.activeGoals);
         output = r.output;
         steps = r.runs;
+        verification = check(output, cap.invoke.verify ?? []);
+        if (verification.status === "refuted") throw new Error("stored verification refuted");
+        witnesses = await this.checkWitnesses(cap.invoke.witnesses ?? [], coerced, output, r.runs);
+        if (witnesses.some((w) => w.status !== "completed")) throw new Error("independent outcome witness refuted: " + witnesses.filter((w) => w.status !== "completed").map((w) => w.error ?? w.capability).join("; "));
+        if (witnesses.length) verification = { ...verification, status: "verified" };
       } else {
         output = await this.execute(cap, coerced);
       }
+      const extra = check(output, opts.verify ?? []);
+      verification = { status: extra.status === "refuted" ? "refuted" : verification.status === "verified" || extra.status === "verified" ? "verified" : "unverified", results: [...verification.results, ...extra.results] };
+      if (verification.status === "refuted") throw new Error("verification refuted: " + JSON.stringify(extra.results.filter((p) => !p.ok)));
     } catch (e) {
       error = String((e as Error)?.message ?? e);
       if (e instanceof StepError) failedCapability = e.capability;
+      verification = { ...verification, status: "refuted" };
     }
     const durationMs = Math.round((performance.now() - t0) * 10) / 10;
-    const verification = error ? { status: "refuted" as const, results: [] } : check(output, opts.verify ?? []);
     const ok = !error && verification.status !== "refuted";
     this.ledger.record(cap.id, ok, durationMs, error);
     const receipt = await this.chain.append(
@@ -524,6 +552,8 @@ export class RightClick {
       receipt,
       steps,
       failedCapability,
+      ...(witnesses.length ? { witnesses } : {}),
+      ...(attempts ? { attempts } : {}),
     };
     this.runs.set(runId, rec);
     if (this.runs.size > RUN_BUFFER) this.runs.delete(this.runs.keys().next().value!);
@@ -546,6 +576,95 @@ export class RightClick {
     return { count: this.chain.receipts.length, intact: broken === null, brokenAt: broken, head: this.chain.headHash };
   }
 
+  /** Pin the checker contract so a saved proof cannot silently become a different test. */
+  private pinWitnesses(witnesses: OutcomeWitness[]): OutcomeWitness[] {
+    if (!Array.isArray(witnesses) || witnesses.length > 16) throw new Error("witnesses must be an array of at most 16 checks");
+    return witnesses.map((w) => {
+      const c = this.graph.get(w.capability);
+      if (!c || c.risk !== "read" || c.invoke.kind === "goal" || c.invoke.kind === "composite") throw new Error(`witness must be an available read-only provider capability: ${w.capability}`);
+      if (!Array.isArray(w.verify) || !w.verify.length) throw new Error(`witness needs nonempty verification predicates: ${w.capability}`);
+      if (w.contract && w.contract !== signature(c)) throw new Error(`witness contract changed: ${w.capability}; establish a new check explicitly`);
+      for (const binding of Object.values(w.args ?? {})) {
+        if (!binding || typeof binding !== "object" || Object.keys(binding).length !== 1 || !("input" in binding || "output" in binding || "value" in binding)) throw new Error("witness arguments must use exactly one of input, output or value");
+        if ("input" in binding && typeof binding.input !== "string" || "output" in binding && typeof binding.output !== "string") throw new Error("witness input/output paths must be strings");
+      }
+      return structuredClone({ ...w, args: w.args ?? {}, contract: signature(c) });
+    });
+  }
+
+  private async checkWitnesses(witnesses: OutcomeWitness[], inputs: Record<string, unknown>, output: unknown, runIds: string[]): Promise<WitnessResult[]> {
+    const providers = new Set<string>();
+    const visit = (id: string) => {
+      const r = this.runs.get(id);
+      if (!r) return;
+      providers.add(r.provider);
+      for (const child of r.steps ?? []) visit(child);
+    };
+    runIds.forEach(visit);
+    const evidence: WitnessResult[] = [];
+    for (const original of witnesses) {
+      try {
+        const w = this.pinWitnesses([original])[0];
+        const cap = this.graph.get(w.capability)!;
+        if (providers.has(cap.provider)) throw new Error("outcome witness must be separate from the providers producing the result");
+        const args: Record<string, unknown> = {};
+        for (const [key, binding] of Object.entries(w.args)) {
+          const value = "input" in binding ? pick(inputs, binding.input) : "output" in binding ? pick(output, binding.output) : binding.value;
+          if (value === undefined) throw new Error(`unresolved witness argument: ${key}`);
+          args[key] = value;
+        }
+        const r = await this.run(w.capability, args, { verify: w.verify });
+        evidence.push({ capability: w.capability, runId: r.runId, status: r.status, verification: r.verification, output: r.output, ...(r.error ? { error: r.error } : {}) });
+      } catch (e) {
+        evidence.push({ capability: original.capability, runId: "", status: "failed", verification: { status: "refuted", results: [] }, error: String((e as Error)?.message ?? e) });
+      }
+    }
+    return evidence;
+  }
+
+  private describeAnchor(cap: Capability): CapabilityAnchor {
+    // Object wrappers and renamed output paths are transport details. Keep the
+    // multiset of leaf meanings, so a different result shape cannot qualify.
+    const leaves = cap.outputs.filter((port) => !cap.outputs.some((other) =>
+      other !== port && (port.name === "" || other.name.startsWith(`${port.name}.`))));
+    return {
+      id: cap.id,
+      source: this.graph.providers.get(cap.provider)?.meta?.source as string | undefined,
+      title: cap.title.trim().toLowerCase().replace(/\s+/g, " "),
+      risk: cap.risk,
+      inputTypes: cap.inputs.filter((p) => p.required).map((p) => p.type).sort(),
+      outputTypes: leaves.map((p) => p.type).sort(),
+    };
+  }
+
+  private pinAnchors(through: string[]): CapabilityAnchor[] {
+    return through.map((reference) => {
+      // An absent explicit id is an error, not a search phrase that may select
+      // some unrelated operation or disappear from the caller's constraints.
+      const cap = this.graph.get(reference) ?? (!/^[\w-]+:/.test(reference) ? this.graph.search(reference, 1)[0]?.capability : undefined);
+      if (!cap) throw new Error(`unresolved required anchor: ${reference}`);
+      return this.describeAnchor(cap);
+    });
+  }
+
+  private resolveAnchors(anchors: CapabilityAnchor[]): string[] {
+    return anchors.map((anchor) => {
+      const equivalent = (cap: Capability) => {
+        const candidate = this.describeAnchor(cap);
+        return candidate.source === anchor.source && candidate.title === anchor.title && candidate.risk === anchor.risk &&
+          JSON.stringify(candidate.inputTypes) === JSON.stringify(anchor.inputTypes) && JSON.stringify(candidate.outputTypes) === JSON.stringify(anchor.outputTypes);
+      };
+      const exact = this.graph.get(anchor.id);
+      if (exact) {
+        if (!equivalent(exact)) throw new Error(`required anchor contract changed meaning: ${anchor.id}`);
+        return exact.id;
+      }
+      const candidates = anchor.source ? this.graph.list().filter(equivalent) : [];
+      if (candidates.length !== 1) throw new Error(`${candidates.length ? "ambiguous" : "unresolved"} required anchor: ${anchor.id}; expected one equivalent operation at ${anchor.source ?? "its original identity"}, found ${candidates.length}`);
+      return candidates[0].id;
+    });
+  }
+
   // ================================================================ context_compose
 
   async compose(opts: {
@@ -554,19 +673,25 @@ export class RightClick {
     intent?: string;
     run?: boolean;
     verify?: Predicate[];
+    witnesses?: OutcomeWitness[];
     maxSteps?: number;
     limit?: number;
     crystallize?: boolean;
     risks?: Capability["risk"][];
     /** Capability ids or search phrases the pipeline must pass through. */
     through?: string[];
+    /** Internal persisted anchor contracts; callers specify through instead. */
+    anchors?: CapabilityAnchor[];
     /** If the graph can't do it, research public directories, learn candidates and re-plan. */
     acquire?: boolean;
     /** After a verified run, publish this goal as an API endpoint under this name. */
     publish?: string;
     /** Required to run plans that contain destructive capabilities. */
     confirm?: boolean;
+    /** Internal recursion guard, carried through nested saved goals. */
+    activeGoals?: string[];
   }): Promise<ComposeResult> {
+    const witnesses = this.pinWitnesses(opts.witnesses ?? []);
     const values: Record<string, unknown> = {};
     const types: Record<string, SemType> = {};
     for (const [k, v] of Object.entries(opts.have)) {
@@ -581,8 +706,18 @@ export class RightClick {
       if (types[k] === "repo" && /^[\w.-]+\/[\w.-]+$/.test(String(v))) types[k] = "repo.full";
       values[k] = v;
     }
-    const through = (opts.through ?? []).map((t) => (this.graph.get(t) ? t : this.graph.search(t, 1)[0]?.capability.id)).filter((x): x is string => !!x);
-    const goal = { have: types, want: opts.want, intent: opts.intent, maxSteps: opts.maxSteps, limit: opts.limit ?? 5, risks: opts.risks, through };
+    const anchors = opts.anchors ?? this.pinAnchors(opts.through ?? []);
+    const through = this.resolveAnchors(anchors);
+    const activeGoalIds = new Set((opts.activeGoals ?? []).map((s) => `goal:${s}`));
+    // Saved composites that include an active goal must not recurse through it either.
+    const containsActive = (c: Capability, seen = new Set<string>()): boolean => {
+      if (activeGoalIds.has(c.id)) return true;
+      if (seen.has(c.id) || c.invoke.kind !== "composite") return false;
+      seen.add(c.id);
+      return c.invoke.steps.some((s) => { const child = this.graph.get(s.capability); return !!child && containsActive(child, seen); });
+    };
+    const blocked = new Set(this.graph.list().filter((c) => containsActive(c)).map((c) => c.id));
+    const goal = { have: types, want: opts.want, intent: opts.intent, maxSteps: opts.maxSteps, limit: opts.limit ?? 5, risks: opts.risks, through, exclude: blocked };
     let plans = plan(this.graph, this.ledger, goal);
     const titles = (p: Plan) => p.steps.map((s) => this.graph.get(s.capability)!.title);
     const result: ComposeResult = {
@@ -626,7 +761,8 @@ export class RightClick {
     // Self-healing execution: when a step fails, route around that capability
     // (and every crystallized pipeline containing it) and re-plan.
     const attempts: Array<{ summary: string; failed: string; error: string; healing?: string }> = [];
-    const exclude = new Set<string>();
+    const exclude = new Set<string>(blocked);
+    let lastWitnesses: WitnessResult[] = [];
     // Measured before anything runs: withdrawal during healing would otherwise erase the evidence.
     const baselineCoverage = plans[0] ? this.leafCoverage(plans[0], opts.intent) : 0;
     const refreshed = new Set<string>();
@@ -634,9 +770,12 @@ export class RightClick {
     for (let attempt = 0; attempt < 6 && plans.length; attempt++) {
       const p = plans[0];
       try {
-        const r = await this.runSteps(p.steps, p.result, values, opts.confirm);
-        const verification = check(r.output, opts.verify ?? []);
+        const r = await this.runSteps(p.steps, p.result, values, opts.confirm, opts.activeGoals);
+        let verification = check(r.output, opts.verify ?? []);
         if (verification.status === "refuted") throw new StepError(p.steps[p.steps.length - 1].capability, `verification refuted: ${JSON.stringify(verification.results.filter((x) => !x.ok))}`);
+        lastWitnesses = await this.checkWitnesses(witnesses, values, r.output, r.runs);
+        if (lastWitnesses.some((w) => w.status !== "completed")) throw new StepError(p.steps[p.steps.length - 1].capability, `verification refuted by independent outcome witness: ${lastWitnesses.filter((w) => w.status !== "completed").map((w) => w.error ?? w.capability).join("; ")}`);
+        if (lastWitnesses.length) verification = { ...verification, status: "verified" };
         result.executed = {
           summary: p.summary,
           titles: titles(p),
@@ -646,8 +785,9 @@ export class RightClick {
           runs: r.runs,
           attempts,
           durationMs: Math.round(performance.now() - t0),
+          witnesses: lastWitnesses,
         };
-        if (opts.crystallize !== false && p.steps.length > 1) result.crystallized = await this.crystallize(p, types, opts.intent);
+        if (opts.crystallize !== false && p.steps.length > 1) result.crystallized = await this.crystallize(p, types, opts.intent, opts.verify, witnesses);
         if (opts.publish) {
           const slug = slugify(opts.publish);
           this.published.set(slug, {
@@ -656,15 +796,19 @@ export class RightClick {
             have: types,
             want: opts.want,
             intent: opts.intent,
-            verify: opts.verify,
-            risks: opts.risks,
-            through: opts.through,
+            verify: structuredClone(opts.verify),
+            witnesses,
+            risks: structuredClone(opts.risks ?? [...new Set(p.steps.map((s) => this.graph.get(s.capability)!.risk))]),
+            through: structuredClone(opts.through),
+            anchors: structuredClone(anchors),
+            maxSteps: opts.maxSteps,
             publishedAt: new Date().toISOString(),
             calls: 0,
             lastPipeline: titles(p),
             providers: [...new Set(p.steps.map((st) => this.graph.get(st.capability)!.provider))],
           });
-          result.published = { slug, path: `/x/${slug}` };
+          this.registerGoal(this.published.get(slug)!);
+          result.published = { id: `goal:${slug}`, slug, path: `/x/${slug}` };
           this.graph.emit("goal.published", { slug, title: opts.publish, pipeline: titles(p) });
           this.persist();
         }
@@ -697,6 +841,17 @@ export class RightClick {
           // A crystallized pipeline in a failed plan is suspect as a whole.
           for (const s of p.steps) if (this.graph.get(s.capability)?.invoke.kind === "composite") exclude.add(s.capability);
         }
+        // Refresh hard anchors in this same call. A changed protocol may have a
+        // new operation id, but the source and role must still match uniquely.
+        // Missing/ambiguous anchors end recovery; they are never dropped.
+        try {
+          goal.through = this.resolveAnchors(anchors);
+          result.goal.through = goal.through;
+        } catch (anchorError) {
+          attempt.error += `; ${String((anchorError as Error)?.message ?? anchorError)}`;
+          plans = [];
+          break;
+        }
         // Healing must preserve the meaning of the goal: a recovery plan may not
         // cover less of the intent than the plan it replaces (an invoice total
         // is a number, but it is not a tax rate).
@@ -720,6 +875,7 @@ export class RightClick {
       runs: [],
       attempts,
       durationMs: Math.round(performance.now() - t0),
+      witnesses: lastWitnesses,
     };
     return result;
   }
@@ -739,10 +895,30 @@ export class RightClick {
     return covered.size;
   }
 
-  /** Serve a published goal: fixed contract, implementation re-derived from the live graph. */
-  async callPublished(slug: string, args: Record<string, unknown>) {
+  /** Make a durable goal discoverable through the same graph and context_run tool. */
+  private registerGoal(g: PublishedGoal): void {
+    const risks = g.risks ?? ["read"];
+    const risk = risks.includes("destructive") ? "destructive" : risks.includes("write") ? "write" : risks.includes("external") ? "external" : "read";
+    this.graph.addCapability({
+      id: `goal:${g.slug}`, title: g.title, provider: "goal:published", source: "composite",
+      description: `Reusable goal: ${g.intent ?? g.want}. Finds a current implementation on every call, repairs changed APIs, and re-runs its stored checks${g.witnesses?.length ? ` plus ${g.witnesses.length} independent outcome witness(es)` : ""}. Invoke with context_run; no need to reconstruct the pipeline.`,
+      inputs: Object.entries(g.have).map(([name, type]) => ({ name, type, required: true })),
+      outputs: [{ name: "", type: g.want, required: true }], risk,
+      tags: ["saved", "goal", "reusable", ...(g.intent ?? g.title).split(/\s+/)],
+      invoke: { kind: "goal", slug: g.slug },
+    }, { id: "goal:published", title: "Reusable environmental capabilities", source: "composite", origin: this.name, learnedAt: g.publishedAt });
+  }
+
+  private async executeGoal(slug: string, args: Record<string, unknown>, confirm?: boolean, activeGoals: string[] = []): Promise<ComposeResult> {
     const g = this.published.get(slug);
     if (!g) throw new Error(`no published goal: ${slug}`);
+    if (activeGoals.includes(slug) || activeGoals.length >= 8) throw new Error(`recursive saved goal: ${slug}`);
+    // Older persisted goals can acquire descriptors only while their original
+    // anchors still exist. Missing old ids fail explicitly rather than weaken.
+    if (!g.anchors) {
+      g.anchors = this.pinAnchors(g.through ?? []);
+      this.persist();
+    }
     const missing = Object.keys(g.have).filter((k) => args[k] === undefined || args[k] === "");
     if (missing.length) throw new Error(`missing parameter(s): ${missing.join(", ")}`);
     const have: Record<string, unknown> = {};
@@ -751,18 +927,25 @@ export class RightClick {
       const value = (t === "number" || t.startsWith("geo.")) && typeof raw === "string" ? Number(raw) : raw;
       have[k] = { type: t, value };
     }
-    const r = await this.compose({ have, want: g.want, intent: g.intent, verify: g.verify, risks: g.risks, through: g.through, run: true });
+    const r = await this.compose({ have, want: g.want, intent: g.intent, verify: g.verify, witnesses: g.witnesses, risks: g.risks, through: g.through, anchors: g.anchors, maxSteps: g.maxSteps, run: true, confirm, activeGoals: [...activeGoals, slug] });
     g.calls++;
     if (r.executed?.status === "completed") {
       g.lastPipeline = r.executed.titles;
       g.providers = [...new Set(r.executed.runs.map((id) => this.runs.get(id)?.provider).filter((x): x is string => !!x))];
     }
     this.persist();
+    return r;
+  }
+
+  /** Serve a published goal: fixed contract, implementation re-derived from the live graph. */
+  async callPublished(slug: string, args: Record<string, unknown>) {
+    const r = await this.executeGoal(slug, args);
     return {
       ok: r.executed?.status === "completed",
       result: r.executed?.output ?? null,
       pipeline: r.executed?.titles ?? [],
       verification: r.executed?.verification.status ?? "refuted",
+      witnesses: r.executed?.witnesses ?? [],
       healed: r.executed?.attempts.length ?? 0,
       receipt: this.chain.headHash,
       error: r.executed?.status === "completed" ? undefined : (r.executed?.attempts.map((a) => a.error).join("; ") || "no pipeline found"),
@@ -812,24 +995,25 @@ export class RightClick {
     };
   }
 
-  /** Turn a proven pipeline into a first-class capability. Powers compound. */
-  private async crystallize(p: Plan, types: Record<string, SemType>, intent?: string) {
-    const id = `composite:${(await sha256(p.steps.map((s) => s.capability).join(">") + p.result)).slice(0, 12)}`;
+  /** Save a successful pipeline with the checks that justified keeping it. */
+  private async crystallize(p: Plan, types: Record<string, SemType>, intent?: string, verify?: Predicate[], witnesses?: OutcomeWitness[]) {
+    const id = `composite:${(await sha256(JSON.stringify({ steps: p.steps, result: p.result, types, verify, witnesses }))).slice(0, 12)}`;
     if (this.graph.get(id)) return { id, title: this.graph.get(id)!.title, newPowers: 0 };
     const usedInputs = new Set(p.steps.flatMap((s) => s.bindings.map((b) => b.from)).filter((f) => f.startsWith("$in.")).map((f) => f.slice(4)));
+    for (const w of witnesses ?? []) for (const b of Object.values(w.args)) if ("input" in b) usedInputs.add(b.input.split(".")[0]);
     const stepCaps = p.steps.map((s) => this.graph.get(s.capability)!);
     const title = `${intent ? intent.charAt(0).toUpperCase() + intent.slice(1) + ": " : ""}${stepCaps.map((c) => c.title).join(" → ")}`;
     const cap: Capability = {
       id,
       title,
-      description: `Crystallized pipeline across ${new Set(stepCaps.map((c) => c.provider)).size} providers, proven by a successful run.`,
+      description: `Saved pipeline across ${new Set(stepCaps.map((c) => c.provider)).size} providers. Every invocation repeats ${verify?.length ?? 0} result check(s) and ${witnesses?.length ?? 0} independent outcome witness(es). A successful sample is not a guarantee for every input.`,
       provider: "composite:crystallized",
       source: "composite",
       inputs: [...usedInputs].map((n) => ({ name: n, type: types[n], required: true })),
       outputs: [{ name: "", type: p.resultType, required: true }],
       risk: stepCaps.some((c) => c.risk === "destructive") ? "destructive" : stepCaps.some((c) => c.risk === "write") ? "write" : stepCaps.some((c) => c.risk === "external") ? "external" : "read",
       tags: [...new Set([...(intent ? intent.split(/\s+/) : []), "composite", "crystallized", ...stepCaps.flatMap((c) => c.tags)])].slice(0, 30),
-      invoke: { kind: "composite", steps: p.steps, result: p.result, signatures: stepCaps.map(signature) },
+      invoke: { kind: "composite", steps: p.steps, result: p.result, signatures: stepCaps.map(signature), verify: structuredClone(verify), witnesses: structuredClone(witnesses) },
     };
     const delta = this.graph.addCapability(cap, {
       id: "composite:crystallized",
@@ -845,7 +1029,7 @@ export class RightClick {
     return { id, title, newPowers: delta.newPowers };
   }
 
-  private async runSteps(steps: PlanStep[], resultRef: string, inputs: Record<string, unknown>, confirm?: boolean) {
+  private async runSteps(steps: PlanStep[], resultRef: string, inputs: Record<string, unknown>, confirm?: boolean, activeGoals?: string[]) {
     const outputs: unknown[] = [];
     const runs: string[] = [];
     const resolve = (ref: string) => {
@@ -856,7 +1040,7 @@ export class RightClick {
     for (const step of steps) {
       const args: Record<string, unknown> = {};
       for (const b of step.bindings) args[b.port] = resolve(b.from);
-      const r = await this.run(step.capability, args, { confirm });
+      const r = await this.run(step.capability, args, { confirm, activeGoals });
       runs.push(r.runId);
       if (r.status === "failed") throw new StepError(r.failedCapability ?? step.capability, `${step.capability}: ${r.error}`);
       outputs.push(r.output);
@@ -997,6 +1181,7 @@ export class RightClick {
         return j.output;
       }
       case "composite":
+      case "goal":
         throw new Error("composite capabilities run through run()");
     }
   }
@@ -1043,7 +1228,10 @@ function coerceArgs(cap: Capability, args: Record<string, unknown>): Record<stri
   for (const p of cap.inputs) {
     const v = out[p.name];
     if (v === undefined) continue;
-    if ((p.type === "number" || p.type.startsWith("geo.")) && typeof v === "string" && v.trim() !== "" && !isNaN(Number(v))) out[p.name] = Number(v);
+    // Keep decimal text intact across reusable wrappers until a converter or
+    // the concrete numeric wire contract consumes it.
+    const numericQuantityWire = p.type.startsWith("quantity:") && !["builtin", "composite", "goal", "peer"].includes(cap.invoke.kind);
+    if ((p.type === "number" || p.type.startsWith("geo.") || numericQuantityWire) && typeof v === "string" && v.trim() !== "" && !isNaN(Number(v))) out[p.name] = Number(v);
     if (p.type === "boolean" && typeof v === "string") out[p.name] = v === "true";
   }
   const missing = cap.inputs.filter((p) => p.required && (out[p.name] === undefined || out[p.name] === null)).map((p) => p.name);
@@ -1060,7 +1248,7 @@ function camel(slug: string): string {
 }
 
 function jsonSchemaFor(t: SemType): Record<string, unknown> {
-  if (t === "number" || t.startsWith("geo.")) return { type: "number" };
+  if (t === "number" || t.startsWith("geo.") || t.startsWith("quantity:")) return { type: "number" };
   if (t === "boolean") return { type: "boolean" };
   if (t === "json") return {};
   if (t.startsWith("list:")) return { type: "array", items: jsonSchemaFor(t.slice(5)) };

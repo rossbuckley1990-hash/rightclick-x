@@ -13,6 +13,11 @@ const predicates = {
   description: 'Outcome checks on the result, e.g. [{"op":"contains","value":"Lisbon"}, {"op":"gt","path":"temperature","value":-50}]. ops: exists, equals, contains, matches, type, gt, lt, length_gt.',
   items: { type: "object" },
 };
+const witnesses = {
+  type: "array",
+  description: 'Independent outcome checks, repeated for every saved invocation. Discover a read-only checker in the environment. Example: [{"capability":"<checker id>","args":{"order_id":{"input":"order_id"},"tax_amount":{"output":""}},"verify":[{"op":"equals","path":"valid","value":true}]}]. input paths read this invocation\'s have values; output paths read the candidate result (empty string = whole result); value supplies a literal. The checker must be a separate provider and must pass its predicates. Its contract is pinned on save; a changed checker fails closed.',
+  items: obj({ capability: str("Exact read-only checker capability id."), args: { type: "object", additionalProperties: { oneOf: [obj({ input: str("Path in the invocation inputs.") }, ["input"]), obj({ output: str("Path in the candidate output; empty string selects all of it.") }, ["output"]), obj({ value: {} }, ["value"])] } }, verify: predicates }, ["capability", "args", "verify"]),
+};
 
 export const TOOLS = [
   {
@@ -54,7 +59,7 @@ export const TOOLS = [
   },
   {
     name: "context_run",
-    description: "Run one capability now. Returns the output, timing, a hash-chained receipt, and verification status (verified/refuted/unverified) against optional predicates.",
+    description: "Run one capability now. Saved goal:<slug> capabilities re-plan against the current environment, heal API changes and repeat their stored result checks and independent witnesses. Returns output, timing, receipt, verification and witness evidence. Optional predicates add checks; they never remove stored checks.",
     inputSchema: obj({ id: str("Capability id."), args: { type: "object", description: "Input arguments by port name." }, verify: predicates, confirm: bool("Required for capabilities labelled destructive.") }, ["id"]),
   },
   {
@@ -65,7 +70,7 @@ export const TOOLS = [
   {
     name: "context_compose",
     description:
-      "Give what you have and the type you want; RightClick X searches the live graph for pipelines across any providers and protocols, ranks them by intent and learned reliability, and (with run:true) executes the best one, falling back to the next if a step fails. A successful multi-step pipeline is crystallized into a new first-class capability.",
+      "Give what you have and the type you want; RightClick X discovers routes across the environment and (with run:true) executes, checks and repairs them. Currency/unit refinements require explicit conversions. Attach witnesses for independent business-outcome checks. publish saves a stable goal:<slug> capability another AI can discover with context_graph and invoke with context_run; its checks survive restart and API changes. A successful multi-step pipeline is also saved for reuse.",
     inputSchema: obj(
       {
         have: { type: "object", description: 'Named inputs, e.g. {"place":"Lisbon","language":"es"} or {"x":{"type":"url","value":"https://..."}}.' },
@@ -73,9 +78,10 @@ export const TOOLS = [
         intent: str("Words describing the goal, e.g. 'weather forecast translated'."),
         run: bool("Execute the best plan."),
         verify: predicates,
+        witnesses,
         maxSteps: num("Max pipeline length (default 4)."),
         confirm: bool("Required to run plans containing destructive capabilities."),
-        publish: str("After a verified run, publish this goal as a stable API endpoint under this name (served at /x/<name>, described in /openapi.json)."),
+        publish: str("After a successful run, save this goal as goal:<slug> in the graph AND as /x/<slug> in the synthesized API. Checks and witnesses are retained and re-run on every invocation. Supply checks/witnesses to establish verified outcomes."),
         acquire: bool("If nothing in the graph can do it: research public directories (APIs.guru, MCP Registry), learn the best candidates and re-plan."),
         through: { type: "array", items: { type: "string" }, description: "Anchors: capability ids or search phrases the pipeline must pass through; the planner wires the types between them." },
         risks: { type: "array", items: { type: "string", enum: ["read", "write", "external", "destructive"] }, description: 'Optional constraint: plan only with these risk labels, e.g. ["read"].' },
@@ -147,7 +153,7 @@ export async function dispatch(rc: RightClick, name: string, a: Record<string, a
     case "context_run_status":
       return a.runId ? rc.runStatus({ runId: a.runId }) : { ...(rc.runStatus({ limit: a.limit }) as object), chain: await rc.verifyReceipts() };
     case "context_compose":
-      return rc.compose({ have: a.have ?? {}, want: a.want, intent: a.intent, run: a.run, verify: a.verify, maxSteps: a.maxSteps, risks: a.risks, through: a.through, acquire: a.acquire, publish: a.publish, confirm: a.confirm });
+      return rc.compose({ have: a.have ?? {}, want: a.want, intent: a.intent, run: a.run, verify: a.verify, witnesses: a.witnesses, maxSteps: a.maxSteps, risks: a.risks, through: a.through, acquire: a.acquire, publish: a.publish, confirm: a.confirm });
     case "context_graph":
       return rc.graphQuery(a as any);
     case "context_providers":

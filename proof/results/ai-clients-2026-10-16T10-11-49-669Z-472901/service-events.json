@@ -1,0 +1,105 @@
+[
+  {
+    "sequence": 1,
+    "service": "gateway",
+    "action": "catalog",
+    "detail": {
+      "listed": [
+        "http://127.0.0.1:61198",
+        "http://127.0.0.1:61199",
+        "http://127.0.0.1:61200"
+      ]
+    }
+  },
+  {
+    "sequence": 2,
+    "service": "orders",
+    "action": "read",
+    "detail": {
+      "order_id": "ORD-1001",
+      "amount_cents": 30900
+    }
+  },
+  {
+    "sequence": 3,
+    "service": "tax",
+    "action": "quote",
+    "detail": {
+      "version": 1,
+      "amount_dollars": 309,
+      "tax_amount": 61.8,
+      "badArithmetic": false
+    }
+  },
+  {
+    "sequence": 4,
+    "service": "auditor",
+    "action": "check",
+    "detail": {
+      "order_id": "ORD-1001",
+      "proposed": 61.8,
+      "expected": 61.8,
+      "valid": true
+    }
+  },
+  {
+    "sequence": 5,
+    "service": "operator",
+    "action": "tax-contract",
+    "detail": {
+      "version": 3
+    }
+  },
+  {
+    "sequence": 6,
+    "service": "orders",
+    "action": "read",
+    "detail": {
+      "order_id": "ORD-1002",
+      "amount_cents": 77215
+    }
+  },
+  {
+    "sequence": 7,
+    "service": "gateway",
+    "action": "catalog",
+    "detail": {
+      "listed": [
+        "http://127.0.0.1:61198",
+        "http://127.0.0.1:61199",
+        "http://127.0.0.1:61200"
+      ]
+    }
+  },
+  {
+    "sequence": 8,
+    "service": "orders",
+    "action": "read",
+    "detail": {
+      "order_id": "ORD-1002",
+      "amount_cents": 77215
+    }
+  },
+  {
+    "sequence": 9,
+    "service": "tax",
+    "action": "quote",
+    "detail": {
+      "version": 3,
+      "amount_dollars": 772.15,
+      "tax_amount": 154.43,
+      "badArithmetic": false
+    }
+  },
+  {
+    "sequence": 10,
+    "service": "auditor",
+    "action": "check",
+    "detail": {
+      "order_id": "ORD-1002",
+      "proposed": 154.43,
+      "expected": 154.43,
+      "valid": true
+    }
+  }
+]

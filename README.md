@@ -1,10 +1,12 @@
 # RightClick X
 
-**An MCP server that becomes whatever its environment can do.**
+**One connection gives an AI agent the capabilities its environment exposes.**
 
 Plug it into any AI client once. Point it at anything with a contract — an OpenAPI or Swagger spec, a GraphQL endpoint, another MCP server, a web page with forms, another RightClick X instance, the platform it is running on — and those capabilities become typed nodes in one live graph. The agent never gets a new tool. It gets the same thirteen `context_*` tools, and the graph behind them changes shape to match wherever it is.
 
 Because every capability's inputs and outputs carry *semantic* types (a `place`, a `geo.lat`, an `account`, an `id.release`, not just "string"), capabilities from unrelated providers and protocols connect to each other. Ask for what you have and what you want; RightClick X finds the pipeline, runs it, verifies it, heals it when a provider dies, and saves it as a new capability when it works.
+
+The goal is an environment capability layer: an agent discovers what is available, acts through the same interface, and leaves reusable capabilities for the next agent. Supported contracts and the operator's existing authority define what it can access. A missing contract, credential, conversion or required check remains a real limitation.
 
 ```text
 any spec · endpoint · MCP server · page · peer · platform
@@ -15,6 +17,75 @@ any spec · endpoint · MCP server · page · peer · platform
                           ▼
          13 context_* MCP tools, the same for every AI client
 ```
+
+## A complete capability, checked and retained
+
+```bash
+npm run proof       # offline, separate local services and MCP processes
+npm run proof:ai -- --clients codex,codex   # two isolated AI sessions; uses model quota
+npm run proof:ai -- --clients claude,codex  # optional cross-vendor run
+```
+
+The reproducible proof starts with one environment gateway and a fresh graph. It discovers an order service, a calculation service and an independent auditor. The requested outcome is a checked order-tax amount, using a **synthetic** 20% rule:
+
+```text
+gateway -> discover environmental capabilities
+order identifier -> subtotal in USD cents -> explicit cents-to-dollars conversion
+                 -> tax service -> proposed USD amount
+                 -> independent auditor checks against its own order records
+                 -> goal:order-tax-usd, reusable by another AI
+```
+
+The runtime infers monetary currency and scale from published contracts. It cannot silently wire cents into dollars, discard known units into a generic numeric input, or invent currency exchange. Explicit conversion capabilities currently cover USD, EUR and GBP. Unknown or conflicting currency/unit declarations do not establish a safe connection.
+
+`context_compose` accepts `witnesses`: read-only capabilities from a separate provider that check the proposed result. Their argument bindings refer to the current invocation's inputs and output, so the checks apply to new orders instead of memorizing the first answer. The checker contract is pinned; a changed or unavailable checker fails closed. Evidence includes the checker run and its receipt. This establishes that the selected checks passed, not that an arbitrary checker is trustworthy.
+
+Publishing also adds a searchable `goal:<slug>` capability. Another agent uses `context_graph` and `context_run` to call it. The saved goal retains its checks and re-plans its implementation after upstream API changes. Required steps retain their discovery source, operation title, risk and semantic input/output types. Renamed fields, paths and protocols can bind to one compatible replacement from that source within the same call; a missing, ambiguous or incompatible replacement fails explicitly. Fixed crystallized pipelines retain their checks too. Caller-supplied predicates add checks; they cannot remove saved ones.
+
+The deterministic proof changes paths, parameter names and response nesting, migrates REST to MCP, injects a wrong result without changing the schema, removes a provider, and restores it. It checks the actual outcome, exercises a fresh MCP process and the stable REST endpoint, and hashes all product source before and after. Raw evidence is saved to `proof/results/latest.json`. The separate two-AI proof records prompts, complete MCP exchanges, independent service events and restart evidence in a timestamped folder under `proof/results/`.
+
+Observed on **2026-10-16**, with product source frozen throughout each proof:
+
+| Check | Result | Evidence |
+|---|---|---|
+| Regression suite, type checking, CLI and edge builds | 83 tests passed; typecheck and both builds passed | `npm test && npm run typecheck && npm run build` |
+| Complete deterministic lifecycle, seed 839171 | 28/28 checks passed, including automatic and explicitly anchored composition, wrong-result rejection, API changes, process restarts and receipt integrity | [Raw lifecycle evidence](proof/results/latest.json) |
+| Two independent Codex sessions, seed 472901 | 36/36 checks passed; the second agent discovered and invoked the saved goal once after REST-to-MCP drift | [Live AI manifest and traces](proof/results/ai-clients-2026-10-16T10-19-52-759Z-472901/manifest.json) |
+
+The first AI built and checked a **$61.80** outcome in 7 MCP calls. A new AI conversation and RightClick X process then used the persisted goal for an unseen order: search, inspect, **one goal invocation**, returning a checked **$154.43**. The runtime repaired the obsolete REST operation inside that invocation. The second AI made no learning, composition or repair calls and had no access to the first conversation. Both agents used only RightClick X for environment actions.
+
+Earlier attempts remain in `proof/results/`, including a witness-plumbing failure and an AI handoff that required a retry. The stricter proof counts that retry attempt as a failure; it exposed the obsolete-anchor bug fixed before the final frozen run. Claude hit its account session limit before using a tool, so this run demonstrates two isolated Codex agents, **not cross-vendor reuse**.
+
+These are controlled services and a bounded read-only workflow. They prove an end-to-end mechanism; they do not establish general understanding of every environment, arbitrary business semantics, or transactional recovery of writes.
+
+## Live public services: Claude builds, Codex inherits
+
+**Passed on 2026-10-16, with no product changes from the preceding proof.** A fresh Claude session received only RightClick X, one environment gateway and an outcome: create a sourced destination brief from current public data and save it for another AI.
+
+The gateway listed the existing [Countries GraphQL API](https://countries.trevorblades.com/), [Wikimedia's own REST contract](https://en.wikipedia.org/api/rest_v1/?spec), and two disposable owned Cloudflare services. RightClick X discovered their contracts and assembled **country → capital → current Wikipedia extract → sourced Markdown → separate outcome audit**. The formatter contains no country facts or canned article text. The separately deployed auditor fetches both public sources again and returns a boolean verdict.
+
+| Phase | Observed result |
+|---|---|
+| Fresh Claude builds | Verified Lisbon brief and saved `goal:destination-brief`; 8 MCP calls, 32.7 seconds. Claude also checked France. |
+| Operator changes owned service | Retired REST v1 and replaced it with MCP, including new operation/input names and nested output. Public services were untouched. |
+| Fresh Codex reuses after restart | Given only a new country code, found the saved goal and produced the verified Iceland brief: search, inspect, **one goal invocation**; 3 MCP calls, 20.5 seconds. |
+| Recovery inside that invocation | Old REST route returned 404; RightClick X re-discovered the contract, retired the stale pipeline, re-planned and audited the result in **1.67 seconds**. No agent retry or manual reconstruction. |
+| Independent verification | All 52 phase checks passed; both receipt chains intact; saved goal requirements and checks unchanged; wrong-country and corrupted-summary candidates rejected by the cloud auditor. A separate local oracle also rejected an incorrect source URL. |
+
+Read the actual [Iceland brief](proof/results/real-ai-2026-10-16T10-54-39-863Z/reuser-brief.md), [complete manifest](proof/results/real-ai-2026-10-16T10-54-39-863Z/manifest.json), and [supplemental evidence audit](proof/results/real-ai-2026-10-16T10-54-39-863Z/independent-evidence-audit.json). The same folder contains prompts, full MCP exchanges, client transcripts, Codex execution wrappers, contract snapshots, public response bodies, cloud telemetry and saved states. The frozen `src`/`bin` hash is `2662563dc3019b9f745ed40aba430037e833b85e5217bb9b6d98266315b9f473`.
+
+This is one cross-vendor read workflow with real public data and a deliberately controlled, semantically compatible cloud API change. Discovery used an operator-curated catalog. It is not a claim that an unrelated public provider changed its API, or that arbitrary environments and write workflows are solved.
+
+To reproduce with authenticated Cloudflare, Claude and Codex CLIs:
+
+```bash
+node proof/real-environment.ts --deploy --manifest .rcx-deploy/real-current.json
+node proof/real-environment.ts --preflight --manifest .rcx-deploy/real-current.json
+npm run proof:real -- --deployment .rcx-deploy/real-current.json --clients claude,codex
+node proof/real-environment.ts --cleanup --manifest .rcx-deploy/real-current.json
+```
+
+The deployment command creates two uniquely named test Workers. The proof uses the authenticated AI clients' model quota; the cleanup command removes only those new Workers. No model overrides are applied.
 
 ## Plug it into any AI
 
@@ -122,7 +193,7 @@ Latest report ([lab/RESULTS.md](lab/RESULTS.md)): **30 of 30 freshly generated e
 
 | Where | How |
 |---|---|
-| Any machine with Node ≥ 22.18 | `node bin/rcx.ts …` (TypeScript runs natively) or the bundled `node dist/rcx.mjs …` (any Node, 155 KB) |
+| Any machine with Node ≥ 22.18 | `node bin/rcx.ts …` (TypeScript runs natively) or the bundled `node dist/rcx.mjs …` (bundled JavaScript) |
 | Bun | `bun bin/rcx.ts …`; `npm run build:bin` makes a single self-contained binary |
 | Cloudflare, region-pinned | `node deploy/cloud.ts` deploys Durable Object instances with location hints and per-instance tokens (`src/entry/durable.ts`) |
 | Cloudflare Workers | `src/entry/edge.ts` + `wrangler.toml` (KV for state; KV/AI bindings become capabilities) |
@@ -136,7 +207,7 @@ Authorised operations run without unnecessary friction; the user keeps authority
 
 - **Read and write capabilities run when called.** Risk is a label (`read`, `write`, `external`, `destructive`) that callers can also use as a constraint: `context_compose` with `risks: ["read"]` plans only with read-only capabilities.
 - **Destructive capabilities need consent:** they run only when the caller passes `confirm: true` to `context_run` or `context_compose`. Without it nothing executes, and compose routes around the step if a non-destructive alternative exists. An operator can opt out for their own environment (`destructive: "allow"`).
-- **Self-healing preserves meaning:** a recovery plan may never cover less of the goal than the plan it replaces, so a missing capability is reported as a failure rather than answered with a plausible substitute.
+- **Checked recovery:** saved goals retain permitted risks, required steps and outcome checks during recovery. Intent matching also constrains planning, but word overlap alone cannot prove business correctness; independent outcome checks are needed for that.
 - **Credentials are origin-pinned** (`RCX_AUTH`), never reflected into capabilities, and never forwarded across origins, including on multi-hop redirects.
 - **Network policy:** when the server is exposed beyond loopback (and at the edge), outbound requests to private, loopback, link-local and cloud-metadata addresses are refused, including via DNS and redirects.
 - **HTTP endpoints** require a bearer token unless bound to loopback, with per-caller rate limits and request-size limits.
@@ -146,7 +217,7 @@ Authorised operations run without unnecessary friction; the user keeps authority
 
 ```bash
 npm install
-npm test             # 64 offline tests (node:test)
+npm test             # 83 offline regression tests (node:test)
 npm run lab          # the Chameleon Lab: one generated environment, end to end
 npm run lab:report   # ten fresh environments → lab/RESULTS.md
 node lab/report.ts 10 --gateway   # same, given only the environment's api-catalog gateway → lab/RESULTS-GATEWAY.md
@@ -157,6 +228,6 @@ node experiments/cloud.ts   # live-internet experiments (read-only)
 
 ## Status
 
-v0.1.0. Verified: 64 tests, typecheck, the Chameleon Lab on a frozen build (30/30 generated environments in three domains), the Open-World Proof against real services with Claude Code and Codex (four models), Node 24 and Bun 1.3, MCP Inspector over stdio and HTTP, live experiments in `experiments/results/`. Also verified earlier: region-pinned Cloudflare deployment (E11-cloud, E12, E13). Not yet verified: Deno Deploy, YAML-only OpenAPI specs (not parsed), OAuth-protected remote MCP servers, and npm publishing.
+v0.1.0. Current workflow validation is recorded in [`proof/results/`](proof/results/). Historical validation: the Chameleon Lab on a frozen build (30/30 generated environments in three domains), the Open-World Proof against real services with Claude Code and Codex (four models), Node 24 and Bun 1.3, MCP Inspector over stdio and HTTP, live experiments in `experiments/results/`. Also verified earlier: region-pinned Cloudflare deployment (E11-cloud, E12, E13). Not yet verified: Deno Deploy, YAML-only OpenAPI specs (not parsed), OAuth-protected remote MCP servers, and npm publishing.
 
 Apache-2.0.

@@ -1,0 +1,112 @@
+{
+  "localControls": [
+    {
+      "name": "wrong country",
+      "markdown": "# Destination brief: Reykjavik\n\nReykjavík is the capital and largest city of Iceland. It is located on the southern shore of the Faxaflói bay in southwest Iceland and has a latitude of 64°08′ N, making it the world's northernmost capital of a sovereign state. Reykjavík has a population of around 140,000 as of 2026, and the surrounding Capital Region has a population of around 252,000, constituting approximately 64% of Iceland's population.\n\nSource: [Wikipedia — Reykjavik](https://en.wikipedia.org/wiki/Reykjavik)\n",
+      "verified": false,
+      "checks": {
+        "expectedCountry": "PT",
+        "expectedCapital": "Lisbon",
+        "recognizedFormat": true,
+        "countryCapitalHeading": false,
+        "fullWikipediaExtract": false,
+        "sourceUrl": false,
+        "sourceLabel": false
+      },
+      "actual": {
+        "headingCapital": "Reykjavik",
+        "sourceUrl": "https://en.wikipedia.org/wiki/Reykjavik",
+        "sourceLabel": "Reykjavik",
+        "body": "Reykjavík is the capital and largest city of Iceland. It is located on the southern shore of the Faxaflói bay in southwest Iceland and has a latitude of 64°08′ N, making it the world's northernmost capital of a sovereign state. Reykjavík has a population of around 140,000 as of 2026, and the surrounding Capital Region has a population of around 252,000, constituting approximately 64% of Iceland's population."
+      }
+    },
+    {
+      "name": "wrong summary",
+      "markdown": "# Destination brief: Reykjavik\n\nThis is fabricated text for a deliberate negative control.\n\nSource: [Wikipedia — Reykjavik](https://en.wikipedia.org/wiki/Reykjavik)\n",
+      "verified": false,
+      "checks": {
+        "expectedCountry": "IS",
+        "expectedCapital": "Reykjavik",
+        "recognizedFormat": true,
+        "countryCapitalHeading": true,
+        "fullWikipediaExtract": false,
+        "sourceUrl": true,
+        "sourceLabel": true
+      },
+      "actual": {
+        "headingCapital": "Reykjavik",
+        "sourceUrl": "https://en.wikipedia.org/wiki/Reykjavik",
+        "sourceLabel": "Reykjavik",
+        "body": "This is fabricated text for a deliberate negative control."
+      }
+    },
+    {
+      "name": "wrong source URL",
+      "markdown": "# Destination brief: Reykjavik\n\nReykjavík is the capital and largest city of Iceland. It is located on the southern shore of the Faxaflói bay in southwest Iceland and has a latitude of 64°08′ N, making it the world's northernmost capital of a sovereign state. Reykjavík has a population of around 140,000 as of 2026, and the surrounding Capital Region has a population of around 252,000, constituting approximately 64% of Iceland's population.\n\nSource: [Wikipedia — Reykjavik](https://example.com/not-wikipedia)\n",
+      "verified": false,
+      "checks": {
+        "expectedCountry": "IS",
+        "expectedCapital": "Reykjavik",
+        "recognizedFormat": true,
+        "countryCapitalHeading": true,
+        "fullWikipediaExtract": true,
+        "sourceUrl": false,
+        "sourceLabel": true
+      },
+      "actual": {
+        "headingCapital": "Reykjavik",
+        "sourceUrl": "https://example.com/not-wikipedia",
+        "sourceLabel": "Reykjavik",
+        "body": "Reykjavík is the capital and largest city of Iceland. It is located on the southern shore of the Faxaflói bay in southwest Iceland and has a latitude of 64°08′ N, making it the world's northernmost capital of a sovereign state. Reykjavík has a population of around 140,000 as of 2026, and the surrounding Capital Region has a population of around 252,000, constituting approximately 64% of Iceland's population."
+      }
+    }
+  ],
+  "auditorContract": {
+    "startedAt": "2026-10-16T10:55:35.187Z",
+    "finishedAt": "2026-10-16T10:55:35.224Z",
+    "url": "https://rcx-real-audit-mvaul9ee-1bdc46.ross-buckley1990.workers.dev/openapi.json",
+    "method": "GET",
+    "authenticated": false,
+    "status": 200,
+    "body": "{\"openapi\":\"3.0.3\",\"info\":{\"title\":\"Independent Live Destination Auditor\",\"version\":\"1\"},\"servers\":[{\"url\":\"https://rcx-real-audit-mvaul9ee-1bdc46.ross-buckley1990.workers.dev\"}],\"paths\":{\"/audit\":{\"get\":{\"operationId\":\"auditDestinationBrief\",\"summary\":\"Audit destination brief independently\",\"description\":\"Fetch current country and Wikipedia data directly, then check the complete candidate Markdown brief, heading and Wikipedia source link. Returns validity without returning a proposed answer.\",\"parameters\":[{\"name\":\"country\",\"in\":\"query\",\"required\":true,\"schema\":{\"type\":\"string\",\"description\":\"ISO 3166 country code\",\"x-rightclick-type\":\"country\"}},{\"name\":\"candidate\",\"in\":\"query\",\"required\":true,\"schema\":{\"type\":\"string\",\"description\":\"Complete Markdown destination brief to verify\",\"x-rightclick-type\":\"markdown\"}}],\"responses\":{\"200\":{\"description\":\"Independent verdict\",\"content\":{\"application/json\":{\"schema\":{\"type\":\"object\",\"properties\":{\"valid\":{\"type\":\"boolean\"}}}}}}}}}}}"
+  },
+  "results": [
+    {
+      "name": "wrong-country",
+      "country": "PT",
+      "candidate": "# Destination brief: Reykjavik\n\nReykjavík is the capital and largest city of Iceland. It is located on the southern shore of the Faxaflói bay in southwest Iceland and has a latitude of 64°08′ N, making it the world's northernmost capital of a sovereign state. Reykjavík has a population of around 140,000 as of 2026, and the surrounding Capital Region has a population of around 252,000, constituting approximately 64% of Iceland's population.\n\nSource: [Wikipedia — Reykjavik](https://en.wikipedia.org/wiki/Reykjavik)\n",
+      "response": {
+        "startedAt": "2026-10-16T10:55:35.225Z",
+        "finishedAt": "2026-10-16T10:55:35.337Z",
+        "url": "https://rcx-real-audit-mvaul9ee-1bdc46.ross-buckley1990.workers.dev/audit?country=PT&candidate=%23+Destination+brief%3A+Reykjavik%0A%0AReykjav%C3%ADk+is+the+capital+and+largest+city+of+Iceland.+It+is+located+on+the+southern+shore+of+the+Faxafl%C3%B3i+bay+in+southwest+Iceland+and+has+a+latitude+of+64%C2%B008%E2%80%B2+N%2C+making+it+the+world%27s+northernmost+capital+of+a+sovereign+state.+Reykjav%C3%ADk+has+a+population+of+around+140%2C000+as+of+2026%2C+and+the+surrounding+Capital+Region+has+a+population+of+around+252%2C000%2C+constituting+approximately+64%25+of+Iceland%27s+population.%0A%0ASource%3A+%5BWikipedia+%E2%80%94+Reykjavik%5D%28https%3A%2F%2Fen.wikipedia.org%2Fwiki%2FReykjavik%29%0A",
+        "method": "GET",
+        "authenticated": false,
+        "status": 200,
+        "body": "{\"valid\":false}"
+      },
+      "output": {
+        "valid": false
+      },
+      "rejected": true
+    },
+    {
+      "name": "corrupt-summary",
+      "country": "IS",
+      "candidate": "# Destination brief: Reykjavik\n\nThis intentionally corrupted paragraph is not the current Wikipedia summary.\n\nSource: [Wikipedia — Reykjavik](https://en.wikipedia.org/wiki/Reykjav%C3%ADk)\n",
+      "response": {
+        "startedAt": "2026-10-16T10:55:35.337Z",
+        "finishedAt": "2026-10-16T10:55:35.477Z",
+        "url": "https://rcx-real-audit-mvaul9ee-1bdc46.ross-buckley1990.workers.dev/audit?country=IS&candidate=%23+Destination+brief%3A+Reykjavik%0A%0AThis+intentionally+corrupted+paragraph+is+not+the+current+Wikipedia+summary.%0A%0ASource%3A+%5BWikipedia+%E2%80%94+Reykjavik%5D%28https%3A%2F%2Fen.wikipedia.org%2Fwiki%2FReykjav%25C3%25ADk%29%0A",
+        "method": "GET",
+        "authenticated": false,
+        "status": 200,
+        "body": "{\"valid\":false}"
+      },
+      "output": {
+        "valid": false
+      },
+      "rejected": true
+    }
+  ],
+  "passed": true
+}

@@ -1,0 +1,72 @@
+{
+  "label": "auditor-openapi",
+  "record": {
+    "startedAt": "2026-10-16T10:54:40.063Z",
+    "finishedAt": "2026-10-16T10:54:40.220Z",
+    "url": "https://rcx-real-audit-mvaul9ee-1bdc46.ross-buckley1990.workers.dev/openapi.json",
+    "method": "GET",
+    "authenticated": false,
+    "status": 200,
+    "body": "{\"openapi\":\"3.0.3\",\"info\":{\"title\":\"Independent Live Destination Auditor\",\"version\":\"1\"},\"servers\":[{\"url\":\"https://rcx-real-audit-mvaul9ee-1bdc46.ross-buckley1990.workers.dev\"}],\"paths\":{\"/audit\":{\"get\":{\"operationId\":\"auditDestinationBrief\",\"summary\":\"Audit destination brief independently\",\"description\":\"Fetch current country and Wikipedia data directly, then check the complete candidate Markdown brief, heading and Wikipedia source link. Returns validity without returning a proposed answer.\",\"parameters\":[{\"name\":\"country\",\"in\":\"query\",\"required\":true,\"schema\":{\"type\":\"string\",\"description\":\"ISO 3166 country code\",\"x-rightclick-type\":\"country\"}},{\"name\":\"candidate\",\"in\":\"query\",\"required\":true,\"schema\":{\"type\":\"string\",\"description\":\"Complete Markdown destination brief to verify\",\"x-rightclick-type\":\"markdown\"}}],\"responses\":{\"200\":{\"description\":\"Independent verdict\",\"content\":{\"application/json\":{\"schema\":{\"type\":\"object\",\"properties\":{\"valid\":{\"type\":\"boolean\"}}}}}}}}}}}"
+  },
+  "value": {
+    "openapi": "3.0.3",
+    "info": {
+      "title": "Independent Live Destination Auditor",
+      "version": "1"
+    },
+    "servers": [
+      {
+        "url": "https://rcx-real-audit-mvaul9ee-1bdc46.ross-buckley1990.workers.dev"
+      }
+    ],
+    "paths": {
+      "/audit": {
+        "get": {
+          "operationId": "auditDestinationBrief",
+          "summary": "Audit destination brief independently",
+          "description": "Fetch current country and Wikipedia data directly, then check the complete candidate Markdown brief, heading and Wikipedia source link. Returns validity without returning a proposed answer.",
+          "parameters": [
+            {
+              "name": "country",
+              "in": "query",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "description": "ISO 3166 country code",
+                "x-rightclick-type": "country"
+              }
+            },
+            {
+              "name": "candidate",
+              "in": "query",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "description": "Complete Markdown destination brief to verify",
+                "x-rightclick-type": "markdown"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Independent verdict",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "valid": {
+                        "type": "boolean"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -9,6 +9,8 @@
 /** A semantic type such as "url", "text", "language", "geo.lat", "list:url". */
 export type SemType = string;
 
+import type { OutcomeWitness, Predicate } from "./verify.ts";
+
 export interface Port {
   /** Input: argument name. Output: dotted path into the result ("" = whole result). */
   name: string;
@@ -31,8 +33,20 @@ export type SourceKind =
   | "composite"
   | "peer";
 
-/** Informational only. RightClick X never blocks on risk; it labels it. */
+/** Destructive operations require confirmation; callers can constrain allowed risks. */
 export type Risk = "read" | "write" | "external" | "destructive";
+
+/** A required operation's role, retained across protocol/port-name changes.
+ * Matching is deliberately exact and source-bound, never a fuzzy replacement.
+ */
+export interface CapabilityAnchor {
+  id: string;
+  source?: string;
+  title: string;
+  risk: Risk;
+  inputTypes: SemType[];
+  outputTypes: SemType[];
+}
 
 export interface HttpInvoke {
   kind: "http";
@@ -102,6 +116,14 @@ export interface CompositeInvoke {
   result: string;
   /** Contract signature of each step when the pipeline was proven; a mismatch retires it. */
   signatures?: string[];
+  /** Checks travel with a saved capability and run on every new invocation. */
+  verify?: Predicate[];
+  witnesses?: OutcomeWitness[];
+}
+
+export interface GoalInvoke {
+  kind: "goal";
+  slug: string;
 }
 
 export type Invoke =
@@ -111,6 +133,7 @@ export type Invoke =
   | BuiltinInvoke
   | PlatformInvoke
   | PeerInvoke
+  | GoalInvoke
   | CompositeInvoke;
 
 export interface Capability {

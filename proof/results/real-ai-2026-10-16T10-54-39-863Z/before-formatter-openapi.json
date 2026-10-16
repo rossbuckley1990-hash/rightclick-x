@@ -1,0 +1,71 @@
+{
+  "label": "formatter-openapi",
+  "record": {
+    "startedAt": "2026-10-16T10:54:40.063Z",
+    "finishedAt": "2026-10-16T10:54:40.163Z",
+    "url": "https://rcx-real-fmt-mvaul9ee-1bdc46.ross-buckley1990.workers.dev/formatter",
+    "method": "GET",
+    "authenticated": false,
+    "status": 200,
+    "body": "{\"openapi\":\"3.0.3\",\"info\":{\"title\":\"Live Destination Formatter\",\"version\":\"1\"},\"servers\":[{\"url\":\"https://rcx-real-fmt-mvaul9ee-1bdc46.ross-buckley1990.workers.dev\"}],\"paths\":{\"/v1/brief\":{\"get\":{\"operationId\":\"renderDestinationBrief\",\"summary\":\"Render sourced destination brief\",\"description\":\"Render a sourced Markdown destination brief from a place and its complete Wikipedia summary. This operation does not fetch or invent facts.\",\"parameters\":[{\"name\":\"place\",\"in\":\"query\",\"required\":true,\"schema\":{\"type\":\"string\",\"description\":\"Capital city or place name\"}},{\"name\":\"text\",\"in\":\"query\",\"required\":true,\"schema\":{\"type\":\"string\",\"description\":\"Complete plain text Wikipedia summary for this place\"}}],\"responses\":{\"200\":{\"description\":\"Sourced destination brief\",\"content\":{\"application/json\":{\"schema\":{\"type\":\"object\",\"properties\":{\"markdown\":{\"type\":\"string\",\"description\":\"Sourced destination brief in Markdown\"}}}}}}}}}}}"
+  },
+  "value": {
+    "openapi": "3.0.3",
+    "info": {
+      "title": "Live Destination Formatter",
+      "version": "1"
+    },
+    "servers": [
+      {
+        "url": "https://rcx-real-fmt-mvaul9ee-1bdc46.ross-buckley1990.workers.dev"
+      }
+    ],
+    "paths": {
+      "/v1/brief": {
+        "get": {
+          "operationId": "renderDestinationBrief",
+          "summary": "Render sourced destination brief",
+          "description": "Render a sourced Markdown destination brief from a place and its complete Wikipedia summary. This operation does not fetch or invent facts.",
+          "parameters": [
+            {
+              "name": "place",
+              "in": "query",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "description": "Capital city or place name"
+              }
+            },
+            {
+              "name": "text",
+              "in": "query",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "description": "Complete plain text Wikipedia summary for this place"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Sourced destination brief",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "markdown": {
+                        "type": "string",
+                        "description": "Sourced destination brief in Markdown"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,8 @@
+Use only the rightclick-x MCP tools. Do not use shell, files, browser, external tools, or other agents.
+You have access to a controlled synthetic environment whose only supplied address is http://127.0.0.1:61590/ .
+Objective: obtain the tax amount in USD dollars for order ORD-1001, independently check that amount, and save the checked workflow so another AI can use it for other orders later.
+Discover the services and their contracts through that gateway. The amount to return is tax, not the order subtotal. Respect the units in each service contract.
+Use context_compose to create and publish a reusable goal named order-tax-usd. Its initial input should be named order_id; its required output type is quantity:money:USD:major.
+The saved goal must contain a required independent outcome witness using the environment's auditor. Bind its order identifier to the goal's input and its proposed tax amount to the goal's output, so the witness applies to later orders too. Discover the auditor identifier and inspect the tool schema to do this.
+Use only read operations for the business workflow. The authorized publication changes RightClick X's own local graph and state.
+Run the goal for the given order, save it only after the required audit passes, and report the published goal identifier, amount, and verification status. Do not invent missing data or claim a pass after an error.
