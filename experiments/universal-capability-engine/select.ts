@@ -147,7 +147,10 @@ if (mode === "draw-ac") {
   const usedDomains = [domainOf(prev.draws.A), domainOf(prev.draws.C)];
   const eligible = prev.suitable.filter((n: string) => !avoid.has(n) && !usedDomains.some((d: string) => d && domainOf(n) === d));
   const G = draw(frozen, eligible, 2);
-  const result = { at: new Date().toISOString(), seedFrom: `frozen build ${frozen}`, eligible: eligible.length, draws: { G }, descriptions: Object.fromEntries(G.map((n: string) => [n, prev.descriptions[n]])) };
+  // The same seeded sequence, continued: used in order when a draw cannot be investigated
+  // (the pre-registered fallback). Its first two entries are G.
+  const order = draw(frozen, eligible, 20);
+  const result = { at: new Date().toISOString(), seedFrom: `frozen build ${frozen}`, eligible: eligible.length, draws: { G }, order, descriptions: Object.fromEntries(order.map((n: string) => [n, prev.descriptions[n]])) };
   writeFileSync(`${OUT}/selection-g.json`, JSON.stringify(result, null, 2));
   console.log(`G = ${G.map((n: string) => `${n}: ${prev.descriptions[n]}`).join(" | ")}`);
 }
