@@ -125,7 +125,10 @@ const UNSPECIFIC = /^(text|json|number|boolean|id)$/;
 export function plan(graph: CapabilityGraph, ledger: Ledger, goal: Goal): Plan[] {
   const maxSteps = Math.min(goal.maxSteps ?? 4, 6);
   const limit = goal.limit ?? 5;
-  const intent = new Set(tokenize(goal.intent ?? ""));
+  // Words that only name the requested type ("text" for want: text) are constraints already
+  // enforced by want; scoring them as intent rewards steps that merely mention the type.
+  const typeWords = new Set(tokenize(goal.want.replace(/^list:/, "").replace(/[.:]/g, " ")));
+  const intent = new Set(tokenize(goal.intent ?? "").filter((t) => !typeWords.has(t)));
   const excluded = goal.exclude ?? new Set<string>();
   const anchors = new Set(goal.through ?? []);
   const risks = goal.risks?.length ? new Set(goal.risks) : null;

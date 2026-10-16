@@ -66,13 +66,18 @@ export function assess(graph: CapabilityGraph, steps: PlanStep[], result: string
   if (cap) {
     const fields = resultFields(cap, rest.join("."));
     const needProjection: string[] = [];
+    const projectable = cap.invoke.kind === "graphql" && !!(cap.invoke as any).selectPort;
     for (const term of require) {
       const sel = fields.find((f) => f.selected !== false && carries(f.path, term));
-      const any = sel ?? fields.find((f) => carries(f.path, term));
+      const unselected = fields.filter((f) => f.selected === false && carries(f.path, term));
+      const any = sel ?? unselected[0];
       if (!any) continue;
+      // Declared but unreachable (the provider cannot be asked for it): not covered.
+      if (!sel && !projectable) continue;
       covered[term] = any.path;
-      if (!sel && cap.invoke.kind === "graphql" && (cap.invoke as any).selectPort) needProjection.push(any.path);
-      else if (!sel) delete covered[term]; // declared but unreachable: the provider cannot be asked for it
+      // Ask for every declared field that carries the term (bounded): which one has a value can
+      // depend on the record (an EM-only field is empty for an X-ray entry).
+      if (projectable) needProjection.push(...unselected.slice(0, 8).map((f) => f.path));
     }
     if (needProjection.length) projection.push({ step: resultStep, fields: needProjection });
   }

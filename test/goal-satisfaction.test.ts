@@ -138,3 +138,48 @@ test("a caller's value in a port it does not fit is a generic join (Q07/Q08g on 
   const good = await rc.compose({ have: { accession: "P38398" }, want: "json", intent: "genomic coordinates", run: true, require: ["chromosome"] });
   assert.equal(good.outcome?.status, "established", JSON.stringify(good.outcome));
 });
+
+test("a step whose bound input came back empty blames the producer, not itself (Q03 on lifesci-satisfy-2)", async () => {
+  const P = { openapi: "3.0.0", info: { title: "Seq" }, servers: [{ url: "https://seq.test" }], paths: { "/seq/{accession}": { get: { operationId: "longest", summary: "Get longest sequence for entries", parameters: [{ name: "accession", in: "path", required: true, schema: { type: "string" } }], responses: ok({ type: "object", properties: { entry_id: { type: "string", description: "Structure entry identifier" } } }) } } } };
+  const f = (async (input: any) => {
+    const u = new URL(typeof input === "string" ? input : input.url);
+    if (u.pathname === "/openapi.json") return json(u.host === "seq.test" ? P : STRUCTURES());
+    if (u.host === "seq.test") return json({ other: "no entry here" });
+    return json({ entry_id: "1ABC", refine: [{ resolution: 2.4 }] });
+  }) as typeof fetch;
+  const rc = await RightClick.create({ name: "gs7", fetch: f, directories: [] });
+  await rc.learn({ sources: ["https://seq.test/openapi.json", "https://structures.test/openapi.json"] });
+  const r = await rc.compose({ have: { accession: "P41159" }, want: "json", intent: "structure entries resolution", run: true, require: ["resolution"], maxSteps: 3 });
+  const a = r.executed?.attempts?.[0];
+  assert.ok(a, JSON.stringify(r.outcome));
+  assert.match(a!.failed, /seq/, `blamed ${a!.failed}`);
+  assert.match(a!.error, /has no value at entry_id/);
+});
+
+test("identifier evidence two array levels deep links records-of-lists to a lookup (H1 shape)", async () => {
+  const HA = { openapi: "3.0.0", info: { title: "Advisories" }, servers: [{ url: "https://adv.test" }], paths: { "/lookup": { get: { operationId: "lookupAdvisories", summary: "Lookup advisories for a package URL", parameters: [{ name: "purl", in: "query", required: true, schema: { type: "string" } }], responses: ok({ type: "array", items: { type: "object", properties: { uuid: { type: "string" }, identifiers: { type: "array", items: { type: "string" } } } } }) } } } };
+  const HB = { openapi: "3.0.0", info: { title: "Vulns" }, servers: [{ url: "https://vuln.test" }], paths: { "/vulns/{id}": { get: { operationId: "getVuln", summary: "Return a vulnerability for a given ID", parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }], responses: ok({ type: "object", properties: { id: { type: "string" }, summary: { type: "string" }, aliases: { type: "array", items: { type: "string" } } } }) } } } };
+  const V: Record<string, any> = { "GHSA-aaaa-1111-xxxx": { id: "GHSA-aaaa-1111-xxxx", summary: "Prototype pollution", aliases: ["CVE-2020-0001"] }, "GHSA-bbbb-2222-yyyy": { id: "GHSA-bbbb-2222-yyyy", summary: "Command injection", aliases: [] }, "GHSA-cccc-3333-zzzz": { id: "GHSA-cccc-3333-zzzz", summary: "Seed advisory", aliases: [] } };
+  const f = (async (input: any) => {
+    const u = new URL(typeof input === "string" ? input : input.url);
+    if (u.pathname === "/openapi.json") return json(u.host === "adv.test" ? HA : HB);
+    if (u.pathname === "/lookup") return json(u.searchParams.get("purl") === "pkg:npm/seed@1" ? [{ uuid: "u0", identifiers: ["GHSA-cccc-3333-zzzz"] }] : [{ uuid: "u1", identifiers: ["GHSA-aaaa-1111-xxxx", "CVE-2020-0001"] }, { uuid: "u2", identifiers: ["GHSA-bbbb-2222-yyyy"] }]);
+    const m = /^\/vulns\/(.+)$/.exec(u.pathname);
+    if (m) return V[decodeURIComponent(m[1])] ? json(V[decodeURIComponent(m[1])]) : json({ code: 5, message: "not found" }, 404);
+    return json({}, 404);
+  }) as typeof fetch;
+  const rc = await RightClick.create({ name: "gs8", fetch: f, directories: [] });
+  await rc.learn({ sources: ["https://adv.test/openapi.json", "https://vuln.test/openapi.json"] });
+  const lookup = rc.graph.list().find((c) => c.title.startsWith("Lookup advisories"))!;
+  const vuln = rc.graph.list().find((c) => c.title.startsWith("Return a vulnerability"))!;
+  const before = await rc.compose({ have: { purl: "pkg:npm/lodash@4.17.20" }, want: "json", intent: "vulnerability summary", require: ["summary"] });
+  assert.notEqual(before.outcome?.status, "established", "without evidence the link is generic");
+  // Seeding on different inputs: the lookup's identifiers are then accepted by the vulnerability lookup.
+  const seed = await rc.run(lookup.id, { purl: "pkg:npm/seed@1" });
+  await rc.run(vuln.id, { id: (seed.output as any)[0].identifiers[0] });
+  const r = await rc.compose({ have: { purl: "pkg:npm/lodash@4.17.20" }, want: "json", intent: "vulnerability summary", run: true, require: ["summary"] });
+  assert.equal(r.outcome?.status, "established", JSON.stringify(r.outcome) + JSON.stringify(r.plans.slice(0, 3).map((p) => [p.summary, p.satisfaction?.joins])));
+  const out = JSON.stringify(r.executed?.output);
+  assert.match(out, /Prototype pollution/);
+  assert.match(out, /Command injection/);
+});

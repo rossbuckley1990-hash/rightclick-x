@@ -184,7 +184,9 @@ export class IdentityEvidence {
     const customised = cap.inputs.some((p) => !p.required && args[p.name] !== undefined);
     const source = (l: Leaf): Source | null => {
       if (declared.has(l.path)) return { key: portKey(cap.id, "out", l.path), observed: null };
-      if (customised || l.lists > 1 || !l.path) return null;
+      // Up to two array levels (records in a list, each with a list of identifiers): fan-out
+      // flattens them. Deeper nesting is not linked.
+      if (customised || l.lists > 2 || !l.path) return null;
       return { key: portKey(cap.id, "out", l.path), observed: { list: l.lists > 0 } };
     };
     const link = (kind: LinkKind, from: Source, to: string, value: string) => {

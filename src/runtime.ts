@@ -1540,6 +1540,18 @@ export class RightClick {
     for (const [index, step] of steps.entries()) {
       const args: Record<string, unknown> = {};
       for (const b of step.bindings) if (!b.each) args[b.port] = b.value !== undefined ? b.value : resolve(b.from);
+      // A required input bound to an earlier step's output that produced nothing there: the
+      // producer is at fault (its result lacks what the plan assumed), not this step.
+      const cap = this.graph.get(step.capability);
+      for (const b of step.bindings) {
+        if (b.each || b.value !== undefined || b.from.startsWith("$in.")) continue;
+        const v = args[b.port];
+        const empty = v === undefined || v === null || v === "" || (Array.isArray(v) && v.every((x) => x === undefined || x === null || x === ""));
+        if (empty && cap?.inputs.find((p) => p.name === b.port)?.required) {
+          const producer = steps[Number(b.from.split(".")[0])]?.capability ?? step.capability;
+          throw new StepError(producer, `${producer}: its result has no value at ${b.from.replace(/^\d+\./, "") || "(result)"}, which ${step.capability}.${b.port} needs`);
+        }
+      }
       const fan = step.bindings.find((b) => b.each);
       if (!fan) {
         const r = await this.run(step.capability, args, { confirm, activeGoals, net, planned: true });

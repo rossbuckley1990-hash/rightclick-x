@@ -161,3 +161,13 @@ test("permission changed: revoking the operator's authority stops an existing pr
   assert.equal(r.status, "failed");
   assert.match(String(r.error), /not authorised to run/);
 });
+
+test("a step that only matches the requested type's name is not added (Stage D on uce-freeze-1: upper case -> Summarize text)", { skip }, async () => {
+  const dir = realpathSync(mkdtempSync(join(tmpdir(), "rcx-prog-")));
+  const p = program(dir, "upper", `if [ "$1" = "--help" ]; then echo "usage: upper [-u] [file]"; echo "  -u    print the input in upper case"; exit 0; fi\nif [ "$1" = "-u" ]; then shift; tr a-z A-Z; else cat; fi`);
+  const rc = await RightClick.create({ name: "i", directories: [], authority: { investigate: [p] } });
+  await rc.learn({ source: `cli:${p}` });
+  const r = await rc.compose({ have: { input: { type: "text", value: "one two three. four five six. seven eight nine.\n" } }, want: "text", intent: "upper case text", run: true });
+  assert.deepEqual(r.executed?.titles, ["upper -u: print the input in upper case"]);
+  assert.equal(String(r.executed?.output).trim(), "ONE TWO THREE. FOUR FIVE SIX. SEVEN EIGHT NINE.");
+});

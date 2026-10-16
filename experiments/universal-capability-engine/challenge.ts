@@ -3,7 +3,7 @@
 // RightClick X is reached only through its MCP tools (stdio), started from a git-archive export
 // of the tag. A and C are the seeded draws (selection-ac.json), run from copies in a disposable
 // directory the operator registers. Every check is the harness's own code, never A or C.
-import { chmodSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Mcp, frozenBuild, readJsonl, serverFiles } from "../life-science/harness.ts";
@@ -21,10 +21,12 @@ const build = frozenBuild(TAG);
 const env = realpathSync(mkdtempSync(join(tmpdir(), "uce-env-")));
 const BIN = `${env}/bin`;
 mkdirSync(BIN);
-copyFileSync(`/usr/bin/${A}`, `${BIN}/${A}`);
-chmodSync(`${BIN}/${A}`, 0o755);
-copyFileSync(`/usr/bin/${C}`, `${BIN}/${C}`);
-chmodSync(`${BIN}/${C}`, 0o755);
+// Deviation from the pre-registration (recorded): A and C are installed into the registered
+// directory as symlinks to the system programs, not copies. macOS kills a copied Apple platform
+// binary run from another location (exit 137; observed in run 1 on uce-freeze-1). Removing the
+// symlink removes the program from the registered location; /usr/bin itself is SIP-protected.
+symlinkSync(`/usr/bin/${A}`, `${BIN}/${A}`);
+symlinkSync(`/usr/bin/${C}`, `${BIN}/${C}`);
 // Operator discovery authority: this directory only.
 process.env.RCX_INVESTIGATE = `${BIN}/`;
 const ev: any = { tag: TAG, commit: build.commit, at: new Date().toISOString(), A, C, env, stages: {}, wrongOutcomes: [] as string[], metrics: {} };
@@ -148,6 +150,8 @@ for (const client of ["claude", "codex"] as const) {
   const answer = /^BEGIN\s*$([\s\S]*?)^END\s*$/m.exec(r.output)?.[1]?.trim();
   const check = htmlCorrected(docB, answer);
   const stage = { client, seconds: r.seconds, turns: r.meta?.turns, usage: r.meta?.usage, toolCalls: tools.length, tools, relearnedProgram: relearned, executedThroughCapability: usedCli, independentCheck: check, pass: !relearned && usedCli && check.pass, tail: r.output.slice(-600) };
+  const blocked = /usage limit|rate limit|hit your/i.test(r.output) && !tools.length;
+  if (blocked) Object.assign(stage, { blocked: true, pass: false, note: "client unavailable (usage limit); not a RightClick X result" });
   if (!check.pass && answer) ev.wrongOutcomes.push(`${client === "claude" ? "B" : "F"}: agent returned HTML failing the check (${check.detail})`);
   ev.stages[client === "claude" ? "B" : "F"] = stage;
   log(`${client === "claude" ? "B" : "F"} (${client}): ${stage.pass ? "PASS" : "FAIL"} · ${r.seconds}s · ${tools.length} tool calls (${tools.join(", ")}) · relearned ${relearned} · used capability ${usedCli} · ${check.detail}`);
@@ -182,17 +186,11 @@ ev.stages.F.label = "different vendor (OpenAI Codex) from the session that built
 
 // ================================================================ Stage D: mutations (synthetic program, operator authority)
 {
-  const prog = (body: string) => `#!/bin/sh\n${body}\n`;
-  const help = (flag: string, what: string, usage: string) => `if [ "$1" = "--help" ]; then echo "usage: ${usage}"; echo "  ${flag}    ${what}"; exit 0; fi`;
-  const V: Record<string, string> = {
-    v1: prog(`${help("-u", "print the input in upper case", "textkit [-u] [file]")}\nif [ "$1" = "-u" ]; then shift; cat "$@" | tr a-z A-Z; else cat "$@"; fi`),
-    renamed: prog(`${help("-U", "print the input in upper case", "textkit [-U] [file]")}\nif [ "$1" = "-U" ]; then shift; cat "$@" | tr a-z A-Z; elif [ "$1" = "-u" ]; then echo "unknown option -u" >&2; exit 64; else cat "$@"; fi`),
-    fileInput: prog(`${help("-U", "print the input in upper case", "textkit [-U] file")}\nif [ "$1" = "-U" ]; then shift; fi; if [ -z "$1" ]; then echo "a file operand is required" >&2; exit 64; fi; tr a-z A-Z < "$1"`),
-    nested: prog(`${help("-U", "print the input in upper case as JSON", "textkit [-U] file")}\nif [ "$1" = "-U" ]; then shift; fi; if [ -z "$1" ]; then exit 64; fi; t=$(tr a-z A-Z < "$1" | tr -d '\\n'); printf '{"result":{"text":"%s"}}\\n' "$t"`),
-    incompatible: prog(`${help("-U", "print the input in upper case as JSON", "textkit [-U] file")}\nif [ "$1" = "-U" ]; then shift; fi; if [ -z "$1" ]; then exit 64; fi; t=$(tr A-Z a-z < "$1" | tr -d '\\n'); printf '{"result":{"text":"%s"}}\\n' "$t"`),
-    unavailable: prog(`echo "temporarily unavailable" >&2; exit 75`),
-  };
-  const checker = prog(`if [ "$1" = "--help" ]; then echo "usage: casecheck original candidate"; echo "  report whether candidate is the original in upper case, as JSON"; exit 0; fi\nif [ "$(tr a-z A-Z < "$1" | tr -d '\\n')" = "$(tr -d '\\n' < "$2")" ]; then echo '{"valid":true}'; else echo '{"valid":false}'; fi`);
+  // The synthetic program's versions are plain files (experiments/universal-capability-engine/programs).
+  const P = "experiments/universal-capability-engine/programs";
+  const V: Record<string, string> = Object.fromEntries(["v1", "renamed", "file-input", "nested", "incompatible", "unavailable"].map((k) => [k, readFileSync(`${P}/textkit-${k}.sh`, "utf8")]));
+  V.fileInput = V["file-input"];
+  const checker = readFileSync(`${P}/casecheck.sh`, "utf8");
   const put = (file: string, body: string) => { writeFileSync(file, body); chmodSync(file, 0o755); };
   put(`${BIN}/textkit`, V.v1);
   put(`${BIN}/casecheck`, checker);
@@ -240,8 +238,7 @@ ev.stages.F.label = "different vendor (OpenAI Codex) from the session that built
   const capsAfter = (await m.tool("context_graph", { op: "export" })).value.capabilities.filter((c: any) => c.provider === `cli:${A}`).length;
   const goneWrong = gone.value?.status === "completed";
   if (goneWrong) ev.wrongOutcomes.push("E: goal completed with the program removed");
-  copyFileSync(`/usr/bin/${A}`, `${BIN}/${A}`);
-  chmodSync(`${BIN}/${A}`, 0o755);
+  symlinkSync(`/usr/bin/${A}`, `${BIN}/${A}`);
   const relearn = await m.tool("context_learn", { source: `cli:${BIN}/${A}` });
   const back = await run();
   const checkBack = htmlCorrected(docA, back.value?.output);
