@@ -412,6 +412,15 @@ function representative(caps: Capability[], s: SchemeInfo): SemType {
   return ranked[0]?.[0] ?? "text";
 }
 
+/**
+ * A generic (text) input that evidence placed in a scheme is known to take one kind of identifier:
+ * values produced by other steps fill it only through the scheme, never as arbitrary text.
+ * Ports with a specific declared type keep their typed links; caller-supplied values are not affected.
+ */
+export function schemeOnly(port: Port): boolean {
+  return !!port.schemes?.length && /^(list:)?text$/.test(port.type);
+}
+
 /** Does a value carrying `valueSchemes` with type `valueType` fill `port` by scheme? Cardinality must match. */
 export function schemeFits(port: Port, valueType: SemType, valueSchemes: string[] | undefined): boolean {
   if (!port.schemes?.length || !valueSchemes?.length) return false;

@@ -7,7 +7,7 @@
 // ledger, yields ranked multi-provider pipelines. Nobody wrote the glue: the
 // types did.
 
-import { schemeFits } from "./identities.ts";
+import { schemeFits, schemeOnly } from "./identities.ts";
 import { accepts, distance, isNominal } from "./semantics.ts";
 import { tokenize, type CapabilityGraph } from "./graph.ts";
 import type { Ledger } from "./ledger.ts";
@@ -254,6 +254,7 @@ function bind(cap: Capability, values: Value[], intent: Set<string>, consumed: S
       // Observed to carry the same identifiers, whatever each contract calls them.
       const linked = schemeFits(port, v.type, v.schemes);
       if (!bridged && !linked && !accepts(port.name, port.type, v.type)) continue;
+      if (!linked && v.step >= 0 && schemeOnly(port)) continue;
       // Optional ports are only filled when the caller supplied them by name.
       if (!port.required && v.ref !== `$in.${port.name}`) continue;
       // A port with a fixed set of allowed values takes a caller's choice, never another step's output.

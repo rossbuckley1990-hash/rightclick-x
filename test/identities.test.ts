@@ -90,11 +90,12 @@ const downstream = (rc: RightClick, from: string) => rc.graph.neighbors(from).do
 
 test("identifier schemes: three providers' differently typed accession ports are unlinked until values link them", async () => {
   const { rc, id } = await world();
-  const [getEntry, feats, variation, protein] = ["getEntry", "features", "variation", "protein"].map(id);
+  const [getEntry, feats, variation, protein, entry] = ["getEntry", "features", "variation", "protein", "entry"].map(id);
   // What the contracts alone say: three different types for one identifier.
   assert.deepEqual([input(rc.graph.get(getEntry)!, "accession").type, input(rc.graph.get(feats)!, "accession").type, input(rc.graph.get(protein)!, "protein_id").type], ["id.stable", "text", "id.protein"]);
   assert.ok(!downstream(rc, getEntry).includes(protein), "no typed link registry -> structures before evidence");
   assert.ok(!downstream(rc, protein).includes(getEntry), "no typed link structures -> registry before evidence");
+  assert.ok(downstream(rc, entry).includes(feats), "any text output fills the undescribed text `accession` before evidence");
   const before = await rc.compose({ have: { accession: "P11111" }, want: "number", intent: "structure resolution" });
   assert.ok(!before.plans.some((p) => p.steps.some((s) => s.capability === protein)), "a caller's accession cannot reach the structure service by type");
 
@@ -115,6 +116,10 @@ test("identifier schemes: three providers' differently typed accession ports are
   assert.ok(downstream(rc, getEntry).includes(protein), "registry primaryAccession now feeds the structure service");
   assert.ok(downstream(rc, protein).includes(getEntry), "structures container_identifiers.protein_id now feeds the registry");
   assert.ok(downstream(rc, protein).includes(variation), "…and the never-called sibling operation");
+  // Known to take one kind of identifier, the text port no longer takes arbitrary produced text.
+  assert.ok(!downstream(rc, entry).includes(feats), "an output never seen to carry these identifiers no longer feeds the scheme's text ports");
+  const junk = plan(rc.graph, rc.ledger, { have: { entry_id: "id.entry" }, want: "number", intent: "sequence features" });
+  assert.ok(!junk.some((p) => p.steps.some((s) => s.capability === feats)), JSON.stringify(junk.map((p) => p.summary)));
 
   // A caller's value named and shaped like the scheme's identifiers carries the scheme.
   const after = await rc.compose({ have: { accession: "P11111" }, want: "number", intent: "structure resolution", run: true });

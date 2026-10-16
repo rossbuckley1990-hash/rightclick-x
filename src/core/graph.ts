@@ -11,7 +11,7 @@
 // add far more powers than capabilities, because its nodes connect to
 // everything already present. That is the number the dashboard shows.
 
-import { IdentityEvidence } from "./identities.ts";
+import { IdentityEvidence, schemeOnly } from "./identities.ts";
 import { accepts, distance, isNominal, parentOf, strongly } from "./semantics.ts";
 import type { Capability, Provider, Reflection, SemType } from "./types.ts";
 
@@ -205,6 +205,7 @@ export class CapabilityGraph {
           if (!byScheme.has(k)) byScheme.set(k, new Set());
           byScheme.get(k)!.add(c.id);
         }
+        if (schemeOnly(p)) continue;
         let set = byInputType.get(p.type);
         if (!set) byInputType.set(p.type, (set = new Set()));
         set.add(c.id);
