@@ -16,7 +16,7 @@ Machine-readable results: [`open-world/results/manifest.json`](open-world/result
 | **What it verified** | Every reported fact was checked by the harness directly against the original services (labelled as independent verification): holiday name and date, exchange rates (±0.5%), capitals, Wikipedia text overlap, and translations exactly equal to the controlled service's documented output. |
 | **How it adapted** | A controlled service on Cloudflare changed contract four times (renamed REST, GraphQL, MCP, rollback); each time RightClick X detected drift, re-learned, retired the stale pipeline and returned a verified answer (~300–350 ms). When the service was deleted it withdrew it and failed honestly; when restored, it rediscovered it. |
 | **Why it matters** | None of these pairings existed as an integration. Each was assembled at request time from contracts the services already publish, saved, and reused by a different AI after a restart. Conventionally, each would be client code someone writes and maintains. |
-| **What remains unproven** | See *Limitations*: two AI clients only; real providers are friendly, well-described public APIs; idiosyncratic naming and interfaces without machine-readable contracts are not covered; cross-host federation was not re-run on this build. |
+| **What remains unproven** | See *Limitations*: two AI clients only; real providers are friendly, well-described public APIs; cryptic names without descriptions and interfaces without machine-readable contracts are not covered; front-door (RFC 9727) discovery was tested on synthetic environments only. |
 
 ## Build
 
@@ -166,12 +166,33 @@ Two Cloudflare Durable Object instances of the frozen build, on separate machine
 
 Agent time 46.8 s. The peer was wired by the operator; RightClick X does not search networks for peers. Evidence: [`ow6-federation.json`](open-world/evidence/ow6-federation.json).
 
+## Discovery from an environment's front door (`gauntlet-freeze-4`)
+
+**Gap addressed.** Until this build, discovery without addresses relied on public directories (APIs.guru, the MCP Registry) or on peers an operator configured. Many real environments are neither: an organisation's own services are not listed publicly. RFC 9727 (*api-catalog*, IETF, 2025) defines a standard way for an environment to publish its APIs at one well-known address, `/.well-known/api-catalog`, as a linkset.
+
+**Change (general, no provider-specific code).** When RightClick X is pointed at any origin, `context_learn` now also probes `/.well-known/api-catalog`. If the origin publishes an RFC 9727 linkset, RightClick X follows the listed `service-desc`, `item` and `service-meta` links one level, capped at 50. It then discovers each one with the same reflectors as before (OpenAPI, GraphQL, MCP). No new AI-facing tool was added. Regression test: *RFC 9727 api-catalog: given only an environment's front door, every listed service is discovered* (65/65 tests). Frozen as `gauntlet-freeze-4` / `lab-freeze-4` (`66b871c`).
+
+**Lab, gateway mode (`node lab/run.ts --gateway`, `node lab/report.ts 10 --gateway`).** The harness gives RightClick X **one address**, the environment's gateway, and no service address, protocol or schema. When the lab removes a provider or introduces a new one, the environment updates its catalog and RightClick X re-reads the gateway. Result: **30/30 freshly generated environments passed all 14 steps** across invoicing, logistics and the cryptic-name *accounts* domain ([lab/RESULTS-GATEWAY.md](../lab/RESULTS-GATEWAY.md)). The address-given lab was re-run on the same build: 30/30 ([lab/RESULTS.md](../lab/RESULTS.md)). Negative controls: 6/6.
+
+**Real AI agents given only the gateway** (`node lab/ai-clients.ts --gateway --domain <d>`). Claude Code and Codex each had only RightClick X as their MCP server. The prompt named only the gateway address ("You have not been told which services exist, where they are…") and the objective.
+
+| Domain | Claude Code | Codex | Services reached through RightClick X |
+|---|---|---|---|
+| accounts (cryptic names) | 11 (expected 11) · 26.9 s | "20%" (expected 20) · 41.8 s, see note | 3 of 3 (MCP, GraphQL, MCP) |
+| logistics | 37.3 (expected 37.3) · 18.7 s | 3.2 (expected 3.2) · 44.9 s | 3 of 3 (GraphQL, MCP, GraphQL) |
+| invoicing | 16.7 (expected 16.7) · 31.9 s | 24.9 (expected 24.9) · 41.7 s | 3 of 3 (OpenAPI, MCP, MCP) |
+
+Note: the harness first scored answers with a strict `Number()`, which rejected Codex's correct value written with a percent sign. That is a harness defect, not a product one. Scoring now takes the leading number. The strict verdict is preserved in the evidence (`correctStrict: false`) next to the re-scored one, with the reason. Strict count: 5/6; re-scored: 6/6. Evidence: `lab/results/ai-clients-*-gateway-*.json`.
+
+**What this does and does not show.** RightClick X can enter an environment knowing only its front door and assemble the environment's capabilities from a published standard catalog. It does not find services the environment does not list, and it does not scan networks. The environments here are local and synthetic; no real organisation's RFC 9727 catalog was tested.
+
 ## Limitations (verified, not hypothetical)
 
 - **Two AI clients, four models.** Claude Code (default model, Sonnet 5.5, Haiku 5.5) and Codex (`gpt-6-astra`). Other MCP clients (Cursor, VS Code, Gemini CLI) were not available here, and Codex with a ChatGPT login offers only its default model.
 - **Friendly providers.** The real services used publish clean machine-readable contracts with conventional field names. Cryptic names are covered only when the contract describes the field (lab domain *accounts*); cryptic names with no description, and interfaces with no machine-readable contract at all, are not covered.
 - **Keys limit acquisition.** In OW5 phase 3, RightClick X found real alternative translation services, but they required credentials it did not have. It reported unavailability correctly; it did not obtain access.
 - **Directory quality.** Discovery without addresses depends on what APIs.guru and the MCP Registry list and how well their descriptions match the objective.
+- **Front-door discovery needs a published catalog.** Given only an environment's gateway, RightClick X finds the services listed in its RFC 9727 `/.well-known/api-catalog`. An environment without a catalog, or a service it does not list, is not found this way. This was tested on local synthetic environments only.
 - **Prompts name the shape of the output** (and, in OW1/OW5, ask for a Wikipedia MCP server from the registry, to ensure protocol diversity). The workflow itself was never given.
 - **Peers are configured, not discovered.** Cross-host federation (OW6) works between instances an operator connects; RightClick X does not search networks for peers.
 - **Single runs.** Each experiment ran once (plus the recorded re-runs); no statistics across many runs.

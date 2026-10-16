@@ -1,0 +1,246 @@
+{
+  "seed": 977098825,
+  "domain": "logistics",
+  "gateway": true,
+  "startedAt": "2026-10-16T07:33:45.556Z",
+  "steps": [
+    {
+      "n": 1,
+      "title": "Start disposable services generated from fixtures",
+      "ok": true,
+      "domain": "logistics",
+      "services": 3,
+      "givenToRightClickX": "only the environment's gateway (RFC 9727 api-catalog)"
+    },
+    {
+      "n": 2,
+      "title": "Connect an MCP client to RightClick X (stdio)",
+      "ok": true,
+      "tools": 13,
+      "startupMs": 107.1
+    },
+    {
+      "n": 3,
+      "title": "Present a business objective: \"For a shipment, find the shipping rate charged from its warehouse's city.\"",
+      "ok": true,
+      "goal": {
+        "have": {
+          "shipment_id": "<id>"
+        },
+        "want": "number",
+        "intent": "shipping rate shipment warehouse city",
+        "verify": [
+          {
+            "op": "type",
+            "value": "number"
+          }
+        ]
+      }
+    },
+    {
+      "n": 4,
+      "title": "Discover the environment's services from its catalog only (no service addresses, protocols or schemas given)",
+      "ok": true,
+      "found": [
+        "mcp",
+        "graphql",
+        "mcp"
+      ],
+      "newCapabilities": 3,
+      "ms": 35.3
+    },
+    {
+      "n": 5,
+      "title": "Identify suitable capabilities",
+      "ok": true,
+      "candidatePlans": 2,
+      "best": [
+        "Shipment details",
+        "Warehouse Details",
+        "City shipping rate"
+      ],
+      "planningMs": 1.6
+    },
+    {
+      "n": 6,
+      "title": "Compose a multi-provider workflow",
+      "ok": true,
+      "steps": [
+        "Shipment details ← shipmentId=$in.shipment_id",
+        "Warehouse Details ← warehouse_id=0.warehouseId",
+        "City shipping rate ← city=1.town"
+      ]
+    },
+    {
+      "n": 7,
+      "title": "Execute the workflow",
+      "ok": true,
+      "input": "SHP-1003",
+      "pipeline": [
+        "Shipment details",
+        "Warehouse Details",
+        "City shipping rate"
+      ],
+      "ms": 3.3
+    },
+    {
+      "n": 8,
+      "title": "Verify against independently held test data",
+      "ok": true,
+      "expected": 33.2,
+      "got": 33.2
+    },
+    {
+      "n": 9,
+      "title": "Save the successful composition and reuse it",
+      "ok": true,
+      "saved": "Shipping rate shipment warehouse city: Shipment details → Warehouse Details → City shipping rate",
+      "reusedAs": [
+        "Shipping rate shipment warehouse city: Shipment details → Warehouse Details → City shipping rate"
+      ],
+      "expected": 3.7,
+      "got": 3.7,
+      "ms": 1.8
+    },
+    {
+      "n": 10,
+      "title": "Change the interface of the last provider in the chain (Brightmark)",
+      "ok": true,
+      "before": "mcp \"City shipping rate\" city → city, shipping_rate",
+      "after": "openapi \"Lookup shipping rate for a city\" town → result.{town, freight_rate}"
+    },
+    {
+      "n": 11,
+      "title": "Recover without changing integration code",
+      "ok": true,
+      "healing": [
+        "API drift at http://127.0.0.1:53871/: mcp:ledgerline,graphql:127-0-0-1-53869-graphql,mcp:brightmark → mcp:ledgerline,graphql:127-0-0-1-53869-graphql,openapi:brightmark; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+      ],
+      "via": [
+        "mcp:ledgerline",
+        "graphql:127-0-0-1-53869-graphql",
+        "openapi:brightmark"
+      ],
+      "expected": 6.9,
+      "got": 6.9,
+      "ms": 15.9
+    },
+    {
+      "n": 12,
+      "title": "Remove that provider (Brightmark)",
+      "ok": true
+    },
+    {
+      "n": 13,
+      "title": "Withdraw its capabilities accurately; report the objective as impossible, not faked",
+      "ok": true,
+      "status": "failed",
+      "healing": [
+        "API drift at http://127.0.0.1:53871/: mcp:ledgerline,graphql:127-0-0-1-53869-graphql,openapi:brightmark → mcp:ledgerline,graphql:127-0-0-1-53869-graphql; +0 −1 ~0 capabilities; 1 pipeline(s) retired"
+      ],
+      "withdrawn": [
+        "Brightmark"
+      ],
+      "capabilities": "21 → 19",
+      "savedPipelines": "1 → 0"
+    },
+    {
+      "n": 14,
+      "title": "Introduce a different provider (Cobaltix, graphql): the objective works again",
+      "ok": true,
+      "learned": [
+        "api-catalog: 3 services listed",
+        "mcp: 1 tools",
+        "graphql: 1 fields",
+        "graphql: 1 fields"
+      ],
+      "via": [
+        "mcp:ledgerline",
+        "graphql:127-0-0-1-53869-graphql",
+        "graphql:127-0-0-1-53934-graphql"
+      ],
+      "expected": 6.9,
+      "got": 6.9,
+      "ms": 1.5
+    }
+  ],
+  "benchmarks": {
+    "startupMs": 107.1,
+    "mcpLatencyMs": {
+      "p50": 0.04,
+      "p95": 0.11
+    },
+    "discoveryMs": 35.3,
+    "graph": {
+      "providers": 5,
+      "capabilities": 20,
+      "edges": 31,
+      "chains2": 31,
+      "chains3": 45,
+      "total": 96
+    },
+    "graphStatsMs": 0.1,
+    "planningMs": 1.6,
+    "executionMs": 3.3,
+    "recoveryAfterChangeMs": 15.9,
+    "recoveryAfterNewProviderMs": 1.5,
+    "memoryMB": 146
+  },
+  "freeze": {
+    "commit": "66b871c4e891036920a88fb2089c9d437fc1331e",
+    "tag": "lab-freeze-4",
+    "productCodeChangedSinceTag": "",
+    "uncommittedProductChanges": "",
+    "frozen": true
+  },
+  "environment": [
+    {
+      "service": "shipments",
+      "brand": "Ledgerline",
+      "protocol": "mcp",
+      "operation": "Shipment details",
+      "input": "shipmentId",
+      "outputs": [
+        "shipmentId",
+        "warehouseId",
+        "weight"
+      ]
+    },
+    {
+      "service": "warehouses",
+      "brand": "Paperhaus",
+      "protocol": "graphql",
+      "operation": "Warehouse details",
+      "input": "warehouse_id",
+      "outputs": [
+        "warehouse_id",
+        "town",
+        "contact_email"
+      ]
+    },
+    {
+      "service": "rates",
+      "brand": "Brightmark",
+      "protocol": "mcp",
+      "operation": "City shipping rate",
+      "input": "city",
+      "outputs": [
+        "city",
+        "shipping_rate"
+      ]
+    }
+  ],
+  "firstRunProviders": [
+    "mcp:ledgerline",
+    "graphql:127-0-0-1-53869-graphql",
+    "mcp:brightmark"
+  ],
+  "receipts": {
+    "count": 21,
+    "intact": true,
+    "brokenAt": null,
+    "head": "bc1075de6dc72ae0f8e34be10b908f57dd58b35d7271635e95588574cbd0d3c7"
+  },
+  "passed": 14,
+  "total": 14
+}

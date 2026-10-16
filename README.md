@@ -101,11 +101,13 @@ One command answers the product's central question: *can an unchanged MCP server
 npm run lab
 ```
 
-The product build is frozen (git tag `gauntlet-freeze-3`). Each run then generates a new environment from `lab/fixtures.json` with a fresh seed: service names, operation titles, field spellings and the protocol of every service (OpenAPI, GraphQL or MCP) are random, and RightClick X knows none of it. The harness starts RightClick X as a separate process and talks to it only as an MCP client. It gives it the services' root addresses and a business objective (*for an invoice, find the tax rate that applies in its customer's country*), then checks every answer against its own copy of the data. Mid-run, the tax service ships a breaking release on a different protocol, is removed, and is replaced by a different provider.
+The product build is frozen (git tag `gauntlet-freeze-4`). Each run then generates a new environment from `lab/fixtures.json` with a fresh seed: service names, operation titles, field spellings and the protocol of every service (OpenAPI, GraphQL or MCP) are random, and RightClick X knows none of it. The harness starts RightClick X as a separate process and talks to it only as an MCP client. It gives it the services' root addresses and a business objective (*for an invoice, find the tax rate that applies in its customer's country*), then checks every answer against its own copy of the data. Mid-run, the tax service ships a breaking release on a different protocol, is removed, and is replaced by a different provider.
 
 **Real AI agents, not just a harness** ([lab/AI-CLIENTS.md](lab/AI-CLIENTS.md)): Claude Code (Anthropic) and Codex (OpenAI), each given only RightClick X as their MCP server, the addresses and the objective, solved freshly generated environments in both domains: 4/4 correct against ground truth, every service reached through RightClick X.
 
 Latest report ([lab/RESULTS.md](lab/RESULTS.md)): **30 of 30 freshly generated environments, across three unrelated business domains (invoicing, logistics, and an accounts domain with cryptic field names whose meaning is only in their descriptions; all pure fixture data), passed all 14 steps** on the frozen build: discovery from addresses alone (31 ms), a three-provider workflow planned in 2.2 ms and executed in 4.4 ms, correct against independent data, reused, recovered from a breaking cross-protocol release in 8 ms with no code change, honest withdrawal when the provider disappeared, and recovery through a newly introduced provider. What the lab does *not* prove is listed in the report.
+
+**Only the front door** ([lab/RESULTS-GATEWAY.md](lab/RESULTS-GATEWAY.md)): with `--gateway`, RightClick X is given one address, the environment's gateway, which publishes a standard RFC 9727 `/.well-known/api-catalog`. It is given no service address. Result: 30 of 30 environments across the three domains passed all 14 steps. Claude Code and Codex, given only the gateway, answered correctly in all three domains (6/6 after a harness scoring fix, recorded; 5/6 under the original strict scoring). RightClick X finds what the environment lists; it does not scan networks.
 
 ## How it works
 
@@ -147,6 +149,7 @@ npm install
 npm test             # 64 offline tests (node:test)
 npm run lab          # the Chameleon Lab: one generated environment, end to end
 npm run lab:report   # ten fresh environments → lab/RESULTS.md
+node lab/report.ts 10 --gateway   # same, given only the environment's api-catalog gateway → lab/RESULTS-GATEWAY.md
 npm run typecheck
 npm run demo         # seven-act offline demo
 node experiments/cloud.ts   # live-internet experiments (read-only)

@@ -91,7 +91,7 @@ ${stepTitles.map((t, i) => `| ${t} | ${stepPass[i]}/${N} |`).join("\n")}
 ## What remains unverified
 
 - Three domains, not many. One (*accounts*) uses cryptic field names whose meaning is only in their descriptions; cryptic names *without* descriptions are not covered.
-- Discovery is from given addresses. Finding services without being told where they are is not part of this lab.
+${GATEWAY ? "- Discovery is from one address the environment designates as its gateway, which must publish an RFC 9727 catalog. Environments that publish no catalog, and services not listed in it, are not found this way; RightClick X does not scan networks." : "- Discovery is from given addresses. Finding services without being told where they are is not part of this lab."}
 - Interfaces without a machine-readable contract (no OpenAPI, GraphQL introspection or MCP tool list) are not covered.
 - One objective shape (a three-step chain). Fan-in joins are covered by unit tests and live experiments (E12), not by this lab.
 - All timings are local loopback; they measure RightClick X, not networks.

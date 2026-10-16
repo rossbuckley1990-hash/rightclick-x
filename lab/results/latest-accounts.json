@@ -1,21 +1,23 @@
 {
-  "seed": 459293647,
+  "seed": 469188820,
   "domain": "accounts",
-  "startedAt": "2026-10-16T07:25:14.398Z",
+  "gateway": false,
+  "startedAt": "2026-10-16T07:29:28.503Z",
   "steps": [
     {
       "n": 1,
       "title": "Start disposable services generated from fixtures",
       "ok": true,
       "domain": "accounts",
-      "services": 3
+      "services": 3,
+      "givenToRightClickX": "the services' root addresses"
     },
     {
       "n": 2,
       "title": "Connect an MCP client to RightClick X (stdio)",
       "ok": true,
       "tools": 13,
-      "startupMs": 108.5
+      "startupMs": 107.5
     },
     {
       "n": 3,
@@ -40,12 +42,12 @@
       "title": "Discover contracts from root addresses only (no protocols, no schemas given)",
       "ok": true,
       "found": [
-        "graphql",
-        "graphql",
+        "openapi",
+        "openapi",
         "graphql"
       ],
       "newCapabilities": 3,
-      "ms": 28.7
+      "ms": 30.7
     },
     {
       "n": 5,
@@ -53,79 +55,79 @@
       "ok": true,
       "candidatePlans": 3,
       "best": [
-        "Account Lookup",
-        "Get Account Holder",
-        "Get Vat Rate"
+        "Account inquiry",
+        "Holder lookup",
+        "Vat Rate Inquiry"
       ],
-      "planningMs": 2
+      "planningMs": 2.1
     },
     {
       "n": 6,
       "title": "Compose a multi-provider workflow",
       "ok": true,
       "steps": [
-        "Account Lookup ← a_ref=$in.account_id",
-        "Get Account Holder ← hldr=0.cust_ref",
-        "Get Vat Rate ← cc=1.jur"
+        "Account inquiry ← acct_ref=$in.account_id",
+        "Holder lookup ← cref=0.cref",
+        "Vat Rate Inquiry ← cc=1.cc"
       ]
     },
     {
       "n": 7,
       "title": "Execute the workflow",
       "ok": true,
-      "input": "ACC-1001",
+      "input": "ACC-1005",
       "pipeline": [
-        "Account Lookup",
-        "Get Account Holder",
-        "Get Vat Rate"
+        "Account inquiry",
+        "Holder lookup",
+        "Vat Rate Inquiry"
       ],
-      "ms": 3.9
+      "ms": 4.5
     },
     {
       "n": 8,
       "title": "Verify against independently held test data",
       "ok": true,
-      "expected": 8.2,
-      "got": 8.2
+      "expected": 12.4,
+      "got": 12.4
     },
     {
       "n": 9,
       "title": "Save the successful composition and reuse it",
       "ok": true,
-      "saved": "Vat rate account holder country: Account Lookup → Get Account Holder → Get Vat Rate",
+      "saved": "Vat rate account holder country: Account inquiry → Holder lookup → Vat Rate Inquiry",
       "reusedAs": [
-        "Vat rate account holder country: Account Lookup → Get Account Holder → Get Vat Rate"
+        "Vat rate account holder country: Account inquiry → Holder lookup → Vat Rate Inquiry"
       ],
-      "expected": 17,
-      "got": 17,
+      "expected": 6.1,
+      "got": 6.1,
       "ms": 2.3
     },
     {
       "n": 10,
-      "title": "Change the interface of the last provider in the chain (Emberlane)",
+      "title": "Change the interface of the last provider in the chain (Brightmark)",
       "ok": true,
-      "before": "graphql \"Get VAT rate\" cc → cc, txr",
-      "after": "openapi \"VAT rate inquiry\" ctry → result.{ctry, vatpct}"
+      "before": "graphql \"VAT rate inquiry\" cc → cc, txr",
+      "after": "mcp \"Get VAT rate\" ctry → result.{ctry, vatpct}"
     },
     {
       "n": 11,
       "title": "Recover without changing integration code",
       "ok": true,
       "healing": [
-        "API drift at http://127.0.0.1:62729/: graphql:127-0-0-1-62729-graphql → openapi:emberlane; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:49277/: graphql:127-0-0-1-49277-graphql → mcp:brightmark; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "via": [
-        "graphql:127-0-0-1-62727-graphql",
-        "graphql:127-0-0-1-62728-graphql",
-        "openapi:emberlane"
+        "openapi:lumen-cargo",
+        "openapi:tallyport",
+        "mcp:brightmark"
       ],
-      "expected": 17,
-      "got": 17,
-      "ms": 7.8
+      "expected": 6.1,
+      "got": 6.1,
+      "ms": 8.2
     },
     {
       "n": 12,
-      "title": "Remove that provider (Emberlane)",
+      "title": "Remove that provider (Brightmark)",
       "ok": true
     },
     {
@@ -134,38 +136,38 @@
       "ok": true,
       "status": "failed",
       "healing": [
-        "provider gone at http://127.0.0.1:62729/: withdrew openapi:emberlane (1 capabilities, 1 pipeline(s) retired)"
+        "provider gone at http://127.0.0.1:49277/: withdrew mcp:brightmark (1 capabilities, 1 pipeline(s) retired)"
       ],
       "withdrawn": [
-        "Emberlane"
+        "Brightmark"
       ],
       "capabilities": "21 → 19",
       "savedPipelines": "1 → 0"
     },
     {
       "n": 14,
-      "title": "Introduce a different provider (Cobaltix, openapi): the objective works again",
+      "title": "Introduce a different provider (Kestrel Freight, openapi): the objective works again",
       "ok": true,
       "learned": [
         "openapi: 1 operations"
       ],
       "via": [
-        "graphql:127-0-0-1-62727-graphql",
-        "graphql:127-0-0-1-62728-graphql",
-        "openapi:cobaltix"
+        "openapi:lumen-cargo",
+        "openapi:tallyport",
+        "openapi:kestrel-freight"
       ],
-      "expected": 13.1,
-      "got": 13.1,
-      "ms": 1.8
+      "expected": 15.3,
+      "got": 15.3,
+      "ms": 1.6
     }
   ],
   "benchmarks": {
-    "startupMs": 108.5,
+    "startupMs": 107.5,
     "mcpLatencyMs": {
       "p50": 0.04,
-      "p95": 0.12
+      "p95": 0.11
     },
-    "discoveryMs": 28.7,
+    "discoveryMs": 30.7,
     "graph": {
       "providers": 5,
       "capabilities": 20,
@@ -175,49 +177,49 @@
       "total": 114
     },
     "graphStatsMs": 0.1,
-    "planningMs": 2,
-    "executionMs": 3.9,
-    "recoveryAfterChangeMs": 7.8,
-    "recoveryAfterNewProviderMs": 1.8,
-    "memoryMB": 134
+    "planningMs": 2.1,
+    "executionMs": 4.5,
+    "recoveryAfterChangeMs": 8.2,
+    "recoveryAfterNewProviderMs": 1.6,
+    "memoryMB": 135
   },
   "freeze": {
-    "commit": "7b78eb66fb3d7612ec8ce694bd3f6a0485e330de",
-    "tag": "lab-freeze-3",
-    "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/core/semantics.ts\nsrc/interface/mcp-server.ts\nsrc/runtime.ts",
+    "commit": "66b871c4e891036920a88fb2089c9d437fc1331e",
+    "tag": "lab-freeze-4",
+    "productCodeChangedSinceTag": "",
     "uncommittedProductChanges": "",
-    "frozen": false
+    "frozen": true
   },
   "environment": [
     {
       "service": "ledger",
-      "brand": "Ashgrove",
-      "protocol": "graphql",
-      "operation": "Account lookup",
-      "input": "a_ref",
+      "brand": "Lumen Cargo",
+      "protocol": "openapi",
+      "operation": "Account inquiry",
+      "input": "acct_ref",
       "outputs": [
-        "a_ref",
-        "cust_ref",
-        "bal"
+        "acct_ref",
+        "cref",
+        "curbal"
       ]
     },
     {
       "service": "kyc",
-      "brand": "Mistral Depot",
-      "protocol": "graphql",
-      "operation": "Get account holder",
-      "input": "hldr",
+      "brand": "Tallyport",
+      "protocol": "openapi",
+      "operation": "Holder lookup",
+      "input": "cref",
       "outputs": [
-        "hldr",
+        "cref",
         "nm",
-        "jur"
+        "cc"
       ]
     },
     {
       "service": "vat",
-      "brand": "Emberlane",
+      "brand": "Brightmark",
       "protocol": "graphql",
-      "operation": "Get VAT rate",
+      "operation": "VAT rate inquiry",
       "input": "cc",
       "outputs": [
         "cc",
@@ -226,15 +228,15 @@
     }
   ],
   "firstRunProviders": [
-    "graphql:127-0-0-1-62727-graphql",
-    "graphql:127-0-0-1-62728-graphql",
-    "graphql:127-0-0-1-62729-graphql"
+    "openapi:lumen-cargo",
+    "openapi:tallyport",
+    "graphql:127-0-0-1-49277-graphql"
   ],
   "receipts": {
     "count": 21,
     "intact": true,
     "brokenAt": null,
-    "head": "4758b62c42820a96a980d44e33c1a9fc4199fb82a850b8248196efa275de2a16"
+    "head": "7c75f602bba10a98210a2a05c885bf2707c3b4b74f47ab2e7c135da14d4cc5cf"
   },
   "passed": 14,
   "total": 14

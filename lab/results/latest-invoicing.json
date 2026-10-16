@@ -1,21 +1,23 @@
 {
-  "seed": 561394071,
+  "seed": 210749734,
   "domain": "invoicing",
-  "startedAt": "2026-10-16T07:25:07.926Z",
+  "gateway": false,
+  "startedAt": "2026-10-16T07:29:22.026Z",
   "steps": [
     {
       "n": 1,
       "title": "Start disposable services generated from fixtures",
       "ok": true,
       "domain": "invoicing",
-      "services": 3
+      "services": 3,
+      "givenToRightClickX": "the services' root addresses"
     },
     {
       "n": 2,
       "title": "Connect an MCP client to RightClick X (stdio)",
       "ok": true,
       "tools": 13,
-      "startupMs": 110.2
+      "startupMs": 114
     },
     {
       "n": 3,
@@ -41,11 +43,11 @@
       "ok": true,
       "found": [
         "openapi",
-        "openapi",
-        "mcp"
+        "graphql",
+        "graphql"
       ],
       "newCapabilities": 3,
-      "ms": 28.9
+      "ms": 31.6
     },
     {
       "n": 5,
@@ -53,79 +55,79 @@
       "ok": true,
       "candidatePlans": 3,
       "best": [
-        "Invoice lookup",
-        "Customer profile",
-        "Tax rate by country"
+        "Retrieve Invoice",
+        "Get customer",
+        "Lookup Tax Rate For A Country"
       ],
-      "planningMs": 2.1
+      "planningMs": 2.2
     },
     {
       "n": 6,
       "title": "Compose a multi-provider workflow",
       "ok": true,
       "steps": [
-        "Invoice lookup ← invoiceId=$in.invoice_id",
-        "Customer profile ← customerId=0.customer_number",
-        "Tax rate by country ← country=1.country"
+        "Retrieve Invoice ← invoice_id=$in.invoice_id",
+        "Get customer ← customerId=0.customer_number",
+        "Lookup Tax Rate For A Country ← countryCode=1.country_code"
       ]
     },
     {
       "n": 7,
       "title": "Execute the workflow",
       "ok": true,
-      "input": "INV-1001",
+      "input": "INV-1000",
       "pipeline": [
-        "Invoice lookup",
-        "Customer profile",
-        "Tax rate by country"
+        "Retrieve Invoice",
+        "Get customer",
+        "Lookup Tax Rate For A Country"
       ],
-      "ms": 4.5
+      "ms": 4.4
     },
     {
       "n": 8,
       "title": "Verify against independently held test data",
       "ok": true,
-      "expected": 23.8,
-      "got": 23.8
+      "expected": 7.7,
+      "got": 7.7
     },
     {
       "n": 9,
       "title": "Save the successful composition and reuse it",
       "ok": true,
-      "saved": "Tax rate invoice customer country: Invoice lookup → Customer profile → Tax rate by country",
+      "saved": "Tax rate invoice customer country: Retrieve Invoice → Get customer → Lookup Tax Rate For A Country",
       "reusedAs": [
-        "Tax rate invoice customer country: Invoice lookup → Customer profile → Tax rate by country"
+        "Tax rate invoice customer country: Retrieve Invoice → Get customer → Lookup Tax Rate For A Country"
       ],
-      "expected": 20.8,
-      "got": 20.8,
+      "expected": 7.5,
+      "got": 7.5,
       "ms": 2.1
     },
     {
       "n": 10,
-      "title": "Change the interface of the last provider in the chain (Cobaltix)",
+      "title": "Change the interface of the last provider in the chain (Northwind Billing)",
       "ok": true,
-      "before": "openapi \"Tax rate by country\" country → country, rate",
-      "after": "graphql \"Country tax rate\" country_code → result.{country_code, tax_rate}"
+      "before": "graphql \"Lookup tax rate for a country\" countryCode → countryCode, standard_rate",
+      "after": "mcp \"Get tax rate\" country_code → result.{country_code, vat_rate}"
     },
     {
       "n": 11,
       "title": "Recover without changing integration code",
       "ok": true,
       "healing": [
-        "API drift at http://127.0.0.1:61193/: openapi:cobaltix → graphql:127-0-0-1-61193-graphql; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:63916/: graphql:127-0-0-1-63916-graphql → mcp:northwind-billing; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "via": [
-        "mcp:tallyport",
-        "openapi:harbourly",
-        "graphql:127-0-0-1-61193-graphql"
+        "graphql:127-0-0-1-63914-graphql",
+        "openapi:fjordsoft",
+        "mcp:northwind-billing"
       ],
-      "expected": 20.8,
-      "got": 20.8,
-      "ms": 8.1
+      "expected": 7.5,
+      "got": 7.5,
+      "ms": 8.8
     },
     {
       "n": 12,
-      "title": "Remove that provider (Cobaltix)",
+      "title": "Remove that provider (Northwind Billing)",
       "ok": true
     },
     {
@@ -134,38 +136,38 @@
       "ok": true,
       "status": "failed",
       "healing": [
-        "provider gone at http://127.0.0.1:61193/: withdrew graphql:127-0-0-1-61193-graphql (1 capabilities, 1 pipeline(s) retired)"
+        "provider gone at http://127.0.0.1:63916/: withdrew mcp:northwind-billing (1 capabilities, 1 pipeline(s) retired)"
       ],
       "withdrawn": [
-        "GraphQL 127.0.0.1:61193"
+        "Northwind Billing"
       ],
       "capabilities": "21 → 19",
       "savedPipelines": "1 → 0"
     },
     {
       "n": 14,
-      "title": "Introduce a different provider (Duneworks, graphql): the objective works again",
+      "title": "Introduce a different provider (Mistral Depot, mcp): the objective works again",
       "ok": true,
       "learned": [
-        "graphql: 1 fields"
+        "mcp: 1 tools"
       ],
       "via": [
-        "mcp:tallyport",
-        "openapi:harbourly",
-        "graphql:127-0-0-1-61255-graphql"
+        "graphql:127-0-0-1-63914-graphql",
+        "openapi:fjordsoft",
+        "mcp:mistral-depot"
       ],
-      "expected": 5.3,
-      "got": 5.3,
-      "ms": 1.8
+      "expected": 7.4,
+      "got": 7.4,
+      "ms": 1.6
     }
   ],
   "benchmarks": {
-    "startupMs": 110.2,
+    "startupMs": 114,
     "mcpLatencyMs": {
-      "p50": 0.03,
-      "p95": 0.13
+      "p50": 0.04,
+      "p95": 0.11
     },
-    "discoveryMs": 28.9,
+    "discoveryMs": 31.6,
     "graph": {
       "providers": 5,
       "capabilities": 20,
@@ -175,28 +177,28 @@
       "total": 114
     },
     "graphStatsMs": 0.1,
-    "planningMs": 2.1,
-    "executionMs": 4.5,
-    "recoveryAfterChangeMs": 8.1,
-    "recoveryAfterNewProviderMs": 1.8,
-    "memoryMB": 134
+    "planningMs": 2.2,
+    "executionMs": 4.4,
+    "recoveryAfterChangeMs": 8.8,
+    "recoveryAfterNewProviderMs": 1.6,
+    "memoryMB": 136
   },
   "freeze": {
-    "commit": "7b78eb66fb3d7612ec8ce694bd3f6a0485e330de",
-    "tag": "lab-freeze-3",
-    "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/core/semantics.ts\nsrc/interface/mcp-server.ts\nsrc/runtime.ts",
+    "commit": "66b871c4e891036920a88fb2089c9d437fc1331e",
+    "tag": "lab-freeze-4",
+    "productCodeChangedSinceTag": "",
     "uncommittedProductChanges": "",
-    "frozen": false
+    "frozen": true
   },
   "environment": [
     {
       "service": "invoices",
-      "brand": "Tallyport",
-      "protocol": "mcp",
-      "operation": "Invoice lookup",
-      "input": "invoiceId",
+      "brand": "Duneworks",
+      "protocol": "graphql",
+      "operation": "Retrieve invoice",
+      "input": "invoice_id",
       "outputs": [
-        "invoiceId",
+        "invoice_id",
         "customer_number",
         "amount",
         "currency_code"
@@ -204,38 +206,38 @@
     },
     {
       "service": "customers",
-      "brand": "Harbourly",
+      "brand": "Fjordsoft",
       "protocol": "openapi",
-      "operation": "Customer profile",
+      "operation": "Get customer",
       "input": "customerId",
       "outputs": [
         "customerId",
-        "display_name",
-        "country"
+        "legal_name",
+        "country_code"
       ]
     },
     {
       "service": "tax",
-      "brand": "Cobaltix",
-      "protocol": "openapi",
-      "operation": "Tax rate by country",
-      "input": "country",
+      "brand": "Northwind Billing",
+      "protocol": "graphql",
+      "operation": "Lookup tax rate for a country",
+      "input": "countryCode",
       "outputs": [
-        "country",
-        "rate"
+        "countryCode",
+        "standard_rate"
       ]
     }
   ],
   "firstRunProviders": [
-    "mcp:tallyport",
-    "openapi:harbourly",
-    "openapi:cobaltix"
+    "graphql:127-0-0-1-63914-graphql",
+    "openapi:fjordsoft",
+    "graphql:127-0-0-1-63916-graphql"
   ],
   "receipts": {
     "count": 21,
     "intact": true,
     "brokenAt": null,
-    "head": "74f464c771ebd3cb9f766c5ef75d4d49debc896b7f903a95bafd4160eb973b98"
+    "head": "3df3e01f69612923f9cd54f5226d5a1873981c835fbb53cb258fc2a059b4619d"
   },
   "passed": 14,
   "total": 14

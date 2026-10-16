@@ -1,21 +1,23 @@
 {
-  "seed": 739557648,
+  "seed": 668456312,
   "domain": "logistics",
-  "startedAt": "2026-10-16T07:25:11.134Z",
+  "gateway": false,
+  "startedAt": "2026-10-16T07:29:25.217Z",
   "steps": [
     {
       "n": 1,
       "title": "Start disposable services generated from fixtures",
       "ok": true,
       "domain": "logistics",
-      "services": 3
+      "services": 3,
+      "givenToRightClickX": "the services' root addresses"
     },
     {
       "n": 2,
       "title": "Connect an MCP client to RightClick X (stdio)",
       "ok": true,
       "tools": 13,
-      "startupMs": 109.8
+      "startupMs": 112.3
     },
     {
       "n": 3,
@@ -45,7 +47,7 @@
         "mcp"
       ],
       "newCapabilities": 3,
-      "ms": 32
+      "ms": 30
     },
     {
       "n": 5,
@@ -53,8 +55,8 @@
       "ok": true,
       "candidatePlans": 2,
       "best": [
-        "Look up shipment",
-        "Fetch Warehouse",
+        "Shipment details",
+        "Get Warehouse",
         "Get Shipping Rate"
       ],
       "planningMs": 1.6
@@ -64,68 +66,68 @@
       "title": "Compose a multi-provider workflow",
       "ok": true,
       "steps": [
-        "Look up shipment ← shipment_number=$in.shipment_id",
-        "Fetch Warehouse ← warehouse_id=0.warehouse_id",
-        "Get Shipping Rate ← city=1.town"
+        "Shipment details ← shipment_id=$in.shipment_id",
+        "Get Warehouse ← warehouse_id=0.warehouseId",
+        "Get Shipping Rate ← town=1.location"
       ]
     },
     {
       "n": 7,
       "title": "Execute the workflow",
       "ok": true,
-      "input": "SHP-1006",
+      "input": "SHP-1003",
       "pipeline": [
-        "Look up shipment",
-        "Fetch Warehouse",
+        "Shipment details",
+        "Get Warehouse",
         "Get Shipping Rate"
       ],
-      "ms": 4
+      "ms": 3.5
     },
     {
       "n": 8,
       "title": "Verify against independently held test data",
       "ok": true,
-      "expected": 11.6,
-      "got": 11.6
+      "expected": 29.8,
+      "got": 29.8
     },
     {
       "n": 9,
       "title": "Save the successful composition and reuse it",
       "ok": true,
-      "saved": "Shipping rate shipment warehouse city: Look up shipment → Fetch Warehouse → Get Shipping Rate",
+      "saved": "Shipping rate shipment warehouse city: Shipment details → Get Warehouse → Get Shipping Rate",
       "reusedAs": [
-        "Shipping rate shipment warehouse city: Look up shipment → Fetch Warehouse → Get Shipping Rate"
+        "Shipping rate shipment warehouse city: Shipment details → Get Warehouse → Get Shipping Rate"
       ],
-      "expected": 14.1,
-      "got": 14.1,
-      "ms": 1.9
+      "expected": 17,
+      "got": 17,
+      "ms": 1.8
     },
     {
       "n": 10,
-      "title": "Change the interface of the last provider in the chain (Emberlane)",
+      "title": "Change the interface of the last provider in the chain (Northwind Billing)",
       "ok": true,
-      "before": "graphql \"Get shipping rate\" city → city, price_per_kg",
-      "after": "mcp \"Lookup shipping rate for a city\" town → result.{town, shipping_rate}"
+      "before": "graphql \"Get shipping rate\" town → town, shipping_rate",
+      "after": "mcp \"Shipping rate by city\" city → result.{city, freight_rate}"
     },
     {
       "n": 11,
       "title": "Recover without changing integration code",
       "ok": true,
       "healing": [
-        "API drift at http://127.0.0.1:61955/: graphql:127-0-0-1-61955-graphql → mcp:emberlane; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:64783/: graphql:127-0-0-1-64783-graphql → mcp:northwind-billing; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "via": [
-        "mcp:cobaltix",
-        "graphql:127-0-0-1-61954-graphql",
-        "mcp:emberlane"
+        "mcp:harbourly",
+        "graphql:127-0-0-1-64782-graphql",
+        "mcp:northwind-billing"
       ],
-      "expected": 14.1,
-      "got": 14.1,
-      "ms": 7.5
+      "expected": 29.8,
+      "got": 29.8,
+      "ms": 7.9
     },
     {
       "n": 12,
-      "title": "Remove that provider (Emberlane)",
+      "title": "Remove that provider (Northwind Billing)",
       "ok": true
     },
     {
@@ -134,38 +136,38 @@
       "ok": true,
       "status": "failed",
       "healing": [
-        "provider gone at http://127.0.0.1:61955/: withdrew mcp:emberlane (1 capabilities, 1 pipeline(s) retired)"
+        "provider gone at http://127.0.0.1:64783/: withdrew mcp:northwind-billing (1 capabilities, 1 pipeline(s) retired)"
       ],
       "withdrawn": [
-        "Emberlane"
+        "Northwind Billing"
       ],
       "capabilities": "21 → 19",
       "savedPipelines": "1 → 0"
     },
     {
       "n": 14,
-      "title": "Introduce a different provider (Duneworks, mcp): the objective works again",
+      "title": "Introduce a different provider (Ashgrove, openapi): the objective works again",
       "ok": true,
       "learned": [
-        "mcp: 1 tools"
+        "openapi: 1 operations"
       ],
       "via": [
-        "mcp:cobaltix",
-        "graphql:127-0-0-1-61954-graphql",
-        "mcp:duneworks"
+        "mcp:harbourly",
+        "graphql:127-0-0-1-64782-graphql",
+        "openapi:ashgrove"
       ],
-      "expected": 11.6,
-      "got": 11.6,
-      "ms": 1.9
+      "expected": 21.1,
+      "got": 21.1,
+      "ms": 1.8
     }
   ],
   "benchmarks": {
-    "startupMs": 109.8,
+    "startupMs": 112.3,
     "mcpLatencyMs": {
       "p50": 0.04,
-      "p95": 0.11
+      "p95": 0.12
     },
-    "discoveryMs": 32,
+    "discoveryMs": 30,
     "graph": {
       "providers": 5,
       "capabilities": 20,
@@ -176,65 +178,65 @@
     },
     "graphStatsMs": 0.1,
     "planningMs": 1.6,
-    "executionMs": 4,
-    "recoveryAfterChangeMs": 7.5,
-    "recoveryAfterNewProviderMs": 1.9,
-    "memoryMB": 134
+    "executionMs": 3.5,
+    "recoveryAfterChangeMs": 7.9,
+    "recoveryAfterNewProviderMs": 1.8,
+    "memoryMB": 135
   },
   "freeze": {
-    "commit": "7b78eb66fb3d7612ec8ce694bd3f6a0485e330de",
-    "tag": "lab-freeze-3",
-    "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/core/semantics.ts\nsrc/interface/mcp-server.ts\nsrc/runtime.ts",
+    "commit": "66b871c4e891036920a88fb2089c9d437fc1331e",
+    "tag": "lab-freeze-4",
+    "productCodeChangedSinceTag": "",
     "uncommittedProductChanges": "",
-    "frozen": false
+    "frozen": true
   },
   "environment": [
     {
       "service": "shipments",
-      "brand": "Cobaltix",
+      "brand": "Harbourly",
       "protocol": "mcp",
-      "operation": "Look up shipment",
-      "input": "shipment_number",
+      "operation": "Shipment details",
+      "input": "shipment_id",
       "outputs": [
-        "shipment_number",
-        "warehouse_id",
-        "gross_weight"
+        "shipment_id",
+        "warehouseId",
+        "weight_kg"
       ]
     },
     {
       "service": "warehouses",
-      "brand": "Quillbase",
+      "brand": "Mistral Depot",
       "protocol": "graphql",
-      "operation": "Fetch warehouse",
+      "operation": "Get warehouse",
       "input": "warehouse_id",
       "outputs": [
         "warehouse_id",
-        "town",
+        "location",
         "manager_email"
       ]
     },
     {
       "service": "rates",
-      "brand": "Emberlane",
+      "brand": "Northwind Billing",
       "protocol": "graphql",
       "operation": "Get shipping rate",
-      "input": "city",
+      "input": "town",
       "outputs": [
-        "city",
-        "price_per_kg"
+        "town",
+        "shipping_rate"
       ]
     }
   ],
   "firstRunProviders": [
-    "mcp:cobaltix",
-    "graphql:127-0-0-1-61954-graphql",
-    "graphql:127-0-0-1-61955-graphql"
+    "mcp:harbourly",
+    "graphql:127-0-0-1-64782-graphql",
+    "graphql:127-0-0-1-64783-graphql"
   ],
   "receipts": {
     "count": 21,
     "intact": true,
     "brokenAt": null,
-    "head": "fa994331f530deb3169199c5ae83663a516a596e4b13a21afa7285bebaaa260a"
+    "head": "f85484af997d4a38a3431943a89455388f5f6b73710ee7ec285c7b2fe2d1608c"
   },
   "passed": 14,
   "total": 14

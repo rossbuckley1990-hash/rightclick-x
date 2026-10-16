@@ -1,0 +1,59 @@
+{
+  "at": "2026-10-16T07:30:50.381Z",
+  "build": "66b871c4e891036920a88fb2089c9d437fc1331e",
+  "domain": "accounts",
+  "seed": 235564317,
+  "gateway": true,
+  "results": [
+    {
+      "client": "claude",
+      "prompt": "You are connected to exactly one MCP server, rightclick-x. Use only its tools.\nThis environment's gateway is at http://127.0.0.1:51753/ . You have not been told which services exist, where they are, what they are or which protocols they use.\nObjective: For a bank account, find the VAT rate that applies in its holder's country.\nThe account id is ACC-1005.\nUse the rightclick-x tools to discover what the services can do and accomplish the objective.\nEnd your reply with a final line of the form: ANSWER: <value>",
+      "start": "ACC-1005",
+      "expected": 11,
+      "answer": "11",
+      "correct": true,
+      "seconds": 26.9,
+      "receipts": 3,
+      "providers": [
+        "mcp:duneworks",
+        "graphql:127-0-0-1-51751-graphql",
+        "mcp:quillbase"
+      ],
+      "reachedAll": false,
+      "tail": "s held by customer **CUS-1055**.\n2. **Customer service (GraphQL):** CUS-1055 is \"Cy SARL\", based in country **CA** (Canada).\n3. **VAT service (quillbase):** the rate for CA is **11**.\n\nThe service returned a bare number with no unit, so 11 most likely means 11%. It doesn't match Canada's real federal rate (5% GST), so this is probably mock data. The answer below is the service's value.\n\nANSWER: 11",
+      "correctStrict": true
+    },
+    {
+      "client": "codex",
+      "prompt": "You are connected to exactly one MCP server, rightclick-x. Use only its tools.\nThis environment's gateway is at http://127.0.0.1:51753/ . You have not been told which services exist, where they are, what they are or which protocols they use.\nObjective: For a bank account, find the VAT rate that applies in its holder's country.\nThe account id is ACC-1013.\nUse the rightclick-x tools to discover what the services can do and accomplish the objective.\nEnd your reply with a final line of the form: ANSWER: <value>",
+      "start": "ACC-1013",
+      "expected": 20,
+      "answer": "20%",
+      "correct": true,
+      "seconds": 41.8,
+      "receipts": 3,
+      "providers": [
+        "mcp:duneworks",
+        "graphql:127-0-0-1-51751-graphql",
+        "mcp:quillbase"
+      ],
+      "reachedAll": false,
+      "tail": "ACC-1013 belongs to Ada Ltd (CUS-1001), whose country is Brazil (BR). The discovered VAT service returned a rate of 20%.\n\nANSWER: 20%",
+      "correctStrict": false
+    }
+  ],
+  "rescored": {
+    "at": "2026-10-16T07:33:23.333Z",
+    "reason": "Harness scored answers with strict Number(); Codex answered \"20%\" (expected 20). Re-scored with the leading-number rule now in lab/ai-clients.ts; strict verdict kept as correctStrict.",
+    "strictVerdicts": [
+      {
+        "client": "claude",
+        "correct": true
+      },
+      {
+        "client": "codex",
+        "correct": false
+      }
+    ]
+  }
+}

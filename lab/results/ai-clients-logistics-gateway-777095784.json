@@ -1,0 +1,43 @@
+{
+  "at": "2026-10-16T07:31:54.205Z",
+  "build": "66b871c4e891036920a88fb2089c9d437fc1331e",
+  "domain": "logistics",
+  "seed": 777095784,
+  "gateway": true,
+  "results": [
+    {
+      "client": "claude",
+      "prompt": "You are connected to exactly one MCP server, rightclick-x. Use only its tools.\nThis environment's gateway is at http://127.0.0.1:51950/ . You have not been told which services exist, where they are, what they are or which protocols they use.\nObjective: For a shipment, find the shipping rate charged from its warehouse's city.\nThe shipment id is SHP-1003.\nUse the rightclick-x tools to discover what the services can do and accomplish the objective.\nEnd your reply with a final line of the form: ANSWER: <value>",
+      "start": "SHP-1003",
+      "expected": 37.3,
+      "answer": "37.3",
+      "correct": true,
+      "seconds": 18.7,
+      "receipts": 3,
+      "providers": [
+        "graphql:127-0-0-1-51947-graphql",
+        "mcp:paperhaus",
+        "graphql:127-0-0-1-51949-graphql"
+      ],
+      "reachedAll": false,
+      "tail": "house city, Perth, is 37.3.\n\nThe gateway listed three services: two GraphQL APIs and one MCP server. I linked their lookups into three steps:\n\n1. **Shipment:** SHP-1003 ships from warehouse WH-1016. Its weight is 812.2 kg.\n2. **Warehouse:** WH-1016 is in Perth.\n3. **Rate:** the shipping rate for Perth is 37.3. The service gave no currency.\n\nAll three lookups completed without errors.\n\nANSWER: 37.3"
+    },
+    {
+      "client": "codex",
+      "prompt": "You are connected to exactly one MCP server, rightclick-x. Use only its tools.\nThis environment's gateway is at http://127.0.0.1:51950/ . You have not been told which services exist, where they are, what they are or which protocols they use.\nObjective: For a shipment, find the shipping rate charged from its warehouse's city.\nThe shipment id is SHP-1007.\nUse the rightclick-x tools to discover what the services can do and accomplish the objective.\nEnd your reply with a final line of the form: ANSWER: <value>",
+      "start": "SHP-1007",
+      "expected": 3.2,
+      "answer": "3.2",
+      "correct": true,
+      "seconds": 44.9,
+      "receipts": 3,
+      "providers": [
+        "graphql:127-0-0-1-51947-graphql",
+        "mcp:paperhaus",
+        "graphql:127-0-0-1-51949-graphql"
+      ],
+      "reachedAll": false,
+      "tail": "Shipment SHP-1007 uses warehouse WH-1043 in Lisbon. The shipping rate returned for Lisbon is 3.2.\n\nANSWER: 3.2"
+    }
+  ]
+}

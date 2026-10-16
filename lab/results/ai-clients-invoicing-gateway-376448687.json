@@ -1,0 +1,43 @@
+{
+  "at": "2026-10-16T07:33:07.996Z",
+  "build": "66b871c4e891036920a88fb2089c9d437fc1331e",
+  "domain": "invoicing",
+  "seed": 376448687,
+  "gateway": true,
+  "results": [
+    {
+      "client": "claude",
+      "prompt": "You are connected to exactly one MCP server, rightclick-x. Use only its tools.\nThis environment's gateway is at http://127.0.0.1:52135/ . You have not been told which services exist, where they are, what they are or which protocols they use.\nObjective: For an invoice, find the tax rate that applies in its customer's country.\nThe invoice id is INV-1003.\nUse the rightclick-x tools to discover what the services can do and accomplish the objective.\nEnd your reply with a final line of the form: ANSWER: <value>",
+      "start": "INV-1003",
+      "expected": 16.7,
+      "answer": "16.7",
+      "correct": true,
+      "seconds": 31.9,
+      "receipts": 6,
+      "providers": [
+        "openapi:duneworks",
+        "mcp:ledgerline",
+        "mcp:cobaltix"
+      ],
+      "reachedAll": true,
+      "tail": "neworks) says invoice **INV-1003** belongs to customer **C-1013**, for 342.90 EUR before tax.\n2. The customer service (ledgerline) has C-1013's country as **IE** (Ireland).\n3. The tax service (cobaltix) gives a rate of **16.7** for IE.\n\nIreland's real standard VAT rate is 23%, so 16.7 doesn't match. It's the figure this environment's service returns, so I've given that as the answer.\n\nANSWER: 16.7"
+    },
+    {
+      "client": "codex",
+      "prompt": "You are connected to exactly one MCP server, rightclick-x. Use only its tools.\nThis environment's gateway is at http://127.0.0.1:52135/ . You have not been told which services exist, where they are, what they are or which protocols they use.\nObjective: For an invoice, find the tax rate that applies in its customer's country.\nThe invoice id is INV-1013.\nUse the rightclick-x tools to discover what the services can do and accomplish the objective.\nEnd your reply with a final line of the form: ANSWER: <value>",
+      "start": "INV-1013",
+      "expected": 24.9,
+      "answer": "24.9",
+      "correct": true,
+      "seconds": 41.7,
+      "receipts": 3,
+      "providers": [
+        "openapi:duneworks",
+        "mcp:ledgerline",
+        "mcp:cobaltix"
+      ],
+      "reachedAll": true,
+      "tail": "Invoice INV-1013 belongs to customer C-1014 in Germany (DE). The discovered tax service returned a rate of 24.9.\n\nANSWER: 24.9"
+    }
+  ]
+}
