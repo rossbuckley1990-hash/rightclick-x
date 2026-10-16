@@ -130,7 +130,7 @@ export function createHandler(rc: RightClick, opts: HttpOptions = {}): (req: Req
       if (req.method === "GET" && path === "/api/tools") return json(TOOLS);
       if (req.method === "POST" && path === "/api/run") {
         const a = (await req.json()) as any;
-        return json(await rc.run(a.id, a.args ?? {}, { verify: a.verify }));
+        return json(await rc.run(a.id, a.args ?? {}, { verify: a.verify, acknowledgeChange: a.acknowledgeChange }));
       }
       const m = /^\/api\/(?:context_)?([a-z_]+)$/.exec(path);
       if (req.method === "POST" && m) {

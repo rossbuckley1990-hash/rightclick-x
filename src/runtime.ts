@@ -35,6 +35,8 @@ export interface PersistedState {
   authFingerprints?: Record<string, string>;
   /** Semantic-inference version the reflections were typed with. */
   semantics?: number;
+  /** Capability ids that changed meaning on re-learning and are not yet acknowledged. */
+  meaningChanges?: MeaningChange[];
 }
 
 /**
@@ -97,6 +99,10 @@ export interface RunRecord {
   failedCapability?: string;
   witnesses?: WitnessResult[];
   attempts?: Array<{ summary: string; failed: string; error: string; healing?: string }>;
+  /** A failed run of a learned operation: what re-reading its contract found, and what was retried. */
+  healing?: { source: string; error: string; note: string; drift?: SourceDrift; retried?: string };
+  /** The id now invokes a different operation than before re-learning. */
+  changedMeaning?: MeaningChange;
 }
 
 export class ConfirmationRequired extends Error {
@@ -146,7 +152,42 @@ export interface SourceDrift {
   modified: string[];
   /** Crystallized pipelines retired because their proof no longer holds. */
   retired: string[];
+  /** Modified ids that now invoke a different operation (not just a moved or reshaped one). */
+  changedMeaning?: string[];
 }
+
+/** A capability id that re-learning pointed at a different operation. */
+export interface MeaningChange {
+  id: string;
+  source: string;
+  at: string;
+  /** What the id invoked before and invokes now, e.g. "GET /items/{}/children". */
+  before: string;
+  after: string;
+  /** The one capability that now carries the operation this id used to name, if there is one. */
+  successor?: string;
+}
+
+/**
+ * What a learned capability invokes, independent of where the API is served:
+ * method and path below the provider's base (parameter names elided), GraphQL
+ * operation and field, or MCP tool, plus its risk. Ids with the same key call
+ * the same operation; an id whose key changes now calls a different one.
+ */
+function operationOf(c: Capability, base?: unknown): string | undefined {
+  const inv = c.invoke;
+  let op: string;
+  if (inv.kind === "http") {
+    let path = typeof base === "string" && base && inv.url.startsWith(base) ? inv.url.slice(base.length) : inv.url.replace(/^[a-z][a-z0-9+.-]*:\/\/[^/]+/i, "");
+    path = path.replace(/\{[^}]*\}/g, "{}").replace(/\/+$/, "");
+    op = `${inv.method.toUpperCase()} ${path.startsWith("/") ? path : `/${path}`}`;
+  } else if (inv.kind === "graphql") op = `${inv.operation} ${inv.field}`;
+  else if (inv.kind === "mcp") op = `tool ${inv.tool}`;
+  else return undefined;
+  return c.risk === "read" ? op : `${op} (${c.risk})`;
+}
+
+const HEALABLE = new Set(["http", "graphql", "mcp"]);
 
 const RUN_BUFFER = 500;
 
@@ -160,6 +201,8 @@ export class RightClick {
   readonly name: string;
   readonly startedAt = new Date();
   readonly published = new Map<string, PublishedGoal>();
+  /** Ids re-learning pointed at a different operation; id-addressed runs refuse them until acknowledged. */
+  readonly meaningChanges = new Map<string, MeaningChange>();
   /** Optional sink for an audit log of MCP tool calls (set by hosts, e.g. RCX_MCP_LOG). */
   toolCallSink?: (entry: { at: string; tool: string; args: unknown; ok: boolean; ms: number; error?: string }) => void;
   private directories: Directory[];
@@ -203,6 +246,7 @@ export class RightClick {
         rc.published.set(g.slug, g);
         rc.registerGoal(g);
       }
+      for (const m of saved.meaningChanges ?? []) if (rc.graph.get(m.id)) rc.meaningChanges.set(m.id, m);
       // Credentials changed for an origin: its past auth and rate-limit failures no longer apply.
       const now = await rc.net.auth.fingerprints();
       const changed = new Set(Object.keys(now).filter((o) => saved.authFingerprints?.[o] !== now[o]));
@@ -321,6 +365,7 @@ export class RightClick {
           // the provider changed protocol (OpenAPI -> GraphQL -> MCP) and so its id.
           const previous = [...this.graph.providers.values()].filter((p) => p.meta?.source === source);
           const before = new Map(previous.flatMap((p) => p.capabilityIds.map((id) => [id, this.graph.get(id) ? signature(this.graph.get(id)!) : ""] as const)));
+          const operationsBefore = new Map(previous.flatMap((p) => p.capabilityIds.map((id) => [id, this.graph.get(id) ? operationOf(this.graph.get(id)!, p.meta?.base) : undefined] as const)));
           if (!d.reflections.length && previous.length) {
             // The provider is gone: withdraw what it offered and retire anything built on it.
             const compositesBefore = this.graph.list().filter((c) => c.source === "composite").map((c) => c.id);
@@ -357,6 +402,7 @@ export class RightClick {
               retired: compositesBefore.filter((id) => !this.graph.get(id)),
             };
             drift.changed = !!(drift.added.length || drift.removed.length || drift.modified.length);
+            drift.changedMeaning = this.noteMeaningChanges(source, drift.modified, operationsBefore);
             if (drift.changed) this.graph.emit("provider.drifted", { source, ...drift });
           }
           results.push({ source, probes: d.probes, learned, drift });
@@ -366,6 +412,7 @@ export class RightClick {
       }),
     );
     this.graph.measuring = true;
+    for (const id of this.meaningChanges.keys()) if (!this.graph.get(id)) this.meaningChanges.delete(id);
     this.persist();
     const powers = this.graph.powers();
     return {
@@ -374,6 +421,31 @@ export class RightClick {
       totalNewPowers: powers.total - batchBefore,
       graph: { providers: this.graph.providers.size, ...powers },
     };
+  }
+
+  /**
+   * A modified id may still call the same operation (moved base, new optional
+   * parameter) or a different one (an operationId reassigned between releases).
+   * The second kind is recorded so an id-addressed run cannot follow it
+   * silently; the change is measured against what callers last saw.
+   */
+  private noteMeaningChanges(source: string, modified: string[], operationsBefore: Map<string, string | undefined>): string[] {
+    const operation = (c: Capability) => operationOf(c, this.graph.providers.get(c.provider)?.meta?.base);
+    const fromSource = this.graph.list().filter((c) => this.graph.providers.get(c.provider)?.meta?.source === source);
+    const changed: string[] = [];
+    for (const id of modified) {
+      const now = this.graph.get(id)!;
+      const after = operation(now);
+      const seen = this.meaningChanges.get(id)?.before ?? operationsBefore.get(id);
+      if (!seen || !after || seen === after) {
+        this.meaningChanges.delete(id);
+        continue;
+      }
+      changed.push(id);
+      const successors = fromSource.filter((c) => c.id !== id && operation(c) === seen);
+      this.meaningChanges.set(id, { id, source, at: new Date().toISOString(), before: seen, after, ...(successors.length === 1 ? { successor: successors[0].id } : {}) });
+    }
+    return changed;
   }
 
   /**
@@ -488,13 +560,32 @@ export class RightClick {
 
   // ================================================================ context_run
 
-  async run(id: string, args: Record<string, unknown> = {}, opts: { verify?: Predicate[]; confirm?: boolean; activeGoals?: string[]; net?: Net } = {}): Promise<RunRecord> {
+  async run(
+    id: string,
+    args: Record<string, unknown> = {},
+    opts: {
+      verify?: Predicate[];
+      confirm?: boolean;
+      /** Run an id that re-learning pointed at a different operation, having seen the change. */
+      acknowledgeChange?: boolean;
+      activeGoals?: string[];
+      net?: Net;
+      /** Internal: a plan step or pinned witness. Its caller chose it by current contract and does its own repair. */
+      planned?: boolean;
+    } = {},
+  ): Promise<RunRecord> {
     const cap = this.graph.get(id);
     if (!cap) throw new Error(`unknown capability: ${id}`);
     // Destructive effects keep the user's authority: they need an explicit confirmation.
     if (cap.risk === "destructive" && this.destructivePolicy === "confirm" && !opts.confirm) {
       throw new ConfirmationRequired(cap.id, cap.title);
     }
+    // An id the caller chose for what it used to do must not quietly do something else.
+    const change = opts.planned ? undefined : this.meaningChanges.get(cap.id);
+    const refused = change && !opts.acknowledgeChange
+      ? `${cap.id} changed meaning when ${change.source} was re-learned (${change.at}): it called ${change.before}, it now calls ${change.after}. Not run.${change.successor ? ` The operation it used to call is now ${change.successor}.` : ""} Call again with acknowledgeChange: true to run the new operation.`
+      : undefined;
+    if (change && !refused) this.meaningChanges.delete(cap.id);
     const runId = `run_${Date.now().toString(36)}_${(++this.runCounter).toString(36)}`;
     const startedAt = new Date().toISOString();
     const t0 = performance.now();
@@ -505,7 +596,9 @@ export class RightClick {
     let verification: RunRecord["verification"] = { status: "unverified", results: [] };
     let witnesses: WitnessResult[] = [];
     let attempts: RunRecord["attempts"];
+    let healing: RunRecord["healing"];
     try {
+      if (refused) throw new Error(refused);
       const coerced = coerceArgs(cap, args);
       if (cap.invoke.kind === "goal") {
         const r = await this.executeGoal(cap.invoke.slug, coerced, opts.confirm, opts.activeGoals);
@@ -525,7 +618,15 @@ export class RightClick {
         if (witnesses.some((w) => w.status !== "completed")) throw new Error("independent outcome witness refuted: " + witnesses.filter((w) => w.status !== "completed").map((w) => w.error ?? w.capability).join("; "));
         if (witnesses.length) verification = { ...verification, status: "verified" };
       } else {
-        output = await this.execute(cap, coerced, opts.net);
+        try {
+          output = await this.execute(cap, coerced, opts.net);
+        } catch (e) {
+          if (opts.planned || !HEALABLE.has(cap.invoke.kind)) throw e;
+          const h = await this.healRun(cap, args, String((e as Error)?.message ?? e), opts.net);
+          healing = h.healing;
+          if (!h.healed) throw new Error(`${healing.error}; ${healing.note}`);
+          output = h.output;
+        }
       }
       const extra = check(output, opts.verify ?? []);
       verification = { status: extra.status === "refuted" ? "refuted" : verification.status === "verified" || extra.status === "verified" ? "verified" : "unverified", results: [...verification.results, ...extra.results] };
@@ -537,7 +638,8 @@ export class RightClick {
     }
     const durationMs = Math.round((performance.now() - t0) * 10) / 10;
     const ok = !error && verification.status !== "refuted";
-    this.ledger.record(cap.id, ok, durationMs, error);
+    // A refusal says nothing about how the operation behaves.
+    if (!refused) this.ledger.record(cap.id, ok, durationMs, error);
     const receipt = await this.chain.append(
       { runId, capability: cap.id, provider: cap.provider, startedAt, durationMs, status: error ? "failed" : "completed", verification: verification.status },
       args,
@@ -559,12 +661,57 @@ export class RightClick {
       failedCapability,
       ...(witnesses.length ? { witnesses } : {}),
       ...(attempts ? { attempts } : {}),
+      ...(healing ? { healing } : {}),
+      ...(change ? { changedMeaning: change } : {}),
     };
+    if (change && !refused) this.persist();
     this.runs.set(runId, rec);
     if (this.runs.size > RUN_BUFFER) this.runs.delete(this.runs.keys().next().value!);
     this.graph.emit("run.completed", { runId, capability: cap.id, title: cap.title, provider: cap.provider, ok, durationMs, verification: verification.status });
     this.persist();
     return rec;
+  }
+
+  /**
+   * A plain run of a learned operation failed. The provider may have changed
+   * its API, so re-read its contract once, as compose does for a failed step.
+   * If it drifted, retry the operation the caller meant: the same id while it
+   * still names that operation, else the one capability that now does. A
+   * changed id is never followed, and repair obeys the run's egress policy.
+   */
+  private async healRun(cap: Capability, args: Record<string, unknown>, error: string, net: Net = this.net): Promise<{ healing: NonNullable<RunRecord["healing"]>; healed: boolean; output?: unknown }> {
+    const provider = this.graph.providers.get(cap.provider);
+    const source = provider?.meta?.source as string | undefined;
+    const healing: NonNullable<RunRecord["healing"]> = { source: source ?? "", error, note: "" };
+    const done = (note: string) => ({ healing: { ...healing, note }, healed: false });
+    if (!source) return done("no contract source to re-read");
+    const allowed = net.policy?.origins;
+    if (allowed && !allowed.includes(new URL(source).origin)) return done(`contract source ${new URL(source).origin} is outside the egress policy; not re-read`);
+    const meant = operationOf(cap, provider?.meta?.base);
+    const r = (await this.learn({ source, deep: true, net })).results[0];
+    const d = r?.drift;
+    if (d) healing.drift = d;
+    if (r?.withdrawn) return done(`provider gone at ${source}: withdrew ${r.withdrawn.join(", ")}`);
+    if (r?.error) return done(`re-reflected ${source}: ${r.error}`);
+    if (!d?.changed) return done(`re-reflected ${source}: no contract change`);
+    let note = `API drift at ${source}: +${d.added.length} −${d.removed.length} ~${d.modified.length} capabilities`;
+    const operation = (c: Capability) => operationOf(c, this.graph.providers.get(c.provider)?.meta?.base);
+    const current = this.graph.get(cap.id);
+    const change = this.meaningChanges.get(cap.id);
+    if (change) note += `; ${cap.id} now calls ${change.after}, not ${change.before}`;
+    const equivalent = current && !change && operation(current) === meant
+      ? [current]
+      : this.graph.list().filter((c) => this.graph.providers.get(c.provider)?.meta?.source === source && operation(c) === meant);
+    if (equivalent.length !== 1) return done(`${note}; ${equivalent.length ? "ambiguous" : "no"} equivalent of ${meant}`);
+    const next = equivalent[0];
+    healing.retried = next.id;
+    note += `; retried ${next.id === cap.id ? "the same operation" : `its operation, now ${next.id}`}`;
+    try {
+      const output = await this.execute(next, coerceArgs(next, args), net);
+      return { healing: { ...healing, note }, healed: true, output };
+    } catch (e) {
+      return done(`${note}: ${String((e as Error)?.message ?? e)}`);
+    }
   }
 
   runStatus(opts: { runId?: string; limit?: number } = {}) {
@@ -618,7 +765,7 @@ export class RightClick {
           if (value === undefined) throw new Error(`unresolved witness argument: ${key}`);
           args[key] = value;
         }
-        const r = await this.run(w.capability, args, { verify: w.verify, net });
+        const r = await this.run(w.capability, args, { verify: w.verify, net, planned: true });
         evidence.push({ capability: w.capability, runId: r.runId, status: r.status, verification: r.verification, output: r.output, ...(r.error ? { error: r.error } : {}) });
       } catch (e) {
         evidence.push({ capability: original.capability, runId: "", status: "failed", verification: { status: "refuted", results: [] }, error: String((e as Error)?.message ?? e) });
@@ -1094,7 +1241,7 @@ export class RightClick {
     for (const step of steps) {
       const args: Record<string, unknown> = {};
       for (const b of step.bindings) args[b.port] = resolve(b.from);
-      const r = await this.run(step.capability, args, { confirm, activeGoals, net });
+      const r = await this.run(step.capability, args, { confirm, activeGoals, net, planned: true });
       runs.push(r.runId);
       if (r.status === "failed") throw new StepError(r.failedCapability ?? step.capability, `${step.capability}: ${r.error}`);
       outputs.push(r.output);
@@ -1270,7 +1417,7 @@ export class RightClick {
     const reflections: Reflection[] = [...this.graph.providers.values()]
       .filter((p) => p.source !== "builtin" && p.source !== "platform")
       .map((p) => ({ provider: p, capabilities: p.capabilityIds.map((id) => this.graph.get(id)!).filter(Boolean) }));
-    await this.store.save({ version: 1, reflections, ledger: this.ledger.toJSON(), receipts: this.chain.receipts.slice(-300), published: [...this.published.values()], authFingerprints: await this.net.auth.fingerprints(), semantics: SEMANTICS });
+    await this.store.save({ version: 1, reflections, ledger: this.ledger.toJSON(), receipts: this.chain.receipts.slice(-300), published: [...this.published.values()], meaningChanges: [...this.meaningChanges.values()], authFingerprints: await this.net.auth.fingerprints(), semantics: SEMANTICS });
   }
 }
 
