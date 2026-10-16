@@ -1,0 +1,653 @@
+{
+  "experiment": "OW1+OW3",
+  "objective": "Country briefing: the capital, a Wikipedia summary of it, and the currency's rate to USD, from three independent providers in three protocols; saved and reused after restart by a different AI client.",
+  "build": "5945a9ae81e87c2af40fbad9d4c6d305da18501a",
+  "startedAt": "2026-10-16T06:54:18.294Z",
+  "runs": [
+    {
+      "run": 1,
+      "client": "claude",
+      "prompt": "You are connected to exactly one MCP server, rightclick-x. Use only its tools.\nA public GraphQL API about countries is available at https://countries.trevorblades.com/ . You are not given any other service address.\nTask: produce a short briefing for the country with ISO code PT:\n  (a) its capital city, and a short summary of that capital from Wikipedia, obtained through a Wikipedia MCP server you find in the official MCP Registry using rightclick-x's research or acquisition abilities;\n  (b) the latest exchange rate from the country's currency to US dollars, from a public exchange-rate service you find the same way.\nSave each working workflow as a reusable capability, named 'Capital briefing' and 'Currency in USD'.\nEnd with a final line: ANSWER: <capital> | <currency code> <rate to USD> | <first sentence of the capital summary>",
+      "answer": "Lisbon | EUR 1.12 | Lisbon is the capital and most populous city of Portugal, with an estimated population of 658,236 as of 2025, within its administrative limits and 3,353,000 within the metropolis, as of 2025.",
+      "independentTruth": {
+        "country": "Portugal",
+        "capital": "Lisbon",
+        "currency": "EUR",
+        "usd": 1.12,
+        "fxDate": "2026-10-16",
+        "wikiExtract": "Lisbon is the capital and most populous city of Portugal, with an estimated population of 658,236 as of 2025, within its administrative limits and 3,353,000 within the metropolis, as of 2025. The city lies in the western part of the Iberian Peninsula, fronting the northern shore of the River Tagus."
+      },
+      "check": {
+        "capitalOk": true,
+        "currencyOk": true,
+        "rateOk": true,
+        "summaryGrounded": true,
+        "summaryWordOverlapWithWikipedia": 10
+      },
+      "verified": true,
+      "seconds": 261.2,
+      "mcpCalls": [
+        {
+          "tool": "context_learn",
+          "ok": true,
+          "ms": 431.4,
+          "args": {
+            "source": "https://countries.trevorblades.com/"
+          }
+        },
+        {
+          "tool": "context_research",
+          "ok": true,
+          "ms": 20006.5,
+          "args": {
+            "topic": "wikipedia"
+          }
+        },
+        {
+          "tool": "context_research",
+          "ok": true,
+          "ms": 20040.9,
+          "args": {
+            "topic": "exchange rate"
+          }
+        },
+        {
+          "tool": "context_research",
+          "ok": true,
+          "ms": 20033.9,
+          "args": {
+            "topic": "wikipedia",
+            "limit": 10
+          }
+        },
+        {
+          "tool": "context_research",
+          "ok": true,
+          "ms": 20050.4,
+          "args": {
+            "topic": "wikipedia article summary"
+          }
+        },
+        {
+          "tool": "context_research",
+          "ok": true,
+          "ms": 20022.8,
+          "args": {
+            "topic": "encyclopedia"
+          }
+        },
+        {
+          "tool": "context_graph",
+          "ok": true,
+          "ms": 1.5,
+          "args": {
+            "op": "search",
+            "query": "country"
+          }
+        },
+        {
+          "tool": "context_run",
+          "ok": true,
+          "ms": 288.2,
+          "args": {
+            "id": "graphql:countries-trevorblades-com:query:country",
+            "args": {
+              "code": "PT"
+            }
+          }
+        },
+        {
+          "tool": "context_compose",
+          "ok": true,
+          "ms": 20849.9,
+          "args": {
+            "have": {
+              "country": "PT"
+            },
+            "want": "text",
+            "intent": "capital city wikipedia summary",
+            "acquire": true
+          }
+        },
+        {
+          "tool": "context_providers",
+          "ok": true,
+          "ms": 0.2,
+          "args": {}
+        },
+        {
+          "tool": "context_research",
+          "ok": true,
+          "ms": 4512.6,
+          "args": {
+            "topic": "wiki"
+          }
+        },
+        {
+          "tool": "context_forget",
+          "ok": true,
+          "ms": 1,
+          "args": {
+            "provider": "openapi:airport-city-search"
+          }
+        },
+        {
+          "tool": "context_forget",
+          "ok": true,
+          "ms": 0.3,
+          "args": {
+            "provider": "openapi:city-context"
+          }
+        },
+        {
+          "tool": "context_forget",
+          "ok": true,
+          "ms": 0.2,
+          "args": {
+            "provider": "mcp:scoremindset-capital-mental"
+          }
+        },
+        {
+          "tool": "context_research",
+          "ok": true,
+          "ms": 17825.1,
+          "args": {
+            "topic": "wikipedia",
+            "limit": 15
+          }
+        },
+        {
+          "tool": "context_learn",
+          "ok": true,
+          "ms": 1011,
+          "args": {
+            "source": "https://wikipedia.caseyjhand.com/mcp"
+          }
+        },
+        {
+          "tool": "context_learn",
+          "ok": true,
+          "ms": 123.9,
+          "args": {
+            "source": "https://api.apis.guru/v2/specs/exchangerate-api.com/4/openapi.json"
+          }
+        },
+        {
+          "tool": "context_graph",
+          "ok": true,
+          "ms": 0.9,
+          "args": {
+            "op": "search",
+            "query": "wikipedia summary exchange rate",
+            "limit": 10
+          }
+        },
+        {
+          "tool": "context_explain",
+          "ok": true,
+          "ms": 0.5,
+          "args": {
+            "id": "mcp:wikipedia-mcp-server:wikipedia-get-summary"
+          }
+        },
+        {
+          "tool": "context_explain",
+          "ok": true,
+          "ms": 0.1,
+          "args": {
+            "id": "openapi:exchangerate-api:get-latest-base-currency"
+          }
+        },
+        {
+          "tool": "context_compose",
+          "ok": true,
+          "ms": 1956.9,
+          "args": {
+            "have": {
+              "country": "PT"
+            },
+            "want": "text",
+            "intent": "capital city wikipedia summary extract",
+            "through": [
+              "graphql:countries-trevorblades-com:query:country",
+              "mcp:wikipedia-mcp-server:wikipedia-get-summary"
+            ],
+            "run": true,
+            "verify": [
+              {
+                "op": "contains",
+                "value": "Lisbon"
+              }
+            ],
+            "publish": "Capital briefing"
+          }
+        },
+        {
+          "tool": "context_run",
+          "ok": true,
+          "ms": 132.7,
+          "args": {
+            "id": "mcp:wikipedia-mcp-server:wikipedia-get-summary",
+            "args": {
+              "title": "Lisbon"
+            }
+          }
+        },
+        {
+          "tool": "context_compose",
+          "ok": true,
+          "ms": 19.7,
+          "args": {
+            "have": {
+              "country": "PT"
+            },
+            "want": "text",
+            "intent": "capital city wikipedia summary extract",
+            "through": [
+              "graphql:countries-trevorblades-com:query:country",
+              "mcp:wikipedia-mcp-server:wikipedia-search-articles",
+              "mcp:wikipedia-mcp-server:wikipedia-get-summary"
+            ],
+            "maxSteps": 3,
+            "run": true,
+            "verify": [
+              {
+                "op": "contains",
+                "value": "Lisbon"
+              }
+            ],
+            "publish": "Capital briefing"
+          }
+        },
+        {
+          "tool": "context_explain",
+          "ok": true,
+          "ms": 0.7,
+          "args": {
+            "id": "mcp:wikipedia-mcp-server:wikipedia-search-articles"
+          }
+        },
+        {
+          "tool": "context_compose",
+          "ok": true,
+          "ms": 4,
+          "args": {
+            "have": {
+              "country": "PT"
+            },
+            "want": "text",
+            "intent": "capital city wikipedia summary extract",
+            "through": [
+              "mcp:wikipedia-mcp-server:wikipedia-get-summary"
+            ],
+            "maxSteps": 2
+          }
+        },
+        {
+          "tool": "context_explain",
+          "ok": true,
+          "ms": 0.3,
+          "args": {
+            "id": "mcp:wikipedia-mcp-server:wikipedia-get-article"
+          }
+        },
+        {
+          "tool": "context_compose",
+          "ok": true,
+          "ms": 587.8,
+          "args": {
+            "have": {
+              "country": "PT"
+            },
+            "want": "text",
+            "intent": "capital city wikipedia article summary",
+            "through": [
+              "graphql:countries-trevorblades-com:query:country",
+              "mcp:wikipedia-mcp-server:wikipedia-get-article",
+              "builtin:text.summarize"
+            ],
+            "maxSteps": 3,
+            "run": true,
+            "verify": [
+              {
+                "op": "contains",
+                "value": "Lisbon"
+              }
+            ],
+            "publish": "Capital briefing"
+          }
+        },
+        {
+          "tool": "context_compose",
+          "ok": true,
+          "ms": 1594.7,
+          "args": {
+            "have": {
+              "country": "PT",
+              "section_index": 0
+            },
+            "want": "text",
+            "intent": "capital city wikipedia lead section summary",
+            "through": [
+              "graphql:countries-trevorblades-com:query:country",
+              "mcp:wikipedia-mcp-server:wikipedia-get-article",
+              "builtin:text.summarize"
+            ],
+            "maxSteps": 3,
+            "run": true,
+            "verify": [
+              {
+                "op": "contains",
+                "value": "capital"
+              }
+            ],
+            "publish": "Capital briefing"
+          }
+        },
+        {
+          "tool": "context_compose",
+          "ok": true,
+          "ms": 1768,
+          "args": {
+            "have": {
+              "country": "PT",
+              "section_index": 0
+            },
+            "want": "text",
+            "intent": "capital city wikipedia lead section content",
+            "through": [
+              "graphql:countries-trevorblades-com:query:country",
+              "mcp:wikipedia-mcp-server:wikipedia-get-article"
+            ],
+            "maxSteps": 2,
+            "run": true,
+            "verify": [
+              {
+                "op": "contains",
+                "value": "capital and most populous city"
+              }
+            ],
+            "publish": "Capital briefing"
+          }
+        },
+        {
+          "tool": "context_compose",
+          "ok": true,
+          "ms": 606.8,
+          "args": {
+            "have": {
+              "country": "PT"
+            },
+            "want": "number",
+            "intent": "country currency latest exchange rate to USD",
+            "through": [
+              "graphql:countries-trevorblades-com:query:country",
+              "openapi:exchangerate-api:get-latest-base-currency"
+            ],
+            "maxSteps": 2,
+            "run": true,
+            "verify": [
+              {
+                "op": "gt",
+                "value": 0
+              }
+            ],
+            "publish": "Currency in USD"
+          }
+        },
+        {
+          "tool": "context_compose",
+          "ok": true,
+          "ms": 661.3,
+          "args": {
+            "have": {
+              "country": "PT"
+            },
+            "want": "json",
+            "intent": "country currency latest exchange rates USD",
+            "through": [
+              "graphql:countries-trevorblades-com:query:country",
+              "openapi:exchangerate-api:get-latest-base-currency"
+            ],
+            "maxSteps": 2,
+            "run": true,
+            "verify": [
+              {
+                "op": "gt",
+                "path": "rates.USD",
+                "value": 0
+              },
+              {
+                "op": "equals",
+                "path": "base",
+                "value": "EUR"
+              }
+            ],
+            "publish": "Currency in USD"
+          }
+        }
+      ],
+      "finalText": "able, and a later retry worked.\n- **Exchange rate:** rightclick-x's research found ExchangeRate-API in the APIs.guru directory. That search also showed several exchange-rate servers in the MCP Registry, but I used ExchangeRate-API because it needs no key.\n\n**Saved capabilities** (each run end-to-end and verified)\n- **Capital briefing** (`/x/capital-briefing`): looks up the country's capital, then reads the opening section of that capital's Wikipedia article. It takes the input `{country, section_index: 0}` and the output must contain \"capital and most populous city\".\n- **Currency in USD** (`/x/currency-in-usd`): looks up the country's currency, then gets that currency's latest exchange rates. The check confirms the base is EUR and the USD rate is above 0.\n\n**Problems along the way**\n- **Wikipedia summary step:** rightclick-x treats that tool's title input as a web address, so the automatic pipeline always failed on it. The saved workflow reads the article's opening section instead. I ran the summary tool once by hand to get the summary above, and its text matches that section.\n- **Capital briefing:** my first saved version used rightclick-x's built-in summarizer, which picked text from the end of the article. I republished over it with the version described above.\n- **Currency in USD:** my first saved version returned the update timestamp instead of the rate. The republished version returns all the rates, with the USD rate at `rates.USD`.\n- **Leftover versions:** the wrong first versions are still stored in rightclick-x as unnamed pipelines (`composite:484c56324879` and `composite:f0f4440e229c`).\n- **Removed providers:** automatic acquisition added three irrelevant ones (airport search, city context and a \"capital mental\" server), so I removed them.\n\nANSWER: Lisbon | EUR 1.12 | Lisbon is the capital and most populous city of Portugal, with an estimated population of 658,236 as of 2025, within its administrative limits and 3,353,000 within the metropolis, as of 2025."
+    },
+    {
+      "run": 2,
+      "client": "codex",
+      "restartedRightClickX": true,
+      "prompt": "You are connected to exactly one MCP server, rightclick-x. Use only its tools.\nEarlier, someone saved reusable capabilities in rightclick-x: a 'Capital briefing' and a 'Currency in USD' for a country code.\nFind them with the rightclick-x tools and use them for the country with ISO code KE.\nEnd with a final line: ANSWER: <capital> | <currency code> <rate to USD> | <first sentence of the capital summary>",
+      "answer": "Nairobi | KES 0.00771 | Nairobi ( ny-ROH-bee) (Jiji kuu la Nairobi, in Swahili), is the capital and largest city of Kenya, located in the south-central part of the country.",
+      "independentTruth": {
+        "country": "Kenya",
+        "capital": "Nairobi",
+        "currency": "KES",
+        "usd": 0.00771,
+        "fxDate": "2026-10-16",
+        "wikiExtract": "Nairobi, is the capital and largest city of Kenya, located in the south-central part of the country. As of 2026, it has a population of 5.6 million and a metropolitan population of 15.95 million, making it the 8th most populous city in Africa and the 4th most populous metropolitan area. The city goes beyond its borders and has expanded into neighbouring counties, making it the 4th largest metropolitan area in Africa."
+      },
+      "check": {
+        "capitalOk": true,
+        "currencyOk": true,
+        "rateOk": true,
+        "summaryGrounded": true,
+        "summaryWordOverlapWithWikipedia": 8
+      },
+      "verified": true,
+      "seconds": 30.7,
+      "mcpCalls": [
+        {
+          "tool": "context_graph",
+          "ok": true,
+          "ms": 2.5,
+          "args": {
+            "op": "search",
+            "query": "Capital briefing",
+            "limit": 10
+          }
+        },
+        {
+          "tool": "context_graph",
+          "ok": true,
+          "ms": 1.8,
+          "args": {
+            "op": "search",
+            "query": "Currency in USD",
+            "limit": 10
+          }
+        },
+        {
+          "tool": "context_explain",
+          "ok": true,
+          "ms": 0.8,
+          "args": {
+            "id": "composite:ff12853a385b"
+          }
+        },
+        {
+          "tool": "context_explain",
+          "ok": true,
+          "ms": 0,
+          "args": {
+            "id": "composite:c7159ac2fa98"
+          }
+        },
+        {
+          "tool": "context_explain",
+          "ok": true,
+          "ms": 0.1,
+          "args": {
+            "id": "composite:484c56324879"
+          }
+        },
+        {
+          "tool": "context_explain",
+          "ok": true,
+          "ms": 0.1,
+          "args": {
+            "id": "composite:f0f4440e229c"
+          }
+        },
+        {
+          "tool": "context_run",
+          "ok": true,
+          "ms": 661.8,
+          "args": {
+            "id": "composite:ff12853a385b",
+            "args": {
+              "country": "KE"
+            }
+          }
+        },
+        {
+          "tool": "context_run",
+          "ok": true,
+          "ms": 1155.1,
+          "args": {
+            "id": "composite:484c56324879",
+            "args": {
+              "country": "KE"
+            }
+          }
+        }
+      ],
+      "finalText": "ANSWER: Nairobi | KES 0.00771 | Nairobi ( ny-ROH-bee) (Jiji kuu la Nairobi, in Swahili), is the capital and largest city of Kenya, located in the south-central part of the country."
+    }
+  ],
+  "afterRun1": {
+    "providersLearned": [
+      {
+        "id": "graphql:countries-trevorblades-com",
+        "protocol": "graphql",
+        "origin": "https://countries.trevorblades.com/",
+        "capabilities": 6
+      },
+      {
+        "id": "openapi:exchangerate-api",
+        "protocol": "openapi",
+        "origin": "https://api.apis.guru/v2/specs/exchangerate-api.com/4/openapi.json",
+        "capabilities": 1
+      },
+      {
+        "id": "mcp:wikipedia-mcp-server",
+        "protocol": "mcp",
+        "origin": "https://wikipedia.caseyjhand.com/mcp",
+        "capabilities": 6
+      },
+      {
+        "id": "composite:crystallized",
+        "protocol": "composite",
+        "origin": "rightclick-x",
+        "capabilities": 4
+      }
+    ],
+    "providersExecuted": [
+      "graphql:countries-trevorblades-com",
+      "mcp:wikipedia-mcp-server",
+      "builtin:core",
+      "openapi:exchangerate-api"
+    ],
+    "published": [
+      {
+        "slug": "capital-briefing",
+        "title": "Capital briefing",
+        "have": {
+          "country": "country",
+          "section_index": "number"
+        },
+        "want": "text",
+        "intent": "capital city wikipedia lead section content",
+        "verify": [
+          {
+            "op": "contains",
+            "value": "capital and most populous city"
+          }
+        ],
+        "through": [
+          "graphql:countries-trevorblades-com:query:country",
+          "mcp:wikipedia-mcp-server:wikipedia-get-article"
+        ],
+        "publishedAt": "2026-10-16T06:58:12.789Z",
+        "calls": 0,
+        "lastPipeline": [
+          "Country",
+          "Get Wikipedia Article"
+        ],
+        "providers": [
+          "graphql:countries-trevorblades-com",
+          "mcp:wikipedia-mcp-server"
+        ]
+      },
+      {
+        "slug": "currency-in-usd",
+        "title": "Currency in USD",
+        "have": {
+          "country": "country"
+        },
+        "want": "json",
+        "intent": "country currency latest exchange rates USD",
+        "verify": [
+          {
+            "op": "gt",
+            "path": "rates.USD",
+            "value": 0
+          },
+          {
+            "op": "equals",
+            "path": "base",
+            "value": "EUR"
+          }
+        ],
+        "through": [
+          "graphql:countries-trevorblades-com:query:country",
+          "openapi:exchangerate-api:get-latest-base-currency"
+        ],
+        "publishedAt": "2026-10-16T06:58:23.135Z",
+        "calls": 0,
+        "lastPipeline": [
+          "Country",
+          "Returns latest exchange rates in parameter-supplied base currency."
+        ],
+        "providers": [
+          "graphql:countries-trevorblades-com",
+          "openapi:exchangerate-api"
+        ]
+      }
+    ]
+  },
+  "receipts": {
+    "total": 24,
+    "providers": [
+      "graphql:countries-trevorblades-com",
+      "mcp:wikipedia-mcp-server",
+      "builtin:core",
+      "openapi:exchangerate-api",
+      "composite:crystallized"
+    ]
+  },
+  "protocolsExecuted": [
+    "graphql",
+    "openapi",
+    "mcp",
+    "composite"
+  ],
+  "verdict": "PASS",
+  "finishedAt": "2026-10-16T06:59:12.260Z"
+}

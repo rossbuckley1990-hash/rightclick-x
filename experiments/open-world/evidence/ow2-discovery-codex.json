@@ -1,0 +1,387 @@
+{
+  "experiment": 1,
+  "hypothesis": "Given no addresses, an AI can acquire useful capabilities from unfamiliar real services via public directories, without SDKs or integration code.",
+  "build": "5945a9ae81e87c2af40fbad9d4c6d305da18501a",
+  "client": "codex",
+  "prompt": "You are connected to exactly one MCP server, rightclick-x. Use only its tools. You are not given any service addresses.\nResearch objective, for someone planning a trip to Toronto:\n  1. What is the next upcoming public holiday in the Canadian province of Ontario (province code ON), and on what date?\n  2. What is today's exchange rate from Canadian dollars (CAD) to euros (EUR)?\nUse rightclick-x's research and acquisition abilities to find suitable public services in public directories, learn them, and use them to answer.\nSave each working workflow as a reusable capability (names: 'Next Ontario holiday' and 'CAD to EUR').\nEnd with a final line: ANSWER: <holiday name> | <YYYY-MM-DD> | <CAD to EUR rate>",
+  "answer": "Christmas Day | 2026-12-25 | 0.628 EUR per CAD",
+  "independentTruth": {
+    "holiday": "Christmas Day",
+    "date": "2026-12-25",
+    "cadToEur": 0.628,
+    "fxDate": "2026-10-16"
+  },
+  "check": {
+    "dateOk": true,
+    "nameOk": true,
+    "rateOk": true
+  },
+  "seconds": 128.7,
+  "mcpCalls": [
+    {
+      "tool": "context_research",
+      "ok": true,
+      "ms": 733.4,
+      "args": {
+        "topic": "currency exchange rates",
+        "limit": 5
+      }
+    },
+    {
+      "tool": "context_research",
+      "ok": true,
+      "ms": 20161.3,
+      "args": {
+        "topic": "public holidays Canada province",
+        "limit": 5
+      }
+    },
+    {
+      "tool": "context_learn",
+      "ok": true,
+      "ms": 139.5,
+      "args": {
+        "sources": [
+          "https://api.apis.guru/v2/specs/canada-holidays.ca/1.8.0/openapi.json",
+          "https://api.apis.guru/v2/specs/exchangerate-api.com/4/openapi.json"
+        ]
+      }
+    },
+    {
+      "tool": "context_graph",
+      "ok": true,
+      "ms": 1.8,
+      "args": {
+        "op": "search",
+        "query": "exchange",
+        "limit": 10
+      }
+    },
+    {
+      "tool": "context_graph",
+      "ok": true,
+      "ms": 1,
+      "args": {
+        "op": "search",
+        "query": "province",
+        "limit": 10
+      }
+    },
+    {
+      "tool": "context_explain",
+      "ok": true,
+      "ms": 0.3,
+      "args": {
+        "id": "openapi:canada-holidays-api:province"
+      }
+    },
+    {
+      "tool": "context_explain",
+      "ok": true,
+      "ms": 0,
+      "args": {
+        "id": "openapi:exchangerate-api:get-latest-base-currency"
+      }
+    },
+    {
+      "tool": "context_compose",
+      "ok": true,
+      "ms": 288.4,
+      "args": {
+        "have": {
+          "provinceId": {
+            "type": "id.province",
+            "value": "ON"
+          }
+        },
+        "want": "json",
+        "intent": "Next upcoming public holiday in Ontario Canada province ON",
+        "through": [
+          "openapi:canada-holidays-api:province"
+        ],
+        "risks": [
+          "read"
+        ],
+        "run": true,
+        "publish": "Next Ontario holiday",
+        "verify": [
+          {
+            "op": "equals",
+            "path": "province.id",
+            "value": "ON"
+          },
+          {
+            "op": "exists",
+            "path": "province.nextHoliday.nameEn"
+          },
+          {
+            "op": "gt",
+            "path": "province.nextHoliday.date",
+            "value": "2026-10-16"
+          }
+        ]
+      }
+    },
+    {
+      "tool": "context_compose",
+      "ok": true,
+      "ms": 262.4,
+      "args": {
+        "have": {
+          "provinceId": {
+            "type": "id.province",
+            "value": "ON"
+          }
+        },
+        "want": "json",
+        "intent": "Next upcoming public holiday in Ontario Canada province ON",
+        "through": [
+          "openapi:canada-holidays-api:province"
+        ],
+        "risks": [
+          "read"
+        ],
+        "run": true,
+        "publish": "Next Ontario holiday",
+        "verify": [
+          {
+            "op": "equals",
+            "path": "province.id",
+            "value": "ON"
+          },
+          {
+            "op": "exists",
+            "path": "province.nextHoliday.nameEn"
+          },
+          {
+            "op": "exists",
+            "path": "province.nextHoliday.date"
+          }
+        ]
+      }
+    },
+    {
+      "tool": "context_compose",
+      "ok": true,
+      "ms": 581.1,
+      "args": {
+        "have": {
+          "base_currency": {
+            "type": "currency",
+            "value": "CAD"
+          }
+        },
+        "want": "json",
+        "intent": "Today's Canadian dollar CAD to euro EUR exchange rate",
+        "through": [
+          "openapi:exchangerate-api:get-latest-base-currency"
+        ],
+        "risks": [
+          "read"
+        ],
+        "run": true,
+        "publish": "CAD to EUR",
+        "verify": [
+          {
+            "op": "equals",
+            "path": "base",
+            "value": "CAD"
+          },
+          {
+            "op": "equals",
+            "path": "date",
+            "value": "2026-10-16"
+          },
+          {
+            "op": "gt",
+            "path": "rates.EUR",
+            "value": 0
+          }
+        ]
+      }
+    },
+    {
+      "tool": "context_graph",
+      "ok": true,
+      "ms": 1,
+      "args": {
+        "op": "search",
+        "query": "Next Ontario holiday",
+        "limit": 5
+      }
+    },
+    {
+      "tool": "context_graph",
+      "ok": true,
+      "ms": 0.5,
+      "args": {
+        "op": "search",
+        "query": "CAD to EUR",
+        "limit": 5
+      }
+    },
+    {
+      "tool": "context_runtime",
+      "ok": true,
+      "ms": 1.9,
+      "args": {}
+    },
+    {
+      "tool": "context_providers",
+      "ok": true,
+      "ms": 0.2,
+      "args": {}
+    },
+    {
+      "tool": "context_compose",
+      "ok": true,
+      "ms": 540.4,
+      "args": {
+        "have": {
+          "base_currency": {
+            "type": "currency",
+            "value": "CAD"
+          }
+        },
+        "want": "json",
+        "intent": "Today's Canadian dollar CAD to euro EUR exchange rate",
+        "through": [
+          "openapi:exchangerate-api:get-latest-base-currency"
+        ],
+        "risks": [
+          "read"
+        ],
+        "run": true,
+        "publish": "CAD to EUR",
+        "verify": [
+          {
+            "op": "equals",
+            "path": "base",
+            "value": "CAD"
+          },
+          {
+            "op": "exists",
+            "path": "date"
+          },
+          {
+            "op": "gt",
+            "path": "rates.EUR",
+            "value": 0
+          }
+        ]
+      }
+    }
+  ],
+  "discoveryCalls": 2,
+  "providersLearned": [
+    {
+      "id": "openapi:canada-holidays-api",
+      "protocol": "openapi",
+      "origin": "https://api.apis.guru/v2/specs/canada-holidays.ca/1.8.0/openapi.json",
+      "source": "https://api.apis.guru/v2/specs/canada-holidays.ca/1.8.0/openapi.json",
+      "capabilities": 6
+    },
+    {
+      "id": "openapi:exchangerate-api",
+      "protocol": "openapi",
+      "origin": "https://api.apis.guru/v2/specs/exchangerate-api.com/4/openapi.json",
+      "source": "https://api.apis.guru/v2/specs/exchangerate-api.com/4/openapi.json",
+      "capabilities": 1
+    }
+  ],
+  "providersExecuted": [
+    "openapi:canada-holidays-api",
+    "openapi:exchangerate-api"
+  ],
+  "published": [
+    {
+      "slug": "next-ontario-holiday",
+      "title": "Next Ontario holiday",
+      "have": {
+        "provinceId": "id.province"
+      },
+      "want": "json",
+      "intent": "Next upcoming public holiday in Ontario Canada province ON",
+      "verify": [
+        {
+          "op": "equals",
+          "path": "province.id",
+          "value": "ON"
+        },
+        {
+          "op": "exists",
+          "path": "province.nextHoliday.nameEn"
+        },
+        {
+          "op": "exists",
+          "path": "province.nextHoliday.date"
+        }
+      ],
+      "risks": [
+        "read"
+      ],
+      "through": [
+        "openapi:canada-holidays-api:province"
+      ],
+      "publishedAt": "2026-10-16T06:52:39.674Z",
+      "calls": 0,
+      "lastPipeline": [
+        "Get a province or territory by abbreviation"
+      ],
+      "providers": [
+        "openapi:canada-holidays-api"
+      ]
+    },
+    {
+      "slug": "cad-to-eur",
+      "title": "CAD to EUR",
+      "have": {
+        "base_currency": "currency"
+      },
+      "want": "json",
+      "intent": "Today's Canadian dollar CAD to euro EUR exchange rate",
+      "verify": [
+        {
+          "op": "equals",
+          "path": "base",
+          "value": "CAD"
+        },
+        {
+          "op": "exists",
+          "path": "date"
+        },
+        {
+          "op": "gt",
+          "path": "rates.EUR",
+          "value": 0
+        }
+      ],
+      "risks": [
+        "read"
+      ],
+      "through": [
+        "openapi:exchangerate-api:get-latest-base-currency"
+      ],
+      "publishedAt": "2026-10-16T06:53:17.840Z",
+      "calls": 0,
+      "lastPipeline": [
+        "Returns latest exchange rates in parameter-supplied base currency."
+      ],
+      "providers": [
+        "openapi:exchangerate-api"
+      ]
+    }
+  ],
+  "verdict": "PASS",
+  "finalText": "- Next Ontario holiday: **Christmas Day, December 25, 2026**. [Source](https://canada-holidays.ca/api/v1/provinces/ON)\n- Today\u2019s rate, **October 16, 2026: 1 CAD = 0.628 EUR**. [Source](https://api.exchangerate-api.com/v4/latest/CAD)\n\nSaved reusable workflows **\u201cNext Ontario holiday\u201d** and **\u201cCAD to EUR\u201d** at `/x/next-ontario-holiday` and `/x/cad-to-eur`.\n\nANSWER: Christmas Day | 2026-12-25 | 0.628 EUR per CAD",
+  "originalScoring": {
+    "check": {
+      "dateOk": true,
+      "nameOk": true,
+      "rateOk": true
+    },
+    "verdict": "FAIL",
+    "note": "Scored FAIL by a harness parser bug: Number(\"0.628 EUR per CAD\") is NaN."
+  },
+  "rescored": "Re-scored from the recorded answer after fixing the harness parser (first number in the field); the agent run was not repeated."
+}

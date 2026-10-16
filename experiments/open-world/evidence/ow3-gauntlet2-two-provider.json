@@ -1,0 +1,246 @@
+{
+  "experiment": 2,
+  "hypothesis": "RightClick X can construct, save and reuse (after restart, from another MCP client) an integration between independent services nobody connected in its codebase.",
+  "build": "5945a9ae81e87c2af40fbad9d4c6d305da18501a",
+  "startedAt": "2026-10-16T06:48:00.420Z",
+  "runs": [
+    {
+      "run": 1,
+      "client": "claude",
+      "prompt": "You are connected to exactly one MCP server, rightclick-x. Use only its tools.\nA public GraphQL API about countries is available at https://countries.trevorblades.com/ .\nTask: for the country with ISO code KE, report the latest exchange rate from that country's currency to US dollars.\nYou are not given any exchange-rate service. If rightclick-x cannot do this with what it knows, use its research or acquisition abilities to find a suitable public service yourself.\nOnce it works, save the working workflow as a reusable capability named 'Country currency in USD' so it can be used again later.\nEnd with a final line: ANSWER: <currency code> <rate to USD>",
+      "answer": "KES 0.00771",
+      "independentTruth": {
+        "currency": "KES",
+        "usd": 0.00771,
+        "fxDate": "2026-10-16"
+      },
+      "check": {
+        "parsed": {
+          "currency": "KES",
+          "usd": 0.00771
+        },
+        "currencyOk": true,
+        "rateOk": true,
+        "verified": true
+      },
+      "seconds": 37.4,
+      "mcpCalls": [
+        {
+          "tool": "context_learn",
+          "ok": true,
+          "ms": 524.2,
+          "args": {
+            "source": "https://countries.trevorblades.com/"
+          }
+        },
+        {
+          "tool": "context_research",
+          "ok": true,
+          "ms": 5977.2,
+          "args": {
+            "topic": "currency exchange rates"
+          }
+        },
+        {
+          "tool": "context_learn",
+          "ok": true,
+          "ms": 151.3,
+          "args": {
+            "source": "https://api.apis.guru/v2/specs/exchangerate-api.com/4/openapi.json"
+          }
+        },
+        {
+          "tool": "context_compose",
+          "ok": true,
+          "ms": 12,
+          "args": {
+            "have": {
+              "country": "KE"
+            },
+            "want": "number",
+            "intent": "country currency exchange rate to USD"
+          }
+        },
+        {
+          "tool": "context_run",
+          "ok": true,
+          "ms": 110.1,
+          "args": {
+            "id": "graphql:countries-trevorblades-com:query:country",
+            "args": {
+              "code": "KE"
+            }
+          }
+        },
+        {
+          "tool": "context_compose",
+          "ok": true,
+          "ms": 679.1,
+          "args": {
+            "have": {
+              "country": "KE"
+            },
+            "want": "json",
+            "intent": "country currency latest exchange rates USD",
+            "through": [
+              "graphql:countries-trevorblades-com:query:country",
+              "openapi:exchangerate-api:get-latest-base-currency"
+            ],
+            "run": true,
+            "verify": [
+              {
+                "op": "exists",
+                "path": "rates.USD"
+              },
+              {
+                "op": "gt",
+                "path": "rates.USD",
+                "value": 0
+              }
+            ],
+            "publish": "Country currency in USD"
+          }
+        }
+      ],
+      "finalText": "e is **1 KES = 0.00771 USD** (about 129.7 KES per dollar), dated 2026-10-16. The workflow ran end to end and passed both checks I set (a USD rate exists and is above zero).\n\n**How it works:**\n1. **Country lookup:** rightclick-x learned the countries GraphQL API at https://countries.trevorblades.com/. Looking up `KE` returned Kenya, with currency `KES`.\n2. **Exchange rates:** rightclick-x had no exchange-rate service, so I searched public directories with its research tool. I picked ExchangeRate-API from the APIs.guru directory because it's free, needs no key and covers KES. The European Central Bank (ECB) based options don't include KES. Its latest rates with KES as the base give `rates.USD = 0.00771`.\n3. **Linking the two:** the planner first chose the right two steps but returned the wrong field, a last-updated timestamp instead of the rate. I re-ran it so it returns the full rates data.\n\n**Saved capability:**\n- It's published as an endpoint named **'Country currency in USD'**, served at `/x/country-currency-in-usd`.\n- rightclick-x also stored the pipeline in its graph as `composite:ff12853a385b`, under a long auto-generated title rather than that name.\n- It takes a country code and returns all of that currency's rates. The USD rate is the `rates.USD` field, not a single number on its own.\n- ExchangeRate-API's response says this free version is deprecated and suggests upgrading to their v6 API, so the saved workflow could stop working if they retire it.\n\nANSWER: KES 0.00771"
+    },
+    {
+      "run": 2,
+      "client": "codex",
+      "restartedRightClickX": true,
+      "prompt": "You are connected to exactly one MCP server, rightclick-x. Use only its tools.\nEarlier, someone saved a reusable capability in rightclick-x for converting a country's currency into US dollars.\nFind it with the rightclick-x tools and use it for the country with ISO code BR.\nEnd with a final line: ANSWER: <currency code> <rate to USD>",
+      "answer": "BRL 0.198",
+      "independentTruth": {
+        "currency": "BRL",
+        "usd": 0.198,
+        "fxDate": "2026-10-16"
+      },
+      "check": {
+        "parsed": {
+          "currency": "BRL",
+          "usd": 0.198
+        },
+        "currencyOk": true,
+        "rateOk": true,
+        "verified": true
+      },
+      "seconds": 25.8,
+      "mcpCalls": [
+        {
+          "tool": "context_graph",
+          "ok": true,
+          "ms": 3.2,
+          "args": {
+            "op": "search",
+            "query": "currency",
+            "limit": 30
+          }
+        },
+        {
+          "tool": "context_explain",
+          "ok": true,
+          "ms": 0.6,
+          "args": {
+            "id": "composite:ff12853a385b"
+          }
+        },
+        {
+          "tool": "context_run",
+          "ok": true,
+          "ms": 675,
+          "args": {
+            "id": "composite:ff12853a385b",
+            "args": {
+              "country": "BR"
+            },
+            "verify": [
+              {
+                "op": "exists",
+                "path": "rates.USD"
+              },
+              {
+                "op": "gt",
+                "path": "rates.USD",
+                "value": 0
+              }
+            ]
+          }
+        }
+      ],
+      "referencedSavedCapability": true,
+      "finalText": "ANSWER: BRL 0.198"
+    }
+  ],
+  "afterRun1": {
+    "published": [
+      {
+        "slug": "country-currency-in-usd",
+        "title": "Country currency in USD",
+        "have": {
+          "country": "country"
+        },
+        "want": "json",
+        "intent": "country currency latest exchange rates USD",
+        "verify": [
+          {
+            "op": "exists",
+            "path": "rates.USD"
+          },
+          {
+            "op": "gt",
+            "path": "rates.USD",
+            "value": 0
+          }
+        ],
+        "through": [
+          "graphql:countries-trevorblades-com:query:country",
+          "openapi:exchangerate-api:get-latest-base-currency"
+        ],
+        "publishedAt": "2026-10-16T06:48:26.375Z",
+        "calls": 0,
+        "lastPipeline": [
+          "Country",
+          "Returns latest exchange rates in parameter-supplied base currency."
+        ],
+        "providers": [
+          "graphql:countries-trevorblades-com",
+          "openapi:exchangerate-api"
+        ]
+      }
+    ],
+    "crystallized": [
+      {
+        "id": "composite:ff12853a385b",
+        "title": "Country currency latest exchange rates USD: Country → Returns latest exchange rates in parameter-supplied base currency."
+      }
+    ],
+    "learnedProviders": [
+      {
+        "id": "graphql:countries-trevorblades-com",
+        "source": "graphql",
+        "origin": "https://countries.trevorblades.com/"
+      },
+      {
+        "id": "openapi:exchangerate-api",
+        "source": "openapi",
+        "origin": "https://api.apis.guru/v2/specs/exchangerate-api.com/4/openapi.json"
+      },
+      {
+        "id": "composite:crystallized",
+        "source": "composite",
+        "origin": "rightclick-x"
+      }
+    ]
+  },
+  "receipts": {
+    "total": 6,
+    "compositeRuns": 1,
+    "providers": [
+      "graphql:countries-trevorblades-com",
+      "openapi:exchangerate-api",
+      "composite:crystallized"
+    ]
+  },
+  "verdict": "PASS",
+  "finishedAt": "2026-10-16T06:49:05.265Z"
+}
