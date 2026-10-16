@@ -44,15 +44,18 @@ const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
 const idOf = (rc: RightClick, operationId: string) => rc.graph.list().find((c) => c.provider.startsWith("openapi:") && norm(c.id.split(":").pop()!) === norm(operationId))!.id;
 
 test("a plain run of a moved operation re-learns its contract, reports the drift and retries the same operation", async () => {
+  // v1 is shut down; the same operation now lives under /svc/v2. Releases split that
+  // path between server base and paths differently: the version may move into the paths.
+  for (const v2 of [contract("/svc/v2", { "/items/{item}/parts": op("listParts", "item") }), contract("/", { "/svc/v2/items/{item}/parts": op("listParts", "item") })]) {
   const svc = catalog({ spec: contract("/svc/v1", { "/items/{item}/parts": op("listParts", "item") }), routes: { "/svc/v1/items/{item}/parts": () => json(["bolt"]) } });
   const rc = await RightClick.create({ fetch: routerFetch({ [ORIGIN]: svc.handler }), directories: [] });
   await rc.learn({ source: SOURCE });
   const id = idOf(rc, "listParts");
   assert.equal((await rc.run(id, { item: "a1" })).status, "completed");
 
-  // v1 is shut down; the same operation now lives under /svc/v2.
-  svc.release({ spec: contract("/svc/v2", { "/items/{item}/parts": op("listParts", "item") }), routes: { "/svc/v2/items/{item}/parts": () => json(["bolt", "nut"]) } });
-  const r = await rc.run(id, { item: "a1" });
+  svc.release({ spec: v2, routes: { "/svc/v2/items/{item}/parts": () => json(["bolt", "nut"]) } });
+  const port = rc.graph.get(id)!.inputs[0].name;
+  const r = await rc.run(id, { [port]: "a1" });
   assert.equal(r.status, "completed", r.error);
   assert.deepEqual(r.output, ["bolt", "nut"]);
   assert.match(r.healing!.error, /404/);
@@ -63,10 +66,11 @@ test("a plain run of a moved operation re-learns its contract, reports the drift
   assert.equal(r.changedMeaning, undefined);
 
   // The graph now describes v2: the next call needs no repair.
-  const again = await rc.run(id, { item: "a1" });
+  const again = await rc.run(id, { [rc.graph.get(id)!.inputs[0].name]: "a1" });
   assert.equal(again.status, "completed");
   assert.equal(again.healing, undefined);
   assert.equal((await rc.verifyReceipts()).intact, true);
+  }
 });
 
 test("a failed plain run with no contract change fails with the re-reflection note", async () => {
@@ -106,8 +110,8 @@ test("an operation id reassigned to a different operation is refused until ackno
   const refused = await rc.run(id, { term: "T1" });
   assert.equal(refused.status, "failed");
   assert.equal(svc.calls.length, before, "the new operation was not called");
-  assert.match(refused.error!, /changed meaning.*GET \/classes\/\{\}\/children.*GET \/individuals\/\{\}\/children.*Not run/);
-  assert.deepEqual({ ...refused.changedMeaning, at: undefined }, { id, source: SOURCE, at: undefined, before: "GET /classes/{}/children", after: "GET /individuals/{}/children", successor });
+  assert.match(refused.error!, /changed meaning.*GET \/api\/classes\/\{\}\/children.*GET \/api\/individuals\/\{\}\/children.*Not run/);
+  assert.deepEqual({ ...refused.changedMeaning, at: undefined }, { id, source: SOURCE, at: undefined, before: "GET /api/classes/{}/children", after: "GET /api/individuals/{}/children", successor });
   assert.equal(rc.ledger.get(id)!.runs, runsBefore, "a refusal is not evidence about the operation");
   assert.deepEqual((await rc.run(successor, { term: "T1" })).output, ["child-a", "child-b"]);
 
@@ -120,7 +124,7 @@ test("an operation id reassigned to a different operation is refused until ackno
   const acknowledged = await restarted.run(id, { term: "T1" }, { acknowledgeChange: true });
   assert.equal(acknowledged.status, "completed");
   assert.deepEqual(acknowledged.output, []);
-  assert.equal(acknowledged.changedMeaning?.after, "GET /individuals/{}/children");
+  assert.equal(acknowledged.changedMeaning?.after, "GET /api/individuals/{}/children");
   const plain = await restarted.run(id, { term: "T1" });
   assert.equal(plain.status, "completed");
   assert.equal(plain.changedMeaning, undefined);
@@ -147,17 +151,17 @@ test("when a failed id now names a different operation, repair retries the opera
   await rc.learn({ source: SOURCE });
   const id = idOf(rc, "getChildren");
 
-  // Class children move to /api/v2 under a suffixed id; the old id now names individuals.
+  // Class children move to another path under a suffixed id; the old id now names individuals.
   svc.release({
-    spec: contract("/api", { "/individuals/{term}/children": op("getChildren", "term"), "/v2/classes/{term}/children": op("getChildren_1", "term") }),
-    routes: { "/api/v2/classes/{term}/children": () => json(["child-a"]), "/api/individuals/{term}/children": () => json([]) },
+    spec: contract("/api", { "/individuals/{term}/children": op("getChildren", "term"), "/taxonomy/classes/{term}/children": op("getChildren_1", "term") }),
+    routes: { "/api/taxonomy/classes/{term}/children": () => json(["child-a"]), "/api/individuals/{term}/children": () => json([]) },
   });
   const r = await rc.run(id, { term: "T1" });
   assert.equal(r.status, "failed", "a different path is a different operation: no equivalent exists");
-  assert.match(r.error!, /now calls GET \/individuals\/\{\}\/children.*no equivalent of GET \/classes\/\{\}\/children/);
+  assert.match(r.error!, /now calls GET \/api\/individuals\/\{\}\/children.*no equivalent of GET \/api\/classes\/\{\}\/children/);
   assert.ok(!svc.calls.some((p) => p.startsWith("/api/individuals")), "the new operation was not called");
 
-  // With an exact successor, repair follows the operation, not the id.
+  // With an exact successor (the old path, now under /api/v2), repair follows the operation, not the id.
   const svc2 = catalog({ spec: contract("/api", { "/classes/{term}/children": op("getChildren", "term") }), routes: {} });
   const rc2 = await RightClick.create({ fetch: routerFetch({ [ORIGIN]: svc2.handler }), directories: [] });
   await rc2.learn({ source: SOURCE });
@@ -211,7 +215,7 @@ test("a saved goal anchored on an id follows the operation it was built on when 
     const id = idOf(rc, "getChildren");
     const published = await rc.compose({ have: { term: "T1" }, want: "json", through: [id], run: true, publish: "Term children" });
     assert.equal(published.executed?.status, "completed");
-    assert.equal(rc.published.get("term-children")!.anchors![0].operation, "GET /classes/{}/children");
+    assert.equal(rc.published.get("term-children")!.anchors![0].operation, "GET /api/classes/{}/children");
 
     // Same id, same title, same input types: only the operation tells them apart.
     svc.release({
@@ -227,7 +231,7 @@ test("a saved goal anchored on an id follows the operation it was built on when 
       assert.ok(r.steps!.some((s) => rc.runs.get(s)?.capability === idOf(rc, "getChildren_1")));
     } else {
       assert.equal(r.status, "failed");
-      assert.match(r.error!, /required anchor contract changed meaning: .*getchildren \(it called GET \/classes\/\{\}\/children, it now calls GET \/individuals\/\{\}\/children\)/);
+      assert.match(r.error!, /required anchor contract changed meaning: .*getchildren \(it called GET \/api\/classes\/\{\}\/children, it now calls GET \/api\/individuals\/\{\}\/children\)/);
     }
   }
 });

@@ -172,18 +172,26 @@ export interface MeaningChange {
 }
 
 /**
- * What a learned capability invokes, independent of where the API is served:
- * method and path below the provider's base (parameter names elided), GraphQL
- * operation and field, or MCP tool, plus its risk. Ids with the same key call
- * the same operation; an id whose key changes now calls a different one.
+ * What a learned capability invokes, independent of where the API is served
+ * and which release of it: method and full path (host, parameter names and
+ * whole version segments such as v1 or 2.1 left out), GraphQL operation and
+ * field, or MCP tool, plus its risk. Contracts split one path between their
+ * server base and their paths differently from release to release, so the
+ * base is not used. Ids with the same key call the same operation; an id
+ * whose key changes now calls a different one.
  */
-function operationOf(c: Capability, base?: unknown): string | undefined {
+function operationOf(c: Capability): string | undefined {
   const inv = c.invoke;
   let op: string;
   if (inv.kind === "http") {
-    let path = typeof base === "string" && base && inv.url.startsWith(base) ? inv.url.slice(base.length) : inv.url.replace(/^[a-z][a-z0-9+.-]*:\/\/[^/]+/i, "");
-    path = path.replace(/\{[^}]*\}/g, "{}").replace(/\/+$/, "");
-    op = `${inv.method.toUpperCase()} ${path.startsWith("/") ? path : `/${path}`}`;
+    const path = inv.url
+      .replace(/^[a-z][a-z0-9+.-]*:\/\/[^/]+/i, "")
+      .replace(/[?#].*$/, "")
+      .split("/")
+      .filter((seg) => seg && !(/^v?\d+(?:\.\d+)*$/i.test(seg) && /^v|\./i.test(seg)))
+      .map((seg) => (/^\{[^}]*\}$/.test(seg) ? "{}" : seg))
+      .join("/");
+    op = `${inv.method.toUpperCase()} /${path}`;
   } else if (inv.kind === "graphql") op = `${inv.operation} ${inv.field}`;
   else if (inv.kind === "mcp") op = `tool ${inv.tool}`;
   else return undefined;
@@ -373,7 +381,7 @@ export class RightClick {
           // the provider changed protocol (OpenAPI -> GraphQL -> MCP) and so its id.
           const previous = [...this.graph.providers.values()].filter((p) => p.meta?.source === source);
           const before = new Map(previous.flatMap((p) => p.capabilityIds.map((id) => [id, this.graph.get(id) ? signature(this.graph.get(id)!) : ""] as const)));
-          const operationsBefore = new Map(previous.flatMap((p) => p.capabilityIds.map((id) => [id, this.graph.get(id) ? operationOf(this.graph.get(id)!, p.meta?.base) : undefined] as const)));
+          const operationsBefore = new Map(previous.flatMap((p) => p.capabilityIds.map((id) => [id, this.graph.get(id) ? operationOf(this.graph.get(id)!) : undefined] as const)));
           if (!d.reflections.length && previous.length) {
             // The provider is gone: withdraw what it offered and retire anything built on it.
             const compositesBefore = this.graph.list().filter((c) => c.source === "composite").map((c) => c.id);
@@ -438,19 +446,18 @@ export class RightClick {
    * silently; the change is measured against what callers last saw.
    */
   private noteMeaningChanges(source: string, modified: string[], operationsBefore: Map<string, string | undefined>): string[] {
-    const operation = (c: Capability) => operationOf(c, this.graph.providers.get(c.provider)?.meta?.base);
     const fromSource = this.graph.list().filter((c) => this.graph.providers.get(c.provider)?.meta?.source === source);
     const changed: string[] = [];
     for (const id of modified) {
       const now = this.graph.get(id)!;
-      const after = operation(now);
+      const after = operationOf(now);
       const seen = this.meaningChanges.get(id)?.before ?? operationsBefore.get(id);
       if (!seen || !after || seen === after) {
         this.meaningChanges.delete(id);
         continue;
       }
       changed.push(id);
-      const successors = fromSource.filter((c) => c.id !== id && operation(c) === seen);
+      const successors = fromSource.filter((c) => c.id !== id && operationOf(c) === seen);
       this.meaningChanges.set(id, { id, source, at: new Date().toISOString(), before: seen, after, ...(successors.length === 1 ? { successor: successors[0].id } : {}) });
     }
     return changed;
@@ -700,7 +707,7 @@ export class RightClick {
     const last = this.healReads.get(source);
     if (last !== undefined && Date.now() - last < HEAL_REREAD_MS) return done(`contract at ${source} was re-read ${Math.round((Date.now() - last) / 1000)}s ago for an earlier failure; not re-read again yet`);
     this.healReads.set(source, Date.now());
-    const meant = operationOf(cap, provider?.meta?.base);
+    const meant = operationOf(cap);
     const r = (await this.learn({ source, deep: true, net })).results[0];
     const d = r?.drift;
     if (d) healing.drift = d;
@@ -708,13 +715,12 @@ export class RightClick {
     if (r?.error) return done(`re-reflected ${source}: ${r.error}`);
     if (!d?.changed) return done(`re-reflected ${source}: no contract change`);
     let note = `API drift at ${source}: +${d.added.length} −${d.removed.length} ~${d.modified.length} capabilities`;
-    const operation = (c: Capability) => operationOf(c, this.graph.providers.get(c.provider)?.meta?.base);
     const current = this.graph.get(cap.id);
     const change = this.meaningChanges.get(cap.id);
     if (change) note += `; ${cap.id} now calls ${change.after}, not ${change.before}`;
-    const equivalent = current && !change && operation(current) === meant
+    const equivalent = current && !change && operationOf(current) === meant
       ? [current]
-      : this.graph.list().filter((c) => this.graph.providers.get(c.provider)?.meta?.source === source && operation(c) === meant);
+      : this.graph.list().filter((c) => this.graph.providers.get(c.provider)?.meta?.source === source && operationOf(c) === meant);
     if (equivalent.length !== 1) return done(`${note}; ${equivalent.length ? "ambiguous" : "no"} equivalent of ${meant}`);
     const next = equivalent[0];
     healing.retried = next.id;
@@ -804,7 +810,7 @@ export class RightClick {
   }
 
   private operationField(cap: Capability): { operation?: string } {
-    const operation = operationOf(cap, this.graph.providers.get(cap.provider)?.meta?.base);
+    const operation = operationOf(cap);
     return operation ? { operation } : {};
   }
 
