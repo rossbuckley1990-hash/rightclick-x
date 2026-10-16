@@ -71,6 +71,9 @@ function named(t: TypeRef): { name: string | null; kind: string; list: boolean }
 
 function semantic(name: string, t: TypeRef, description = "", context = ""): SemType {
   const n = named(t);
+  // Another RightClick X tells us the exact semantic type.
+  const tagged = /\[rightclick:([\w.:-]+)\]/.exec(description)?.[1];
+  if (tagged && tagged !== "goal") return n.list && !tagged.startsWith("list:") ? `list:${tagged}` : tagged;
   const base = n.kind === "SCALAR" || n.kind === "ENUM" ? inferInContext(name, graphqlScalar(n.name!), description, context) : "json";
   return n.list ? `list:${base}` : base;
 }

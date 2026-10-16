@@ -46,3 +46,43 @@ test("API synthesis: a published goal becomes an OpenAPI endpoint that another i
   assert.equal(out.verification.status, "verified");
   assert.equal(a.published.get("weather-for-a-place")!.calls, 2, "A served B's chained call and C's call through B");
 });
+
+test("universal interface: an MCP-only tool answers GraphQL queries, and a peer learns that GraphQL with exact types", async () => {
+  const routes: Record<string, (r: Request) => Promise<Response>> = {
+    "https://skycast.test": SERVICES.skycast,
+    "https://atlas.test": SERVICES.atlas,
+  };
+  const f = routerFetch(routes);
+  const a = await RightClick.create({ name: "instance-a", fetch: f, directories: [] });
+  await a.learn({ sources: ["https://skycast.test/mcp", "https://atlas.test/graphql"] });
+  // Skycast speaks only MCP; Atlas speaks only GraphQL. Publish a goal that needs both.
+  const pub = await a.compose({ have: { place: "Lima" }, want: "text", intent: "weather forecast", run: true, publish: "Forecast for a place" });
+  assert.ok(pub.published);
+  const handler = createHandler(a, { open: true });
+  routes["https://a.test"] = handler;
+
+  // Any GraphQL client: plain HTTP POST, variables, selection.
+  const res = await handler(
+    new Request("https://a.test/graphql", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ query: "query Q($p: String!) { forecastForAPlace(place: $p) { result verification pipeline } }", variables: { p: "Tokyo" } }),
+    }),
+  );
+  const j: any = await res.json();
+  assert.equal(j.errors, undefined, JSON.stringify(j.errors));
+  assert.match(j.data.forecastForAPlace.result, /°C/);
+  assert.deepEqual(Object.keys(j.data.forecastForAPlace), ["result", "verification", "pipeline"]);
+  const intro: any = await (await handler(new Request("https://a.test/graphql", { method: "POST", body: JSON.stringify({ query: "{ __schema { queryType { name } } }" }) }))).json();
+  assert.equal(intro.data.__schema.queryType.name, "Query");
+
+  // Another RightClick X learns A's GraphQL face and keeps the semantic types.
+  const b = await RightClick.create({ name: "instance-b", fetch: f, directories: [] });
+  const l = await b.learn({ source: "https://a.test/graphql" });
+  assert.equal(l.results[0].probes.find((p) => p.ok)?.kind, "graphql");
+  const cap = b.graph.list().find((c) => c.id.endsWith("query:forecastForAPlace"))!;
+  assert.deepEqual(cap.inputs.map((p) => [p.name, p.type]), [["place", "place"]]);
+  assert.ok(cap.outputs.some((o) => o.name === "result" && o.type === "text"));
+  const r = await b.run(cap.id, { place: "Nairobi" }, { verify: [{ op: "contains", path: "result", value: "°C" }] });
+  assert.equal(r.verification.status, "verified");
+});

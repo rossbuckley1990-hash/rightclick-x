@@ -14,6 +14,7 @@
 
 import { VERSION, type RightClick } from "../runtime.ts";
 import { DASHBOARD_HTML } from "./dashboard.ts";
+import { executeGraphQL } from "./graphql-server.ts";
 import { handle, type JsonRpc } from "./mcp-server.ts";
 import { TOOLS, dispatch } from "./tools.ts";
 
@@ -87,7 +88,7 @@ export function createHandler(rc: RightClick, opts: HttpOptions = {}): (req: Req
       return new Response(DASHBOARD_HTML, { headers: { "content-type": "text/html; charset=utf-8" } });
     }
     if (req.method === "GET" && path === "/.well-known/rightclick.json") {
-      return json({ rightclick: VERSION, name: rc.name, region: rc.info.region, runtime: rc.info.name, api: "/api", mcp: "/mcp", openapi: "/openapi.json", auth: opts.token ? "bearer" : opts.open ? "none" : "locked" });
+      return json({ rightclick: VERSION, name: rc.name, region: rc.info.region, runtime: rc.info.name, api: "/api", mcp: "/mcp", openapi: "/openapi.json", graphql: "/graphql", auth: opts.token ? "bearer" : opts.open ? "none" : "locked" });
     }
     if (req.method === "GET" && path === "/health") return json({ ok: true, version: VERSION });
 
@@ -117,6 +118,7 @@ export function createHandler(rc: RightClick, opts: HttpOptions = {}): (req: Req
       }
       if (req.method === "GET" && path === "/api/graph") return json(rc.exportGraph());
       if (req.method === "GET" && path === "/openapi.json") return json(rc.openApi(url.origin));
+      if (req.method === "POST" && path === "/graphql") return json(await executeGraphQL(rc, (await req.json().catch(() => ({}))) as any));
       const x = /^\/x\/([a-z0-9-]+)$/.exec(path);
       if (x && (req.method === "GET" || req.method === "POST")) {
         const args = req.method === "GET" ? Object.fromEntries(url.searchParams) : ((await req.json().catch(() => ({}))) as Record<string, unknown>);
