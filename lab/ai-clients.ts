@@ -3,7 +3,8 @@
 // addresses, and the objective in plain language. Answers are checked against
 // the harness's own data; each agent's RightClick X receipts show which
 // services it actually reached through RightClick X.
-//   node lab/ai-clients.ts [seed] [--domain logistics] [--clients claude,codex] [--gateway]
+//   node lab/ai-clients.ts [seed] [--domain logistics] [--clients claude,codex,vibe] [--gateway]
+// vibe = Mistral Vibe CLI (billed to the operator's Mistral account; capped by VIBE_MAX_PRICE, default $0.05 per run).
 // --gateway: the agents are told only the environment's gateway address, which
 // publishes an RFC 9727 /.well-known/api-catalog of the running services.
 
@@ -111,6 +112,23 @@ for (const [i, client] of clients.entries()) {
     );
     try {
       out = readFileSync(`${dir}/last.txt`, "utf8");
+    } catch {
+      out = (r.stdout + r.stderr).slice(-2000);
+    }
+  }
+  else if (client === "vibe") {
+    // Mistral Vibe: a per-run project config in the temp dir declares RightClick X as its only
+    // MCP server; trust is for this session only; only RightClick X's tools are enabled; price-capped.
+    mkdirSync(`${dir}/.vibe`, { recursive: true });
+    writeFileSync(
+      `${dir}/.vibe/config.toml`,
+      `[[mcp_servers]]\nname = "rcx"\ntransport = "stdio"\ncommand = ${JSON.stringify(process.execPath)}\nargs = ${JSON.stringify([rcx, "mcp"])}\nenv = { RCX_STATE_FILE = ${JSON.stringify(state)}, RCX_WORKSPACE = ${JSON.stringify(dir)} }\ntool_timeout_sec = 120\n`,
+    );
+    const r = await run("vibe", ["-p", prompt, "--trust", "--enabled-tools", "rcx_*", "--auto-approve", "--max-turns", "30", "--max-price", process.env.VIBE_MAX_PRICE ?? "0.05", "--output", "json"], dir);
+    try {
+      const history = JSON.parse(r.stdout);
+      const msgs = (Array.isArray(history) ? history : history.history) as any[];
+      out = [...msgs].reverse().find((m) => m.role === "assistant" && typeof m.content === "string" && m.content.trim())?.content ?? "";
     } catch {
       out = (r.stdout + r.stderr).slice(-2000);
     }

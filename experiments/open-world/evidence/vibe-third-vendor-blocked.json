@@ -1,0 +1,9 @@
+{
+  "experiment": "Third AI vendor: Mistral Vibe CLI (2.26.0) through RightClick X, gateway lab",
+  "verdict": "BLOCKED",
+  "at": "2026-10-16T10:52:53.812605+00:00",
+  "authorisation": "Operator approved running Vibe on their Mistral account with a per-run price cap.",
+  "observed": "A 1-turn smoke test ('Reply with exactly: OK', --max-price 0.01) never got a completion: every Mistral request returned HTTP 429 'Rate limit exceeded' (Vibe's own log, retries up to attempt 13 over ~3 minutes). Vibe's log shows the same 429s on 2026-10-09, before this work. The smoke test was stopped to respect the service's limit; RightClick X was never reached.",
+  "harness": "lab/ai-clients.ts now supports --clients vibe (temporary project .vibe/config.toml declaring RightClick X as the only stdio MCP server, session-only --trust, --enabled-tools 'rcx_*', --max-price from VIBE_MAX_PRICE, default 0.05).",
+  "rerun": "node lab/ai-clients.ts --gateway --domain accounts --clients vibe (once the Mistral account's rate limit clears)"
+}

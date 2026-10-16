@@ -188,7 +188,7 @@ Note: the harness first scored answers with a strict `Number()`, which rejected 
 
 ## Limitations (verified, not hypothetical)
 
-- **Two AI clients, four models.** Claude Code (default model, Sonnet 5.5, Haiku 5.5) and Codex (`gpt-6-astra`). Other MCP clients (Cursor, VS Code, Gemini CLI) were not available here, and Codex with a ChatGPT login offers only its default model.
+- **Two AI clients, four models.** Claude Code (default model, Sonnet 5.5, Haiku 5.5) and Codex (`gpt-6-astra`). Other MCP clients (Cursor, VS Code, Gemini CLI) were not available here, and Codex with a ChatGPT login offers only its default model. A third vendor, Mistral Vibe, is installed and now supported by the lab harness (`--clients vibe`), but its run is **BLOCKED**: the Mistral account returns HTTP 429 to every request, so no Mistral model reached RightClick X ([evidence](open-world/evidence/vibe-third-vendor-blocked.json)).
 - **Friendly providers.** The real services used publish clean machine-readable contracts with conventional field names. Cryptic names are covered only when the contract describes the field (lab domain *accounts*); cryptic names with no description, and interfaces with no machine-readable contract at all, are not covered.
 - **Keys limit acquisition.** In OW5 phase 3, RightClick X found real alternative translation services, but they required credentials it did not have. It reported unavailability correctly; it did not obtain access.
 - **Directory quality.** Discovery without addresses depends on what APIs.guru and the MCP Registry list and how well their descriptions match the objective.
