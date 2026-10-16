@@ -68,6 +68,20 @@ test("planner routes around excluded capabilities and learns from the ledger", (
   assert.equal(plan(g, ledger, { have: { u: "url" }, want: "text", exclude: new Set(["slow"]) })[0].steps[0].capability, "fast");
 });
 
+test("fan-in: anchored steps may start parallel branches that a later step joins", () => {
+  const g = new CapabilityGraph();
+  add(g, cap("issue", ["id.issue"], ["text"], "Get an issue"));
+  add(g, cap("repo", ["id.issue"], ["repo.full"], "Get a repository"));
+  add(g, cap("ask", ["repo.full", "text"], ["text"], "Ask about a codebase"));
+  const goal = { have: { n: "id.issue" }, want: "text", intent: "ask" };
+  assert.equal(plan(g, new Ledger(), goal).some((p) => p.steps.length === 3), false, "without anchors, no unconnected branches");
+  const plans = plan(g, new Ledger(), { ...goal, through: ["issue", "repo", "ask"] });
+  assert.equal(plans.length, 1);
+  assert.deepEqual(plans[0].steps.map((s) => s.capability).sort(), ["ask", "issue", "repo"]);
+  const join = plans[0].steps.find((s) => s.capability === "ask")!;
+  assert.equal(new Set(join.bindings.map((b) => b.from.split(".")[0])).size, 2, "the join consumes two different upstream steps");
+});
+
 test("search ranks by relevance across titles, tags and ports", () => {
   const g = new CapabilityGraph();
   add(g, cap("t", ["text", "language"], ["text"], "Translate text"));

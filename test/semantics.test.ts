@@ -21,6 +21,9 @@ test("inferType reads meaning from names, formats and descriptions", () => {
   assert.equal(inferType("page", { type: "integer" }), "number");
   assert.equal(inferType("body", { type: "object" }), "json");
   assert.equal(inferType("message", { type: "string" }), "text");
+  assert.equal(inferType("full_name", { type: "string" }), "repo.full");
+  assert.equal(inferType("repoName", { type: "string" }, "GitHub repository in owner/repo format"), "repo.full");
+  assert.equal(inferType("repo", { type: "string" }), "repo");
 });
 
 test("type lattice: exact, widening, and incompatible", () => {

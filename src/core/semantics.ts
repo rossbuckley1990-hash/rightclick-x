@@ -27,6 +27,7 @@ const PARENT: Record<string, SemType> = {
   path: "text",
   account: "text",
   repo: "text",
+  "repo.full": "text",
   color: "text",
   text: "json",
   number: "json",
@@ -104,6 +105,7 @@ const NAME_RULES: Array<[RegExp, SemType]> = [
   [/(^|_)(city|place|location|address|town|placename|region|capital)$/, "place"],
   [/(^|_)(domain|hostname|host)$/, "domain"],
   [/^(username|login|owner|user|org|organization|account|handle|screen_name|user_login|owner_login)$/, "account"],
+  [/^(full_name|name_with_owner|full_repo_name|repo_full_name|repository_full_name)$/, "repo.full"],
   [/^(repo|repository|repo_name|repository_name)$/, "repo"],
   [/(^|_)(ip|ipaddress|ipv4|ipv6)$/, "ip"],
   [/(^|_)(date|time|datetime|timestamp|createdat|updatedat)$/, "datetime"],
@@ -169,6 +171,8 @@ export function inferType(name: string, schema: SchemaLike = {}, description = "
     case "hostname":
       return "domain";
   }
+  // "owner/repo" is a different thing from a bare repository name.
+  if (rawType !== "array" && /\bowner\/repo(sitory)?\b/i.test(description) && /repo/i.test(n)) return "repo.full";
   // Resource identifiers described in prose: "name of the Namespace" -> id.namespace.
   const of = /\bname of the ([A-Za-z]+)\b/i.exec(description);
   if (of && (n === "name" || n.endsWith("_name"))) return `id.${of[1].toLowerCase()}`;

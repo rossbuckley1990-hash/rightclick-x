@@ -90,13 +90,15 @@ export function plan(graph: CapabilityGraph, ledger: Ledger, goal: Goal): Plan[]
       if (expansions > DEPTH_BUDGET) break;
       for (const cap of caps) {
         if (node.used.has(cap.id)) continue;
-        const bindings = bind(cap, node.values, intent);
+        const bindings = bind(cap, node.values, intent, consumedSteps(node));
         if (!bindings) continue;
         if (++expansions > DEPTH_BUDGET) break;
         // A step must consume something produced or supplied, not only constants,
-        // and every step after the first must build on an earlier step's output.
+        // and every step after the first must build on an earlier step's output,
+        // unless the caller anchored it: anchored steps may start parallel branches
+        // that a later step joins (fan-in: two systems' outputs feeding a third).
         if (cap.inputs.length && !bindings.length) continue;
-        if (node.steps.length && !bindings.some((b) => !b.from.startsWith("$in."))) continue;
+        if (node.steps.length && !anchors.has(cap.id) && !bindings.some((b) => !b.from.startsWith("$in."))) continue;
         const stepIndex = node.steps.length;
         const produced: Value[] = cap.outputs.map((o) => ({
           ref: `${stepIndex}.${o.name}`,
@@ -106,7 +108,7 @@ export function plan(graph: CapabilityGraph, ledger: Ledger, goal: Goal): Plan[]
         // Prune steps that add no new type to the state, unless they finish the goal.
         const finishes = produced.some((v) => satisfies(goal.want, v.type));
         const novel = produced.some((v) => !node.values.some((h) => h.type === v.type));
-        if (!novel && !finishes) continue;
+        if (!novel && !finishes && !anchors.has(cap.id)) continue;
         const child: Node = {
           values: [...node.values, ...produced],
           steps: [...node.steps, { capability: cap.id, bindings }],
@@ -176,11 +178,12 @@ function outputScore(ref: string, intent: Set<string>, want?: SemType): number {
 }
 
 /** Bind every required input of `cap` to the best available value, or null. */
-function bind(cap: Capability, values: Value[], intent: Set<string>): Binding[] | null {
-  const bindings: Binding[] = [];
-  for (const port of cap.inputs) {
-    let best: Value | undefined;
-    let bestScore = Infinity;
+function bind(cap: Capability, values: Value[], intent: Set<string>, consumed: Set<number> = new Set()): Binding[] | null {
+  // Score every acceptable value for every port first, then bind the most
+  // constrained ports first, preferring values from branches nobody has used
+  // yet, so a join draws each input from a different upstream system.
+  const options = cap.inputs.map((port) => {
+    const scored: Array<{ v: Value; score: number }> = [];
     for (const v of values) {
       // A caller input named after an entity ("province") identifies it: it can fill id.province.
       const bridged = v.step === -1 && port.type === `id.${v.ref.slice(4).toLowerCase().replace(/[^a-z0-9]/g, "")}`;
@@ -189,13 +192,12 @@ function bind(cap: Capability, values: Value[], intent: Set<string>): Binding[] 
       if (!port.required && v.ref !== `$in.${port.name}`) continue;
       // A port with a fixed set of allowed values takes a caller's choice, never another step's output.
       if (port.enum && v.step >= 0) continue;
-      const leafName = v.ref.replace(/^(\$in|\d+)\./, "").split(".").pop() ?? "";
+      const leaf = v.ref.replace(/^(\$in|\d+)\./, "").split(".").pop() ?? "";
       // Name-like ports (title, name, q) take names, not prose fields like body/description.
-      if (isNominal(port.name, port.type) && CONTENT.test(leafName)) continue;
+      if (isNominal(port.name, port.type) && CONTENT.test(leaf)) continue;
       // Prefer exact types, recent values, the caller's names, and values named like the intent.
       const d = bridged ? 0 : distance(port.type, v.type);
       const nameBonus = v.ref === `$in.${port.name}` ? (port.type === "text" ? 1.5 : 5) : 0;
-      const leaf = v.ref.replace(/^(\$in|\d+)\./, "").split(".").pop() ?? "";
       const leafToks = tokenize(leaf);
       // Intent words often name the caller's own inputs ("question"); only produced values earn this.
       const intentBonus = v.step >= 0 && leafToks.length ? (5 * leafToks.filter((t) => intent.has(t)).length) / leafToks.length : 0;
@@ -203,16 +205,38 @@ function bind(cap: Capability, values: Value[], intent: Set<string>): Binding[] 
       // The caller's own value of the exact type beats one derived through a detour.
       // (Identities only: free text is meant to be transformed, so the latest version wins.)
       const callerBonus = v.step === -1 && d === 0 && port.type !== "text" ? 3 : 0;
-      const score = d * 3 - 2 * v.step - nameBonus - intentBonus - contentBonus - callerBonus;
-      if (score < bestScore) {
-        bestScore = score;
+      scored.push({ v, score: d * 3 - 2 * v.step - nameBonus - intentBonus - contentBonus - callerBonus });
+    }
+    return { port, scored };
+  });
+  const used = new Set(consumed);
+  const chosen = new Map<string, Value>();
+  for (const { port, scored } of [...options].sort((a, b) => a.scored.length - b.scored.length)) {
+    let best: Value | undefined;
+    let bestScore = Infinity;
+    for (const { v, score } of scored) {
+      const s = score - (v.step >= 0 && !used.has(v.step) ? 3 : 0);
+      if (s < bestScore) {
+        bestScore = s;
         best = v;
       }
     }
-    if (best) bindings.push({ port: port.name, from: best.ref });
-    else if (port.required) return null;
+    if (best) {
+      chosen.set(port.name, best);
+      if (best.step >= 0) used.add(best.step);
+    } else if (port.required) return null;
   }
-  return bindings;
+  return cap.inputs.filter((p) => chosen.has(p.name)).map((p) => ({ port: p.name, from: chosen.get(p.name)!.ref }));
+}
+
+/** Steps whose outputs some later step already uses. */
+function consumedSteps(node: Node): Set<number> {
+  const out = new Set<number>();
+  for (const s of node.steps) for (const b of s.bindings) {
+    const m = /^(\d+)\./.exec(b.from);
+    if (m) out.add(Number(m[1]));
+  }
+  return out;
 }
 
 /** How many distinct intent terms the plan covers. Junk steps add nothing. */
@@ -298,7 +322,10 @@ function finalize(graph: CapabilityGraph, node: Node, v: Value, d: number, inten
 function dedupe(plans: Plan[]): Plan[] {
   const seen = new Set<string>();
   return plans.filter((p) => {
-    const k = p.steps.map((s) => s.capability).join(">") + "#" + p.result;
+    // Order-independent: parallel branches in a different order are the same pipeline.
+    const m = /^(\d+)\.(.*)$/.exec(p.result);
+    const resultCap = m ? p.steps[Number(m[1])].capability + "." + m[2] : p.result;
+    const k = p.steps.map((s) => s.capability).sort().join(">") + "#" + resultCap;
     if (seen.has(k)) return false;
     seen.add(k);
     return true;
