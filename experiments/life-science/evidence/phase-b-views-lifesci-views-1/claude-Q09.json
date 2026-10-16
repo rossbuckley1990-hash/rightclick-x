@@ -1,0 +1,153 @@
+{
+  "client": "claude",
+  "question": "Q09",
+  "prompt": "You are connected to exactly one MCP server, rightclick-x. Use only its tools.\nRightClick X has already learned several public life-science databases (see context_providers).\nAnswer the question using only data you obtain through rightclick-x tools, not from memory.\nIf the tools cannot give you the answer, say so instead of guessing.\nQuestion: For UniProtKB P04637: what is the length of the canonical sequence according to UniProtKB, and how many isoform entries does the EBI Proteins API isoforms endpoint return for it?\nEnd your reply with a final line exactly of the form: ANSWER: <canonical length> | <number of isoform entries>",
+  "answer": "393 | 9",
+  "parts": [
+    "393",
+    "9"
+  ],
+  "truth": [
+    393,
+    9
+  ],
+  "truthFacts": {
+    "length": 393,
+    "isoformEntries": 9,
+    "isoformAccessions": [
+      "P04637-6",
+      "P04637-1",
+      "P04637-9",
+      "P04637-5",
+      "P04637-8",
+      "P04637-7",
+      "P04637-4",
+      "P04637-3",
+      "P04637-2"
+    ],
+    "uniprotAlternativeProductsIsoforms": 9
+  },
+  "witness": null,
+  "perPart": [
+    true,
+    true
+  ],
+  "correct": true,
+  "grounded": true,
+  "correctAndGrounded": true,
+  "groundingChecks": [],
+  "seconds": 30.7,
+  "exit": 0,
+  "timedOut": false,
+  "clientMeta": {
+    "turns": 7,
+    "costUsd": 0.2318237,
+    "isError": false,
+    "subtype": "success"
+  },
+  "mcpCalls": 5,
+  "mcpCallsByTool": {
+    "context_providers": 1,
+    "context_actions": 1,
+    "context_run": 3
+  },
+  "mcpCallLog": [
+    {
+      "tool": "context_providers",
+      "ok": true,
+      "ms": 0.2,
+      "args": {}
+    },
+    {
+      "tool": "context_actions",
+      "ok": true,
+      "ms": 30.7,
+      "args": {
+        "value": "P04637",
+        "limit": 50
+      }
+    },
+    {
+      "tool": "context_run",
+      "ok": true,
+      "ms": 1238.7,
+      "args": {
+        "id": "openapi:openapi-definition:searchcursor",
+        "args": {
+          "query": "accession:P04637",
+          "fields": "accession,length,sequence"
+        },
+        "view": {
+          "fields": [
+            "primaryAccession",
+            "sequence.length"
+          ],
+          "select": "results"
+        }
+      }
+    },
+    {
+      "tool": "context_run",
+      "ok": true,
+      "ms": 4194.5,
+      "args": {
+        "id": "openapi:proteins-rest-api:getentriesforisoforms",
+        "args": {
+          "accession": "P04637"
+        },
+        "view": {
+          "count": true
+        }
+      }
+    },
+    {
+      "tool": "context_run",
+      "ok": true,
+      "ms": 10420.8,
+      "args": {
+        "id": "openapi:proteins-rest-api:getentriesforisoforms",
+        "args": {
+          "accession": "P04637"
+        },
+        "view": {
+          "fields": [
+            "accession",
+            "sequence.length"
+          ]
+        }
+      }
+    }
+  ],
+  "learnedByAgent": [],
+  "composeUsed": 0,
+  "receipts": [
+    {
+      "capability": "openapi:openapi-definition:searchcursor",
+      "provider": "openapi:openapi-definition",
+      "status": "completed",
+      "ms": 1232.5
+    },
+    {
+      "capability": "openapi:proteins-rest-api:getentriesforisoforms",
+      "provider": "openapi:proteins-rest-api",
+      "status": "completed",
+      "ms": 4164.7
+    },
+    {
+      "capability": "openapi:proteins-rest-api:getentriesforisoforms",
+      "provider": "openapi:proteins-rest-api",
+      "status": "completed",
+      "ms": 10396.1
+    }
+  ],
+  "providersReached": [
+    "openapi:openapi-definition",
+    "openapi:proteins-rest-api"
+  ],
+  "requests": 4,
+  "requestsPerHost": {
+    "rest.uniprot.org": 2,
+    "www.ebi.ac.uk": 2
+  },
+  "finalText": "The canonical sequence of P04637 is 393 amino acids long, and the EBI Proteins API isoforms endpoint returns 9 isoform entries for it. Both numbers come from live rightclick-x calls.\n\n- **Canonical length:** A UniProtKB REST search for `accession:P04637` returned a sequence length of 393.\n- **Isoform entries:** The Proteins API isoforms endpoint returned an array of 9 entries, P04637-1 through P04637-9. Their lengths are 393, 341, 346, 354, 302, 307, 261, 209 and 214 respectively.\n\nThe 9 includes P04637-1, which is the canonical isoform itself, so there are 8 alternative isoforms on top of it.\n\nANSWER: 393 | 9"
+}

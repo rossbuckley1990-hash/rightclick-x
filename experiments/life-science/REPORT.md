@@ -188,7 +188,10 @@ Truth, computed directly at the same time: 393 | 9.
 
 - **Codex: ✓ `393 | 9`, grounded, 34 s / 7 calls** (freeze-3: ✓ 45 s / 7). Unprompted, it called the isoforms capability with `view: {"count": true}`.
 - **Codex, attempt 1: invalid, preserved** (`codex-Q09-attempt1-remote-app.json`). Codex used an account-level app connector: a different, remote RightClick deployment without these databases. It logged 0 calls to the server under test and answered "unavailable". The harness now runs Codex with `--disable apps` (deviation 8).
-- **Claude Code: not run.** The `claude` CLI's login had expired ("OAuth session expired and could not be refreshed"). The session made no tool call (`claude-Q09-attempt1-auth-failure.json`). Claude Code's original Q09 miss is therefore **not yet re-tested** with an agent.
+- **Claude Code: ✓ `393 | 9`, grounded, 31 s / 5 calls** (freeze-3: ✗ `8`, 60 s / 12). It called the isoforms capability with `view: {"count": true}`, then with `view: {"fields": ["accession","sequence.length"]}`. It also noted that the 9 include the canonical isoform. It never received the 1.2 MB payload.
+- **Claude Code, attempt 1: not a result, preserved** (`claude-Q09-attempt1-auth-failure.json`). The `claude` CLI's login had expired, and the session ended before any tool call. After the user logged in again, the re-run was started from the user's own shell, because processes started by the desktop app still saw no login. The CLI had meanwhile updated itself to 2.1.301; Phase B used 2.1.294.
+
+Both clients now answer Q09 correctly with a server-side count. This is a single run per client on one question; it shows the gap is closed, not how often agents use views.
 
 ## Follow-up (post hoc): drift for plain `context_run`
 
@@ -226,7 +229,7 @@ The rule now compares the full path without version segments (`968637a`), with a
 - **Friendly targets.** All five publish machine-readable contracts. Databases with only SPARQL/RDF (most of TogoMCP's RDF Portal), or with no contract at all, were not tested.
 - **The agent does the identifier bridging.** Typed composition across databases did not happen (P3). Fixing it needs cross-provider identifier equivalence: learned from observed values, or from annotations such as x-bte. That is not built.
 - **Self-healing covers `context_compose`/goals only** on the builds Phase B and C ran. There, a failed `context_run` does not re-reflect its source (C1-c), and an id-addressed call after an identity shift runs the new operation without an error (C2). Both are fixed post hoc and checked on the same real changes (see *Follow-up*). They are re-tested with Codex but not Claude Code, and single-run. Argument names are not remapped: a retried operation whose parameter was renamed fails.
-- **No server-side projection or aggregation over large outputs** (Q09) on the builds Phase B ran. Output views were added afterwards (see *Follow-up*). They are tested on the real API and with Codex, not yet with Claude Code. There is no filter operator.
+- **No server-side projection or aggregation over large outputs** (Q09) on the builds Phase B ran. Output views were added afterwards (see *Follow-up*). They are tested on the real API and, for Q09 only, with both clients (one run each). There is no filter operator.
 - **The `selection` field list is clipped** at 3,000 characters for very wide GraphQL types.
 - **Contract quirks needed product fixes.** "Zero per-database authoring" held only after three general fixes made during the experiment. More databases will surface more such quirks.
 - **The replay proxy** emulates "the contract at the same URL changed". The old v1 service no longer exists, so C1's pre-change state was learned but never executed successfully.
@@ -242,7 +245,7 @@ The rule now compares the full path without version segments (`968637a`), with a
 5. After Phase B, `polite-fetch.ts` was changed to also keep bodies relayed by the local replay proxy, which C1-c grounding needed. Phase B had already run with the original version.
 6. C2 planned no goal/anchor test, and none was run. Instead the shifted id was invoked directly before and after re-learning.
 7. C1-b composed with `want: json` and the stale capability as anchor, because RCSB's response schema is an external `$ref` and types only as `json`.
-8. The Q09 follow-up is post hoc. Its start state is the freeze-3 Phase A state, re-derived once by the `lifesci-views-1` build. Copied raw, the newer semantics version re-learned all six providers on every startup, so the server took 5.1 s to answer `initialize`; re-derived, it took 0.13 s, with the same providers and capability counts. Codex was run with `--disable apps` so that RightClick X was its only MCP server, as pre-registered. In the harness check and the first, invalid attempts, the harness's own truth queries ran without `polite-fetch.ts`: two direct requests per run.
+8. The Q09 follow-up is post hoc. Its start state is the freeze-3 Phase A state, re-derived once by the `lifesci-views-1` build. Copied raw, the newer semantics version re-learned all six providers on every startup, so the server took 5.1 s to answer `initialize`; re-derived, it took 0.13 s, with the same providers and capability counts. Codex was run with `--disable apps` so that RightClick X was its only MCP server, as pre-registered. Claude Code 2.1.301 was run from the user's login shell. In the harness check and the first, invalid attempts, the harness's own truth queries ran without `polite-fetch.ts`: two direct requests per run.
 
 9. The run-drift follow-up is post hoc. Phase C was re-run in full on `lifesci-rundrift-1` (a FAIL, preserved) and `-2`. C1-d and the C2 refusal check are additions, and C1-c started from the freeze-3 Phase A state (`--state`). In both C1-c runs Codex ran without `--disable apps` (added to `phase-c.ts` afterwards); its MCP log shows all of its 14 calls going to the server under test.
 
