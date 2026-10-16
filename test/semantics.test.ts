@@ -53,6 +53,12 @@ test("inspectValue classifies values", () => {
   assert.equal(inspectValue("just some words").type, "text");
 });
 
+test("identifiers with runs of capitals split into words", () => {
+  assert.ok(tokenize("lookupShippingRateForACity").includes(stem("city")));
+  assert.ok(tokenize("parseXMLDocument").includes(stem("document")));
+  assert.ok(tokenize("getV2Rates").includes(stem("rates")));
+});
+
 test("stemming joins word families", () => {
   assert.equal(stem("translate"), stem("translated"));
   assert.equal(stem("translation"), stem("translate"));

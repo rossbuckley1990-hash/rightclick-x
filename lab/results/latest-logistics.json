@@ -1,0 +1,241 @@
+{
+  "seed": 963786426,
+  "domain": "logistics",
+  "startedAt": "2026-10-16T06:29:44.222Z",
+  "steps": [
+    {
+      "n": 1,
+      "title": "Start disposable services generated from fixtures",
+      "ok": true,
+      "domain": "logistics",
+      "services": 3
+    },
+    {
+      "n": 2,
+      "title": "Connect an MCP client to RightClick X (stdio)",
+      "ok": true,
+      "tools": 13,
+      "startupMs": 108.5
+    },
+    {
+      "n": 3,
+      "title": "Present a business objective: \"For a shipment, find the shipping rate charged from its warehouse's city.\"",
+      "ok": true,
+      "goal": {
+        "have": {
+          "shipment_id": "<id>"
+        },
+        "want": "number",
+        "intent": "shipping rate shipment warehouse city",
+        "verify": [
+          {
+            "op": "type",
+            "value": "number"
+          }
+        ]
+      }
+    },
+    {
+      "n": 4,
+      "title": "Discover contracts from root addresses only (no protocols, no schemas given)",
+      "ok": true,
+      "found": [
+        "graphql",
+        "openapi",
+        "openapi"
+      ],
+      "newCapabilities": 3,
+      "ms": 27.6
+    },
+    {
+      "n": 5,
+      "title": "Identify suitable capabilities",
+      "ok": true,
+      "candidatePlans": 2,
+      "best": [
+        "Shipment Details",
+        "Fetch warehouse",
+        "Lookup shipping rate for a city"
+      ],
+      "planningMs": 1.6
+    },
+    {
+      "n": 6,
+      "title": "Compose a multi-provider workflow",
+      "ok": true,
+      "steps": [
+        "Shipment Details ← shipment_id=$in.shipment_id",
+        "Fetch warehouse ← warehouse_id=0.warehouseId",
+        "Lookup shipping rate for a city ← location=1.city"
+      ]
+    },
+    {
+      "n": 7,
+      "title": "Execute the workflow",
+      "ok": true,
+      "input": "SHP-1003",
+      "pipeline": [
+        "Shipment Details",
+        "Fetch warehouse",
+        "Lookup shipping rate for a city"
+      ],
+      "ms": 3.8
+    },
+    {
+      "n": 8,
+      "title": "Verify against independently held test data",
+      "ok": true,
+      "expected": 29.2,
+      "got": 29.2
+    },
+    {
+      "n": 9,
+      "title": "Save the successful composition and reuse it",
+      "ok": true,
+      "saved": "Shipping rate shipment warehouse city: Shipment Details → Fetch warehouse → Lookup shipping rate for a city",
+      "reusedAs": [
+        "Shipping rate shipment warehouse city: Shipment Details → Fetch warehouse → Lookup shipping rate for a city"
+      ],
+      "expected": 20,
+      "got": 20,
+      "ms": 1.9
+    },
+    {
+      "n": 10,
+      "title": "Change the interface of the last provider in the chain (Harbourly)",
+      "ok": true,
+      "before": "openapi \"Lookup shipping rate for a city\" location → location, price_per_kg",
+      "after": "mcp \"Shipping rate by city\" city → result.{city, rate}"
+    },
+    {
+      "n": 11,
+      "title": "Recover without changing integration code",
+      "ok": true,
+      "healing": [
+        "API drift at http://127.0.0.1:64026/: openapi:harbourly → mcp:harbourly; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+      ],
+      "via": [
+        "graphql:127-0-0-1-64024-graphql",
+        "openapi:brightmark",
+        "mcp:harbourly"
+      ],
+      "expected": 18.1,
+      "got": 18.1,
+      "ms": 8.6
+    },
+    {
+      "n": 12,
+      "title": "Remove that provider (Harbourly)",
+      "ok": true
+    },
+    {
+      "n": 13,
+      "title": "Withdraw its capabilities accurately; report the objective as impossible, not faked",
+      "ok": true,
+      "status": "failed",
+      "healing": [
+        "provider gone at http://127.0.0.1:64026/: withdrew mcp:harbourly (1 capabilities, 1 pipeline(s) retired)"
+      ],
+      "withdrawn": [
+        "Harbourly"
+      ],
+      "capabilities": "21 → 19",
+      "savedPipelines": "1 → 0"
+    },
+    {
+      "n": 14,
+      "title": "Introduce a different provider (Quillbase, mcp): the objective works again",
+      "ok": true,
+      "learned": [
+        "mcp: 1 tools"
+      ],
+      "via": [
+        "graphql:127-0-0-1-64024-graphql",
+        "openapi:brightmark",
+        "mcp:quillbase"
+      ],
+      "expected": 29.2,
+      "got": 29.2,
+      "ms": 1.4
+    }
+  ],
+  "benchmarks": {
+    "startupMs": 108.5,
+    "mcpLatencyMs": {
+      "p50": 0.04,
+      "p95": 0.11
+    },
+    "discoveryMs": 27.6,
+    "graph": {
+      "providers": 5,
+      "capabilities": 20,
+      "edges": 31,
+      "chains2": 31,
+      "chains3": 45,
+      "total": 96
+    },
+    "graphStatsMs": 0.4,
+    "planningMs": 1.6,
+    "executionMs": 3.8,
+    "recoveryAfterChangeMs": 8.6,
+    "recoveryAfterNewProviderMs": 1.4,
+    "memoryMB": 131
+  },
+  "freeze": {
+    "commit": "4c8b5a39791f4658f08ab52b3692ffd8f4038307",
+    "tag": "lab-freeze-1",
+    "productCodeChangedSinceTag": "",
+    "uncommittedProductChanges": "M src/core/graph.ts\n M src/reflectors/graphql.ts\n M src/reflectors/openapi.ts\n M src/runtime.ts",
+    "frozen": false
+  },
+  "environment": [
+    {
+      "service": "shipments",
+      "brand": "Cobaltix",
+      "protocol": "graphql",
+      "operation": "Shipment details",
+      "input": "shipment_id",
+      "outputs": [
+        "shipment_id",
+        "warehouseId",
+        "weight_kg"
+      ]
+    },
+    {
+      "service": "warehouses",
+      "brand": "Brightmark",
+      "protocol": "openapi",
+      "operation": "Fetch warehouse",
+      "input": "warehouse_id",
+      "outputs": [
+        "warehouse_id",
+        "city",
+        "manager_email"
+      ]
+    },
+    {
+      "service": "rates",
+      "brand": "Harbourly",
+      "protocol": "openapi",
+      "operation": "Lookup shipping rate for a city",
+      "input": "location",
+      "outputs": [
+        "location",
+        "price_per_kg"
+      ]
+    }
+  ],
+  "firstRunProviders": [
+    "graphql:127-0-0-1-64024-graphql",
+    "openapi:brightmark",
+    "openapi:harbourly"
+  ],
+  "receipts": {
+    "count": 21,
+    "intact": true,
+    "brokenAt": null,
+    "head": "cf0a6aae598013a7731dd4226067628c84bc3285e841b0bfa2e518a4d2831e95"
+  },
+  "passed": 14,
+  "total": 14
+}

@@ -1,21 +1,22 @@
-// Chameleon Lab environment: generated from lab/fixtures.json with a seed.
-// Services are plain data (name, protocol, operation, field spellings) served
-// by generic protocol servers below. Nothing here is known to RightClick X.
+// Chameleon Lab environment, generated from lab/fixtures.json with a seed.
+// A domain is pure data: an objective and a chain of services. Services are
+// served by generic OpenAPI, GraphQL and MCP servers. Nothing here is known to
+// RightClick X.
 
 import { readFileSync } from "node:fs";
 import { serve, type Served } from "../src/entry/node-host.ts";
 
-type Protocol = "openapi" | "graphql" | "mcp";
-type Role = string;
+export type Protocol = "openapi" | "graphql" | "mcp";
 
 export interface Field {
-  role: Role;
+  role: string;
   name: string;
   kind: "string" | "number";
 }
 
 export interface ServiceSpec {
-  key: "invoices" | "customers" | "tax";
+  service: string;
+  link: number;
   label: string;
   brand: string;
   protocol: Protocol;
@@ -28,12 +29,22 @@ export interface ServiceSpec {
 }
 
 export interface Dataset {
-  customers: Array<{ customer: string; name: string; country: string }>;
-  invoices: Array<{ invoice: string; customer: string; amount: number; currency: string }>;
-  rates: Record<string, number>;
+  /** One table per chain link, rows keyed by role. */
+  tables: Array<Array<Record<string, string | number>>>;
+}
+
+export interface Domain {
+  objective: string;
+  have: string;
+  want: string;
+  intent: string;
+  chain: Array<{ service: string; key: string; next?: string; answer?: string; operation: string[]; fields: Record<string, string[]> }>;
+  values: Record<string, string | string[]>;
+  numbers: Record<string, [number, number]>;
 }
 
 const fixtures = JSON.parse(readFileSync(new URL("./fixtures.json", import.meta.url), "utf8"));
+export const DOMAINS = Object.keys(fixtures.domains);
 
 export function rng(seed: number) {
   let s = seed >>> 0;
@@ -46,70 +57,92 @@ export function rng(seed: number) {
   };
 }
 
-const NUMBER_ROLES = new Set(["amount", "rate"]);
+const slugify = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
-export function generate(seed: number) {
+export function generate(seed: number, domainName = "invoicing") {
+  const domain: Domain = fixtures.domains[domainName];
+  if (!domain) throw new Error(`unknown domain ${domainName}; known: ${DOMAINS.join(", ")}`);
   const r = rng(seed);
   const pick = <T>(xs: T[]): T => xs[Math.floor(r() * xs.length)];
-  const brands = [...fixtures.brands].sort(() => r() - 0.5);
-  const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const brands: string[] = [...fixtures.brands].sort(() => r() - 0.5);
 
-  const makeService = (key: ServiceSpec["key"], label: string, protocol?: Protocol, avoid?: ServiceSpec): ServiceSpec => {
-    const pool = fixtures.services[key];
-    const choose = (options: string[]) => {
-      const fresh = options.filter((o) => !avoid || ![avoid.input.name, ...avoid.outputs.map((f) => f.name)].includes(o));
-      return pick(fresh.length ? fresh : options);
+  const makeService = (link: number, label: string, protocol?: Protocol, avoid?: ServiceSpec): ServiceSpec => {
+    const def = domain.chain[link];
+    const taken = avoid ? new Set([avoid.input.name, ...avoid.outputs.map((f) => f.name)]) : new Set<string>();
+    const choose = (options: string[]) => pick(options.filter((o) => !taken.has(o)).length ? options.filter((o) => !taken.has(o)) : options);
+    const names: Record<string, string> = {};
+    for (const [role, options] of Object.entries(def.fields)) names[role] = choose(options);
+    const kind = (role: string): Field["kind"] => (role in domain.numbers ? "number" : "string");
+    const operation = avoid ? pick(def.operation.filter((o) => o !== avoid.operation)) : pick(def.operation);
+    return {
+      service: def.service,
+      link,
+      label,
+      brand: avoid?.brand ?? brands.pop()!,
+      protocol: protocol ?? pick(fixtures.protocols as Protocol[]),
+      operation,
+      slug: slugify(operation),
+      input: { role: def.key, name: names[def.key], kind: kind(def.key) },
+      outputs: Object.keys(def.fields).map((role) => ({ role, name: names[role], kind: kind(role) })),
     };
-    const [inRole, inNames] = Object.entries(pool.input as Record<string, string[]>)[0];
-    const input: Field = { role: inRole, name: choose(inNames), kind: "string" };
-    const outputs: Field[] = Object.entries(pool.output as Record<string, string[]>).map(([role, names]) => ({
-      role,
-      name: role === inRole ? input.name : choose(names),
-      kind: NUMBER_ROLES.has(role) ? "number" : "string",
-    }));
-    const operation = avoid ? pick((pool.operation as string[]).filter((o) => o !== avoid.operation)) : pick(pool.operation);
-    return { key, label, brand: brands.pop()!, protocol: protocol ?? pick(fixtures.protocols), operation, slug: slug(operation), input, outputs };
   };
 
-  const invoices = makeService("invoices", "invoices");
-  const customers = makeService("customers", "customers");
-  const taxPrimary = makeService("tax", "tax (primary)");
-  const taxBackup = makeService("tax", "tax (backup)", pick((fixtures.protocols as Protocol[]).filter((p) => p !== taxPrimary.protocol)));
+  const last = domain.chain.length - 1;
+  const services = domain.chain.map((d, i) => makeService(i, d.service));
+  const backup = makeService(last, `${domain.chain[last].service} (newcomer)`, pick((fixtures.protocols as Protocol[]).filter((p) => p !== services[last].protocol)));
 
-  const countries: string[] = fixtures.countries;
-  const rates: Record<string, number> = Object.fromEntries(countries.map((c) => [c, Math.round((5 + r() * 22) * 10) / 10]));
-  const customersData = Array.from({ length: 8 }, (_, i) => ({ customer: `C-${1000 + i}`, name: `${pick(fixtures.brands)} Ltd ${i}`, country: pick(countries) }));
-  const invoicesData = Array.from({ length: 12 }, (_, i) => ({
-    invoice: `INV-${5000 + Math.floor(r() * 4000)}-${i}`,
-    customer: pick(customersData).customer,
-    amount: Math.round(r() * 100000) / 100,
-    currency: pick(["EUR", "USD", "JPY", "BRL"]),
-  }));
-  const data: Dataset = { customers: customersData, invoices: invoicesData, rates };
-  return { seed, services: { invoices, customers, taxPrimary, taxBackup }, data, makeService };
+  // Synthetic data, built from the end of the chain backwards so every link resolves.
+  const value = (role: string, i: number): string | number => {
+    const v = domain.values[role];
+    if (role in domain.numbers) {
+      const [lo, hi] = domain.numbers[role];
+      return Math.round((lo + r() * (hi - lo)) * 10) / 10;
+    }
+    if (Array.isArray(v)) return pick(v);
+    if (typeof v === "string") return `${v}${1000 + i}`;
+    return `${role}-${i}`;
+  };
+  const tables: Dataset["tables"] = [];
+  for (let link = last; link >= 0; link--) {
+    const def = domain.chain[link];
+    const keyPool = domain.values[def.key];
+    const keys = Array.isArray(keyPool) ? [...keyPool] : Array.from({ length: link === 0 ? 12 : 8 }, (_, i) => `${keyPool}${1000 + i * 7 + Math.floor(r() * 7)}`);
+    tables[link] = keys.map((k, i) => {
+      const row: Record<string, string | number> = {};
+      for (const role of Object.keys(def.fields)) row[role] = value(role, i);
+      row[def.key] = k;
+      if (def.next) row[def.next] = pick(tables[link + 1])[domain.chain[link + 1].key] as string;
+      return row;
+    });
+  }
+  const data: Dataset = { tables };
+
+  /** Ground truth: walk the chain through the harness's own tables. */
+  const expected = (start: string, truth: Dataset = data): string | number | undefined => {
+    let v: string | number | undefined = start;
+    for (const [i, def] of domain.chain.entries()) {
+      const row = truth.tables[i].find((x) => x[def.key] === v);
+      if (!row) return undefined;
+      v = def.next ? row[def.next] : row[def.answer!];
+    }
+    return v;
+  };
+  const starts = tables[0].map((row) => String(row[domain.chain[0].key]));
+  return { seed, domainName, domain, services, backup, data, expected, starts, makeService };
 }
 
-/** A breaking release: new operation, new field spellings, nested output, a different protocol. */
-export function breakingRelease(old: ServiceSpec, seed: number): ServiceSpec {
-  const g = generate(seed);
-  const next = g.makeService(old.key, old.label, (["openapi", "graphql", "mcp"] as Protocol[]).filter((p) => p !== old.protocol)[seed % 2], old);
-  return { ...next, brand: old.brand, nest: "result" };
+/** A breaking release: new operation title, new field spellings, nested output, a different protocol. */
+export function breakingRelease(env: ReturnType<typeof generate>, old: ServiceSpec, seed: number): ServiceSpec {
+  const protocols = (["openapi", "graphql", "mcp"] as Protocol[]).filter((p) => p !== old.protocol);
+  return { ...env.makeService(old.link, old.label, protocols[seed % 2], old), nest: "result" };
 }
 
 // ------------------------------------------------------------------ servers
 
 function lookup(spec: ServiceSpec, data: Dataset, value: unknown): Record<string, unknown> | undefined {
-  const v = String(value ?? "");
-  const row =
-    spec.key === "invoices"
-      ? data.invoices.find((x) => x.invoice === v)
-      : spec.key === "customers"
-        ? data.customers.find((x) => x.customer === v)
-        : v in data.rates
-          ? { country: v, rate: data.rates[v] }
-          : undefined;
+  const row = data.tables[spec.link].find((x) => String(x[spec.input.role]) === String(value ?? ""));
   if (!row) return undefined;
-  const flat = Object.fromEntries(spec.outputs.map((f) => [f.name, (row as any)[f.role]]));
+  const flat = Object.fromEntries(spec.outputs.map((f) => [f.name, row[f.role]]));
   return spec.nest ? { [spec.nest]: flat } : flat;
 }
 
@@ -123,7 +156,7 @@ function openapi(spec: ServiceSpec) {
   const schema = spec.nest ? { type: "object", properties: { [spec.nest]: { type: "object", properties: props } } } : { type: "object", properties: props };
   return {
     openapi: "3.0.3",
-    info: { title: `${spec.brand}`, version: spec.nest ? "2.0.0" : "1.0.0" },
+    info: { title: spec.brand, version: spec.nest ? "2.0.0" : "1.0.0" },
     paths: {
       [`/api/${spec.slug}`]: {
         get: {

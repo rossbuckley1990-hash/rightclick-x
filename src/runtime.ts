@@ -697,7 +697,10 @@ export class RightClick {
         // Healing must preserve the meaning of the goal: a recovery plan may not
         // cover less of the intent than the plan it replaces (an invoice total
         // is a number, but it is not a tax rate).
-        const floor = Math.min(p.intentScore, baselineIntent);
+        // Naming varies between providers, so allow losing up to a quarter of the
+        // intent's terms, never more (an invoice total covers far less of
+        // "tax rate invoice customer country" than any real tax-rate route).
+        const floor = Math.ceil(Math.min(p.intentScore, baselineIntent) * 0.75);
         const keep = (ps: Plan[]) => ps.filter((x) => x.intentScore >= floor);
         plans = keep(plan(this.graph, this.ledger, { ...goal, exclude }));
         if (!plans.length && (await acquireMore())) plans = keep(plan(this.graph, this.ledger, { ...goal, exclude }));

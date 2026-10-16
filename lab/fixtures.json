@@ -1,23 +1,69 @@
 {
-  "description": "Vocabulary pools for the Chameleon Lab. Each run draws names, field spellings and protocols from these pools with a fresh seed. RightClick X has no knowledge of this file.",
-  "brands": ["Ledgerline", "Paperhaus", "Fernway", "Quillbase", "Tallyport", "Northwind Billing", "Ashgrove", "Brightmark", "Cobaltix", "Duneworks", "Emberlane", "Fjordsoft"],
+  "description": "Chameleon Lab fixtures. Each domain is pure data: a business objective and a chain of services, each with vocabulary pools. Every run draws names, field spellings and protocols from these pools with a fresh seed. RightClick X has no knowledge of this file.",
+  "brands": ["Ledgerline", "Paperhaus", "Fernway", "Quillbase", "Tallyport", "Northwind Billing", "Ashgrove", "Brightmark", "Cobaltix", "Duneworks", "Emberlane", "Fjordsoft", "Harbourly", "Kestrel Freight", "Lumen Cargo", "Mistral Depot"],
   "protocols": ["openapi", "graphql", "mcp"],
-  "services": {
-    "invoices": {
-      "operation": ["Retrieve invoice", "Get invoice", "Fetch invoice details", "Invoice lookup"],
-      "input": { "invoice": ["invoice_id", "invoiceId", "invoice_number"] },
-      "output": { "invoice": ["invoice_id", "invoiceId", "invoice_number"], "customer": ["customer_id", "customerId", "customer_number"], "amount": ["amount", "total", "net_amount"], "currency": ["currency", "currency_code"] }
+  "domains": {
+    "invoicing": {
+      "objective": "For an invoice, find the tax rate that applies in its customer's country.",
+      "have": "invoice_id",
+      "want": "number",
+      "intent": "tax rate invoice customer country",
+      "chain": [
+        {
+          "service": "invoices",
+          "key": "invoice",
+          "next": "customer",
+          "operation": ["Retrieve invoice", "Get invoice", "Fetch invoice details", "Invoice lookup"],
+          "fields": { "invoice": ["invoice_id", "invoiceId", "invoice_number"], "customer": ["customer_id", "customerId", "customer_number"], "amount": ["amount", "total", "net_amount"], "currency": ["currency", "currency_code"] }
+        },
+        {
+          "service": "customers",
+          "key": "customer",
+          "next": "country",
+          "operation": ["Look up customer", "Get customer", "Customer profile", "Fetch customer record"],
+          "fields": { "customer": ["customer_id", "customerId", "customer_number"], "name": ["display_name", "company_name", "legal_name"], "country": ["country", "country_code", "countryCode"] }
+        },
+        {
+          "service": "tax",
+          "key": "country",
+          "answer": "rate",
+          "operation": ["Tax rate by country", "Country tax rate", "Get tax rate", "Lookup tax rate for a country"],
+          "fields": { "country": ["country", "country_code", "countryCode"], "rate": ["tax_rate", "vat_rate", "rate", "standard_rate"] }
+        }
+      ],
+      "values": { "invoice": "INV-", "customer": "C-", "country": ["DE", "FR", "IE", "JP", "BR", "KE", "NZ", "CA"], "currency": ["EUR", "USD", "JPY", "BRL"] },
+      "numbers": { "amount": [10, 1000], "rate": [5, 27] }
     },
-    "customers": {
-      "operation": ["Look up customer", "Get customer", "Customer profile", "Fetch customer record"],
-      "input": { "customer": ["customer_id", "customerId", "customer_number"] },
-      "output": { "customer": ["customer_id", "customerId", "customer_number"], "name": ["display_name", "company_name", "legal_name"], "country": ["country", "country_code", "countryCode"] }
-    },
-    "tax": {
-      "operation": ["Tax rate by country", "Country tax rate", "Get tax rate", "Lookup tax rate for a country"],
-      "input": { "country": ["country", "country_code", "countryCode"] },
-      "output": { "country": ["country", "country_code", "countryCode"], "rate": ["tax_rate", "vat_rate", "rate", "standard_rate"] }
+    "logistics": {
+      "objective": "For a shipment, find the shipping rate charged from its warehouse's city.",
+      "have": "shipment_id",
+      "want": "number",
+      "intent": "shipping rate shipment warehouse city",
+      "chain": [
+        {
+          "service": "shipments",
+          "key": "shipment",
+          "next": "warehouse",
+          "operation": ["Track shipment", "Get shipment", "Shipment details", "Look up shipment"],
+          "fields": { "shipment": ["shipment_id", "shipmentId", "shipment_number"], "warehouse": ["warehouse_id", "warehouseId", "warehouse_number"], "weight": ["weight_kg", "weight", "gross_weight"] }
+        },
+        {
+          "service": "warehouses",
+          "key": "warehouse",
+          "next": "city",
+          "operation": ["Get warehouse", "Warehouse details", "Look up warehouse", "Fetch warehouse"],
+          "fields": { "warehouse": ["warehouse_id", "warehouseId", "warehouse_number"], "city": ["city", "town", "location"], "contact": ["contact_email", "manager_email", "email"] }
+        },
+        {
+          "service": "rates",
+          "key": "city",
+          "answer": "rate",
+          "operation": ["Shipping rate by city", "City shipping rate", "Get shipping rate", "Lookup shipping rate for a city"],
+          "fields": { "city": ["city", "town", "location"], "rate": ["shipping_rate", "rate", "freight_rate", "price_per_kg"] }
+        }
+      ],
+      "values": { "shipment": "SHP-", "warehouse": "WH-", "city": ["Lisbon", "Osaka", "Lagos", "Denver", "Rotterdam", "Santos", "Busan", "Perth"], "contact": ["ops@example.com", "dock@example.com", "night@example.com"] },
+      "numbers": { "weight": [1, 900], "rate": [1, 40] }
     }
-  },
-  "countries": ["DE", "FR", "IE", "JP", "BR", "KE", "NZ", "CA"]
+  }
 }

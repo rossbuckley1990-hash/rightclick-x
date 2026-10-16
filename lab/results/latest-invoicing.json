@@ -1,0 +1,242 @@
+{
+  "seed": 972785027,
+  "domain": "invoicing",
+  "startedAt": "2026-10-16T06:29:37.517Z",
+  "steps": [
+    {
+      "n": 1,
+      "title": "Start disposable services generated from fixtures",
+      "ok": true,
+      "domain": "invoicing",
+      "services": 3
+    },
+    {
+      "n": 2,
+      "title": "Connect an MCP client to RightClick X (stdio)",
+      "ok": true,
+      "tools": 13,
+      "startupMs": 107
+    },
+    {
+      "n": 3,
+      "title": "Present a business objective: \"For an invoice, find the tax rate that applies in its customer's country.\"",
+      "ok": true,
+      "goal": {
+        "have": {
+          "invoice_id": "<id>"
+        },
+        "want": "number",
+        "intent": "tax rate invoice customer country",
+        "verify": [
+          {
+            "op": "type",
+            "value": "number"
+          }
+        ]
+      }
+    },
+    {
+      "n": 4,
+      "title": "Discover contracts from root addresses only (no protocols, no schemas given)",
+      "ok": true,
+      "found": [
+        "graphql",
+        "graphql",
+        "openapi"
+      ],
+      "newCapabilities": 3,
+      "ms": 29.2
+    },
+    {
+      "n": 5,
+      "title": "Identify suitable capabilities",
+      "ok": true,
+      "candidatePlans": 3,
+      "best": [
+        "Retrieve Invoice",
+        "Look Up Customer",
+        "Lookup tax rate for a country"
+      ],
+      "planningMs": 2.2
+    },
+    {
+      "n": 6,
+      "title": "Compose a multi-provider workflow",
+      "ok": true,
+      "steps": [
+        "Retrieve Invoice ← invoice_id=$in.invoice_id",
+        "Look Up Customer ← customer_number=0.customerId",
+        "Lookup tax rate for a country ← countryCode=1.country"
+      ]
+    },
+    {
+      "n": 7,
+      "title": "Execute the workflow",
+      "ok": true,
+      "input": "INV-1004",
+      "pipeline": [
+        "Retrieve Invoice",
+        "Look Up Customer",
+        "Lookup tax rate for a country"
+      ],
+      "ms": 4.4
+    },
+    {
+      "n": 8,
+      "title": "Verify against independently held test data",
+      "ok": true,
+      "expected": 17.6,
+      "got": 17.6
+    },
+    {
+      "n": 9,
+      "title": "Save the successful composition and reuse it",
+      "ok": true,
+      "saved": "Tax rate invoice customer country: Retrieve Invoice → Look Up Customer → Lookup tax rate for a country",
+      "reusedAs": [
+        "Tax rate invoice customer country: Retrieve Invoice → Look Up Customer → Lookup tax rate for a country"
+      ],
+      "expected": 17.6,
+      "got": 17.6,
+      "ms": 2.2
+    },
+    {
+      "n": 10,
+      "title": "Change the interface of the last provider in the chain (Quillbase)",
+      "ok": true,
+      "before": "openapi \"Lookup tax rate for a country\" countryCode → countryCode, vat_rate",
+      "after": "graphql \"Tax rate by country\" country_code → result.{country_code, standard_rate}"
+    },
+    {
+      "n": 11,
+      "title": "Recover without changing integration code",
+      "ok": true,
+      "healing": [
+        "API drift at http://127.0.0.1:62468/: openapi:quillbase → graphql:127-0-0-1-62468-graphql; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+      ],
+      "via": [
+        "graphql:127-0-0-1-62466-graphql",
+        "graphql:127-0-0-1-62467-graphql",
+        "graphql:127-0-0-1-62468-graphql"
+      ],
+      "expected": 17.6,
+      "got": 17.6,
+      "ms": 7.9
+    },
+    {
+      "n": 12,
+      "title": "Remove that provider (Quillbase)",
+      "ok": true
+    },
+    {
+      "n": 13,
+      "title": "Withdraw its capabilities accurately; report the objective as impossible, not faked",
+      "ok": true,
+      "status": "failed",
+      "healing": [
+        "provider gone at http://127.0.0.1:62468/: withdrew graphql:127-0-0-1-62468-graphql (1 capabilities, 1 pipeline(s) retired)"
+      ],
+      "withdrawn": [
+        "GraphQL 127.0.0.1:62468"
+      ],
+      "capabilities": "21 → 19",
+      "savedPipelines": "1 → 0"
+    },
+    {
+      "n": 14,
+      "title": "Introduce a different provider (Duneworks, graphql): the objective works again",
+      "ok": true,
+      "learned": [
+        "graphql: 1 fields"
+      ],
+      "via": [
+        "graphql:127-0-0-1-62466-graphql",
+        "graphql:127-0-0-1-62467-graphql",
+        "graphql:127-0-0-1-62530-graphql"
+      ],
+      "expected": 19.6,
+      "got": 19.6,
+      "ms": 1.9
+    }
+  ],
+  "benchmarks": {
+    "startupMs": 107,
+    "mcpLatencyMs": {
+      "p50": 0.04,
+      "p95": 0.11
+    },
+    "discoveryMs": 29.2,
+    "graph": {
+      "providers": 5,
+      "capabilities": 20,
+      "edges": 37,
+      "chains2": 37,
+      "chains3": 57,
+      "total": 114
+    },
+    "graphStatsMs": 0.4,
+    "planningMs": 2.2,
+    "executionMs": 4.4,
+    "recoveryAfterChangeMs": 7.9,
+    "recoveryAfterNewProviderMs": 1.9,
+    "memoryMB": 134
+  },
+  "freeze": {
+    "commit": "4c8b5a39791f4658f08ab52b3692ffd8f4038307",
+    "tag": "lab-freeze-1",
+    "productCodeChangedSinceTag": "",
+    "uncommittedProductChanges": "M src/core/graph.ts\n M src/reflectors/graphql.ts\n M src/reflectors/openapi.ts\n M src/runtime.ts",
+    "frozen": false
+  },
+  "environment": [
+    {
+      "service": "invoices",
+      "brand": "Paperhaus",
+      "protocol": "graphql",
+      "operation": "Retrieve invoice",
+      "input": "invoice_id",
+      "outputs": [
+        "invoice_id",
+        "customerId",
+        "total",
+        "currency"
+      ]
+    },
+    {
+      "service": "customers",
+      "brand": "Fernway",
+      "protocol": "graphql",
+      "operation": "Look up customer",
+      "input": "customer_number",
+      "outputs": [
+        "customer_number",
+        "company_name",
+        "country"
+      ]
+    },
+    {
+      "service": "tax",
+      "brand": "Quillbase",
+      "protocol": "openapi",
+      "operation": "Lookup tax rate for a country",
+      "input": "countryCode",
+      "outputs": [
+        "countryCode",
+        "vat_rate"
+      ]
+    }
+  ],
+  "firstRunProviders": [
+    "graphql:127-0-0-1-62466-graphql",
+    "graphql:127-0-0-1-62467-graphql",
+    "openapi:quillbase"
+  ],
+  "receipts": {
+    "count": 21,
+    "intact": true,
+    "brokenAt": null,
+    "head": "1b05486c564ad588ca38e3501a05967a1ed0e5006c818a2bc85a63e6d185ff4f"
+  },
+  "passed": 14,
+  "total": 14
+}

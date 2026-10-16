@@ -351,7 +351,9 @@ const STOP = new Set(["the", "a", "an", "of", "to", "and", "or", "for", "in", "o
 
 export function tokenize(s: string): string[] {
   return s
-    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    // Runs of capitals: "ForACity" → "For A City", "XMLHttp" → "XML Http".
+    .replace(/([A-Z])([A-Z][a-z])/g, "$1 $2")
     .toLowerCase()
     .split(/[^a-z0-9]+/)
     .filter((t) => t.length > 1 && !STOP.has(t))
