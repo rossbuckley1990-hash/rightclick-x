@@ -82,6 +82,16 @@ And the offline demo (`npm run demo`), which spins up four local services in fou
 
 `npm run serve` opens a live dashboard where the graph grows, nodes light up as they run, and compose/learn/research are one click away.
 
+## The Open-World Proof
+
+Against real, independently operated services, with a frozen build and two AI clients from different vendors (Claude Code, OpenAI Codex), each connected only to RightClick X ([experiments/OPEN-WORLD-PROOF.md](experiments/OPEN-WORLD-PROOF.md)):
+
+- **Discovery without addresses:** given only an objective, both agents had RightClick X find the Canada Holidays API and an exchange-rate API in public directories and answer correctly.
+- **Three providers, three protocols:** countries GraphQL + an exchange-rate REST API + a Wikipedia **MCP server from the official MCP Registry**, combined and saved; after a restart, the other agent reused the saved capabilities for a new country in 8 MCP calls.
+- **Real network adaptation:** an owned service on Cloudflare changed contract four times (renamed REST, GraphQL, MCP, rollback); RightClick X recovered each time in ~0.3 s, withdrew it honestly when deleted, and rediscovered it when restored.
+- **Negative controls:** 6/6, e.g. it will not return an order total as a tax rate, or plan a write in a read-only task.
+- 0 lines of product code changed during the experiments. Limitations are listed in the report.
+
 ## The Chameleon Lab
 
 One command answers the product's central question: *can an unchanged MCP server discover unfamiliar, authorised software capabilities, compose a useful workflow, verify its result, and adapt when the underlying software changes?*

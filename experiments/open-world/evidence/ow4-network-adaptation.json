@@ -1,0 +1,268 @@
+{
+  "experiment": "OW4",
+  "hypothesis": "RightClick X keeps an unchanged task working across breaking contract changes of a real network service, withdraws it when it disappears, and rediscovers it when restored, without integration-code changes.",
+  "build": "ac1543bb0718dea9445843e5438fb9f1a180aea2",
+  "service": "CONTROLLED TEST SERVICE (owned, disposable): rcx-ow-service on Cloudflare Workers",
+  "rounds": [
+    {
+      "label": "v1 REST (initial)",
+      "contract": {
+        "protocol": "openapi",
+        "paths": [
+          "/translate"
+        ]
+      },
+      "status": "completed",
+      "output": "Hola mundo. The tiempo is soleado hoy.",
+      "expected": "Hola mundo. The tiempo is soleado hoy.",
+      "verified": true,
+      "pipeline": [
+        "Summarize text",
+        "Translate text"
+      ],
+      "healing": [],
+      "crystallized": "composite:fcb1f2a07377",
+      "ms": 50,
+      "providers": [
+        "builtin:core",
+        "platform:node",
+        "openapi:polyglot",
+        "composite:crystallized"
+      ]
+    },
+    {
+      "label": "v2 REST: renamed path/fields, nested",
+      "contract": {
+        "protocol": "openapi",
+        "paths": [
+          "/v2/translations"
+        ]
+      },
+      "status": "completed",
+      "output": "Hola mundo. The tiempo is soleado hoy.",
+      "expected": "Hola mundo. The tiempo is soleado hoy.",
+      "verified": true,
+      "pipeline": [
+        "Summarize text",
+        "Create a translation"
+      ],
+      "healing": [
+        "API drift at https://rcx-ow-service.ross-buckley1990.workers.dev/: openapi:polyglot → openapi:polyglot; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+      ],
+      "crystallized": "composite:43747735ec0d",
+      "ms": 302,
+      "providers": [
+        "builtin:core",
+        "platform:node",
+        "composite:crystallized",
+        "openapi:polyglot"
+      ]
+    },
+    {
+      "label": "v3 moved to GraphQL",
+      "contract": {
+        "protocol": "graphql",
+        "query": [
+          {
+            "name": "translate",
+            "description": "Translate input text.",
+            "args": [
+              {
+                "name": "input",
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "String",
+                    "ofType": null
+                  }
+                },
+                "defaultValue": null
+              },
+              {
+                "name": "to",
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "String",
+                    "ofType": null
+                  }
+                },
+                "defaultValue": null
+              }
+            ],
+            "type": {
+              "kind": "OBJECT",
+              "name": "Translation",
+              "ofType": null
+            }
+          }
+        ]
+      },
+      "status": "completed",
+      "output": "Hola mundo. The tiempo is soleado hoy.",
+      "expected": "Hola mundo. The tiempo is soleado hoy.",
+      "verified": true,
+      "pipeline": [
+        "Summarize text",
+        "Translate"
+      ],
+      "healing": [
+        "API drift at https://rcx-ow-service.ross-buckley1990.workers.dev/: openapi:polyglot → graphql:rcx-ow-service-ross-buckley1990-workers-dev-graphql; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+      ],
+      "crystallized": "composite:b03bdf5f38f8",
+      "ms": 332,
+      "providers": [
+        "builtin:core",
+        "platform:node",
+        "composite:crystallized",
+        "graphql:rcx-ow-service-ross-buckley1990-workers-dev-graphql"
+      ]
+    },
+    {
+      "label": "v4 moved to MCP",
+      "contract": {
+        "protocol": "mcp",
+        "tools": [
+          {
+            "name": "translate_text",
+            "inputs": [
+              "text",
+              "language"
+            ]
+          }
+        ]
+      },
+      "status": "completed",
+      "output": "Hola mundo. The tiempo is soleado hoy.",
+      "expected": "Hola mundo. The tiempo is soleado hoy.",
+      "verified": true,
+      "pipeline": [
+        "Translate text",
+        "Summarize text"
+      ],
+      "healing": [
+        "API drift at https://rcx-ow-service.ross-buckley1990.workers.dev/: graphql:rcx-ow-service-ross-buckley1990-workers-dev-graphql → mcp:polyglot; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+      ],
+      "crystallized": "composite:3ee2d4f7577a",
+      "ms": 347,
+      "providers": [
+        "builtin:core",
+        "platform:node",
+        "composite:crystallized",
+        "mcp:polyglot"
+      ]
+    },
+    {
+      "label": "rollback to v1 REST",
+      "contract": {
+        "protocol": "openapi",
+        "paths": [
+          "/translate"
+        ]
+      },
+      "status": "completed",
+      "output": "Hola mundo. The tiempo is soleado hoy.",
+      "expected": "Hola mundo. The tiempo is soleado hoy.",
+      "verified": true,
+      "pipeline": [
+        "Summarize text",
+        "Translate text"
+      ],
+      "healing": [
+        "API drift at https://rcx-ow-service.ross-buckley1990.workers.dev/: mcp:polyglot → openapi:polyglot; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+      ],
+      "crystallized": "composite:fcb1f2a07377",
+      "ms": 329,
+      "providers": [
+        "builtin:core",
+        "platform:node",
+        "composite:crystallized",
+        "openapi:polyglot"
+      ]
+    },
+    {
+      "label": "service deleted",
+      "contract": {
+        "protocol": "none",
+        "status": [
+          404,
+          404,
+          404
+        ]
+      },
+      "status": "failed",
+      "output": null,
+      "expected": "Hola mundo. The tiempo is soleado hoy.",
+      "verified": false,
+      "pipeline": [],
+      "healing": [
+        "provider gone at https://rcx-ow-service.ross-buckley1990.workers.dev/: withdrew openapi:polyglot (1 capabilities, 1 pipeline(s) retired)"
+      ],
+      "ms": 423,
+      "providers": [
+        "builtin:core",
+        "platform:node",
+        "composite:crystallized"
+      ]
+    },
+    {
+      "label": "restored + rediscovered",
+      "contract": {
+        "protocol": "openapi",
+        "paths": [
+          "/translate"
+        ]
+      },
+      "status": "completed",
+      "output": "Hola mundo. The tiempo is soleado hoy.",
+      "expected": "Hola mundo. The tiempo is soleado hoy.",
+      "verified": true,
+      "pipeline": [
+        "Summarize text",
+        "Translate text"
+      ],
+      "healing": [],
+      "crystallized": "composite:fcb1f2a07377",
+      "ms": 67,
+      "providers": [
+        "builtin:core",
+        "platform:node",
+        "composite:crystallized",
+        "openapi:polyglot"
+      ]
+    }
+  ],
+  "endpoint": "https://rcx-ow-service.ross-buckley1990.workers.dev",
+  "discovery": {
+    "ms": 383,
+    "probes": [
+      {
+        "url": "https://rcx-ow-service.ross-buckley1990.workers.dev/",
+        "kind": "unknown",
+        "ok": false,
+        "detail": "no supported contract found"
+      },
+      {
+        "url": "https://rcx-ow-service.ross-buckley1990.workers.dev/openapi.json",
+        "kind": "openapi",
+        "ok": true,
+        "detail": "1 operations"
+      }
+    ]
+  },
+  "withdrawal": {
+    "status": "failed",
+    "honest": true,
+    "providerStillListed": false
+  },
+  "rediscovery": {
+    "ms": 575,
+    "verified": true
+  },
+  "verdict": "PASS",
+  "finishedAt": "2026-10-16T07:03:08.215Z"
+}

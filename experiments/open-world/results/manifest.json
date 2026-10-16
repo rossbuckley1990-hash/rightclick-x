@@ -1,0 +1,308 @@
+{
+  "build": {
+    "freezeTag": "gauntlet-freeze-1",
+    "commit": "5945a9ae81e87c2af40fbad9d4c6d305da18501a",
+    "dirtyTree": false,
+    "runtime": "v24.16.0",
+    "os": "macOS-26.4.1-arm64-arm-64bit-Mach-O",
+    "machine": "arm64",
+    "executable": {
+      "path": "dist/rcx.mjs",
+      "sha256": "9d433baa257f427efbcb4cf0f285a3dd1838ab464b4aab5f00a89acf729d6760",
+      "note": "bundled build of bin/rcx.ts; experiments run bin/rcx.ts from the tagged tree"
+    },
+    "mcpTransports": {
+      "stdio": {
+        "tools": 13,
+        "checkedWith": "@modelcontextprotocol/inspector --cli"
+      },
+      "streamableHttp": {
+        "tools": 13,
+        "checkedWith": "@modelcontextprotocol/inspector --cli"
+      }
+    },
+    "tests": "\u2139 pass 63 \u2139 fail 0",
+    "typecheck": "tsc exit 0"
+  },
+  "experiments": [
+    {
+      "id": "OW2",
+      "title": "Discovery without addresses",
+      "verdict": "PASS",
+      "runs": [
+        {
+          "client": "claude",
+          "verdict": "PASS",
+          "seconds": 63.5,
+          "mcpCalls": 11,
+          "providersDiscovered": [
+            "openapi:exchangerate-api",
+            "openapi:canada-holidays-api"
+          ],
+          "providersExecuted": [
+            "openapi:exchangerate-api",
+            "openapi:canada-holidays-api"
+          ]
+        },
+        {
+          "client": "codex",
+          "verdict": "PASS",
+          "seconds": 128.7,
+          "mcpCalls": 15,
+          "providersExecuted": [
+            "openapi:canada-holidays-api",
+            "openapi:exchangerate-api"
+          ],
+          "note": "Re-scored from the recorded answer after fixing the harness parser (first number in the field); the agent run was not repeated."
+        }
+      ]
+    },
+    {
+      "id": "OW1+OW3",
+      "title": "Three real providers, three protocols; saved; reused after restart by another client",
+      "verdict": "PASS",
+      "protocolsExecuted": [
+        "graphql",
+        "openapi",
+        "mcp",
+        "composite"
+      ],
+      "providersLearned": [
+        {
+          "id": "graphql:countries-trevorblades-com",
+          "protocol": "graphql",
+          "origin": "https://countries.trevorblades.com/",
+          "capabilities": 6
+        },
+        {
+          "id": "openapi:exchangerate-api",
+          "protocol": "openapi",
+          "origin": "https://api.apis.guru/v2/specs/exchangerate-api.com/4/openapi.json",
+          "capabilities": 1
+        },
+        {
+          "id": "mcp:wikipedia-mcp-server",
+          "protocol": "mcp",
+          "origin": "https://wikipedia.caseyjhand.com/mcp",
+          "capabilities": 6
+        },
+        {
+          "id": "composite:crystallized",
+          "protocol": "composite",
+          "origin": "rightclick-x",
+          "capabilities": 4
+        }
+      ],
+      "runs": [
+        {
+          "client": "claude",
+          "verified": true,
+          "seconds": 261.2,
+          "mcpCalls": 31
+        },
+        {
+          "client": "codex",
+          "verified": true,
+          "seconds": 30.7,
+          "mcpCalls": 8
+        }
+      ],
+      "saved": [
+        "Capital briefing",
+        "Currency in USD"
+      ]
+    },
+    {
+      "id": "OW4",
+      "title": "Adaptation across a real network boundary (controlled service)",
+      "verdict": "PASS",
+      "endpoint": "https://rcx-ow-service.ross-buckley1990.workers.dev",
+      "discoveryMs": 383,
+      "rounds": [
+        {
+          "label": "v1 REST (initial)",
+          "protocol": "openapi",
+          "status": "completed",
+          "verified": true,
+          "ms": 50
+        },
+        {
+          "label": "v2 REST: renamed path/fields, nested",
+          "protocol": "openapi",
+          "status": "completed",
+          "verified": true,
+          "ms": 302
+        },
+        {
+          "label": "v3 moved to GraphQL",
+          "protocol": "graphql",
+          "status": "completed",
+          "verified": true,
+          "ms": 332
+        },
+        {
+          "label": "v4 moved to MCP",
+          "protocol": "mcp",
+          "status": "completed",
+          "verified": true,
+          "ms": 347
+        },
+        {
+          "label": "rollback to v1 REST",
+          "protocol": "openapi",
+          "status": "completed",
+          "verified": true,
+          "ms": 329
+        },
+        {
+          "label": "service deleted",
+          "protocol": "none",
+          "status": "failed",
+          "verified": false,
+          "ms": 423
+        },
+        {
+          "label": "restored + rediscovered",
+          "protocol": "openapi",
+          "status": "completed",
+          "verified": true,
+          "ms": 67
+        }
+      ]
+    },
+    {
+      "id": "OW5",
+      "title": "Chameleon Challenge",
+      "verdict": "PASS",
+      "phases": [
+        {
+          "name": "Phase 1: build",
+          "client": "claude",
+          "verified": true,
+          "seconds": 133.3,
+          "mcpCalls": 21
+        },
+        {
+          "name": "Phase 2: restart + different client + changed environment",
+          "client": "codex",
+          "verified": true,
+          "seconds": 78.3,
+          "mcpCalls": 17
+        },
+        {
+          "name": "Phase 3: a provider disappears",
+          "client": "claude",
+          "verified": true,
+          "seconds": 116.2,
+          "mcpCalls": 16
+        }
+      ],
+      "providersLearned": [
+        {
+          "id": "graphql:countries-trevorblades-com",
+          "protocol": "graphql",
+          "origin": "https://countries.trevorblades.com/"
+        },
+        {
+          "id": "openapi:exchangerate-api",
+          "protocol": "openapi",
+          "origin": "https://api.apis.guru/v2/specs/exchangerate-api.com/4/openapi.json"
+        },
+        {
+          "id": "composite:crystallized",
+          "protocol": "composite",
+          "origin": "rightclick-x"
+        },
+        {
+          "id": "openapi:funtranslations-braille-api",
+          "protocol": "openapi",
+          "origin": "https://api.apis.guru/v2/specs/funtranslations.com/braile/2.3/swagger.json"
+        },
+        {
+          "id": "openapi:funtranslations-api",
+          "protocol": "openapi",
+          "origin": "https://api.apis.guru/v2/specs/funtranslations.com/index/2.3/swagger.json"
+        },
+        {
+          "id": "openapi:starwars-translations-api",
+          "protocol": "openapi",
+          "origin": "https://api.apis.guru/v2/specs/funtranslations.com/starwars/2.3/swagger.json"
+        },
+        {
+          "id": "openapi:libretranslate",
+          "protocol": "openapi",
+          "origin": "https://api.apis.guru/v2/specs/libretranslate.local/1.3.9/openapi.json"
+        },
+        {
+          "id": "mcp:wikipedia-mcp-server",
+          "protocol": "mcp",
+          "origin": "https://wikipedia.caseyjhand.com/mcp"
+        },
+        {
+          "id": "openapi:cloud-translation-api",
+          "protocol": "openapi",
+          "origin": "https://api.apis.guru/v2/specs/googleapis.com/translate/v3beta1/openapi.json"
+        },
+        {
+          "id": "openapi:amazon-translate",
+          "protocol": "openapi",
+          "origin": "https://api.apis.guru/v2/specs/amazonaws.com/translate/2017-07-01/openapi.json"
+        },
+        {
+          "id": "mcp:ai-text",
+          "protocol": "mcp",
+          "origin": "https://aitext.openkrill.app/mcp"
+        }
+      ]
+    },
+    {
+      "id": "NC",
+      "title": "Negative controls",
+      "verdict": "PASS",
+      "controls": [
+        {
+          "control": "Identical primitive types, different entities",
+          "verdict": "PASS"
+        },
+        {
+          "control": "A numerical field with ambiguous meaning",
+          "verdict": "PASS"
+        },
+        {
+          "control": "A seemingly compatible operation would change data during a read-only task",
+          "verdict": "PASS"
+        },
+        {
+          "control": "A provider returns a successful response containing an incorrect result",
+          "verdict": "PASS"
+        },
+        {
+          "control": "A required provider disappears",
+          "verdict": "PASS"
+        },
+        {
+          "control": "A contract changes but keeps the same operation name",
+          "verdict": "PASS"
+        }
+      ]
+    },
+    {
+      "id": "G2",
+      "title": "Two-provider integration, restart, cross-client reuse (earlier run)",
+      "verdict": "PASS"
+    }
+  ],
+  "runtimeBenchmarks": {
+    "source": "Chameleon Lab harness (local stdio), latest run",
+    "startupMs": 108.9,
+    "memoryMB": 134,
+    "mcpLatencyMs": {
+      "p50": 0.04,
+      "p95": 0.11
+    },
+    "planningMs": 2.3
+  },
+  "providerSpecificCodeSinceFreeze": {
+    "linesChangedUnder_src_bin": 0
+  }
+}

@@ -1,0 +1,787 @@
+{
+  "experiment": "OW5 Chameleon Challenge",
+  "build": "ac1543bb0718dea9445843e5438fb9f1a180aea2",
+  "startedAt": "2026-10-16T07:04:15.959Z",
+  "phases": [
+    {
+      "name": "Phase 1: build",
+      "client": "claude",
+      "code": "PE",
+      "prompt": "You are connected to exactly one MCP server, rightclick-x. Use only its tools.\nTwo services are known to you: a public GraphQL API about countries at https://countries.trevorblades.com/ and a translation service at https://rcx-ow-service.ross-buckley1990.workers.dev/ (a controlled test service).\nAnything else you need (for example exchange rates, or Wikipedia, which you should reach through a Wikipedia MCP server from the official MCP Registry) must be found with rightclick-x's research or acquisition abilities.\nTask: a briefing for the country with ISO code PE: its capital; the latest exchange rate from its currency to USD; the first sentence of the Wikipedia summary of the capital; and that sentence translated into Spanish (language code es) by the translation service.\nSave working workflows as reusable capabilities so the briefing can be produced again later for other countries.\nEnd with exactly these four lines:\nCAPITAL: <capital city>\nRATE: <currency code> <rate to USD>\nSENTENCE: <the first sentence of the Wikipedia summary of the capital>\nTRANSLATION: <that sentence as returned by the translation service, or 'unavailable'>",
+      "independentTruth": {
+        "capital": "Lima",
+        "currency": "PEN",
+        "usd": 0.291,
+        "wikiExtract": "Lima is the capital and largest city of Peru, as well as a primate city. It is located in the valleys of the Chillón, Rímac and Lurín Rivers, in the desert zone of the central coastal part of the country, overlooking the Pacific Ocean. The city is considered the political, cultural, financial and commercial center of Peru. Jurisdictionally, the metropolis extends mainly within the province of Lima"
+      },
+      "check": {
+        "capitalOk": true,
+        "rateOk": true,
+        "sentenceGrounded": true,
+        "translationOk": true,
+        "translationReportedUnavailable": false
+      },
+      "verified": true,
+      "seconds": 133.3,
+      "mcpCalls": [
+        {
+          "tool": "context_providers",
+          "ok": true,
+          "ms": 0.3,
+          "args": {}
+        },
+        {
+          "tool": "context_learn",
+          "ok": true,
+          "ms": 568.9,
+          "args": {
+            "sources": [
+              "https://countries.trevorblades.com/",
+              "https://rcx-ow-service.ross-buckley1990.workers.dev/"
+            ]
+          }
+        },
+        {
+          "tool": "context_graph",
+          "ok": true,
+          "ms": 2.8,
+          "args": {
+            "op": "search",
+            "query": "country"
+          }
+        },
+        {
+          "tool": "context_explain",
+          "ok": true,
+          "ms": 1.6,
+          "args": {
+            "id": "translate"
+          }
+        },
+        {
+          "tool": "context_run",
+          "ok": true,
+          "ms": 116.1,
+          "args": {
+            "id": "graphql:countries-trevorblades-com:query:country",
+            "args": {
+              "code": "PE"
+            }
+          }
+        },
+        {
+          "tool": "context_research",
+          "ok": true,
+          "ms": 20005.5,
+          "args": {
+            "topic": "exchange rates currency"
+          }
+        },
+        {
+          "tool": "context_research",
+          "ok": true,
+          "ms": 20023.7,
+          "args": {
+            "topic": "wikipedia"
+          }
+        },
+        {
+          "tool": "context_learn",
+          "ok": true,
+          "ms": 179.3,
+          "args": {
+            "source": "https://api.apis.guru/v2/specs/exchangerate-api.com/4/openapi.json"
+          }
+        },
+        {
+          "tool": "context_research",
+          "ok": true,
+          "ms": 20045.1,
+          "args": {
+            "topic": "wikipedia summary",
+            "limit": 8
+          }
+        },
+        {
+          "tool": "context_learn",
+          "ok": true,
+          "ms": 1036,
+          "args": {
+            "source": "https://wikipedia.caseyjhand.com/mcp"
+          }
+        },
+        {
+          "tool": "context_explain",
+          "ok": true,
+          "ms": 1.3,
+          "args": {
+            "id": "openapi:exchangerate-api"
+          }
+        },
+        {
+          "tool": "context_run",
+          "ok": true,
+          "ms": 531.9,
+          "args": {
+            "id": "openapi:exchangerate-api:get-latest-base-currency",
+            "args": {
+              "base_currency": "PEN"
+            },
+            "verify": [
+              {
+                "op": "exists",
+                "path": "rates.USD"
+              }
+            ]
+          }
+        },
+        {
+          "tool": "context_graph",
+          "ok": true,
+          "ms": 1,
+          "args": {
+            "op": "search",
+            "query": "wikipedia summary"
+          }
+        },
+        {
+          "tool": "context_explain",
+          "ok": true,
+          "ms": 0.1,
+          "args": {
+            "id": "mcp:wikipedia-mcp-server:wikipedia-get-summary"
+          }
+        },
+        {
+          "tool": "context_run",
+          "ok": true,
+          "ms": 272.3,
+          "args": {
+            "id": "mcp:wikipedia-mcp-server:wikipedia-get-summary",
+            "args": {
+              "title": "Lima",
+              "language": "en"
+            },
+            "verify": [
+              {
+                "op": "contains",
+                "path": "extract",
+                "value": "Lima"
+              }
+            ]
+          }
+        },
+        {
+          "tool": "context_run",
+          "ok": true,
+          "ms": 178,
+          "args": {
+            "id": "openapi:polyglot:translatetext",
+            "args": {
+              "text": "Lima is the capital and largest city of Peru, as well as a primate city.",
+              "target": "es"
+            }
+          }
+        },
+        {
+          "tool": "context_compose",
+          "ok": true,
+          "ms": 793.3,
+          "args": {
+            "have": {
+              "code": "PE"
+            },
+            "want": "json",
+            "intent": "country code to latest exchange rates of its currency",
+            "through": [
+              "graphql:countries-trevorblades-com:query:country",
+              "openapi:exchangerate-api:get-latest-base-currency"
+            ],
+            "run": true,
+            "verify": [
+              {
+                "op": "exists",
+                "path": "rates.USD"
+              }
+            ],
+            "publish": "country-currency-rates",
+            "risks": [
+              "read"
+            ]
+          }
+        },
+        {
+          "tool": "context_compose",
+          "ok": true,
+          "ms": 1705.8,
+          "args": {
+            "have": {
+              "title": "Lima",
+              "target": "es"
+            },
+            "want": "text",
+            "intent": "wikipedia summary of a place translated",
+            "through": [
+              "mcp:wikipedia-mcp-server:wikipedia-get-summary",
+              "openapi:polyglot:translatetext"
+            ],
+            "run": true,
+            "publish": "wikipedia-summary-translated"
+          }
+        },
+        {
+          "tool": "context_compose",
+          "ok": true,
+          "ms": 4.9,
+          "args": {
+            "have": {
+              "title": "Lima",
+              "target": "es"
+            },
+            "want": "text",
+            "intent": "wikipedia summary extract translated",
+            "through": [
+              "mcp:wikipedia-mcp-server:wikipedia-get-summary",
+              "openapi:polyglot:translatetext"
+            ],
+            "maxSteps": 2,
+            "run": true,
+            "verify": [
+              {
+                "op": "contains",
+                "value": "Lima"
+              }
+            ],
+            "publish": "wikipedia-summary-translated"
+          }
+        },
+        {
+          "tool": "context_compose",
+          "ok": true,
+          "ms": 281.8,
+          "args": {
+            "have": {
+              "title": {
+                "type": "url",
+                "value": "Lima"
+              },
+              "target": {
+                "type": "language",
+                "value": "es"
+              }
+            },
+            "want": "text",
+            "intent": "wikipedia summary extract translated",
+            "through": [
+              "mcp:wikipedia-mcp-server:wikipedia-get-summary",
+              "openapi:polyglot:translatetext"
+            ],
+            "maxSteps": 2,
+            "run": true,
+            "verify": [
+              {
+                "op": "contains",
+                "value": "Lima"
+              }
+            ],
+            "publish": "wikipedia-summary-translated"
+          }
+        },
+        {
+          "tool": "context_compose",
+          "ok": true,
+          "ms": 3.2,
+          "args": {
+            "have": {
+              "code": {
+                "type": "country",
+                "value": "PE"
+              }
+            },
+            "want": "json",
+            "intent": "country capital wikipedia summary",
+            "through": [
+              "graphql:countries-trevorblades-com:query:country",
+              "mcp:wikipedia-mcp-server:wikipedia-get-summary"
+            ],
+            "maxSteps": 2,
+            "run": true,
+            "verify": [
+              {
+                "op": "contains",
+                "path": "extract",
+                "value": "Lima"
+              }
+            ],
+            "publish": "country-capital-summary"
+          }
+        }
+      ],
+      "finalText": "I put together the briefing for PE (Peru). The translation service did not really translate the sentence into Spanish: it only swapped a few small words (\"and\"→\"y\", \"of\"→\"de\", \"a\"→\"una\") and left the rest in English. The line below is exactly what it returned. You said it's a test service, so that may be on purpose.\n\n**Where each answer came from:**\n- **Capital and currency:** the countries API returned Lima as the capital and PEN (the Peruvian sol) as the currency.\n- **Exchange rate:** I found ExchangeRate-API (free, no key needed) through rightclick-x's directory search. Its latest rates for PEN, dated 2026-10-16, give 1 PEN = 0.291 USD. That figure is rounded to three decimal places by the API.\n- **Wikipedia sentence:** I added a Wikipedia server from the official MCP Registry (`io.github.cyanheads/wikipedia-mcp-server`). The first sentence is from the English summary of the \"Lima\" article.\n- **Translation:** sent to your translation service with target language `es`.\n\n**Saved for reuse (both ran successfully on this data):**\n- `country-currency-rates` (`/x/country-currency-rates`): takes a country code and returns the latest rates for that country's currency; you read the USD figure from the result.\n- `wikipedia-summary-translated` (`/x/wikipedia-summary-translated`): takes an article title and a language code and returns the translated summary.\n\n**What the saved workflows don't do:**\n- The tool couldn't link the country lookup directly to the Wikipedia lookup, so for another country you still pass the capital's name in yourself.\n- The second workflow translates the whole summary, not just the first sentence. The planner can't pull out a single sentence, so I did that step by hand and translated the sentence on its own for the line below.\n\nCAPITAL: Lima\nRATE: PEN 0.291\nSENTENCE: Lima is the capital and largest city of Peru, as well as a primate city.\nTRANSLATION: Lima is the capital y largest city de Peru, as well as una primate city."
+    },
+    {
+      "name": "Phase 2: restart + different client + changed environment",
+      "client": "codex",
+      "code": "JP",
+      "prompt": "You are connected to exactly one MCP server, rightclick-x. Use only its tools.\nSomeone saved reusable capabilities in rightclick-x for producing a country briefing (capital, exchange rate to USD, Wikipedia summary of the capital, and a Spanish translation of its first sentence).\nUse them for the country with ISO code JP. If something has changed or no longer works, use rightclick-x to adapt.\nEnd with exactly these four lines:\nCAPITAL: <capital city>\nRATE: <currency code> <rate to USD>\nSENTENCE: <the first sentence of the Wikipedia summary of the capital>\nTRANSLATION: <that sentence as returned by the translation service, or 'unavailable'>",
+      "independentTruth": {
+        "capital": "Tokyo",
+        "currency": "JPY",
+        "usd": 0.00633,
+        "wikiExtract": "Tokyo, officially the Tokyo Metropolis, is the capital and most populous city of Japan. The population of the city proper was over 14 million as of 2023. The Greater Tokyo Area, which includes Tokyo and parts of six neighboring prefectures, is the third-most populous metropolitan area in the world, with 33 million residents as of 2025."
+      },
+      "check": {
+        "capitalOk": true,
+        "rateOk": true,
+        "sentenceGrounded": true,
+        "translationOk": true,
+        "translationReportedUnavailable": false
+      },
+      "verified": true,
+      "seconds": 78.3,
+      "mcpCalls": [
+        {
+          "tool": "context_research",
+          "ok": true,
+          "ms": 0.9,
+          "args": {}
+        },
+        {
+          "tool": "context_graph",
+          "ok": true,
+          "ms": 1.8,
+          "args": {
+            "op": "search",
+            "query": "country",
+            "limit": 30
+          }
+        },
+        {
+          "tool": "context_providers",
+          "ok": true,
+          "ms": 0.3,
+          "args": {}
+        },
+        {
+          "tool": "context_graph",
+          "ok": true,
+          "ms": 2.8,
+          "args": {
+            "op": "search",
+            "query": "summary",
+            "limit": 20
+          }
+        },
+        {
+          "tool": "context_graph",
+          "ok": true,
+          "ms": 1.9,
+          "args": {
+            "op": "search",
+            "query": "translation",
+            "limit": 20
+          }
+        },
+        {
+          "tool": "context_explain",
+          "ok": true,
+          "ms": 0.6,
+          "args": {
+            "id": "composite:ff12853a385b"
+          }
+        },
+        {
+          "tool": "context_explain",
+          "ok": true,
+          "ms": 0.2,
+          "args": {
+            "id": "graphql:countries-trevorblades-com:query:country"
+          }
+        },
+        {
+          "tool": "context_explain",
+          "ok": true,
+          "ms": 0.1,
+          "args": {
+            "id": "mcp:wikipedia-mcp-server:wikipedia-get-summary"
+          }
+        },
+        {
+          "tool": "context_run",
+          "ok": true,
+          "ms": 700.5,
+          "args": {
+            "id": "composite:ff12853a385b",
+            "args": {
+              "code": "JP"
+            }
+          }
+        },
+        {
+          "tool": "context_explain",
+          "ok": true,
+          "ms": 0.2,
+          "args": {
+            "id": "openapi:polyglot:translatetext"
+          }
+        },
+        {
+          "tool": "context_run_status",
+          "ok": true,
+          "ms": 0.2,
+          "args": {
+            "runId": "run_mvamktni_2"
+          }
+        },
+        {
+          "tool": "context_run",
+          "ok": true,
+          "ms": 628.1,
+          "args": {
+            "id": "mcp:wikipedia-mcp-server:wikipedia-get-summary",
+            "args": {
+              "title": "Tokyo",
+              "language": "en"
+            },
+            "verify": [
+              {
+                "op": "exists",
+                "path": "extract"
+              }
+            ]
+          }
+        },
+        {
+          "tool": "context_run",
+          "ok": true,
+          "ms": 127.7,
+          "args": {
+            "id": "openapi:polyglot:translatetext",
+            "args": {
+              "text": "Tokyo, officially the Tokyo Metropolis, is the capital and most populous city of Japan.",
+              "target": "es"
+            },
+            "verify": [
+              {
+                "op": "exists",
+                "path": "translatedText"
+              }
+            ]
+          }
+        },
+        {
+          "tool": "context_learn",
+          "ok": true,
+          "ms": 235.9,
+          "args": {
+            "source": "https://rcx-ow-service.ross-buckley1990.workers.dev/openapi.json"
+          }
+        },
+        {
+          "tool": "context_learn",
+          "ok": true,
+          "ms": 412.8,
+          "args": {
+            "source": "https://rcx-ow-service.ross-buckley1990.workers.dev/",
+            "deep": true
+          }
+        },
+        {
+          "tool": "context_explain",
+          "ok": true,
+          "ms": 0.3,
+          "args": {
+            "id": "graphql:rcx-ow-service-ross-buckley1990-workers-dev-graphql:query:translate"
+          }
+        },
+        {
+          "tool": "context_run",
+          "ok": true,
+          "ms": 96.8,
+          "args": {
+            "id": "graphql:rcx-ow-service-ross-buckley1990-workers-dev-graphql:query:translate",
+            "args": {
+              "input": "Tokyo, officially the Tokyo Metropolis, is the capital and most populous city of Japan.",
+              "to": "es"
+            },
+            "verify": [
+              {
+                "op": "exists",
+                "path": "translation"
+              }
+            ]
+          }
+        }
+      ],
+      "finalText": "CAPITAL: Tokyo\nRATE: JPY 0.00633\nSENTENCE: Tokyo, officially the Tokyo Metropolis, is the capital and most populous city of Japan.\nTRANSLATION: Tokyo, officially the Tokyo Metropolis, is the capital y most populous city de Japan."
+    },
+    {
+      "name": "Phase 3: a provider disappears",
+      "client": "claude",
+      "code": "BR",
+      "prompt": "You are connected to exactly one MCP server, rightclick-x. Use only its tools.\nSomeone saved reusable capabilities in rightclick-x for producing a country briefing (capital, exchange rate to USD, Wikipedia summary of the capital, and a Spanish translation of its first sentence).\nUse them for the country with ISO code BR. If something has changed or no longer works, use rightclick-x to adapt.\nEnd with exactly these four lines:\nCAPITAL: <capital city>\nRATE: <currency code> <rate to USD>\nSENTENCE: <the first sentence of the Wikipedia summary of the capital>\nTRANSLATION: <that sentence as returned by the translation service, or 'unavailable'>",
+      "independentTruth": {
+        "capital": "Brasília",
+        "currency": "BRL",
+        "usd": 0.198,
+        "wikiExtract": "Brasília is the capital city of Brazil and the Federal District. Located in the Brazilian Highlands in the country's Central-West region, it was founded by President Juscelino Kubitschek on 21 April 1960, to replace Rio de Janeiro as the national capital. Brasília is Brazil's third-most populous city after São Paulo and Rio de Janeiro, with a population of 2.8 million. Among major Latin American c"
+      },
+      "check": {
+        "capitalOk": true,
+        "rateOk": true,
+        "sentenceGrounded": true,
+        "translationOk": true,
+        "translationReportedUnavailable": true
+      },
+      "verified": true,
+      "seconds": 116.2,
+      "mcpCalls": [
+        {
+          "tool": "context_graph",
+          "ok": true,
+          "ms": 2.8,
+          "args": {
+            "op": "search",
+            "query": "country briefing"
+          }
+        },
+        {
+          "tool": "context_providers",
+          "ok": true,
+          "ms": 0.2,
+          "args": {}
+        },
+        {
+          "tool": "context_run",
+          "ok": true,
+          "ms": 146.7,
+          "args": {
+            "id": "graphql:countries-trevorblades-com:query:country",
+            "args": {
+              "code": "BR"
+            }
+          }
+        },
+        {
+          "tool": "context_explain",
+          "ok": true,
+          "ms": 0.3,
+          "args": {
+            "id": "composite:ff12853a385b"
+          }
+        },
+        {
+          "tool": "context_graph",
+          "ok": true,
+          "ms": 3.1,
+          "args": {
+            "op": "search",
+            "query": "translate"
+          }
+        },
+        {
+          "tool": "context_run",
+          "ok": true,
+          "ms": 583.4,
+          "args": {
+            "id": "composite:ff12853a385b",
+            "args": {
+              "code": "BR"
+            }
+          }
+        },
+        {
+          "tool": "context_explain",
+          "ok": true,
+          "ms": 0.2,
+          "args": {
+            "id": "graphql:rcx-ow-service-ross-buckley1990-workers-dev-graphql:query:translate"
+          }
+        },
+        {
+          "tool": "context_graph",
+          "ok": true,
+          "ms": 1.4,
+          "args": {
+            "op": "search",
+            "query": "wikipedia summary"
+          }
+        },
+        {
+          "tool": "context_explain",
+          "ok": true,
+          "ms": 0.2,
+          "args": {
+            "id": "mcp:wikipedia-mcp-server:wikipedia-get-summary"
+          }
+        },
+        {
+          "tool": "context_run",
+          "ok": true,
+          "ms": 779.4,
+          "args": {
+            "id": "mcp:wikipedia-mcp-server:wikipedia-get-summary",
+            "args": {
+              "title": "Brasília",
+              "language": "en"
+            }
+          }
+        },
+        {
+          "tool": "context_run",
+          "ok": true,
+          "ms": 75.1,
+          "args": {
+            "id": "graphql:rcx-ow-service-ross-buckley1990-workers-dev-graphql:query:translate",
+            "args": {
+              "input": "Brasília is the capital city of Brazil and the Federal District.",
+              "to": "es"
+            }
+          }
+        },
+        {
+          "tool": "context_learn",
+          "ok": true,
+          "ms": 398.1,
+          "args": {
+            "source": "https://rcx-ow-service.ross-buckley1990.workers.dev/",
+            "deep": true
+          }
+        },
+        {
+          "tool": "context_research",
+          "ok": true,
+          "ms": 20007,
+          "args": {
+            "topic": "translation"
+          }
+        },
+        {
+          "tool": "context_compose",
+          "ok": true,
+          "ms": 23853,
+          "args": {
+            "have": {
+              "text": "Brasília is the capital city of Brazil and the Federal District.",
+              "language": "es"
+            },
+            "want": "text",
+            "intent": "translate text to spanish",
+            "acquire": true,
+            "run": true,
+            "risks": [
+              "read",
+              "external"
+            ]
+          }
+        },
+        {
+          "tool": "context_graph",
+          "ok": true,
+          "ms": 4.6,
+          "args": {
+            "op": "search",
+            "query": "libretranslate translate"
+          }
+        },
+        {
+          "tool": "context_run",
+          "ok": true,
+          "ms": 5008,
+          "args": {
+            "id": "openapi:libretranslate:post-translate",
+            "args": {
+              "q": "Brasília is the capital city of Brazil and the Federal District.",
+              "source": "en",
+              "target": "es",
+              "format": "text"
+            }
+          }
+        }
+      ],
+      "finalText": "I got the capital, rate and sentence, but not the translation, because the saved translation service is gone.\n\n- **Capital:** the saved countries lookup for BR returned Brasília, with currency BRL.\n- **Rate:** the saved country-to-exchange-rate pipeline ran with BRL as the base currency. It returned USD 0.198 for 2026-10-16, meaning 1 BRL = 0.198 USD.\n- **Sentence:** the Wikipedia summary tool returned the \"Brasília\" summary, and I took its first sentence.\n- **Translation (failed):** the saved service at `rcx-ow-service.ross-buckley1990.workers.dev` now returns Cloudflare error 1042 (\"No Workers script was found for this host\"). I tried to re-learn it from that address and found nothing, so rightclick-x removed it from the graph. I then let rightclick-x search public directories for a replacement:\n  - The LibreTranslate spec points to a `libretranslate.local` host that can't be reached (\"fetch failed\").\n  - The other options it found either need credentials (Google Cloud Translation, Amazon Translate) or exposed no tools (Langbly, AI-Translators).\n  - The pipelines it put together on its own were nonsense, and none of them ran.\n\nTranslating the sentence again would need a working translation service you can access, such as a redeployed worker or an API key for one of those providers.\n\nCAPITAL: Brasília\nRATE: BRL 0.198\nSENTENCE: Brasília is the capital city of Brazil and the Federal District.\nTRANSLATION: unavailable"
+    }
+  ],
+  "controlledService": "https://rcx-ow-service.ross-buckley1990.workers.dev",
+  "change": {
+    "from": "REST v1",
+    "to": "GraphQL v3"
+  },
+  "providersLearned": [
+    {
+      "id": "graphql:countries-trevorblades-com",
+      "protocol": "graphql",
+      "origin": "https://countries.trevorblades.com/"
+    },
+    {
+      "id": "openapi:exchangerate-api",
+      "protocol": "openapi",
+      "origin": "https://api.apis.guru/v2/specs/exchangerate-api.com/4/openapi.json"
+    },
+    {
+      "id": "composite:crystallized",
+      "protocol": "composite",
+      "origin": "rightclick-x"
+    },
+    {
+      "id": "openapi:funtranslations-braille-api",
+      "protocol": "openapi",
+      "origin": "https://api.apis.guru/v2/specs/funtranslations.com/braile/2.3/swagger.json"
+    },
+    {
+      "id": "openapi:funtranslations-api",
+      "protocol": "openapi",
+      "origin": "https://api.apis.guru/v2/specs/funtranslations.com/index/2.3/swagger.json"
+    },
+    {
+      "id": "openapi:starwars-translations-api",
+      "protocol": "openapi",
+      "origin": "https://api.apis.guru/v2/specs/funtranslations.com/starwars/2.3/swagger.json"
+    },
+    {
+      "id": "openapi:libretranslate",
+      "protocol": "openapi",
+      "origin": "https://api.apis.guru/v2/specs/libretranslate.local/1.3.9/openapi.json"
+    },
+    {
+      "id": "mcp:wikipedia-mcp-server",
+      "protocol": "mcp",
+      "origin": "https://wikipedia.caseyjhand.com/mcp"
+    },
+    {
+      "id": "openapi:cloud-translation-api",
+      "protocol": "openapi",
+      "origin": "https://api.apis.guru/v2/specs/googleapis.com/translate/v3beta1/openapi.json"
+    },
+    {
+      "id": "openapi:amazon-translate",
+      "protocol": "openapi",
+      "origin": "https://api.apis.guru/v2/specs/amazonaws.com/translate/2017-07-01/openapi.json"
+    },
+    {
+      "id": "mcp:ai-text",
+      "protocol": "mcp",
+      "origin": "https://aitext.openkrill.app/mcp"
+    }
+  ],
+  "published": [
+    {
+      "title": "country-currency-rates",
+      "pipeline": [
+        "Country",
+        "Returns latest exchange rates in parameter-supplied base currency."
+      ],
+      "calls": 0
+    },
+    {
+      "title": "wikipedia-summary-translated",
+      "pipeline": [
+        "Get Wikipedia Summary",
+        "Translate text"
+      ],
+      "calls": 0
+    }
+  ],
+  "verdict": "PASS",
+  "finishedAt": "2026-10-16T07:10:54.045Z"
+}
