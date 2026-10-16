@@ -305,7 +305,7 @@ export class RightClick {
 
   // ================================================================ context_learn
 
-  async learn(opts: { source?: string; sources?: string[]; deep?: boolean; spec?: Reflection; kinds?: Record<string, SourceKind> }) {
+  async learn(opts: { source?: string; sources?: string[]; deep?: boolean; spec?: Reflection; kinds?: Record<string, SourceKind>; net?: Net }) {
     const sources = [...(opts.source ? [opts.source] : []), ...(opts.sources ?? [])];
     // Batch learning measures powers once for the whole batch, not per provider.
     const batchBefore = this.graph.powers().total;
@@ -315,7 +315,8 @@ export class RightClick {
     await Promise.all(
       sources.map(async (source) => {
         try {
-          const d = await discover(this.net, source, { deep: opts.deep, mcp: (u) => this.mcp(u), kind: opts.kinds?.[source] });
+          const net = opts.net ?? this.net;
+          const d = await discover(net, source, { deep: opts.deep, mcp: (u) => this.mcp(u, net), kind: opts.kinds?.[source] });
           // Re-learning a source replaces everything it produced before, even when
           // the provider changed protocol (OpenAPI -> GraphQL -> MCP) and so its id.
           const previous = [...this.graph.providers.values()].filter((p) => p.meta?.source === source);
@@ -487,7 +488,7 @@ export class RightClick {
 
   // ================================================================ context_run
 
-  async run(id: string, args: Record<string, unknown> = {}, opts: { verify?: Predicate[]; confirm?: boolean; activeGoals?: string[] } = {}): Promise<RunRecord> {
+  async run(id: string, args: Record<string, unknown> = {}, opts: { verify?: Predicate[]; confirm?: boolean; activeGoals?: string[]; net?: Net } = {}): Promise<RunRecord> {
     const cap = this.graph.get(id);
     if (!cap) throw new Error(`unknown capability: ${id}`);
     // Destructive effects keep the user's authority: they need an explicit confirmation.
@@ -515,16 +516,16 @@ export class RightClick {
         verification = r.executed?.verification ?? { status: "refuted", results: [] };
         if (r.executed?.status !== "completed") throw new Error(attempts?.map((a) => a.error).join("; ") || "no pipeline found for saved goal");
       } else if (cap.invoke.kind === "composite") {
-        const r = await this.runSteps(cap.invoke.steps, cap.invoke.result, coerced, opts.confirm, opts.activeGoals);
+        const r = await this.runSteps(cap.invoke.steps, cap.invoke.result, coerced, opts.confirm, opts.activeGoals, opts.net);
         output = r.output;
         steps = r.runs;
         verification = check(output, cap.invoke.verify ?? []);
         if (verification.status === "refuted") throw new Error("stored verification refuted");
-        witnesses = await this.checkWitnesses(cap.invoke.witnesses ?? [], coerced, output, r.runs);
+        witnesses = await this.checkWitnesses(cap.invoke.witnesses ?? [], coerced, output, r.runs, opts.net);
         if (witnesses.some((w) => w.status !== "completed")) throw new Error("independent outcome witness refuted: " + witnesses.filter((w) => w.status !== "completed").map((w) => w.error ?? w.capability).join("; "));
         if (witnesses.length) verification = { ...verification, status: "verified" };
       } else {
-        output = await this.execute(cap, coerced);
+        output = await this.execute(cap, coerced, opts.net);
       }
       const extra = check(output, opts.verify ?? []);
       verification = { status: extra.status === "refuted" ? "refuted" : verification.status === "verified" || extra.status === "verified" ? "verified" : "unverified", results: [...verification.results, ...extra.results] };
@@ -596,7 +597,7 @@ export class RightClick {
     });
   }
 
-  private async checkWitnesses(witnesses: OutcomeWitness[], inputs: Record<string, unknown>, output: unknown, runIds: string[]): Promise<WitnessResult[]> {
+  private async checkWitnesses(witnesses: OutcomeWitness[], inputs: Record<string, unknown>, output: unknown, runIds: string[], net?: Net): Promise<WitnessResult[]> {
     const providers = new Set<string>();
     const visit = (id: string) => {
       const r = this.runs.get(id);
@@ -617,7 +618,7 @@ export class RightClick {
           if (value === undefined) throw new Error(`unresolved witness argument: ${key}`);
           args[key] = value;
         }
-        const r = await this.run(w.capability, args, { verify: w.verify });
+        const r = await this.run(w.capability, args, { verify: w.verify, net });
         evidence.push({ capability: w.capability, runId: r.runId, status: r.status, verification: r.verification, output: r.output, ...(r.error ? { error: r.error } : {}) });
       } catch (e) {
         evidence.push({ capability: original.capability, runId: "", status: "failed", verification: { status: "refuted", results: [] }, error: String((e as Error)?.message ?? e) });
@@ -730,6 +731,9 @@ export class RightClick {
     };
     const blocked = new Set(this.graph.list().filter((c) => containsActive(c)).map((c) => c.id));
     const origins = opts.origins?.length ? opts.origins.map((o) => new URL(o).origin) : undefined;
+    // Everything this goal does on the network - its steps, checks and repairs, including
+    // every redirect hop - goes through a handle that enforces the caller's origins.
+    const net: Net = origins ? { ...this.net, policy: { blockPrivate: false, ...this.net.policy, origins } } : this.net;
     const goal = { have: types, want: opts.want, intent: opts.intent, maxSteps: opts.maxSteps, limit: opts.limit ?? 5, risks: opts.risks, through, exclude: blocked, origins };
     let plans = plan(this.graph, this.ledger, goal);
     const titles = (p: Plan) => p.steps.map((s) => this.graph.get(s.capability)!.title);
@@ -793,10 +797,10 @@ export class RightClick {
     for (let attempt = 0; attempt < 6 && plans.length; attempt++) {
       const p = plans[0];
       try {
-        const r = await this.runSteps(p.steps, p.result, values, opts.confirm, opts.activeGoals);
+        const r = await this.runSteps(p.steps, p.result, values, opts.confirm, opts.activeGoals, net);
         let verification = check(r.output, opts.verify ?? []);
         if (verification.status === "refuted") throw new StepError(p.steps[p.steps.length - 1].capability, `verification refuted: ${JSON.stringify(verification.results.filter((x) => !x.ok))}`);
-        lastWitnesses = await this.checkWitnesses(witnesses, values, r.output, r.runs);
+        lastWitnesses = await this.checkWitnesses(witnesses, values, r.output, r.runs, net);
         if (lastWitnesses.some((w) => w.status !== "completed")) throw new StepError(p.steps[p.steps.length - 1].capability, `verification refuted by independent outcome witness: ${lastWitnesses.filter((w) => w.status !== "completed").map((w) => w.error ?? w.capability).join("; ")}`);
         if (lastWitnesses.length) verification = { ...verification, status: "verified" };
         result.executed = {
@@ -856,7 +860,7 @@ export class RightClick {
           gone = /HTTP (404|410)\b/.test(attempt.error);
         } else if (source && !refreshed.has(source) && !(e instanceof StepError && /verification refuted/.test(attempt.error))) {
           refreshed.add(source);
-          const r = await this.learn({ source, deep: true });
+          const r = await this.learn({ source, deep: true, net });
           const d = r.results[0]?.drift;
           drifted = !!d?.changed;
           attempt.healing = r.results[0]?.withdrawn
@@ -879,7 +883,7 @@ export class RightClick {
           for (const home of homes) {
             if (refreshed.has(home) || !allowedOrigin(home)) continue;
             refreshed.add(home);
-            const s = await this.learn({ source: home });
+            const s = await this.learn({ source: home, net });
             const found = s.results[0]?.learned?.length ?? 0;
             attempt.healing = `${attempt.healing ? attempt.healing + "; " : ""}looked for a successor at ${home}: ${found ? `learned ${found} provider(s)` : s.results[0]?.error ?? "nothing found"}`;
             if (found) drifted = true;
@@ -1079,7 +1083,7 @@ export class RightClick {
     return { id, title, newPowers: delta.newPowers };
   }
 
-  private async runSteps(steps: PlanStep[], resultRef: string, inputs: Record<string, unknown>, confirm?: boolean, activeGoals?: string[]) {
+  private async runSteps(steps: PlanStep[], resultRef: string, inputs: Record<string, unknown>, confirm?: boolean, activeGoals?: string[], net?: Net) {
     const outputs: unknown[] = [];
     const runs: string[] = [];
     const resolve = (ref: string) => {
@@ -1090,7 +1094,7 @@ export class RightClick {
     for (const step of steps) {
       const args: Record<string, unknown> = {};
       for (const b of step.bindings) args[b.port] = resolve(b.from);
-      const r = await this.run(step.capability, args, { confirm, activeGoals });
+      const r = await this.run(step.capability, args, { confirm, activeGoals, net });
       runs.push(r.runId);
       if (r.status === "failed") throw new StepError(r.failedCapability ?? step.capability, `${step.capability}: ${r.error}`);
       outputs.push(r.output);
@@ -1147,19 +1151,21 @@ export class RightClick {
 
   // ================================================================ execution
 
-  mcp(endpoint: string): McpClient {
+  mcp(endpoint: string, net: Net = this.net): McpClient {
+    // A policy-scoped handle gets its own session; shared sessions use the unscoped network.
+    if (net !== this.net) return new McpClient(endpoint, net);
     let c = this.mcpClients.get(endpoint);
     if (!c) this.mcpClients.set(endpoint, (c = new McpClient(endpoint, this.net)));
     return c;
   }
 
-  private async execute(cap: Capability, args: Record<string, unknown>): Promise<unknown> {
+  private async execute(cap: Capability, args: Record<string, unknown>, net: Net = this.net): Promise<unknown> {
     const inv = cap.invoke;
     switch (inv.kind) {
       case "builtin": {
         const fn = this.builtins.get(inv.fn);
         if (!fn) throw new Error(`builtin missing: ${inv.fn}`);
-        return fn(args as Record<string, any>, this.net);
+        return fn(args as Record<string, any>, net);
       }
       case "platform": {
         const fn = this.platformFns.get(inv.fn);
@@ -1197,7 +1203,7 @@ export class RightClick {
           for (const k of inv.bodyParams) if (args[k] != null) f.set(k, String(args[k]));
           body = f.toString();
         }
-        const res = await request(this.net, u.toString(), { method: inv.method, headers, body });
+        const res = await request(net, u.toString(), { method: inv.method, headers, body });
         const out = await readBody(res);
         if (!res.ok) throw new Error(`HTTP ${res.status}: ${String(JSON.stringify(preview(out))).slice(0, 300)}`);
         if (inv.entry) {
@@ -1218,7 +1224,7 @@ export class RightClick {
           const t = inv.args[k] ?? "";
           variables[k] = /^(Int|Float)!?$/.test(t) ? Number(args[k]) : args[k];
         }
-        const res = await request(this.net, inv.endpoint, {
+        const res = await request(net, inv.endpoint, {
           method: "POST",
           headers: { "content-type": "application/json", accept: "application/json" },
           body: JSON.stringify({ query: buildDocument(doc, provided), variables }),
@@ -1228,9 +1234,9 @@ export class RightClick {
         return j.data[inv.field];
       }
       case "mcp":
-        return this.mcp(inv.endpoint).call(inv.tool, args, cap.outputs.some((o) => o.name !== ""));
+        return this.mcp(inv.endpoint, net).call(inv.tool, args, cap.outputs.some((o) => o.name !== ""));
       case "peer": {
-        const res = await request(this.net, `${inv.endpoint}/api/run`, {
+        const res = await request(net, `${inv.endpoint}/api/run`, {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ id: inv.id, args }),

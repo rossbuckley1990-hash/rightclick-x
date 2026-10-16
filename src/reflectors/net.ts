@@ -55,6 +55,8 @@ export interface NetworkPolicy {
   allow?: string[];
   /** Hosts always refused. */
   deny?: string[];
+  /** Egress allowlist (a caller's policy): only these origins, on every request and redirect hop. */
+  origins?: string[];
 }
 
 export interface Net {
@@ -88,6 +90,7 @@ export async function checkUrl(policy: NetworkPolicy | undefined, raw: string): 
   const u = new URL(raw);
   if (u.protocol !== "http:" && u.protocol !== "https:") throw new Error(`blocked by network policy: ${u.protocol} URLs are not allowed`);
   if (!policy) return;
+  if (policy.origins && !policy.origins.includes(u.origin)) throw new Error(`blocked by egress policy: ${u.origin} is not an approved origin`);
   const matches = (list?: string[]) => (list ?? []).some((x) => x === u.host || x === u.hostname || x === u.origin);
   if (matches(policy.deny)) throw new Error(`blocked by network policy: ${u.host} is denied`);
   if (!policy.blockPrivate || matches(policy.allow)) return;

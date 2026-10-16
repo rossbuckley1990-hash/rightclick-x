@@ -139,3 +139,28 @@ test("egress policy covers repair traffic too: a contract mirrored elsewhere is 
   assert.equal(after.ok, true, after.error);
   assert.equal(after.result, RATE.GBP);
 });
+
+test("egress policy holds across redirects: an approved origin cannot hand the call to an unapproved one (OW8b attempt 2)", async () => {
+  const { state, fetchMock } = world();
+  // The approved API origin redirects its root to a marketing site on another origin.
+  const redirecting = (async (input: any, init?: any) => {
+    const u = new URL(typeof input === "string" ? input : input.url);
+    if (u.host === "fx.test" && u.pathname === "/") {
+      state.calls.push(`${u.host}${u.pathname}`);
+      return new Response(null, { status: 301, headers: { location: "https://www.fx-marketing.test/" } });
+    }
+    if (u.host === "www.fx-marketing.test") {
+      state.calls.push(`${u.host}${u.pathname}`);
+      return new Response("<html>FX</html>", { headers: { "content-type": "text/html" } });
+    }
+    return fetchMock(input, init);
+  }) as typeof fetch;
+  const rc = await RightClick.create({ name: "redirect", fetch: redirecting, directories: [] });
+  await rc.learn({ source: "https://fx.test/v1/openapi.json" });
+  const built = await rc.compose(requirement({ origins: ["https://fx.test"] }));
+  assert.equal(built.executed?.output, RATE.USD);
+  state.v1Retired = true;
+  const after = await rc.callPublished("euro-rate", { base: "JPY" });
+  assert.ok(!state.calls.some((c) => c.startsWith("www.fx-marketing.test")), "the redirect to an unapproved origin was not followed");
+  assert.equal(after.ok, false, "with no reachable successor inside the policy, it fails closed");
+});
