@@ -1,8 +1,8 @@
 {
-  "seed": 827776466,
+  "seed": 597175202,
   "domain": "accounts",
   "gateway": true,
-  "startedAt": "2026-10-16T07:33:48.995Z",
+  "startedAt": "2026-10-16T21:24:31.412Z",
   "steps": [
     {
       "n": 1,
@@ -17,7 +17,7 @@
       "title": "Connect an MCP client to RightClick X (stdio)",
       "ok": true,
       "tools": 13,
-      "startupMs": 110.2
+      "startupMs": 210.1
     },
     {
       "n": 3,
@@ -44,90 +44,90 @@
       "found": [
         "mcp",
         "graphql",
-        "openapi"
+        "graphql"
       ],
       "newCapabilities": 3,
-      "ms": 36.7
+      "ms": 64.8
     },
     {
       "n": 5,
       "title": "Identify suitable capabilities",
       "ok": true,
-      "candidatePlans": 2,
+      "candidatePlans": 3,
       "best": [
-        "Account lookup",
-        "Customer Inquiry",
-        "VAT rate inquiry"
+        "Get account",
+        "Get Account Holder",
+        "Vat Rate Inquiry"
       ],
-      "planningMs": 2.1
+      "planningMs": 6.3
     },
     {
       "n": 6,
       "title": "Compose a multi-provider workflow",
       "ok": true,
       "steps": [
-        "Account lookup ← acctno=$in.account_id",
-        "Customer Inquiry ← cref=0.cref",
-        "VAT rate inquiry ← cc=1.jur"
+        "Get account ← acct_ref=$in.account_id",
+        "Get Account Holder ← cust_ref=0.cref",
+        "Vat Rate Inquiry ← jur=1.cc"
       ]
     },
     {
       "n": 7,
       "title": "Execute the workflow",
       "ok": true,
-      "input": "ACC-1002",
+      "input": "ACC-1001",
       "pipeline": [
-        "Account lookup",
-        "Customer Inquiry",
-        "VAT rate inquiry"
+        "Get account",
+        "Get Account Holder",
+        "Vat Rate Inquiry"
       ],
-      "ms": 4.4
+      "ms": 8.2
     },
     {
       "n": 8,
       "title": "Verify against independently held test data",
       "ok": true,
-      "expected": 20.5,
-      "got": 20.5
+      "expected": 8.7,
+      "got": 8.7
     },
     {
       "n": 9,
       "title": "Save the successful composition and reuse it",
       "ok": true,
-      "saved": "Vat rate account holder country: Account lookup → Customer Inquiry → VAT rate inquiry",
+      "saved": "Vat rate account holder country: Get account → Get Account Holder → Vat Rate Inquiry",
       "reusedAs": [
-        "Vat rate account holder country: Account lookup → Customer Inquiry → VAT rate inquiry"
+        "Vat rate account holder country: Get account → Get Account Holder → Vat Rate Inquiry"
       ],
-      "expected": 20.5,
-      "got": 20.5,
-      "ms": 2.1
+      "expected": 8.7,
+      "got": 8.7,
+      "ms": 5.4
     },
     {
       "n": 10,
-      "title": "Change the interface of the last provider in the chain (Duneworks)",
+      "title": "Change the interface of the last provider in the chain (Quillbase)",
       "ok": true,
-      "before": "openapi \"VAT rate inquiry\" cc → cc, vr",
-      "after": "mcp \"Get VAT rate\" jur → result.{jur, vatpct}"
+      "before": "graphql \"VAT rate inquiry\" jur → jur, vatpct",
+      "after": "mcp \"Get VAT rate\" cc → result.{cc, vr}"
     },
     {
       "n": 11,
       "title": "Recover without changing integration code",
       "ok": true,
       "healing": [
-        "API drift at http://127.0.0.1:54670/: mcp:lumen-cargo,graphql:127-0-0-1-54668-graphql,openapi:duneworks → mcp:lumen-cargo,graphql:127-0-0-1-54668-graphql,mcp:duneworks; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:63577/: mcp:duneworks,graphql:127-0-0-1-63575-graphql,graphql:127-0-0-1-63576-graphql → mcp:duneworks,graphql:127-0-0-1-63575-graphql,mcp:quillbase; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "via": [
-        "mcp:lumen-cargo",
-        "graphql:127-0-0-1-54668-graphql",
-        "mcp:duneworks"
+        "mcp:duneworks",
+        "graphql:127-0-0-1-63575-graphql",
+        "mcp:quillbase"
       ],
-      "expected": 20.2,
-      "got": 20.2,
-      "ms": 16.7
+      "expected": 8.7,
+      "got": 8.7,
+      "ms": 33.8
     },
     {
       "n": 12,
-      "title": "Remove that provider (Duneworks)",
+      "title": "Remove that provider (Quillbase)",
       "ok": true
     },
     {
@@ -136,17 +136,17 @@
       "ok": true,
       "status": "failed",
       "healing": [
-        "API drift at http://127.0.0.1:54670/: mcp:lumen-cargo,graphql:127-0-0-1-54668-graphql,mcp:duneworks → mcp:lumen-cargo,graphql:127-0-0-1-54668-graphql; +0 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:63577/: mcp:duneworks,graphql:127-0-0-1-63575-graphql,mcp:quillbase → mcp:duneworks,graphql:127-0-0-1-63575-graphql; +0 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "withdrawn": [
-        "Duneworks"
+        "Quillbase"
       ],
-      "capabilities": "21 → 19",
+      "capabilities": "27 → 25",
       "savedPipelines": "1 → 0"
     },
     {
       "n": 14,
-      "title": "Introduce a different provider (Cobaltix, mcp): the objective works again",
+      "title": "Introduce a different provider (Kestrel Freight, mcp): the objective works again",
       "ok": true,
       "learned": [
         "api-catalog: 3 services listed",
@@ -155,91 +155,91 @@
         "mcp: 1 tools"
       ],
       "via": [
-        "mcp:lumen-cargo",
-        "graphql:127-0-0-1-54668-graphql",
-        "mcp:cobaltix"
+        "mcp:duneworks",
+        "graphql:127-0-0-1-63575-graphql",
+        "mcp:kestrel-freight"
       ],
-      "expected": 20.2,
-      "got": 20.2,
-      "ms": 1.7
+      "expected": 19.2,
+      "got": 19.2,
+      "ms": 4.6
     }
   ],
   "benchmarks": {
-    "startupMs": 110.2,
+    "startupMs": 210.1,
     "mcpLatencyMs": {
-      "p50": 0.04,
-      "p95": 0.11
+      "p50": 0.05,
+      "p95": 0.18
     },
-    "discoveryMs": 36.7,
+    "discoveryMs": 64.8,
     "graph": {
       "providers": 5,
-      "capabilities": 20,
-      "edges": 37,
-      "chains2": 37,
-      "chains3": 57,
-      "total": 114
+      "capabilities": 26,
+      "edges": 43,
+      "chains2": 43,
+      "chains3": 63,
+      "total": 132
     },
     "graphStatsMs": 0.1,
-    "planningMs": 2.1,
-    "executionMs": 4.4,
-    "recoveryAfterChangeMs": 16.7,
-    "recoveryAfterNewProviderMs": 1.7,
-    "memoryMB": 144
+    "planningMs": 6.3,
+    "executionMs": 8.2,
+    "recoveryAfterChangeMs": 33.8,
+    "recoveryAfterNewProviderMs": 4.6,
+    "memoryMB": 146
   },
   "freeze": {
-    "commit": "66b871c4e891036920a88fb2089c9d437fc1331e",
-    "tag": "lab-freeze-4",
-    "productCodeChangedSinceTag": "",
-    "uncommittedProductChanges": "",
-    "frozen": true
+    "commit": "3f1fbcc80dc47180a996bf08ba0cf5dadf31f72c",
+    "tag": "lab-freeze-9",
+    "productCodeChangedSinceTag": "src/core/graph.ts\nsrc/core/identities.ts\nsrc/core/planner.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/interface/http.ts\nsrc/interface/tools.ts\nsrc/reflectors/net.ts\nsrc/runtime.ts",
+    "uncommittedProductChanges": "M bin/rcx.ts\n M src/entry/durable.ts\n M src/entry/edge.ts\n M src/interface/http.ts\n M src/reflectors/mcp.ts\n M src/reflectors/platform.ts\n M src/runtime.ts\n?? src/core/authority.ts",
+    "frozen": false
   },
   "environment": [
     {
       "service": "ledger",
-      "brand": "Lumen Cargo",
+      "brand": "Duneworks",
       "protocol": "mcp",
-      "operation": "Account lookup",
-      "input": "acctno",
+      "operation": "Get account",
+      "input": "acct_ref",
       "outputs": [
-        "acctno",
+        "acct_ref",
         "cref",
-        "curbal"
+        "bal"
       ]
     },
     {
       "service": "kyc",
       "brand": "Harbourly",
       "protocol": "graphql",
-      "operation": "Customer inquiry",
-      "input": "cref",
+      "operation": "Get account holder",
+      "input": "cust_ref",
       "outputs": [
-        "cref",
-        "lglnm",
-        "jur"
+        "cust_ref",
+        "fullnm",
+        "cc"
       ]
     },
     {
       "service": "vat",
-      "brand": "Duneworks",
-      "protocol": "openapi",
+      "brand": "Quillbase",
+      "protocol": "graphql",
       "operation": "VAT rate inquiry",
-      "input": "cc",
+      "input": "jur",
       "outputs": [
-        "cc",
-        "vr"
+        "jur",
+        "vatpct"
       ]
     }
   ],
   "firstRunProviders": [
-    "mcp:lumen-cargo",
-    "graphql:127-0-0-1-54668-graphql",
-    "openapi:duneworks"
+    "mcp:duneworks",
+    "graphql:127-0-0-1-63575-graphql",
+    "graphql:127-0-0-1-63576-graphql"
   ],
   "receipts": {
     "count": 21,
     "intact": true,
     "brokenAt": null,
-    "head": "ca3c2d4c3fa687847de5a88b076382c90738557d59f6549eef7570f172bc5dd4"
+    "head": "4b0119f39dc09a7e143be8ec4b02f6a36310c7cd0fa9821d63e51b7582657efa"
   },
   "passed": 14,
   "total": 14

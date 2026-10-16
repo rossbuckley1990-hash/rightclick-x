@@ -15,7 +15,9 @@ const GOAL = {
 test("self-maintaining integration survives four breaking API releases, including two protocol migrations", async () => {
   const svc = evolvingPolyglot();
   const f = routerFetch({ [ORIGIN]: svc.handler });
-  const rc = await RightClick.create({ fetch: f, directories: [] });
+  // The operator declares the translation service side-effect-free (its POSTs only compute), so
+  // repair may send them again. Without that declaration repair stops (test/security-boundaries).
+  const rc = await RightClick.create({ fetch: f, directories: [], authority: { retry: [ORIGIN] } });
   await rc.learn({ source: `${ORIGIN}/` });
 
   const first = await rc.compose({ ...GOAL, run: true });
@@ -64,7 +66,8 @@ test("a provider that disappears is withdrawn: capabilities removed, pipelines r
     "https://primary.test": (req) => (primaryUp ? SERVICES.polyglot(req) : Promise.resolve(new Response("gone", { status: 404 }))),
     "https://backup.test": SERVICES.polyglot,
   };
-  const rc = await RightClick.create({ fetch: routerFetch(routes), directories: [] });
+  // Operator declaration: both translation services only compute (see test/security-boundaries).
+  const rc = await RightClick.create({ fetch: routerFetch(routes), directories: [], authority: { retry: ["https://primary.test", "https://backup.test"] } });
   await rc.learn({ source: "https://primary.test/openapi.json" });
   const goal = { have: { text: "Hello world. The weather is sunny today.", language: "es" }, want: "text", intent: "summary translated", verify: [{ op: "contains" as const, value: "Hola mundo" }] };
   const first = await rc.compose({ ...goal, run: true });

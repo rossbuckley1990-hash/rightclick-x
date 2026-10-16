@@ -157,7 +157,14 @@ test("consent: writes run directly; destructive capabilities need confirm: true"
     if (req.method === "DELETE") deleted.push(u.pathname);
     return req.method === "DELETE" ? new Response(null, { status: 204 }) : Response.json({ ok: true });
   };
-  const { rc } = await world({ "https://notes.test": api });
+  // Without an operator approval, even confirm: true is refused (an agent cannot authorise itself).
+  const { rc: unapproved } = await world({ "https://notes.test": api });
+  await unapproved.learn({ source: "https://notes.test/openapi.json" });
+  const delU = unapproved.graph.list().find((c) => c.id.endsWith("deletenote"))!;
+  await assert.rejects(unapproved.run(delU.id, { noteId: "42" }, { confirm: true }), /operator/);
+  assert.deepEqual(deleted, []);
+  // The operator approved this service's destructive operations; the caller must still confirm.
+  const { rc } = await world({ "https://notes.test": api }, { authority: { approve: ["openapi:notes:*"] } });
   await rc.learn({ source: "https://notes.test/openapi.json" });
   const del = rc.graph.list().find((c) => c.id.endsWith("deletenote"))!;
   const put = rc.graph.list().find((c) => c.id.endsWith("putnote"))!;

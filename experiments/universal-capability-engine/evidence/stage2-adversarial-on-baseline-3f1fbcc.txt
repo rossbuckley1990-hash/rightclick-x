@@ -1,0 +1,106 @@
+✖ workspace: a symlink inside the workspace cannot read or write outside it (54.273833ms)
+✖ no automatic retry of a non-idempotent step: a failed POST is not sent again by healing (18.864541ms)
+✖ published goals: GET never executes a goal that can write; POST is required (9.103541ms)
+✖ ambiguous side effects: an MCP tool without annotations is not executable as if it were safe (1.896708ms)
+✖ authority: an agent's confirm: true is not operator approval for a destructive operation (1.606042ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 0
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 315.178458
+
+✖ failing tests:
+
+test at test/security-boundaries.test.ts:14:1
+✖ workspace: a symlink inside the workspace cannot read or write outside it (54.273833ms)
+  AssertionError [ERR_ASSERTION]: read through escape/secret.txt must fail
+  + actual - expected
+  
+  + 'completed'
+  - 'failed'
+  
+      at TestContext.<anonymous> (file:///Users/ross/src/rightclick-x-uce/test/security-boundaries.test.ts:24:12)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'completed',
+    expected: 'failed',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/security-boundaries.test.ts:74:1
+✖ no automatic retry of a non-idempotent step: a failed POST is not sent again by healing (18.864541ms)
+  AssertionError [ERR_ASSERTION]: the POST was sent 2 times
+  
+  2 !== 1
+  
+      at TestContext.<anonymous> (file:///Users/ross/src/rightclick-x-uce/test/security-boundaries.test.ts:80:10)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/security-boundaries.test.ts:88:1
+✖ published goals: GET never executes a goal that can write; POST is required (9.103541ms)
+  AssertionError [ERR_ASSERTION]: GET on a writing goal is refused
+  
+  200 !== 405
+  
+      at TestContext.<anonymous> (file:///Users/ross/src/rightclick-x-uce/test/security-boundaries.test.ts:111:10)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 200,
+    expected: 405,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/security-boundaries.test.ts:133:1
+✖ ambiguous side effects: an MCP tool without annotations is not executable as if it were safe (1.896708ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'external'
+  - 'destructive'
+  
+      at TestContext.<anonymous> (file:///Users/ross/src/rightclick-x-uce/test/security-boundaries.test.ts:145:10)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'external',
+    expected: 'destructive',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/security-boundaries.test.ts:151:1
+✖ authority: an agent's confirm: true is not operator approval for a destructive operation (1.606042ms)
+  AssertionError [ERR_ASSERTION]: agent-supplied confirmation alone is refused
+  + actual - expected
+  
+  + 'completed'
+  - 'failed'
+  
+      at TestContext.<anonymous> (file:///Users/ross/src/rightclick-x-uce/test/security-boundaries.test.ts:159:10)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'completed',
+    expected: 'failed',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

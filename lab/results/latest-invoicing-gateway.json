@@ -1,8 +1,8 @@
 {
-  "seed": 113206303,
+  "seed": 327704512,
   "domain": "invoicing",
   "gateway": true,
-  "startedAt": "2026-10-16T07:33:42.122Z",
+  "startedAt": "2026-10-16T21:24:18.941Z",
   "steps": [
     {
       "n": 1,
@@ -17,7 +17,7 @@
       "title": "Connect an MCP client to RightClick X (stdio)",
       "ok": true,
       "tools": 13,
-      "startupMs": 106.7
+      "startupMs": 177
     },
     {
       "n": 3,
@@ -42,12 +42,12 @@
       "title": "Discover the environment's services from its catalog only (no service addresses, protocols or schemas given)",
       "ok": true,
       "found": [
-        "graphql",
-        "graphql",
-        "openapi"
+        "openapi",
+        "openapi",
+        "graphql"
       ],
       "newCapabilities": 3,
-      "ms": 33.6
+      "ms": 65.9
     },
     {
       "n": 5,
@@ -55,79 +55,79 @@
       "ok": true,
       "candidatePlans": 3,
       "best": [
-        "Invoice Lookup",
-        "Customer Profile",
-        "Lookup tax rate for a country"
+        "Retrieve invoice",
+        "Customer profile",
+        "Lookup Tax Rate For A Country"
       ],
-      "planningMs": 2.2
+      "planningMs": 6.1
     },
     {
       "n": 6,
       "title": "Compose a multi-provider workflow",
       "ok": true,
       "steps": [
-        "Invoice Lookup ← invoice_id=$in.invoice_id",
-        "Customer Profile ← customerId=0.customerId",
-        "Lookup tax rate for a country ← country=1.countryCode"
+        "Retrieve invoice ← invoice_number=$in.invoice_id",
+        "Customer profile ← customerId=0.customer_number",
+        "Lookup Tax Rate For A Country ← countryCode=1.countryCode"
       ]
     },
     {
       "n": 7,
       "title": "Execute the workflow",
       "ok": true,
-      "input": "INV-1006",
+      "input": "INV-1001",
       "pipeline": [
-        "Invoice Lookup",
-        "Customer Profile",
-        "Lookup tax rate for a country"
+        "Retrieve invoice",
+        "Customer profile",
+        "Lookup Tax Rate For A Country"
       ],
-      "ms": 4.1
+      "ms": 13.1
     },
     {
       "n": 8,
       "title": "Verify against independently held test data",
       "ok": true,
-      "expected": 14.2,
-      "got": 14.2
+      "expected": 11.1,
+      "got": 11.1
     },
     {
       "n": 9,
       "title": "Save the successful composition and reuse it",
       "ok": true,
-      "saved": "Tax rate invoice customer country: Invoice Lookup → Customer Profile → Lookup tax rate for a country",
+      "saved": "Tax rate invoice customer country: Retrieve invoice → Customer profile → Lookup Tax Rate For A Country",
       "reusedAs": [
-        "Tax rate invoice customer country: Invoice Lookup → Customer Profile → Lookup tax rate for a country"
+        "Tax rate invoice customer country: Retrieve invoice → Customer profile → Lookup Tax Rate For A Country"
       ],
-      "expected": 11.9,
-      "got": 11.9,
-      "ms": 2.3
+      "expected": 10.4,
+      "got": 10.4,
+      "ms": 4.7
     },
     {
       "n": 10,
-      "title": "Change the interface of the last provider in the chain (Quillbase)",
+      "title": "Change the interface of the last provider in the chain (Paperhaus)",
       "ok": true,
-      "before": "openapi \"Lookup tax rate for a country\" country → country, standard_rate",
-      "after": "graphql \"Get tax rate\" countryCode → result.{countryCode, tax_rate}"
+      "before": "graphql \"Lookup tax rate for a country\" countryCode → countryCode, rate",
+      "after": "mcp \"Tax rate by country\" country_code → result.{country_code, standard_rate}"
     },
     {
       "n": 11,
       "title": "Recover without changing integration code",
       "ok": true,
       "healing": [
-        "API drift at http://127.0.0.1:53059/: graphql:127-0-0-1-53056-graphql,graphql:127-0-0-1-53057-graphql,openapi:quillbase → graphql:127-0-0-1-53056-graphql,graphql:127-0-0-1-53057-graphql,graphql:127-0-0-1-53058-graphql; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:61981/: openapi:ledgerline,openapi:emberlane,graphql:127-0-0-1-61980-graphql → openapi:ledgerline,openapi:emberlane,mcp:paperhaus; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "via": [
-        "graphql:127-0-0-1-53056-graphql",
-        "graphql:127-0-0-1-53057-graphql",
-        "graphql:127-0-0-1-53058-graphql"
+        "openapi:ledgerline",
+        "openapi:emberlane",
+        "mcp:paperhaus"
       ],
-      "expected": 11.9,
-      "got": 11.9,
-      "ms": 16
+      "expected": 9.5,
+      "got": 9.5,
+      "ms": 32.7
     },
     {
       "n": 12,
-      "title": "Remove that provider (Quillbase)",
+      "title": "Remove that provider (Paperhaus)",
       "ok": true
     },
     {
@@ -136,81 +136,81 @@
       "ok": true,
       "status": "failed",
       "healing": [
-        "API drift at http://127.0.0.1:53059/: graphql:127-0-0-1-53056-graphql,graphql:127-0-0-1-53057-graphql,graphql:127-0-0-1-53058-graphql → graphql:127-0-0-1-53056-graphql,graphql:127-0-0-1-53057-graphql; +0 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:61981/: openapi:ledgerline,openapi:emberlane,mcp:paperhaus → openapi:ledgerline,openapi:emberlane; +0 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "withdrawn": [
-        "GraphQL 127.0.0.1:53058"
+        "Paperhaus"
       ],
-      "capabilities": "21 → 19",
+      "capabilities": "27 → 25",
       "savedPipelines": "1 → 0"
     },
     {
       "n": 14,
-      "title": "Introduce a different provider (Duneworks, mcp): the objective works again",
+      "title": "Introduce a different provider (Duneworks, openapi): the objective works again",
       "ok": true,
       "learned": [
         "api-catalog: 3 services listed",
-        "graphql: 1 fields",
-        "graphql: 1 fields",
-        "mcp: 1 tools"
+        "openapi: 1 operations",
+        "openapi: 1 operations",
+        "openapi: 1 operations"
       ],
       "via": [
-        "graphql:127-0-0-1-53056-graphql",
-        "graphql:127-0-0-1-53057-graphql",
-        "mcp:duneworks"
+        "openapi:ledgerline",
+        "openapi:emberlane",
+        "openapi:duneworks"
       ],
-      "expected": 12.3,
-      "got": 12.3,
-      "ms": 2.1
+      "expected": 17.8,
+      "got": 17.8,
+      "ms": 3.5
     }
   ],
   "benchmarks": {
-    "startupMs": 106.7,
+    "startupMs": 177,
     "mcpLatencyMs": {
-      "p50": 0.04,
-      "p95": 0.11
+      "p50": 0.05,
+      "p95": 0.27
     },
-    "discoveryMs": 33.6,
+    "discoveryMs": 65.9,
     "graph": {
       "providers": 5,
-      "capabilities": 20,
-      "edges": 37,
-      "chains2": 37,
-      "chains3": 57,
-      "total": 114
+      "capabilities": 26,
+      "edges": 43,
+      "chains2": 43,
+      "chains3": 63,
+      "total": 132
     },
-    "graphStatsMs": 0.6,
-    "planningMs": 2.2,
-    "executionMs": 4.1,
-    "recoveryAfterChangeMs": 16,
-    "recoveryAfterNewProviderMs": 2.1,
-    "memoryMB": 143
+    "graphStatsMs": 0.2,
+    "planningMs": 6.1,
+    "executionMs": 13.1,
+    "recoveryAfterChangeMs": 32.7,
+    "recoveryAfterNewProviderMs": 3.5,
+    "memoryMB": 146
   },
   "freeze": {
-    "commit": "66b871c4e891036920a88fb2089c9d437fc1331e",
-    "tag": "lab-freeze-4",
-    "productCodeChangedSinceTag": "",
-    "uncommittedProductChanges": "",
-    "frozen": true
+    "commit": "3f1fbcc80dc47180a996bf08ba0cf5dadf31f72c",
+    "tag": "lab-freeze-9",
+    "productCodeChangedSinceTag": "src/core/graph.ts\nsrc/core/identities.ts\nsrc/core/planner.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/interface/http.ts\nsrc/interface/tools.ts\nsrc/reflectors/net.ts\nsrc/runtime.ts",
+    "uncommittedProductChanges": "M bin/rcx.ts\n M src/entry/durable.ts\n M src/entry/edge.ts\n M src/interface/http.ts\n M src/reflectors/mcp.ts\n M src/reflectors/platform.ts\n M src/runtime.ts\n?? src/core/authority.ts",
+    "frozen": false
   },
   "environment": [
     {
       "service": "invoices",
-      "brand": "Paperhaus",
-      "protocol": "graphql",
-      "operation": "Invoice lookup",
-      "input": "invoice_id",
+      "brand": "Ledgerline",
+      "protocol": "openapi",
+      "operation": "Retrieve invoice",
+      "input": "invoice_number",
       "outputs": [
-        "invoice_id",
-        "customerId",
-        "net_amount",
-        "currency_code"
+        "invoice_number",
+        "customer_number",
+        "amount",
+        "currency"
       ]
     },
     {
       "service": "customers",
-      "brand": "Fjordsoft",
-      "protocol": "graphql",
+      "brand": "Emberlane",
+      "protocol": "openapi",
       "operation": "Customer profile",
       "input": "customerId",
       "outputs": [
@@ -221,26 +221,26 @@
     },
     {
       "service": "tax",
-      "brand": "Quillbase",
-      "protocol": "openapi",
+      "brand": "Paperhaus",
+      "protocol": "graphql",
       "operation": "Lookup tax rate for a country",
-      "input": "country",
+      "input": "countryCode",
       "outputs": [
-        "country",
-        "standard_rate"
+        "countryCode",
+        "rate"
       ]
     }
   ],
   "firstRunProviders": [
-    "graphql:127-0-0-1-53056-graphql",
-    "graphql:127-0-0-1-53057-graphql",
-    "openapi:quillbase"
+    "openapi:ledgerline",
+    "openapi:emberlane",
+    "graphql:127-0-0-1-61980-graphql"
   ],
   "receipts": {
     "count": 21,
     "intact": true,
     "brokenAt": null,
-    "head": "5942d5d963ae3c287554050d4bd5cf43a578b0dd75f6609c1d716d72ded8b454"
+    "head": "ce43c9945bed0d4c2eb9508db7f79a0eec7d3696817f0d118f577acbd99ecb00"
   },
   "passed": 14,
   "total": 14

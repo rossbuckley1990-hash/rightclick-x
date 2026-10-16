@@ -1,8 +1,8 @@
 {
-  "seed": 469188820,
+  "seed": 348775771,
   "domain": "accounts",
   "gateway": false,
-  "startedAt": "2026-10-16T07:29:28.503Z",
+  "startedAt": "2026-10-16T21:24:12.595Z",
   "steps": [
     {
       "n": 1,
@@ -17,7 +17,7 @@
       "title": "Connect an MCP client to RightClick X (stdio)",
       "ok": true,
       "tools": 13,
-      "startupMs": 107.5
+      "startupMs": 156
     },
     {
       "n": 3,
@@ -42,92 +42,92 @@
       "title": "Discover contracts from root addresses only (no protocols, no schemas given)",
       "ok": true,
       "found": [
-        "openapi",
-        "openapi",
-        "graphql"
+        "graphql",
+        "graphql",
+        "mcp"
       ],
       "newCapabilities": 3,
-      "ms": 30.7
+      "ms": 43.8
     },
     {
       "n": 5,
       "title": "Identify suitable capabilities",
       "ok": true,
-      "candidatePlans": 3,
+      "candidatePlans": 2,
       "best": [
-        "Account inquiry",
-        "Holder lookup",
-        "Vat Rate Inquiry"
+        "Get Account",
+        "Customer Inquiry",
+        "VAT rate lookup"
       ],
-      "planningMs": 2.1
+      "planningMs": 4.5
     },
     {
       "n": 6,
       "title": "Compose a multi-provider workflow",
       "ok": true,
       "steps": [
-        "Account inquiry ← acct_ref=$in.account_id",
-        "Holder lookup ← cref=0.cref",
-        "Vat Rate Inquiry ← cc=1.cc"
+        "Get Account ← a_ref=$in.account_id",
+        "Customer Inquiry ← cust_ref=0.cust_ref",
+        "VAT rate lookup ← ctry=1.jur"
       ]
     },
     {
       "n": 7,
       "title": "Execute the workflow",
       "ok": true,
-      "input": "ACC-1005",
+      "input": "ACC-1001",
       "pipeline": [
-        "Account inquiry",
-        "Holder lookup",
-        "Vat Rate Inquiry"
+        "Get Account",
+        "Customer Inquiry",
+        "VAT rate lookup"
       ],
-      "ms": 4.5
+      "ms": 6.2
     },
     {
       "n": 8,
       "title": "Verify against independently held test data",
       "ok": true,
-      "expected": 12.4,
-      "got": 12.4
+      "expected": 8.5,
+      "got": 8.5
     },
     {
       "n": 9,
       "title": "Save the successful composition and reuse it",
       "ok": true,
-      "saved": "Vat rate account holder country: Account inquiry → Holder lookup → Vat Rate Inquiry",
+      "saved": "Vat rate account holder country: Get Account → Customer Inquiry → VAT rate lookup",
       "reusedAs": [
-        "Vat rate account holder country: Account inquiry → Holder lookup → Vat Rate Inquiry"
+        "Vat rate account holder country: Get Account → Customer Inquiry → VAT rate lookup"
       ],
-      "expected": 6.1,
-      "got": 6.1,
-      "ms": 2.3
+      "expected": 13.9,
+      "got": 13.9,
+      "ms": 3.6
     },
     {
       "n": 10,
-      "title": "Change the interface of the last provider in the chain (Brightmark)",
+      "title": "Change the interface of the last provider in the chain (Fernway)",
       "ok": true,
-      "before": "graphql \"VAT rate inquiry\" cc → cc, txr",
-      "after": "mcp \"Get VAT rate\" ctry → result.{ctry, vatpct}"
+      "before": "mcp \"VAT rate lookup\" ctry → ctry, vatpct",
+      "after": "openapi \"Get VAT rate\" jur → result.{jur, vr}"
     },
     {
       "n": 11,
       "title": "Recover without changing integration code",
       "ok": true,
       "healing": [
-        "API drift at http://127.0.0.1:49277/: graphql:127-0-0-1-49277-graphql → mcp:brightmark; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:61182/: mcp:fernway → openapi:fernway; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "via": [
-        "openapi:lumen-cargo",
-        "openapi:tallyport",
-        "mcp:brightmark"
+        "graphql:127-0-0-1-61180-graphql",
+        "graphql:127-0-0-1-61181-graphql",
+        "openapi:fernway"
       ],
-      "expected": 6.1,
-      "got": 6.1,
-      "ms": 8.2
+      "expected": 21.4,
+      "got": 21.4,
+      "ms": 13.9
     },
     {
       "n": 12,
-      "title": "Remove that provider (Brightmark)",
+      "title": "Remove that provider (Fernway)",
       "ok": true
     },
     {
@@ -136,107 +136,107 @@
       "ok": true,
       "status": "failed",
       "healing": [
-        "provider gone at http://127.0.0.1:49277/: withdrew mcp:brightmark (1 capabilities, 1 pipeline(s) retired)"
+        "provider gone at http://127.0.0.1:61182/: withdrew openapi:fernway (1 capabilities, 1 pipeline(s) retired)"
       ],
       "withdrawn": [
-        "Brightmark"
+        "Fernway"
       ],
-      "capabilities": "21 → 19",
+      "capabilities": "27 → 25",
       "savedPipelines": "1 → 0"
     },
     {
       "n": 14,
-      "title": "Introduce a different provider (Kestrel Freight, openapi): the objective works again",
+      "title": "Introduce a different provider (Ashgrove, graphql): the objective works again",
       "ok": true,
       "learned": [
-        "openapi: 1 operations"
+        "graphql: 1 fields"
       ],
       "via": [
-        "openapi:lumen-cargo",
-        "openapi:tallyport",
-        "openapi:kestrel-freight"
+        "graphql:127-0-0-1-61180-graphql",
+        "graphql:127-0-0-1-61181-graphql",
+        "graphql:127-0-0-1-61254-graphql"
       ],
-      "expected": 15.3,
-      "got": 15.3,
-      "ms": 1.6
+      "expected": 21.4,
+      "got": 21.4,
+      "ms": 3.1
     }
   ],
   "benchmarks": {
-    "startupMs": 107.5,
+    "startupMs": 156,
     "mcpLatencyMs": {
       "p50": 0.04,
-      "p95": 0.11
+      "p95": 0.17
     },
-    "discoveryMs": 30.7,
+    "discoveryMs": 43.8,
     "graph": {
       "providers": 5,
-      "capabilities": 20,
-      "edges": 37,
-      "chains2": 37,
-      "chains3": 57,
-      "total": 114
+      "capabilities": 26,
+      "edges": 43,
+      "chains2": 43,
+      "chains3": 63,
+      "total": 132
     },
     "graphStatsMs": 0.1,
-    "planningMs": 2.1,
-    "executionMs": 4.5,
-    "recoveryAfterChangeMs": 8.2,
-    "recoveryAfterNewProviderMs": 1.6,
-    "memoryMB": 135
+    "planningMs": 4.5,
+    "executionMs": 6.2,
+    "recoveryAfterChangeMs": 13.9,
+    "recoveryAfterNewProviderMs": 3.1,
+    "memoryMB": 140
   },
   "freeze": {
-    "commit": "66b871c4e891036920a88fb2089c9d437fc1331e",
-    "tag": "lab-freeze-4",
-    "productCodeChangedSinceTag": "",
-    "uncommittedProductChanges": "",
-    "frozen": true
+    "commit": "3f1fbcc80dc47180a996bf08ba0cf5dadf31f72c",
+    "tag": "lab-freeze-9",
+    "productCodeChangedSinceTag": "src/core/graph.ts\nsrc/core/identities.ts\nsrc/core/planner.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/interface/http.ts\nsrc/interface/tools.ts\nsrc/reflectors/net.ts\nsrc/runtime.ts",
+    "uncommittedProductChanges": "M bin/rcx.ts\n M src/entry/durable.ts\n M src/entry/edge.ts\n M src/interface/http.ts\n M src/reflectors/mcp.ts\n M src/reflectors/platform.ts\n M src/runtime.ts\n?? src/core/authority.ts",
+    "frozen": false
   },
   "environment": [
     {
       "service": "ledger",
-      "brand": "Lumen Cargo",
-      "protocol": "openapi",
-      "operation": "Account inquiry",
-      "input": "acct_ref",
+      "brand": "Kestrel Freight",
+      "protocol": "graphql",
+      "operation": "Get account",
+      "input": "a_ref",
       "outputs": [
-        "acct_ref",
-        "cref",
+        "a_ref",
+        "cust_ref",
         "curbal"
       ]
     },
     {
       "service": "kyc",
-      "brand": "Tallyport",
-      "protocol": "openapi",
-      "operation": "Holder lookup",
-      "input": "cref",
+      "brand": "Cobaltix",
+      "protocol": "graphql",
+      "operation": "Customer inquiry",
+      "input": "cust_ref",
       "outputs": [
-        "cref",
-        "nm",
-        "cc"
+        "cust_ref",
+        "lglnm",
+        "jur"
       ]
     },
     {
       "service": "vat",
-      "brand": "Brightmark",
-      "protocol": "graphql",
-      "operation": "VAT rate inquiry",
-      "input": "cc",
+      "brand": "Fernway",
+      "protocol": "mcp",
+      "operation": "VAT rate lookup",
+      "input": "ctry",
       "outputs": [
-        "cc",
-        "txr"
+        "ctry",
+        "vatpct"
       ]
     }
   ],
   "firstRunProviders": [
-    "openapi:lumen-cargo",
-    "openapi:tallyport",
-    "graphql:127-0-0-1-49277-graphql"
+    "graphql:127-0-0-1-61180-graphql",
+    "graphql:127-0-0-1-61181-graphql",
+    "mcp:fernway"
   ],
   "receipts": {
     "count": 21,
     "intact": true,
     "brokenAt": null,
-    "head": "7c75f602bba10a98210a2a05c885bf2707c3b4b74f47ab2e7c135da14d4cc5cf"
+    "head": "791cbe7051b7ed7cc89c275d13914f534a57ce9eb2838e095a585a63f43d7c0a"
   },
   "passed": 14,
   "total": 14
