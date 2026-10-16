@@ -17,13 +17,17 @@ import { execFileSync, spawn } from "node:child_process";
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { breakingRelease, generate, LabService, type Dataset } from "./environment.ts";
+import { serve } from "../src/entry/node-host.ts";
 
 const args = process.argv.slice(2);
 const domainName = args.includes("--domain") ? args[args.indexOf("--domain") + 1] : "invoicing";
+// --gateway: the environment publishes an RFC 9727 API catalog at one front door, and
+// RightClick X is given only that address (not the services' addresses).
+const gatewayMode = args.includes("--gateway");
 const seed = Number(args.find((a) => /^\d+$/.test(a)) ?? Math.floor(Math.random() * 1e9));
 const log = (...a: unknown[]) => console.log(...a);
 const ms = (t: number) => Math.round((performance.now() - t) * 10) / 10;
-const results: Record<string, any> = { seed, domain: domainName, startedAt: new Date().toISOString(), steps: [], benchmarks: {} };
+const results: Record<string, any> = { seed, domain: domainName, gateway: gatewayMode, startedAt: new Date().toISOString(), steps: [], benchmarks: {} };
 const step = (n: number, title: string, ok: boolean, detail: Record<string, unknown> = {}) => {
   results.steps.push({ n, title, ok, ...detail });
   log(`${ok ? "✓" : "✗"} ${String(n).padStart(2)}. ${title}`);
@@ -55,7 +59,17 @@ const target = services[services.length - 1];
 const newcomer = new LabService(env.backup, env.data); // introduced only in step 14
 for (const s of services) log(`  ${s.spec.service.padEnd(11)} ${s.spec.brand.padEnd(17)} ${s.spec.protocol.padEnd(8)} "${s.spec.operation}"  ${s.spec.input.name} → ${s.spec.outputs.map((f) => f.name).join(", ")}  ${s.url}`);
 results.environment = services.map((s) => ({ service: s.spec.service, brand: s.spec.brand, protocol: s.spec.protocol, operation: s.spec.operation, input: s.spec.input.name, outputs: s.spec.outputs.map((f) => f.name) }));
-step(1, "Start disposable services generated from fixtures", true, { domain: domainName, services: services.length });
+// The environment's front door: a catalog of whatever services are currently up.
+const listed = new Set(services.map((s) => s.url));
+const gateway = gatewayMode
+  ? await serve(async (req) => {
+      const u = new URL(req.url);
+      if (u.pathname !== "/.well-known/api-catalog") return new Response("not found", { status: 404 });
+      return new Response(JSON.stringify({ linkset: [{ anchor: `${u.origin}/.well-known/api-catalog`, item: [...listed].map((href) => ({ href })) }] }), { headers: { "content-type": "application/linkset+json" } });
+    }, 0)
+  : null;
+const sourcesGiven = gateway ? [`${gateway.url}/`] : services.map((s) => s.url);
+step(1, "Start disposable services generated from fixtures", true, { domain: domainName, services: services.length, givenToRightClickX: gateway ? "only the environment's gateway (RFC 9727 api-catalog)" : "the services' root addresses" });
 
 // ------------------------------------------------------------ MCP client (stdio)
 const stateDir = mkdtempSync(`${tmpdir()}/rcx-lab-`);
@@ -107,10 +121,10 @@ step(3, `Present a business objective: "${env.domain.objective}"`, true, { goal:
 
 // ------------------------------------------------------------ discovery
 let t = performance.now();
-const learned = await call("context_learn", { sources: services.map((s) => s.url) });
+const learned = await call("context_learn", { sources: sourcesGiven });
 results.benchmarks.discoveryMs = ms(t);
-const probes = learned.results.flatMap((r: any) => r.probes.filter((p: any) => p.ok).map((p: any) => p.kind));
-step(4, "Discover contracts from root addresses only (no protocols, no schemas given)", probes.length === services.length, { found: probes, newCapabilities: learned.totalNewCapabilities, ms: results.benchmarks.discoveryMs });
+const probes = learned.results.flatMap((r: any) => r.probes.filter((p: any) => p.ok && p.kind !== "api-catalog").map((p: any) => p.kind));
+step(4, gateway ? "Discover the environment's services from its catalog only (no service addresses, protocols or schemas given)" : "Discover contracts from root addresses only (no protocols, no schemas given)", probes.length === services.length, { found: probes, newCapabilities: learned.totalNewCapabilities, ms: results.benchmarks.discoveryMs });
 t = performance.now();
 results.benchmarks.graph = await call("context_graph", { op: "stats" });
 results.benchmarks.graphStatsMs = ms(t);
@@ -180,6 +194,7 @@ const provBefore = await listProviders();
 const capsBefore = await capCount();
 const savedBefore = provBefore.find((p) => p.id === "composite:crystallized")?.capabilities ?? 0;
 await target.stop();
+listed.delete(target.url); // the environment updates its catalog
 step(12, `Remove that provider (${before.brand})`, true, {});
 const e4 = await runGoal(starts[3]);
 const provAfter = await listProviders();
@@ -196,7 +211,9 @@ step(13, "Withdraw its capabilities accurately; report the objective as impossib
 
 // ------------------------------------------------------------ introduce a new provider
 await newcomer.start();
-const ln = await call("context_learn", { source: newcomer.url });
+listed.add(newcomer.url);
+// Gateway mode: RightClick X re-reads the environment's catalog; otherwise it is told the new address.
+const ln = await call("context_learn", { source: gateway ? `${gateway.url}/` : newcomer.url });
 const e5 = await runGoal(starts[4]);
 results.benchmarks.recoveryAfterNewProviderMs = e5.ms;
 step(14, `Introduce a different provider (${newcomer.spec.brand}, ${newcomer.spec.protocol}): the objective works again`, e5.correct, {
@@ -215,12 +232,13 @@ results.receipts = chain.chain;
 // ------------------------------------------------------------ report
 child.stdin.end();
 for (const s of [...services, newcomer]) await s.stop().catch(() => {});
+await gateway?.close();
 const passed = results.steps.filter((s: any) => s.ok).length;
 results.passed = passed;
 results.total = results.steps.length;
 log(`\n${passed}/${results.steps.length} steps passed · receipts ${chain.chain.count} (intact ${chain.chain.intact}) · memory ${runtime.memoryMB} MB`);
 log(`benchmarks: ${JSON.stringify(results.benchmarks)}`);
 mkdirSync("lab/results", { recursive: true });
-writeFileSync(`lab/results/seed-${domainName}-${seed}.json`, JSON.stringify(results, null, 2));
-writeFileSync(`lab/results/latest-${domainName}.json`, JSON.stringify(results, null, 2));
+writeFileSync(`lab/results/seed-${domainName}${gatewayMode ? "-gateway" : ""}-${seed}.json`, JSON.stringify(results, null, 2));
+writeFileSync(`lab/results/latest-${domainName}${gatewayMode ? "-gateway" : ""}.json`, JSON.stringify(results, null, 2));
 process.exit(passed === results.steps.length ? 0 : 1);

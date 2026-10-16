@@ -141,3 +141,32 @@ test("provider identity: two sources with the same API name do not overwrite eac
   await rc.learn({ source: "https://us.polyglot.test/openapi.json" });
   assert.equal([...rc.graph.providers.keys()].filter((id) => id.startsWith("openapi:polyglot")).length, 2);
 });
+
+test("RFC 9727 api-catalog: given only an environment's front door, every listed service is discovered", async () => {
+  const { routerFetch, SERVICES } = await import("../demo/services.ts");
+  const gateway = async (req: Request) => {
+    const u = new URL(req.url);
+    if (u.pathname === "/.well-known/api-catalog")
+      return new Response(
+        JSON.stringify({
+          linkset: [
+            { anchor: "https://gateway.test/.well-known/api-catalog", item: [{ href: "https://polyglot.test/openapi.json" }, { href: "https://atlas.test/graphql" }] },
+            { anchor: "https://skycast.test/", "service-desc": [{ href: "https://skycast.test/mcp" }] },
+          ],
+        }),
+        { headers: { "content-type": "application/linkset+json" } },
+      );
+    return new Response("not found", { status: 404 });
+  };
+  const rc = await RightClick.create({
+    fetch: routerFetch({ "https://gateway.test": gateway, "https://polyglot.test": SERVICES.polyglot, "https://atlas.test": SERVICES.atlas, "https://skycast.test": SERVICES.skycast }),
+    directories: [],
+  });
+  const r = await rc.learn({ source: "https://gateway.test/" });
+  const kinds = r.results[0].probes.filter((p) => p.ok).map((p) => p.kind).sort();
+  assert.deepEqual(kinds, ["api-catalog", "graphql", "mcp", "openapi"]);
+  const sources = new Set(rc.graph.list().map((c) => c.source));
+  for (const k of ["openapi", "graphql", "mcp"]) assert.ok(sources.has(k as any), k);
+  const run = await rc.compose({ have: { place: "Lisbon", language: "es" }, want: "text", intent: "weather translated", run: true });
+  assert.equal(run.executed?.status, "completed");
+});

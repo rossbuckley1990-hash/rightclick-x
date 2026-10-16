@@ -1,23 +1,26 @@
 // Run the Chameleon Lab across N fresh seeds and write lab/RESULTS.md.
 //   npm run lab:report            (10 seeds)
 //   node lab/report.ts 25
+//   node lab/report.ts 10 --gateway   (RightClick X gets only the environment's RFC 9727 catalog; writes lab/RESULTS-GATEWAY.md)
 
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import { DOMAINS } from "./environment.ts";
 
 const PER_DOMAIN = Number(process.argv[2] ?? 10);
+const GATEWAY = process.argv.includes("--gateway");
+const OUT = GATEWAY ? "lab/RESULTS-GATEWAY.md" : "lab/RESULTS.md";
 const N = PER_DOMAIN * DOMAINS.length;
 const runs: any[] = [];
 for (const domain of DOMAINS) {
   for (let i = 0; i < PER_DOMAIN; i++) {
     const seed = Math.floor(Math.random() * 1e9);
     try {
-      execFileSync(process.execPath, ["lab/run.ts", String(seed), "--domain", domain], { stdio: "ignore" });
+      execFileSync(process.execPath, ["lab/run.ts", String(seed), "--domain", domain, ...(GATEWAY ? ["--gateway"] : [])], { stdio: "ignore" });
     } catch {
       /* a failing run still writes its results */
     }
-    runs.push(JSON.parse(readFileSync(`lab/results/seed-${domain}-${seed}.json`, "utf8")));
+    runs.push(JSON.parse(readFileSync(`lab/results/seed-${domain}${GATEWAY ? "-gateway" : ""}-${seed}.json`, "utf8")));
     process.stdout.write(`${domain} seed ${seed}: ${runs.at(-1).passed}/${runs.at(-1).total}\n`);
   }
 }
@@ -52,7 +55,7 @@ ${perDomain.map(({ d, runs: rs }) => `| ${d} | ${rs[0]?.steps?.find((s: any) => 
 - Domains are pure fixture data (\`lab/fixtures.json\`): an objective plus a chain of services with vocabulary pools. Adding a domain requires no change to RightClick X.
 - Each run generates a new environment from \`lab/fixtures.json\` with a fresh random seed, after the freeze: service names, operation titles, field spellings and the protocol of every service (${[...protocols].join(", ")}) are drawn at random. RightClick X contains no knowledge of the fixtures.
 - RightClick X runs as a separate process; the harness is only an MCP client over stdio (\`tools/call context_*\`). It never calls the runtime directly.
-- RightClick X is given the services' root addresses only: no protocols, schemas or operation names.
+${GATEWAY ? "- RightClick X is given one address only: the environment's gateway, which publishes an RFC 9727 `/.well-known/api-catalog` linkset of the services currently running. It is not given any service address, protocol, schema or operation name. When a provider is removed or added, the environment updates its catalog and RightClick X re-reads the gateway. (Discovery here depends on the environment publishing a catalog; it is not scanning.)" : "- RightClick X is given the services' root addresses only: no protocols, schemas or operation names."}
 - Every result is checked against the harness's own copy of the synthetic data, not against anything RightClick X reports.
 - Local disposable services, synthetic data, no external network.
 
@@ -93,5 +96,5 @@ ${stepTitles.map((t, i) => `| ${t} | ${stepPass[i]}/${N} |`).join("\n")}
 - One objective shape (a three-step chain). Fan-in joins are covered by unit tests and live experiments (E12), not by this lab.
 - All timings are local loopback; they measure RightClick X, not networks.
 `;
-writeFileSync("lab/RESULTS.md", md);
-console.log(`\n${allPassed}/${N} environments passed all steps → lab/RESULTS.md`);
+writeFileSync(OUT, md);
+console.log(`\n${allPassed}/${N} environments passed all steps → ${OUT}`);

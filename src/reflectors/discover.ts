@@ -17,6 +17,7 @@ export interface Discovery {
 }
 
 const WELL_KNOWN = [
+  "/.well-known/api-catalog",
   "/.well-known/rightclick.json",
   "/openapi.json",
   "/.well-known/openapi.json",
@@ -28,7 +29,22 @@ const WELL_KNOWN = [
 
 export type SourceKind = "openapi" | "graphql" | "mcp" | "peer" | "web";
 
-export async function discover(net: Net, source: string, opts: { deep?: boolean; mcp?: (url: string) => McpClient; kind?: SourceKind } = {}): Promise<Discovery> {
+/** RFC 9727 API catalog (a linkset): the environment lists its own APIs. */
+function catalogLinks(body: unknown, base: string): string[] | null {
+  const linkset = (body as any)?.linkset;
+  if (!Array.isArray(linkset)) return null;
+  const out = new Set<string>();
+  for (const entry of linkset) {
+    for (const rel of ["service-desc", "item", "service-meta"]) {
+      for (const link of entry?.[rel] ?? []) if (typeof link?.href === "string") out.add(new URL(link.href, base).toString());
+    }
+  }
+  return [...out];
+}
+
+const CATALOG_LIMIT = 50;
+
+export async function discover(net: Net, source: string, opts: { deep?: boolean; mcp?: (url: string) => McpClient; kind?: SourceKind; viaCatalog?: boolean } = {}): Promise<Discovery> {
   const url = new URL(source);
   const probes: Discovery["probes"] = [];
   // When a directory already says what a source is, learn it with one probe, not ten
@@ -51,6 +67,15 @@ export async function discover(net: Net, source: string, opts: { deep?: boolean;
     // Another RightClick X instance: federate its graph, not its own context_* tools.
     const peer = all.find((r) => r.provider.source === "peer");
     for (const r of peer ? [peer] : all) keep(r);
+    // The environment publishes an API catalog: discover every service it lists (one level, capped).
+    const listed = opts.viaCatalog ? [] : extra.flatMap((e) => e.catalog ?? []).slice(0, CATALOG_LIMIT);
+    if (listed.length) probes.push({ url: new URL("/.well-known/api-catalog", url.origin).toString(), kind: "api-catalog", ok: true, detail: `${listed.length} services listed` });
+    const nested = await Promise.all(listed.map((href) => discover(net, href, { ...opts, deep: false, viaCatalog: true }).catch(() => null)));
+    for (const d of nested) {
+      if (!d) continue;
+      probes.push(...d.probes);
+      for (const r of d.reflections) keep(r);
+    }
   }
   for (const hint of direct.hints.slice(0, 5)) {
     const e = await probeUrl(net, hint, probes, opts);
@@ -101,7 +126,7 @@ async function probeUrl(
   url: string,
   probes: Discovery["probes"],
   opts: { mcp?: (url: string) => McpClient; quiet?: boolean },
-): Promise<{ reflections: Reflection[]; hints: string[]; definitive: boolean }> {
+): Promise<{ reflections: Reflection[]; hints: string[]; definitive: boolean; catalog?: string[] }> {
   const reflections: Reflection[] = [];
   let hints: string[] = [];
   // 1. GET: specs, peers and pages.
@@ -109,6 +134,8 @@ async function probeUrl(
     const res = await request(net, url, { headers: { accept: "application/json, text/html;q=0.9, */*;q=0.5" } });
     if (res.ok) {
       const body = await readBody(res);
+      const listed = catalogLinks(body, url);
+      if (listed) return { reflections: [], hints: [], definitive: false, catalog: listed };
       if (isOpenAPI(body)) {
         const r = reflectOpenAPI(body as any, url);
         probes.push({ url, kind: "openapi", ok: true, detail: `${r.capabilities.length} operations` });
