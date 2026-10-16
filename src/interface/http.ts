@@ -22,6 +22,34 @@ export interface HttpOptions {
   token?: string;
   /** Allow unauthenticated access (only sensible on loopback). */
   open?: boolean;
+  /** Largest accepted request body (default 1 MiB). */
+  maxBodyBytes?: number;
+  /** Requests per minute per caller (bearer token, else client address); default 600, 0 disables. */
+  ratePerMinute?: number;
+}
+
+/** Token-bucket rate limiter, keyed per caller. */
+class RateLimiter {
+  private buckets = new Map<string, { tokens: number; at: number }>();
+  private perMinute: number;
+  constructor(perMinute: number) {
+    this.perMinute = perMinute;
+  }
+  take(key: string): boolean {
+    if (!this.perMinute) return true;
+    const now = Date.now();
+    const b = this.buckets.get(key) ?? { tokens: this.perMinute, at: now };
+    b.tokens = Math.min(this.perMinute, b.tokens + ((now - b.at) / 60_000) * this.perMinute);
+    b.at = now;
+    if (b.tokens < 1) {
+      this.buckets.set(key, b);
+      return false;
+    }
+    b.tokens -= 1;
+    this.buckets.set(key, b);
+    if (this.buckets.size > 10_000) this.buckets.delete(this.buckets.keys().next().value!);
+    return true;
+  }
 }
 
 const JSON_HEADERS = { "content-type": "application/json; charset=utf-8", "access-control-allow-origin": "*" };
@@ -39,6 +67,8 @@ function authorized(req: Request, opts: HttpOptions): boolean {
 }
 
 export function createHandler(rc: RightClick, opts: HttpOptions = {}): (req: Request) => Promise<Response> {
+  const limiter = new RateLimiter(opts.ratePerMinute ?? 600);
+  const maxBody = opts.maxBodyBytes ?? 1024 * 1024;
   return async (req: Request) => {
     const url = new URL(req.url);
     const path = url.pathname.replace(/\/+$/, "") || "/";
@@ -60,6 +90,11 @@ export function createHandler(rc: RightClick, opts: HttpOptions = {}): (req: Req
       return json({ rightclick: VERSION, name: rc.name, region: rc.info.region, runtime: rc.info.name, api: "/api", mcp: "/mcp", openapi: "/openapi.json", auth: opts.token ? "bearer" : opts.open ? "none" : "locked" });
     }
     if (req.method === "GET" && path === "/health") return json({ ok: true, version: VERSION });
+
+    const caller = req.headers.get("authorization") ?? req.headers.get("cf-connecting-ip") ?? req.headers.get("x-forwarded-for") ?? "local";
+    if (!limiter.take(caller)) return json({ error: "rate limited", hint: "Slow down or raise ratePerMinute." }, 429);
+    const length = Number(req.headers.get("content-length") ?? 0);
+    if (length > maxBody) return json({ error: `request body larger than ${maxBody} bytes` }, 413);
 
     if (!authorized(req, opts)) {
       return json(

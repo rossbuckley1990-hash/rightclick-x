@@ -87,7 +87,10 @@ async function main() {
       token = [...crypto.getRandomValues(new Uint8Array(24))].map((b) => b.toString(16).padStart(2, "0")).join("");
       console.log(`Generated access token (set RCX_TOKEN to choose your own): ${token}`);
     }
+    // Exposed beyond loopback: "learn any URL" must never reach private networks or cloud metadata.
+    if (!loopback) rc.net.policy = { blockPrivate: true, ...(rc.net.policy ?? {}) };
     const s = await serve(createHandler(rc, { token, open: loopback }), port, host);
+    if (!loopback) console.log("Network policy: private, loopback and cloud-metadata addresses are blocked for outbound requests.");
     console.log(`RightClick X ${VERSION} on ${s.url}\n  dashboard  ${s.url}/\n  MCP        ${s.url}/mcp\n  API        ${s.url}/api/<tool>`);
     if (demoMode) {
       const { startStage } = await import("../demo/stage.ts");
