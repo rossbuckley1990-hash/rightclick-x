@@ -1,0 +1,170 @@
+{
+  "tag": "uce-freeze-4",
+  "commit": "1fa3c7e8b62d55bba7ebca1f4e96a0f82cde6141",
+  "seedFrom": "frozen build 1fa3c7e8b62d55bba7ebca1f4e96a0f82cde6141",
+  "attempts": [
+    {
+      "program": "htmltree",
+      "description": "htmltree - Parse the given HTML file(s) and dump the parse tree",
+      "ms": 1158,
+      "probes": [
+        {
+          "url": "cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-holdout-jAfoxB/bin/htmltree",
+          "kind": "cli",
+          "ok": true,
+          "detail": "1 capability from 15 sandboxed runs (files; ok exit 0)"
+        }
+      ],
+      "capabilities": [
+        {
+          "id": "cli:htmltree:default",
+          "title": "htmltree: Parse the given HTML file(s) and dump the parse tree",
+          "inputs": [
+            {
+              "name": "file1",
+              "type": "html",
+              "required": true
+            },
+            {
+              "name": "file2",
+              "type": "html",
+              "required": true
+            },
+            {
+              "name": "file3",
+              "type": "html",
+              "required": true
+            }
+          ],
+          "outputs": [
+            {
+              "name": "(result)",
+              "type": "html"
+            }
+          ],
+          "evidence": [
+            "documents its usage [declared]",
+            "purpose: htmltree - Parse the given HTML file(s) and dump the parse tree [declared]",
+            "options: 2 declared [declared]",
+            "operands: required [file1, file2, file3], optional [] [inferred]",
+            "accepts html/xml/json/csv/text input via files and prints html [experimentally-supported]",
+            "deterministic for identical input [experimentally-supported]",
+            "side effects outside the sandbox [unknown]",
+            "on empty input exits 0 with output [observed]"
+          ],
+          "limitations": [
+            "side effects outside the sandbox [unknown]",
+            "runs only inside the host sandbox: no network, inputs passed as content"
+          ]
+        }
+      ],
+      "investigable": true,
+      "supported": true
+    },
+    {
+      "program": "slogin",
+      "description": "ssh - OpenSSH remote login client",
+      "ms": 1014,
+      "probes": [
+        {
+          "url": "cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-holdout-jAfoxB/bin/slogin",
+          "kind": "cli",
+          "ok": false,
+          "detail": "no input channel produced output for slogin (20 trials)"
+        }
+      ],
+      "capabilities": [],
+      "investigable": false,
+      "supported": false
+    },
+    {
+      "program": "pod2man",
+      "description": "pod2man - Convert POD data to formatted *roff input",
+      "ms": 1329,
+      "probes": [
+        {
+          "url": "cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-holdout-jAfoxB/bin/pod2man",
+          "kind": "cli",
+          "ok": false,
+          "detail": "no input channel produced output for pod2man (20 trials)"
+        }
+      ],
+      "capabilities": [],
+      "investigable": false,
+      "supported": false
+    },
+    {
+      "program": "pod2usage",
+      "description": "pod2usage - print usage messages from embedded pod docs in files",
+      "ms": 757,
+      "probes": [
+        {
+          "url": "cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-holdout-jAfoxB/bin/pod2usage",
+          "kind": "cli",
+          "ok": false,
+          "detail": "no input channel produced output for pod2usage (10 trials)"
+        }
+      ],
+      "capabilities": [],
+      "investigable": false,
+      "supported": false
+    },
+    {
+      "program": "mp2bug",
+      "description": "mp2bug - mod_perl bug report generator",
+      "ms": 5625,
+      "probes": [
+        {
+          "url": "cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-holdout-jAfoxB/bin/mp2bug",
+          "kind": "cli",
+          "ok": true,
+          "detail": "1 capability from 26 sandboxed runs (stdin; ok exit 0)"
+        }
+      ],
+      "capabilities": [
+        {
+          "id": "cli:mp2bug:default",
+          "title": "mp2bug: mod_perl bug report generator",
+          "inputs": [
+            {
+              "name": "input",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "outputs": [
+            {
+              "name": "(result)",
+              "type": "text"
+            }
+          ],
+          "evidence": [
+            "documents its usage [declared]",
+            "purpose: mp2bug - mod_perl bug report generator [declared]",
+            "options: 0 declared [unknown]",
+            "operands: required [], optional [] [inferred]",
+            "accepts html/xml/json/csv/text input via stdin and prints text [observed]",
+            "deterministic for identical input [contradicted]",
+            "side effects outside the sandbox [unknown]",
+            "on empty input exits 0 with output [observed]"
+          ],
+          "limitations": [
+            "options: 0 declared [unknown]",
+            "deterministic for identical input [contradicted]",
+            "side effects outside the sandbox [unknown]",
+            "output differs between identical runs",
+            "runs only inside the host sandbox: no network, inputs passed as content"
+          ]
+        }
+      ],
+      "investigable": true,
+      "supported": false
+    }
+  ],
+  "chosen": [
+    "htmltree",
+    "mp2bug"
+  ],
+  "state": "/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-holdout-jAfoxB/server/state.json",
+  "bin": "/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-holdout-jAfoxB/bin"
+}

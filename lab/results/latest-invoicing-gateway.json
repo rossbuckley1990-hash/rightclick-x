@@ -1,8 +1,8 @@
 {
-  "seed": 505750103,
+  "seed": 909753656,
   "domain": "invoicing",
   "gateway": true,
-  "startedAt": "2026-10-16T22:11:55.675Z",
+  "startedAt": "2026-10-16T22:15:37.783Z",
   "steps": [
     {
       "n": 1,
@@ -17,7 +17,7 @@
       "title": "Connect an MCP client to RightClick X (stdio)",
       "ok": true,
       "tools": 13,
-      "startupMs": 138.6
+      "startupMs": 213.9
     },
     {
       "n": 3,
@@ -42,12 +42,12 @@
       "title": "Discover the environment's services from its catalog only (no service addresses, protocols or schemas given)",
       "ok": true,
       "found": [
-        "graphql",
-        "graphql",
+        "mcp",
+        "openapi",
         "graphql"
       ],
       "newCapabilities": 3,
-      "ms": 42.4
+      "ms": 78.5
     },
     {
       "n": 5,
@@ -55,79 +55,79 @@
       "ok": true,
       "candidatePlans": 3,
       "best": [
-        "Retrieve Invoice",
-        "Look Up Customer",
-        "Tax Rate By Country"
+        "Get invoice",
+        "Fetch customer record",
+        "Get Tax Rate"
       ],
-      "planningMs": 3.6
+      "planningMs": 6
     },
     {
       "n": 6,
       "title": "Compose a multi-provider workflow",
       "ok": true,
       "steps": [
-        "Retrieve Invoice ← invoice_id=$in.invoice_id",
-        "Look Up Customer ← customer_id=0.customerId",
-        "Tax Rate By Country ← countryCode=1.country"
+        "Get invoice ← invoice_number=$in.invoice_id",
+        "Fetch customer record ← customer_id=0.customerId",
+        "Get Tax Rate ← country_code=1.country"
       ]
     },
     {
       "n": 7,
       "title": "Execute the workflow",
       "ok": true,
-      "input": "INV-1002",
+      "input": "INV-1005",
       "pipeline": [
-        "Retrieve Invoice",
-        "Look Up Customer",
-        "Tax Rate By Country"
+        "Get invoice",
+        "Fetch customer record",
+        "Get Tax Rate"
       ],
-      "ms": 6.6
+      "ms": 11.2
     },
     {
       "n": 8,
       "title": "Verify against independently held test data",
       "ok": true,
-      "expected": 5.3,
-      "got": 5.3
+      "expected": 8.9,
+      "got": 8.9
     },
     {
       "n": 9,
       "title": "Save the successful composition and reuse it",
       "ok": true,
-      "saved": "Tax rate invoice customer country: Retrieve Invoice → Look Up Customer → Tax Rate By Country",
+      "saved": "Tax rate invoice customer country: Get invoice → Fetch customer record → Get Tax Rate",
       "reusedAs": [
-        "Tax rate invoice customer country: Retrieve Invoice → Look Up Customer → Tax Rate By Country"
+        "Tax rate invoice customer country: Get invoice → Fetch customer record → Get Tax Rate"
       ],
-      "expected": 5.3,
-      "got": 5.3,
-      "ms": 3.1
+      "expected": 9.4,
+      "got": 9.4,
+      "ms": 4.9
     },
     {
       "n": 10,
-      "title": "Change the interface of the last provider in the chain (Quillbase)",
+      "title": "Change the interface of the last provider in the chain (Ashgrove)",
       "ok": true,
-      "before": "graphql \"Tax rate by country\" countryCode → countryCode, vat_rate",
-      "after": "openapi \"Get tax rate\" country → result.{country, standard_rate}"
+      "before": "graphql \"Get tax rate\" country_code → country_code, vat_rate",
+      "after": "mcp \"Lookup tax rate for a country\" country → result.{country, tax_rate}"
     },
     {
       "n": 11,
       "title": "Recover without changing integration code",
       "ok": true,
       "healing": [
-        "API drift at http://127.0.0.1:62893/: graphql:127-0-0-1-62890-graphql,graphql:127-0-0-1-62891-graphql,graphql:127-0-0-1-62892-graphql → graphql:127-0-0-1-62890-graphql,graphql:127-0-0-1-62891-graphql,openapi:quillbase; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:52017/: mcp:harbourly,openapi:tallyport,graphql:127-0-0-1-52016-graphql → mcp:harbourly,openapi:tallyport,mcp:ashgrove; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "via": [
-        "graphql:127-0-0-1-62890-graphql",
-        "graphql:127-0-0-1-62891-graphql",
-        "openapi:quillbase"
+        "mcp:harbourly",
+        "openapi:tallyport",
+        "mcp:ashgrove"
       ],
-      "expected": 5.3,
-      "got": 5.3,
-      "ms": 21
+      "expected": 17.9,
+      "got": 17.9,
+      "ms": 32
     },
     {
       "n": 12,
-      "title": "Remove that provider (Quillbase)",
+      "title": "Remove that provider (Ashgrove)",
       "ok": true
     },
     {
@@ -136,41 +136,41 @@
       "ok": true,
       "status": "failed",
       "healing": [
-        "API drift at http://127.0.0.1:62893/: graphql:127-0-0-1-62890-graphql,graphql:127-0-0-1-62891-graphql,openapi:quillbase → graphql:127-0-0-1-62890-graphql,graphql:127-0-0-1-62891-graphql; +0 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:52017/: mcp:harbourly,openapi:tallyport,mcp:ashgrove → mcp:harbourly,openapi:tallyport; +0 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "withdrawn": [
-        "Quillbase"
+        "Ashgrove"
       ],
       "capabilities": "27 → 25",
       "savedPipelines": "1 → 0"
     },
     {
       "n": 14,
-      "title": "Introduce a different provider (Emberlane, mcp): the objective works again",
+      "title": "Introduce a different provider (Ledgerline, mcp): the objective works again",
       "ok": true,
       "learned": [
         "api-catalog: 3 services listed",
-        "graphql: 1 fields",
-        "graphql: 1 fields",
+        "mcp: 1 tools",
+        "openapi: 1 operations",
         "mcp: 1 tools"
       ],
       "via": [
-        "graphql:127-0-0-1-62890-graphql",
-        "graphql:127-0-0-1-62891-graphql",
-        "mcp:emberlane"
+        "mcp:harbourly",
+        "openapi:tallyport",
+        "mcp:ledgerline"
       ],
-      "expected": 25.3,
-      "got": 25.3,
-      "ms": 2.3
+      "expected": 17,
+      "got": 17,
+      "ms": 4.8
     }
   ],
   "benchmarks": {
-    "startupMs": 138.6,
+    "startupMs": 213.9,
     "mcpLatencyMs": {
-      "p50": 0.04,
-      "p95": 0.12
+      "p50": 0.06,
+      "p95": 0.21
     },
-    "discoveryMs": 42.4,
+    "discoveryMs": 78.5,
     "graph": {
       "providers": 5,
       "capabilities": 26,
@@ -179,15 +179,15 @@
       "chains3": 63,
       "total": 132
     },
-    "graphStatsMs": 0.1,
-    "planningMs": 3.6,
-    "executionMs": 6.6,
-    "recoveryAfterChangeMs": 21,
-    "recoveryAfterNewProviderMs": 2.3,
-    "memoryMB": 149
+    "graphStatsMs": 0.2,
+    "planningMs": 6,
+    "executionMs": 11.2,
+    "recoveryAfterChangeMs": 32,
+    "recoveryAfterNewProviderMs": 4.8,
+    "memoryMB": 151
   },
   "freeze": {
-    "commit": "fdf5be342ad58aba71ea1e81487d99db19c14934",
+    "commit": "1fa3c7e8b62d55bba7ebca1f4e96a0f82cde6141",
     "tag": "lab-freeze-9",
     "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/core/authority.ts\nsrc/core/fields.ts\nsrc/core/graph.ts\nsrc/core/identities.ts\nsrc/core/planner.ts\nsrc/core/sandbox.ts\nsrc/core/satisfaction.ts\nsrc/core/semantics.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/core/yaml.ts\nsrc/entry/durable.ts\nsrc/entry/edge.ts\nsrc/interface/http.ts\nsrc/interface/tools.ts\nsrc/reflectors/cli.ts\nsrc/reflectors/discover.ts\nsrc/reflectors/graphql.ts\nsrc/reflectors/mcp.ts\nsrc/reflectors/net.ts\nsrc/reflectors/openapi.ts\nsrc/reflectors/platform.ts\nsrc/runtime.ts",
     "uncommittedProductChanges": "",
@@ -196,51 +196,51 @@
   "environment": [
     {
       "service": "invoices",
-      "brand": "Kestrel Freight",
-      "protocol": "graphql",
-      "operation": "Retrieve invoice",
-      "input": "invoice_id",
+      "brand": "Harbourly",
+      "protocol": "mcp",
+      "operation": "Get invoice",
+      "input": "invoice_number",
       "outputs": [
-        "invoice_id",
+        "invoice_number",
         "customerId",
-        "net_amount",
+        "total",
         "currency_code"
       ]
     },
     {
       "service": "customers",
-      "brand": "Northwind Billing",
-      "protocol": "graphql",
-      "operation": "Look up customer",
+      "brand": "Tallyport",
+      "protocol": "openapi",
+      "operation": "Fetch customer record",
       "input": "customer_id",
       "outputs": [
         "customer_id",
-        "display_name",
+        "legal_name",
         "country"
       ]
     },
     {
       "service": "tax",
-      "brand": "Quillbase",
+      "brand": "Ashgrove",
       "protocol": "graphql",
-      "operation": "Tax rate by country",
-      "input": "countryCode",
+      "operation": "Get tax rate",
+      "input": "country_code",
       "outputs": [
-        "countryCode",
+        "country_code",
         "vat_rate"
       ]
     }
   ],
   "firstRunProviders": [
-    "graphql:127-0-0-1-62890-graphql",
-    "graphql:127-0-0-1-62891-graphql",
-    "graphql:127-0-0-1-62892-graphql"
+    "mcp:harbourly",
+    "openapi:tallyport",
+    "graphql:127-0-0-1-52016-graphql"
   ],
   "receipts": {
     "count": 21,
     "intact": true,
     "brokenAt": null,
-    "head": "9b39addb584e28977036d71e0b36b1fade97ec8476df47818d64fef83ad5ddce"
+    "head": "b6474eb847e9713e1b5b97b503e1317f415f34edf02aceed61fcf5c6bfbf691a"
   },
   "passed": 14,
   "total": 14

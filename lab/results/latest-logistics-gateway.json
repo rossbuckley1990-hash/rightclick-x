@@ -1,8 +1,8 @@
 {
-  "seed": 821787934,
+  "seed": 836606803,
   "domain": "logistics",
   "gateway": true,
-  "startedAt": "2026-10-16T22:12:00.581Z",
+  "startedAt": "2026-10-16T22:15:45.075Z",
   "steps": [
     {
       "n": 1,
@@ -17,7 +17,7 @@
       "title": "Connect an MCP client to RightClick X (stdio)",
       "ok": true,
       "tools": 13,
-      "startupMs": 189.8
+      "startupMs": 227
     },
     {
       "n": 3,
@@ -44,10 +44,10 @@
       "found": [
         "graphql",
         "mcp",
-        "graphql"
+        "openapi"
       ],
       "newCapabilities": 3,
-      "ms": 78.9
+      "ms": 67.1
     },
     {
       "n": 5,
@@ -55,79 +55,79 @@
       "ok": true,
       "candidatePlans": 2,
       "best": [
-        "Look Up Shipment",
+        "Track Shipment",
         "Get warehouse",
-        "Shipping Rate By City"
+        "Shipping rate by city"
       ],
-      "planningMs": 5.1
+      "planningMs": 4.4
     },
     {
       "n": 6,
       "title": "Compose a multi-provider workflow",
       "ok": true,
       "steps": [
-        "Look Up Shipment ← shipment_number=$in.shipment_id",
+        "Track Shipment ← shipment_id=$in.shipment_id",
         "Get warehouse ← warehouseId=0.warehouseId",
-        "Shipping Rate By City ← city=1.city"
+        "Shipping rate by city ← town=1.town"
       ]
     },
     {
       "n": 7,
       "title": "Execute the workflow",
       "ok": true,
-      "input": "SHP-1003",
+      "input": "SHP-1004",
       "pipeline": [
-        "Look Up Shipment",
+        "Track Shipment",
         "Get warehouse",
-        "Shipping Rate By City"
+        "Shipping rate by city"
       ],
-      "ms": 9.4
+      "ms": 8.9
     },
     {
       "n": 8,
       "title": "Verify against independently held test data",
       "ok": true,
-      "expected": 37.3,
-      "got": 37.3
+      "expected": 1.5,
+      "got": 1.5
     },
     {
       "n": 9,
       "title": "Save the successful composition and reuse it",
       "ok": true,
-      "saved": "Shipping rate shipment warehouse city: Look Up Shipment → Get warehouse → Shipping Rate By City",
+      "saved": "Shipping rate shipment warehouse city: Track Shipment → Get warehouse → Shipping rate by city",
       "reusedAs": [
-        "Shipping rate shipment warehouse city: Look Up Shipment → Get warehouse → Shipping Rate By City"
+        "Shipping rate shipment warehouse city: Track Shipment → Get warehouse → Shipping rate by city"
       ],
-      "expected": 31,
-      "got": 31,
-      "ms": 4.2
+      "expected": 1.5,
+      "got": 1.5,
+      "ms": 4.3
     },
     {
       "n": 10,
-      "title": "Change the interface of the last provider in the chain (Emberlane)",
+      "title": "Change the interface of the last provider in the chain (Tallyport)",
       "ok": true,
-      "before": "graphql \"Shipping rate by city\" city → city, price_per_kg",
-      "after": "mcp \"Lookup shipping rate for a city\" location → result.{location, rate}"
+      "before": "openapi \"Shipping rate by city\" town → town, shipping_rate",
+      "after": "graphql \"City shipping rate\" city → result.{city, price_per_kg}"
     },
     {
       "n": 11,
       "title": "Recover without changing integration code",
       "ok": true,
       "healing": [
-        "API drift at http://127.0.0.1:63707/: graphql:127-0-0-1-63704-graphql,mcp:northwind-billing,graphql:127-0-0-1-63706-graphql → graphql:127-0-0-1-63704-graphql,mcp:northwind-billing,mcp:emberlane; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:52835/: graphql:127-0-0-1-52832-graphql,mcp:duneworks,openapi:tallyport → graphql:127-0-0-1-52832-graphql,mcp:duneworks,graphql:127-0-0-1-52834-graphql; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "via": [
-        "graphql:127-0-0-1-63704-graphql",
-        "mcp:northwind-billing",
-        "mcp:emberlane"
+        "graphql:127-0-0-1-52832-graphql",
+        "mcp:duneworks",
+        "graphql:127-0-0-1-52834-graphql"
       ],
-      "expected": 31,
-      "got": 31,
-      "ms": 32.5
+      "expected": 17.9,
+      "got": 17.9,
+      "ms": 28.7
     },
     {
       "n": 12,
-      "title": "Remove that provider (Emberlane)",
+      "title": "Remove that provider (Tallyport)",
       "ok": true
     },
     {
@@ -136,41 +136,41 @@
       "ok": true,
       "status": "failed",
       "healing": [
-        "API drift at http://127.0.0.1:63707/: graphql:127-0-0-1-63704-graphql,mcp:northwind-billing,mcp:emberlane → graphql:127-0-0-1-63704-graphql,mcp:northwind-billing; +0 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:52835/: graphql:127-0-0-1-52832-graphql,mcp:duneworks,graphql:127-0-0-1-52834-graphql → graphql:127-0-0-1-52832-graphql,mcp:duneworks; +0 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "withdrawn": [
-        "Emberlane"
+        "GraphQL 127.0.0.1:52834"
       ],
       "capabilities": "27 → 25",
       "savedPipelines": "1 → 0"
     },
     {
       "n": 14,
-      "title": "Introduce a different provider (Harbourly, openapi): the objective works again",
+      "title": "Introduce a different provider (Harbourly, mcp): the objective works again",
       "ok": true,
       "learned": [
         "api-catalog: 3 services listed",
         "graphql: 1 fields",
         "mcp: 1 tools",
-        "openapi: 1 operations"
+        "mcp: 1 tools"
       ],
       "via": [
-        "graphql:127-0-0-1-63704-graphql",
-        "mcp:northwind-billing",
-        "openapi:harbourly"
+        "graphql:127-0-0-1-52832-graphql",
+        "mcp:duneworks",
+        "mcp:harbourly"
       ],
-      "expected": 37.3,
-      "got": 37.3,
-      "ms": 4.7
+      "expected": 4.5,
+      "got": 4.5,
+      "ms": 3.5
     }
   ],
   "benchmarks": {
-    "startupMs": 189.8,
+    "startupMs": 227,
     "mcpLatencyMs": {
-      "p50": 0.05,
-      "p95": 0.19
+      "p50": 0.06,
+      "p95": 0.2
     },
-    "discoveryMs": 78.9,
+    "discoveryMs": 67.1,
     "graph": {
       "providers": 5,
       "capabilities": 26,
@@ -179,15 +179,15 @@
       "chains3": 51,
       "total": 114
     },
-    "graphStatsMs": 0.2,
-    "planningMs": 5.1,
-    "executionMs": 9.4,
-    "recoveryAfterChangeMs": 32.5,
-    "recoveryAfterNewProviderMs": 4.7,
-    "memoryMB": 149
+    "graphStatsMs": 0.3,
+    "planningMs": 4.4,
+    "executionMs": 8.9,
+    "recoveryAfterChangeMs": 28.7,
+    "recoveryAfterNewProviderMs": 3.5,
+    "memoryMB": 151
   },
   "freeze": {
-    "commit": "fdf5be342ad58aba71ea1e81487d99db19c14934",
+    "commit": "1fa3c7e8b62d55bba7ebca1f4e96a0f82cde6141",
     "tag": "lab-freeze-9",
     "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/core/authority.ts\nsrc/core/fields.ts\nsrc/core/graph.ts\nsrc/core/identities.ts\nsrc/core/planner.ts\nsrc/core/sandbox.ts\nsrc/core/satisfaction.ts\nsrc/core/semantics.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/core/yaml.ts\nsrc/entry/durable.ts\nsrc/entry/edge.ts\nsrc/interface/http.ts\nsrc/interface/tools.ts\nsrc/reflectors/cli.ts\nsrc/reflectors/discover.ts\nsrc/reflectors/graphql.ts\nsrc/reflectors/mcp.ts\nsrc/reflectors/net.ts\nsrc/reflectors/openapi.ts\nsrc/reflectors/platform.ts\nsrc/runtime.ts",
     "uncommittedProductChanges": "",
@@ -196,50 +196,50 @@
   "environment": [
     {
       "service": "shipments",
-      "brand": "Ledgerline",
+      "brand": "Ashgrove",
       "protocol": "graphql",
-      "operation": "Look up shipment",
-      "input": "shipment_number",
+      "operation": "Track shipment",
+      "input": "shipment_id",
       "outputs": [
-        "shipment_number",
+        "shipment_id",
         "warehouseId",
-        "gross_weight"
+        "weight_kg"
       ]
     },
     {
       "service": "warehouses",
-      "brand": "Northwind Billing",
+      "brand": "Duneworks",
       "protocol": "mcp",
       "operation": "Get warehouse",
       "input": "warehouseId",
       "outputs": [
         "warehouseId",
-        "city",
-        "email"
+        "town",
+        "contact_email"
       ]
     },
     {
       "service": "rates",
-      "brand": "Emberlane",
-      "protocol": "graphql",
+      "brand": "Tallyport",
+      "protocol": "openapi",
       "operation": "Shipping rate by city",
-      "input": "city",
+      "input": "town",
       "outputs": [
-        "city",
-        "price_per_kg"
+        "town",
+        "shipping_rate"
       ]
     }
   ],
   "firstRunProviders": [
-    "graphql:127-0-0-1-63704-graphql",
-    "mcp:northwind-billing",
-    "graphql:127-0-0-1-63706-graphql"
+    "graphql:127-0-0-1-52832-graphql",
+    "mcp:duneworks",
+    "openapi:tallyport"
   ],
   "receipts": {
     "count": 21,
     "intact": true,
     "brokenAt": null,
-    "head": "b69c1c04777c7d30c8f9e98866b7478dcb5ccf95556cab0365ac9951c43cd40b"
+    "head": "d4c41360d208f053a3c191fd5e5f532acefca53cbbb6c6a47fb7c15059463159"
   },
   "passed": 14,
   "total": 14

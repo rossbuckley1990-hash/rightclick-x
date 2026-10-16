@@ -143,6 +143,8 @@ export function plan(graph: CapabilityGraph, ledger: Ledger, goal: Goal): Plan[]
       !excluded.has(c.id) &&
       !(c.invoke.kind === "composite" && c.invoke.steps.some((s) => excluded.has(s.capability))) &&
       (!risks || risks.has(c.risk)) &&
+      // Investigated behaviour that experiments did not support is never composed automatically.
+      !c.tags.includes("unsupported") &&
       withinPolicy(c),
   );
   const start: Node = {

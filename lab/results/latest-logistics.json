@@ -1,8 +1,8 @@
 {
-  "seed": 622230088,
+  "seed": 314168545,
   "domain": "logistics",
   "gateway": false,
-  "startedAt": "2026-10-16T22:11:47.012Z",
+  "startedAt": "2026-10-16T22:15:26.271Z",
   "steps": [
     {
       "n": 1,
@@ -17,7 +17,7 @@
       "title": "Connect an MCP client to RightClick X (stdio)",
       "ok": true,
       "tools": 13,
-      "startupMs": 125.4
+      "startupMs": 155.1
     },
     {
       "n": 3,
@@ -42,12 +42,12 @@
       "title": "Discover contracts from root addresses only (no protocols, no schemas given)",
       "ok": true,
       "found": [
-        "openapi",
+        "graphql",
         "mcp",
         "mcp"
       ],
       "newCapabilities": 3,
-      "ms": 35.8
+      "ms": 42.1
     },
     {
       "n": 5,
@@ -55,79 +55,79 @@
       "ok": true,
       "candidatePlans": 2,
       "best": [
-        "Shipment details",
+        "Track shipment",
         "Warehouse details",
-        "Shipping rate by city"
+        "City Shipping Rate"
       ],
-      "planningMs": 2.6
+      "planningMs": 3.3
     },
     {
       "n": 6,
       "title": "Compose a multi-provider workflow",
       "ok": true,
       "steps": [
-        "Shipment details ← shipment_number=$in.shipment_id",
-        "Warehouse details ← warehouseId=0.warehouse_id",
-        "Shipping rate by city ← city=1.town"
+        "Track shipment ← shipment_number=$in.shipment_id",
+        "Warehouse details ← warehouse_number=0.warehouse_id",
+        "City Shipping Rate ← location=1.city"
       ]
     },
     {
       "n": 7,
       "title": "Execute the workflow",
       "ok": true,
-      "input": "SHP-1003",
+      "input": "SHP-1005",
       "pipeline": [
-        "Shipment details",
+        "Track shipment",
         "Warehouse details",
-        "Shipping rate by city"
+        "City Shipping Rate"
       ],
-      "ms": 5.4
+      "ms": 5.9
     },
     {
       "n": 8,
       "title": "Verify against independently held test data",
       "ok": true,
-      "expected": 15.4,
-      "got": 15.4
+      "expected": 31.9,
+      "got": 31.9
     },
     {
       "n": 9,
       "title": "Save the successful composition and reuse it",
       "ok": true,
-      "saved": "Shipping rate shipment warehouse city: Shipment details → Warehouse details → Shipping rate by city",
+      "saved": "Shipping rate shipment warehouse city: Track shipment → Warehouse details → City Shipping Rate",
       "reusedAs": [
-        "Shipping rate shipment warehouse city: Shipment details → Warehouse details → Shipping rate by city"
+        "Shipping rate shipment warehouse city: Track shipment → Warehouse details → City Shipping Rate"
       ],
-      "expected": 15.4,
-      "got": 15.4,
-      "ms": 2.6
+      "expected": 6,
+      "got": 6,
+      "ms": 3.5
     },
     {
       "n": 10,
-      "title": "Change the interface of the last provider in the chain (Harbourly)",
+      "title": "Change the interface of the last provider in the chain (Emberlane)",
       "ok": true,
-      "before": "mcp \"Shipping rate by city\" city → city, freight_rate",
-      "after": "graphql \"Get shipping rate\" town → result.{town, rate}"
+      "before": "graphql \"City shipping rate\" location → location, shipping_rate",
+      "after": "openapi \"Get shipping rate\" city → result.{city, price_per_kg}"
     },
     {
       "n": 11,
       "title": "Recover without changing integration code",
       "ok": true,
       "healing": [
-        "API drift at http://127.0.0.1:61204/: mcp:harbourly → graphql:127-0-0-1-61204-graphql; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:50334/: graphql:127-0-0-1-50334-graphql → openapi:emberlane; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "via": [
-        "openapi:tallyport",
-        "mcp:quillbase",
-        "graphql:127-0-0-1-61204-graphql"
+        "mcp:northwind-billing",
+        "mcp:ledgerline",
+        "openapi:emberlane"
       ],
-      "expected": 10.1,
-      "got": 10.1,
-      "ms": 8.8
+      "expected": 11.6,
+      "got": 11.6,
+      "ms": 10.5
     },
     {
       "n": 12,
-      "title": "Remove that provider (Harbourly)",
+      "title": "Remove that provider (Emberlane)",
       "ok": true
     },
     {
@@ -136,10 +136,10 @@
       "ok": true,
       "status": "failed",
       "healing": [
-        "provider gone at http://127.0.0.1:61204/: withdrew graphql:127-0-0-1-61204-graphql (1 capabilities, 1 pipeline(s) retired)"
+        "provider gone at http://127.0.0.1:50334/: withdrew openapi:emberlane (1 capabilities, 1 pipeline(s) retired)"
       ],
       "withdrawn": [
-        "GraphQL 127.0.0.1:61204"
+        "Emberlane"
       ],
       "capabilities": "27 → 25",
       "savedPipelines": "1 → 0"
@@ -152,22 +152,22 @@
         "openapi: 1 operations"
       ],
       "via": [
-        "openapi:tallyport",
-        "mcp:quillbase",
+        "mcp:northwind-billing",
+        "mcp:ledgerline",
         "openapi:cobaltix"
       ],
-      "expected": 10.1,
-      "got": 10.1,
-      "ms": 1.8
+      "expected": 31.9,
+      "got": 31.9,
+      "ms": 2.1
     }
   ],
   "benchmarks": {
-    "startupMs": 125.4,
+    "startupMs": 155.1,
     "mcpLatencyMs": {
-      "p50": 0.03,
-      "p95": 0.12
+      "p50": 0.04,
+      "p95": 0.14
     },
-    "discoveryMs": 35.8,
+    "discoveryMs": 42.1,
     "graph": {
       "providers": 5,
       "capabilities": 26,
@@ -177,14 +177,14 @@
       "total": 114
     },
     "graphStatsMs": 0.1,
-    "planningMs": 2.6,
-    "executionMs": 5.4,
-    "recoveryAfterChangeMs": 8.8,
-    "recoveryAfterNewProviderMs": 1.8,
-    "memoryMB": 137
+    "planningMs": 3.3,
+    "executionMs": 5.9,
+    "recoveryAfterChangeMs": 10.5,
+    "recoveryAfterNewProviderMs": 2.1,
+    "memoryMB": 136
   },
   "freeze": {
-    "commit": "fdf5be342ad58aba71ea1e81487d99db19c14934",
+    "commit": "1fa3c7e8b62d55bba7ebca1f4e96a0f82cde6141",
     "tag": "lab-freeze-9",
     "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/core/authority.ts\nsrc/core/fields.ts\nsrc/core/graph.ts\nsrc/core/identities.ts\nsrc/core/planner.ts\nsrc/core/sandbox.ts\nsrc/core/satisfaction.ts\nsrc/core/semantics.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/core/yaml.ts\nsrc/entry/durable.ts\nsrc/entry/edge.ts\nsrc/interface/http.ts\nsrc/interface/tools.ts\nsrc/reflectors/cli.ts\nsrc/reflectors/discover.ts\nsrc/reflectors/graphql.ts\nsrc/reflectors/mcp.ts\nsrc/reflectors/net.ts\nsrc/reflectors/openapi.ts\nsrc/reflectors/platform.ts\nsrc/runtime.ts",
     "uncommittedProductChanges": "",
@@ -193,9 +193,9 @@
   "environment": [
     {
       "service": "shipments",
-      "brand": "Tallyport",
-      "protocol": "openapi",
-      "operation": "Shipment details",
+      "brand": "Northwind Billing",
+      "protocol": "mcp",
+      "operation": "Track shipment",
       "input": "shipment_number",
       "outputs": [
         "shipment_number",
@@ -205,38 +205,38 @@
     },
     {
       "service": "warehouses",
-      "brand": "Quillbase",
+      "brand": "Ledgerline",
       "protocol": "mcp",
       "operation": "Warehouse details",
-      "input": "warehouseId",
+      "input": "warehouse_number",
       "outputs": [
-        "warehouseId",
-        "town",
-        "manager_email"
+        "warehouse_number",
+        "city",
+        "contact_email"
       ]
     },
     {
       "service": "rates",
-      "brand": "Harbourly",
-      "protocol": "mcp",
-      "operation": "Shipping rate by city",
-      "input": "city",
+      "brand": "Emberlane",
+      "protocol": "graphql",
+      "operation": "City shipping rate",
+      "input": "location",
       "outputs": [
-        "city",
-        "freight_rate"
+        "location",
+        "shipping_rate"
       ]
     }
   ],
   "firstRunProviders": [
-    "openapi:tallyport",
-    "mcp:quillbase",
-    "mcp:harbourly"
+    "mcp:northwind-billing",
+    "mcp:ledgerline",
+    "graphql:127-0-0-1-50334-graphql"
   ],
   "receipts": {
     "count": 21,
     "intact": true,
     "brokenAt": null,
-    "head": "2be1a3763aa8e97fbd5df53b4002174fdbf78b0a87af316b39bb4d287e2bc208"
+    "head": "215eab160c3491fa7fdc8dbf0f8d85b93ad7bb1b596580cc0423d835aa64bd06"
   },
   "passed": 14,
   "total": 14

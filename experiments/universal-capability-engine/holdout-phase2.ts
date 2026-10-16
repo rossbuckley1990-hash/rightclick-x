@@ -53,6 +53,32 @@ const TASKS_FREEZE3: Record<string, any> = {
   },
 };
 
+// Tasks for the uce-freeze-4 draws, written after phase 1 on uce-freeze-4 and before these executions.
+const TASKS_FREEZE4: Record<string, any> = {
+  htmltree: {
+    intent: "parse an html document and dump its parse tree",
+    want: "text",
+    inputs: ["<html><head><title>Garden log</title></head><body><h1>Spring</h1><p>Tulips <em>early</em></p><ul><li>water</li></ul></body></html>\n"],
+    check: (outs: unknown[], ins: string[]) => {
+      const o = String(outs[0] ?? "");
+      const elements = [...new Set([...ins[0].matchAll(/<([a-z][a-z0-9]*)\b/gi)].map((m) => m[1].toLowerCase()))];
+      const missingEl = elements.filter((e) => !new RegExp(`\\b${e}\\b`, "i").test(o));
+      const missingW = [...new Set(words(ins[0]))].filter((w) => !words(o).includes(w));
+      return { pass: !!o.trim() && !missingEl.length && !missingW.length, detail: `elements missing ${missingEl.join(",") || "none"}; words missing ${missingW.join(",") || "none"}` };
+    },
+  },
+  mp2bug: {
+    intent: "generate a mod_perl bug report",
+    want: "text",
+    inputs: ["Requests to the gallery handler hang after upgrading the server\n"],
+    check: (outs: unknown[], ins: string[]) => {
+      const o = String(outs[0] ?? "");
+      const missing = [...new Set(words(ins[0]))].filter((w) => !words(o).includes(w));
+      return { pass: !!o.trim() && !missing.length, detail: `description words missing from the report: ${missing.join(",") || "none"}` };
+    },
+  },
+};
+
 const TASKS: Record<string, { intent: string; want: string; inputs: string[]; check: (outputs: unknown[], inputs: string[]) => { pass: boolean; detail: string } }> = {
   expand: {
     intent: "expand tabs to spaces",
@@ -82,7 +108,7 @@ const f = serverFiles(`${p1.bin}/../phase2`);
 const { copyFileSync } = await import("node:fs");
 copyFileSync(p1.state, f.state);
 for (const name of p1.chosen as string[]) {
-  const task = TASKS[name] ?? TASKS_FREEZE3[name];
+  const task = TASKS[name] ?? TASKS_FREEZE3[name] ?? TASKS_FREEZE4[name];
   if (!task) throw new Error(`no task written for ${name}`);
   const m = new Mcp(build.rcx, f);
   await m.init();

@@ -205,3 +205,18 @@ test("an error report on stdout is not a result (holdout zipinfo on uce-freeze-3
   const ops = parseOperands(["Usage : xmlish [options] XMLfiles ...", "xmlish [--version | --debug | --shell | --xpath XPath_expression] [XML-FILE ...]"], "xmlish");
   assert.deepEqual(ops.required, ["XMLfiles"]);
 });
+
+test("holdout uce-freeze-4: numbered variadic operands are one input; behaviour never supported is not composed", { skip }, async () => {
+  const { parseOperands } = await import("../src/reflectors/cli.ts");
+  assert.deepEqual(parseOperands(["usage: treeish [-D3] [-w] file1 file2 file3 ..."], "treeish").required, ["file"]);
+  const dir = realpathSync(mkdtempSync(join(tmpdir(), "rcx-prog-")));
+  // Ignores its input and prints a template with a timestamp (like mp2bug).
+  const tmpl = program(dir, "reportgen", `if [ "$1" = "--help" ]; then echo "usage: reportgen"; echo "  generate a bug report"; exit 0; fi\ncat > /dev/null; echo "Bug report"; echo "1. Problem description: [DESCRIBE]"; date +%s%N`);
+  const rc = await RightClick.create({ name: "r", directories: [], authority: { investigate: [tmpl] } });
+  await rc.learn({ source: `cli:${tmpl}` });
+  const cap = rc.graph.list().find((c) => c.provider === "cli:reportgen");
+  assert.ok(cap, "still learned, with its evidence");
+  assert.ok(cap!.tags.includes("unsupported"), cap!.tags.join(","));
+  const r = await rc.compose({ have: { input: { type: "text", value: "the gallery handler hangs\n" } }, want: "text", intent: "generate a bug report", run: true });
+  assert.ok(!(r.executed?.titles ?? []).some((t) => t.startsWith("reportgen")), `not composed: ${r.executed?.titles}`);
+});

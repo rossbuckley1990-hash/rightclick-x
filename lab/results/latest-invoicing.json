@@ -1,8 +1,8 @@
 {
-  "seed": 587339366,
+  "seed": 355942662,
   "domain": "invoicing",
   "gateway": false,
-  "startedAt": "2026-10-16T22:11:42.421Z",
+  "startedAt": "2026-10-16T22:15:20.315Z",
   "steps": [
     {
       "n": 1,
@@ -17,7 +17,7 @@
       "title": "Connect an MCP client to RightClick X (stdio)",
       "ok": true,
       "tools": 13,
-      "startupMs": 141.4
+      "startupMs": 226.8
     },
     {
       "n": 3,
@@ -42,12 +42,12 @@
       "title": "Discover contracts from root addresses only (no protocols, no schemas given)",
       "ok": true,
       "found": [
-        "graphql",
-        "graphql",
-        "graphql"
+        "openapi",
+        "openapi",
+        "openapi"
       ],
       "newCapabilities": 3,
-      "ms": 37.9
+      "ms": 72.6
     },
     {
       "n": 5,
@@ -55,79 +55,79 @@
       "ok": true,
       "candidatePlans": 3,
       "best": [
-        "Retrieve Invoice",
-        "Get Customer",
-        "Country Tax Rate"
+        "Invoice lookup",
+        "Look up customer",
+        "Get tax rate"
       ],
-      "planningMs": 4.5
+      "planningMs": 6.9
     },
     {
       "n": 6,
       "title": "Compose a multi-provider workflow",
       "ok": true,
       "steps": [
-        "Retrieve Invoice ← invoice_id=$in.invoice_id",
-        "Get Customer ← customer_id=0.customer_number",
-        "Country Tax Rate ← country_code=1.countryCode"
+        "Invoice lookup ← invoice_id=$in.invoice_id",
+        "Look up customer ← customer_id=0.customerId",
+        "Get tax rate ← country_code=1.countryCode"
       ]
     },
     {
       "n": 7,
       "title": "Execute the workflow",
       "ok": true,
-      "input": "INV-1000",
+      "input": "INV-1006",
       "pipeline": [
-        "Retrieve Invoice",
-        "Get Customer",
-        "Country Tax Rate"
+        "Invoice lookup",
+        "Look up customer",
+        "Get tax rate"
       ],
-      "ms": 9.4
+      "ms": 14.4
     },
     {
       "n": 8,
       "title": "Verify against independently held test data",
       "ok": true,
-      "expected": 11.2,
-      "got": 11.2
+      "expected": 16.4,
+      "got": 16.4
     },
     {
       "n": 9,
       "title": "Save the successful composition and reuse it",
       "ok": true,
-      "saved": "Tax rate invoice customer country: Retrieve Invoice → Get Customer → Country Tax Rate",
+      "saved": "Tax rate invoice customer country: Invoice lookup → Look up customer → Get tax rate",
       "reusedAs": [
-        "Tax rate invoice customer country: Retrieve Invoice → Get Customer → Country Tax Rate"
+        "Tax rate invoice customer country: Invoice lookup → Look up customer → Get tax rate"
       ],
-      "expected": 11.2,
-      "got": 11.2,
-      "ms": 3.3
+      "expected": 22.9,
+      "got": 22.9,
+      "ms": 7.4
     },
     {
       "n": 10,
-      "title": "Change the interface of the last provider in the chain (Emberlane)",
+      "title": "Change the interface of the last provider in the chain (Duneworks)",
       "ok": true,
-      "before": "graphql \"Country tax rate\" country_code → country_code, standard_rate",
-      "after": "mcp \"Lookup tax rate for a country\" country → result.{country, tax_rate}"
+      "before": "openapi \"Get tax rate\" country_code → country_code, rate",
+      "after": "mcp \"Lookup tax rate for a country\" countryCode → result.{countryCode, tax_rate}"
     },
     {
       "n": 11,
       "title": "Recover without changing integration code",
       "ok": true,
       "healing": [
-        "API drift at http://127.0.0.1:60312/: graphql:127-0-0-1-60312-graphql → mcp:emberlane; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:49441/: openapi:duneworks → mcp:duneworks; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "via": [
-        "graphql:127-0-0-1-60310-graphql",
-        "graphql:127-0-0-1-60311-graphql",
-        "mcp:emberlane"
+        "openapi:northwind-billing",
+        "openapi:fernway",
+        "mcp:duneworks"
       ],
-      "expected": 14.1,
-      "got": 14.1,
-      "ms": 11.8
+      "expected": 24.6,
+      "got": 24.6,
+      "ms": 24.7
     },
     {
       "n": 12,
-      "title": "Remove that provider (Emberlane)",
+      "title": "Remove that provider (Duneworks)",
       "ok": true
     },
     {
@@ -136,38 +136,38 @@
       "ok": true,
       "status": "failed",
       "healing": [
-        "provider gone at http://127.0.0.1:60312/: withdrew mcp:emberlane (1 capabilities, 1 pipeline(s) retired)"
+        "provider gone at http://127.0.0.1:49441/: withdrew mcp:duneworks (1 capabilities, 1 pipeline(s) retired)"
       ],
       "withdrawn": [
-        "Emberlane"
+        "Duneworks"
       ],
       "capabilities": "27 → 25",
       "savedPipelines": "1 → 0"
     },
     {
       "n": 14,
-      "title": "Introduce a different provider (Cobaltix, openapi): the objective works again",
+      "title": "Introduce a different provider (Cobaltix, mcp): the objective works again",
       "ok": true,
       "learned": [
-        "openapi: 1 operations"
+        "mcp: 1 tools"
       ],
       "via": [
-        "graphql:127-0-0-1-60310-graphql",
-        "graphql:127-0-0-1-60311-graphql",
-        "openapi:cobaltix"
+        "openapi:northwind-billing",
+        "openapi:fernway",
+        "mcp:cobaltix"
       ],
-      "expected": 14.1,
-      "got": 14.1,
-      "ms": 3.5
+      "expected": 16.4,
+      "got": 16.4,
+      "ms": 5
     }
   ],
   "benchmarks": {
-    "startupMs": 141.4,
+    "startupMs": 226.8,
     "mcpLatencyMs": {
-      "p50": 0.04,
-      "p95": 0.12
+      "p50": 0.08,
+      "p95": 0.18
     },
-    "discoveryMs": 37.9,
+    "discoveryMs": 72.6,
     "graph": {
       "providers": 5,
       "capabilities": 26,
@@ -176,15 +176,15 @@
       "chains3": 63,
       "total": 132
     },
-    "graphStatsMs": 0.1,
-    "planningMs": 4.5,
-    "executionMs": 9.4,
-    "recoveryAfterChangeMs": 11.8,
-    "recoveryAfterNewProviderMs": 3.5,
-    "memoryMB": 140
+    "graphStatsMs": 0.2,
+    "planningMs": 6.9,
+    "executionMs": 14.4,
+    "recoveryAfterChangeMs": 24.7,
+    "recoveryAfterNewProviderMs": 5,
+    "memoryMB": 145
   },
   "freeze": {
-    "commit": "fdf5be342ad58aba71ea1e81487d99db19c14934",
+    "commit": "1fa3c7e8b62d55bba7ebca1f4e96a0f82cde6141",
     "tag": "lab-freeze-9",
     "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/core/authority.ts\nsrc/core/fields.ts\nsrc/core/graph.ts\nsrc/core/identities.ts\nsrc/core/planner.ts\nsrc/core/sandbox.ts\nsrc/core/satisfaction.ts\nsrc/core/semantics.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/core/yaml.ts\nsrc/entry/durable.ts\nsrc/entry/edge.ts\nsrc/interface/http.ts\nsrc/interface/tools.ts\nsrc/reflectors/cli.ts\nsrc/reflectors/discover.ts\nsrc/reflectors/graphql.ts\nsrc/reflectors/mcp.ts\nsrc/reflectors/net.ts\nsrc/reflectors/openapi.ts\nsrc/reflectors/platform.ts\nsrc/runtime.ts",
     "uncommittedProductChanges": "",
@@ -193,22 +193,22 @@
   "environment": [
     {
       "service": "invoices",
-      "brand": "Duneworks",
-      "protocol": "graphql",
-      "operation": "Retrieve invoice",
+      "brand": "Northwind Billing",
+      "protocol": "openapi",
+      "operation": "Invoice lookup",
       "input": "invoice_id",
       "outputs": [
         "invoice_id",
-        "customer_number",
-        "amount",
-        "currency_code"
+        "customerId",
+        "net_amount",
+        "currency"
       ]
     },
     {
       "service": "customers",
-      "brand": "Kestrel Freight",
-      "protocol": "graphql",
-      "operation": "Get customer",
+      "brand": "Fernway",
+      "protocol": "openapi",
+      "operation": "Look up customer",
       "input": "customer_id",
       "outputs": [
         "customer_id",
@@ -218,26 +218,26 @@
     },
     {
       "service": "tax",
-      "brand": "Emberlane",
-      "protocol": "graphql",
-      "operation": "Country tax rate",
+      "brand": "Duneworks",
+      "protocol": "openapi",
+      "operation": "Get tax rate",
       "input": "country_code",
       "outputs": [
         "country_code",
-        "standard_rate"
+        "rate"
       ]
     }
   ],
   "firstRunProviders": [
-    "graphql:127-0-0-1-60310-graphql",
-    "graphql:127-0-0-1-60311-graphql",
-    "graphql:127-0-0-1-60312-graphql"
+    "openapi:northwind-billing",
+    "openapi:fernway",
+    "openapi:duneworks"
   ],
   "receipts": {
     "count": 21,
     "intact": true,
     "brokenAt": null,
-    "head": "f2b3b46e87a8d740cda91a751d04220c28899c39a19ae0a24768578b95cf4078"
+    "head": "b8d053b765a04b6f1814b04ef58e91531729782a241c3cc77bb4cc99779d1508"
   },
   "passed": 14,
   "total": 14

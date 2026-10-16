@@ -1,8 +1,8 @@
 {
-  "seed": 216164728,
+  "seed": 330079119,
   "domain": "accounts",
   "gateway": false,
-  "startedAt": "2026-10-16T22:11:51.148Z",
+  "startedAt": "2026-10-16T22:15:31.517Z",
   "steps": [
     {
       "n": 1,
@@ -17,7 +17,7 @@
       "title": "Connect an MCP client to RightClick X (stdio)",
       "ok": true,
       "tools": 13,
-      "startupMs": 133.4
+      "startupMs": 153.8
     },
     {
       "n": 3,
@@ -43,91 +43,91 @@
       "ok": true,
       "found": [
         "openapi",
-        "graphql",
+        "mcp",
         "mcp"
       ],
       "newCapabilities": 3,
-      "ms": 35.9
+      "ms": 43.1
     },
     {
       "n": 5,
       "title": "Identify suitable capabilities",
       "ok": true,
-      "candidatePlans": 2,
+      "candidatePlans": 3,
       "best": [
-        "Get account",
-        "Customer Inquiry",
-        "VAT rate lookup"
+        "Account lookup",
+        "Get account holder",
+        "Get VAT rate"
       ],
-      "planningMs": 3.6
+      "planningMs": 4.5
     },
     {
       "n": 6,
       "title": "Compose a multi-provider workflow",
       "ok": true,
       "steps": [
-        "Get account ← acct_ref=$in.account_id",
-        "Customer Inquiry ← cref=0.cust_ref",
-        "VAT rate lookup ← jur=1.ctry"
+        "Account lookup ← a_ref=$in.account_id",
+        "Get account holder ← hldr=0.cref",
+        "Get VAT rate ← ctry=1.ctry"
       ]
     },
     {
       "n": 7,
       "title": "Execute the workflow",
       "ok": true,
-      "input": "ACC-1006",
+      "input": "ACC-1003",
       "pipeline": [
-        "Get account",
-        "Customer Inquiry",
-        "VAT rate lookup"
+        "Account lookup",
+        "Get account holder",
+        "Get VAT rate"
       ],
-      "ms": 5.9
+      "ms": 7.3
     },
     {
       "n": 8,
       "title": "Verify against independently held test data",
       "ok": true,
-      "expected": 26.6,
-      "got": 26.6
+      "expected": 26.3,
+      "got": 26.3
     },
     {
       "n": 9,
       "title": "Save the successful composition and reuse it",
       "ok": true,
-      "saved": "Vat rate account holder country: Get account → Customer Inquiry → VAT rate lookup",
+      "saved": "Vat rate account holder country: Account lookup → Get account holder → Get VAT rate",
       "reusedAs": [
-        "Vat rate account holder country: Get account → Customer Inquiry → VAT rate lookup"
+        "Vat rate account holder country: Account lookup → Get account holder → Get VAT rate"
       ],
-      "expected": 6.6,
-      "got": 6.6,
-      "ms": 2.6
+      "expected": 14.1,
+      "got": 14.1,
+      "ms": 3.8
     },
     {
       "n": 10,
-      "title": "Change the interface of the last provider in the chain (Tallyport)",
+      "title": "Change the interface of the last provider in the chain (Lumen Cargo)",
       "ok": true,
-      "before": "mcp \"VAT rate lookup\" jur → jur, vatpct",
-      "after": "graphql \"VAT rate inquiry\" cc → result.{cc, vr}"
+      "before": "mcp \"Get VAT rate\" ctry → ctry, vr",
+      "after": "openapi \"VAT rate lookup\" cc → result.{cc, txr}"
     },
     {
       "n": 11,
       "title": "Recover without changing integration code",
       "ok": true,
       "healing": [
-        "API drift at http://127.0.0.1:62084/: mcp:tallyport → graphql:127-0-0-1-62084-graphql; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:51206/: mcp:lumen-cargo → openapi:lumen-cargo; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "via": [
-        "openapi:quillbase",
-        "graphql:127-0-0-1-62083-graphql",
-        "graphql:127-0-0-1-62084-graphql"
+        "mcp:fjordsoft",
+        "openapi:ashgrove",
+        "openapi:lumen-cargo"
       ],
-      "expected": 21.2,
-      "got": 21.2,
-      "ms": 10.4
+      "expected": 18.6,
+      "got": 18.6,
+      "ms": 11
     },
     {
       "n": 12,
-      "title": "Remove that provider (Tallyport)",
+      "title": "Remove that provider (Lumen Cargo)",
       "ok": true
     },
     {
@@ -136,38 +136,38 @@
       "ok": true,
       "status": "failed",
       "healing": [
-        "provider gone at http://127.0.0.1:62084/: withdrew graphql:127-0-0-1-62084-graphql (1 capabilities, 1 pipeline(s) retired)"
+        "provider gone at http://127.0.0.1:51206/: withdrew openapi:lumen-cargo (1 capabilities, 1 pipeline(s) retired)"
       ],
       "withdrawn": [
-        "GraphQL 127.0.0.1:62084"
+        "Lumen Cargo"
       ],
       "capabilities": "27 → 25",
       "savedPipelines": "1 → 0"
     },
     {
       "n": 14,
-      "title": "Introduce a different provider (Harbourly, graphql): the objective works again",
+      "title": "Introduce a different provider (Fernway, openapi): the objective works again",
       "ok": true,
       "learned": [
-        "graphql: 1 fields"
+        "openapi: 1 operations"
       ],
       "via": [
-        "openapi:quillbase",
-        "graphql:127-0-0-1-62083-graphql",
-        "graphql:127-0-0-1-62156-graphql"
+        "mcp:fjordsoft",
+        "openapi:ashgrove",
+        "openapi:fernway"
       ],
-      "expected": 21.2,
-      "got": 21.2,
-      "ms": 2.3
+      "expected": 11.3,
+      "got": 11.3,
+      "ms": 3.3
     }
   ],
   "benchmarks": {
-    "startupMs": 133.4,
+    "startupMs": 153.8,
     "mcpLatencyMs": {
       "p50": 0.04,
-      "p95": 0.12
+      "p95": 0.14
     },
-    "discoveryMs": 35.9,
+    "discoveryMs": 43.1,
     "graph": {
       "providers": 5,
       "capabilities": 26,
@@ -176,15 +176,15 @@
       "chains3": 63,
       "total": 132
     },
-    "graphStatsMs": 0.1,
-    "planningMs": 3.6,
-    "executionMs": 5.9,
-    "recoveryAfterChangeMs": 10.4,
-    "recoveryAfterNewProviderMs": 2.3,
-    "memoryMB": 142
+    "graphStatsMs": 0.2,
+    "planningMs": 4.5,
+    "executionMs": 7.3,
+    "recoveryAfterChangeMs": 11,
+    "recoveryAfterNewProviderMs": 3.3,
+    "memoryMB": 139
   },
   "freeze": {
-    "commit": "fdf5be342ad58aba71ea1e81487d99db19c14934",
+    "commit": "1fa3c7e8b62d55bba7ebca1f4e96a0f82cde6141",
     "tag": "lab-freeze-9",
     "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/core/authority.ts\nsrc/core/fields.ts\nsrc/core/graph.ts\nsrc/core/identities.ts\nsrc/core/planner.ts\nsrc/core/sandbox.ts\nsrc/core/satisfaction.ts\nsrc/core/semantics.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/core/yaml.ts\nsrc/entry/durable.ts\nsrc/entry/edge.ts\nsrc/interface/http.ts\nsrc/interface/tools.ts\nsrc/reflectors/cli.ts\nsrc/reflectors/discover.ts\nsrc/reflectors/graphql.ts\nsrc/reflectors/mcp.ts\nsrc/reflectors/net.ts\nsrc/reflectors/openapi.ts\nsrc/reflectors/platform.ts\nsrc/runtime.ts",
     "uncommittedProductChanges": "",
@@ -193,50 +193,50 @@
   "environment": [
     {
       "service": "ledger",
-      "brand": "Quillbase",
-      "protocol": "openapi",
-      "operation": "Get account",
-      "input": "acct_ref",
+      "brand": "Fjordsoft",
+      "protocol": "mcp",
+      "operation": "Account lookup",
+      "input": "a_ref",
       "outputs": [
-        "acct_ref",
-        "cust_ref",
-        "amt"
+        "a_ref",
+        "cref",
+        "bal"
       ]
     },
     {
       "service": "kyc",
-      "brand": "Northwind Billing",
-      "protocol": "graphql",
-      "operation": "Customer inquiry",
-      "input": "cref",
+      "brand": "Ashgrove",
+      "protocol": "openapi",
+      "operation": "Get account holder",
+      "input": "hldr",
       "outputs": [
-        "cref",
-        "fullnm",
+        "hldr",
+        "nm",
         "ctry"
       ]
     },
     {
       "service": "vat",
-      "brand": "Tallyport",
+      "brand": "Lumen Cargo",
       "protocol": "mcp",
-      "operation": "VAT rate lookup",
-      "input": "jur",
+      "operation": "Get VAT rate",
+      "input": "ctry",
       "outputs": [
-        "jur",
-        "vatpct"
+        "ctry",
+        "vr"
       ]
     }
   ],
   "firstRunProviders": [
-    "openapi:quillbase",
-    "graphql:127-0-0-1-62083-graphql",
-    "mcp:tallyport"
+    "mcp:fjordsoft",
+    "openapi:ashgrove",
+    "mcp:lumen-cargo"
   ],
   "receipts": {
     "count": 21,
     "intact": true,
     "brokenAt": null,
-    "head": "195cc9f8a17a84471df73b2cd31e0ae18a352f776a2bc11970f566e00ad09095"
+    "head": "bc6219c4c8eaf1ec059ec17f5dc9b06e078686df66e782db775a345c795ae80b"
   },
   "passed": 14,
   "total": 14

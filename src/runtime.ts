@@ -23,7 +23,7 @@ import { detectRuntime, platformReflection, type PlatformFn, type RuntimeInfo } 
 
 export const VERSION = "0.1.0";
 /** Bump whenever semantic inference changes: persisted reflections are then re-derived from their sources. */
-export const SEMANTICS = 16;
+export const SEMANTICS = 17;
 
 export interface Store {
   load(): Promise<PersistedState | null>;

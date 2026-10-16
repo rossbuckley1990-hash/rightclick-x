@@ -81,7 +81,11 @@ export function parseOperands(synopsis: string[], name: string): Investigation["
     if (/\.\.\./.test(noOpts)) variadic = true;
     if (required.length || optional.length) break;
   }
-  return { required: [...new Set(required)].slice(0, 4), optional: [...new Set(optional)].slice(0, 4), variadic };
+  // "file1 file2 file3 ..." is an example of a variadic list, not three operands.
+  const uniq = [...new Set(required)];
+  const stems = uniq.map((r) => r.replace(/\d+$/, ""));
+  const collapsed = variadic && uniq.length >= 3 && stems.every((st) => st === stems[0]) ? [stems[0]] : uniq;
+  return { required: collapsed.slice(0, 4), optional: [...new Set(optional)].slice(0, 4), variadic };
 }
 
 // ---------------------------------------------------------------- synthetic samples (generic)
@@ -403,9 +407,12 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
     if (mt.some((t) => t.r.created.length)) claim(id, `creates files: ${[...new Set(mt.flatMap((t) => t.r.created))].join(", ")}`, "observed", "contained in the sandbox's temporary directory");
     claim(id, "side effects outside the sandbox", "unknown", "the sandbox prevents them; not observable");
     if (!deterministic) (capabilities[capabilities.length - 1].tags as string[]).push("nondeterministic");
+    // Behaviour only observed, never supported by distinct repeatable inputs: available to call
+    // directly with its evidence, but not chosen by automatic composition.
+    if (!supported) (capabilities[capabilities.length - 1].tags as string[]).push("unsupported");
     if (constant) {
       claim(id, "output did not vary across the distinct inputs tried", "observed", `${distinctInputs} distinct inputs gave identical output`);
-      (capabilities[capabilities.length - 1].tags as string[]).push("input-independent-in-samples");
+      (capabilities[capabilities.length - 1].tags as string[]).push("input-independent-in-samples", "unsupported");
     }
   }
   if (empty) claim(name, `on empty input exits ${empty.code}${empty.stdout.trim() ? " with output" : " without output"}`, "observed", empty.stderr.slice(0, 120));
