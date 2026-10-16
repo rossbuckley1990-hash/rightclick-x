@@ -82,6 +82,18 @@ And the offline demo (`npm run demo`), which spins up four local services in fou
 
 `npm run serve` opens a live dashboard where the graph grows, nodes light up as they run, and compose/learn/research are one click away.
 
+## The Chameleon Lab
+
+One command answers the product's central question: *can an unchanged MCP server discover unfamiliar, authorised software capabilities, compose a useful workflow, verify its result, and adapt when the underlying software changes?*
+
+```bash
+npm run lab
+```
+
+The product build is frozen (git tag `lab-freeze-1`). Each run then generates a new environment from `lab/fixtures.json` with a fresh seed: service names, operation titles, field spellings and the protocol of every service (OpenAPI, GraphQL or MCP) are random, and RightClick X knows none of it. The harness starts RightClick X as a separate process and talks to it only as an MCP client. It gives it the services' root addresses and a business objective (*for an invoice, find the tax rate that applies in its customer's country*), then checks every answer against its own copy of the data. Mid-run, the tax service ships a breaking release on a different protocol, is removed, and is replaced by a different provider.
+
+Latest report ([lab/RESULTS.md](lab/RESULTS.md)): **10 of 10 freshly generated environments passed all 14 steps** on the frozen build: discovery from addresses alone (31 ms), a three-provider workflow planned in 2.2 ms and executed in 4.4 ms, correct against independent data, reused, recovered from a breaking cross-protocol release in 8 ms with no code change, honest withdrawal when the provider disappeared, and recovery through a newly introduced provider. What the lab does *not* prove is listed in the report.
+
 ## How it works
 
 - **Reflectors** turn contracts into typed capabilities: OpenAPI 3.x and Swagger 2.0 (`$ref`, `allOf`/`oneOf`, servers, path/query/header/body), GraphQL (introspection with a depth-limited fallback; selections generated), remote MCP over Streamable HTTP (sessions, SSE responses, output schemas, annotations), HTML forms (hidden fields become constants; password fields are never reflected), RightClick X peers (federation), and the platform itself (Cloudflare KV / Workers AI bindings, a sandboxed workspace filesystem on servers).
@@ -105,18 +117,23 @@ And the offline demo (`npm run demo`), which spins up four local services in fou
 
 ## Safety model
 
-There are no approval gates: write and destructive capabilities run when called, and nothing is hidden or held for confirmation. Risk is a *label* (`read`, `write`, `external`, `destructive`) that callers can use — `context_compose` accepts an optional `risks` constraint such as `["read"]` when the caller wants it. What does remain are locks that keep other people out, not you:
+Authorised operations run without unnecessary friction; the user keeps authority over anything destructive.
 
-- HTTP endpoints require a bearer token unless bound to loopback; a public deploy without `RCX_TOKEN` keeps its API locked.
-- Credentials are origin-pinned (`RCX_AUTH`), stripped on cross-origin redirects, and never reflected into capabilities.
-- Workspace file capabilities cannot escape their root.
-- OS-level permission prompts are untouched.
+- **Read and write capabilities run when called.** Risk is a label (`read`, `write`, `external`, `destructive`) that callers can also use as a constraint: `context_compose` with `risks: ["read"]` plans only with read-only capabilities.
+- **Destructive capabilities need consent:** they run only when the caller passes `confirm: true` to `context_run` or `context_compose`. Without it nothing executes, and compose routes around the step if a non-destructive alternative exists. An operator can opt out for their own environment (`destructive: "allow"`).
+- **Self-healing preserves meaning:** a recovery plan may never cover less of the goal than the plan it replaces, so a missing capability is reported as a failure rather than answered with a plausible substitute.
+- **Credentials are origin-pinned** (`RCX_AUTH`), never reflected into capabilities, and never forwarded across origins, including on multi-hop redirects.
+- **Network policy:** when the server is exposed beyond loopback (and at the edge), outbound requests to private, loopback, link-local and cloud-metadata addresses are refused, including via DNS and redirects.
+- **HTTP endpoints** require a bearer token unless bound to loopback, with per-caller rate limits and request-size limits.
+- Workspace file capabilities cannot escape their root. Operating-system permissions are untouched.
 
 ## Develop
 
 ```bash
 npm install
-npm test             # 47 offline tests (node:test)
+npm test             # 61 offline tests (node:test)
+npm run lab          # the Chameleon Lab: one generated environment, end to end
+npm run lab:report   # ten fresh environments → lab/RESULTS.md
 npm run typecheck
 npm run demo         # seven-act offline demo
 node experiments/cloud.ts   # live-internet experiments (read-only)
@@ -124,6 +141,6 @@ node experiments/cloud.ts   # live-internet experiments (read-only)
 
 ## Status
 
-v0.1.0. Verified: tests, typecheck, Node 24 and Bun 1.3, MCP Inspector over stdio and HTTP, live experiments in `experiments/results/`. Not yet verified: an actual Cloudflare / Deno Deploy deployment, YAML-only OpenAPI specs (not parsed), OAuth-protected remote MCP servers, and npm publishing.
+v0.1.0. Verified: 61 tests, typecheck, the Chameleon Lab on a frozen build (10/10 generated environments), Node 24 and Bun 1.3, MCP Inspector over stdio and HTTP, live experiments in `experiments/results/`. Not yet verified: an actual Cloudflare / Deno Deploy deployment, YAML-only OpenAPI specs (not parsed), OAuth-protected remote MCP servers, and npm publishing.
 
 Apache-2.0.

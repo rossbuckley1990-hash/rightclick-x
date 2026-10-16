@@ -1,6 +1,6 @@
 {
-  "seed": 637888138,
-  "startedAt": "2026-10-16T06:24:08.468Z",
+  "seed": 62019365,
+  "startedAt": "2026-10-16T06:24:46.985Z",
   "steps": [
     {
       "n": 1,
@@ -18,7 +18,7 @@
         "version": "0.1.0"
       },
       "tools": 13,
-      "startupMs": 117.1
+      "startupMs": 110.6
     },
     {
       "n": 3,
@@ -43,12 +43,12 @@
       "title": "Discover contracts from root addresses only (no protocols, no schemas given)",
       "ok": true,
       "found": [
-        "graphql",
-        "mcp",
-        "mcp"
+        "openapi",
+        "openapi",
+        "openapi"
       ],
       "newCapabilities": 3,
-      "ms": 33.7
+      "ms": 28.5
     },
     {
       "n": 5,
@@ -57,15 +57,15 @@
       "candidatePlans": 3,
       "best": [
         "Fetch invoice details",
-        "Get Customer",
-        "Tax rate by country"
+        "Fetch customer record",
+        "Get tax rate"
       ],
       "providers": [
-        "mcp:fjordsoft",
-        "graphql:127-0-0-1-59653-graphql",
-        "mcp:paperhaus"
+        "openapi:ashgrove",
+        "openapi:ledgerline",
+        "openapi:emberlane"
       ],
-      "planningMs": 2.3
+      "planningMs": 2.6
     },
     {
       "n": 6,
@@ -73,19 +73,19 @@
       "ok": true,
       "steps": [
         "Fetch invoice details ← invoiceId=$in.invoice_id",
-        "Get Customer ← customer_number=0.customerId",
-        "Tax rate by country ← country=1.countryCode"
+        "Fetch customer record ← customerId=0.customer_number",
+        "Get tax rate ← countryCode=1.country"
       ]
     },
     {
       "n": 7,
       "title": "Execute the workflow",
       "ok": true,
-      "invoice": "INV-8931-0",
+      "invoice": "INV-8827-0",
       "pipeline": [
         "Fetch invoice details",
-        "Get Customer",
-        "Tax rate by country"
+        "Fetch customer record",
+        "Get tax rate"
       ],
       "ms": 4.3
     },
@@ -93,47 +93,47 @@
       "n": 8,
       "title": "Verify against independently held test data",
       "ok": true,
-      "expected": 17.9,
-      "got": 17.9
+      "expected": 20.7,
+      "got": 20.7
     },
     {
       "n": 9,
       "title": "Save the successful composition and reuse it",
       "ok": true,
-      "saved": "Tax rate invoice customer country: Fetch invoice details → Get Customer → Tax rate by country",
+      "saved": "Tax rate invoice customer country: Fetch invoice details → Fetch customer record → Get tax rate",
       "reusedAs": [
-        "Tax rate invoice customer country: Fetch invoice details → Get Customer → Tax rate by country"
+        "Tax rate invoice customer country: Fetch invoice details → Fetch customer record → Get tax rate"
       ],
-      "expected": 12.2,
-      "got": 12.2,
-      "ms": 2.6
+      "expected": 13.7,
+      "got": 13.7,
+      "ms": 2.1
     },
     {
       "n": 10,
-      "title": "Change the tax provider's interface (Paperhaus)",
+      "title": "Change the tax provider's interface (Emberlane)",
       "ok": true,
-      "before": "mcp \"Tax rate by country\" country → country, standard_rate",
-      "after": "graphql \"Country tax rate\" country_code → result.{country_code, rate}"
+      "before": "openapi \"Get tax rate\" countryCode → countryCode, standard_rate",
+      "after": "graphql \"Country tax rate\" country_code → result.{country_code, vat_rate}"
     },
     {
       "n": 11,
       "title": "Recover without changing integration code",
       "ok": true,
       "healing": [
-        "API drift at http://127.0.0.1:59655/: mcp:paperhaus → graphql:127-0-0-1-59655-graphql; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:60447/: openapi:emberlane → graphql:127-0-0-1-60447-graphql; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "via": [
-        "mcp:fjordsoft",
-        "graphql:127-0-0-1-59653-graphql",
-        "graphql:127-0-0-1-59655-graphql"
+        "openapi:ashgrove",
+        "openapi:ledgerline",
+        "graphql:127-0-0-1-60447-graphql"
       ],
-      "expected": 24.7,
-      "got": 24.7,
-      "ms": 8.4
+      "expected": 20.7,
+      "got": 20.7,
+      "ms": 7.8
     },
     {
       "n": 12,
-      "title": "Remove the tax provider (Paperhaus)",
+      "title": "Remove the tax provider (Emberlane)",
       "ok": true
     },
     {
@@ -142,39 +142,39 @@
       "ok": true,
       "status": "failed",
       "healing": [
-        "provider gone at http://127.0.0.1:59655/: withdrew graphql:127-0-0-1-59655-graphql (1 capabilities, 1 pipeline(s) retired)"
+        "provider gone at http://127.0.0.1:60447/: withdrew graphql:127-0-0-1-60447-graphql (1 capabilities, 1 pipeline(s) retired)"
       ],
       "withdrawn": [
-        "GraphQL 127.0.0.1:59655"
+        "GraphQL 127.0.0.1:60447"
       ],
       "capabilities": "21 → 19",
       "savedPipelines": "1 → 0"
     },
     {
       "n": 14,
-      "title": "Introduce a different tax provider (Fernway, graphql): the objective works again",
+      "title": "Introduce a different tax provider (Tallyport, mcp): the objective works again",
       "ok": true,
       "learned": [
-        "graphql: 1 fields"
+        "mcp: 1 tools"
       ],
       "via": [
-        "mcp:fjordsoft",
-        "graphql:127-0-0-1-59653-graphql",
-        "graphql:127-0-0-1-59720-graphql"
+        "openapi:ashgrove",
+        "openapi:ledgerline",
+        "mcp:tallyport"
       ],
-      "expected": 18.8,
-      "got": 18.8,
-      "ms": 1.8
+      "expected": 22,
+      "got": 22,
+      "ms": 1.7
     }
   ],
   "benchmarks": {
-    "startupMs": 117.1,
+    "startupMs": 110.6,
     "mcpLatencyMs": {
-      "p50": 0.04,
-      "p95": 0.12
+      "p50": 0.03,
+      "p95": 0.11
     },
-    "discoveryMs": 33.7,
-    "graphStatsMs": 0.1,
+    "discoveryMs": 28.5,
+    "graphStatsMs": 0.4,
     "graph": {
       "providers": 5,
       "capabilities": 20,
@@ -183,63 +183,65 @@
       "chains3": 57,
       "total": 114
     },
-    "planningMs": 2.3,
+    "planningMs": 2.6,
     "executionMs": 4.3,
-    "recoveryAfterChangeMs": 8.4,
-    "recoveryAfterNewProviderMs": 1.8,
-    "memoryMB": 135
+    "recoveryAfterChangeMs": 7.8,
+    "recoveryAfterNewProviderMs": 1.7,
+    "memoryMB": 134
   },
   "freeze": {
-    "commit": "da7d8d7cc2f5f4e69df65761528757f925df9609",
-    "tags": [],
-    "productCodeUnchanged": false,
-    "frozen": false
+    "commit": "c9c7273eeae7da7c4063398d6d485c2d04ee8e82",
+    "tags": [
+      "lab-freeze-1"
+    ],
+    "productCodeUnchanged": true,
+    "frozen": true
   },
   "environment": {
     "invoices": {
-      "brand": "Fjordsoft",
-      "protocol": "mcp",
+      "brand": "Ashgrove",
+      "protocol": "openapi",
       "operation": "Fetch invoice details",
       "input": "invoiceId",
       "outputs": [
         "invoiceId",
-        "customerId",
+        "customer_number",
         "net_amount",
         "currency_code"
       ]
     },
     "customers": {
       "brand": "Ledgerline",
-      "protocol": "graphql",
-      "operation": "Get customer",
-      "input": "customer_number",
+      "protocol": "openapi",
+      "operation": "Fetch customer record",
+      "input": "customerId",
       "outputs": [
-        "customer_number",
-        "display_name",
-        "countryCode"
+        "customerId",
+        "legal_name",
+        "country"
       ]
     },
     "taxPrimary": {
-      "brand": "Paperhaus",
-      "protocol": "mcp",
-      "operation": "Tax rate by country",
-      "input": "country",
+      "brand": "Emberlane",
+      "protocol": "openapi",
+      "operation": "Get tax rate",
+      "input": "countryCode",
       "outputs": [
-        "country",
+        "countryCode",
         "standard_rate"
       ]
     }
   },
   "firstRunProviders": [
-    "mcp:fjordsoft",
-    "graphql:127-0-0-1-59653-graphql",
-    "mcp:paperhaus"
+    "openapi:ashgrove",
+    "openapi:ledgerline",
+    "openapi:emberlane"
   ],
   "receipts": {
     "count": 21,
     "intact": true,
     "brokenAt": null,
-    "head": "0d4b773dedda335222523176f52be1c228928f4edf67c51c89789cf47fe1c6f3"
+    "head": "2078b15a8492cb9e3e6e5ed37b48e33eb187b425d89c349588ebdca6f7ddbd74"
   },
   "passed": 14,
   "total": 14
