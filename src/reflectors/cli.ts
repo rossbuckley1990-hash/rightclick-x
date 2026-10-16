@@ -62,17 +62,21 @@ export function parseOperands(synopsis: string[], name: string): Investigation["
   const required: string[] = [];
   const optional: string[] = [];
   let variadic = false;
-  for (const raw of synopsis) {
-    const line = raw.replace(/^usage:\s*/i, "");
+  // Join continuation lines, then drop flags and their metavariables ("--xpath XPath_expression"),
+  // so alternatives like [--version | --debug | ...] are never read as operands.
+  const joined = synopsis.join(" ").replace(/\s+/g, " ");
+  const firstUse = joined.search(new RegExp(`\\b${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`));
+  for (const raw of [joined.slice(Math.max(0, firstUse)).split(/\busage:/i)[0]]) {
+    const line = raw.replace(/^usage:\s*/i, "").replace(/(^|[\s\[|])-{1,2}[A-Za-z0-9?][\w-]*(=\S+|\s+(?=[A-Z][A-Za-z_]*\b)[A-Z][A-Za-z_]*)?/g, "$1");
     const after = line.slice(line.indexOf(name) >= 0 ? line.indexOf(name) + name.length : 0);
     // Drop option groups, then read what is left.
     const noOpts = after.replace(/\[\s*-[^\]]*\]/g, " ");
     for (const m of noOpts.matchAll(/\[([^\]]+)\]|([A-Za-z][\w.-]*)/g)) {
       if (m[1]) {
         const word = /[A-Za-z][\w-]*/.exec(m[1])?.[0];
-        if (word && !/^-/.test(m[1].trim())) optional.push(word);
+        if (word && !/^-/.test(m[1].trim()) && word !== name) optional.push(word);
         if (/\.\.\./.test(m[1])) variadic = true;
-      } else if (m[2] && !/^(options?|flags?)$/i.test(m[2])) required.push(m[2].replace(/\.+$/, ""));
+      } else if (m[2] && !/^(options?|flags?)$/i.test(m[2]) && m[2] !== name) required.push(m[2].replace(/\.+$/, ""));
     }
     if (/\.\.\./.test(noOpts)) variadic = true;
     if (required.length || optional.length) break;
@@ -266,7 +270,16 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
     if (usage.trim() && (o === usage.trim() || usage.includes(o.split("\n")[0].trim()) && /usage/i.test(o.split("\n")[0]))) return true;
     return /^\s*usage:/i.test(o);
   };
-  const works = (t: Trial | null) => !!t && !t.r.timedOut && !t.r.truncated && t.r.stdout.trim().length > 0 && !usageLike(t.r.stdout);
+  // A failure exit whose output shares nothing with the input's content is an error report (a
+  // program saying "not a zipfile"), not a result. Diff-like programs exit 1 yet echo their input.
+  const errorReport = (t: Trial) => {
+    if ((t.r.code ?? 0) === 0) return false;
+    const want = new Set(t.inputs.flatMap(visibleText).filter((w) => w.length >= 3));
+    if (!want.size) return false;
+    const got = new Set(visibleText(t.r.stdout));
+    return [...want].filter((w) => got.has(w)).length < want.size / 2;
+  };
+  const works = (t: Trial | null) => !!t && !t.r.timedOut && !t.r.truncated && t.r.stdout.trim().length > 0 && !usageLike(t.r.stdout) && !errorReport(t);
 
   // Default mode on every channel and kind; keep the channels that work.
   const okChannels: Array<{ id: string; arity: number }> = [];
@@ -349,7 +362,12 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
     const anyText = channelAnyText || (inKinds.length >= 2 && inKinds.includes("text"));
     // Typed by what the program says it is for (its documentation names one kind that worked, e.g.
     // HTML), still taking other text where experiments showed it does.
-    const documented = ["html", "xml", "json", "csv"].filter((k) => new RegExp(`\\b${k === "html" ? "x?html" : k}\\b`, "i").test(docs) && defaultWorks(k));
+    // Only the stated purpose counts, and not output-format phrasing ("print ... as JSON").
+    const purpose = inv.program.description ?? "";
+    const documented = ["html", "xml", "json", "csv"].filter((k) => {
+      const kw = k === "html" ? "x?html" : k;
+      return new RegExp(`\\b${kw}\\b`, "i").test(purpose) && !new RegExp(`\\b(as|to|into|in)\\s+${kw}\\b`, "i").test(purpose) && defaultWorks(k);
+    });
     const portType: SemType = documented.length === 1 && SEM[documented[0]] !== "text" ? SEM[documented[0]] : anyText ? "text" : inType;
     const names = best.id === "stdin" ? [portType === "html" ? "html" : portType === "json" ? "json" : "input"] : portNames;
     const inputs: Port[] = names.map((n) => ({ name: n, type: portType, required: true, ...(anyText ? { anyText: true } : {}), description: best.id === "stdin" ? "Content given on standard input" : "Content passed as a file operand" }));

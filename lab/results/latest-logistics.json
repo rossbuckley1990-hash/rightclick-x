@@ -1,8 +1,8 @@
 {
-  "seed": 871855553,
+  "seed": 622230088,
   "domain": "logistics",
   "gateway": false,
-  "startedAt": "2026-10-16T22:00:58.891Z",
+  "startedAt": "2026-10-16T22:11:47.012Z",
   "steps": [
     {
       "n": 1,
@@ -17,7 +17,7 @@
       "title": "Connect an MCP client to RightClick X (stdio)",
       "ok": true,
       "tools": 13,
-      "startupMs": 130.8
+      "startupMs": 125.4
     },
     {
       "n": 3,
@@ -42,12 +42,12 @@
       "title": "Discover contracts from root addresses only (no protocols, no schemas given)",
       "ok": true,
       "found": [
-        "graphql",
-        "graphql",
+        "openapi",
+        "mcp",
         "mcp"
       ],
       "newCapabilities": 3,
-      "ms": 38.6
+      "ms": 35.8
     },
     {
       "n": 5,
@@ -55,20 +55,20 @@
       "ok": true,
       "candidatePlans": 2,
       "best": [
-        "Get shipment",
-        "Fetch Warehouse",
-        "City Shipping Rate"
+        "Shipment details",
+        "Warehouse details",
+        "Shipping rate by city"
       ],
-      "planningMs": 2.8
+      "planningMs": 2.6
     },
     {
       "n": 6,
       "title": "Compose a multi-provider workflow",
       "ok": true,
       "steps": [
-        "Get shipment ← shipment_number=$in.shipment_id",
-        "Fetch Warehouse ← warehouse_number=0.warehouse_number",
-        "City Shipping Rate ← city=1.location"
+        "Shipment details ← shipment_number=$in.shipment_id",
+        "Warehouse details ← warehouseId=0.warehouse_id",
+        "Shipping rate by city ← city=1.town"
       ]
     },
     {
@@ -77,57 +77,57 @@
       "ok": true,
       "input": "SHP-1003",
       "pipeline": [
-        "Get shipment",
-        "Fetch Warehouse",
-        "City Shipping Rate"
+        "Shipment details",
+        "Warehouse details",
+        "Shipping rate by city"
       ],
-      "ms": 5.5
+      "ms": 5.4
     },
     {
       "n": 8,
       "title": "Verify against independently held test data",
       "ok": true,
-      "expected": 15.2,
-      "got": 15.2
+      "expected": 15.4,
+      "got": 15.4
     },
     {
       "n": 9,
       "title": "Save the successful composition and reuse it",
       "ok": true,
-      "saved": "Shipping rate shipment warehouse city: Get shipment → Fetch Warehouse → City Shipping Rate",
+      "saved": "Shipping rate shipment warehouse city: Shipment details → Warehouse details → Shipping rate by city",
       "reusedAs": [
-        "Shipping rate shipment warehouse city: Get shipment → Fetch Warehouse → City Shipping Rate"
+        "Shipping rate shipment warehouse city: Shipment details → Warehouse details → Shipping rate by city"
       ],
-      "expected": 15.2,
-      "got": 15.2,
-      "ms": 3.2
+      "expected": 15.4,
+      "got": 15.4,
+      "ms": 2.6
     },
     {
       "n": 10,
-      "title": "Change the interface of the last provider in the chain (Northwind Billing)",
+      "title": "Change the interface of the last provider in the chain (Harbourly)",
       "ok": true,
-      "before": "graphql \"City shipping rate\" city → city, price_per_kg",
-      "after": "openapi \"Shipping rate by city\" town → result.{town, rate}"
+      "before": "mcp \"Shipping rate by city\" city → city, freight_rate",
+      "after": "graphql \"Get shipping rate\" town → result.{town, rate}"
     },
     {
       "n": 11,
       "title": "Recover without changing integration code",
       "ok": true,
       "healing": [
-        "API drift at http://127.0.0.1:55483/: graphql:127-0-0-1-55483-graphql → openapi:northwind-billing; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:61204/: mcp:harbourly → graphql:127-0-0-1-61204-graphql; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "via": [
-        "mcp:cobaltix",
-        "graphql:127-0-0-1-55482-graphql",
-        "openapi:northwind-billing"
+        "openapi:tallyport",
+        "mcp:quillbase",
+        "graphql:127-0-0-1-61204-graphql"
       ],
-      "expected": 29.4,
-      "got": 29.4,
-      "ms": 8.9
+      "expected": 10.1,
+      "got": 10.1,
+      "ms": 8.8
     },
     {
       "n": 12,
-      "title": "Remove that provider (Northwind Billing)",
+      "title": "Remove that provider (Harbourly)",
       "ok": true
     },
     {
@@ -136,38 +136,38 @@
       "ok": true,
       "status": "failed",
       "healing": [
-        "provider gone at http://127.0.0.1:55483/: withdrew openapi:northwind-billing (1 capabilities, 1 pipeline(s) retired)"
+        "provider gone at http://127.0.0.1:61204/: withdrew graphql:127-0-0-1-61204-graphql (1 capabilities, 1 pipeline(s) retired)"
       ],
       "withdrawn": [
-        "Northwind Billing"
+        "GraphQL 127.0.0.1:61204"
       ],
       "capabilities": "27 → 25",
       "savedPipelines": "1 → 0"
     },
     {
       "n": 14,
-      "title": "Introduce a different provider (Brightmark, mcp): the objective works again",
+      "title": "Introduce a different provider (Cobaltix, openapi): the objective works again",
       "ok": true,
       "learned": [
-        "mcp: 1 tools"
+        "openapi: 1 operations"
       ],
       "via": [
-        "mcp:cobaltix",
-        "graphql:127-0-0-1-55482-graphql",
-        "mcp:brightmark"
+        "openapi:tallyport",
+        "mcp:quillbase",
+        "openapi:cobaltix"
       ],
-      "expected": 35.7,
-      "got": 35.7,
-      "ms": 2.3
+      "expected": 10.1,
+      "got": 10.1,
+      "ms": 1.8
     }
   ],
   "benchmarks": {
-    "startupMs": 130.8,
+    "startupMs": 125.4,
     "mcpLatencyMs": {
       "p50": 0.03,
       "p95": 0.12
     },
-    "discoveryMs": 38.6,
+    "discoveryMs": 35.8,
     "graph": {
       "providers": 5,
       "capabilities": 26,
@@ -177,66 +177,66 @@
       "total": 114
     },
     "graphStatsMs": 0.1,
-    "planningMs": 2.8,
-    "executionMs": 5.5,
-    "recoveryAfterChangeMs": 8.9,
-    "recoveryAfterNewProviderMs": 2.3,
-    "memoryMB": 138
+    "planningMs": 2.6,
+    "executionMs": 5.4,
+    "recoveryAfterChangeMs": 8.8,
+    "recoveryAfterNewProviderMs": 1.8,
+    "memoryMB": 137
   },
   "freeze": {
-    "commit": "899a7b9e2774eb91b6921fdae6794276e81b1e39",
+    "commit": "fdf5be342ad58aba71ea1e81487d99db19c14934",
     "tag": "lab-freeze-9",
-    "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/core/authority.ts\nsrc/core/fields.ts\nsrc/core/graph.ts\nsrc/core/identities.ts\nsrc/core/planner.ts\nsrc/core/sandbox.ts\nsrc/core/satisfaction.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/core/yaml.ts\nsrc/entry/durable.ts\nsrc/entry/edge.ts\nsrc/interface/http.ts\nsrc/interface/tools.ts\nsrc/reflectors/cli.ts\nsrc/reflectors/discover.ts\nsrc/reflectors/graphql.ts\nsrc/reflectors/mcp.ts\nsrc/reflectors/net.ts\nsrc/reflectors/openapi.ts\nsrc/reflectors/platform.ts\nsrc/runtime.ts",
+    "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/core/authority.ts\nsrc/core/fields.ts\nsrc/core/graph.ts\nsrc/core/identities.ts\nsrc/core/planner.ts\nsrc/core/sandbox.ts\nsrc/core/satisfaction.ts\nsrc/core/semantics.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/core/yaml.ts\nsrc/entry/durable.ts\nsrc/entry/edge.ts\nsrc/interface/http.ts\nsrc/interface/tools.ts\nsrc/reflectors/cli.ts\nsrc/reflectors/discover.ts\nsrc/reflectors/graphql.ts\nsrc/reflectors/mcp.ts\nsrc/reflectors/net.ts\nsrc/reflectors/openapi.ts\nsrc/reflectors/platform.ts\nsrc/runtime.ts",
     "uncommittedProductChanges": "",
     "frozen": false
   },
   "environment": [
     {
       "service": "shipments",
-      "brand": "Cobaltix",
-      "protocol": "mcp",
-      "operation": "Get shipment",
+      "brand": "Tallyport",
+      "protocol": "openapi",
+      "operation": "Shipment details",
       "input": "shipment_number",
       "outputs": [
         "shipment_number",
-        "warehouse_number",
-        "weight_kg"
+        "warehouse_id",
+        "gross_weight"
       ]
     },
     {
       "service": "warehouses",
-      "brand": "Ashgrove",
-      "protocol": "graphql",
-      "operation": "Fetch warehouse",
-      "input": "warehouse_number",
+      "brand": "Quillbase",
+      "protocol": "mcp",
+      "operation": "Warehouse details",
+      "input": "warehouseId",
       "outputs": [
-        "warehouse_number",
-        "location",
+        "warehouseId",
+        "town",
         "manager_email"
       ]
     },
     {
       "service": "rates",
-      "brand": "Northwind Billing",
-      "protocol": "graphql",
-      "operation": "City shipping rate",
+      "brand": "Harbourly",
+      "protocol": "mcp",
+      "operation": "Shipping rate by city",
       "input": "city",
       "outputs": [
         "city",
-        "price_per_kg"
+        "freight_rate"
       ]
     }
   ],
   "firstRunProviders": [
-    "mcp:cobaltix",
-    "graphql:127-0-0-1-55482-graphql",
-    "graphql:127-0-0-1-55483-graphql"
+    "openapi:tallyport",
+    "mcp:quillbase",
+    "mcp:harbourly"
   ],
   "receipts": {
     "count": 21,
     "intact": true,
     "brokenAt": null,
-    "head": "a0158e8a5360229fb72804ff9895c0bf547119a9015a8eacd1fefe8a8b9319eb"
+    "head": "2be1a3763aa8e97fbd5df53b4002174fdbf78b0a87af316b39bb4d287e2bc208"
   },
   "passed": 14,
   "total": 14

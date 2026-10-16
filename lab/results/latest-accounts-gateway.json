@@ -1,8 +1,8 @@
 {
-  "seed": 499450175,
+  "seed": 564135787,
   "domain": "accounts",
   "gateway": true,
-  "startedAt": "2026-10-16T22:01:18.141Z",
+  "startedAt": "2026-10-16T22:12:06.898Z",
   "steps": [
     {
       "n": 1,
@@ -17,7 +17,7 @@
       "title": "Connect an MCP client to RightClick X (stdio)",
       "ok": true,
       "tools": 13,
-      "startupMs": 138.1
+      "startupMs": 133.2
     },
     {
       "n": 3,
@@ -42,92 +42,92 @@
       "title": "Discover the environment's services from its catalog only (no service addresses, protocols or schemas given)",
       "ok": true,
       "found": [
+        "mcp",
         "graphql",
-        "graphql",
-        "graphql"
+        "openapi"
       ],
       "newCapabilities": 3,
-      "ms": 42.8
+      "ms": 41.9
     },
     {
       "n": 5,
       "title": "Identify suitable capabilities",
       "ok": true,
-      "candidatePlans": 3,
+      "candidatePlans": 2,
       "best": [
-        "Get Account",
-        "Holder Lookup",
-        "Vat Rate Lookup"
+        "Account lookup",
+        "Customer Inquiry",
+        "VAT rate lookup"
       ],
-      "planningMs": 3.6
+      "planningMs": 3.7
     },
     {
       "n": 6,
       "title": "Compose a multi-provider workflow",
       "ok": true,
       "steps": [
-        "Get Account ← acct_ref=$in.account_id",
-        "Holder Lookup ← cust_ref=0.cref",
-        "Vat Rate Lookup ← cc=1.ctry"
+        "Account lookup ← acct_ref=$in.account_id",
+        "Customer Inquiry ← cust_ref=0.hldr",
+        "VAT rate lookup ← cc=1.jur"
       ]
     },
     {
       "n": 7,
       "title": "Execute the workflow",
       "ok": true,
-      "input": "ACC-1004",
+      "input": "ACC-1002",
       "pipeline": [
-        "Get Account",
-        "Holder Lookup",
-        "Vat Rate Lookup"
+        "Account lookup",
+        "Customer Inquiry",
+        "VAT rate lookup"
       ],
-      "ms": 6.6
+      "ms": 6
     },
     {
       "n": 8,
       "title": "Verify against independently held test data",
       "ok": true,
-      "expected": 25.6,
-      "got": 25.6
+      "expected": 7.3,
+      "got": 7.3
     },
     {
       "n": 9,
       "title": "Save the successful composition and reuse it",
       "ok": true,
-      "saved": "Vat rate account holder country: Get Account → Holder Lookup → Vat Rate Lookup",
+      "saved": "Vat rate account holder country: Account lookup → Customer Inquiry → VAT rate lookup",
       "reusedAs": [
-        "Vat rate account holder country: Get Account → Holder Lookup → Vat Rate Lookup"
+        "Vat rate account holder country: Account lookup → Customer Inquiry → VAT rate lookup"
       ],
-      "expected": 25.6,
-      "got": 25.6,
-      "ms": 3.3
+      "expected": 16.7,
+      "got": 16.7,
+      "ms": 2.9
     },
     {
       "n": 10,
-      "title": "Change the interface of the last provider in the chain (Ledgerline)",
+      "title": "Change the interface of the last provider in the chain (Northwind Billing)",
       "ok": true,
-      "before": "graphql \"VAT rate lookup\" cc → cc, vatpct",
-      "after": "openapi \"VAT rate inquiry\" jur → result.{jur, txr}"
+      "before": "openapi \"VAT rate lookup\" cc → cc, vr",
+      "after": "graphql \"Get VAT rate\" jur → result.{jur, txr}"
     },
     {
       "n": 11,
       "title": "Recover without changing integration code",
       "ok": true,
       "healing": [
-        "API drift at http://127.0.0.1:58794/: graphql:127-0-0-1-58791-graphql,graphql:127-0-0-1-58792-graphql,graphql:127-0-0-1-58793-graphql → graphql:127-0-0-1-58791-graphql,graphql:127-0-0-1-58792-graphql,openapi:ledgerline; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:64527/: mcp:harbourly,graphql:127-0-0-1-64525-graphql,openapi:northwind-billing → mcp:harbourly,graphql:127-0-0-1-64525-graphql,graphql:127-0-0-1-64526-graphql; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "via": [
-        "graphql:127-0-0-1-58791-graphql",
-        "graphql:127-0-0-1-58792-graphql",
-        "openapi:ledgerline"
+        "mcp:harbourly",
+        "graphql:127-0-0-1-64525-graphql",
+        "graphql:127-0-0-1-64526-graphql"
       ],
-      "expected": 5.6,
-      "got": 5.6,
-      "ms": 20.6
+      "expected": 7.3,
+      "got": 7.3,
+      "ms": 18.5
     },
     {
       "n": 12,
-      "title": "Remove that provider (Ledgerline)",
+      "title": "Remove that provider (Northwind Billing)",
       "ok": true
     },
     {
@@ -136,41 +136,41 @@
       "ok": true,
       "status": "failed",
       "healing": [
-        "API drift at http://127.0.0.1:58794/: graphql:127-0-0-1-58791-graphql,graphql:127-0-0-1-58792-graphql,openapi:ledgerline → graphql:127-0-0-1-58791-graphql,graphql:127-0-0-1-58792-graphql; +0 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:64527/: mcp:harbourly,graphql:127-0-0-1-64525-graphql,graphql:127-0-0-1-64526-graphql → mcp:harbourly,graphql:127-0-0-1-64525-graphql; +0 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "withdrawn": [
-        "Ledgerline"
+        "GraphQL 127.0.0.1:64526"
       ],
       "capabilities": "27 → 25",
       "savedPipelines": "1 → 0"
     },
     {
       "n": 14,
-      "title": "Introduce a different provider (Tallyport, mcp): the objective works again",
+      "title": "Introduce a different provider (Ledgerline, mcp): the objective works again",
       "ok": true,
       "learned": [
         "api-catalog: 3 services listed",
-        "graphql: 1 fields",
+        "mcp: 1 tools",
         "graphql: 1 fields",
         "mcp: 1 tools"
       ],
       "via": [
-        "graphql:127-0-0-1-58791-graphql",
-        "graphql:127-0-0-1-58792-graphql",
-        "mcp:tallyport"
+        "mcp:harbourly",
+        "graphql:127-0-0-1-64525-graphql",
+        "mcp:ledgerline"
       ],
-      "expected": 5.6,
-      "got": 5.6,
-      "ms": 3.2
+      "expected": 7.3,
+      "got": 7.3,
+      "ms": 2.4
     }
   ],
   "benchmarks": {
-    "startupMs": 138.1,
+    "startupMs": 133.2,
     "mcpLatencyMs": {
       "p50": 0.04,
-      "p95": 0.12
+      "p95": 0.13
     },
-    "discoveryMs": 42.8,
+    "discoveryMs": 41.9,
     "graph": {
       "providers": 5,
       "capabilities": 26,
@@ -180,66 +180,66 @@
       "total": 132
     },
     "graphStatsMs": 0.1,
-    "planningMs": 3.6,
-    "executionMs": 6.6,
-    "recoveryAfterChangeMs": 20.6,
-    "recoveryAfterNewProviderMs": 3.2,
-    "memoryMB": 148
+    "planningMs": 3.7,
+    "executionMs": 6,
+    "recoveryAfterChangeMs": 18.5,
+    "recoveryAfterNewProviderMs": 2.4,
+    "memoryMB": 150
   },
   "freeze": {
-    "commit": "899a7b9e2774eb91b6921fdae6794276e81b1e39",
+    "commit": "fdf5be342ad58aba71ea1e81487d99db19c14934",
     "tag": "lab-freeze-9",
-    "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/core/authority.ts\nsrc/core/fields.ts\nsrc/core/graph.ts\nsrc/core/identities.ts\nsrc/core/planner.ts\nsrc/core/sandbox.ts\nsrc/core/satisfaction.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/core/yaml.ts\nsrc/entry/durable.ts\nsrc/entry/edge.ts\nsrc/interface/http.ts\nsrc/interface/tools.ts\nsrc/reflectors/cli.ts\nsrc/reflectors/discover.ts\nsrc/reflectors/graphql.ts\nsrc/reflectors/mcp.ts\nsrc/reflectors/net.ts\nsrc/reflectors/openapi.ts\nsrc/reflectors/platform.ts\nsrc/runtime.ts",
+    "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/core/authority.ts\nsrc/core/fields.ts\nsrc/core/graph.ts\nsrc/core/identities.ts\nsrc/core/planner.ts\nsrc/core/sandbox.ts\nsrc/core/satisfaction.ts\nsrc/core/semantics.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/core/yaml.ts\nsrc/entry/durable.ts\nsrc/entry/edge.ts\nsrc/interface/http.ts\nsrc/interface/tools.ts\nsrc/reflectors/cli.ts\nsrc/reflectors/discover.ts\nsrc/reflectors/graphql.ts\nsrc/reflectors/mcp.ts\nsrc/reflectors/net.ts\nsrc/reflectors/openapi.ts\nsrc/reflectors/platform.ts\nsrc/runtime.ts",
     "uncommittedProductChanges": "",
     "frozen": false
   },
   "environment": [
     {
       "service": "ledger",
-      "brand": "Kestrel Freight",
-      "protocol": "graphql",
-      "operation": "Get account",
+      "brand": "Harbourly",
+      "protocol": "mcp",
+      "operation": "Account lookup",
       "input": "acct_ref",
       "outputs": [
         "acct_ref",
-        "cref",
-        "curbal"
+        "hldr",
+        "amt"
       ]
     },
     {
       "service": "kyc",
-      "brand": "Mistral Depot",
+      "brand": "Emberlane",
       "protocol": "graphql",
-      "operation": "Holder lookup",
+      "operation": "Customer inquiry",
       "input": "cust_ref",
       "outputs": [
         "cust_ref",
-        "fullnm",
-        "ctry"
+        "lglnm",
+        "jur"
       ]
     },
     {
       "service": "vat",
-      "brand": "Ledgerline",
-      "protocol": "graphql",
+      "brand": "Northwind Billing",
+      "protocol": "openapi",
       "operation": "VAT rate lookup",
       "input": "cc",
       "outputs": [
         "cc",
-        "vatpct"
+        "vr"
       ]
     }
   ],
   "firstRunProviders": [
-    "graphql:127-0-0-1-58791-graphql",
-    "graphql:127-0-0-1-58792-graphql",
-    "graphql:127-0-0-1-58793-graphql"
+    "mcp:harbourly",
+    "graphql:127-0-0-1-64525-graphql",
+    "openapi:northwind-billing"
   ],
   "receipts": {
     "count": 21,
     "intact": true,
     "brokenAt": null,
-    "head": "dbe65f8bce8cee9d72a97a6191dbd5986e4eb979acc939c3e47aa7c5a510cc0e"
+    "head": "d8d7d5d271b17843cd59b61d18f77eb1972790729788bb89b719b2b455cc1cfd"
   },
   "passed": 14,
   "total": 14

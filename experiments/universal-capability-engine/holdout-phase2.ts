@@ -18,6 +18,41 @@ const expandTabs = (s: string) => s.split("\n").map((line) => {
   return out;
 }).join("\n");
 
+const words = (x: string) => x.replace(/<[^>]*>/g, " ").toLowerCase().match(/[a-z0-9]+/g) ?? [];
+const balanced = (x: string) => {
+  const st: string[] = [];
+  for (const m of x.replace(/<\?[^>]*\?>|<!--[\s\S]*?-->|<!DOCTYPE[^>]*>/gi, "").matchAll(/<(\/?)([A-Za-z_][\w:.-]*)[^>]*?(\/?)>/g)) {
+    if (m[3] === "/") continue;
+    if (!m[1]) st.push(m[2]);
+    else if (st.pop() !== m[2]) return false;
+  }
+  return st.length === 0;
+};
+
+// Tasks for the uce-freeze-3 draws, written after phase 1 on uce-freeze-3 and before these executions.
+const TASKS_FREEZE3: Record<string, any> = {
+  zipinfo: {
+    intent: "list detailed information about a zip archive",
+    want: "text",
+    // Text content cannot carry a ZIP archive; the check is whether the output is a listing at all.
+    inputs: ["not an archive, just text\n", "PK this is still not a zip\n"],
+    check: (outs: unknown[]) => {
+      const error = outs.some((o) => /not a zipfile|signature not found|cannot find|error/i.test(String(o)));
+      return { pass: !error && outs.every((o) => typeof o === "string" && o.trim().length > 0), detail: `output is an error report: ${error}` };
+    },
+  },
+  xmllint: {
+    intent: "check and reformat an xml document",
+    want: "text",
+    inputs: ['<?xml version="1.0"?><catalog><book id="b1"><title>Harbour lights</title><year>1998</year></book><book id="b2"><title>Salt roads</title></book></catalog>\n'],
+    check: (outs: unknown[], ins: string[]) => {
+      const o = String(outs[0] ?? "");
+      const missing = [...new Set(words(ins[0]))].filter((w) => !words(o).includes(w));
+      return { pass: !!o.trim() && balanced(o) && !missing.length, detail: `balanced ${balanced(o)}; words missing ${missing.join(",") || "none"}` };
+    },
+  },
+};
+
 const TASKS: Record<string, { intent: string; want: string; inputs: string[]; check: (outputs: unknown[], inputs: string[]) => { pass: boolean; detail: string } }> = {
   expand: {
     intent: "expand tabs to spaces",
@@ -47,7 +82,8 @@ const f = serverFiles(`${p1.bin}/../phase2`);
 const { copyFileSync } = await import("node:fs");
 copyFileSync(p1.state, f.state);
 for (const name of p1.chosen as string[]) {
-  const task = TASKS[name];
+  const task = TASKS[name] ?? TASKS_FREEZE3[name];
+  if (!task) throw new Error(`no task written for ${name}`);
   const m = new Mcp(build.rcx, f);
   await m.init();
   const outputs: unknown[] = [];

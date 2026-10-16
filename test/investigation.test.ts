@@ -194,3 +194,14 @@ test("a type-preserving correction feeds a comparison of two distinct inputs (St
   const lines = String(r.executed?.output).trim().split("\n");
   assert.ok(lines.some((l) => l.includes("<p>soup</p>|<p>soup") || l.includes("<p>soup|<p>soup</p>")), String(r.executed?.output));
 });
+
+test("an error report on stdout is not a result (holdout zipinfo on uce-freeze-3), and flag alternatives are not operands (xmllint)", { skip }, async () => {
+  const dir = realpathSync(mkdtempSync(join(tmpdir(), "rcx-prog-")));
+  const zipish = program(dir, "zipish", `if [ "$1" = "--help" ]; then echo "usage: zipish [-h] file"; echo "  -h    list detailed information about an archive"; exit 0; fi\nfor f; do [ "$f" = "-h" ] && continue; echo "Archive: $f"; echo "  End-of-central-directory signature not found."; done; exit 9`);
+  const rc = await RightClick.create({ name: "z", directories: [], authority: { investigate: [`${dir}/`] } });
+  await rc.learn({ source: `cli:${zipish}` });
+  assert.equal(rc.graph.list().filter((c) => c.provider === "cli:zipish").length, 0, "no capability from an error report");
+  const { parseOperands } = await import("../src/reflectors/cli.ts");
+  const ops = parseOperands(["Usage : xmlish [options] XMLfiles ...", "xmlish [--version | --debug | --shell | --xpath XPath_expression] [XML-FILE ...]"], "xmlish");
+  assert.deepEqual(ops.required, ["XMLfiles"]);
+});
