@@ -838,10 +838,13 @@ export class RightClick {
     return (this.sandboxCache ??= hostSandbox());
   }
 
+  private mayRunProgram(bin: string): boolean {
+    return bin.startsWith("/") && this.investigable.some((a) => (a.endsWith("/") ? bin.startsWith(a) : a === bin));
+  }
+
   /** Investigate an operator-authorised local program (source "cli:/path/to/program"). */
   private async investigate(bin: string): Promise<Discovery> {
-    const allowed = this.investigable.some((a) => (a.endsWith("/") ? bin.startsWith(a) : a === bin));
-    if (!bin.startsWith("/") || !allowed) throw new Error(`not authorised to investigate ${bin}: the operator has not registered it (authority.investigate / RCX_INVESTIGATE)`);
+    if (!this.mayRunProgram(bin)) throw new Error(`not authorised to investigate ${bin}: the operator has not registered it (authority.investigate / RCX_INVESTIGATE)`);
     const sb = await this.sandbox();
     if (!sb) throw new Error(`unavailable: no sandbox on this host, so ${bin} is not investigated or run`);
     const { reflection, investigation } = await investigateCli(bin, sb);
@@ -1711,6 +1714,9 @@ export class RightClick {
         return j.output;
       }
       case "cli": {
+        // Authority is checked on every run, not only when the program was learned: an operator
+        // who revokes it (permission changed) stops existing capabilities too.
+        if (!this.mayRunProgram(inv.bin)) throw new Error(`not authorised to run ${inv.bin}: the operator no longer registers it (HTTP 403 equivalent: nothing was run)`);
         const sb = await this.sandbox();
         if (!sb) throw new Error(`unavailable: no sandbox on this host`);
         const fs = await import("node:fs");

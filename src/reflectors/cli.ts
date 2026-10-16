@@ -11,6 +11,7 @@
 // what was observed), unknown. "verified" is never set here: only independent checks set it.
 
 import type { Capability, CliInvoke, Port, Reflection, SemType } from "../core/types.ts";
+import { inferType } from "../core/semantics.ts";
 export type { CliInvoke };
 import type { Sandbox, SandboxRun } from "../core/sandbox.ts";
 
@@ -108,6 +109,38 @@ export function samplesFor(docs: string, seed: number): Sample[] {
 }
 
 // ---------------------------------------------------------------- observations
+
+/** JSON output: fields present with the same kind in every observed result become ports (marked observed). */
+export function observedFields(outputs: string[]): Port[] {
+  const parsed = outputs.map((o) => {
+    try {
+      return JSON.parse(o);
+    } catch {
+      return undefined;
+    }
+  });
+  if (parsed.some((p) => p === undefined)) return [];
+  const leaves = (v: unknown, prefix: string, depth: number, out: Map<string, unknown>) => {
+    if (depth > 3 || !v || typeof v !== "object" || Array.isArray(v)) return;
+    for (const [k, x] of Object.entries(v)) {
+      const path = prefix ? `${prefix}.${k}` : k;
+      if (x && typeof x === "object" && !Array.isArray(x)) leaves(x, path, depth + 1, out);
+      else out.set(path, x);
+    }
+    return out;
+  };
+  const maps = parsed.map((p) => leaves(p, "", 0, new Map()) ?? new Map());
+  const first = maps[0];
+  const ports: Port[] = [];
+  for (const [path, value] of first) {
+    const kinds = maps.map((m) => (m.has(path) ? typeof m.get(path) : "missing"));
+    if (kinds.some((k) => k !== kinds[0] || k === "missing")) continue;
+    const name = path.split(".").pop()!;
+    const type = typeof value === "number" ? "number" : typeof value === "boolean" ? "boolean" : Array.isArray(value) ? "list:json" : inferType(name, { type: "string" });
+    ports.push({ name: path, type: type === "id" ? "text" : type, required: true, observed: true });
+  }
+  return ports.slice(0, 40);
+}
 
 const visibleText = (s: string) => s.replace(/<[^>]*>/g, " ").replace(/&[a-z]+;/g, " ").toLowerCase().match(/[a-z0-9]+/g) ?? [];
 
@@ -303,7 +336,7 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
       provider: providerId,
       source: "cli",
       inputs,
-      outputs: [{ name: "", type: SEM[out] ?? "text", required: true }],
+      outputs: [{ name: "", type: SEM[out] ?? "text", required: true }, ...(out === "json" ? observedFields(mt.map((t) => t.r.stdout)) : [])],
       risk: "read",
       tags: [name, ...(inv.program.description ?? "").toLowerCase().match(/[a-z]{3,}/g) ?? [], ...(option ? option.description.toLowerCase().match(/[a-z]{3,}/g) ?? [] : [])].slice(0, 30),
       invoke,

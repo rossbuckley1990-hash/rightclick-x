@@ -143,3 +143,21 @@ test("synthesis: a goal composed from investigated programs is saved with a capa
   assert.ok((pc.verification as any).evidence.length > 0);
   assert.ok(pc.limitations.some((l) => /sandbox/.test(l)));
 });
+
+test("permission changed: revoking the operator's authority stops an existing program capability", { skip }, async () => {
+  const dir = realpathSync(mkdtempSync(join(tmpdir(), "rcx-prog-")));
+  const p = program(dir, "shout", `${usage("shout")}\nif [ "$1" = "-u" ]; then shift; tr a-z A-Z; else cat; fi`);
+  const { MemoryStore } = await import("./helpers.ts");
+  const store = new MemoryStore();
+  const rc = await RightClick.create({ name: "h", directories: [], store, authority: { investigate: [p] } });
+  await rc.learn({ source: `cli:${p}` });
+  const input = rc.graph.get("cli:shout:u")!.inputs[0].name;
+  assert.equal((await rc.run("cli:shout:u", { [input]: "a\n" })).status, "completed");
+  await rc.flush();
+  // Same saved graph, restarted by an operator who no longer registers the program.
+  const revoked = await RightClick.create({ name: "h", directories: [], store, authority: { investigate: [] } });
+  assert.ok(revoked.graph.get("cli:shout:u"), "the capability is still in the saved graph");
+  const r = await revoked.run("cli:shout:u", { [input]: "a\n" });
+  assert.equal(r.status, "failed");
+  assert.match(String(r.error), /not authorised to run/);
+});
