@@ -115,6 +115,13 @@ export interface Binding {
   port: string;
   /** Either a goal input ("$in.<name>") or "<stepIndex>.<outputPath>". */
   from: string;
+  /**
+   * Fan-out: `from` is a list and this single-value port takes one item at a time. The step
+   * runs once per item, in order, and each of its outputs becomes the list of per-item outputs.
+   * More than `max` items refuses the step. With `shapes`, only items of those identifier shapes
+   * (see core/identities.ts) are used, because the list was linked by a learned scheme.
+   */
+  each?: { max: number; shapes?: string[] };
 }
 
 export interface PlanStep {

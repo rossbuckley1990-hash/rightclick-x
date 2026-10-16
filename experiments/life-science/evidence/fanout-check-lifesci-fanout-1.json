@@ -1,0 +1,292 @@
+{
+  "check": "fan-out reachability on the after-replay graph (plan only, offline)",
+  "build": {
+    "tag": "lifesci-fanout-1",
+    "commit": "c2159668167bea023157158c0c58b02768981454"
+  },
+  "at": "2026-10-16T17:05:22.645Z",
+  "q03": {
+    "goal": {
+      "have": {
+        "accession": "text"
+      },
+      "want": "json",
+      "intent": "protein structure entries resolution",
+      "maxSteps": 3,
+      "schemes": {
+        "accession": [
+          "scheme:accession"
+        ]
+      }
+    },
+    "unanchored": {
+      "plans": 1129,
+      "fanOutPlans": 0
+    },
+    "anchoredThroughEntry": [],
+    "oneStepRecordPlan": {
+      "summary": "Get UniProt entry by accession",
+      "result": "0.",
+      "resultType": "json",
+      "intentScore": 2,
+      "fit": 1.25,
+      "steps": [
+        {
+          "capability": "openapi:proteins-rest-api:getbyaccession-2",
+          "bindings": [
+            {
+              "port": "accession",
+              "from": "$in.accession"
+            }
+          ]
+        }
+      ]
+    },
+    "note": "links.ts keeps a plan only if it covers more intent terms than a kept plan it extends; compare intentScore of the one-step record plan with the fan-out plan"
+  },
+  "q04List": {
+    "goal": {
+      "have": {
+        "entry_id": "id.entry"
+      },
+      "want": "list:text",
+      "intent": "gene name",
+      "maxSteps": 3
+    },
+    "anchoredThroughPolymerEntity": [
+      {
+        "summary": "Entry → Nonpolymer entities → Polymer entity (each)",
+        "result": "2.rcsb_membrane_lineage_provenance_code",
+        "resultType": "list:text",
+        "intentScore": 1,
+        "fit": 1.25,
+        "steps": [
+          {
+            "capability": "graphql:data-rcsb-org-graphql:query:entry",
+            "bindings": [
+              {
+                "port": "entry_id",
+                "from": "$in.entry_id"
+              }
+            ]
+          },
+          {
+            "capability": "graphql:data-rcsb-org-graphql:query:nonpolymer_entities",
+            "bindings": [
+              {
+                "port": "entity_ids",
+                "from": "0.audit_author.name"
+              }
+            ]
+          },
+          {
+            "capability": "graphql:data-rcsb-org-graphql:query:polymer_entity",
+            "bindings": [
+              {
+                "port": "entity_id",
+                "from": "1.pdbx_entity_nonpoly.entity_id",
+                "each": {
+                  "max": 20
+                }
+              },
+              {
+                "port": "entry_id",
+                "from": "$in.entry_id"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "summary": "Entry → Polymer entities → Polymer entity (each)",
+        "result": "2.rcsb_membrane_lineage_provenance_code",
+        "resultType": "list:text",
+        "intentScore": 1,
+        "fit": 1.25,
+        "steps": [
+          {
+            "capability": "graphql:data-rcsb-org-graphql:query:entry",
+            "bindings": [
+              {
+                "port": "entry_id",
+                "from": "$in.entry_id"
+              }
+            ]
+          },
+          {
+            "capability": "graphql:data-rcsb-org-graphql:query:polymer_entities",
+            "bindings": [
+              {
+                "port": "entity_ids",
+                "from": "0.audit_author.name"
+              }
+            ]
+          },
+          {
+            "capability": "graphql:data-rcsb-org-graphql:query:polymer_entity",
+            "bindings": [
+              {
+                "port": "entity_id",
+                "from": "1.rcsb_polymer_entity_container_identifiers.entity_id",
+                "each": {
+                  "max": 20
+                }
+              },
+              {
+                "port": "entry_id",
+                "from": "$in.entry_id"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "summary": "Entry → Branched entity instances → Polymer entity (each)",
+        "result": "2.rcsb_membrane_lineage_provenance_code",
+        "resultType": "list:text",
+        "intentScore": 1,
+        "fit": 1.25,
+        "steps": [
+          {
+            "capability": "graphql:data-rcsb-org-graphql:query:entry",
+            "bindings": [
+              {
+                "port": "entry_id",
+                "from": "$in.entry_id"
+              }
+            ]
+          },
+          {
+            "capability": "graphql:data-rcsb-org-graphql:query:branched_entity_instances",
+            "bindings": [
+              {
+                "port": "instance_ids",
+                "from": "0.audit_author.name"
+              }
+            ]
+          },
+          {
+            "capability": "graphql:data-rcsb-org-graphql:query:polymer_entity",
+            "bindings": [
+              {
+                "port": "entity_id",
+                "from": "1.rcsb_branched_entity_instance_container_identifiers.entity_id",
+                "each": {
+                  "max": 20
+                }
+              },
+              {
+                "port": "entry_id",
+                "from": "$in.entry_id"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "summary": "Entry → Polymer entity instances → Polymer entity (each)",
+        "result": "2.rcsb_membrane_lineage_provenance_code",
+        "resultType": "list:text",
+        "intentScore": 1,
+        "fit": 1.25,
+        "steps": [
+          {
+            "capability": "graphql:data-rcsb-org-graphql:query:entry",
+            "bindings": [
+              {
+                "port": "entry_id",
+                "from": "$in.entry_id"
+              }
+            ]
+          },
+          {
+            "capability": "graphql:data-rcsb-org-graphql:query:polymer_entity_instances",
+            "bindings": [
+              {
+                "port": "instance_ids",
+                "from": "0.audit_author.name"
+              }
+            ]
+          },
+          {
+            "capability": "graphql:data-rcsb-org-graphql:query:polymer_entity",
+            "bindings": [
+              {
+                "port": "entity_id",
+                "from": "1.rcsb_polymer_entity_instance_container_identifiers.entity_id",
+                "each": {
+                  "max": 20
+                }
+              },
+              {
+                "port": "entry_id",
+                "from": "$in.entry_id"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "summary": "Entry → Branched entities → Polymer entity (each)",
+        "result": "2.rcsb_membrane_lineage_provenance_code",
+        "resultType": "list:text",
+        "intentScore": 1,
+        "fit": 1.25,
+        "steps": [
+          {
+            "capability": "graphql:data-rcsb-org-graphql:query:entry",
+            "bindings": [
+              {
+                "port": "entry_id",
+                "from": "$in.entry_id"
+              }
+            ]
+          },
+          {
+            "capability": "graphql:data-rcsb-org-graphql:query:branched_entities",
+            "bindings": [
+              {
+                "port": "entity_ids",
+                "from": "0.audit_author.name"
+              }
+            ]
+          },
+          {
+            "capability": "graphql:data-rcsb-org-graphql:query:polymer_entity",
+            "bindings": [
+              {
+                "port": "entity_id",
+                "from": "1.rcsb_branched_entity_container_identifiers.entity_id",
+                "each": {
+                  "max": 20
+                }
+              },
+              {
+                "port": "entry_id",
+                "from": "$in.entry_id"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "producersOfEntityIds": [
+      "graphql:data-rcsb-org-graphql:query:polymer_entity_instance.rcsb_polymer_entity_instance_container_identifiers.entity_id (id.entity)",
+      "graphql:data-rcsb-org-graphql:query:chem_comps.pdbx_reference_molecule.name (list:id.entity)",
+      "graphql:data-rcsb-org-graphql:query:nonpolymer_entities.pdbx_entity_nonpoly.entity_id (list:id.entity)",
+      "graphql:data-rcsb-org-graphql:query:nonpolymer_entities.rcsb_nonpolymer_entity_container_identifiers.entity_id (list:id.entity)",
+      "graphql:data-rcsb-org-graphql:query:polymer_entities.rcsb_polymer_entity_container_identifiers.entity_id (list:id.entity)",
+      "graphql:data-rcsb-org-graphql:query:polymer_entity.rcsb_polymer_entity_container_identifiers.entity_id (id.entity)",
+      "graphql:data-rcsb-org-graphql:query:branched_entity_instances.rcsb_branched_entity_instance_container_identifiers.entity_id (list:id.entity)",
+      "graphql:data-rcsb-org-graphql:query:polymer_entity_instances.rcsb_polymer_entity_instance_container_identifiers.entity_id (list:id.entity)",
+      "graphql:data-rcsb-org-graphql:query:branched_entity.rcsb_branched_entity_container_identifiers.entity_id (id.entity)",
+      "graphql:data-rcsb-org-graphql:query:branched_entity_instance.rcsb_branched_entity_instance_container_identifiers.entity_id (id.entity)",
+      "graphql:data-rcsb-org-graphql:query:nonpolymer_entity_instance.rcsb_nonpolymer_entity_instance_container_identifiers.entity_id (id.entity)",
+      "graphql:data-rcsb-org-graphql:query:chem_comp.pdbx_reference_molecule.name (id.entity)",
+      "graphql:data-rcsb-org-graphql:query:branched_entities.rcsb_branched_entity_container_identifiers.entity_id (list:id.entity)",
+      "graphql:data-rcsb-org-graphql:query:nonpolymer_entity_instances.rcsb_nonpolymer_entity_instance_container_identifiers.entity_id (list:id.entity)",
+      "graphql:data-rcsb-org-graphql:query:nonpolymer_entity.pdbx_entity_nonpoly.entity_id (id.entity)",
+      "graphql:data-rcsb-org-graphql:query:nonpolymer_entity.rcsb_nonpolymer_entity_container_identifiers.entity_id (id.entity)"
+    ]
+  }
+}

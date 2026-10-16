@@ -4,7 +4,7 @@
 
 import { CapabilityGraph, signature, tokenize, type GraphEvent, type LearnDelta } from "./core/graph.ts";
 import { Ledger, ReceiptChain, sha256, type Receipt } from "./core/ledger.ts";
-import type { IdentityState } from "./core/identities.ts";
+import { shapeOf, type IdentityState } from "./core/identities.ts";
 import { egressOf, plan, type Plan } from "./core/planner.ts";
 import { distance, inferType, inspectValue, type Inspection } from "./core/semantics.ts";
 import type { Capability, CapabilityAnchor, FetchLike, PlanStep, Reflection, SemType } from "./core/types.ts";
@@ -124,6 +124,9 @@ class StepError extends Error {
   }
 }
 
+/** A fan-out step refused before any call: its list is longer than the cap. The provider did nothing wrong. */
+class FanOutRefused extends StepError {}
+
 export interface ComposeResult {
   goal: { have: Record<string, SemType>; want: SemType; intent?: string; through?: string[] };
   plans: Array<Plan & { titles: string[] }>;
@@ -138,6 +141,8 @@ export interface ComposeResult {
     attempts: Array<{ summary: string; failed: string; error: string; healing?: string }>;
     durationMs: number;
     witnesses?: WitnessResult[];
+    /** Steps that ran once per list item: how many items the list had, how many ran, how many did not fit the scheme's shapes. */
+    fanOuts?: FanOutReport[];
   };
   crystallized?: { id: string; title: string; newPowers: number };
   /** Present when the goal was published as an endpoint. */
@@ -920,7 +925,7 @@ export class RightClick {
     const schemes = Object.fromEntries(Object.entries(values).map(([k, v]) => [k, this.graph.identities.schemesFor(this.graph.capabilities.values(), k, v)]).filter(([, s]) => s.length));
     const goal = { have: types, want: opts.want, intent: opts.intent, maxSteps: opts.maxSteps, limit: opts.limit ?? 5, risks: opts.risks, through, exclude: blocked, origins, schemes };
     let plans = plan(this.graph, this.ledger, goal);
-    const titles = (p: Plan) => p.steps.map((s) => this.graph.get(s.capability)!.title);
+    const titles = (p: Plan) => p.steps.map((s) => this.graph.get(s.capability)!.title + (s.bindings.some((b) => b.each) ? " (each)" : ""));
     const result: ComposeResult = {
       goal: { have: types, want: opts.want, intent: opts.intent, through },
       plans: plans.map((p) => ({ ...p, titles: titles(p) })),
@@ -997,6 +1002,7 @@ export class RightClick {
           attempts,
           durationMs: Math.round(performance.now() - t0),
           witnesses: lastWitnesses,
+          ...(r.fanOuts.length ? { fanOuts: r.fanOuts } : {}),
         };
         if (opts.crystallize !== false && p.steps.length > 1) result.crystallized = await this.crystallize(p, types, opts.intent, opts.verify, witnesses);
         if (opts.publish) {
@@ -1038,6 +1044,7 @@ export class RightClick {
         let drifted = false;
         let gone = false;
         if (e instanceof ConfirmationRequired) attempt.healing = "not run: destructive step needs confirm: true; looking for a non-destructive route";
+        else if (e instanceof FanOutRefused) attempt.healing = "not run: the list is longer than the fan-out cap; looking for another route";
         else if (source && !allowedOrigin(source) && !refreshed.has(source)) {
           refreshed.add(source);
           attempt.healing = `contract source ${new URL(source).origin} is outside the egress policy; not re-read`;
@@ -1270,20 +1277,46 @@ export class RightClick {
   private async runSteps(steps: PlanStep[], resultRef: string, inputs: Record<string, unknown>, confirm?: boolean, activeGoals?: string[], net?: Net) {
     const outputs: unknown[] = [];
     const runs: string[] = [];
+    const fanOuts: FanOutReport[] = [];
+    // Steps that fanned out hold one output per item; a path reads into each of them.
+    const fanned = new Set<number>();
     const resolve = (ref: string) => {
       if (ref.startsWith("$in.")) return inputs[ref.slice(4)];
       const m = /^(\d+)\.?(.*)$/.exec(ref)!;
-      return pick(outputs[Number(m[1])], m[2] || undefined);
+      const i = Number(m[1]);
+      return fanned.has(i) ? (outputs[i] as unknown[]).map((o) => pick(o, m[2] || undefined)) : pick(outputs[i], m[2] || undefined);
     };
-    for (const step of steps) {
+    for (const [index, step] of steps.entries()) {
       const args: Record<string, unknown> = {};
-      for (const b of step.bindings) args[b.port] = resolve(b.from);
-      const r = await this.run(step.capability, args, { confirm, activeGoals, net, planned: true });
-      runs.push(r.runId);
-      if (r.status === "failed") throw new StepError(r.failedCapability ?? step.capability, `${step.capability}: ${r.error}`);
-      outputs.push(r.output);
+      for (const b of step.bindings) if (!b.each) args[b.port] = resolve(b.from);
+      const fan = step.bindings.find((b) => b.each);
+      if (!fan) {
+        const r = await this.run(step.capability, args, { confirm, activeGoals, net, planned: true });
+        runs.push(r.runId);
+        if (r.status === "failed") throw new StepError(r.failedCapability ?? step.capability, `${step.capability}: ${r.error}`);
+        outputs.push(r.output);
+        continue;
+      }
+      const { max, shapes } = fan.each!;
+      const listed = fanItems(resolve(fan.from));
+      // Through a learned scheme, only items shaped like the scheme's identifiers are its identifiers.
+      const items = shapes?.length ? listed.filter((x) => typeof x === "string" && shapes.includes(shapeOf(x))) : listed;
+      const report: FanOutReport = { step: index, capability: step.capability, port: fan.port, items: listed.length, ran: 0, skipped: listed.length - items.length, max };
+      fanOuts.push(report);
+      if (items.length > max) throw new FanOutRefused(step.capability, `${step.capability}: fan-out over ${items.length} items of ${fan.from} exceeds the cap of ${max}; not run`);
+      // One item at a time: a list never turns into a burst of requests against one provider.
+      const each: unknown[] = [];
+      for (const item of items) {
+        const r = await this.run(step.capability, { ...args, [fan.port]: item }, { confirm, activeGoals, net, planned: true });
+        runs.push(r.runId);
+        report.ran++;
+        if (r.status === "failed") throw new StepError(r.failedCapability ?? step.capability, `${step.capability} (item ${JSON.stringify(item)}, ${report.ran} of ${items.length}): ${r.error}`);
+        each.push(r.output);
+      }
+      outputs.push(each);
+      fanned.add(index);
     }
-    return { output: resolve(resultRef), runs };
+    return { output: resolve(resultRef), runs, fanOuts };
   }
 
   // ================================================================ context_graph / watch
@@ -1517,4 +1550,29 @@ export function preview(v: unknown, n = 300): unknown {
   const s = JSON.stringify(v);
   if (s && s.length > n * 4) return s.slice(0, n * 4) + "…";
   return v;
+}
+
+export interface FanOutReport {
+  step: number;
+  capability: string;
+  port: string;
+  /** Distinct items the list held. */
+  items: number;
+  /** Items the step ran on before finishing or failing. */
+  ran: number;
+  /** Items left out because they did not have the shape of the scheme's identifiers. */
+  skipped: number;
+  max: number;
+}
+
+/** The distinct, non-empty items of a list value (nested lists flattened; a single value is a list of one). */
+function fanItems(v: unknown): unknown[] {
+  const flat = (Array.isArray(v) ? v : [v]).flat(Infinity).filter((x) => x !== null && x !== undefined && x !== "");
+  const seen = new Set<string>();
+  return flat.filter((x) => {
+    const k = JSON.stringify(x);
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
 }
