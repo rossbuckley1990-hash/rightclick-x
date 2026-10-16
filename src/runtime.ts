@@ -61,6 +61,11 @@ export interface PublishedGoal {
   fixed?: Record<string, unknown>;
   /** The customer's egress policy: origins this goal may send data to, in every run and repair. */
   origins?: string[];
+  /**
+   * "verified" only when an independent check (stored predicates or outcome witnesses) passed
+   * on the publishing run; otherwise "unverified". Never assumed.
+   */
+  trust?: "verified" | "unverified";
   risks?: Capability["risk"][];
   through?: string[];
   anchors?: CapabilityAnchor[];
@@ -111,6 +116,8 @@ export interface OperatorAuthority {
    * sandbox. Nothing else on the machine is looked at.
    */
   investigate?: string[];
+  /** Publication authority: "verified" publishes only goals whose independent checks passed; "any" (default) also publishes unverified goals, labelled as such. */
+  publish?: "any" | "verified";
   /**
    * Capabilities the operator declares free of side effects, so they may be sent again during
    * repair (POST endpoints that only compute, for example): capability ids, prefixes ending in
@@ -191,7 +198,9 @@ export interface ComposeResult {
   };
   crystallized?: { id: string; title: string; newPowers: number };
   /** Present when the goal was published as an endpoint. */
-  published?: { id: string; slug: string; path: string };
+  published?: { id: string; slug: string; path: string; trust?: "verified" | "unverified" };
+  /** Present when publication was refused by the operator's publication authority. */
+  publishRefused?: string;
   /** Present when compose had to go and find new capabilities in the world. */
   acquisition?: { topic: string; considered: string[]; learned: Array<{ title: string; kind: string; source: string; capabilities: number; error?: string }> };
 }
@@ -284,6 +293,7 @@ export class RightClick {
   investigations = new Map<string, Investigation>();
   private retrySafe: string[] = [];
   private investigable: string[] = [];
+  private publishPolicy: "any" | "verified" = "any";
   private sandboxCache?: Promise<Sandbox | null>;
   private hashCache = new Map<string, { key: string; sha256: string }>();
 
@@ -309,6 +319,7 @@ export class RightClick {
     rc.approvals = [...(opts.authority?.approve ?? [])];
     rc.retrySafe = [...(opts.authority?.retry ?? [])];
     rc.investigable = [...(opts.authority?.investigate ?? [])];
+    rc.publishPolicy = opts.authority?.publish ?? "any";
     if (opts.sandbox !== undefined) rc.sandboxCache = Promise.resolve(opts.sandbox);
     rc.graph.add(b.reflection);
     const p = await platformReflection(rc.info, { bindings: opts.bindings, workspace: opts.workspace });
@@ -615,13 +626,70 @@ export class RightClick {
     const n = this.graph.neighbors(c.id);
     const example: Record<string, unknown> = {};
     for (const p of c.inputs) if (p.required) example[p.name] = EXAMPLES[p.type] ?? `<${p.type}>`;
+    const prov = this.graph.providers.get(c.provider);
     return {
+      card: this.card(c),
       capability: c,
-      provider: this.graph.providers.get(c.provider),
+      // The full investigation log is evidence, not something every agent needs to read.
+      provider: prov ? { ...prov, meta: prov.meta?.investigation ? { ...prov.meta, investigation: (prov.meta.investigation as Investigation).summary } : prov.meta } : undefined,
       graph: { feedsFrom: n.upstream.length, feedsInto: n.downstream.length, upstream: n.upstream.slice(0, 10), downstream: n.downstream.slice(0, 10) },
       experience: this.ledger.get(c.id) ?? null,
       reliability: this.ledger.reliability(c.id),
       exampleArgs: example,
+    };
+  }
+
+  /**
+   * The capability's declaration, built only from recorded data: identity, purpose, contracts,
+   * dependencies, semantic assumptions, execution plan, side effects, authority, verification,
+   * known limitations and provenance.
+   */
+  card(c: Capability) {
+    const prov = this.graph.providers.get(c.provider);
+    const inv = c.invoke as any;
+    const goal = inv.kind === "goal" ? this.published.get(inv.slug) : undefined;
+    const investigation: Investigation | undefined = inv.kind === "cli" ? this.investigations.get(inv.bin) ?? (prov?.meta?.investigation as Investigation | undefined) : undefined;
+    const claims = investigation?.claims.filter((cl) => cl.subject === c.id || cl.subject === investigation.program.name) ?? [];
+    const stepCaps = inv.kind === "composite" ? inv.steps.map((st: PlanStep) => this.graph.get(st.capability)).filter(Boolean) as Capability[] : [];
+    const egress = egressOf(c, this.graph);
+    const where = (x: Capability) => {
+      const i = x.invoke as any;
+      return i.kind === "cli" ? `program ${i.bin} (sha256 ${String(i.sha256).slice(0, 12)})` : i.kind === "http" ? new URL(i.url.replace(/\{[^}]+\}/g, "x")).origin : i.endpoint ?? i.kind;
+    };
+    return {
+      identity: { id: c.id, title: c.title, provider: prov?.title ?? c.provider, ...(inv.kind === "cli" ? { program: inv.bin, sha256: inv.sha256, version: investigation?.program.version } : {}) },
+      purpose: c.description,
+      inputs: c.inputs.map((p) => ({ name: p.name, type: p.type, required: p.required })),
+      outputs: c.outputs.map((p) => ({ name: p.name || "(result)", type: p.type })),
+      dependencies: goal ? goal.providers ?? [] : stepCaps.length ? [...new Set(stepCaps.map(where))] : [where(c)],
+      semanticAssumptions: inv.kind === "composite"
+        ? inv.steps.flatMap((st: PlanStep) => st.bindings.map((b) => `${st.capability}.${b.port} ← ${b.from}`))
+        : goal ? [`inputs typed ${JSON.stringify(goal.have)}, result typed ${goal.want}`, ...(goal.fixed ? [`fixed inputs ${JSON.stringify(goal.fixed)}`] : [])]
+        : c.inputs.map((p) => `${p.name} is a ${p.type}`),
+      executionPlan: goal ? { replannedOnEveryCall: true, lastPipeline: goal.lastPipeline ?? [] } : inv.kind === "composite" ? stepCaps.map((x) => x.title) : inv.kind === "cli" ? [`${inv.bin} ${inv.args.map((a: any) => (typeof a === "string" ? a : `<${a.input}>`)).join(" ")}${inv.stdin ? ` < ${inv.stdin}` : ""}`] : [`${inv.kind} ${inv.method ?? ""} ${inv.url ?? inv.field ?? inv.tool ?? inv.fn ?? ""}`.trim()],
+      sideEffects: { risk: c.risk, ...(inv.kind === "cli" ? { sandboxed: true, observed: claims.filter((cl) => /creates files|side effects/.test(cl.claim)).map((cl) => `${cl.claim} [${cl.status}]`) } : {}) },
+      authority: {
+        egress: egress === "anywhere" ? "any origin (target comes from inputs)" : egress.length ? egress : "none (local)",
+        execution: c.risk === "destructive" ? (this.destructivePolicy === "operator" ? "operator approval in configuration, plus the caller's confirm" : this.destructivePolicy === "agent-confirm" ? "the caller's confirm" : "none") : "none beyond the operator's policy",
+        ...(inv.kind === "cli" ? { discovery: "operator-registered program (authority.investigate)" } : {}),
+      },
+      verification: goal
+        ? { trust: goal.trust ?? "unverified", predicates: goal.verify ?? [], witnesses: (goal.witnesses ?? []).map((w) => w.capability) }
+        : inv.kind === "composite" ? { predicates: inv.verify ?? [], witnesses: (inv.witnesses ?? []).map((w: any) => w.capability) }
+        : inv.kind === "cli" ? { evidence: claims.map((cl) => `${cl.claim} [${cl.status}]`), note: "investigation never marks anything verified; independent checks do" }
+        : { note: "declared by the provider's contract" },
+      limitations: [
+        ...claims.filter((cl) => cl.status === "contradicted" || cl.status === "unknown").map((cl) => `${cl.claim} [${cl.status}]`),
+        ...(c.tags.includes("nondeterministic") ? ["output differs between identical runs"] : []),
+        ...(inv.kind === "cli" ? ["runs only inside the host sandbox: no network, inputs passed as content"] : []),
+        ...(goal && goal.trust !== "verified" ? ["no independent check passed when it was saved"] : []),
+      ],
+      provenance: {
+        source: (prov?.meta?.source as string) ?? prov?.origin,
+        learnedAt: prov?.learnedAt,
+        ...(investigation ? { investigation: investigation.summary, runs: investigation.runs.length } : {}),
+        ...(goal ? { publishedAt: goal.publishedAt, calls: goal.calls } : {}),
+      },
     };
   }
 
@@ -1135,9 +1203,13 @@ export class RightClick {
           ...(r.fanOuts.length ? { fanOuts: r.fanOuts } : {}),
         };
         if (opts.crystallize !== false && p.steps.length > 1) result.crystallized = await this.crystallize(p, types, opts.intent, opts.verify, witnesses);
-        if (opts.publish) {
+        const trust: "verified" | "unverified" = verification.status === "verified" ? "verified" : "unverified";
+        if (opts.publish && trust !== "verified" && this.publishPolicy === "verified") {
+          result.publishRefused = `not published: the operator publishes only verified goals, and no independent check (verify predicates or witnesses) passed on this run`;
+        } else if (opts.publish) {
           const slug = slugify(opts.publish);
           this.published.set(slug, {
+            trust,
             slug,
             title: opts.publish,
             have: types,
@@ -1157,7 +1229,7 @@ export class RightClick {
             providers: [...new Set(p.steps.map((st) => this.graph.get(st.capability)!.provider))],
           });
           this.registerGoal(this.published.get(slug)!);
-          result.published = { id: `goal:${slug}`, slug, path: `/x/${slug}` };
+          result.published = { id: `goal:${slug}`, slug, path: `/x/${slug}`, trust };
           this.graph.emit("goal.published", { slug, title: opts.publish, pipeline: titles(p) });
           this.persist();
         }
@@ -1283,10 +1355,10 @@ export class RightClick {
     const risk = risks.includes("destructive") ? "destructive" : risks.includes("write") ? "write" : risks.includes("external") ? "external" : "read";
     this.graph.addCapability({
       id: `goal:${g.slug}`, title: g.title, provider: "goal:published", source: "composite",
-      description: `Reusable goal: ${g.intent ?? g.want}. Finds a current implementation on every call, repairs changed APIs, and re-runs its stored checks${g.witnesses?.length ? ` plus ${g.witnesses.length} independent outcome witness(es)` : ""}. Invoke with context_run; no need to reconstruct the pipeline.`,
+      description: `${g.trust === "verified" ? "Verified" : "Unverified (no independent check passed when it was saved)"} reusable goal: ${g.intent ?? g.want}. Finds a current implementation on every call, repairs changed APIs, and re-runs its stored checks${g.witnesses?.length ? ` plus ${g.witnesses.length} independent outcome witness(es)` : ""}. Invoke with context_run; no need to reconstruct the pipeline.`,
       inputs: goalParams(g).map(([name, type]) => ({ name, type, required: true })),
       outputs: [{ name: "", type: g.want, required: true }], risk,
-      tags: ["saved", "goal", "reusable", ...(g.intent ?? g.title).split(/\s+/)],
+      tags: ["saved", "goal", "reusable", g.trust ?? "unverified", ...(g.intent ?? g.title).split(/\s+/)],
       invoke: { kind: "goal", slug: g.slug },
     }, { id: "goal:published", title: "Reusable environmental capabilities", source: "composite", origin: this.name, learnedAt: g.publishedAt });
   }
@@ -1328,6 +1400,7 @@ export class RightClick {
       result: r.executed?.output ?? null,
       pipeline: r.executed?.titles ?? [],
       verification: r.executed?.verification.status ?? "refuted",
+      trust: this.published.get(slug)?.trust ?? "unverified",
       witnesses: r.executed?.witnesses ?? [],
       healed: r.executed?.attempts.length ?? 0,
       receipt: this.chain.headHash,

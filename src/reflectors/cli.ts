@@ -179,7 +179,9 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
   let manual = "";
   const m = await sandbox.run("/usr/bin/man", ["-P", "cat", name]).catch(() => null);
   if (m && m.code === 0) manual = m.stdout.replace(/.\x08/g, "");
-  inv.program.description = /NAME\s*\n\s*(.+?)\n\s*\n/s.exec(manual)?.[1]?.replace(/\s+/g, " ").trim();
+  // Purpose: the manual's NAME line; without a manual, the first prose line of the usage text.
+  const prose = usage.split("\n").map((l) => l.trim()).find((l) => l && !/^(usage|options?|synopsis)\b/i.test(l) && !/^-/.test(l) && /[a-z]{3,}\s+[a-z]{3,}/i.test(l));
+  inv.program.description = /NAME\s*\n\s*(.+?)\n\s*\n/s.exec(manual)?.[1]?.replace(/\s+/g, " ").trim() ?? (prose ? `${name} - ${prose}` : undefined);
   const version = await run("read version", ["--version"]);
   if (version && version.code === 0 && version.stdout.trim()) inv.program.version = version.stdout.trim().split("\n")[0].slice(0, 120);
   const docs = `${usage}\n${manual}`;

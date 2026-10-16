@@ -110,3 +110,36 @@ test("negative controls: a program with no output yields no capability (N1); ran
   assert.ok(!inv.claims.some((c) => /deterministic/.test(c.claim) && c.status === "experimentally-supported"));
   for (const c of rc.graph.list().filter((x) => x.provider === "cli:dice")) assert.ok(c.tags.includes("nondeterministic"));
 });
+
+test("synthesis: a goal composed from investigated programs is saved with a capability card and an honest trust label", { skip }, async () => {
+  const dir = realpathSync(mkdtempSync(join(tmpdir(), "rcx-prog-")));
+  const up = program(dir, "upcase", `if [ "$1" = "--help" ]; then echo "usage: upcase [file]"; echo "  convert text to upper case"; exit 0; fi\ntr a-z A-Z`);
+  const rev = program(dir, "rev2", `if [ "$1" = "--help" ]; then echo "usage: rev2 [file]"; echo "  reverse the order of lines of text"; exit 0; fi\ntail -r`);
+  const mk = (extra: object = {}) => RightClick.create({ name: "s", directories: [], authority: { investigate: [`${dir}/`], ...extra } });
+  const rc = await mk();
+  await rc.learn({ sources: [`cli:${up}`, `cli:${rev}`] });
+  const goal = { have: { input: { type: "text", value: "one\ntwo\nthree\n" } }, want: "text", intent: "reverse lines upper case", run: true, maxSteps: 2 };
+  // Unverified: published, but labelled so.
+  const u = await rc.compose({ ...goal, publish: "Shout backwards" });
+  assert.equal(u.executed?.status, "completed", JSON.stringify(u.executed?.attempts ?? u.plans?.map((p) => p.summary)));
+  assert.equal(String(u.executed?.output).trim(), "THREE\nTWO\nONE");
+  assert.equal(u.published?.trust, "unverified");
+  const card = rc.explain("goal:shout-backwards").card;
+  assert.equal((card.verification as any).trust, "unverified");
+  assert.ok(card.limitations.some((l) => /no independent check/.test(l)));
+  assert.ok(card.dependencies.length >= 1);
+  // With a stored check it passes and is verified.
+  const v = await rc.compose({ ...goal, verify: [{ op: "matches", pattern: "^THREE\\nTWO\\nONE\\s*$" }], publish: "Shout backwards checked" });
+  assert.equal(v.published?.trust, "verified");
+  // Operator publication authority: verified-only refuses unverified goals.
+  const strict = await mk({ publish: "verified" });
+  await strict.learn({ sources: [`cli:${up}`, `cli:${rev}`] });
+  const refused = await strict.compose({ ...goal, publish: "Unchecked" });
+  assert.equal(refused.published, undefined);
+  assert.match(String(refused.publishRefused), /only verified/);
+  // A program capability's card carries its investigation evidence and sandbox limitation.
+  const pc = rc.explain(rc.graph.list().find((c) => c.provider === "cli:upcase")!.id).card;
+  assert.ok(pc.identity.sha256);
+  assert.ok((pc.verification as any).evidence.length > 0);
+  assert.ok(pc.limitations.some((l) => /sandbox/.test(l)));
+});
