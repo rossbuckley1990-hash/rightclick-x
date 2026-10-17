@@ -1,8 +1,8 @@
 {
-  "seed": 296685826,
+  "seed": 840094783,
   "domain": "logistics",
   "gateway": true,
-  "startedAt": "2026-10-17T09:39:16.859Z",
+  "startedAt": "2026-10-17T09:48:36.435Z",
   "steps": [
     {
       "n": 1,
@@ -17,7 +17,7 @@
       "title": "Connect an MCP client to RightClick X (stdio)",
       "ok": true,
       "tools": 13,
-      "startupMs": 126.1
+      "startupMs": 126.5
     },
     {
       "n": 3,
@@ -43,11 +43,11 @@
       "ok": true,
       "found": [
         "mcp",
-        "mcp",
-        "graphql"
+        "openapi",
+        "mcp"
       ],
       "newCapabilities": 3,
-      "ms": 38.1
+      "ms": 39.4
     },
     {
       "n": 5,
@@ -55,79 +55,79 @@
       "ok": true,
       "candidatePlans": 2,
       "best": [
-        "Track shipment",
+        "Shipment details",
         "Get warehouse",
-        "Get Shipping Rate"
+        "Get shipping rate"
       ],
-      "planningMs": 2.6
+      "planningMs": 3
     },
     {
       "n": 6,
       "title": "Compose a multi-provider workflow",
       "ok": true,
       "steps": [
-        "Track shipment ← shipment_number=$in.shipment_id",
-        "Get warehouse ← warehouse_id=0.warehouse_number",
-        "Get Shipping Rate ← city=1.location"
+        "Shipment details ← shipment_id=$in.shipment_id",
+        "Get warehouse ← warehouseId=0.warehouseId",
+        "Get shipping rate ← city=1.town"
       ]
     },
     {
       "n": 7,
       "title": "Execute the workflow",
       "ok": true,
-      "input": "SHP-1003",
+      "input": "SHP-1006",
       "pipeline": [
-        "Track shipment",
+        "Shipment details",
         "Get warehouse",
-        "Get Shipping Rate"
+        "Get shipping rate"
       ],
-      "ms": 5.2
+      "ms": 6
     },
     {
       "n": 8,
       "title": "Verify against independently held test data",
       "ok": true,
-      "expected": 24.5,
-      "got": 24.5
+      "expected": 23.9,
+      "got": 23.9
     },
     {
       "n": 9,
       "title": "Save the successful composition and reuse it",
       "ok": true,
-      "saved": "Shipping rate shipment warehouse city: Track shipment → Get warehouse → Get Shipping Rate",
+      "saved": "Shipping rate shipment warehouse city: Shipment details → Get warehouse → Get shipping rate",
       "reusedAs": [
-        "Shipping rate shipment warehouse city: Track shipment → Get warehouse → Get Shipping Rate"
+        "Shipping rate shipment warehouse city: Shipment details → Get warehouse → Get shipping rate"
       ],
-      "expected": 15.8,
-      "got": 15.8,
-      "ms": 2.4
+      "expected": 23.9,
+      "got": 23.9,
+      "ms": 2.5
     },
     {
       "n": 10,
-      "title": "Change the interface of the last provider in the chain (Ashgrove)",
+      "title": "Change the interface of the last provider in the chain (Northwind Billing)",
       "ok": true,
-      "before": "graphql \"Get shipping rate\" city → city, rate",
-      "after": "mcp \"Shipping rate by city\" location → result.{location, shipping_rate}"
+      "before": "mcp \"Get shipping rate\" city → city, rate",
+      "after": "openapi \"Shipping rate by city\" town → result.{town, shipping_rate}"
     },
     {
       "n": 11,
       "title": "Recover without changing integration code",
       "ok": true,
       "healing": [
-        "API drift at http://127.0.0.1:50434/: mcp:kestrel-freight,mcp:tallyport,graphql:127-0-0-1-50433-graphql → mcp:kestrel-freight,mcp:tallyport,mcp:ashgrove; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:61853/: mcp:mistral-depot,openapi:brightmark,mcp:northwind-billing → mcp:mistral-depot,openapi:brightmark,openapi:northwind-billing; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "via": [
-        "mcp:kestrel-freight",
-        "mcp:tallyport",
-        "mcp:ashgrove"
+        "mcp:mistral-depot",
+        "openapi:brightmark",
+        "openapi:northwind-billing"
       ],
-      "expected": 22.4,
-      "got": 22.4,
+      "expected": 26.7,
+      "got": 26.7,
       "ms": 17.5
     },
     {
       "n": 12,
-      "title": "Remove that provider (Ashgrove)",
+      "title": "Remove that provider (Northwind Billing)",
       "ok": true
     },
     {
@@ -136,41 +136,41 @@
       "ok": true,
       "status": "failed",
       "healing": [
-        "API drift at http://127.0.0.1:50434/: mcp:kestrel-freight,mcp:tallyport,mcp:ashgrove → mcp:kestrel-freight,mcp:tallyport; +0 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:61853/: mcp:mistral-depot,openapi:brightmark,openapi:northwind-billing → mcp:mistral-depot,openapi:brightmark; +0 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "withdrawn": [
-        "Ashgrove"
+        "Northwind Billing"
       ],
       "capabilities": "27 → 25",
       "savedPipelines": "1 → 0"
     },
     {
       "n": 14,
-      "title": "Introduce a different provider (Lumen Cargo, openapi): the objective works again",
+      "title": "Introduce a different provider (Duneworks, openapi): the objective works again",
       "ok": true,
       "learned": [
         "api-catalog: 3 services listed",
         "mcp: 1 tools",
-        "mcp: 1 tools",
+        "openapi: 1 operations",
         "openapi: 1 operations"
       ],
       "via": [
-        "mcp:kestrel-freight",
-        "mcp:tallyport",
-        "openapi:lumen-cargo"
+        "mcp:mistral-depot",
+        "openapi:brightmark",
+        "openapi:duneworks"
       ],
-      "expected": 15.8,
-      "got": 15.8,
-      "ms": 2.1
+      "expected": 38.4,
+      "got": 38.4,
+      "ms": 1.7
     }
   ],
   "benchmarks": {
-    "startupMs": 126.1,
+    "startupMs": 126.5,
     "mcpLatencyMs": {
       "p50": 0.04,
       "p95": 0.11
     },
-    "discoveryMs": 38.1,
+    "discoveryMs": 39.4,
     "graph": {
       "providers": 5,
       "capabilities": 26,
@@ -180,48 +180,48 @@
       "total": 114
     },
     "graphStatsMs": 0.1,
-    "planningMs": 2.6,
-    "executionMs": 5.2,
+    "planningMs": 3,
+    "executionMs": 6,
     "recoveryAfterChangeMs": 17.5,
-    "recoveryAfterNewProviderMs": 2.1,
-    "memoryMB": 148
+    "recoveryAfterNewProviderMs": 1.7,
+    "memoryMB": 149
   },
   "freeze": {
-    "commit": "65ae92d03ec87558da97f665011f93ab52bcebf7",
+    "commit": "5f0faa956c6a983648695e07396b132c9f5442fd",
     "tag": "lab-freeze-9",
-    "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/core/authority.ts\nsrc/core/fields.ts\nsrc/core/graph.ts\nsrc/core/identities.ts\nsrc/core/planner.ts\nsrc/core/programs.ts\nsrc/core/sandbox.ts\nsrc/core/satisfaction.ts\nsrc/core/secrets.ts\nsrc/core/semantics.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/core/yaml.ts\nsrc/entry/durable.ts\nsrc/entry/edge.ts\nsrc/interface/http.ts\nsrc/interface/mcp-server.ts\nsrc/interface/tools.ts\nsrc/reflectors/cli.ts\nsrc/reflectors/discover.ts\nsrc/reflectors/graphql.ts\nsrc/reflectors/mcp.ts\nsrc/reflectors/net.ts\nsrc/reflectors/openapi.ts\nsrc/reflectors/platform.ts\nsrc/runtime.ts",
+    "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/core/authority.ts\nsrc/core/contract.ts\nsrc/core/fields.ts\nsrc/core/graph.ts\nsrc/core/identities.ts\nsrc/core/ledger.ts\nsrc/core/planner.ts\nsrc/core/programs.ts\nsrc/core/sandbox.ts\nsrc/core/satisfaction.ts\nsrc/core/secrets.ts\nsrc/core/semantics.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/core/yaml.ts\nsrc/entry/durable.ts\nsrc/entry/edge.ts\nsrc/interface/http.ts\nsrc/interface/mcp-server.ts\nsrc/interface/tools.ts\nsrc/reflectors/cli.ts\nsrc/reflectors/discover.ts\nsrc/reflectors/graphql.ts\nsrc/reflectors/mcp.ts\nsrc/reflectors/net.ts\nsrc/reflectors/openapi.ts\nsrc/reflectors/platform.ts\nsrc/runtime.ts",
     "uncommittedProductChanges": "",
     "frozen": false
   },
   "environment": [
     {
       "service": "shipments",
-      "brand": "Kestrel Freight",
+      "brand": "Mistral Depot",
       "protocol": "mcp",
-      "operation": "Track shipment",
-      "input": "shipment_number",
+      "operation": "Shipment details",
+      "input": "shipment_id",
       "outputs": [
-        "shipment_number",
-        "warehouse_number",
-        "weight"
+        "shipment_id",
+        "warehouseId",
+        "weight_kg"
       ]
     },
     {
       "service": "warehouses",
-      "brand": "Tallyport",
-      "protocol": "mcp",
+      "brand": "Brightmark",
+      "protocol": "openapi",
       "operation": "Get warehouse",
-      "input": "warehouse_id",
+      "input": "warehouseId",
       "outputs": [
-        "warehouse_id",
-        "location",
-        "email"
+        "warehouseId",
+        "town",
+        "manager_email"
       ]
     },
     {
       "service": "rates",
-      "brand": "Ashgrove",
-      "protocol": "graphql",
+      "brand": "Northwind Billing",
+      "protocol": "mcp",
       "operation": "Get shipping rate",
       "input": "city",
       "outputs": [
@@ -231,15 +231,15 @@
     }
   ],
   "firstRunProviders": [
-    "mcp:kestrel-freight",
-    "mcp:tallyport",
-    "graphql:127-0-0-1-50433-graphql"
+    "mcp:mistral-depot",
+    "openapi:brightmark",
+    "mcp:northwind-billing"
   ],
   "receipts": {
     "count": 21,
     "intact": true,
     "brokenAt": null,
-    "head": "fdad058011a46f2f31d9472a43cf2f85b43db3c8ffa9cd22e057fd329b930ce3"
+    "head": "1b511721530d94044be8f3f77980a3ee57ec3b24bbcae38d4bee2e9b91eaa12a"
   },
   "passed": 14,
   "total": 14

@@ -1,8 +1,8 @@
 {
-  "seed": 888055814,
+  "seed": 340994431,
   "domain": "accounts",
   "gateway": false,
-  "startedAt": "2026-10-17T09:39:09.070Z",
+  "startedAt": "2026-10-17T09:48:28.347Z",
   "steps": [
     {
       "n": 1,
@@ -17,7 +17,7 @@
       "title": "Connect an MCP client to RightClick X (stdio)",
       "ok": true,
       "tools": 13,
-      "startupMs": 118.3
+      "startupMs": 118.9
     },
     {
       "n": 3,
@@ -43,11 +43,11 @@
       "ok": true,
       "found": [
         "openapi",
-        "graphql",
-        "graphql"
+        "openapi",
+        "mcp"
       ],
       "newCapabilities": 3,
-      "ms": 32.3
+      "ms": 32.6
     },
     {
       "n": 5,
@@ -55,79 +55,79 @@
       "ok": true,
       "candidatePlans": 2,
       "best": [
-        "Account lookup",
-        "Customer Inquiry",
-        "Vat Rate Inquiry"
+        "Get account",
+        "Customer inquiry",
+        "VAT rate inquiry"
       ],
-      "planningMs": 3.3
+      "planningMs": 3.8
     },
     {
       "n": 6,
       "title": "Compose a multi-provider workflow",
       "ok": true,
       "steps": [
-        "Account lookup ← a_ref=$in.account_id",
-        "Customer Inquiry ← cust_ref=0.cref",
-        "Vat Rate Inquiry ← cc=1.jur"
+        "Get account ← acct_ref=$in.account_id",
+        "Customer inquiry ← cust_ref=0.cref",
+        "VAT rate inquiry ← jur=1.ctry"
       ]
     },
     {
       "n": 7,
       "title": "Execute the workflow",
       "ok": true,
-      "input": "ACC-1006",
+      "input": "ACC-1005",
       "pipeline": [
-        "Account lookup",
-        "Customer Inquiry",
-        "Vat Rate Inquiry"
+        "Get account",
+        "Customer inquiry",
+        "VAT rate inquiry"
       ],
-      "ms": 5.4
+      "ms": 5.5
     },
     {
       "n": 8,
       "title": "Verify against independently held test data",
       "ok": true,
-      "expected": 10,
-      "got": 10
+      "expected": 11.9,
+      "got": 11.9
     },
     {
       "n": 9,
       "title": "Save the successful composition and reuse it",
       "ok": true,
-      "saved": "Vat rate account holder country: Account lookup → Customer Inquiry → Vat Rate Inquiry",
+      "saved": "Vat rate account holder country: Get account → Customer inquiry → VAT rate inquiry",
       "reusedAs": [
-        "Vat rate account holder country: Account lookup → Customer Inquiry → Vat Rate Inquiry"
+        "Vat rate account holder country: Get account → Customer inquiry → VAT rate inquiry"
       ],
-      "expected": 9.1,
-      "got": 9.1,
-      "ms": 2.7
+      "expected": 7,
+      "got": 7,
+      "ms": 2.8
     },
     {
       "n": 10,
-      "title": "Change the interface of the last provider in the chain (Emberlane)",
+      "title": "Change the interface of the last provider in the chain (Brightmark)",
       "ok": true,
-      "before": "graphql \"VAT rate inquiry\" cc → cc, txr",
-      "after": "mcp \"Get VAT rate\" jur → result.{jur, vatpct}"
+      "before": "openapi \"VAT rate inquiry\" jur → jur, vatpct",
+      "after": "graphql \"VAT rate lookup\" ctry → result.{ctry, txr}"
     },
     {
       "n": 11,
       "title": "Recover without changing integration code",
       "ok": true,
       "healing": [
-        "API drift at http://127.0.0.1:65215/: graphql:127-0-0-1-65215-graphql → mcp:emberlane; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:60215/: openapi:brightmark → graphql:127-0-0-1-60215-graphql; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "via": [
-        "openapi:lumen-cargo",
-        "graphql:127-0-0-1-65214-graphql",
-        "mcp:emberlane"
+        "mcp:ashgrove",
+        "openapi:quillbase",
+        "graphql:127-0-0-1-60215-graphql"
       ],
-      "expected": 13.9,
-      "got": 13.9,
-      "ms": 10.6
+      "expected": 23.9,
+      "got": 23.9,
+      "ms": 9.9
     },
     {
       "n": 12,
-      "title": "Remove that provider (Emberlane)",
+      "title": "Remove that provider (Brightmark)",
       "ok": true
     },
     {
@@ -136,38 +136,38 @@
       "ok": true,
       "status": "failed",
       "healing": [
-        "provider gone at http://127.0.0.1:65215/: withdrew mcp:emberlane (1 capabilities, 1 pipeline(s) retired)"
+        "provider gone at http://127.0.0.1:60215/: withdrew graphql:127-0-0-1-60215-graphql (1 capabilities, 1 pipeline(s) retired)"
       ],
       "withdrawn": [
-        "Emberlane"
+        "GraphQL 127.0.0.1:60215"
       ],
       "capabilities": "27 → 25",
       "savedPipelines": "1 → 0"
     },
     {
       "n": 14,
-      "title": "Introduce a different provider (Tallyport, mcp): the objective works again",
+      "title": "Introduce a different provider (Mistral Depot, graphql): the objective works again",
       "ok": true,
       "learned": [
-        "mcp: 1 tools"
+        "graphql: 1 fields"
       ],
       "via": [
-        "openapi:lumen-cargo",
-        "graphql:127-0-0-1-65214-graphql",
-        "mcp:tallyport"
+        "mcp:ashgrove",
+        "openapi:quillbase",
+        "graphql:127-0-0-1-60286-graphql"
       ],
-      "expected": 10,
-      "got": 10,
-      "ms": 2.2
+      "expected": 6.7,
+      "got": 6.7,
+      "ms": 2.3
     }
   ],
   "benchmarks": {
-    "startupMs": 118.3,
+    "startupMs": 118.9,
     "mcpLatencyMs": {
       "p50": 0.03,
       "p95": 0.1
     },
-    "discoveryMs": 32.3,
+    "discoveryMs": 32.6,
     "graph": {
       "providers": 5,
       "capabilities": 26,
@@ -177,66 +177,66 @@
       "total": 132
     },
     "graphStatsMs": 0.1,
-    "planningMs": 3.3,
-    "executionMs": 5.4,
-    "recoveryAfterChangeMs": 10.6,
-    "recoveryAfterNewProviderMs": 2.2,
-    "memoryMB": 142
+    "planningMs": 3.8,
+    "executionMs": 5.5,
+    "recoveryAfterChangeMs": 9.9,
+    "recoveryAfterNewProviderMs": 2.3,
+    "memoryMB": 140
   },
   "freeze": {
-    "commit": "65ae92d03ec87558da97f665011f93ab52bcebf7",
+    "commit": "5f0faa956c6a983648695e07396b132c9f5442fd",
     "tag": "lab-freeze-9",
-    "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/core/authority.ts\nsrc/core/fields.ts\nsrc/core/graph.ts\nsrc/core/identities.ts\nsrc/core/planner.ts\nsrc/core/programs.ts\nsrc/core/sandbox.ts\nsrc/core/satisfaction.ts\nsrc/core/secrets.ts\nsrc/core/semantics.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/core/yaml.ts\nsrc/entry/durable.ts\nsrc/entry/edge.ts\nsrc/interface/http.ts\nsrc/interface/mcp-server.ts\nsrc/interface/tools.ts\nsrc/reflectors/cli.ts\nsrc/reflectors/discover.ts\nsrc/reflectors/graphql.ts\nsrc/reflectors/mcp.ts\nsrc/reflectors/net.ts\nsrc/reflectors/openapi.ts\nsrc/reflectors/platform.ts\nsrc/runtime.ts",
+    "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/core/authority.ts\nsrc/core/contract.ts\nsrc/core/fields.ts\nsrc/core/graph.ts\nsrc/core/identities.ts\nsrc/core/ledger.ts\nsrc/core/planner.ts\nsrc/core/programs.ts\nsrc/core/sandbox.ts\nsrc/core/satisfaction.ts\nsrc/core/secrets.ts\nsrc/core/semantics.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/core/yaml.ts\nsrc/entry/durable.ts\nsrc/entry/edge.ts\nsrc/interface/http.ts\nsrc/interface/mcp-server.ts\nsrc/interface/tools.ts\nsrc/reflectors/cli.ts\nsrc/reflectors/discover.ts\nsrc/reflectors/graphql.ts\nsrc/reflectors/mcp.ts\nsrc/reflectors/net.ts\nsrc/reflectors/openapi.ts\nsrc/reflectors/platform.ts\nsrc/runtime.ts",
     "uncommittedProductChanges": "",
     "frozen": false
   },
   "environment": [
     {
       "service": "ledger",
-      "brand": "Lumen Cargo",
-      "protocol": "openapi",
-      "operation": "Account lookup",
-      "input": "a_ref",
+      "brand": "Ashgrove",
+      "protocol": "mcp",
+      "operation": "Get account",
+      "input": "acct_ref",
       "outputs": [
-        "a_ref",
+        "acct_ref",
         "cref",
-        "curbal"
+        "bal"
       ]
     },
     {
       "service": "kyc",
-      "brand": "Mistral Depot",
-      "protocol": "graphql",
+      "brand": "Quillbase",
+      "protocol": "openapi",
       "operation": "Customer inquiry",
       "input": "cust_ref",
       "outputs": [
         "cust_ref",
-        "fullnm",
-        "jur"
+        "lglnm",
+        "ctry"
       ]
     },
     {
       "service": "vat",
-      "brand": "Emberlane",
-      "protocol": "graphql",
+      "brand": "Brightmark",
+      "protocol": "openapi",
       "operation": "VAT rate inquiry",
-      "input": "cc",
+      "input": "jur",
       "outputs": [
-        "cc",
-        "txr"
+        "jur",
+        "vatpct"
       ]
     }
   ],
   "firstRunProviders": [
-    "openapi:lumen-cargo",
-    "graphql:127-0-0-1-65214-graphql",
-    "graphql:127-0-0-1-65215-graphql"
+    "mcp:ashgrove",
+    "openapi:quillbase",
+    "openapi:brightmark"
   ],
   "receipts": {
     "count": 21,
     "intact": true,
     "brokenAt": null,
-    "head": "5e403c66cd0d8702c30bb4463aeb669c46e88584e6868ac667dfd0a1a5abce72"
+    "head": "765dfbf07a9691e0ac674fc10b9e3010dc5bce78659dae2d473edd771b0a52a0"
   },
   "passed": 14,
   "total": 14

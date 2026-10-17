@@ -1,8 +1,8 @@
 {
-  "seed": 124156111,
+  "seed": 441079629,
   "domain": "invoicing",
   "gateway": true,
-  "startedAt": "2026-10-17T09:39:13.041Z",
+  "startedAt": "2026-10-17T09:48:32.515Z",
   "steps": [
     {
       "n": 1,
@@ -17,7 +17,7 @@
       "title": "Connect an MCP client to RightClick X (stdio)",
       "ok": true,
       "tools": 13,
-      "startupMs": 124.6
+      "startupMs": 131.2
     },
     {
       "n": 3,
@@ -42,12 +42,12 @@
       "title": "Discover the environment's services from its catalog only (no service addresses, protocols or schemas given)",
       "ok": true,
       "found": [
+        "mcp",
         "openapi",
-        "openapi",
-        "mcp"
+        "openapi"
       ],
       "newCapabilities": 3,
-      "ms": 39.1
+      "ms": 43.3
     },
     {
       "n": 5,
@@ -55,79 +55,79 @@
       "ok": true,
       "candidatePlans": 3,
       "best": [
-        "Invoice lookup",
-        "Fetch customer record",
+        "Get invoice",
+        "Look up customer",
         "Get tax rate"
       ],
-      "planningMs": 3.5
+      "planningMs": 4
     },
     {
       "n": 6,
       "title": "Compose a multi-provider workflow",
       "ok": true,
       "steps": [
-        "Invoice lookup ← invoice_number=$in.invoice_id",
-        "Fetch customer record ← customer_id=0.customerId",
-        "Get tax rate ← country=1.country"
+        "Get invoice ← invoice_number=$in.invoice_id",
+        "Look up customer ← customer_id=0.customer_number",
+        "Get tax rate ← country=1.countryCode"
       ]
     },
     {
       "n": 7,
       "title": "Execute the workflow",
       "ok": true,
-      "input": "INV-1001",
+      "input": "INV-1005",
       "pipeline": [
-        "Invoice lookup",
-        "Fetch customer record",
+        "Get invoice",
+        "Look up customer",
         "Get tax rate"
       ],
-      "ms": 7.3
+      "ms": 6.5
     },
     {
       "n": 8,
       "title": "Verify against independently held test data",
       "ok": true,
-      "expected": 17.2,
-      "got": 17.2
+      "expected": 18.3,
+      "got": 18.3
     },
     {
       "n": 9,
       "title": "Save the successful composition and reuse it",
       "ok": true,
-      "saved": "Tax rate invoice customer country: Invoice lookup → Fetch customer record → Get tax rate",
+      "saved": "Tax rate invoice customer country: Get invoice → Look up customer → Get tax rate",
       "reusedAs": [
-        "Tax rate invoice customer country: Invoice lookup → Fetch customer record → Get tax rate"
+        "Tax rate invoice customer country: Get invoice → Look up customer → Get tax rate"
       ],
-      "expected": 11,
-      "got": 11,
-      "ms": 2.9
+      "expected": 20.8,
+      "got": 20.8,
+      "ms": 3.1
     },
     {
       "n": 10,
-      "title": "Change the interface of the last provider in the chain (Ashgrove)",
+      "title": "Change the interface of the last provider in the chain (Quillbase)",
       "ok": true,
-      "before": "mcp \"Get tax rate\" country → country, standard_rate",
-      "after": "openapi \"Lookup tax rate for a country\" countryCode → result.{countryCode, tax_rate}"
+      "before": "openapi \"Get tax rate\" country → country, tax_rate",
+      "after": "graphql \"Country tax rate\" country_code → result.{country_code, standard_rate}"
     },
     {
       "n": 11,
       "title": "Recover without changing integration code",
       "ok": true,
       "healing": [
-        "API drift at http://127.0.0.1:49631/: openapi:harbourly,openapi:northwind-billing,mcp:ashgrove → openapi:harbourly,openapi:northwind-billing,openapi:ashgrove; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:61055/: mcp:mistral-depot,openapi:duneworks,openapi:quillbase → mcp:mistral-depot,openapi:duneworks,graphql:127-0-0-1-61054-graphql; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "via": [
-        "openapi:harbourly",
-        "openapi:northwind-billing",
-        "openapi:ashgrove"
+        "mcp:mistral-depot",
+        "openapi:duneworks",
+        "graphql:127-0-0-1-61054-graphql"
       ],
-      "expected": 11,
-      "got": 11,
-      "ms": 18.7
+      "expected": 18.3,
+      "got": 18.3,
+      "ms": 19.5
     },
     {
       "n": 12,
-      "title": "Remove that provider (Ashgrove)",
+      "title": "Remove that provider (Quillbase)",
       "ok": true
     },
     {
@@ -136,41 +136,41 @@
       "ok": true,
       "status": "failed",
       "healing": [
-        "API drift at http://127.0.0.1:49631/: openapi:harbourly,openapi:northwind-billing,openapi:ashgrove → openapi:harbourly,openapi:northwind-billing; +0 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:61055/: mcp:mistral-depot,openapi:duneworks,graphql:127-0-0-1-61054-graphql → mcp:mistral-depot,openapi:duneworks; +0 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "withdrawn": [
-        "Ashgrove"
+        "GraphQL 127.0.0.1:61054"
       ],
       "capabilities": "27 → 25",
       "savedPipelines": "1 → 0"
     },
     {
       "n": 14,
-      "title": "Introduce a different provider (Quillbase, openapi): the objective works again",
+      "title": "Introduce a different provider (Kestrel Freight, mcp): the objective works again",
       "ok": true,
       "learned": [
         "api-catalog: 3 services listed",
+        "mcp: 1 tools",
         "openapi: 1 operations",
-        "openapi: 1 operations",
-        "openapi: 1 operations"
+        "mcp: 1 tools"
       ],
       "via": [
-        "openapi:harbourly",
-        "openapi:northwind-billing",
-        "openapi:quillbase"
+        "mcp:mistral-depot",
+        "openapi:duneworks",
+        "mcp:kestrel-freight"
       ],
-      "expected": 10.4,
-      "got": 10.4,
-      "ms": 1.8
+      "expected": 9.1,
+      "got": 9.1,
+      "ms": 2.1
     }
   ],
   "benchmarks": {
-    "startupMs": 124.6,
+    "startupMs": 131.2,
     "mcpLatencyMs": {
       "p50": 0.04,
-      "p95": 0.11
+      "p95": 0.12
     },
-    "discoveryMs": 39.1,
+    "discoveryMs": 43.3,
     "graph": {
       "providers": 5,
       "capabilities": 26,
@@ -180,67 +180,67 @@
       "total": 132
     },
     "graphStatsMs": 0.1,
-    "planningMs": 3.5,
-    "executionMs": 7.3,
-    "recoveryAfterChangeMs": 18.7,
-    "recoveryAfterNewProviderMs": 1.8,
-    "memoryMB": 147
+    "planningMs": 4,
+    "executionMs": 6.5,
+    "recoveryAfterChangeMs": 19.5,
+    "recoveryAfterNewProviderMs": 2.1,
+    "memoryMB": 149
   },
   "freeze": {
-    "commit": "65ae92d03ec87558da97f665011f93ab52bcebf7",
+    "commit": "5f0faa956c6a983648695e07396b132c9f5442fd",
     "tag": "lab-freeze-9",
-    "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/core/authority.ts\nsrc/core/fields.ts\nsrc/core/graph.ts\nsrc/core/identities.ts\nsrc/core/planner.ts\nsrc/core/programs.ts\nsrc/core/sandbox.ts\nsrc/core/satisfaction.ts\nsrc/core/secrets.ts\nsrc/core/semantics.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/core/yaml.ts\nsrc/entry/durable.ts\nsrc/entry/edge.ts\nsrc/interface/http.ts\nsrc/interface/mcp-server.ts\nsrc/interface/tools.ts\nsrc/reflectors/cli.ts\nsrc/reflectors/discover.ts\nsrc/reflectors/graphql.ts\nsrc/reflectors/mcp.ts\nsrc/reflectors/net.ts\nsrc/reflectors/openapi.ts\nsrc/reflectors/platform.ts\nsrc/runtime.ts",
+    "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/core/authority.ts\nsrc/core/contract.ts\nsrc/core/fields.ts\nsrc/core/graph.ts\nsrc/core/identities.ts\nsrc/core/ledger.ts\nsrc/core/planner.ts\nsrc/core/programs.ts\nsrc/core/sandbox.ts\nsrc/core/satisfaction.ts\nsrc/core/secrets.ts\nsrc/core/semantics.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/core/yaml.ts\nsrc/entry/durable.ts\nsrc/entry/edge.ts\nsrc/interface/http.ts\nsrc/interface/mcp-server.ts\nsrc/interface/tools.ts\nsrc/reflectors/cli.ts\nsrc/reflectors/discover.ts\nsrc/reflectors/graphql.ts\nsrc/reflectors/mcp.ts\nsrc/reflectors/net.ts\nsrc/reflectors/openapi.ts\nsrc/reflectors/platform.ts\nsrc/runtime.ts",
     "uncommittedProductChanges": "",
     "frozen": false
   },
   "environment": [
     {
       "service": "invoices",
-      "brand": "Harbourly",
-      "protocol": "openapi",
-      "operation": "Invoice lookup",
+      "brand": "Mistral Depot",
+      "protocol": "mcp",
+      "operation": "Get invoice",
       "input": "invoice_number",
       "outputs": [
         "invoice_number",
-        "customerId",
+        "customer_number",
         "total",
-        "currency"
+        "currency_code"
       ]
     },
     {
       "service": "customers",
-      "brand": "Northwind Billing",
+      "brand": "Duneworks",
       "protocol": "openapi",
-      "operation": "Fetch customer record",
+      "operation": "Look up customer",
       "input": "customer_id",
       "outputs": [
         "customer_id",
         "legal_name",
-        "country"
+        "countryCode"
       ]
     },
     {
       "service": "tax",
-      "brand": "Ashgrove",
-      "protocol": "mcp",
+      "brand": "Quillbase",
+      "protocol": "openapi",
       "operation": "Get tax rate",
       "input": "country",
       "outputs": [
         "country",
-        "standard_rate"
+        "tax_rate"
       ]
     }
   ],
   "firstRunProviders": [
-    "openapi:harbourly",
-    "openapi:northwind-billing",
-    "mcp:ashgrove"
+    "mcp:mistral-depot",
+    "openapi:duneworks",
+    "openapi:quillbase"
   ],
   "receipts": {
     "count": 21,
     "intact": true,
     "brokenAt": null,
-    "head": "de495edd72449ff1f69d088fdb5faa0aaa644a9000c0af2fc20a20692a03fb7a"
+    "head": "045e2e38fd6849c3c7a41d63c1cee20ab5099d04f8a1f47429af8c5c3d70f998"
   },
   "passed": 14,
   "total": 14

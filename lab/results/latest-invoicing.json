@@ -1,8 +1,8 @@
 {
-  "seed": 628809904,
+  "seed": 375030655,
   "domain": "invoicing",
   "gateway": false,
-  "startedAt": "2026-10-17T09:39:01.831Z",
+  "startedAt": "2026-10-17T09:48:21.089Z",
   "steps": [
     {
       "n": 1,
@@ -17,7 +17,7 @@
       "title": "Connect an MCP client to RightClick X (stdio)",
       "ok": true,
       "tools": 13,
-      "startupMs": 126.4
+      "startupMs": 121.8
     },
     {
       "n": 3,
@@ -43,11 +43,11 @@
       "ok": true,
       "found": [
         "graphql",
-        "graphql",
-        "graphql"
+        "mcp",
+        "mcp"
       ],
       "newCapabilities": 3,
-      "ms": 32.7
+      "ms": 34.5
     },
     {
       "n": 5,
@@ -55,79 +55,79 @@
       "ok": true,
       "candidatePlans": 3,
       "best": [
-        "Invoice Lookup",
-        "Get Customer",
-        "Lookup Tax Rate For A Country"
+        "Get invoice",
+        "Customer Profile",
+        "Tax rate by country"
       ],
-      "planningMs": 3.6
+      "planningMs": 4.1
     },
     {
       "n": 6,
       "title": "Compose a multi-provider workflow",
       "ok": true,
       "steps": [
-        "Invoice Lookup ← invoice_id=$in.invoice_id",
-        "Get Customer ← customer_number=0.customer_number",
-        "Lookup Tax Rate For A Country ← country=1.countryCode"
+        "Get invoice ← invoice_id=$in.invoice_id",
+        "Customer Profile ← customerId=0.customer_id",
+        "Tax rate by country ← country=1.countryCode"
       ]
     },
     {
       "n": 7,
       "title": "Execute the workflow",
       "ok": true,
-      "input": "INV-1001",
+      "input": "INV-1000",
       "pipeline": [
-        "Invoice Lookup",
-        "Get Customer",
-        "Lookup Tax Rate For A Country"
+        "Get invoice",
+        "Customer Profile",
+        "Tax rate by country"
       ],
-      "ms": 6
+      "ms": 6.2
     },
     {
       "n": 8,
       "title": "Verify against independently held test data",
       "ok": true,
-      "expected": 23.3,
-      "got": 23.3
+      "expected": 13,
+      "got": 13
     },
     {
       "n": 9,
       "title": "Save the successful composition and reuse it",
       "ok": true,
-      "saved": "Tax rate invoice customer country: Invoice Lookup → Get Customer → Lookup Tax Rate For A Country",
+      "saved": "Tax rate invoice customer country: Get invoice → Customer Profile → Tax rate by country",
       "reusedAs": [
-        "Tax rate invoice customer country: Invoice Lookup → Get Customer → Lookup Tax Rate For A Country"
+        "Tax rate invoice customer country: Get invoice → Customer Profile → Tax rate by country"
       ],
-      "expected": 13.4,
-      "got": 13.4,
-      "ms": 3.1
+      "expected": 22,
+      "got": 22,
+      "ms": 3.2
     },
     {
       "n": 10,
-      "title": "Change the interface of the last provider in the chain (Paperhaus)",
+      "title": "Change the interface of the last provider in the chain (Kestrel Freight)",
       "ok": true,
-      "before": "graphql \"Lookup tax rate for a country\" country → country, rate",
-      "after": "mcp \"Tax rate by country\" countryCode → result.{countryCode, tax_rate}"
+      "before": "mcp \"Tax rate by country\" country → country, tax_rate",
+      "after": "openapi \"Lookup tax rate for a country\" country_code → result.{country_code, standard_rate}"
     },
     {
       "n": 11,
       "title": "Recover without changing integration code",
       "ok": true,
       "healing": [
-        "API drift at http://127.0.0.1:63446/: graphql:127-0-0-1-63446-graphql → mcp:paperhaus; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:58468/: mcp:kestrel-freight → openapi:kestrel-freight; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "via": [
-        "graphql:127-0-0-1-63444-graphql",
-        "graphql:127-0-0-1-63445-graphql",
-        "mcp:paperhaus"
+        "mcp:fjordsoft",
+        "graphql:127-0-0-1-58467-graphql",
+        "openapi:kestrel-freight"
       ],
-      "expected": 13.4,
-      "got": 13.4,
-      "ms": 10.4
+      "expected": 20.8,
+      "got": 20.8,
+      "ms": 10.7
     },
     {
       "n": 12,
-      "title": "Remove that provider (Paperhaus)",
+      "title": "Remove that provider (Kestrel Freight)",
       "ok": true
     },
     {
@@ -136,38 +136,38 @@
       "ok": true,
       "status": "failed",
       "healing": [
-        "provider gone at http://127.0.0.1:63446/: withdrew mcp:paperhaus (1 capabilities, 1 pipeline(s) retired)"
+        "provider gone at http://127.0.0.1:58468/: withdrew openapi:kestrel-freight (1 capabilities, 1 pipeline(s) retired)"
       ],
       "withdrawn": [
-        "Paperhaus"
+        "Kestrel Freight"
       ],
       "capabilities": "27 → 25",
       "savedPipelines": "1 → 0"
     },
     {
       "n": 14,
-      "title": "Introduce a different provider (Fernway, openapi): the objective works again",
+      "title": "Introduce a different provider (Northwind Billing, openapi): the objective works again",
       "ok": true,
       "learned": [
         "openapi: 1 operations"
       ],
       "via": [
-        "graphql:127-0-0-1-63444-graphql",
-        "graphql:127-0-0-1-63445-graphql",
-        "openapi:fernway"
+        "mcp:fjordsoft",
+        "graphql:127-0-0-1-58467-graphql",
+        "openapi:northwind-billing"
       ],
-      "expected": 13.4,
-      "got": 13.4,
-      "ms": 3.1
+      "expected": 20.8,
+      "got": 20.8,
+      "ms": 3
     }
   ],
   "benchmarks": {
-    "startupMs": 126.4,
+    "startupMs": 121.8,
     "mcpLatencyMs": {
       "p50": 0.04,
-      "p95": 0.11
+      "p95": 0.1
     },
-    "discoveryMs": 32.7,
+    "discoveryMs": 34.5,
     "graph": {
       "providers": 5,
       "capabilities": 26,
@@ -176,30 +176,30 @@
       "chains3": 63,
       "total": 132
     },
-    "graphStatsMs": 0.2,
-    "planningMs": 3.6,
-    "executionMs": 6,
-    "recoveryAfterChangeMs": 10.4,
-    "recoveryAfterNewProviderMs": 3.1,
-    "memoryMB": 139
+    "graphStatsMs": 0.1,
+    "planningMs": 4.1,
+    "executionMs": 6.2,
+    "recoveryAfterChangeMs": 10.7,
+    "recoveryAfterNewProviderMs": 3,
+    "memoryMB": 141
   },
   "freeze": {
-    "commit": "65ae92d03ec87558da97f665011f93ab52bcebf7",
+    "commit": "5f0faa956c6a983648695e07396b132c9f5442fd",
     "tag": "lab-freeze-9",
-    "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/core/authority.ts\nsrc/core/fields.ts\nsrc/core/graph.ts\nsrc/core/identities.ts\nsrc/core/planner.ts\nsrc/core/programs.ts\nsrc/core/sandbox.ts\nsrc/core/satisfaction.ts\nsrc/core/secrets.ts\nsrc/core/semantics.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/core/yaml.ts\nsrc/entry/durable.ts\nsrc/entry/edge.ts\nsrc/interface/http.ts\nsrc/interface/mcp-server.ts\nsrc/interface/tools.ts\nsrc/reflectors/cli.ts\nsrc/reflectors/discover.ts\nsrc/reflectors/graphql.ts\nsrc/reflectors/mcp.ts\nsrc/reflectors/net.ts\nsrc/reflectors/openapi.ts\nsrc/reflectors/platform.ts\nsrc/runtime.ts",
+    "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/core/authority.ts\nsrc/core/contract.ts\nsrc/core/fields.ts\nsrc/core/graph.ts\nsrc/core/identities.ts\nsrc/core/ledger.ts\nsrc/core/planner.ts\nsrc/core/programs.ts\nsrc/core/sandbox.ts\nsrc/core/satisfaction.ts\nsrc/core/secrets.ts\nsrc/core/semantics.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/core/yaml.ts\nsrc/entry/durable.ts\nsrc/entry/edge.ts\nsrc/interface/http.ts\nsrc/interface/mcp-server.ts\nsrc/interface/tools.ts\nsrc/reflectors/cli.ts\nsrc/reflectors/discover.ts\nsrc/reflectors/graphql.ts\nsrc/reflectors/mcp.ts\nsrc/reflectors/net.ts\nsrc/reflectors/openapi.ts\nsrc/reflectors/platform.ts\nsrc/runtime.ts",
     "uncommittedProductChanges": "",
     "frozen": false
   },
   "environment": [
     {
       "service": "invoices",
-      "brand": "Harbourly",
-      "protocol": "graphql",
-      "operation": "Invoice lookup",
+      "brand": "Fjordsoft",
+      "protocol": "mcp",
+      "operation": "Get invoice",
       "input": "invoice_id",
       "outputs": [
         "invoice_id",
-        "customer_number",
+        "customer_id",
         "net_amount",
         "currency_code"
       ]
@@ -208,36 +208,36 @@
       "service": "customers",
       "brand": "Ashgrove",
       "protocol": "graphql",
-      "operation": "Get customer",
-      "input": "customer_number",
+      "operation": "Customer profile",
+      "input": "customerId",
       "outputs": [
-        "customer_number",
-        "display_name",
+        "customerId",
+        "legal_name",
         "countryCode"
       ]
     },
     {
       "service": "tax",
-      "brand": "Paperhaus",
-      "protocol": "graphql",
-      "operation": "Lookup tax rate for a country",
+      "brand": "Kestrel Freight",
+      "protocol": "mcp",
+      "operation": "Tax rate by country",
       "input": "country",
       "outputs": [
         "country",
-        "rate"
+        "tax_rate"
       ]
     }
   ],
   "firstRunProviders": [
-    "graphql:127-0-0-1-63444-graphql",
-    "graphql:127-0-0-1-63445-graphql",
-    "graphql:127-0-0-1-63446-graphql"
+    "mcp:fjordsoft",
+    "graphql:127-0-0-1-58467-graphql",
+    "mcp:kestrel-freight"
   ],
   "receipts": {
     "count": 21,
     "intact": true,
     "brokenAt": null,
-    "head": "3efd983daa57eb422f679ffa4dc840497267a44d20325d8e7e35b1552ac9a432"
+    "head": "33bea41d30fc6b256a0ace932e84898c363b01bdac581893be0094a7b5e60447"
   },
   "passed": 14,
   "total": 14
