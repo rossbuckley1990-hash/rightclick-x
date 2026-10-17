@@ -114,7 +114,7 @@ test("negative controls: a program with no output yields no capability (N1); ran
 test("synthesis: a goal composed from investigated programs is saved with a capability card and an honest trust label", { skip }, async () => {
   const dir = realpathSync(mkdtempSync(join(tmpdir(), "rcx-prog-")));
   const up = program(dir, "upcase", `if [ "$1" = "--help" ]; then echo "usage: upcase [file]"; echo "  convert text to upper case"; exit 0; fi\ntr a-z A-Z`);
-  const rev = program(dir, "rev2", `if [ "$1" = "--help" ]; then echo "usage: rev2 [file]"; echo "  reverse the order of lines of text"; exit 0; fi\ntail -r`);
+  const rev = program(dir, "rev2", `if [ "$1" = "--help" ]; then echo "usage: rev2 [file]"; echo "  reverse the order of lines of text"; exit 0; fi\nsed '1!G;h;$!d'`);
   const mk = (extra: object = {}) => RightClick.create({ name: "s", directories: [], authority: { investigate: [`${dir}/`], ...extra } });
   const rc = await mk();
   await rc.learn({ sources: [`cli:${up}`, `cli:${rev}`] });

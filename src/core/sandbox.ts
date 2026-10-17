@@ -56,14 +56,27 @@ export interface Sandbox {
   run(bin: string, args: string[], opts?: { stdin?: string; files?: Record<string, string>; limits?: Partial<SandboxLimits> }): Promise<SandboxRun>;
 }
 
-/** The sandbox available on this host, or null (then programs are not investigated or run). */
-export async function hostSandbox(): Promise<Sandbox | null> {
-  const g = globalThis as any;
-  if (!g.process?.versions?.node) return null;
-  const fs = await import("node:fs");
-  if (g.process.platform === "darwin" && fs.existsSync("/usr/bin/sandbox-exec")) return makeSandbox("macos-sandbox-exec");
-  for (const p of ["/usr/bin/bwrap", "/bin/bwrap"]) if (g.process.platform === "linux" && fs.existsSync(p)) return makeSandbox("linux-bwrap", p);
-  return null;
+let probed: Promise<Sandbox | null> | undefined;
+
+/**
+ * The sandbox available on this host, or null (then programs are not investigated or run). A
+ * sandbox counts only if it actually starts here: bubblewrap without user namespaces (an
+ * unprivileged container, a hardened kernel) is reported unavailable, not used.
+ */
+export function hostSandbox(): Promise<Sandbox | null> {
+  return (probed ??= (async () => {
+    const g = globalThis as any;
+    if (!g.process?.versions?.node) return null;
+    const fs = await import("node:fs");
+    const candidates: Sandbox[] = [];
+    if (g.process.platform === "darwin" && fs.existsSync("/usr/bin/sandbox-exec")) candidates.push(makeSandbox("macos-sandbox-exec"));
+    for (const p of ["/usr/bin/bwrap", "/bin/bwrap"]) if (g.process.platform === "linux" && fs.existsSync(p)) candidates.push(makeSandbox("linux-bwrap", p));
+    for (const sb of candidates) {
+      const r = await sb.run("/bin/echo", ["rcx-sandbox-probe"], { limits: { timeoutMs: 5000 } }).catch(() => null);
+      if (r && r.code === 0 && r.stdout.trim() === "rcx-sandbox-probe") return sb;
+    }
+    return null;
+  })());
 }
 
 /** Resident memory (bytes) and process count of one process group, or null when ps is unavailable. */

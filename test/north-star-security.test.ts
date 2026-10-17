@@ -191,7 +191,8 @@ test("B6 executable: replacing the program after it was learned (different ident
 
 // ------------------------------------------------------------------ C. sandbox resource bounds
 
-const marker = () => `rcx${Math.random().toString(36).slice(2, 10)}`;
+// A unique, portable process marker: a fractional sleep duration (BSD and GNU sleep both accept it).
+const marker = () => `${30 + Math.floor(Math.random() * 9)}.${String(Math.floor(Math.random() * 1e6)).padStart(6, "0")}`;
 const alive = (m: string) => {
   try {
     return execFileSync("/bin/ps", ["-A", "-o", "command="], { encoding: "utf8" }).split("\n").filter((l) => l.includes(m) && !l.includes("/bin/ps")).length;
@@ -203,7 +204,7 @@ const alive = (m: string) => {
 test("C1 sandbox: background processes a program leaves behind are terminated with the run", { skip }, async () => {
   const dir = tmp("rcx-c1-");
   const m = marker();
-  const p = program(dir, "leaver", `/bin/sleep 37 ${m} 2>/dev/null & /bin/sh -c 'exec -a ${m} /bin/sleep 37' & echo started`);
+  const p = program(dir, "leaver", `/bin/sleep ${m} & /bin/sh -c '/bin/sleep ${m}' & echo started`);
   const t0 = Date.now();
   const r = await sandbox!.run(p, []);
   assert.match(r.stdout, /started/);
@@ -231,7 +232,7 @@ test("C3 sandbox: the size of files a program writes is bounded", { skip, timeou
 test("C4 sandbox: the number of processes a run may create is bounded", { skip, timeout: 30_000 }, async () => {
   const dir = tmp("rcx-c4-");
   const m = marker();
-  const p = program(dir, "spawner", `i=0; while [ $i -lt 200 ]; do /bin/sh -c 'exec -a ${m} /bin/sleep 20' & i=$((i+1)); done; wait; echo finished`);
+  const p = program(dir, "spawner", `i=0; while [ $i -lt 200 ]; do /bin/sleep ${m} & i=$((i+1)); done; wait; echo finished`);
   const t0 = Date.now();
   const r = await sandbox!.run(p, [], { limits: { timeoutMs: 15_000 } });
   assert.notEqual(r.stdout.trim(), "finished");
