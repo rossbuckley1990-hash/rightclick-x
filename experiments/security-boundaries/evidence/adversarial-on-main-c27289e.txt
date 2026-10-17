@@ -1,0 +1,106 @@
+✖ workspace: a symlink inside the workspace cannot read or write outside it (42.485208ms)
+✖ no automatic retry of a non-idempotent step: a failed POST is not sent again by healing (8.321334ms)
+✖ published goals: GET never executes a goal that can write; POST is required (4.410458ms)
+✖ ambiguous side effects: an MCP tool without annotations is not executable as if it were safe (1.173583ms)
+✖ authority: an agent's confirm: true is not operator approval for a destructive operation (0.990125ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 0
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 205.529084
+
+✖ failing tests:
+
+test at test/security-boundaries.test.ts:16:1
+✖ workspace: a symlink inside the workspace cannot read or write outside it (42.485208ms)
+  AssertionError [ERR_ASSERTION]: read through escape/secret.txt must fail
+  + actual - expected
+  
+  + 'completed'
+  - 'failed'
+  
+      at TestContext.<anonymous> (file:///Users/ross/src/rightclick-x-security/test/security-boundaries.test.ts:26:12)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'completed',
+    expected: 'failed',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/security-boundaries.test.ts:76:1
+✖ no automatic retry of a non-idempotent step: a failed POST is not sent again by healing (8.321334ms)
+  AssertionError [ERR_ASSERTION]: the POST was sent 2 times
+  
+  2 !== 1
+  
+      at TestContext.<anonymous> (file:///Users/ross/src/rightclick-x-security/test/security-boundaries.test.ts:82:10)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/security-boundaries.test.ts:90:1
+✖ published goals: GET never executes a goal that can write; POST is required (4.410458ms)
+  AssertionError [ERR_ASSERTION]: GET on a writing goal is refused
+  
+  200 !== 405
+  
+      at TestContext.<anonymous> (file:///Users/ross/src/rightclick-x-security/test/security-boundaries.test.ts:113:10)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 200,
+    expected: 405,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/security-boundaries.test.ts:135:1
+✖ ambiguous side effects: an MCP tool without annotations is not executable as if it were safe (1.173583ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'external'
+  - 'destructive'
+  
+      at TestContext.<anonymous> (file:///Users/ross/src/rightclick-x-security/test/security-boundaries.test.ts:147:10)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'external',
+    expected: 'destructive',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/security-boundaries.test.ts:153:1
+✖ authority: an agent's confirm: true is not operator approval for a destructive operation (0.990125ms)
+  AssertionError [ERR_ASSERTION]: agent-supplied confirmation alone is refused
+  + actual - expected
+  
+  + 'completed'
+  - 'failed'
+  
+      at TestContext.<anonymous> (file:///Users/ross/src/rightclick-x-security/test/security-boundaries.test.ts:161:10)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'completed',
+    expected: 'failed',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

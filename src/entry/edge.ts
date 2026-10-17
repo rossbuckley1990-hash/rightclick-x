@@ -10,6 +10,7 @@
 //   RCX_STATE    (binding) KV namespace to persist the graph across isolates
 //   any other KV / AI bindings become platform capabilities automatically
 
+import { authorityFromEnv } from "../core/authority.ts";
 import { createHandler } from "../interface/http.ts";
 import { Authority } from "../reflectors/net.ts";
 import { RightClick, type PersistedState, type Store } from "../runtime.ts";
@@ -41,6 +42,7 @@ async function boot(env: Env) {
     auth,
     bindings,
     store: env.RCX_STATE ? new KvStore(env.RCX_STATE) : undefined,
+    authority: authorityFromEnv(env as Record<string, unknown>),
   });
   const sources = String(env.RCX_SOURCES ?? "")
     .split(",")

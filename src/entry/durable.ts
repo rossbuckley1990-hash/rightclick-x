@@ -12,6 +12,7 @@
 // vars:     RCX_NAME, RCX_LOCATION (location hint)
 // secrets:  RCX_TOKEN (required), RCX_AUTH (origin-pinned credentials for peers/APIs)
 
+import { authorityFromEnv } from "../core/authority.ts";
 import { createHandler } from "../interface/http.ts";
 import { Authority } from "../reflectors/net.ts";
 import { RightClick, type PersistedState, type Store } from "../runtime.ts";
@@ -68,6 +69,7 @@ export class RightClickInstance {
       // Public deployment: never let "learn any URL" reach private or metadata addresses.
       network: { blockPrivate: true },
       timeoutMs: 25_000,
+      authority: authorityFromEnv(this.env as Record<string, unknown>),
     });
     try {
       const trace = await (await fetch("https://cloudflare.com/cdn-cgi/trace")).text();

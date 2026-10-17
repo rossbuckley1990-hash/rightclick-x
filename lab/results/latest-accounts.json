@@ -1,8 +1,8 @@
 {
-  "seed": 469188820,
+  "seed": 542718488,
   "domain": "accounts",
   "gateway": false,
-  "startedAt": "2026-10-16T07:29:28.503Z",
+  "startedAt": "2026-10-17T08:44:09.971Z",
   "steps": [
     {
       "n": 1,
@@ -17,7 +17,7 @@
       "title": "Connect an MCP client to RightClick X (stdio)",
       "ok": true,
       "tools": 13,
-      "startupMs": 107.5
+      "startupMs": 113.9
     },
     {
       "n": 3,
@@ -47,7 +47,7 @@
         "graphql"
       ],
       "newCapabilities": 3,
-      "ms": 30.7
+      "ms": 32.5
     },
     {
       "n": 5,
@@ -55,79 +55,79 @@
       "ok": true,
       "candidatePlans": 3,
       "best": [
-        "Account inquiry",
+        "Account lookup",
         "Holder lookup",
-        "Vat Rate Inquiry"
+        "Get Vat Rate"
       ],
-      "planningMs": 2.1
+      "planningMs": 3.2
     },
     {
       "n": 6,
       "title": "Compose a multi-provider workflow",
       "ok": true,
       "steps": [
-        "Account inquiry ← acct_ref=$in.account_id",
-        "Holder lookup ← cref=0.cref",
-        "Vat Rate Inquiry ← cc=1.cc"
+        "Account lookup ← acctno=$in.account_id",
+        "Holder lookup ← cust_ref=0.cust_ref",
+        "Get Vat Rate ← jur=1.cc"
       ]
     },
     {
       "n": 7,
       "title": "Execute the workflow",
       "ok": true,
-      "input": "ACC-1005",
+      "input": "ACC-1004",
       "pipeline": [
-        "Account inquiry",
+        "Account lookup",
         "Holder lookup",
-        "Vat Rate Inquiry"
+        "Get Vat Rate"
       ],
-      "ms": 4.5
+      "ms": 5.1
     },
     {
       "n": 8,
       "title": "Verify against independently held test data",
       "ok": true,
-      "expected": 12.4,
-      "got": 12.4
+      "expected": 26.4,
+      "got": 26.4
     },
     {
       "n": 9,
       "title": "Save the successful composition and reuse it",
       "ok": true,
-      "saved": "Vat rate account holder country: Account inquiry → Holder lookup → Vat Rate Inquiry",
+      "saved": "Vat rate account holder country: Account lookup → Holder lookup → Get Vat Rate",
       "reusedAs": [
-        "Vat rate account holder country: Account inquiry → Holder lookup → Vat Rate Inquiry"
+        "Vat rate account holder country: Account lookup → Holder lookup → Get Vat Rate"
       ],
-      "expected": 6.1,
-      "got": 6.1,
-      "ms": 2.3
+      "expected": 26.4,
+      "got": 26.4,
+      "ms": 3
     },
     {
       "n": 10,
-      "title": "Change the interface of the last provider in the chain (Brightmark)",
+      "title": "Change the interface of the last provider in the chain (Mistral Depot)",
       "ok": true,
-      "before": "graphql \"VAT rate inquiry\" cc → cc, txr",
-      "after": "mcp \"Get VAT rate\" ctry → result.{ctry, vatpct}"
+      "before": "graphql \"Get VAT rate\" jur → jur, txr",
+      "after": "mcp \"VAT rate inquiry\" ctry → result.{ctry, vatpct}"
     },
     {
       "n": 11,
       "title": "Recover without changing integration code",
       "ok": true,
       "healing": [
-        "API drift at http://127.0.0.1:49277/: graphql:127-0-0-1-49277-graphql → mcp:brightmark; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:63482/: graphql:127-0-0-1-63482-graphql → mcp:mistral-depot; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "via": [
-        "openapi:lumen-cargo",
-        "openapi:tallyport",
-        "mcp:brightmark"
+        "openapi:fjordsoft",
+        "openapi:harbourly",
+        "mcp:mistral-depot"
       ],
-      "expected": 6.1,
-      "got": 6.1,
-      "ms": 8.2
+      "expected": 6.6,
+      "got": 6.6,
+      "ms": 8.8
     },
     {
       "n": 12,
-      "title": "Remove that provider (Brightmark)",
+      "title": "Remove that provider (Mistral Depot)",
       "ok": true
     },
     {
@@ -136,107 +136,107 @@
       "ok": true,
       "status": "failed",
       "healing": [
-        "provider gone at http://127.0.0.1:49277/: withdrew mcp:brightmark (1 capabilities, 1 pipeline(s) retired)"
+        "provider gone at http://127.0.0.1:63482/: withdrew mcp:mistral-depot (1 capabilities, 1 pipeline(s) retired)"
       ],
       "withdrawn": [
-        "Brightmark"
+        "Mistral Depot"
       ],
-      "capabilities": "21 → 19",
+      "capabilities": "27 → 25",
       "savedPipelines": "1 → 0"
     },
     {
       "n": 14,
-      "title": "Introduce a different provider (Kestrel Freight, openapi): the objective works again",
+      "title": "Introduce a different provider (Duneworks, openapi): the objective works again",
       "ok": true,
       "learned": [
         "openapi: 1 operations"
       ],
       "via": [
-        "openapi:lumen-cargo",
-        "openapi:tallyport",
-        "openapi:kestrel-freight"
+        "openapi:fjordsoft",
+        "openapi:harbourly",
+        "openapi:duneworks"
       ],
-      "expected": 15.3,
-      "got": 15.3,
-      "ms": 1.6
+      "expected": 6.6,
+      "got": 6.6,
+      "ms": 2
     }
   ],
   "benchmarks": {
-    "startupMs": 107.5,
+    "startupMs": 113.9,
     "mcpLatencyMs": {
       "p50": 0.04,
       "p95": 0.11
     },
-    "discoveryMs": 30.7,
+    "discoveryMs": 32.5,
     "graph": {
       "providers": 5,
-      "capabilities": 20,
-      "edges": 37,
-      "chains2": 37,
-      "chains3": 57,
-      "total": 114
+      "capabilities": 26,
+      "edges": 43,
+      "chains2": 43,
+      "chains3": 63,
+      "total": 132
     },
     "graphStatsMs": 0.1,
-    "planningMs": 2.1,
-    "executionMs": 4.5,
-    "recoveryAfterChangeMs": 8.2,
-    "recoveryAfterNewProviderMs": 1.6,
-    "memoryMB": 135
+    "planningMs": 3.2,
+    "executionMs": 5.1,
+    "recoveryAfterChangeMs": 8.8,
+    "recoveryAfterNewProviderMs": 2,
+    "memoryMB": 136
   },
   "freeze": {
-    "commit": "66b871c4e891036920a88fb2089c9d437fc1331e",
-    "tag": "lab-freeze-4",
-    "productCodeChangedSinceTag": "",
-    "uncommittedProductChanges": "",
-    "frozen": true
+    "commit": "c27289e2570cc0a18512787082095ac32ba0eb80",
+    "tag": "lab-freeze-9",
+    "productCodeChangedSinceTag": "src/core/graph.ts\nsrc/core/identities.ts\nsrc/core/planner.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/interface/http.ts\nsrc/interface/tools.ts\nsrc/reflectors/net.ts\nsrc/runtime.ts",
+    "uncommittedProductChanges": "M  bin/rcx.ts\nA  src/core/authority.ts\nM  src/entry/durable.ts\nM  src/entry/edge.ts\nM  src/interface/http.ts\nM  src/reflectors/mcp.ts\nM  src/reflectors/platform.ts\nM  src/runtime.ts",
+    "frozen": false
   },
   "environment": [
     {
       "service": "ledger",
-      "brand": "Lumen Cargo",
+      "brand": "Fjordsoft",
       "protocol": "openapi",
-      "operation": "Account inquiry",
-      "input": "acct_ref",
+      "operation": "Account lookup",
+      "input": "acctno",
       "outputs": [
-        "acct_ref",
-        "cref",
-        "curbal"
+        "acctno",
+        "cust_ref",
+        "amt"
       ]
     },
     {
       "service": "kyc",
-      "brand": "Tallyport",
+      "brand": "Harbourly",
       "protocol": "openapi",
       "operation": "Holder lookup",
-      "input": "cref",
+      "input": "cust_ref",
       "outputs": [
-        "cref",
-        "nm",
+        "cust_ref",
+        "lglnm",
         "cc"
       ]
     },
     {
       "service": "vat",
-      "brand": "Brightmark",
+      "brand": "Mistral Depot",
       "protocol": "graphql",
-      "operation": "VAT rate inquiry",
-      "input": "cc",
+      "operation": "Get VAT rate",
+      "input": "jur",
       "outputs": [
-        "cc",
+        "jur",
         "txr"
       ]
     }
   ],
   "firstRunProviders": [
-    "openapi:lumen-cargo",
-    "openapi:tallyport",
-    "graphql:127-0-0-1-49277-graphql"
+    "openapi:fjordsoft",
+    "openapi:harbourly",
+    "graphql:127-0-0-1-63482-graphql"
   ],
   "receipts": {
     "count": 21,
     "intact": true,
     "brokenAt": null,
-    "head": "7c75f602bba10a98210a2a05c885bf2707c3b4b74f47ab2e7c135da14d4cc5cf"
+    "head": "09d26e99f18f7e026a1a7e6d36cf68a70f513613b1e7cc983f77b7bc8728969d"
   },
   "passed": 14,
   "total": 14

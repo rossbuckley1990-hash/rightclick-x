@@ -70,16 +70,33 @@ export async function platformReflection(info: RuntimeInfo, opts: PlatformOption
     const fs = await import("node:fs/promises");
     const path = await import("node:path");
     const root = path.resolve(opts.workspace);
-    const inside = (p: string) => {
+    // Paths are judged by where they really lead: a symlink inside the workspace that points
+    // outside it is an escape, for reads and for writes alike.
+    const within = (real: string, realRoot: string) => real === realRoot || real.startsWith(realRoot + path.sep);
+    const inside = async (p: string, forWrite = false) => {
       const full = path.resolve(root, String(p));
       if (full !== root && !full.startsWith(root + path.sep)) throw new Error(`path escapes workspace: ${p}`);
-      return full;
+      const realRoot = await fs.realpath(root);
+      if (forWrite) {
+        const link = await fs.lstat(full).catch(() => null);
+        if (link?.isSymbolicLink()) throw new Error(`refusing to write through a symlink: ${p}`);
+        // The nearest existing ancestor must really be inside the workspace.
+        let dir = path.dirname(full);
+        while (!(await fs.lstat(dir).catch(() => null))) dir = path.dirname(dir);
+        if (!within(await fs.realpath(dir), realRoot)) throw new Error(`path escapes workspace: ${p}`);
+        return full;
+      }
+      const real = await fs.realpath(full);
+      if (!within(real, realRoot)) throw new Error(`path escapes workspace: ${p}`);
+      return real;
     };
-    add("fs.list", { title: "List workspace files", description: `List files in the workspace (${root}).`, inputs: [port("dir", "path", false)], outputs: [port("", "list:path")], risk: "read", tags: ["files", "list", "workspace"] }, async ({ dir }) => (await fs.readdir(inside(dir ?? "."), { recursive: true })).map(String).slice(0, 1000));
-    add("fs.read", { title: "Read workspace file", description: "Read a text file from the workspace.", inputs: [port("path", "path")], outputs: [port("", "text")], risk: "read", tags: ["files", "read", "workspace"] }, async ({ path: p }) => fs.readFile(inside(p), "utf8"));
+    add("fs.list", { title: "List workspace files", description: `List files in the workspace (${root}).`, inputs: [port("dir", "path", false)], outputs: [port("", "list:path")], risk: "read", tags: ["files", "list", "workspace"] }, async ({ dir }) => (await fs.readdir(await inside(dir ?? "."), { recursive: true })).map(String).slice(0, 1000));
+    add("fs.read", { title: "Read workspace file", description: "Read a text file from the workspace.", inputs: [port("path", "path")], outputs: [port("", "text")], risk: "read", tags: ["files", "read", "workspace"] }, async ({ path: p }) => fs.readFile(await inside(p), "utf8"));
     add("fs.write", { title: "Write workspace file", description: "Write text to a file in the workspace.", inputs: [port("path", "path"), port("content", "text")], outputs: [port("", "json"), port("path", "path")], risk: "write", tags: ["files", "write", "save", "workspace"] }, async ({ path: p, content }) => {
-      const full = inside(p);
+      const full = await inside(p, true);
       await fs.mkdir(path.dirname(full), { recursive: true });
+      // mkdir may have created directories; re-check before writing.
+      await inside(p, true);
       await fs.writeFile(full, String(content));
       return { path: String(p), bytes: new TextEncoder().encode(String(content)).length };
     });
