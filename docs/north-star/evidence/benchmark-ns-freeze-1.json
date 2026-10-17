@@ -1080,6 +1080,103 @@
       ],
       "skillBytesSaved": 0,
       "reply": "BEGIN\nWidth: 120\nHeight: 80\nEND"
+    },
+    {
+      "key": "B|exiftool|t4",
+      "arm": "B",
+      "program": "exiftool",
+      "step": "t4",
+      "phase": "reuse",
+      "task": "exiftool#4",
+      "correct": false,
+      "wrong": true,
+      "matchesOracle": false,
+      "unable": null,
+      "answered": true,
+      "executed": true,
+      "seconds": 12.9,
+      "turns": 3,
+      "tokens": 92733,
+      "costUsd": 0.0663279,
+      "toolCalls": 1,
+      "tools": [
+        "run_program"
+      ],
+      "skillBytesSaved": 0,
+      "reply": "BEGIN\nJane Doe\nEND"
+    },
+    {
+      "key": "B|exiftool|infeasible",
+      "arm": "B",
+      "program": "exiftool",
+      "step": "infeasible",
+      "phase": "infeasible",
+      "task": "exiftool#5",
+      "correct": true,
+      "wrong": false,
+      "matchesOracle": false,
+      "unable": "exiftool only reads and writes file metadata. It can't sort or deduplicate the lines of a text file. On list.txt it only reported metadata such as line count and word count.",
+      "answered": false,
+      "executed": true,
+      "seconds": 10.9,
+      "turns": 3,
+      "tokens": 93282,
+      "costUsd": 0.0694992,
+      "toolCalls": 1,
+      "tools": [
+        "run_program"
+      ],
+      "skillBytesSaved": 0,
+      "reply": "UNABLE: exiftool only reads and writes file metadata. It can't sort or deduplicate the lines of a text file. On list.txt it only reported metadata such as line count and word count."
+    },
+    {
+      "key": "B|exiftool|compatible",
+      "arm": "B",
+      "program": "exiftool",
+      "step": "compatible",
+      "phase": "compatible-change",
+      "task": "exiftool#1",
+      "correct": false,
+      "wrong": true,
+      "matchesOracle": false,
+      "unable": null,
+      "answered": true,
+      "executed": true,
+      "seconds": 15.2,
+      "turns": 3,
+      "tokens": 92772,
+      "costUsd": 0.06668040000000001,
+      "toolCalls": 1,
+      "tools": [
+        "run_program"
+      ],
+      "skillBytesSaved": 0,
+      "reply": "BEGIN\nLines: 3\nWords: 9\nEND"
+    },
+    {
+      "key": "B|exiftool|incompatible",
+      "arm": "B",
+      "program": "exiftool",
+      "step": "incompatible",
+      "phase": "incompatible-change",
+      "task": "exiftool#2",
+      "correct": true,
+      "wrong": false,
+      "matchesOracle": false,
+      "unable": "exiftool did read the title tag, but it printed the text reversed (\"tropeR ylretrauQ\"). I couldn't get a correct, unaltered title from the program's output.",
+      "answered": false,
+      "executed": true,
+      "seconds": 15.4,
+      "turns": 4,
+      "tokens": 124951,
+      "costUsd": 0.07693649999999999,
+      "toolCalls": 2,
+      "tools": [
+        "run_program",
+        "run_program"
+      ],
+      "skillBytesSaved": 0,
+      "reply": "UNABLE: exiftool did read the title tag, but it printed the text reversed (\"tropeR ylretrauQ\"). I couldn't get a correct, unaltered title from the program's output."
     }
   ]
 }
