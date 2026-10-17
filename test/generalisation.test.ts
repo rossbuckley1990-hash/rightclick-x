@@ -262,7 +262,7 @@ test("options declared only in a synopsis or usage line are read, including bund
 
 test("output that differs between identical runs only by date-times is deterministic apart from them; a behaviour-identical wrapper is still accepted", { skip, timeout: 120_000 }, async () => {
   const dir = tmp("rcx-gen-");
-  const body = `if [ "$1" = "--help" ]; then echo "usage: stamp [file]"; echo "  report a text with the time it was processed"; exit 0; fi; /usr/bin/tr a-z A-Z; printf "Processed: 2026-10-17T14:%02d:%02dZ\\n" $(( $$ % 60 )) $(( ($$ / 60) % 60 ))`;
+  const body = `if [ "$1" = "--help" ]; then echo "usage: stamp [file]"; echo "  report a text with the time it was processed"; exit 0; fi; /usr/bin/tr a-z A-Z; r=$(/usr/bin/od -An -N2 -tu2 /dev/urandom | /usr/bin/tr -d ' '); printf "Processed: 2026-10-17T14:%02d:%02dZ\\n" $(( r % 60 )) $(( (r / 60) % 60 ))`;
   const p = program(dir, "stamp", body);
   const rc = await RightClick.create({ directories: [], authority: { investigate: [`${dir}/`] } });
   await rc.learn({ source: `cli:${p}` });
