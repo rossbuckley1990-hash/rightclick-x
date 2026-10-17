@@ -1,0 +1,53 @@
+{
+  "tag": "uce-freeze-5",
+  "commit": "02eca766e8da97a36239b64001ba6510bb582694",
+  "programs": {
+    "mandoc": {
+      "runs": [
+        {
+          "status": "completed",
+          "plan": [
+            "mandoc: format manual pages"
+          ],
+          "attempts": []
+        }
+      ],
+      "outputs": [
+        "LANTERN(1)                  General Commands Manual                 LANTERN(1)\n\nN\bNA\bAM\bME\bE\n     l\bla\ban\bnt\bte\ber\brn\bn - light the harbour path\n\nD\bDE\bES\bSC\bCR\bRI\bIP\bPT\bTI\bIO\bON\bN\n     The l\bla\ban\bnt\bte\ber\brn\bn utility guides boats home at dusk.\n\nmacOS 26.4                     October 17, 2026                     macOS 26.4\n"
+      ],
+      "check": {
+        "pass": true,
+        "detail": "words missing none; raw macro lines left false"
+      },
+      "supported": true,
+      "retained": true,
+      "executed": true,
+      "wrongOutcome": false,
+      "pass": true
+    },
+    "od": {
+      "runs": [
+        {
+          "status": "completed",
+          "plan": [
+            "mandoc: format manual pages",
+            "od -b: Output octal bytes.  Equivalent to -t o1"
+          ],
+          "attempts": []
+        }
+      ],
+      "outputs": [
+        "0000000   050 051 040 040 040 040 040 040 040 040 040 040 040 040 040 040\n0000020   040 040 040 040 040 040 040 040 040 040 040 040 040 040 040 040\n*\n0000100   040 040 040 040 040 040 040 040 040 040 040 040 050 051 012 012\n0000120   110 141 162 142 157 165 162 040 154 151 147 150 164 163 040 141\n0000140   164 040 144 165 163 153 012 012 040 040 040 040 040 040 040 040\n0000160   040 040 040 040 040 040 040 040 040 040 040 040 040 040 040 040\n*\n0000260   040 040 040 040 050 051 012                                    \n0000267\n"
+      ],
+      "check": {
+        "pass": false,
+        "detail": "bytes reconstructed from the dump equal the input: false"
+      },
+      "supported": true,
+      "retained": true,
+      "executed": true,
+      "wrongOutcome": true,
+      "pass": false
+    }
+  }
+}

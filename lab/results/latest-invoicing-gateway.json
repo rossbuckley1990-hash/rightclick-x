@@ -1,8 +1,8 @@
 {
-  "seed": 909753656,
+  "seed": 411685120,
   "domain": "invoicing",
   "gateway": true,
-  "startedAt": "2026-10-16T22:15:37.783Z",
+  "startedAt": "2026-10-16T22:17:56.794Z",
   "steps": [
     {
       "n": 1,
@@ -17,7 +17,7 @@
       "title": "Connect an MCP client to RightClick X (stdio)",
       "ok": true,
       "tools": 13,
-      "startupMs": 213.9
+      "startupMs": 183.1
     },
     {
       "n": 3,
@@ -42,12 +42,12 @@
       "title": "Discover the environment's services from its catalog only (no service addresses, protocols or schemas given)",
       "ok": true,
       "found": [
-        "mcp",
-        "openapi",
-        "graphql"
+        "graphql",
+        "graphql",
+        "openapi"
       ],
       "newCapabilities": 3,
-      "ms": 78.5
+      "ms": 63.1
     },
     {
       "n": 5,
@@ -55,79 +55,79 @@
       "ok": true,
       "candidatePlans": 3,
       "best": [
-        "Get invoice",
-        "Fetch customer record",
-        "Get Tax Rate"
+        "Retrieve Invoice",
+        "Fetch Customer Record",
+        "Tax rate by country"
       ],
-      "planningMs": 6
+      "planningMs": 5.8
     },
     {
       "n": 6,
       "title": "Compose a multi-provider workflow",
       "ok": true,
       "steps": [
-        "Get invoice ← invoice_number=$in.invoice_id",
-        "Fetch customer record ← customer_id=0.customerId",
-        "Get Tax Rate ← country_code=1.country"
+        "Retrieve Invoice ← invoice_id=$in.invoice_id",
+        "Fetch Customer Record ← customer_id=0.customer_number",
+        "Tax rate by country ← countryCode=1.countryCode"
       ]
     },
     {
       "n": 7,
       "title": "Execute the workflow",
       "ok": true,
-      "input": "INV-1005",
+      "input": "INV-1004",
       "pipeline": [
-        "Get invoice",
-        "Fetch customer record",
-        "Get Tax Rate"
+        "Retrieve Invoice",
+        "Fetch Customer Record",
+        "Tax rate by country"
       ],
-      "ms": 11.2
+      "ms": 10.3
     },
     {
       "n": 8,
       "title": "Verify against independently held test data",
       "ok": true,
-      "expected": 8.9,
-      "got": 8.9
+      "expected": 19.8,
+      "got": 19.8
     },
     {
       "n": 9,
       "title": "Save the successful composition and reuse it",
       "ok": true,
-      "saved": "Tax rate invoice customer country: Get invoice → Fetch customer record → Get Tax Rate",
+      "saved": "Tax rate invoice customer country: Retrieve Invoice → Fetch Customer Record → Tax rate by country",
       "reusedAs": [
-        "Tax rate invoice customer country: Get invoice → Fetch customer record → Get Tax Rate"
+        "Tax rate invoice customer country: Retrieve Invoice → Fetch Customer Record → Tax rate by country"
       ],
-      "expected": 9.4,
-      "got": 9.4,
-      "ms": 4.9
+      "expected": 12.5,
+      "got": 12.5,
+      "ms": 4.2
     },
     {
       "n": 10,
-      "title": "Change the interface of the last provider in the chain (Ashgrove)",
+      "title": "Change the interface of the last provider in the chain (Paperhaus)",
       "ok": true,
-      "before": "graphql \"Get tax rate\" country_code → country_code, vat_rate",
-      "after": "mcp \"Lookup tax rate for a country\" country → result.{country, tax_rate}"
+      "before": "openapi \"Tax rate by country\" countryCode → countryCode, standard_rate",
+      "after": "mcp \"Get tax rate\" country_code → result.{country_code, tax_rate}"
     },
     {
       "n": 11,
       "title": "Recover without changing integration code",
       "ok": true,
       "healing": [
-        "API drift at http://127.0.0.1:52017/: mcp:harbourly,openapi:tallyport,graphql:127-0-0-1-52016-graphql → mcp:harbourly,openapi:tallyport,mcp:ashgrove; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:57441/: graphql:127-0-0-1-57438-graphql,graphql:127-0-0-1-57439-graphql,openapi:paperhaus → graphql:127-0-0-1-57438-graphql,graphql:127-0-0-1-57439-graphql,mcp:paperhaus; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "via": [
-        "mcp:harbourly",
-        "openapi:tallyport",
-        "mcp:ashgrove"
+        "graphql:127-0-0-1-57438-graphql",
+        "graphql:127-0-0-1-57439-graphql",
+        "mcp:paperhaus"
       ],
-      "expected": 17.9,
-      "got": 17.9,
-      "ms": 32
+      "expected": 15.1,
+      "got": 15.1,
+      "ms": 31.8
     },
     {
       "n": 12,
-      "title": "Remove that provider (Ashgrove)",
+      "title": "Remove that provider (Paperhaus)",
       "ok": true
     },
     {
@@ -136,41 +136,41 @@
       "ok": true,
       "status": "failed",
       "healing": [
-        "API drift at http://127.0.0.1:52017/: mcp:harbourly,openapi:tallyport,mcp:ashgrove → mcp:harbourly,openapi:tallyport; +0 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:57441/: graphql:127-0-0-1-57438-graphql,graphql:127-0-0-1-57439-graphql,mcp:paperhaus → graphql:127-0-0-1-57438-graphql,graphql:127-0-0-1-57439-graphql; +0 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "withdrawn": [
-        "Ashgrove"
+        "Paperhaus"
       ],
       "capabilities": "27 → 25",
       "savedPipelines": "1 → 0"
     },
     {
       "n": 14,
-      "title": "Introduce a different provider (Ledgerline, mcp): the objective works again",
+      "title": "Introduce a different provider (Ashgrove, mcp): the objective works again",
       "ok": true,
       "learned": [
         "api-catalog: 3 services listed",
-        "mcp: 1 tools",
-        "openapi: 1 operations",
+        "graphql: 1 fields",
+        "graphql: 1 fields",
         "mcp: 1 tools"
       ],
       "via": [
-        "mcp:harbourly",
-        "openapi:tallyport",
-        "mcp:ledgerline"
+        "graphql:127-0-0-1-57438-graphql",
+        "graphql:127-0-0-1-57439-graphql",
+        "mcp:ashgrove"
       ],
-      "expected": 17,
-      "got": 17,
-      "ms": 4.8
+      "expected": 19.8,
+      "got": 19.8,
+      "ms": 3
     }
   ],
   "benchmarks": {
-    "startupMs": 213.9,
+    "startupMs": 183.1,
     "mcpLatencyMs": {
-      "p50": 0.06,
-      "p95": 0.21
+      "p50": 0.05,
+      "p95": 0.16
     },
-    "discoveryMs": 78.5,
+    "discoveryMs": 63.1,
     "graph": {
       "providers": 5,
       "capabilities": 26,
@@ -180,14 +180,14 @@
       "total": 132
     },
     "graphStatsMs": 0.2,
-    "planningMs": 6,
-    "executionMs": 11.2,
-    "recoveryAfterChangeMs": 32,
-    "recoveryAfterNewProviderMs": 4.8,
-    "memoryMB": 151
+    "planningMs": 5.8,
+    "executionMs": 10.3,
+    "recoveryAfterChangeMs": 31.8,
+    "recoveryAfterNewProviderMs": 3,
+    "memoryMB": 150
   },
   "freeze": {
-    "commit": "1fa3c7e8b62d55bba7ebca1f4e96a0f82cde6141",
+    "commit": "02eca766e8da97a36239b64001ba6510bb582694",
     "tag": "lab-freeze-9",
     "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/core/authority.ts\nsrc/core/fields.ts\nsrc/core/graph.ts\nsrc/core/identities.ts\nsrc/core/planner.ts\nsrc/core/sandbox.ts\nsrc/core/satisfaction.ts\nsrc/core/semantics.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/core/yaml.ts\nsrc/entry/durable.ts\nsrc/entry/edge.ts\nsrc/interface/http.ts\nsrc/interface/tools.ts\nsrc/reflectors/cli.ts\nsrc/reflectors/discover.ts\nsrc/reflectors/graphql.ts\nsrc/reflectors/mcp.ts\nsrc/reflectors/net.ts\nsrc/reflectors/openapi.ts\nsrc/reflectors/platform.ts\nsrc/runtime.ts",
     "uncommittedProductChanges": "",
@@ -196,51 +196,51 @@
   "environment": [
     {
       "service": "invoices",
-      "brand": "Harbourly",
-      "protocol": "mcp",
-      "operation": "Get invoice",
-      "input": "invoice_number",
+      "brand": "Kestrel Freight",
+      "protocol": "graphql",
+      "operation": "Retrieve invoice",
+      "input": "invoice_id",
       "outputs": [
-        "invoice_number",
-        "customerId",
-        "total",
-        "currency_code"
+        "invoice_id",
+        "customer_number",
+        "net_amount",
+        "currency"
       ]
     },
     {
       "service": "customers",
-      "brand": "Tallyport",
-      "protocol": "openapi",
+      "brand": "Ledgerline",
+      "protocol": "graphql",
       "operation": "Fetch customer record",
       "input": "customer_id",
       "outputs": [
         "customer_id",
         "legal_name",
-        "country"
+        "countryCode"
       ]
     },
     {
       "service": "tax",
-      "brand": "Ashgrove",
-      "protocol": "graphql",
-      "operation": "Get tax rate",
-      "input": "country_code",
+      "brand": "Paperhaus",
+      "protocol": "openapi",
+      "operation": "Tax rate by country",
+      "input": "countryCode",
       "outputs": [
-        "country_code",
-        "vat_rate"
+        "countryCode",
+        "standard_rate"
       ]
     }
   ],
   "firstRunProviders": [
-    "mcp:harbourly",
-    "openapi:tallyport",
-    "graphql:127-0-0-1-52016-graphql"
+    "graphql:127-0-0-1-57438-graphql",
+    "graphql:127-0-0-1-57439-graphql",
+    "openapi:paperhaus"
   ],
   "receipts": {
     "count": 21,
     "intact": true,
     "brokenAt": null,
-    "head": "b6474eb847e9713e1b5b97b503e1317f415f34edf02aceed61fcf5c6bfbf691a"
+    "head": "2a6c08675dcd8d3549a2b2ff0773ed873ff5db34e8c56ae4ba7011264ee842ae"
   },
   "passed": 14,
   "total": 14

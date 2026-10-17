@@ -69,8 +69,13 @@ export function parseOperands(synopsis: string[], name: string): Investigation["
   for (const raw of [joined.slice(Math.max(0, firstUse)).split(/\busage:/i)[0]]) {
     const line = raw.replace(/^usage:\s*/i, "").replace(/(^|[\s\[|])-{1,2}[A-Za-z0-9?][\w-]*(=\S+|\s+(?=[A-Z][A-Za-z_]*\b)[A-Z][A-Za-z_]*)?/g, "$1");
     const after = line.slice(line.indexOf(name) >= 0 ? line.indexOf(name) + name.length : 0);
+    // Nested optional groups ("[[+]offset[.][Bb]]") are optional as a whole: mark the outermost
+    // group's words optional, innermost first, so none of them is read as a required operand.
+    let flat = after;
+    for (let i = 0; i < 6 && /\[[^\[\]]*\]/.test(flat); i++) flat = flat.replace(/\[([^\[\]]*)\]/g, (_m, inner) => `\u0001${inner.replace(/[\u0001\u0002]/g, " ")}\u0002`);
+    const groups = flat.replace(/\u0001/g, "[").replace(/\u0002/g, "]");
     // Drop option groups, then read what is left.
-    const noOpts = after.replace(/\[\s*-[^\]]*\]/g, " ");
+    const noOpts = groups.replace(/\[\s*-[^\]]*\]/g, " ");
     for (const m of noOpts.matchAll(/\[([^\]]+)\]|([A-Za-z][\w.-]*)/g)) {
       if (m[1]) {
         const word = /[A-Za-z][\w-]*/.exec(m[1])?.[0];

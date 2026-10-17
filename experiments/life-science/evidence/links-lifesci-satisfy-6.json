@@ -1,0 +1,2263 @@
+{
+  "measurement": "cross-provider identifier links",
+  "build": {
+    "tag": "lifesci-satisfy-6",
+    "commit": "02eca766e8da97a36239b64001ba6510bb582694"
+  },
+  "at": "2026-10-16T22:19:51.329Z",
+  "definition": "cap pair (A in source X, B in source Y≠X) where an output port of A fills a required input port of B via a shared learned scheme with equal cardinality (schemeLinks), or where B's input has a specific id.* type that accepts A's output type (idTypeLinks)",
+  "baseline": {
+    "tag": "lifesci-freeze-3",
+    "capabilities": 260,
+    "schemeLinks": {
+      "pairs": 0,
+      "bySourcePair": {},
+      "samples": []
+    },
+    "idTypeLinks": {
+      "pairs": 85,
+      "bySourcePair": {
+        "S1→S2": 4,
+        "S2→S3": 81
+      }
+    },
+    "newBySchemeOnly": 0
+  },
+  "phaseA": {
+    "capabilities": 260,
+    "schemeLinks": {
+      "pairs": 23,
+      "bySourcePair": {
+        "S1→S2": 22,
+        "S2→S1": 1
+      },
+      "samples": [
+        "openapi:openapi-definition:getbyaccession.primaryAccession (text) → openapi:proteins-rest-api:getbyaccession.accession (text) [scheme:accession]",
+        "openapi:openapi-definition:getbyaccession.primaryAccession (text) → openapi:proteins-rest-api:getbyaccession-1.accession (text) [scheme:accession]",
+        "openapi:openapi-definition:getbyaccession.primaryAccession (text) → openapi:proteins-rest-api:getgenomelocationbyaccession.accession (text) [scheme:accession]",
+        "openapi:openapi-definition:getbyaccession.primaryAccession (text) → openapi:proteins-rest-api:getgenomepositionbyaccession.accession (text) [scheme:accession]",
+        "openapi:openapi-definition:getbyaccession.primaryAccession (text) → openapi:proteins-rest-api:getallinteractionentries.accession (text) [scheme:accession]",
+        "openapi:openapi-definition:getbyaccession.primaryAccession (text) → openapi:proteins-rest-api:getbyaccession-2.accession (text) [scheme:accession]",
+        "openapi:openapi-definition:getbyaccession.primaryAccession (text) → openapi:proteins-rest-api:getentriesforisoforms.accession (text) [scheme:accession]",
+        "openapi:openapi-definition:getbyaccession.primaryAccession (text) → openapi:proteins-rest-api:getbyaccession-3.accession (text) [scheme:accession]",
+        "openapi:openapi-definition:getbyaccession.primaryAccession (text) → openapi:proteins-rest-api:getbyaccession-4.accession (text) [scheme:accession]",
+        "openapi:openapi-definition:getbyaccession.primaryAccession (text) → openapi:proteins-rest-api:getgenecentricbyaccession.accession (text) [scheme:accession]",
+        "openapi:openapi-definition:getbyaccession.primaryAccession (text) → openapi:proteins-rest-api:getbyaccession-5.accession (text) [scheme:accession]",
+        "openapi:openapi-definition:getbyaccession.primaryAccession (text) → openapi:proteins-rest-api:getbyaccession-6.accession (text) [scheme:accession]",
+        "openapi:openapi-definition:getbyaccession.primaryAccession (text) → openapi:proteins-rest-api:getbyaccession-7.accession (text) [scheme:accession]",
+        "openapi:openapi-definition:getbyaccession.primaryAccession (text) → openapi:proteins-rest-api:getbyaccession-8.accession (text) [scheme:accession]",
+        "openapi:openapi-definition:getbyaccession.primaryAccession (text) → openapi:proteins-rest-api:getnonptmbyaccession.accession (text) [scheme:accession]",
+        "openapi:openapi-definition:getbyaccession.primaryAccession (text) → openapi:proteins-rest-api:getbyaccession-9.accession (text) [scheme:accession]",
+        "openapi:openapi-definition:getbyaccession.primaryAccession (text) → openapi:proteins-rest-api:getbyaccession-10.accession (text) [scheme:accession]",
+        "openapi:openapi-definition:getbyaccession.primaryAccession (text) → openapi:proteins-rest-api:getbyaccession-11.accession (text) [scheme:accession]",
+        "openapi:openapi-definition:getbyaccession.primaryAccession (text) → openapi:proteins-rest-api:getuniparcentrybyuniprotaccession.accession (text) [scheme:accession]",
+        "openapi:openapi-definition:getbyaccession.primaryAccession (text) → openapi:proteins-rest-api:getunirefentrybyaccession.accession (text) [scheme:accession]",
+        "openapi:openapi-definition:getbyaccession.primaryAccession (text) → openapi:proteins-rest-api:getbyaccession-12.accession (text) [scheme:accession]",
+        "openapi:openapi-definition:getbyaccession.primaryAccession (text) → openapi:proteins-rest-api:getvariation.accession (text) [scheme:accession]",
+        "openapi:proteins-rest-api:getbyaccession-2.accession (id.stable) → openapi:openapi-definition:getbyaccession.accession (id.stable) [scheme:accession]"
+      ]
+    },
+    "idTypeLinks": {
+      "pairs": 86,
+      "bySourcePair": {
+        "S1→S2": 4,
+        "S2→S1": 1,
+        "S2→S3": 81
+      }
+    },
+    "newBySchemeOnly": 22,
+    "schemes": {
+      "scheme:accession": {
+        "inputs": [
+          "S1 getbyaccession.accession (id.stable)",
+          "S2 getbyaccession.accession (text)",
+          "S2 search.accession (text)",
+          "S2 getbyaccession-1.accession (text)",
+          "S2 getgenomelocationbyaccession.accession (text)",
+          "S2 getgenomepositionbyaccession.accession (text)",
+          "S2 search-1.accession (text)",
+          "S2 getallinteractionentries.accession (text)",
+          "S2 getbyaccession-2.accession (text)",
+          "S2 getentriesforisoforms.accession (text)",
+          "S2 search-2.accession (text)",
+          "S2 getbyaccession-3.accession (text)",
+          "S2 search-3.accession (text)",
+          "S2 getbyaccession-4.accession (text)",
+          "S2 search-4.accession (text)",
+          "S2 getgenecentricbyaccession.accession (text)",
+          "S2 getgenecentricbyupid.accession (text)",
+          "S2 getbyaccession-5.accession (text)",
+          "S2 search-5.accession (text)",
+          "S2 getbyaccession-6.accession (text)",
+          "S2 search-6.accession (text)",
+          "S2 getbyaccession-7.accession (text)",
+          "S2 search-7.accession (text)",
+          "S2 getbyaccession-8.accession (text)",
+          "S2 getnonptmbyaccession.accession (text)",
+          "S2 search-9.accession (text)",
+          "S2 searchnonptm.accession (text)",
+          "S2 getbyaccession-9.accession (text)",
+          "S2 search-10.accession (text)",
+          "S2 getbyaccession-10.accession (text)",
+          "S2 search-11.accession (text)",
+          "S2 getbyaccession-11.accession (text)",
+          "S2 search-12.accession (text)",
+          "S2 getuniparcbestguest.accession (text)",
+          "S2 getuniparcentrybyuniprotaccession.accession (text)",
+          "S2 searchuniparc.accession (text)",
+          "S2 getunirefentrybyaccession.accession (text)",
+          "S2 getbyaccession-12.accession (text)",
+          "S2 search-13.accession (text)",
+          "S2 getvariation.accession (text)",
+          "S2 search-14.accession (text)"
+        ],
+        "feeds": [
+          "S1 getbyaccession.primaryAccession (text)",
+          "S2 getbyaccession-2.accession (id.stable, observed)"
+        ]
+      },
+      "scheme:entry_id": {
+        "inputs": [
+          "S3 polymer_entity_instance.entry_id (id.entry)",
+          "S3 interface.entry_id (id.entry)",
+          "S3 polymer_entity.entry_id (id.entry)",
+          "S3 assembly.entry_id (id.entry)",
+          "S3 branched_entity.entry_id (id.entry)",
+          "S3 branched_entity_instance.entry_id (id.entry)",
+          "S3 nonpolymer_entity_instance.entry_id (id.entry)",
+          "S3 entry.entry_id (id.entry)",
+          "S3 nonpolymer_entity.entry_id (id.entry)"
+        ],
+        "feeds": [
+          "S3 entry.database_2.database_code (list:text)"
+        ]
+      }
+    },
+    "evidence": [
+      {
+        "kind": "echo",
+        "from": "openapi:openapi-definition:getbyaccession out primaryAccession",
+        "to": "openapi:openapi-definition:getbyaccession in accession",
+        "value": "P04637"
+      },
+      {
+        "kind": "echo",
+        "from": "openapi:proteins-rest-api:getbyaccession-2 out accession",
+        "to": "openapi:proteins-rest-api:getbyaccession-2 in accession",
+        "value": "P04637"
+      },
+      {
+        "kind": "co-accept",
+        "from": "openapi:openapi-definition:getbyaccession in accession",
+        "to": "openapi:proteins-rest-api:getbyaccession-2 in accession",
+        "value": "P04637"
+      },
+      {
+        "kind": "echo",
+        "from": "graphql:data-rcsb-org-graphql:query:entry out database_2.database_code",
+        "to": "graphql:data-rcsb-org-graphql:query:entry in entry_id",
+        "value": "4HHB"
+      }
+    ]
+  },
+  "replay": {
+    "note": "context_run calls of all 28 Phase B sessions, in order, in one process starting from the Phase A state; `verify` dropped",
+    "calls": 77,
+    "completed": 76,
+    "calls_": [
+      {
+        "session": "claude-Q01",
+        "capability": "openapi:openapi-definition:searchcursor",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 1147
+      },
+      {
+        "session": "claude-Q02",
+        "capability": "openapi:openapi-definition:searchcursor",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 2052
+      },
+      {
+        "session": "claude-Q03",
+        "capability": "openapi:openapi-definition:searchcursor",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 1927
+      },
+      {
+        "session": "claude-Q03",
+        "capability": "graphql:data-rcsb-org-graphql:query:entries",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 373
+      },
+      {
+        "session": "claude-Q04",
+        "capability": "graphql:data-rcsb-org-graphql:query:entry",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 758
+      },
+      {
+        "session": "claude-Q04",
+        "capability": "graphql:data-rcsb-org-graphql:query:entry",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 1091
+      },
+      {
+        "session": "claude-Q04",
+        "capability": "openapi:proteins-rest-api:getbyaccession-2",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 688
+      },
+      {
+        "session": "claude-Q04",
+        "capability": "openapi:proteins-rest-api:getbyaccession-2",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 407
+      },
+      {
+        "session": "claude-Q05",
+        "capability": "graphql:data-rcsb-org-graphql:query:entry",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 127
+      },
+      {
+        "session": "claude-Q05",
+        "capability": "graphql:data-rcsb-org-graphql:query:polymer_entity",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 1007
+      },
+      {
+        "session": "claude-Q05",
+        "capability": "graphql:data-rcsb-org-graphql:query:polymer_entity",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 1022
+      },
+      {
+        "session": "claude-Q05",
+        "capability": "openapi:proteins-rest-api:getbyaccession-2",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 1471
+      },
+      {
+        "session": "claude-Q05",
+        "capability": "openapi:proteins-rest-api:getbyaccession-2",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 170
+      },
+      {
+        "session": "claude-Q05",
+        "capability": "openapi:openapi-definition:stream",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 1143
+      },
+      {
+        "session": "claude-Q05",
+        "capability": "mcp:pipeworx-gateway:get-summary",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 2326
+      },
+      {
+        "session": "claude-Q05",
+        "capability": "graphql:data-rcsb-org-graphql:query:entry",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 463
+      },
+      {
+        "session": "claude-Q06",
+        "capability": "openapi:openapi-definition:searchcursor",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 1127
+      },
+      {
+        "session": "claude-Q06",
+        "capability": "openapi:ols-service:search",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 155
+      },
+      {
+        "session": "claude-Q07",
+        "capability": "openapi:openapi-definition:getbyaccession",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 1853
+      },
+      {
+        "session": "claude-Q07",
+        "capability": "openapi:ols-service:termparentsbyontology",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 139
+      },
+      {
+        "session": "claude-Q08",
+        "capability": "openapi:openapi-definition:searchcursor",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 1850
+      },
+      {
+        "session": "claude-Q08",
+        "capability": "openapi:proteins-rest-api:getbyaccession-1",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 4191
+      },
+      {
+        "session": "claude-Q08",
+        "capability": "openapi:proteins-rest-api:getbyaccession-1",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 407
+      },
+      {
+        "session": "claude-Q08",
+        "capability": "openapi:proteins-rest-api:getbyaccession-1",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 948
+      },
+      {
+        "session": "claude-Q09",
+        "capability": "openapi:openapi-definition:searchcursor",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 1126
+      },
+      {
+        "session": "claude-Q09",
+        "capability": "openapi:proteins-rest-api:getentriesforisoforms",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 10077
+      },
+      {
+        "session": "claude-Q09",
+        "capability": "openapi:proteins-rest-api:getentriesforisoforms",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 6628
+      },
+      {
+        "session": "claude-Q09",
+        "capability": "openapi:proteins-rest-api:getentriesforisoforms",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 5213
+      },
+      {
+        "session": "claude-Q09",
+        "capability": "openapi:proteins-rest-api:getentriesforisoforms",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 7309
+      },
+      {
+        "session": "claude-Q09",
+        "capability": "openapi:openapi-definition:searchcursor",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 1123
+      },
+      {
+        "session": "claude-Q10",
+        "capability": "graphql:data-rcsb-org-graphql:entry",
+        "agentOk": false,
+        "ok": false,
+        "error": "unknown capability: graphql:data-rcsb-org-graphql:entry",
+        "ms": 0
+      },
+      {
+        "session": "claude-Q10",
+        "capability": "graphql:data-rcsb-org-graphql:query:entry",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 356
+      },
+      {
+        "session": "claude-Q10",
+        "capability": "graphql:data-rcsb-org-graphql:query:nonpolymer_entity",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 771
+      },
+      {
+        "session": "claude-Q10",
+        "capability": "graphql:data-rcsb-org-graphql:query:chem_comp",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 1011
+      },
+      {
+        "session": "claude-Q10",
+        "capability": "graphql:data-rcsb-org-graphql:query:nonpolymer_entity",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 998
+      },
+      {
+        "session": "claude-Q11",
+        "capability": "openapi:openapi-definition:searchcursor",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 1244
+      },
+      {
+        "session": "claude-Q11",
+        "capability": "openapi:rcsb-search-api:runjsonqueriespost",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 479
+      },
+      {
+        "session": "claude-Q12",
+        "capability": "openapi:proteins-rest-api:search-4",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 214
+      },
+      {
+        "session": "claude-Q13",
+        "capability": "openapi:openapi-definition:searchcursor",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 1176
+      },
+      {
+        "session": "claude-Q13",
+        "capability": "openapi:openapi-definition:searchcursor",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 2010
+      },
+      {
+        "session": "claude-Q13",
+        "capability": "openapi:openapi-definition:searchcursor",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 2169
+      },
+      {
+        "session": "claude-Q14",
+        "capability": "openapi:openapi-definition:searchcursor",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 1876
+      },
+      {
+        "session": "claude-Q14",
+        "capability": "openapi:openapi-definition:searchcursor",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 1964
+      },
+      {
+        "session": "claude-Q14",
+        "capability": "openapi:openapi-definition:searchcursor",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 2022
+      },
+      {
+        "session": "claude-Q14",
+        "capability": "openapi:openapi-definition:searchcursor",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 1998
+      },
+      {
+        "session": "claude-Q14",
+        "capability": "openapi:rcsb-search-api:runjsonqueriesget",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 412
+      },
+      {
+        "session": "codex-Q01",
+        "capability": "openapi:proteins-rest-api:search-2",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 337
+      },
+      {
+        "session": "codex-Q02",
+        "capability": "openapi:openapi-definition:searchcursor",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 1258
+      },
+      {
+        "session": "codex-Q03",
+        "capability": "openapi:openapi-definition:searchcursor",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 1993
+      },
+      {
+        "session": "codex-Q03",
+        "capability": "graphql:data-rcsb-org-graphql:query:entries",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 482
+      },
+      {
+        "session": "codex-Q04",
+        "capability": "graphql:data-rcsb-org-graphql:query:entry",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 732
+      },
+      {
+        "session": "codex-Q04",
+        "capability": "openapi:openapi-definition:getbyaccession",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 1392
+      },
+      {
+        "session": "codex-Q04",
+        "capability": "openapi:openapi-definition:getbyaccession",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 1727
+      },
+      {
+        "session": "codex-Q05",
+        "capability": "graphql:data-rcsb-org-graphql:query:entry",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 146
+      },
+      {
+        "session": "codex-Q05",
+        "capability": "openapi:openapi-definition:searchcursor",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 1862
+      },
+      {
+        "session": "codex-Q06",
+        "capability": "openapi:ols-service:search",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 200
+      },
+      {
+        "session": "codex-Q06",
+        "capability": "openapi:openapi-definition:searchcursor",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 1879
+      },
+      {
+        "session": "codex-Q06",
+        "capability": "openapi:ols-service:search",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 118
+      },
+      {
+        "session": "codex-Q07",
+        "capability": "openapi:openapi-definition:getbyaccession",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 1865
+      },
+      {
+        "session": "codex-Q07",
+        "capability": "openapi:ols-service:termparentsbyontology",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 35
+      },
+      {
+        "session": "codex-Q07",
+        "capability": "openapi:ols-service:graphjson",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 1034
+      },
+      {
+        "session": "codex-Q08",
+        "capability": "openapi:proteins-rest-api:search-2",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 1086
+      },
+      {
+        "session": "codex-Q08",
+        "capability": "openapi:proteins-rest-api:getbyaccession-1",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 6756
+      },
+      {
+        "session": "codex-Q09",
+        "capability": "openapi:proteins-rest-api:getentriesforisoforms",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 4433
+      },
+      {
+        "session": "codex-Q09",
+        "capability": "openapi:openapi-definition:getbyaccession",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 1123
+      },
+      {
+        "session": "codex-Q10",
+        "capability": "graphql:data-rcsb-org-graphql:query:entry",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 386
+      },
+      {
+        "session": "codex-Q10",
+        "capability": "graphql:data-rcsb-org-graphql:query:nonpolymer_entity",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 735
+      },
+      {
+        "session": "codex-Q10",
+        "capability": "graphql:data-rcsb-org-graphql:query:chem_comp",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 1000
+      },
+      {
+        "session": "codex-Q11",
+        "capability": "openapi:proteins-rest-api:search-2",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 218
+      },
+      {
+        "session": "codex-Q11",
+        "capability": "openapi:rcsb-search-api:getmetadata",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 762
+      },
+      {
+        "session": "codex-Q11",
+        "capability": "openapi:rcsb-search-api:runjsonqueriespost",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 371
+      },
+      {
+        "session": "codex-Q12",
+        "capability": "openapi:proteins-rest-api:search-2",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 101
+      },
+      {
+        "session": "codex-Q12",
+        "capability": "openapi:proteins-rest-api:getbyaccession-4",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 960
+      },
+      {
+        "session": "codex-Q13",
+        "capability": "openapi:proteins-rest-api:search-2",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 983
+      },
+      {
+        "session": "codex-Q14",
+        "capability": "openapi:openapi-definition:getbyaccession",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 1238
+      },
+      {
+        "session": "codex-Q14",
+        "capability": "openapi:rcsb-search-api:getmetadata",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 512
+      },
+      {
+        "session": "codex-Q14",
+        "capability": "openapi:rcsb-search-api:runjsonqueriesget",
+        "agentOk": true,
+        "ok": true,
+        "status": "completed",
+        "ms": 673
+      }
+    ]
+  },
+  "afterReplay": {
+    "capabilities": 260,
+    "schemeLinks": {
+      "pairs": 26,
+      "bySourcePair": {
+        "S1→S2": 22,
+        "S2→S1": 3,
+        "S4→S3": 1
+      },
+      "samples": [
+        "openapi:openapi-definition:getbyaccession.primaryAccession (text) → openapi:proteins-rest-api:getbyaccession.accession (text) [scheme:accession]",
+        "openapi:openapi-definition:getbyaccession.primaryAccession (text) → openapi:proteins-rest-api:getbyaccession-1.accession (text) [scheme:accession]",
+        "openapi:openapi-definition:getbyaccession.primaryAccession (text) → openapi:proteins-rest-api:getgenomelocationbyaccession.accession (text) [scheme:accession]",
+        "openapi:openapi-definition:getbyaccession.primaryAccession (text) → openapi:proteins-rest-api:getgenomepositionbyaccession.accession (text) [scheme:accession]",
+        "openapi:openapi-definition:getbyaccession.primaryAccession (text) → openapi:proteins-rest-api:getallinteractionentries.accession (text) [scheme:accession]",
+        "openapi:openapi-definition:getbyaccession.primaryAccession (text) → openapi:proteins-rest-api:getbyaccession-2.accession (text) [scheme:accession]",
+        "openapi:openapi-definition:getbyaccession.primaryAccession (text) → openapi:proteins-rest-api:getentriesforisoforms.accession (text) [scheme:accession]",
+        "openapi:openapi-definition:getbyaccession.primaryAccession (text) → openapi:proteins-rest-api:getbyaccession-3.accession (text) [scheme:accession]",
+        "openapi:openapi-definition:getbyaccession.primaryAccession (text) → openapi:proteins-rest-api:getbyaccession-4.accession (text) [scheme:accession]",
+        "openapi:openapi-definition:getbyaccession.primaryAccession (text) → openapi:proteins-rest-api:getgenecentricbyaccession.accession (text) [scheme:accession]",
+        "openapi:openapi-definition:getbyaccession.primaryAccession (text) → openapi:proteins-rest-api:getbyaccession-5.accession (text) [scheme:accession]",
+        "openapi:openapi-definition:getbyaccession.primaryAccession (text) → openapi:proteins-rest-api:getbyaccession-6.accession (text) [scheme:accession]",
+        "openapi:openapi-definition:getbyaccession.primaryAccession (text) → openapi:proteins-rest-api:getbyaccession-7.accession (text) [scheme:accession]",
+        "openapi:openapi-definition:getbyaccession.primaryAccession (text) → openapi:proteins-rest-api:getbyaccession-8.accession (text) [scheme:accession]",
+        "openapi:openapi-definition:getbyaccession.primaryAccession (text) → openapi:proteins-rest-api:getnonptmbyaccession.accession (text) [scheme:accession]",
+        "openapi:openapi-definition:getbyaccession.primaryAccession (text) → openapi:proteins-rest-api:getbyaccession-9.accession (text) [scheme:accession]",
+        "openapi:openapi-definition:getbyaccession.primaryAccession (text) → openapi:proteins-rest-api:getbyaccession-10.accession (text) [scheme:accession]",
+        "openapi:openapi-definition:getbyaccession.primaryAccession (text) → openapi:proteins-rest-api:getbyaccession-11.accession (text) [scheme:accession]",
+        "openapi:openapi-definition:getbyaccession.primaryAccession (text) → openapi:proteins-rest-api:getuniparcentrybyuniprotaccession.accession (text) [scheme:accession]",
+        "openapi:openapi-definition:getbyaccession.primaryAccession (text) → openapi:proteins-rest-api:getunirefentrybyaccession.accession (text) [scheme:accession]",
+        "openapi:openapi-definition:getbyaccession.primaryAccession (text) → openapi:proteins-rest-api:getbyaccession-12.accession (text) [scheme:accession]",
+        "openapi:openapi-definition:getbyaccession.primaryAccession (text) → openapi:proteins-rest-api:getvariation.accession (text) [scheme:accession]",
+        "openapi:proteins-rest-api:getbyaccession-1.accession (text) → openapi:openapi-definition:getbyaccession.accession (id.stable) [scheme:accession]",
+        "openapi:proteins-rest-api:getbyaccession-2.accession (id.stable) → openapi:openapi-definition:getbyaccession.accession (id.stable) [scheme:accession]",
+        "openapi:proteins-rest-api:getbyaccession-4.accession (text) → openapi:openapi-definition:getbyaccession.accession (id.stable) [scheme:accession]",
+        "openapi:rcsb-search-api:runjsonqueriespost.result_set.identifier (list:text) → graphql:data-rcsb-org-graphql:query:entries.entry_ids (list:text) [scheme:entry_ids]"
+      ]
+    },
+    "idTypeLinks": {
+      "pairs": 86,
+      "bySourcePair": {
+        "S1→S2": 4,
+        "S2→S1": 1,
+        "S2→S3": 81
+      }
+    },
+    "newBySchemeOnly": 25,
+    "schemes": {
+      "scheme:accession": {
+        "inputs": [
+          "S1 getbyaccession.accession (id.stable)",
+          "S2 getbyaccession.accession (text)",
+          "S2 search.accession (text)",
+          "S2 getbyaccession-1.accession (text)",
+          "S2 getgenomelocationbyaccession.accession (text)",
+          "S2 getgenomepositionbyaccession.accession (text)",
+          "S2 search-1.accession (text)",
+          "S2 getallinteractionentries.accession (text)",
+          "S2 getbyaccession-2.accession (text)",
+          "S2 getentriesforisoforms.accession (text)",
+          "S2 search-2.accession (text)",
+          "S2 getbyaccession-3.accession (text)",
+          "S2 search-3.accession (text)",
+          "S2 getbyaccession-4.accession (text)",
+          "S2 search-4.accession (text)",
+          "S2 getgenecentricbyaccession.accession (text)",
+          "S2 getgenecentricbyupid.accession (text)",
+          "S2 getbyaccession-5.accession (text)",
+          "S2 search-5.accession (text)",
+          "S2 getbyaccession-6.accession (text)",
+          "S2 search-6.accession (text)",
+          "S2 getbyaccession-7.accession (text)",
+          "S2 search-7.accession (text)",
+          "S2 getbyaccession-8.accession (text)",
+          "S2 getnonptmbyaccession.accession (text)",
+          "S2 search-9.accession (text)",
+          "S2 searchnonptm.accession (text)",
+          "S2 getbyaccession-9.accession (text)",
+          "S2 search-10.accession (text)",
+          "S2 getbyaccession-10.accession (text)",
+          "S2 search-11.accession (text)",
+          "S2 getbyaccession-11.accession (text)",
+          "S2 search-12.accession (text)",
+          "S2 getuniparcbestguest.accession (text)",
+          "S2 getuniparcentrybyuniprotaccession.accession (text)",
+          "S2 searchuniparc.accession (text)",
+          "S2 getunirefentrybyaccession.accession (text)",
+          "S2 getbyaccession-12.accession (text)",
+          "S2 search-13.accession (text)",
+          "S2 getvariation.accession (text)",
+          "S2 search-14.accession (text)"
+        ],
+        "feeds": [
+          "S1 getbyaccession.primaryAccession (text)",
+          "S2 getbyaccession-1.accession (text)",
+          "S2 getbyaccession-2.accession (id.stable, observed)",
+          "S2 getbyaccession-2.comments.interactions.accession2 (list:id.stable, observed)",
+          "S2 search-2.accession (list:id.stable, observed)",
+          "S2 search-2.dbReferences.id (list:id.stable, observed)",
+          "S2 getbyaccession-4.accession (text)",
+          "S2 search-4.accession (list:id.stable, observed)",
+          "S3 polymer_entity.polymer_entity_groups.rcsb_id (list:id.rcsb)",
+          "S3 polymer_entity.rcsb_polymer_entity_align.reference_database_accession (list:text)"
+        ]
+      },
+      "scheme:exact_gene": {
+        "inputs": [
+          "S2 search-2.exact_gene (text)",
+          "S2 search-4.exact_gene (text)"
+        ],
+        "feeds": [
+          "S2 getbyaccession-1.gene.value (list:text, observed)",
+          "S2 search-2.dbReferences.id (list:id.stable, observed)"
+        ]
+      },
+      "scheme:entry_id": {
+        "inputs": [
+          "S3 polymer_entity_instance.entry_id (id.entry)",
+          "S3 interface.entry_id (id.entry)",
+          "S3 polymer_entity.entry_id (id.entry)",
+          "S3 assembly.entry_id (id.entry)",
+          "S3 branched_entity.entry_id (id.entry)",
+          "S3 branched_entity_instance.entry_id (id.entry)",
+          "S3 nonpolymer_entity_instance.entry_id (id.entry)",
+          "S3 entry.entry_id (id.entry)",
+          "S3 nonpolymer_entity.entry_id (id.entry)"
+        ],
+        "feeds": [
+          "S2 getbyaccession-2.dbReferences.id (list:id.entry, observed)",
+          "S2 getbyaccession-2.references.evidences.source.id (list:id.entry, observed)",
+          "S3 polymer_entity.entry.rcsb_id (id.rcsb)",
+          "S3 polymer_entity.rcsb_polymer_entity_container_identifiers.entry_id (id.entry)",
+          "S3 entry.database_2.database_code (list:text)",
+          "S3 nonpolymer_entity.entry.rcsb_id (id.rcsb)",
+          "S3 nonpolymer_entity.rcsb_nonpolymer_entity_container_identifiers.entry_id (id.entry)"
+        ]
+      },
+      "scheme:comp_id": {
+        "inputs": [
+          "S3 chem_comp.comp_id (id.comp)"
+        ],
+        "feeds": [
+          "S3 chem_comp.chem_comp.id (id.chemcomp)",
+          "S3 chem_comp.pdbx_chem_comp_audit.comp_id (list:id.comp)",
+          "S3 chem_comp.pdbx_chem_comp_descriptor.comp_id (list:id.comp)",
+          "S3 chem_comp.pdbx_chem_comp_identifier.comp_id (list:id.comp)",
+          "S3 nonpolymer_entity.nonpolymer_comp.rcsb_id (id.rcsb)",
+          "S3 nonpolymer_entity.pdbx_entity_nonpoly.comp_id (id.comp)",
+          "S3 nonpolymer_entity.rcsb_nonpolymer_entity_container_identifiers.chem_ref_def_id (id.chemrefdef)",
+          "S3 nonpolymer_entity.rcsb_nonpolymer_entity_container_identifiers.nonpolymer_comp_id (id.nonpolymercomp)"
+        ]
+      },
+      "scheme:entry_ids": {
+        "inputs": [
+          "S3 entries.entry_ids (list:text)"
+        ],
+        "feeds": [
+          "S4 runjsonqueriespost.result_set.identifier (list:text, observed)"
+        ]
+      }
+    },
+    "evidence": [
+      {
+        "kind": "echo",
+        "from": "openapi:openapi-definition:getbyaccession out primaryAccession",
+        "to": "openapi:openapi-definition:getbyaccession in accession",
+        "value": "P04637"
+      },
+      {
+        "kind": "echo",
+        "from": "openapi:proteins-rest-api:getbyaccession-2 out accession",
+        "to": "openapi:proteins-rest-api:getbyaccession-2 in accession",
+        "value": "P04637"
+      },
+      {
+        "kind": "co-accept",
+        "from": "openapi:openapi-definition:getbyaccession in accession",
+        "to": "openapi:proteins-rest-api:getbyaccession-2 in accession",
+        "value": "P04637"
+      },
+      {
+        "kind": "echo",
+        "from": "graphql:data-rcsb-org-graphql:query:entry out database_2.database_code",
+        "to": "graphql:data-rcsb-org-graphql:query:entry in entry_id",
+        "value": "4HHB"
+      },
+      {
+        "kind": "echo",
+        "from": "graphql:data-rcsb-org-graphql:query:polymer_entity out entry.rcsb_id",
+        "to": "graphql:data-rcsb-org-graphql:query:polymer_entity in entry_id",
+        "value": "6M0J"
+      },
+      {
+        "kind": "echo",
+        "from": "graphql:data-rcsb-org-graphql:query:polymer_entity out rcsb_polymer_entity_container_identifiers.entry_id",
+        "to": "graphql:data-rcsb-org-graphql:query:polymer_entity in entry_id",
+        "value": "6M0J"
+      },
+      {
+        "kind": "co-accept",
+        "from": "graphql:data-rcsb-org-graphql:query:entry in entry_id",
+        "to": "graphql:data-rcsb-org-graphql:query:polymer_entity in entry_id",
+        "value": "6M0J"
+      },
+      {
+        "kind": "flow",
+        "from": "graphql:data-rcsb-org-graphql:query:polymer_entity out polymer_entity_groups.rcsb_id",
+        "to": "openapi:proteins-rest-api:getbyaccession-2 in accession",
+        "value": "Q9BYF1"
+      },
+      {
+        "kind": "flow",
+        "from": "graphql:data-rcsb-org-graphql:query:polymer_entity out rcsb_polymer_entity_align.reference_database_accession",
+        "to": "openapi:proteins-rest-api:getbyaccession-2 in accession",
+        "value": "Q9BYF1"
+      },
+      {
+        "kind": "co-accept",
+        "from": "openapi:proteins-rest-api:getbyaccession-2 in accession",
+        "to": "openapi:openapi-definition:getbyaccession in accession",
+        "value": "P68871"
+      },
+      {
+        "kind": "flow",
+        "from": "openapi:proteins-rest-api:getbyaccession-2 out comments.interactions.accession2",
+        "to": "openapi:openapi-definition:getbyaccession in accession",
+        "value": "P68871"
+      },
+      {
+        "kind": "echo",
+        "from": "openapi:proteins-rest-api:getbyaccession-1 out accession",
+        "to": "openapi:proteins-rest-api:getbyaccession-1 in accession",
+        "value": "P38398"
+      },
+      {
+        "kind": "echo",
+        "from": "graphql:data-rcsb-org-graphql:query:nonpolymer_entity out entry.rcsb_id",
+        "to": "graphql:data-rcsb-org-graphql:query:nonpolymer_entity in entry_id",
+        "value": "1HSG"
+      },
+      {
+        "kind": "echo",
+        "from": "graphql:data-rcsb-org-graphql:query:nonpolymer_entity out rcsb_nonpolymer_entity_container_identifiers.entry_id",
+        "to": "graphql:data-rcsb-org-graphql:query:nonpolymer_entity in entry_id",
+        "value": "1HSG"
+      },
+      {
+        "kind": "co-accept",
+        "from": "graphql:data-rcsb-org-graphql:query:entry in entry_id",
+        "to": "graphql:data-rcsb-org-graphql:query:nonpolymer_entity in entry_id",
+        "value": "1HSG"
+      },
+      {
+        "kind": "echo",
+        "from": "graphql:data-rcsb-org-graphql:query:chem_comp out chem_comp.id",
+        "to": "graphql:data-rcsb-org-graphql:query:chem_comp in comp_id",
+        "value": "MK1"
+      },
+      {
+        "kind": "echo",
+        "from": "graphql:data-rcsb-org-graphql:query:chem_comp out pdbx_chem_comp_audit.comp_id",
+        "to": "graphql:data-rcsb-org-graphql:query:chem_comp in comp_id",
+        "value": "MK1"
+      },
+      {
+        "kind": "echo",
+        "from": "graphql:data-rcsb-org-graphql:query:chem_comp out pdbx_chem_comp_descriptor.comp_id",
+        "to": "graphql:data-rcsb-org-graphql:query:chem_comp in comp_id",
+        "value": "MK1"
+      },
+      {
+        "kind": "echo",
+        "from": "graphql:data-rcsb-org-graphql:query:chem_comp out pdbx_chem_comp_identifier.comp_id",
+        "to": "graphql:data-rcsb-org-graphql:query:chem_comp in comp_id",
+        "value": "MK1"
+      },
+      {
+        "kind": "flow",
+        "from": "graphql:data-rcsb-org-graphql:query:nonpolymer_entity out nonpolymer_comp.rcsb_id",
+        "to": "graphql:data-rcsb-org-graphql:query:chem_comp in comp_id",
+        "value": "MK1"
+      },
+      {
+        "kind": "flow",
+        "from": "graphql:data-rcsb-org-graphql:query:nonpolymer_entity out pdbx_entity_nonpoly.comp_id",
+        "to": "graphql:data-rcsb-org-graphql:query:chem_comp in comp_id",
+        "value": "MK1"
+      },
+      {
+        "kind": "flow",
+        "from": "graphql:data-rcsb-org-graphql:query:nonpolymer_entity out rcsb_nonpolymer_entity_container_identifiers.chem_ref_def_id",
+        "to": "graphql:data-rcsb-org-graphql:query:chem_comp in comp_id",
+        "value": "MK1"
+      },
+      {
+        "kind": "flow",
+        "from": "graphql:data-rcsb-org-graphql:query:nonpolymer_entity out rcsb_nonpolymer_entity_container_identifiers.nonpolymer_comp_id",
+        "to": "graphql:data-rcsb-org-graphql:query:chem_comp in comp_id",
+        "value": "MK1"
+      },
+      {
+        "kind": "flow",
+        "from": "openapi:rcsb-search-api:runjsonqueriespost out result_set.identifier",
+        "to": "graphql:data-rcsb-org-graphql:query:entries in entry_ids",
+        "value": "1AX8"
+      },
+      {
+        "kind": "flow",
+        "from": "openapi:proteins-rest-api:getbyaccession-2 out dbReferences.id",
+        "to": "graphql:data-rcsb-org-graphql:query:entry in entry_id",
+        "value": "4HHB"
+      },
+      {
+        "kind": "co-accept",
+        "from": "graphql:data-rcsb-org-graphql:query:polymer_entity in entry_id",
+        "to": "graphql:data-rcsb-org-graphql:query:entry in entry_id",
+        "value": "6M0J"
+      },
+      {
+        "kind": "flow",
+        "from": "openapi:proteins-rest-api:getbyaccession-2 out references.evidences.source.id",
+        "to": "graphql:data-rcsb-org-graphql:query:entry in entry_id",
+        "value": "6M0J"
+      },
+      {
+        "kind": "echo",
+        "from": "openapi:proteins-rest-api:search-2 out dbReferences.id",
+        "to": "openapi:proteins-rest-api:search-2 in exact_gene",
+        "value": "BRCA1"
+      },
+      {
+        "kind": "flow",
+        "from": "openapi:proteins-rest-api:getbyaccession-1 out gene.value",
+        "to": "openapi:proteins-rest-api:search-2 in exact_gene",
+        "value": "BRCA1"
+      },
+      {
+        "kind": "flow",
+        "from": "openapi:proteins-rest-api:search-2 out accession",
+        "to": "openapi:proteins-rest-api:getbyaccession-1 in accession",
+        "value": "P38398"
+      },
+      {
+        "kind": "flow",
+        "from": "openapi:proteins-rest-api:search-2 out dbReferences.id",
+        "to": "openapi:proteins-rest-api:getbyaccession-1 in accession",
+        "value": "P38398"
+      },
+      {
+        "kind": "flow",
+        "from": "openapi:proteins-rest-api:search-2 out accession",
+        "to": "openapi:openapi-definition:getbyaccession in accession",
+        "value": "P04637"
+      },
+      {
+        "kind": "co-accept",
+        "from": "graphql:data-rcsb-org-graphql:query:nonpolymer_entity in entry_id",
+        "to": "graphql:data-rcsb-org-graphql:query:entry in entry_id",
+        "value": "1HSG"
+      },
+      {
+        "kind": "echo",
+        "from": "openapi:proteins-rest-api:getbyaccession-4 out accession",
+        "to": "openapi:proteins-rest-api:getbyaccession-4 in accession",
+        "value": "P00533"
+      },
+      {
+        "kind": "flow",
+        "from": "openapi:proteins-rest-api:getbyaccession-2 out comments.interactions.accession2",
+        "to": "openapi:proteins-rest-api:getbyaccession-4 in accession",
+        "value": "P00533"
+      },
+      {
+        "kind": "flow",
+        "from": "openapi:proteins-rest-api:search-4 out accession",
+        "to": "openapi:proteins-rest-api:getbyaccession-4 in accession",
+        "value": "P00533"
+      },
+      {
+        "kind": "flow",
+        "from": "openapi:proteins-rest-api:search-2 out accession",
+        "to": "openapi:proteins-rest-api:getbyaccession-4 in accession",
+        "value": "P00533"
+      }
+    ]
+  },
+  "probes": {
+    "before": [
+      {
+        "hop": "accession → structure (Q03, Q11)",
+        "have": {
+          "accession": "P41159"
+        },
+        "want": "json",
+        "intent": "protein structure entries resolution",
+        "haveTypes": {
+          "accession": "text"
+        },
+        "plans": [
+          {
+            "summary": "Get UniProt entry by accession → Get proteome by proteome UPID → Resolution Audit",
+            "providers": [
+              "S2",
+              "S6"
+            ],
+            "crossings": [
+              "generic: S2 genomeAssembly.genomeAssemblyUrl (url) → S6 market (url)"
+            ],
+            "fanOut": false,
+            "meaningful": false
+          },
+          {
+            "summary": "Get UniProt entry by accession → Entry → Search Classes By Vector",
+            "providers": [
+              "S2",
+              "S3",
+              "S5"
+            ],
+            "crossings": [
+              "id-type: S2 id (id.entry) → S3 entry_id (id.entry)",
+              "generic: S3 em_experiment.aggregation_state (text) → S5 model (text)",
+              "generic: S3 em_diffraction_shell.high_resolution (list:number) → S5 body (list:number)"
+            ],
+            "fanOut": false,
+            "meaningful": false
+          },
+          {
+            "summary": "Get UniProt entry by accession",
+            "providers": [
+              "S2"
+            ],
+            "crossings": [],
+            "fanOut": false,
+            "meaningful": false
+          },
+          {
+            "summary": "Get UniParc longest sequence for entries.",
+            "providers": [
+              "S2"
+            ],
+            "crossings": [],
+            "fanOut": false,
+            "meaningful": false
+          },
+          {
+            "summary": "Get UniParc entry only by UniProt accession",
+            "providers": [
+              "S2"
+            ],
+            "crossings": [],
+            "fanOut": false,
+            "meaningful": false
+          }
+        ],
+        "meaningfulCrossSourcePlans": 0,
+        "genericCrossSourcePlans": 2,
+        "fanOutPlans": 0,
+        "meaningfulFanOutPlans": 0
+      },
+      {
+        "hop": "accession → genomic coordinates (Q08)",
+        "have": {
+          "accession": "P38398"
+        },
+        "want": "json",
+        "intent": "genomic coordinates",
+        "haveTypes": {
+          "accession": "text"
+        },
+        "plans": [
+          {
+            "summary": "Get genomic coordinates for a UniProt accession",
+            "providers": [
+              "S2"
+            ],
+            "crossings": [],
+            "fanOut": false,
+            "meaningful": false
+          },
+          {
+            "summary": "Search genomic coordinates for UniProt entries",
+            "providers": [
+              "S2"
+            ],
+            "crossings": [],
+            "fanOut": false,
+            "meaningful": false
+          },
+          {
+            "summary": "Get UniProt entry by accession → Get genomic coordinates for a UniProt accession",
+            "providers": [
+              "S2"
+            ],
+            "crossings": [],
+            "fanOut": false,
+            "meaningful": false
+          },
+          {
+            "summary": "Get UniProtKB entry by a single accession. → Get genomic coordinates for a UniProt accession",
+            "providers": [
+              "S1",
+              "S2"
+            ],
+            "crossings": [
+              "scheme: S1 primaryAccession (text) → S2 accession (text)"
+            ],
+            "fanOut": false,
+            "meaningful": true
+          },
+          {
+            "summary": "Get UniProtKB entry by a single accession. → Search UniProt entries by taxonomy and genomic coordinates",
+            "providers": [
+              "S1",
+              "S2"
+            ],
+            "crossings": [
+              "id-type: S1 organism.taxonId (id.taxon) → S2 taxonomy (id.taxon)",
+              "generic: S1 entryType (text) → S2 locations (text)"
+            ],
+            "fanOut": false,
+            "meaningful": false
+          }
+        ],
+        "meaningfulCrossSourcePlans": 1,
+        "genericCrossSourcePlans": 1,
+        "fanOutPlans": 0,
+        "meaningfulFanOutPlans": 0
+      },
+      {
+        "hop": "accession → GO term → ontology parents (Q07)",
+        "have": {
+          "accession": "P68871"
+        },
+        "want": "json",
+        "intent": "ontology term parents",
+        "haveTypes": {
+          "accession": "text"
+        },
+        "plans": [
+          {
+            "summary": "Get UniProt entry by accession → Term Parents By Ontology",
+            "providers": [
+              "S2",
+              "S5"
+            ],
+            "crossings": [
+              "generic: S2 name (text) → S5 onto (text)"
+            ],
+            "fanOut": false,
+            "meaningful": false
+          },
+          {
+            "summary": "Get UniProtKB entry by a single accession. → Term Parents By Ontology",
+            "providers": [
+              "S1",
+              "S5"
+            ],
+            "crossings": [
+              "generic: S1 entryType (text) → S5 onto (text)"
+            ],
+            "fanOut": false,
+            "meaningful": false
+          },
+          {
+            "summary": "Get antigen by UniProt accession → Term Parents By Ontology",
+            "providers": [
+              "S2",
+              "S5"
+            ],
+            "crossings": [
+              "generic: S2 version (text) → S5 onto (text)"
+            ],
+            "fanOut": false,
+            "meaningful": false
+          },
+          {
+            "summary": "Search antigens in UniProt → Term Parents By Ontology",
+            "providers": [
+              "S2",
+              "S5"
+            ],
+            "crossings": [
+              "generic: S2 version (text) → S5 onto (text)"
+            ],
+            "fanOut": false,
+            "meaningful": false
+          },
+          {
+            "summary": "Get genomic coordinates for a UniProt accession → Term Parents By Ontology",
+            "providers": [
+              "S2",
+              "S5"
+            ],
+            "crossings": [
+              "generic: S2 accession (text) → S5 onto (text)"
+            ],
+            "fanOut": false,
+            "meaningful": false
+          }
+        ],
+        "meaningfulCrossSourcePlans": 0,
+        "genericCrossSourcePlans": 5,
+        "fanOutPlans": 0,
+        "meaningfulFanOutPlans": 0
+      },
+      {
+        "hop": "PDB entry → accession → gene (Q04)",
+        "have": {
+          "entry_id": "4HHB"
+        },
+        "want": "text",
+        "intent": "gene name",
+        "haveTypes": {
+          "entry_id": "id.entry"
+        },
+        "plans": [
+          {
+            "summary": "Entry → Get natural variants by list of accession and its locations",
+            "providers": [
+              "S3",
+              "S2"
+            ],
+            "crossings": [
+              "generic: S3 em_experiment.aggregation_state (text) → S2 accession_locations (text)"
+            ],
+            "fanOut": false,
+            "meaningful": false
+          },
+          {
+            "summary": "Entry → Get gene centric proteins by proteome UPID is deprecated, please use new /genecentric?upid= endpoint → Get proteome by proteome UPID",
+            "providers": [
+              "S3",
+              "S2"
+            ],
+            "crossings": [
+              "generic: S3 em_experiment.aggregation_state (text) → S2 upid (text)"
+            ],
+            "fanOut": false,
+            "meaningful": false
+          },
+          {
+            "summary": "Entry → Get gene centric proteins by proteome UPID is deprecated, please use new /genecentric?upid= endpoint → Get proteins by proteome UPID",
+            "providers": [
+              "S3",
+              "S2"
+            ],
+            "crossings": [
+              "generic: S3 em_experiment.aggregation_state (text) → S2 upid (text)"
+            ],
+            "fanOut": false,
+            "meaningful": false
+          },
+          {
+            "summary": "Entry → Get gene centric proteins by proteome UPID is deprecated, please use new /genecentric?upid= endpoint → Get natural variants by list of accession and its locations",
+            "providers": [
+              "S3",
+              "S2"
+            ],
+            "crossings": [
+              "generic: S3 em_experiment.aggregation_state (text) → S2 upid (text)"
+            ],
+            "fanOut": false,
+            "meaningful": false
+          },
+          {
+            "summary": "Entry → Get gene centric proteins by proteome UPID is deprecated, please use new /genecentric?upid= endpoint → Get Ontology 1",
+            "providers": [
+              "S3",
+              "S2",
+              "S5"
+            ],
+            "crossings": [
+              "generic: S3 em_experiment.aggregation_state (text) → S2 upid (text)",
+              "generic: S2 name (text) → S5 onto (text)"
+            ],
+            "fanOut": false,
+            "meaningful": false
+          }
+        ],
+        "meaningfulCrossSourcePlans": 0,
+        "genericCrossSourcePlans": 5,
+        "fanOutPlans": 0,
+        "meaningfulFanOutPlans": 0
+      },
+      {
+        "hop": "PDB entry → accession → organism (Q05)",
+        "have": {
+          "entry_id": "6M0J"
+        },
+        "want": "text",
+        "intent": "organism scientific name",
+        "haveTypes": {
+          "entry_id": "id.entry"
+        },
+        "plans": [
+          {
+            "summary": "Entry → Polymer entities → Scan Competitor AI Presence",
+            "providers": [
+              "S3",
+              "S6"
+            ],
+            "crossings": [
+              "generic: S3 pdbx_entity_src_syn.organism_scientific (list:text) → S6 entities (list:text)"
+            ],
+            "fanOut": false,
+            "meaningful": false
+          },
+          {
+            "summary": "Entry → Get natural variants by list of accession and its locations",
+            "providers": [
+              "S3",
+              "S2"
+            ],
+            "crossings": [
+              "generic: S3 em_experiment.aggregation_state (text) → S2 accession_locations (text)"
+            ],
+            "fanOut": false,
+            "meaningful": false
+          },
+          {
+            "summary": "Entry → Scan Competitor AI Presence → Get natural variants by list of accession and its locations",
+            "providers": [
+              "S3",
+              "S6",
+              "S2"
+            ],
+            "crossings": [
+              "generic: S3 audit_author.name (list:text) → S6 entities (list:text)",
+              "generic: S6 (whole) (text) → S2 accession_locations (text)"
+            ],
+            "fanOut": false,
+            "meaningful": false
+          },
+          {
+            "summary": "Entry → Summarize text → Get natural variants by list of accession and its locations",
+            "providers": [
+              "S3",
+              null,
+              "S2"
+            ],
+            "crossings": [
+              "generic: S3 em_experiment.aggregation_state (text) → undefined text (text)",
+              "generic: undefined (whole) (text) → S2 accession_locations (text)"
+            ],
+            "fanOut": false,
+            "meaningful": false
+          },
+          {
+            "summary": "Entry → Download UniProtKB entries retrieved by a search query. (Max. 10 million entries) → Get natural variants by list of accession and its locations",
+            "providers": [
+              "S3",
+              "S1",
+              "S2"
+            ],
+            "crossings": [
+              "generic: S3 em_experiment.aggregation_state (text) → S1 query (text)",
+              "generic: S1 error (text) → S2 accession_locations (text)"
+            ],
+            "fanOut": false,
+            "meaningful": false
+          }
+        ],
+        "meaningfulCrossSourcePlans": 0,
+        "genericCrossSourcePlans": 5,
+        "fanOutPlans": 0,
+        "meaningfulFanOutPlans": 0
+      },
+      {
+        "hop": "PDB entry → accessions → genes, as a list (Q04)",
+        "have": {
+          "entry_id": "4HHB"
+        },
+        "want": "list:text",
+        "intent": "gene name",
+        "added": "fanout-1",
+        "haveTypes": {
+          "entry_id": "id.entry"
+        },
+        "plans": [
+          {
+            "summary": "Entry → Get gene centric proteins by proteome UPID is deprecated, please use new /genecentric?upid= endpoint → Get Term",
+            "providers": [
+              "S3",
+              "S2",
+              "S5"
+            ],
+            "crossings": [
+              "generic: S3 em_experiment.aggregation_state (text) → S2 upid (text)",
+              "generic: S2 name (text) → S5 onto (text)",
+              "generic: S2 genomeAssembly.genomeAssemblyUrl (url) → S5 iri (url)"
+            ],
+            "fanOut": false,
+            "meaningful": false
+          },
+          {
+            "summary": "Entry → Get gene centric proteins by proteome UPID is deprecated, please use new /genecentric?upid= endpoint → Get Property 1",
+            "providers": [
+              "S3",
+              "S2",
+              "S5"
+            ],
+            "crossings": [
+              "generic: S3 em_experiment.aggregation_state (text) → S2 upid (text)",
+              "generic: S2 name (text) → S5 onto (text)",
+              "generic: S2 genomeAssembly.genomeAssemblyUrl (url) → S5 iri (url)"
+            ],
+            "fanOut": false,
+            "meaningful": false
+          },
+          {
+            "summary": "Entry → Get gene centric proteins by proteome UPID is deprecated, please use new /genecentric?upid= endpoint → Get Individual 1",
+            "providers": [
+              "S3",
+              "S2",
+              "S5"
+            ],
+            "crossings": [
+              "generic: S3 em_experiment.aggregation_state (text) → S2 upid (text)",
+              "generic: S2 name (text) → S5 onto (text)",
+              "generic: S2 genomeAssembly.genomeAssemblyUrl (url) → S5 iri (url)"
+            ],
+            "fanOut": false,
+            "meaningful": false
+          },
+          {
+            "summary": "Entry → Get gene centric proteins by proteome UPID is deprecated, please use new /genecentric?upid= endpoint → Get proteome by proteome UPID",
+            "providers": [
+              "S3",
+              "S2"
+            ],
+            "crossings": [
+              "generic: S3 em_experiment.aggregation_state (text) → S2 upid (text)"
+            ],
+            "fanOut": false,
+            "meaningful": false
+          },
+          {
+            "summary": "Entry → Get gene centric proteins by proteome UPID is deprecated, please use new /genecentric?upid= endpoint → Get proteins by proteome UPID",
+            "providers": [
+              "S3",
+              "S2"
+            ],
+            "crossings": [
+              "generic: S3 em_experiment.aggregation_state (text) → S2 upid (text)"
+            ],
+            "fanOut": false,
+            "meaningful": false
+          }
+        ],
+        "meaningfulCrossSourcePlans": 0,
+        "genericCrossSourcePlans": 5,
+        "fanOutPlans": 0,
+        "meaningfulFanOutPlans": 0
+      },
+      {
+        "hop": "PDB entry → accessions → organisms, as a list (Q05)",
+        "have": {
+          "entry_id": "6M0J"
+        },
+        "want": "list:text",
+        "intent": "organism scientific name",
+        "added": "fanout-1",
+        "haveTypes": {
+          "entry_id": "id.entry"
+        },
+        "plans": [
+          {
+            "summary": "Entry → Polymer entities",
+            "providers": [
+              "S3"
+            ],
+            "crossings": [],
+            "fanOut": false,
+            "meaningful": false
+          },
+          {
+            "summary": "Entry → Nonpolymer entity groups → Polymer entities",
+            "providers": [
+              "S3"
+            ],
+            "crossings": [],
+            "fanOut": false,
+            "meaningful": false
+          },
+          {
+            "summary": "Entry → Polymer entity groups → Polymer entities",
+            "providers": [
+              "S3"
+            ],
+            "crossings": [],
+            "fanOut": false,
+            "meaningful": false
+          },
+          {
+            "summary": "Entry → Nonpolymer entities → Polymer entities",
+            "providers": [
+              "S3"
+            ],
+            "crossings": [],
+            "fanOut": false,
+            "meaningful": false
+          },
+          {
+            "summary": "Entry → Branched entity instances → Polymer entities",
+            "providers": [
+              "S3"
+            ],
+            "crossings": [],
+            "fanOut": false,
+            "meaningful": false
+          }
+        ],
+        "meaningfulCrossSourcePlans": 0,
+        "genericCrossSourcePlans": 0,
+        "fanOutPlans": 0,
+        "meaningfulFanOutPlans": 0
+      }
+    ],
+    "after": [
+      {
+        "hop": "accession → structure (Q03, Q11)",
+        "have": {
+          "accession": "P41159"
+        },
+        "want": "json",
+        "intent": "protein structure entries resolution",
+        "haveTypes": {
+          "accession": "text"
+        },
+        "plans": [
+          {
+            "summary": "Search UniProt entries → Polymer entities → Resolution Audit (each)",
+            "providers": [
+              "S2",
+              "S3",
+              "S6"
+            ],
+            "crossings": [
+              "generic: S2 (whole) (list:text) → S3 entity_ids (list:text)",
+              "generic: S3 rcsb_cluster_flexibility.link (list:url) → S6 market (url) [each ≤20]"
+            ],
+            "fanOut": true,
+            "meaningful": false
+          },
+          {
+            "summary": "Get UniParc longest sequence for entries. → Entry → Search Classes By Vector",
+            "providers": [
+              "S2",
+              "S3",
+              "S5"
+            ],
+            "crossings": [
+              "id-type: S2 id (id.entry) → S3 entry_id (id.entry)",
+              "generic: S3 em_experiment.aggregation_state (text) → S5 model (text)",
+              "generic: S3 em_diffraction_shell.high_resolution (list:number) → S5 body (list:number)"
+            ],
+            "fanOut": false,
+            "meaningful": false
+          },
+          {
+            "summary": "Get UniParc entry only by UniProt accession → Entry → Search Classes By Vector",
+            "providers": [
+              "S2",
+              "S3",
+              "S5"
+            ],
+            "crossings": [
+              "id-type: S2 id (id.entry) → S3 entry_id (id.entry)",
+              "generic: S3 em_experiment.aggregation_state (text) → S5 model (text)",
+              "generic: S3 em_diffraction_shell.high_resolution (list:number) → S5 body (list:number)"
+            ],
+            "fanOut": false,
+            "meaningful": false
+          },
+          {
+            "summary": "Get UniParc entries by sequence → Entry → Search Classes By Vector",
+            "providers": [
+              "S2",
+              "S3",
+              "S5"
+            ],
+            "crossings": [
+              "id-type: S2 id (id.entry) → S3 entry_id (id.entry)",
+              "generic: S3 em_experiment.aggregation_state (text) → S5 model (text)",
+              "generic: S3 em_diffraction_shell.high_resolution (list:number) → S5 body (list:number)"
+            ],
+            "fanOut": false,
+            "meaningful": false
+          },
+          {
+            "summary": "Get UniParc entries by all UniParc cross reference accessions → Entry → Search Classes By Vector",
+            "providers": [
+              "S2",
+              "S3",
+              "S5"
+            ],
+            "crossings": [
+              "id-type: S2 id (id.entry) → S3 entry_id (id.entry)",
+              "generic: S3 em_experiment.aggregation_state (text) → S5 model (text)",
+              "generic: S3 em_diffraction_shell.high_resolution (list:number) → S5 body (list:number)"
+            ],
+            "fanOut": false,
+            "meaningful": false
+          }
+        ],
+        "meaningfulCrossSourcePlans": 0,
+        "genericCrossSourcePlans": 5,
+        "fanOutPlans": 1,
+        "meaningfulFanOutPlans": 0
+      },
+      {
+        "hop": "accession → genomic coordinates (Q08)",
+        "have": {
+          "accession": "P38398"
+        },
+        "want": "json",
+        "intent": "genomic coordinates",
+        "haveTypes": {
+          "accession": "text"
+        },
+        "plans": [
+          {
+            "summary": "Get genomic coordinates for a UniProt accession",
+            "providers": [
+              "S2"
+            ],
+            "crossings": [],
+            "fanOut": false,
+            "meaningful": false
+          },
+          {
+            "summary": "Search genomic coordinates for UniProt entries",
+            "providers": [
+              "S2"
+            ],
+            "crossings": [],
+            "fanOut": false,
+            "meaningful": false
+          },
+          {
+            "summary": "Get UniProt entry by accession → Get genomic coordinates for a UniProt accession",
+            "providers": [
+              "S2"
+            ],
+            "crossings": [],
+            "fanOut": false,
+            "meaningful": false
+          },
+          {
+            "summary": "Get UniProtKB entry by a single accession. → Get genomic coordinates for a UniProt accession",
+            "providers": [
+              "S1",
+              "S2"
+            ],
+            "crossings": [
+              "scheme: S1 primaryAccession (text) → S2 accession (text)"
+            ],
+            "fanOut": false,
+            "meaningful": true
+          },
+          {
+            "summary": "Get UniProt protein sequence features by accession  → Get genomic coordinates for a UniProt accession",
+            "providers": [
+              "S2"
+            ],
+            "crossings": [],
+            "fanOut": false,
+            "meaningful": false
+          }
+        ],
+        "meaningfulCrossSourcePlans": 1,
+        "genericCrossSourcePlans": 0,
+        "fanOutPlans": 0,
+        "meaningfulFanOutPlans": 0
+      },
+      {
+        "hop": "accession → GO term → ontology parents (Q07)",
+        "have": {
+          "accession": "P68871"
+        },
+        "want": "json",
+        "intent": "ontology term parents",
+        "haveTypes": {
+          "accession": "text"
+        },
+        "plans": [
+          {
+            "summary": "Get UniProt entry by accession → Term Parents By Ontology",
+            "providers": [
+              "S2",
+              "S5"
+            ],
+            "crossings": [
+              "generic: S2 name (text) → S5 onto (text)"
+            ],
+            "fanOut": false,
+            "meaningful": false
+          },
+          {
+            "summary": "Get UniProtKB entry by a single accession. → Term Parents By Ontology",
+            "providers": [
+              "S1",
+              "S5"
+            ],
+            "crossings": [
+              "generic: S1 entryType (text) → S5 onto (text)"
+            ],
+            "fanOut": false,
+            "meaningful": false
+          },
+          {
+            "summary": "Get UniProt protein sequence features by accession  → Term Parents By Ontology",
+            "providers": [
+              "S2",
+              "S5"
+            ],
+            "crossings": [
+              "generic: S2 version (text) → S5 onto (text)"
+            ],
+            "fanOut": false,
+            "meaningful": false
+          },
+          {
+            "summary": "Get antigen by UniProt accession → Term Parents By Ontology",
+            "providers": [
+              "S2",
+              "S5"
+            ],
+            "crossings": [
+              "generic: S2 version (text) → S5 onto (text)"
+            ],
+            "fanOut": false,
+            "meaningful": false
+          },
+          {
+            "summary": "Search antigens in UniProt → Term Parents By Ontology",
+            "providers": [
+              "S2",
+              "S5"
+            ],
+            "crossings": [
+              "generic: S2 version (text) → S5 onto (text)"
+            ],
+            "fanOut": false,
+            "meaningful": false
+          }
+        ],
+        "meaningfulCrossSourcePlans": 0,
+        "genericCrossSourcePlans": 5,
+        "fanOutPlans": 0,
+        "meaningfulFanOutPlans": 0
+      },
+      {
+        "hop": "PDB entry → accession → gene (Q04)",
+        "have": {
+          "entry_id": "4HHB"
+        },
+        "want": "text",
+        "intent": "gene name",
+        "haveTypes": {
+          "entry_id": "id.entry"
+        },
+        "plans": [
+          {
+            "summary": "Entry → Get natural variants by list of accession and its locations",
+            "providers": [
+              "S3",
+              "S2"
+            ],
+            "crossings": [
+              "generic: S3 em_experiment.aggregation_state (text) → S2 accession_locations (text)"
+            ],
+            "fanOut": false,
+            "meaningful": false
+          },
+          {
+            "summary": "Entry → Download UniProtKB entries retrieved by a search query. (Max. 10 million entries) → Get natural variants by list of accession and its locations",
+            "providers": [
+              "S3",
+              "S1",
+              "S2"
+            ],
+            "crossings": [
+              "generic: S3 em_experiment.aggregation_state (text) → S1 query (text)",
+              "generic: S1 error (text) → S2 accession_locations (text)"
+            ],
+            "fanOut": false,
+            "meaningful": false
+          },
+          {
+            "summary": "Entry → Get gene centric proteins by proteome UPID is deprecated, please use new /genecentric?upid= endpoint → Get proteome by proteome UPID",
+            "providers": [
+              "S3",
+              "S2"
+            ],
+            "crossings": [
+              "generic: S3 em_experiment.aggregation_state (text) → S2 upid (text)"
+            ],
+            "fanOut": false,
+            "meaningful": false
+          },
+          {
+            "summary": "Entry → Get gene centric proteins by proteome UPID is deprecated, please use new /genecentric?upid= endpoint → Get proteins by proteome UPID",
+            "providers": [
+              "S3",
+              "S2"
+            ],
+            "crossings": [
+              "generic: S3 em_experiment.aggregation_state (text) → S2 upid (text)"
+            ],
+            "fanOut": false,
+            "meaningful": false
+          },
+          {
+            "summary": "Entry → Get gene centric proteins by proteome UPID is deprecated, please use new /genecentric?upid= endpoint → Get natural variants by list of accession and its locations",
+            "providers": [
+              "S3",
+              "S2"
+            ],
+            "crossings": [
+              "generic: S3 em_experiment.aggregation_state (text) → S2 upid (text)"
+            ],
+            "fanOut": false,
+            "meaningful": false
+          }
+        ],
+        "meaningfulCrossSourcePlans": 0,
+        "genericCrossSourcePlans": 5,
+        "fanOutPlans": 0,
+        "meaningfulFanOutPlans": 0
+      },
+      {
+        "hop": "PDB entry → accession → organism (Q05)",
+        "have": {
+          "entry_id": "6M0J"
+        },
+        "want": "text",
+        "intent": "organism scientific name",
+        "haveTypes": {
+          "entry_id": "id.entry"
+        },
+        "plans": [
+          {
+            "summary": "Entry → Polymer entities → Scan Competitor AI Presence",
+            "providers": [
+              "S3",
+              "S6"
+            ],
+            "crossings": [
+              "generic: S3 pdbx_entity_src_syn.organism_scientific (list:text) → S6 entities (list:text)"
+            ],
+            "fanOut": false,
+            "meaningful": false
+          },
+          {
+            "summary": "Entry → Get natural variants by list of accession and its locations",
+            "providers": [
+              "S3",
+              "S2"
+            ],
+            "crossings": [
+              "generic: S3 em_experiment.aggregation_state (text) → S2 accession_locations (text)"
+            ],
+            "fanOut": false,
+            "meaningful": false
+          },
+          {
+            "summary": "Entry → Download UniProtKB entries retrieved by a search query. (Max. 10 million entries) → Get natural variants by list of accession and its locations",
+            "providers": [
+              "S3",
+              "S1",
+              "S2"
+            ],
+            "crossings": [
+              "generic: S3 em_experiment.aggregation_state (text) → S1 query (text)",
+              "generic: S1 error (text) → S2 accession_locations (text)"
+            ],
+            "fanOut": false,
+            "meaningful": false
+          },
+          {
+            "summary": "Entry → Scan Competitor AI Presence → Get natural variants by list of accession and its locations",
+            "providers": [
+              "S3",
+              "S6",
+              "S2"
+            ],
+            "crossings": [
+              "generic: S3 audit_author.name (list:text) → S6 entities (list:text)",
+              "generic: S6 (whole) (text) → S2 accession_locations (text)"
+            ],
+            "fanOut": false,
+            "meaningful": false
+          },
+          {
+            "summary": "Entry → Summarize text → Get natural variants by list of accession and its locations",
+            "providers": [
+              "S3",
+              null,
+              "S2"
+            ],
+            "crossings": [
+              "generic: S3 em_experiment.aggregation_state (text) → undefined text (text)",
+              "generic: undefined (whole) (text) → S2 accession_locations (text)"
+            ],
+            "fanOut": false,
+            "meaningful": false
+          }
+        ],
+        "meaningfulCrossSourcePlans": 0,
+        "genericCrossSourcePlans": 5,
+        "fanOutPlans": 0,
+        "meaningfulFanOutPlans": 0
+      },
+      {
+        "hop": "PDB entry → accessions → genes, as a list (Q04)",
+        "have": {
+          "entry_id": "4HHB"
+        },
+        "want": "list:text",
+        "intent": "gene name",
+        "added": "fanout-1",
+        "haveTypes": {
+          "entry_id": "id.entry"
+        },
+        "plans": [
+          {
+            "summary": "Entry → Get gene centric proteins by proteome UPID is deprecated, please use new /genecentric?upid= endpoint → Get Term",
+            "providers": [
+              "S3",
+              "S2",
+              "S5"
+            ],
+            "crossings": [
+              "generic: S3 em_experiment.aggregation_state (text) → S2 upid (text)",
+              "generic: S2 name (text) → S5 onto (text)",
+              "generic: S2 genomeAssembly.genomeAssemblyUrl (url) → S5 iri (url)"
+            ],
+            "fanOut": false,
+            "meaningful": false
+          },
+          {
+            "summary": "Entry → Get gene centric proteins by proteome UPID is deprecated, please use new /genecentric?upid= endpoint → Get Property 1",
+            "providers": [
+              "S3",
+              "S2",
+              "S5"
+            ],
+            "crossings": [
+              "generic: S3 em_experiment.aggregation_state (text) → S2 upid (text)",
+              "generic: S2 name (text) → S5 onto (text)",
+              "generic: S2 genomeAssembly.genomeAssemblyUrl (url) → S5 iri (url)"
+            ],
+            "fanOut": false,
+            "meaningful": false
+          },
+          {
+            "summary": "Entry → Get gene centric proteins by proteome UPID is deprecated, please use new /genecentric?upid= endpoint → Get Individual 1",
+            "providers": [
+              "S3",
+              "S2",
+              "S5"
+            ],
+            "crossings": [
+              "generic: S3 em_experiment.aggregation_state (text) → S2 upid (text)",
+              "generic: S2 name (text) → S5 onto (text)",
+              "generic: S2 genomeAssembly.genomeAssemblyUrl (url) → S5 iri (url)"
+            ],
+            "fanOut": false,
+            "meaningful": false
+          },
+          {
+            "summary": "Entry → Get gene centric proteins by proteome UPID is deprecated, please use new /genecentric?upid= endpoint → Get proteome by proteome UPID",
+            "providers": [
+              "S3",
+              "S2"
+            ],
+            "crossings": [
+              "generic: S3 em_experiment.aggregation_state (text) → S2 upid (text)"
+            ],
+            "fanOut": false,
+            "meaningful": false
+          },
+          {
+            "summary": "Entry → Get gene centric proteins by proteome UPID is deprecated, please use new /genecentric?upid= endpoint → Get proteins by proteome UPID",
+            "providers": [
+              "S3",
+              "S2"
+            ],
+            "crossings": [
+              "generic: S3 em_experiment.aggregation_state (text) → S2 upid (text)"
+            ],
+            "fanOut": false,
+            "meaningful": false
+          }
+        ],
+        "meaningfulCrossSourcePlans": 0,
+        "genericCrossSourcePlans": 5,
+        "fanOutPlans": 0,
+        "meaningfulFanOutPlans": 0
+      },
+      {
+        "hop": "PDB entry → accessions → organisms, as a list (Q05)",
+        "have": {
+          "entry_id": "6M0J"
+        },
+        "want": "list:text",
+        "intent": "organism scientific name",
+        "added": "fanout-1",
+        "haveTypes": {
+          "entry_id": "id.entry"
+        },
+        "plans": [
+          {
+            "summary": "Entry → Polymer entities",
+            "providers": [
+              "S3"
+            ],
+            "crossings": [],
+            "fanOut": false,
+            "meaningful": false
+          },
+          {
+            "summary": "Entry → Nonpolymer entity groups → Polymer entities",
+            "providers": [
+              "S3"
+            ],
+            "crossings": [],
+            "fanOut": false,
+            "meaningful": false
+          },
+          {
+            "summary": "Entry → Polymer entity groups → Polymer entities",
+            "providers": [
+              "S3"
+            ],
+            "crossings": [],
+            "fanOut": false,
+            "meaningful": false
+          },
+          {
+            "summary": "Entry → Nonpolymer entities → Polymer entities",
+            "providers": [
+              "S3"
+            ],
+            "crossings": [],
+            "fanOut": false,
+            "meaningful": false
+          },
+          {
+            "summary": "Entry → Branched entity instances → Polymer entities",
+            "providers": [
+              "S3"
+            ],
+            "crossings": [],
+            "fanOut": false,
+            "meaningful": false
+          }
+        ],
+        "meaningfulCrossSourcePlans": 0,
+        "genericCrossSourcePlans": 0,
+        "fanOutPlans": 0,
+        "meaningfulFanOutPlans": 0
+      }
+    ]
+  },
+  "network": {
+    "requests": 104,
+    "perHost": {
+      "rest.uniprot.org": 52,
+      "data.rcsb.org": 17,
+      "www.ebi.ac.uk": 26,
+      "gateway.pipeworx.io": 3,
+      "search.rcsb.org": 6
+    },
+    "refused": 0
+  }
+}

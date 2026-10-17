@@ -1,0 +1,368 @@
+{
+  "tag": "uce-freeze-5",
+  "commit": "02eca766e8da97a36239b64001ba6510bb582694",
+  "seedFrom": "frozen build 02eca766e8da97a36239b64001ba6510bb582694",
+  "attempts": [
+    {
+      "program": "mandoc",
+      "description": "mandoc - format manual pages",
+      "ms": 744,
+      "probes": [
+        {
+          "url": "cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-holdout-ueP1Qa/bin/mandoc",
+          "kind": "cli",
+          "ok": true,
+          "detail": "3 capabilities from 32 sandboxed runs (stdin, files; ok exit 0)"
+        }
+      ],
+      "capabilities": [
+        {
+          "id": "cli:mandoc:default",
+          "title": "mandoc: format manual pages",
+          "inputs": [
+            {
+              "name": "input",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "outputs": [
+            {
+              "name": "(result)",
+              "type": "text"
+            }
+          ],
+          "evidence": [
+            "documents its usage [declared]",
+            "purpose: mandoc - format manual pages [declared]",
+            "options: 11 declared [declared]",
+            "operands: required [], optional [os, encoding, options, output], variadic [inferred]",
+            "accepts html/xml/json/csv/text input via stdin and prints text [experimentally-supported]",
+            "deterministic for identical input [experimentally-supported]",
+            "output keeps every word of the input [experimentally-supported]",
+            "side effects outside the sandbox [unknown]",
+            "on empty input exits 0 with output [observed]"
+          ],
+          "limitations": [
+            "side effects outside the sandbox [unknown]",
+            "runs only inside the host sandbox: no network, inputs passed as content"
+          ]
+        },
+        {
+          "id": "cli:mandoc:a",
+          "title": "mandoc -a: If the standard output is a terminal device and -c is not",
+          "inputs": [
+            {
+              "name": "input",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "outputs": [
+            {
+              "name": "(result)",
+              "type": "text"
+            }
+          ],
+          "evidence": [
+            "documents its usage [declared]",
+            "purpose: mandoc - format manual pages [declared]",
+            "options: 11 declared [declared]",
+            "operands: required [], optional [os, encoding, options, output], variadic [inferred]",
+            "accepts text input via stdin and prints text [experimentally-supported]",
+            "deterministic for identical input [experimentally-supported]",
+            "output keeps every word of the input [experimentally-supported]",
+            "side effects outside the sandbox [unknown]",
+            "on empty input exits 0 with output [observed]"
+          ],
+          "limitations": [
+            "side effects outside the sandbox [unknown]",
+            "runs only inside the host sandbox: no network, inputs passed as content"
+          ]
+        },
+        {
+          "id": "cli:mandoc:c",
+          "title": "mandoc -c: Copy the formatted manual pages to the standard output without",
+          "inputs": [
+            {
+              "name": "input",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "outputs": [
+            {
+              "name": "(result)",
+              "type": "text"
+            }
+          ],
+          "evidence": [
+            "documents its usage [declared]",
+            "purpose: mandoc - format manual pages [declared]",
+            "options: 11 declared [declared]",
+            "operands: required [], optional [os, encoding, options, output], variadic [inferred]",
+            "accepts text input via stdin and prints text [experimentally-supported]",
+            "deterministic for identical input [experimentally-supported]",
+            "output keeps every word of the input [experimentally-supported]",
+            "side effects outside the sandbox [unknown]",
+            "on empty input exits 0 with output [observed]"
+          ],
+          "limitations": [
+            "side effects outside the sandbox [unknown]",
+            "runs only inside the host sandbox: no network, inputs passed as content"
+          ]
+        }
+      ],
+      "investigable": true,
+      "supported": true
+    },
+    {
+      "program": "od",
+      "description": "od - octal, decimal, hex, ASCII dump",
+      "ms": 763,
+      "probes": [
+        {
+          "url": "cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-holdout-ueP1Qa/bin/od",
+          "kind": "cli",
+          "ok": true,
+          "detail": "9 capabilities from 38 sandboxed runs (files; ok exit 0)"
+        }
+      ],
+      "capabilities": [
+        {
+          "id": "cli:od:default",
+          "title": "od: octal, decimal, hex, ASCII dump",
+          "inputs": [
+            {
+              "name": "offset",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "outputs": [
+            {
+              "name": "(result)",
+              "type": "text"
+            }
+          ],
+          "evidence": [
+            "documents its usage [declared]",
+            "purpose: od - octal, decimal, hex, ASCII dump [declared]",
+            "options: 19 declared [declared]",
+            "operands: required [offset], optional [base, skip, length, type], variadic [inferred]",
+            "accepts html/xml/json/csv/text input via files and prints text [experimentally-supported]",
+            "deterministic for identical input [experimentally-supported]",
+            "side effects outside the sandbox [unknown]",
+            "on empty input exits 0 without output [observed]"
+          ],
+          "limitations": [
+            "side effects outside the sandbox [unknown]",
+            "runs only inside the host sandbox: no network, inputs passed as content"
+          ]
+        },
+        {
+          "id": "cli:od:a",
+          "title": "od -a: Output named characters.  Equivalent to -t a",
+          "inputs": [
+            {
+              "name": "offset",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "outputs": [
+            {
+              "name": "(result)",
+              "type": "text"
+            }
+          ],
+          "evidence": [
+            "documents its usage [declared]",
+            "purpose: od - octal, decimal, hex, ASCII dump [declared]",
+            "options: 19 declared [declared]",
+            "operands: required [offset], optional [base, skip, length, type], variadic [inferred]",
+            "accepts text input via files and prints text [experimentally-supported]",
+            "deterministic for identical input [experimentally-supported]",
+            "side effects outside the sandbox [unknown]",
+            "on empty input exits 0 without output [observed]"
+          ],
+          "limitations": [
+            "side effects outside the sandbox [unknown]",
+            "runs only inside the host sandbox: no network, inputs passed as content"
+          ]
+        },
+        {
+          "id": "cli:od:o",
+          "title": "od -o: Output octal shorts.  Equivalent to -t o2",
+          "inputs": [
+            {
+              "name": "offset",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "outputs": [
+            {
+              "name": "(result)",
+              "type": "text"
+            }
+          ],
+          "evidence": [
+            "documents its usage [declared]",
+            "purpose: od - octal, decimal, hex, ASCII dump [declared]",
+            "options: 19 declared [declared]",
+            "operands: required [offset], optional [base, skip, length, type], variadic [inferred]",
+            "accepts text input via files and prints text [experimentally-supported]",
+            "deterministic for identical input [experimentally-supported]",
+            "side effects outside the sandbox [unknown]",
+            "on empty input exits 0 without output [observed]"
+          ],
+          "limitations": [
+            "side effects outside the sandbox [unknown]",
+            "runs only inside the host sandbox: no network, inputs passed as content"
+          ]
+        },
+        {
+          "id": "cli:od:b",
+          "title": "od -b: Output octal bytes.  Equivalent to -t o1",
+          "inputs": [
+            {
+              "name": "offset",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "outputs": [
+            {
+              "name": "(result)",
+              "type": "text"
+            }
+          ],
+          "evidence": [
+            "documents its usage [declared]",
+            "purpose: od - octal, decimal, hex, ASCII dump [declared]",
+            "options: 19 declared [declared]",
+            "operands: required [offset], optional [base, skip, length, type], variadic [inferred]",
+            "accepts text input via files and prints text [experimentally-supported]",
+            "deterministic for identical input [experimentally-supported]",
+            "side effects outside the sandbox [unknown]",
+            "on empty input exits 0 without output [observed]"
+          ],
+          "limitations": [
+            "side effects outside the sandbox [unknown]",
+            "runs only inside the host sandbox: no network, inputs passed as content"
+          ]
+        },
+        {
+          "id": "cli:od:c",
+          "title": "od -c: Output C-style escaped characters.  Equivalent to -t c",
+          "inputs": [
+            {
+              "name": "offset",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "outputs": [
+            {
+              "name": "(result)",
+              "type": "text"
+            }
+          ],
+          "evidence": [
+            "documents its usage [declared]",
+            "purpose: od - octal, decimal, hex, ASCII dump [declared]",
+            "options: 19 declared [declared]",
+            "operands: required [offset], optional [base, skip, length, type], variadic [inferred]",
+            "accepts text input via files and prints text [experimentally-supported]",
+            "deterministic for identical input [experimentally-supported]",
+            "side effects outside the sandbox [unknown]",
+            "on empty input exits 0 without output [observed]"
+          ],
+          "limitations": [
+            "side effects outside the sandbox [unknown]",
+            "runs only inside the host sandbox: no network, inputs passed as content"
+          ]
+        },
+        {
+          "id": "cli:od:d",
+          "title": "od -d: Output unsigned decimal shorts.  Equivalent to -t u2",
+          "inputs": [
+            {
+              "name": "offset",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "outputs": [
+            {
+              "name": "(result)",
+              "type": "text"
+            }
+          ],
+          "evidence": [
+            "documents its usage [declared]",
+            "purpose: od - octal, decimal, hex, ASCII dump [declared]",
+            "options: 19 declared [declared]",
+            "operands: required [offset], optional [base, skip, length, type], variadic [inferred]",
+            "accepts text input via files and prints text [experimentally-supported]",
+            "deterministic for identical input [experimentally-supported]",
+            "side effects outside the sandbox [unknown]",
+            "accepts text input via files and prints text [experimentally-supported]",
+            "deterministic for identical input [experimentally-supported]",
+            "side effects outside the sandbox [unknown]",
+            "on empty input exits 0 without output [observed]"
+          ],
+          "limitations": [
+            "side effects outside the sandbox [unknown]",
+            "side effects outside the sandbox [unknown]",
+            "runs only inside the host sandbox: no network, inputs passed as content"
+          ]
+        },
+        {
+          "id": "cli:od:f",
+          "title": "od -f: Output single-precision floating point numbers",
+          "inputs": [
+            {
+              "name": "offset",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "outputs": [
+            {
+              "name": "(result)",
+              "type": "text"
+            }
+          ],
+          "evidence": [
+            "documents its usage [declared]",
+            "purpose: od - octal, decimal, hex, ASCII dump [declared]",
+            "options: 19 declared [declared]",
+            "operands: required [offset], optional [base, skip, length, type], variadic [inferred]",
+            "accepts text input via files and prints text [experimentally-supported]",
+            "deterministic for identical input [experimentally-supported]",
+            "side effects outside the sandbox [unknown]",
+            "accepts text input via files and prints text [experimentally-supported]",
+            "deterministic for identical input [experimentally-supported]",
+            "side effects outside the sandbox [unknown]",
+            "on empty input exits 0 without output [observed]"
+          ],
+          "limitations": [
+            "side effects outside the sandbox [unknown]",
+            "side effects outside the sandbox [unknown]",
+            "runs only inside the host sandbox: no network, inputs passed as content"
+          ]
+        }
+      ],
+      "investigable": true,
+      "supported": true
+    }
+  ],
+  "chosen": [
+    "mandoc",
+    "od"
+  ],
+  "state": "/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-holdout-ueP1Qa/server/state.json",
+  "bin": "/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-holdout-ueP1Qa/bin"
+}

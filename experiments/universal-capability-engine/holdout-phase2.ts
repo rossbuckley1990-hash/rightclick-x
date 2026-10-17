@@ -79,6 +79,50 @@ const TASKS_FREEZE4: Record<string, any> = {
   },
 };
 
+/** Reconstruct bytes from an od dump: octal bytes, octal/decimal 16-bit words (little-endian) or escaped chars. */
+function odBytes(dump: string): number[] | null {
+  const rows = dump.split("\n").map((l) => l.trim()).filter(Boolean).filter((l) => !/^\*$/.test(l));
+  const body = rows.map((l) => l.split(/\s+/).slice(1)).filter((x) => x.length);
+  if (!body.length) return null;
+  const tokens = body.flat();
+  if (tokens.every((t) => /^[0-7]{3}$/.test(t))) return tokens.map((t) => parseInt(t, 8));
+  const words16 = (base: number) => tokens.flatMap((t) => { const v = parseInt(t, base); return [v & 0xff, (v >> 8) & 0xff]; });
+  if (tokens.every((t) => /^[0-7]{6}$/.test(t))) return words16(8);
+  if (tokens.every((t) => /^\d{5}$/.test(t))) return words16(10);
+  const esc: Record<string, number> = { "\\n": 10, "\\t": 9, "\\r": 13, "\\0": 0, "\\\\": 92 };
+  const chars = rows.map((l) => l.replace(/^\d+\s*/, "")).join(" ");
+  const parts = chars.match(/\\[ntr0\\]|\S/g);
+  return parts ? parts.map((c) => esc[c] ?? c.charCodeAt(0)) : null;
+}
+
+// Tasks for the uce-freeze-5 draws, written after phase 1 on uce-freeze-5 and before these executions.
+const TASKS_FREEZE5: Record<string, any> = {
+  mandoc: {
+    intent: "format a manual page",
+    want: "text",
+    inputs: [".Dd October 17, 2026\n.Dt LANTERN 1\n.Os\n.Sh NAME\n.Nm lantern\n.Nd light the harbour path\n.Sh DESCRIPTION\nThe\n.Nm\nutility guides boats home at dusk.\n"],
+    check: (outs: unknown[], ins: string[]) => {
+      const o = String(outs[0] ?? "");
+      const content = ["lantern", "light", "harbour", "path", "utility", "guides", "boats", "home", "dusk"];
+      const missing = content.filter((w) => !o.toLowerCase().includes(w));
+      const rawMacros = o.split("\n").some((l) => /^\.[A-Z][a-z]\b/.test(l.trim()));
+      return { pass: !!o.trim() && !missing.length && !rawMacros, detail: `words missing ${missing.join(",") || "none"}; raw macro lines left ${rawMacros}` };
+    },
+  },
+  od: {
+    intent: "octal dump of the bytes of a text",
+    want: "text",
+    inputs: ["Harbour lights\tat dusk\n"],
+    check: (outs: unknown[], ins: string[]) => {
+      const bytes = odBytes(String(outs[0] ?? ""));
+      const want = [...new TextEncoder().encode(ins[0])];
+      const got = bytes ? (bytes.length === want.length + 1 && bytes[bytes.length - 1] === 0 ? bytes.slice(0, -1) : bytes) : null;
+      const ok = !!got && got.length === want.length && got.every((b, i) => b === want[i]);
+      return { pass: ok, detail: `bytes reconstructed from the dump equal the input: ${ok}${got ? "" : " (dump not parseable)"}` };
+    },
+  },
+};
+
 const TASKS: Record<string, { intent: string; want: string; inputs: string[]; check: (outputs: unknown[], inputs: string[]) => { pass: boolean; detail: string } }> = {
   expand: {
     intent: "expand tabs to spaces",
@@ -108,7 +152,7 @@ const f = serverFiles(`${p1.bin}/../phase2`);
 const { copyFileSync } = await import("node:fs");
 copyFileSync(p1.state, f.state);
 for (const name of p1.chosen as string[]) {
-  const task = TASKS[name] ?? TASKS_FREEZE3[name] ?? TASKS_FREEZE4[name];
+  const task = TASKS[name] ?? TASKS_FREEZE3[name] ?? TASKS_FREEZE4[name] ?? TASKS_FREEZE5[name];
   if (!task) throw new Error(`no task written for ${name}`);
   const m = new Mcp(build.rcx, f);
   await m.init();

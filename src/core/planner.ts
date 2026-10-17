@@ -244,9 +244,15 @@ export function plan(graph: CapabilityGraph, ledger: Ledger, goal: Goal): Plan[]
         rank(b) - rank(a) || coverage(b) - coverage(a) ||
         Math.floor(b.fit) - Math.floor(a.fit) || ignored(a) - ignored(b) || b.intentScore - a.intentScore || b.fit - a.fit || b.resultScore - a.resultScore || a.cost - b.cost || a.steps.length - b.steps.length,
     );
+  // A plan that contains another plan's steps plus more, without covering more of the intent or
+  // the required information, carries a step that only transforms the data on the way (a text
+  // typeset as a manual page before being dumped): the smaller plan answers the question.
+  const capsOf = (p: Plan) => p.steps.map((st) => st.capability);
+  const bloated = (p: Plan) => ranked.some((q) => q !== p && q.steps.length < p.steps.length && capsOf(q).every((c) => capsOf(p).includes(c)) && q.intentScore >= p.intentScore && rank(q) >= rank(p) && coverage(q) >= coverage(p));
+  const lean = ranked.filter((p) => !bloated(p));
   // Drop plans that merely extend a kept plan without covering more of the intent.
   const kept: Plan[] = [];
-  for (const p of ranked) {
+  for (const p of lean) {
     const ids = p.steps.map((s) => s.capability).join(">");
     // ...unless it carries more of the required information or reaches a better status.
     const redundant = kept.some((k) => k.intentScore >= p.intentScore && rank(k) >= rank(p) && coverage(k) >= coverage(p) && ids.startsWith(k.steps.map((s) => s.capability).join(">") + ">"));
@@ -302,7 +308,11 @@ function bind(cap: Capability, values: Value[], intent: Set<string>, consumed: S
     const scored: Array<{ v: Value; score: number; each?: Binding["each"] }> = [];
     for (const v of values) {
       // A caller input named after an entity ("province") identifies it: it can fill id.province.
-      const bridged = v.step === -1 && port.type === `id.${v.ref.slice(4).toLowerCase().replace(/[^a-z0-9]/g, "")}`;
+      // A caller input given under the port's own name is that value (a "purl" is a purl, even if the
+      // contract types it url); and a caller input named after an entity identifies it (id.province).
+      const callerName = v.step === -1 ? v.ref.slice(4).toLowerCase().replace(/[^a-z0-9]/g, "") : "";
+      const stringLike = (t: string) => !/^(number|boolean|json|list:|quantity:|geo\.)/.test(t);
+      const bridged = v.step === -1 && (port.type === `id.${callerName}` || (callerName === port.name.toLowerCase().replace(/[^a-z0-9]/g, "") && stringLike(port.type) && stringLike(v.type)));
       // Observed to carry the same identifiers, whatever each contract calls them.
       const linked = schemeFits(port, v.type, v.schemes);
       let each: Binding["each"] | undefined;

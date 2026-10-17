@@ -32,8 +32,12 @@ const GENERIC = new Set(["text", "json", "number", "id", "boolean", "list:text",
 /** The fields a step's result carries under a result path, from ports and contract-declared fields. */
 export function resultFields(cap: Capability, path: string): DeclaredField[] {
   const prefix = path ? `${path}.` : "";
-  const fromPorts = cap.outputs.filter((o) => o.name).map((o) => ({ path: o.name, selected: true }) as DeclaredField);
-  const all = [...fromPorts, ...(cap.fields ?? [])];
+  // A declared field's own flag wins: an output port observed under some custom request is not
+  // something the default request returns (Q03: an EM-only field seen once was taken as selected).
+  const declared = cap.fields ?? [];
+  const declaredPaths = new Set(declared.map((f) => f.path.replace(/\[\]/g, "")));
+  const fromPorts = cap.outputs.filter((o) => o.name && !declaredPaths.has(o.name)).map((o) => ({ path: o.name, selected: !o.observed }) as DeclaredField);
+  const all = [...declared, ...fromPorts];
   const seen = new Set<string>();
   const out: DeclaredField[] = [];
   for (const f of all) {

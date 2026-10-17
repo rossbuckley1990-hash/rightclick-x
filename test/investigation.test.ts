@@ -220,3 +220,16 @@ test("holdout uce-freeze-4: numbered variadic operands are one input; behaviour 
   const r = await rc.compose({ have: { input: { type: "text", value: "the gallery handler hangs\n" } }, want: "text", intent: "generate a bug report", run: true });
   assert.ok(!(r.executed?.titles ?? []).some((t) => t.startsWith("reportgen")), `not composed: ${r.executed?.titles}`);
 });
+
+test("holdout uce-freeze-5: nested optional brackets are not operands, and an unrelated transformation is not inserted before the answer", { skip }, async () => {
+  const { parseOperands } = await import("../src/reflectors/cli.ts");
+  assert.deepEqual(parseOperands(["usage: dumpish [-b] [-A base] [[+]offset[.][Bb]] [file ...]"], "dumpish").required, []);
+  const dir = realpathSync(mkdtempSync(join(tmpdir(), "rcx-prog-")));
+  const dump = program(dir, "dumpish", `if [ "$1" = "--help" ]; then echo "usage: dumpish [-b] [[+]offset[.][Bb]] [file ...]"; echo "  -b    output octal bytes"; exit 0; fi\nif [ "$1" = "-b" ]; then shift; fi\nod -b "$@"`);
+  const page = program(dir, "pageset", `if [ "$1" = "--help" ]; then echo "usage: pageset [file]"; echo "  format manual pages"; exit 0; fi\nprintf '()     \\n'; cat "$@"; printf '\\n     ()\\n'`);
+  const rc = await RightClick.create({ name: "o", directories: [], authority: { investigate: [`${dir}/`] } });
+  await rc.learn({ sources: [`cli:${dump}`, `cli:${page}`] });
+  const r = await rc.compose({ have: { input: { type: "text", value: "Harbour lights\\n" } }, want: "text", intent: "octal dump of the bytes of a text", run: true });
+  assert.ok(r.executed?.titles.every((t) => t.startsWith("dumpish")), r.executed?.titles.join(" → "));
+  assert.match(String(r.executed?.output), /110 141 162 142 157 165 162/);
+});
