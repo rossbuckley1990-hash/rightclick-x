@@ -9,7 +9,7 @@ const TAG = process.argv[2];
 const OUT = "experiments/universal-capability-engine/evidence";
 const p1 = JSON.parse(readFileSync(`${OUT}/holdout-phase1-${TAG}.json`, "utf8"));
 const build = frozenBuild(TAG);
-process.env.RCX_INVESTIGATE = `${p1.bin}/`;
+process.env.RCX_INVESTIGATE = [`${p1.bin}/`, ...(p1.chosen as string[]).map((n) => `${p1.bin}/${n}`)].join(",");
 
 /** The harness's own tab expansion (tab stops every 8 columns). */
 const expandTabs = (s: string) => s.split("\n").map((line) => {

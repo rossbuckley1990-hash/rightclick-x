@@ -127,6 +127,9 @@ export async function request(net: Net, url: string, init: RequestInit = {}): Pr
   return res;
 }
 
+/** Request headers that carry no credential and may follow a redirect to another origin. */
+const CROSS_ORIGIN_SAFE = new Set(["accept", "accept-language", "content-language", "user-agent"]);
+
 async function requestOnce(net: Net, url: string, init: RequestInit = {}): Promise<Response> {
   const headers = new Headers(init.headers);
   for (const [k, v] of Object.entries(net.auth.headersFor(url))) if (!headers.has(k)) headers.set(k, v);
@@ -135,28 +138,31 @@ async function requestOnce(net: Net, url: string, init: RequestInit = {}): Promi
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(new Error(`timeout after ${net.timeoutMs}ms: ${url}`)), net.timeoutMs);
   try {
-    // Manual redirects. Every hop starts from headers with no credentials at all,
-    // then gets only the credentials pinned to its own origin; caller-supplied
-    // Authorization/Cookie never leave the original origin. (A → B → C must not
-    // carry A's credentials to C.)
+    // Manual redirects. A caller's headers (credentials of any name: Authorization, Cookie,
+    // Proxy-Authorization, X-Api-Key, X-Session-Token, ...) never leave the original origin.
+    // Once a redirect has left it, the chain is tainted: every later hop, even one back to the
+    // original origin at a path a third party chose, gets only content-negotiation headers plus
+    // the operator's credentials pinned to that hop's own origin. A request body is never sent
+    // to another origin (307/308 across origins is not followed).
     const origin0 = new URL(url).origin;
-    const pinnedNames = new Set(net.auth.origins().flatMap((o) => Object.keys(net.auth.headersFor(o)).map((k) => k.toLowerCase())));
-    const bare = new Headers(init.headers);
-    for (const k of pinnedNames) bare.delete(k);
+    const caller = new Headers(init.headers);
+    const userAgent = headers.get("user-agent")!;
+    let tainted = false;
     let res = await net.fetch(url, { ...init, headers, signal: ctrl.signal, redirect: "manual" });
     let hops = 0;
     while (res.status >= 300 && res.status < 400 && res.headers.get("location") && hops++ < 5) {
       const next = new URL(res.headers.get("location")!, url).toString();
       await checkUrl(net.policy, next);
-      const h = new Headers(bare);
-      if (!h.has("user-agent")) h.set("user-agent", headers.get("user-agent")!);
-      if (new URL(next).origin !== origin0) {
-        h.delete("authorization");
-        h.delete("cookie");
-      }
+      const nextOrigin = new URL(next).origin;
+      const method = res.status === 303 ? "GET" : (init.method ?? "GET");
+      const carriesBody = method !== "GET" && method !== "HEAD" && init.body != null;
+      if (carriesBody && nextOrigin !== new URL(url).origin) return res;
+      if (nextOrigin !== origin0) tainted = true;
+      const h = new Headers();
+      for (const [k, v] of caller) if (!tainted || CROSS_ORIGIN_SAFE.has(k.toLowerCase()) || (carriesBody && k.toLowerCase() === "content-type")) h.set(k, v);
+      if (!h.has("user-agent")) h.set("user-agent", userAgent);
       for (const [k, v] of Object.entries(net.auth.headersFor(next))) h.set(k, v);
-      const method = res.status === 303 ? "GET" : init.method;
-      res = await net.fetch(next, { ...init, method, body: method === "GET" ? undefined : init.body, headers: h, signal: ctrl.signal, redirect: "manual" });
+      res = await net.fetch(next, { ...init, method, body: method === "GET" || method === "HEAD" ? undefined : init.body, headers: h, signal: ctrl.signal, redirect: "manual" });
       url = next;
     }
     return res;

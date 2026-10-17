@@ -20,7 +20,7 @@ symlinkSync(`/usr/bin/${A}`, `${BIN}/${A}`);
 
 // Re-create RightClick X's Stage A state on this build (same harness calls as the challenge).
 const docA = `<html><head><title>Quarterly report</title></head>\n<body><h2>Results</h2>\n<p>Revenue grew in every region\n<p>Costs fell sharply\n<ul><li>North<li>South</ul>\n</body></html>\n`;
-process.env.RCX_INVESTIGATE = `${BIN}/`;
+process.env.RCX_INVESTIGATE = `${BIN}/,${BIN}/${A}`;
 const sf = serverFiles(`${env}/rcx`);
 const m = new Mcp(build.rcx, sf);
 await m.init();
@@ -80,7 +80,7 @@ for (const arm of ARMS) {
     let r;
     if (arm.id === "rightclick-x") {
       copyFileSync(sf.state, `${dir}/state.json`);
-      const cfg = { mcpServers: { "rightclick-x": { command: process.execPath, args: [build.rcx, "mcp"], env: { RCX_STATE_FILE: `${dir}/state.json`, RCX_MCP_LOG: log, RCX_WORKSPACE: dir, RCX_INVESTIGATE: `${BIN}/` } } } };
+      const cfg = { mcpServers: { "rightclick-x": { command: process.execPath, args: [build.rcx, "mcp"], env: { RCX_STATE_FILE: `${dir}/state.json`, RCX_MCP_LOG: log, RCX_WORKSPACE: dir, RCX_INVESTIGATE: process.env.RCX_INVESTIGATE! } } } };
       r = await claude(cfg, "mcp__rightclick-x", prompt(doc, "You are connected to exactly one MCP server, rightclick-x. Use only its tools."), dir);
     } else {
       const cfg = { mcpServers: { surface: { command: process.execPath, args: [resolve("experiments/universal-capability-engine/direct-surface.ts")], env: { DS_PROGRAM: `${BIN}/${A}`, DS_LOG: log } } } };

@@ -213,7 +213,11 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
   let budget = MAX_RUNS;
   const run = async (purpose: string, args: string[], o: { stdin?: string; files?: Record<string, string> } = {}): Promise<SandboxRun | null> => {
     if (budget-- <= 0) return null;
-    const r = await sandbox.run(bin, args, o);
+    const raw = await sandbox.run(bin, args, o);
+    // Programs that print their own file names would differ run to run only by the sandbox's
+    // private directory; that is not behaviour.
+    const strip = (t: string) => (raw.workDir ? t.split(raw.workDir).join("<work>").split(raw.workDir.replace(/^\/private/, "")).join("<work>") : t);
+    const r = { ...raw, stdout: strip(raw.stdout), stderr: strip(raw.stderr) };
     inv.runs.push({ id: inv.runs.length + 1, purpose, args, stdinBytes: (o.stdin ?? "").length, files: Object.keys(o.files ?? {}), code: r.code, timedOut: r.timedOut, stdoutBytes: r.stdout.length, stdoutPreview: r.stdout.slice(0, 300), stderrPreview: r.stderr.slice(0, 300), created: r.created, ms: r.durationMs });
     return r;
   };
@@ -383,6 +387,11 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
     const portType: SemType = documented.length === 1 && SEM[documented[0]] !== "text" ? SEM[documented[0]] : anyText ? "text" : inType;
     const names = best.id === "stdin" ? [portType === "html" ? "html" : portType === "json" ? "json" : "input"] : portNames;
     const inputs: Port[] = names.map((n) => ({ name: n, type: portType, required: true, ...(anyText ? { anyText: true } : {}), description: best.id === "stdin" ? "Content given on standard input" : "Content passed as a file operand" }));
+    const behaviour = crypto
+      .createHash("sha256")
+      .update(JSON.stringify(mt.map((t) => [t.inputs.join("\u0000"), t.r.stdout]).sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0))))
+      .digest("hex")
+      .slice(0, 16);
     const invoke: CliInvoke = {
       kind: "cli",
       bin,
@@ -393,6 +402,7 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
       okExit: [...new Set([0, ...mt.map((t) => t.r.code ?? -1)])].sort(),
       output: out,
       sha256: inv.program.sha256,
+      behaviour,
     };
     const what = option ? option.description.replace(/\.$/, "") : inv.program.description?.replace(/^[^-–]+[-–]\s*/, "") ?? `run ${name}`;
     const supported = mt.length >= 2 && deterministic && new Set(mt.map((t) => t.inputs.join("\u0000"))).size >= 2;

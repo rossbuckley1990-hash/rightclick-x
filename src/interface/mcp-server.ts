@@ -1,6 +1,7 @@
 // MCP server: JSON-RPC message handling, transport-agnostic. The stdio and
 // Streamable HTTP transports both feed messages through handle().
 
+import { redact, redactText } from "../core/secrets.ts";
 import { VERSION, type RightClick } from "../runtime.ts";
 import { ANNOTATED_TOOLS, TOOLS, dispatch } from "./tools.ts";
 
@@ -39,8 +40,9 @@ export async function handle(rc: RightClick, msg: JsonRpc): Promise<JsonRpc | nu
       if (!TOOLS.some((t) => t.name === name)) return fail(-32602, `unknown tool: ${name}`);
       const t0 = performance.now();
       const args = msg.params?.arguments ?? {};
+      // The audit log never holds credentials: values under credential names are redacted.
       const audit = (ok: boolean, error?: string) =>
-        rc.toolCallSink?.({ at: new Date().toISOString(), tool: name, args, ok, ms: Math.round((performance.now() - t0) * 10) / 10, ...(error ? { error: error.slice(0, 300) } : {}) });
+        rc.toolCallSink?.({ at: new Date().toISOString(), tool: name, args: redact(args), ok, ms: Math.round((performance.now() - t0) * 10) / 10, ...(error ? { error: redactText(error).slice(0, 300) } : {}) });
       try {
         const out = await dispatch(rc, name, args);
         audit(true);

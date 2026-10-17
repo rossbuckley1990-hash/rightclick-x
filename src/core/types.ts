@@ -164,6 +164,13 @@ export interface CliInvoke {
   output: "text" | "json" | "html" | "xml";
   /** SHA-256 of the program when it was investigated; a different program is not run as this. */
   sha256: string;
+  /**
+   * Behaviour fingerprint: a digest of the outputs this mode produced for the investigator's fixed
+   * synthetic inputs. Two investigations with the same fingerprint observed the same behaviour, so
+   * a new file (another version, a wrapper) that keeps it is the same capability, and one that
+   * changes it is not.
+   */
+  behaviour?: string;
 }
 
 export type Invoke =

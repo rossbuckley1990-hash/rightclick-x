@@ -14,7 +14,8 @@ const build = frozenBuild(TAG);
 const env = realpathSync(mkdtempSync(join(tmpdir(), "uce-holdout-")));
 const BIN = `${env}/bin`;
 mkdirSync(BIN);
-process.env.RCX_INVESTIGATE = `${BIN}/`;
+// Links to system programs are authorised by name (a directory authorises only what really lives in it).
+process.env.RCX_INVESTIGATE = [`${BIN}/`, ...(sel.order as string[]).map((n) => `${BIN}/${n}`)].join(",");
 const f = serverFiles(`${env}/server`);
 const m = new Mcp(build.rcx, f);
 await m.init();

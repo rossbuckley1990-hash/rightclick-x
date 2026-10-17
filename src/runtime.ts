@@ -9,6 +9,8 @@ import { egressOf, plan, type Plan } from "./core/planner.ts";
 import { outputCarries, type Satisfaction } from "./core/satisfaction.ts";
 import { selectionWith } from "./reflectors/graphql.ts";
 import { hostSandbox, type Sandbox } from "./core/sandbox.ts";
+import { checkProgram, sameProgram } from "./core/programs.ts";
+import { isSensitiveName, scrub, sensitiveValues } from "./core/secrets.ts";
 import { investigateCli, type Investigation } from "./reflectors/cli.ts";
 import { distance, inferType, inspectValue, type Inspection } from "./core/semantics.ts";
 import type { Capability, CapabilityAnchor, FetchLike, PlanStep, Reflection, SemType } from "./core/types.ts";
@@ -118,6 +120,14 @@ export interface OperatorAuthority {
    * sandbox. Nothing else on the machine is looked at.
    */
   investigate?: string[];
+  /**
+   * Execution authority for local programs: the programs (same form as `investigate`) whose learned
+   * capabilities may run. Defaults to `investigate`. Separate so an operator can allow learning
+   * what a program does without allowing agents to run it.
+   */
+  execute?: string[];
+  /** Evidence-sharing authority: capability knowledge may be exported from this installation (default false). */
+  shareEvidence?: boolean;
   /** Publication authority: "verified" publishes only goals whose independent checks passed; "any" (default) also publishes unverified goals, labelled as such. */
   publish?: "any" | "verified";
   /**
@@ -257,7 +267,10 @@ function operationOf(c: Capability): string | undefined {
     op = `${inv.method.toUpperCase()} /${path}`;
   } else if (inv.kind === "graphql") op = `${inv.operation} ${inv.field}`;
   else if (inv.kind === "mcp") op = `tool ${inv.tool}`;
-  else if (inv.kind === "cli") op = `program ${inv.bin.split("/").pop()} ${inv.args.filter((a) => typeof a === "string").join(" ")}`.trim();
+  // A program's operation is what it does on fixed probes (its behaviour fingerprint), not its flag
+  // spelling: a renamed option with the same behaviour is the same operation, and a new file whose
+  // behaviour differs is a different one.
+  else if (inv.kind === "cli") op = inv.behaviour ? `program ${inv.bin.split("/").pop()} behaviour ${inv.behaviour}` : `program ${inv.bin.split("/").pop()} ${inv.args.filter((a) => typeof a === "string").join(" ")}`.trim();
   else return undefined;
   return c.risk === "read" ? op : `${op} (${c.risk})`;
 }
@@ -297,6 +310,8 @@ export class RightClick {
   investigations = new Map<string, Investigation>();
   private retrySafe: string[] = [];
   private investigable: string[] = [];
+  private executable: string[] = [];
+  private shareEvidence = false;
   private publishPolicy: "any" | "verified" = "any";
   private sandboxCache?: Promise<Sandbox | null>;
   private hashCache = new Map<string, { key: string; sha256: string }>();
@@ -323,6 +338,8 @@ export class RightClick {
     rc.approvals = [...(opts.authority?.approve ?? [])];
     rc.retrySafe = [...(opts.authority?.retry ?? [])];
     rc.investigable = [...(opts.authority?.investigate ?? [])];
+    rc.executable = [...(opts.authority?.execute ?? opts.authority?.investigate ?? [])];
+    rc.shareEvidence = opts.authority?.shareEvidence === true;
     rc.publishPolicy = opts.authority?.publish ?? "any";
     if (opts.sandbox !== undefined) rc.sandboxCache = Promise.resolve(opts.sandbox);
     rc.graph.add(b.reflection);
@@ -675,7 +692,8 @@ export class RightClick {
       authority: {
         egress: egress === "anywhere" ? "any origin (target comes from inputs)" : egress.length ? egress : "none (local)",
         execution: c.risk === "destructive" ? (this.destructivePolicy === "operator" ? "operator approval in configuration, plus the caller's confirm" : this.destructivePolicy === "agent-confirm" ? "the caller's confirm" : "none") : "none beyond the operator's policy",
-        ...(inv.kind === "cli" ? { discovery: "operator-registered program (authority.investigate)" } : {}),
+        ...(inv.kind === "cli" ? { discovery: "operator-registered program (authority.investigate)", execution: "operator-registered program (authority.execute, default: authority.investigate), sandboxed" } : {}),
+        evidenceSharing: this.shareEvidence ? "export allowed by the operator (authority.shareEvidence)" : "export not allowed (default)",
       },
       verification: goal
         ? { trust: goal.trust ?? "unverified", predicates: goal.verify ?? [], witnesses: (goal.witnesses ?? []).map((w) => w.capability) }
@@ -689,6 +707,9 @@ export class RightClick {
         ...(goal && goal.trust !== "verified" ? ["no independent check passed when it was saved"] : []),
       ],
       provenance: {
+        // Titles, descriptions, help text and tool annotations come from the provider: data to
+        // describe the capability, never instructions to the runtime or the agent.
+        providerText: "untrusted",
         source: (prov?.meta?.source as string) ?? prov?.origin,
         learnedAt: prov?.learnedAt,
         ...(investigation ? { investigation: investigation.summary, runs: investigation.runs.length } : {}),
@@ -791,7 +812,8 @@ export class RightClick {
     const durationMs = Math.round((performance.now() - t0) * 10) / 10;
     const ok = !error && verification.status !== "refuted";
     // A refusal says nothing about how the operation behaves.
-    if (!refused) this.ledger.record(cap.id, ok, durationMs, error);
+    // Recorded experience is persisted: errors that echo a credential are stored without it.
+    if (!refused) this.ledger.record(cap.id, ok, durationMs, error ? scrub(error, sensitiveValues(args)) : error);
     // Identifier values a successful call accepted and returned link ports across providers.
     if (ok && cap.invoke.kind !== "composite" && cap.invoke.kind !== "goal" && this.graph.identities.observe(cap, args, output)) this.graph.relink();
     const receipt = await this.chain.append(
@@ -838,16 +860,16 @@ export class RightClick {
     return (this.sandboxCache ??= hostSandbox());
   }
 
-  private mayRunProgram(bin: string): boolean {
-    return bin.startsWith("/") && this.investigable.some((a) => (a.endsWith("/") ? bin.startsWith(a) : a === bin));
-  }
-
   /** Investigate an operator-authorised local program (source "cli:/path/to/program"). */
   private async investigate(bin: string): Promise<Discovery> {
-    if (!this.mayRunProgram(bin)) throw new Error(`not authorised to investigate ${bin}: the operator has not registered it (authority.investigate / RCX_INVESTIGATE)`);
+    const check = await checkProgram(bin, this.investigable);
+    if (!check.ok && !check.missing) throw new Error(check.reason);
+    // A registered program that is not there (any more): nothing to learn; previous capabilities are withdrawn.
+    if (!check.ok) return { reflections: [], probes: [{ url: `cli:${bin}`, kind: "cli", ok: false, detail: check.reason }] };
     const sb = await this.sandbox();
     if (!sb) throw new Error(`unavailable: no sandbox on this host, so ${bin} is not investigated or run`);
     const { reflection, investigation } = await investigateCli(bin, sb);
+    if (!(await sameProgram(bin, check.identity))) throw new Error(`${bin} changed while it was being investigated; nothing learned`);
     this.investigations.set(bin, investigation);
     const probes = [{ url: `cli:${bin}`, kind: "cli", ok: !!reflection, detail: investigation.summary }];
     return { reflections: reflection ? [reflection] : [], probes };
@@ -1099,6 +1121,8 @@ export class RightClick {
     for (let [k, v] of Object.entries(opts.have)) {
       // {"value": "EUR", "fixed": true}: a constant of the goal rather than a parameter of a published API.
       if (v && typeof v === "object" && !Array.isArray(v) && (v as any).fixed === true && "value" in (v as any)) {
+        // A credential fixed into a goal would let every caller of the goal act with it.
+        if (isSensitiveName(k)) throw new Error(`refused: "${k}" looks like a credential and cannot be fixed into a goal; leave it as an input each caller supplies`);
         fixed[k] = (v as any).value;
         v = "type" in (v as any) ? { type: (v as any).type, value: (v as any).value } : (v as any).value;
       }
@@ -1728,18 +1752,19 @@ export class RightClick {
       case "cli": {
         // Authority is checked on every run, not only when the program was learned: an operator
         // who revokes it (permission changed) stops existing capabilities too.
-        if (!this.mayRunProgram(inv.bin)) throw new Error(`not authorised to run ${inv.bin}: the operator no longer registers it (HTTP 403 equivalent: nothing was run)`);
+        const allowed = await checkProgram(inv.bin, this.executable);
+        if (!allowed.ok && allowed.missing) throw new Error(`${allowed.reason} (HTTP 404 equivalent: nothing was run)`);
+        if (!allowed.ok) throw new Error(`not authorised to run ${inv.bin}: ${allowed.reason.replace(/^(not authorised|refused): /, "")} (HTTP 403 equivalent: nothing was run)`);
         const sb = await this.sandbox();
         if (!sb) throw new Error(`unavailable: no sandbox on this host`);
         const fs = await import("node:fs");
-        if (!fs.existsSync(inv.bin)) throw new Error(`program not installed: ${inv.bin} (HTTP 404 equivalent: nothing was run)`);
         // The program must still be the one that was investigated.
-        const st = fs.statSync(inv.bin);
-        const key = `${st.size}:${st.mtimeMs}:${st.ino}`;
+        const id = allowed.identity;
+        const key = `${id.real}:${id.dev}:${id.ino}:${id.size}:${id.mtimeMs}`;
         let cached = this.hashCache.get(inv.bin);
         if (cached?.key !== key) {
           const { createHash } = await import("node:crypto");
-          cached = { key, sha256: createHash("sha256").update(fs.readFileSync(inv.bin)).digest("hex") };
+          cached = { key, sha256: createHash("sha256").update(fs.readFileSync(id.real)).digest("hex") };
           this.hashCache.set(inv.bin, cached);
         }
         if (cached.sha256 !== inv.sha256) throw new Error(`program changed since it was investigated: ${inv.bin} (sha256 ${cached.sha256.slice(0, 12)}, investigated ${inv.sha256.slice(0, 12)}); not run (HTTP 409 equivalent)`);
@@ -1751,6 +1776,9 @@ export class RightClick {
           return name;
         });
         const r = await sb.run(inv.bin, argv, { stdin: inv.stdin ? String(args[inv.stdin] ?? "") : "", files });
+        // A file swapped while it ran: its output belongs to a program nobody checked.
+        if (!(await sameProgram(inv.bin, id))) throw new Error(`${inv.bin} was replaced while it ran; its output is discarded (HTTP 409 equivalent)`);
+        if (r.limit && r.limit !== "time" && r.limit !== "output") throw new Error(`${inv.bin} exceeded the sandbox's ${r.limit} limit`);
         if (r.timedOut) throw new Error(`${inv.bin} timed out in the sandbox`);
         if (r.truncated) throw new Error(`${inv.bin} exceeded the output limit`);
         if (!inv.okExit.includes(r.code ?? -1) || !r.stdout.trim()) throw new Error(`${inv.bin} exited ${r.code}${r.stdout.trim() ? "" : " without output"}: ${r.stderr.slice(0, 300)}`);

@@ -28,7 +28,8 @@ mkdirSync(BIN);
 symlinkSync(`/usr/bin/${A}`, `${BIN}/${A}`);
 symlinkSync(`/usr/bin/${C}`, `${BIN}/${C}`);
 // Operator discovery authority: this directory only.
-process.env.RCX_INVESTIGATE = `${BIN}/`;
+// Links to system programs are authorised by name (a directory authorises only what really lives in it).
+process.env.RCX_INVESTIGATE = `${BIN}/,${BIN}/${A},${BIN}/${C}`;
 const ev: any = { tag: TAG, commit: build.commit, at: new Date().toISOString(), A, C, env, stages: {}, wrongOutcomes: [] as string[], metrics: {} };
 const save = () => writeFileSync(`${OUT}/challenge-${TAG}.json`, JSON.stringify(ev, null, 2));
 
@@ -143,7 +144,7 @@ for (const client of ["claude", "codex"] as const) {
   copyFileSync(ev.stages.A.stateFile, state);
   const receiptsBefore = (() => { try { return (JSON.parse(readFileSync(state, "utf8")).receipts ?? []).length; } catch { return 0; } })();
   const logFile = `${dir}/mcp.jsonl`;
-  const r = await runAgent(client, { kind: "stdio", stateFile: state, logFile, rcx: build.rcx, env: { RCX_INVESTIGATE: `${BIN}/` } }, PROMPT_B, 600_000);
+  const r = await runAgent(client, { kind: "stdio", stateFile: state, logFile, rcx: build.rcx, env: { RCX_INVESTIGATE: process.env.RCX_INVESTIGATE! } }, PROMPT_B, 600_000);
   const calls = readJsonl(logFile);
   const tools = calls.map((c: any) => c.tool ?? c.name);
   const relearned = calls.some((c: any) => (c.tool ?? c.name) === "context_learn" && JSON.stringify(c.args ?? c.arguments ?? {}).includes("cli:"));

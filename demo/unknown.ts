@@ -43,7 +43,7 @@ class Client {
   private n = 1;
   private wait = new Map<number, (m: any) => void>();
   constructor(state: string) {
-    this.p = spawn(process.execPath, [resolve("bin/rcx.ts"), "mcp"], { env: { ...process.env, RCX_STATE_FILE: state, RCX_INVESTIGATE: `${BIN}/`, RCX_WORKSPACE: env }, stdio: ["pipe", "pipe", "pipe"] });
+    this.p = spawn(process.execPath, [resolve("bin/rcx.ts"), "mcp"], { env: { ...process.env, RCX_STATE_FILE: state, RCX_INVESTIGATE: `${BIN}/${name}`, RCX_WORKSPACE: env }, stdio: ["pipe", "pipe", "pipe"] });
     this.p.stdout!.setEncoding("utf8");
     this.p.stdout!.on("data", (d: string) => {
       this.buf += d;
