@@ -91,6 +91,41 @@ FORMAT: {"apis":[{"name":"...","tasks":[{"request":"...","referenceUrl":"...","a
   save();
 }
 
+// One replacement round for invalid tasks, as in Domain 1 (EVALUATION-PLAN §3.5, applied to
+// Domain 2 by clarification §10.6): the evaluator sees only which tasks failed and why.
+const invalid = ev.tasks.filter((x: any) => !x.valid && !x.replaced);
+if (invalid.length && !PILOT) {
+  const prompt = `You are an independent evaluator for a software benchmark. You have no tools; answer from your own knowledge. Reply with JSON only.
+Some tasks you wrote could not be used because their reference request did not yield a value at the given paths. Write one replacement task for each, for the same API, with the same rules as before (plain-words request; exact GET referenceUrl on that API's origin; 1-3 answerPaths whose values a correct answer must state, as dot paths into the JSON response, using numeric indexes for arrays, e.g. "0.capital.0"; stable facts).
+Failed tasks:
+${invalid.map((t: any) => `- ${t.api}: ${JSON.stringify({ request: t.request, referenceUrl: t.referenceUrl, answerPaths: t.answerPaths })}: ${t.invalid}`).join("\n")}
+FORMAT: {"tasks":[{"api":"<api name>","request":"...","referenceUrl":"...","answerPaths":["..."]}]}`;
+  const text = await evaluator(prompt);
+  if (/hit your (session |usage )?limit|usage limit|rate limit/i.test(text) && !/\{/.test(text)) {
+    console.log(`BLOCKED by a usage limit: ${text.slice(0, 120)}; re-run to resume`);
+    process.exit(2);
+  }
+  (ev.replacementReplies ??= []).push(text);
+  const j = JSON.parse(/\{[\s\S]*\}/.exec(text)![0]);
+  for (const [i, t] of (j.tasks ?? []).slice(0, invalid.length).entries()) {
+    const old = invalid[i];
+    let expected: string[] = [];
+    let bad: string | undefined;
+    try {
+      const res = await fetch(t.referenceUrl, { headers: { accept: "application/json", "user-agent": "rightclick-x-benchmark/1 (+https://github.com/rossbuckley1990-hash/rightclick-x)" } });
+      const body = await res.json();
+      expected = (t.answerPaths ?? []).map((p: string) => pick(body, p)).filter((v: unknown) => v !== undefined && v !== null && typeof v !== "object").map(String);
+      if (!res.ok) bad = `reference HTTP ${res.status}`;
+      else if (!expected.length) bad = "no answer value at the given paths";
+    } catch (e) {
+      bad = String((e as Error).message);
+    }
+    old.replaced = true;
+    ev.tasks.push({ id: `${old.api}#r${i + 1}`, api: old.api, root: old.root, request: t.request, referenceUrl: t.referenceUrl, answerPaths: t.answerPaths, expected, valid: !bad, replaces: old.id, ...(bad ? { invalid: bad } : {}) });
+  }
+  save();
+}
+
 for (const t of ev.tasks.filter((x: any) => x.valid).slice(0, PILOT ? 2 : undefined)) {
   for (const arm of ["A", "D"]) {
     const key = `${arm}|${t.id}`;

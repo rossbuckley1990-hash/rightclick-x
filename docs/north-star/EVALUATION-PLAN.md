@@ -166,3 +166,4 @@ These were recorded on 2026-10-17, after the harness pilot on development progra
    - The harness now stops on a blocked call and resumes on the same freeze, from the first program without a real decision, in the same seeded order. The 24 real decisions are kept.
    - Agent-session and challenge harnesses also recognise "session limit" as blocked; challenge stage B on `ns-freeze-1` was cut off this way and is re-run.
    - No product code changed, so the freeze is unchanged.
+6. **Domain 2 invalid tasks.** On `ns-freeze-1`, all four REST Countries tasks were invalid: the evaluator's answer paths did not match the array the API returns. Domain 1's pre-registered procedure (one evaluator replacement round, before those tasks run) is applied to Domain 2 as well. The evaluator sees only which tasks failed and why. Recorded before any replacement task ran.

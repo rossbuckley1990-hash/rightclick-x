@@ -1,0 +1,647 @@
+{
+  "tag": "ns-freeze-1",
+  "commit": "1e248695cd16227e88d6a0825f397817979e69b9",
+  "apis": [
+    {
+      "name": "Open-Meteo forecast",
+      "root": "https://api.open-meteo.com"
+    },
+    {
+      "name": "PokeAPI",
+      "root": "https://pokeapi.co"
+    },
+    {
+      "name": "GBIF species",
+      "root": "https://api.gbif.org"
+    },
+    {
+      "name": "Rick and Morty GraphQL",
+      "root": "https://rickandmortyapi.com"
+    },
+    {
+      "name": "Art Institute of Chicago",
+      "root": "https://api.artic.edu"
+    },
+    {
+      "name": "Open Library",
+      "root": "https://openlibrary.org"
+    },
+    {
+      "name": "REST Countries",
+      "root": "https://restcountries.com"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "PokeAPI#1",
+      "api": "PokeAPI",
+      "root": "https://pokeapi.co",
+      "request": "What type is Pikachu?",
+      "referenceUrl": "https://pokeapi.co/api/v2/pokemon/pikachu",
+      "answerPaths": [
+        "types.0.type.name"
+      ],
+      "expected": [
+        "electric"
+      ],
+      "valid": true
+    },
+    {
+      "id": "PokeAPI#2",
+      "api": "PokeAPI",
+      "root": "https://pokeapi.co",
+      "request": "How tall and how heavy is Charizard according to the Pokémon data?",
+      "referenceUrl": "https://pokeapi.co/api/v2/pokemon/charizard",
+      "answerPaths": [
+        "height",
+        "weight"
+      ],
+      "expected": [
+        "17",
+        "905"
+      ],
+      "valid": true
+    },
+    {
+      "id": "PokeAPI#3",
+      "api": "PokeAPI",
+      "root": "https://pokeapi.co",
+      "request": "What is the power, accuracy, and type of the move Thunderbolt?",
+      "referenceUrl": "https://pokeapi.co/api/v2/move/thunderbolt",
+      "answerPaths": [
+        "power",
+        "accuracy",
+        "type.name"
+      ],
+      "expected": [
+        "90",
+        "100",
+        "electric"
+      ],
+      "valid": true
+    },
+    {
+      "id": "PokeAPI#4",
+      "api": "PokeAPI",
+      "root": "https://pokeapi.co",
+      "request": "Which generation was Mewtwo introduced in, and is it a legendary Pokémon?",
+      "referenceUrl": "https://pokeapi.co/api/v2/pokemon-species/mewtwo",
+      "answerPaths": [
+        "generation.name",
+        "is_legendary"
+      ],
+      "expected": [
+        "generation-i",
+        "true"
+      ],
+      "valid": true
+    },
+    {
+      "id": "Rick and Morty API#1",
+      "api": "Rick and Morty API",
+      "root": "https://rickandmortyapi.com",
+      "request": "What is the full name, status, and species of character number 1 in Rick and Morty?",
+      "referenceUrl": "https://rickandmortyapi.com/api/character/1",
+      "answerPaths": [
+        "name",
+        "status",
+        "species"
+      ],
+      "expected": [
+        "Rick Sanchez",
+        "Alive",
+        "Human"
+      ],
+      "valid": true
+    },
+    {
+      "id": "Rick and Morty API#2",
+      "api": "Rick and Morty API",
+      "root": "https://rickandmortyapi.com",
+      "request": "What is the name and gender of the second character in the Rick and Morty database?",
+      "referenceUrl": "https://rickandmortyapi.com/api/character/2",
+      "answerPaths": [
+        "name",
+        "gender"
+      ],
+      "expected": [
+        "Morty Smith",
+        "Male"
+      ],
+      "valid": true
+    },
+    {
+      "id": "Rick and Morty API#3",
+      "api": "Rick and Morty API",
+      "root": "https://rickandmortyapi.com",
+      "request": "What was the title and original air date of the very first Rick and Morty episode, and what's its episode code?",
+      "referenceUrl": "https://rickandmortyapi.com/api/episode/1",
+      "answerPaths": [
+        "name",
+        "air_date",
+        "episode"
+      ],
+      "expected": [
+        "Pilot",
+        "December 2, 2013",
+        "S01E01"
+      ],
+      "valid": true
+    },
+    {
+      "id": "Rick and Morty API#4",
+      "api": "Rick and Morty API",
+      "root": "https://rickandmortyapi.com",
+      "request": "What is the first location listed in Rick and Morty, what kind of place is it, and which dimension is it in?",
+      "referenceUrl": "https://rickandmortyapi.com/api/location/1",
+      "answerPaths": [
+        "name",
+        "type",
+        "dimension"
+      ],
+      "expected": [
+        "Earth (C-137)",
+        "Planet",
+        "Dimension C-137"
+      ],
+      "valid": true
+    },
+    {
+      "id": "REST Countries#1",
+      "api": "REST Countries",
+      "root": "https://restcountries.com",
+      "request": "What is the capital city of Japan?",
+      "referenceUrl": "https://restcountries.com/v3.1/name/japan",
+      "answerPaths": [
+        "0.capital.0"
+      ],
+      "expected": [],
+      "valid": false,
+      "invalid": "no answer value at the given paths",
+      "replaced": true
+    },
+    {
+      "id": "REST Countries#2",
+      "api": "REST Countries",
+      "root": "https://restcountries.com",
+      "request": "What currency does Switzerland use?",
+      "referenceUrl": "https://restcountries.com/v3.1/alpha/CHE",
+      "answerPaths": [
+        "0.currencies.CHF.name"
+      ],
+      "expected": [],
+      "valid": false,
+      "invalid": "no answer value at the given paths",
+      "replaced": true
+    },
+    {
+      "id": "REST Countries#3",
+      "api": "REST Countries",
+      "root": "https://restcountries.com",
+      "request": "Which region and subregion is Kenya in?",
+      "referenceUrl": "https://restcountries.com/v3.1/alpha/KEN",
+      "answerPaths": [
+        "0.region",
+        "0.subregion"
+      ],
+      "expected": [],
+      "valid": false,
+      "invalid": "no answer value at the given paths",
+      "replaced": true
+    },
+    {
+      "id": "REST Countries#4",
+      "api": "REST Countries",
+      "root": "https://restcountries.com",
+      "request": "Is Bolivia landlocked, and what is its official name?",
+      "referenceUrl": "https://restcountries.com/v3.1/alpha/BOL",
+      "answerPaths": [
+        "0.landlocked",
+        "0.name.official"
+      ],
+      "expected": [],
+      "valid": false,
+      "invalid": "no answer value at the given paths",
+      "replaced": true
+    },
+    {
+      "id": "REST Countries#r1",
+      "api": "REST Countries",
+      "root": "https://restcountries.com",
+      "request": "Which country has Tokyo as its capital, and what is that country's official name?",
+      "referenceUrl": "https://restcountries.com/v3.1/capital/tokyo?fields=name,capital",
+      "answerPaths": [
+        "0.name.official"
+      ],
+      "expected": [],
+      "valid": false,
+      "replaces": "REST Countries#1",
+      "invalid": "no answer value at the given paths"
+    },
+    {
+      "id": "REST Countries#r2",
+      "api": "REST Countries",
+      "root": "https://restcountries.com",
+      "request": "What is the official name of the country whose currency code is CHF?",
+      "referenceUrl": "https://restcountries.com/v3.1/name/switzerland?fullText=true&fields=name,currencies",
+      "answerPaths": [
+        "0.name.official",
+        "0.currencies.CHF.name"
+      ],
+      "expected": [],
+      "valid": false,
+      "replaces": "REST Countries#2",
+      "invalid": "no answer value at the given paths"
+    },
+    {
+      "id": "REST Countries#r3",
+      "api": "REST Countries",
+      "root": "https://restcountries.com",
+      "request": "What region and subregion is Kenya in?",
+      "referenceUrl": "https://restcountries.com/v3.1/name/kenya?fullText=true&fields=name,region,subregion",
+      "answerPaths": [
+        "0.region",
+        "0.subregion"
+      ],
+      "expected": [],
+      "valid": false,
+      "replaces": "REST Countries#3",
+      "invalid": "no answer value at the given paths"
+    },
+    {
+      "id": "REST Countries#r4",
+      "api": "REST Countries",
+      "root": "https://restcountries.com",
+      "request": "Is Bolivia landlocked?",
+      "referenceUrl": "https://restcountries.com/v3.1/name/bolivia?fields=name,landlocked",
+      "answerPaths": [
+        "0.landlocked"
+      ],
+      "expected": [],
+      "valid": false,
+      "replaces": "REST Countries#4",
+      "invalid": "no answer value at the given paths"
+    }
+  ],
+  "sessions": [
+    {
+      "key": "A|PokeAPI#1",
+      "arm": "A",
+      "task": "PokeAPI#1",
+      "api": "PokeAPI",
+      "correct": true,
+      "wrong": false,
+      "unable": null,
+      "executed": true,
+      "seconds": 12.3,
+      "tokens": 129171,
+      "costUsd": 0.1312049,
+      "turns": 4,
+      "toolCalls": 2,
+      "tools": [
+        "http_get",
+        "http_get"
+      ],
+      "reply": "BEGIN\nPikachu is Electric type. The API lists it with a single type, electric, in slot 1.\nEND"
+    },
+    {
+      "key": "D|PokeAPI#1",
+      "arm": "D",
+      "task": "PokeAPI#1",
+      "api": "PokeAPI",
+      "correct": true,
+      "wrong": false,
+      "unable": null,
+      "executed": true,
+      "seconds": 44.3,
+      "tokens": 293717,
+      "costUsd": 0.10773140000000002,
+      "turns": 9,
+      "toolCalls": 6,
+      "tools": [
+        "context_research",
+        "context_learn",
+        "context_learn",
+        "context_graph",
+        "context_graph",
+        "context_run"
+      ],
+      "reply": "BEGIN\nPikachu is an Electric type. The API lists a single type for it, electric, in slot 1.\nEND"
+    },
+    {
+      "key": "A|PokeAPI#2",
+      "arm": "A",
+      "task": "PokeAPI#2",
+      "api": "PokeAPI",
+      "correct": false,
+      "wrong": false,
+      "unable": "The PokéAPI response for Charizard (`/api/v2/pokemon/charizard`, also tried `/pokemon/6`) is about 66 KB. The tool wouldn't display it, and I have no way to open the saved copy (Bash and file-reading tools are disabled). I couldn't read the height and weight fields, and I won't give figures from memory.",
+      "executed": true,
+      "seconds": 17.8,
+      "tokens": 140957,
+      "costUsd": 0.07114440000000001,
+      "turns": 5,
+      "toolCalls": 2,
+      "tools": [
+        "http_get",
+        "http_get"
+      ],
+      "reply": "UNABLE: The PokéAPI response for Charizard (`/api/v2/pokemon/charizard`, also tried `/pokemon/6`) is about 66 KB. The tool wouldn't display it, and I have no way to open the saved copy (Bash and file-reading tools are disabled). I couldn't read the height and weight fields, and I won't give figures from memory."
+    },
+    {
+      "key": "D|PokeAPI#2",
+      "arm": "D",
+      "task": "PokeAPI#2",
+      "api": "PokeAPI",
+      "correct": true,
+      "wrong": false,
+      "unable": null,
+      "executed": true,
+      "seconds": 43.3,
+      "tokens": 294963,
+      "costUsd": 0.11111820000000003,
+      "turns": 9,
+      "toolCalls": 6,
+      "tools": [
+        "context_compose",
+        "context_learn",
+        "context_learn",
+        "context_graph",
+        "context_graph",
+        "context_run"
+      ],
+      "reply": "BEGIN\nCharizard: height 17 (1.7 m) and weight 905 (90.5 kg). PokeAPI reports height in decimetres and weight in hectograms.\nEND"
+    },
+    {
+      "key": "A|PokeAPI#3",
+      "arm": "A",
+      "task": "PokeAPI#3",
+      "api": "PokeAPI",
+      "correct": false,
+      "wrong": false,
+      "unable": "The API response for the Thunderbolt move is about 55k characters. It exceeded the tool's output limit and was saved to a file. I'm restricted to http_get and can't open that file, so I couldn't read the power, accuracy or type.",
+      "executed": true,
+      "seconds": 19,
+      "tokens": 140836,
+      "costUsd": 0.0698267,
+      "turns": 5,
+      "toolCalls": 2,
+      "tools": [
+        "http_get",
+        "http_get"
+      ],
+      "reply": "UNABLE: The API response for the Thunderbolt move is about 55k characters. It exceeded the tool's output limit and was saved to a file. I'm restricted to http_get and can't open that file, so I couldn't read the power, accuracy or type."
+    },
+    {
+      "key": "D|PokeAPI#3",
+      "arm": "D",
+      "task": "PokeAPI#3",
+      "api": "PokeAPI",
+      "correct": true,
+      "wrong": false,
+      "unable": null,
+      "executed": true,
+      "seconds": 44,
+      "tokens": 265384,
+      "costUsd": 0.11258120000000002,
+      "turns": 8,
+      "toolCalls": 6,
+      "tools": [
+        "context_research",
+        "context_learn",
+        "context_learn",
+        "context_run",
+        "context_compose",
+        "context_run"
+      ],
+      "reply": "BEGIN\nThunderbolt: power 90, accuracy 100, type electric.\nEND"
+    },
+    {
+      "key": "A|PokeAPI#4",
+      "arm": "A",
+      "task": "PokeAPI#4",
+      "api": "PokeAPI",
+      "correct": true,
+      "wrong": false,
+      "unable": null,
+      "executed": true,
+      "seconds": 7.8,
+      "tokens": 98200,
+      "costUsd": 0.115597,
+      "turns": 3,
+      "toolCalls": 1,
+      "tools": [
+        "http_get"
+      ],
+      "reply": "BEGIN\nMewtwo was introduced in Generation I (generation-i). Yes, it is a legendary Pokémon: the API returns is_legendary: true and is_mythical: false.\nEND"
+    },
+    {
+      "key": "D|PokeAPI#4",
+      "arm": "D",
+      "task": "PokeAPI#4",
+      "api": "PokeAPI",
+      "correct": true,
+      "wrong": false,
+      "unable": null,
+      "executed": true,
+      "seconds": 41.4,
+      "tokens": 234822,
+      "costUsd": 0.1113584,
+      "turns": 8,
+      "toolCalls": 6,
+      "tools": [
+        "context_research",
+        "context_learn",
+        "context_learn",
+        "context_run",
+        "context_compose",
+        "context_run"
+      ],
+      "reply": "BEGIN\nMewtwo was introduced in Generation I (generation-i). Yes, it is a legendary Pokémon: `is_legendary` is true, and `is_mythical` is false.\nEND"
+    },
+    {
+      "key": "A|Rick and Morty API#1",
+      "arm": "A",
+      "task": "Rick and Morty API#1",
+      "api": "Rick and Morty API",
+      "correct": true,
+      "wrong": false,
+      "unable": null,
+      "executed": true,
+      "seconds": 7.8,
+      "tokens": 83433,
+      "costUsd": 0.056234099999999995,
+      "turns": 3,
+      "toolCalls": 1,
+      "tools": [
+        "http_get"
+      ],
+      "reply": "BEGIN\nName: Rick Sanchez\nStatus: Alive\nSpecies: Human\nEND"
+    },
+    {
+      "key": "D|Rick and Morty API#1",
+      "arm": "D",
+      "task": "Rick and Morty API#1",
+      "api": "Rick and Morty API",
+      "correct": true,
+      "wrong": false,
+      "unable": null,
+      "executed": true,
+      "seconds": 40.9,
+      "tokens": 230222,
+      "costUsd": 0.10965490000000001,
+      "turns": 7,
+      "toolCalls": 5,
+      "tools": [
+        "context_research",
+        "context_learn",
+        "context_learn",
+        "context_compose",
+        "context_run"
+      ],
+      "reply": "BEGIN\nName: Rick Sanchez\nStatus: Alive\nSpecies: Human\nEND"
+    },
+    {
+      "key": "A|Rick and Morty API#2",
+      "arm": "A",
+      "task": "Rick and Morty API#2",
+      "api": "Rick and Morty API",
+      "correct": true,
+      "wrong": false,
+      "unable": null,
+      "executed": true,
+      "seconds": 8.6,
+      "tokens": 83391,
+      "costUsd": 0.056041499999999994,
+      "turns": 3,
+      "toolCalls": 1,
+      "tools": [
+        "http_get"
+      ],
+      "reply": "BEGIN\nName: Morty Smith\nGender: Male\nEND"
+    },
+    {
+      "key": "D|Rick and Morty API#2",
+      "arm": "D",
+      "task": "Rick and Morty API#2",
+      "api": "Rick and Morty API",
+      "correct": true,
+      "wrong": false,
+      "unable": null,
+      "executed": true,
+      "seconds": 38.2,
+      "tokens": 193464,
+      "costUsd": 0.09995819999999998,
+      "turns": 6,
+      "toolCalls": 4,
+      "tools": [
+        "context_research",
+        "context_learn",
+        "context_learn",
+        "context_compose"
+      ],
+      "reply": "BEGIN\nName: Morty Smith\nGender: Male\nEND"
+    },
+    {
+      "key": "A|Rick and Morty API#3",
+      "arm": "A",
+      "task": "Rick and Morty API#3",
+      "api": "Rick and Morty API",
+      "correct": true,
+      "wrong": false,
+      "unable": null,
+      "executed": true,
+      "seconds": 17.9,
+      "tokens": 82543,
+      "costUsd": 0.0526849,
+      "turns": 3,
+      "toolCalls": 1,
+      "tools": [
+        "http_get"
+      ],
+      "reply": "BEGIN\nTitle: Pilot\nOriginal air date: December 2, 2013\nEpisode code: S01E01\nEND"
+    },
+    {
+      "key": "D|Rick and Morty API#3",
+      "arm": "D",
+      "task": "Rick and Morty API#3",
+      "api": "Rick and Morty API",
+      "correct": true,
+      "wrong": false,
+      "unable": null,
+      "executed": true,
+      "seconds": 42,
+      "tokens": 260898,
+      "costUsd": 0.1056625,
+      "turns": 10,
+      "toolCalls": 7,
+      "tools": [
+        "context_research",
+        "context_learn",
+        "context_learn",
+        "context_graph",
+        "context_run",
+        "context_graph",
+        "context_run"
+      ],
+      "reply": "BEGIN\nTitle: Pilot\nOriginal air date: December 2, 2013\nEpisode code: S01E01\nEND"
+    },
+    {
+      "key": "A|Rick and Morty API#4",
+      "arm": "A",
+      "task": "Rick and Morty API#4",
+      "api": "Rick and Morty API",
+      "correct": true,
+      "wrong": false,
+      "unable": null,
+      "executed": true,
+      "seconds": 12.7,
+      "tokens": 82730,
+      "costUsd": 0.0534473,
+      "turns": 3,
+      "toolCalls": 1,
+      "tools": [
+        "http_get"
+      ],
+      "reply": "BEGIN\nThe first location listed (ID 1) is Earth (C-137). It is a Planet, in Dimension C-137.\nEND"
+    },
+    {
+      "key": "D|Rick and Morty API#4",
+      "arm": "D",
+      "task": "Rick and Morty API#4",
+      "api": "Rick and Morty API",
+      "correct": true,
+      "wrong": false,
+      "unable": null,
+      "executed": true,
+      "seconds": 37.5,
+      "tokens": 196068,
+      "costUsd": 0.10172430000000002,
+      "turns": 6,
+      "toolCalls": 4,
+      "tools": [
+        "context_research",
+        "context_learn",
+        "context_learn",
+        "context_compose"
+      ],
+      "reply": "BEGIN\nThe first location listed is Earth (C-137) (location id 1). It is a Planet, and it is in Dimension C-137.\nEND"
+    }
+  ],
+  "evaluatorReply": "{\"apis\":[{\"name\":\"PokeAPI\",\"tasks\":[{\"request\":\"What type is Pikachu?\",\"referenceUrl\":\"https://pokeapi.co/api/v2/pokemon/pikachu\",\"answerPaths\":[\"types.0.type.name\"]},{\"request\":\"How tall and how heavy is Charizard according to the Pokémon data?\",\"referenceUrl\":\"https://pokeapi.co/api/v2/pokemon/charizard\",\"answerPaths\":[\"height\",\"weight\"]},{\"request\":\"What is the power, accuracy, and type of the move Thunderbolt?\",\"referenceUrl\":\"https://pokeapi.co/api/v2/move/thunderbolt\",\"answerPaths\":[\"power\",\"accuracy\",\"type.name\"]},{\"request\":\"Which generation was Mewtwo introduced in, and is it a legendary Pokémon?\",\"referenceUrl\":\"https://pokeapi.co/api/v2/pokemon-species/mewtwo\",\"answerPaths\":[\"generation.name\",\"is_legendary\"]}]},{\"name\":\"Rick and Morty API\",\"tasks\":[{\"request\":\"What is the full name, status, and species of character number 1 in Rick and Morty?\",\"referenceUrl\":\"https://rickandmortyapi.com/api/character/1\",\"answerPaths\":[\"name\",\"status\",\"species\"]},{\"request\":\"What is the name and gender of the second character in the Rick and Morty database?\",\"referenceUrl\":\"https://rickandmortyapi.com/api/character/2\",\"answerPaths\":[\"name\",\"gender\"]},{\"request\":\"What was the title and original air date of the very first Rick and Morty episode, and what's its episode code?\",\"referenceUrl\":\"https://rickandmortyapi.com/api/episode/1\",\"answerPaths\":[\"name\",\"air_date\",\"episode\"]},{\"request\":\"What is the first location listed in Rick and Morty, what kind of place is it, and which dimension is it in?\",\"referenceUrl\":\"https://rickandmortyapi.com/api/location/1\",\"answerPaths\":[\"name\",\"type\",\"dimension\"]}]},{\"name\":\"REST Countries\",\"tasks\":[{\"request\":\"What is the capital city of Japan?\",\"referenceUrl\":\"https://restcountries.com/v3.1/name/japan\",\"answerPaths\":[\"0.capital.0\"]},{\"request\":\"What currency does Switzerland use?\",\"referenceUrl\":\"https://restcountries.com/v3.1/alpha/CHE\",\"answerPaths\":[\"0.currencies.CHF.name\"]},{\"request\":\"Which region and subregion is Kenya in?\",\"referenceUrl\":\"https://restcountries.com/v3.1/alpha/KEN\",\"answerPaths\":[\"0.region\",\"0.subregion\"]},{\"request\":\"Is Bolivia landlocked, and what is its official name?\",\"referenceUrl\":\"https://restcountries.com/v3.1/alpha/BOL\",\"answerPaths\":[\"0.landlocked\",\"0.name.official\"]}]}]}",
+  "summary": {
+    "A": {
+      "n": 8,
+      "correct": 6,
+      "wrong": 0
+    },
+    "D": {
+      "n": 8,
+      "correct": 8,
+      "wrong": 0
+    }
+  },
+  "replacementReplies": [
+    "{\"tasks\":[{\"api\":\"REST Countries\",\"request\":\"Which country has Tokyo as its capital, and what is that country's official name?\",\"referenceUrl\":\"https://restcountries.com/v3.1/capital/tokyo?fields=name,capital\",\"answerPaths\":[\"0.name.official\"]},{\"api\":\"REST Countries\",\"request\":\"What is the official name of the country whose currency code is CHF?\",\"referenceUrl\":\"https://restcountries.com/v3.1/name/switzerland?fullText=true&fields=name,currencies\",\"answerPaths\":[\"0.name.official\",\"0.currencies.CHF.name\"]},{\"api\":\"REST Countries\",\"request\":\"What region and subregion is Kenya in?\",\"referenceUrl\":\"https://restcountries.com/v3.1/name/kenya?fullText=true&fields=name,region,subregion\",\"answerPaths\":[\"0.region\",\"0.subregion\"]},{\"api\":\"REST Countries\",\"request\":\"Is Bolivia landlocked?\",\"referenceUrl\":\"https://restcountries.com/v3.1/name/bolivia?fields=name,landlocked\",\"answerPaths\":[\"0.landlocked\"]}]}"
+  ]
+}
