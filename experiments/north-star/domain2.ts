@@ -10,8 +10,10 @@ import { join, resolve } from "node:path";
 import { OUT, claudeSession, extract, readJsonl } from "./common.ts";
 
 const TAG = process.argv[2];
+// Pilot mode (harness debugging before the freeze): a development API only, separate file.
+const PILOT = process.argv.includes("--pilot");
 const COMMIT = execFileSync("git", ["rev-parse", `${TAG}^{commit}`], { encoding: "utf8" }).trim();
-const FILE = `${OUT}/domain2-${TAG}.json`;
+const FILE = PILOT ? `${OUT}/pilot-domain2-${TAG}.json` : `${OUT}/domain2-${TAG}.json`;
 const WORK = realpathSync(tmpdir()) + `/ns-d2-${TAG}`;
 const BUILD = `${WORK}/build`;
 if (!existsSync(`${BUILD}/bin/rcx.ts`)) {
@@ -19,7 +21,7 @@ if (!existsSync(`${BUILD}/bin/rcx.ts`)) {
   execFileSync("sh", ["-c", `git archive ${TAG} | tar -x -C ${JSON.stringify(BUILD)}`]);
 }
 // Pre-registered list (EVALUATION-PLAN.md §4): name and root URL only.
-const APIS = [
+const APIS = PILOT ? [{ name: "Countries GraphQL (development API)", root: "https://countries.trevorblades.com" }] : [
   { name: "Open-Meteo forecast", root: "https://api.open-meteo.com" },
   { name: "PokeAPI", root: "https://pokeapi.co" },
   { name: "GBIF species", root: "https://api.gbif.org" },
@@ -53,7 +55,7 @@ const pick = (v: any, path: string): unknown => path.replace(/^\$\.?/, "").split
 
 if (!ev.tasks.length) {
   const prompt = `You are an independent evaluator for a software benchmark. You have no tools; answer from your own knowledge. Reply with JSON only.
-From this list of public, read-only, no-authentication web APIs, choose THREE, in an order of your own choosing:
+From this list of public, read-only, no-authentication web APIs, choose ${PILOT ? "ONE" : "THREE"}, in an order of your own choosing:
 ${APIS.map((a) => `- ${a.name} (${a.root})`).join("\n")}
 For each, write four tasks a user might ask that the API answers. Rules:
 - "request": plain words, as a user would ask; do not give URLs or parameter names.
@@ -64,7 +66,7 @@ FORMAT: {"apis":[{"name":"...","tasks":[{"request":"...","referenceUrl":"...","a
   const text = await evaluator(prompt);
   ev.evaluatorReply = text;
   const j = JSON.parse(/\{[\s\S]*\}/.exec(text)![0]);
-  for (const api of j.apis.slice(0, 3)) {
+  for (const api of j.apis.slice(0, PILOT ? 1 : 3)) {
     const root = APIS.find((a) => a.name === api.name)?.root ?? new URL(api.tasks[0].referenceUrl).origin;
     for (const [i, t] of api.tasks.slice(0, 4).entries()) {
       // The reference request's values are the truth (fetched now, read-only).
@@ -85,7 +87,7 @@ FORMAT: {"apis":[{"name":"...","tasks":[{"request":"...","referenceUrl":"...","a
   save();
 }
 
-for (const t of ev.tasks.filter((x: any) => x.valid)) {
+for (const t of ev.tasks.filter((x: any) => x.valid).slice(0, PILOT ? 2 : undefined)) {
   for (const arm of ["A", "D"]) {
     const key = `${arm}|${t.id}`;
     if (ev.sessions.some((s: any) => s.key === key && !s.blocked)) continue;
