@@ -1,8 +1,8 @@
 {
-  "seed": 46577093,
+  "seed": 704919311,
   "domain": "accounts",
   "gateway": false,
-  "startedAt": "2026-10-17T02:28:33.054Z",
+  "startedAt": "2026-10-17T09:05:20.513Z",
   "steps": [
     {
       "n": 1,
@@ -17,7 +17,7 @@
       "title": "Connect an MCP client to RightClick X (stdio)",
       "ok": true,
       "tools": 13,
-      "startupMs": 124
+      "startupMs": 121.5
     },
     {
       "n": 3,
@@ -43,11 +43,11 @@
       "ok": true,
       "found": [
         "openapi",
-        "graphql",
-        "mcp"
+        "openapi",
+        "openapi"
       ],
       "newCapabilities": 3,
-      "ms": 34.2
+      "ms": 32.7
     },
     {
       "n": 5,
@@ -57,7 +57,7 @@
       "best": [
         "Account lookup",
         "Holder lookup",
-        "Vat Rate Lookup"
+        "Get VAT rate"
       ],
       "planningMs": 3.4
     },
@@ -67,67 +67,67 @@
       "ok": true,
       "steps": [
         "Account lookup ← acct_ref=$in.account_id",
-        "Holder lookup ← cust_ref=0.cref",
-        "Vat Rate Lookup ← ctry=1.ctry"
+        "Holder lookup ← cref=0.hldr",
+        "Get VAT rate ← cc=1.ctry"
       ]
     },
     {
       "n": 7,
       "title": "Execute the workflow",
       "ok": true,
-      "input": "ACC-1006",
+      "input": "ACC-1001",
       "pipeline": [
         "Account lookup",
         "Holder lookup",
-        "Vat Rate Lookup"
+        "Get VAT rate"
       ],
-      "ms": 5.8
+      "ms": 5.1
     },
     {
       "n": 8,
       "title": "Verify against independently held test data",
       "ok": true,
-      "expected": 5.7,
-      "got": 5.7
+      "expected": 8.5,
+      "got": 8.5
     },
     {
       "n": 9,
       "title": "Save the successful composition and reuse it",
       "ok": true,
-      "saved": "Vat rate account holder country: Account lookup → Holder lookup → Vat Rate Lookup",
+      "saved": "Vat rate account holder country: Account lookup → Holder lookup → Get VAT rate",
       "reusedAs": [
-        "Vat rate account holder country: Account lookup → Holder lookup → Vat Rate Lookup"
+        "Vat rate account holder country: Account lookup → Holder lookup → Get VAT rate"
       ],
-      "expected": 24.4,
-      "got": 24.4,
-      "ms": 3.1
+      "expected": 21.5,
+      "got": 21.5,
+      "ms": 2.8
     },
     {
       "n": 10,
-      "title": "Change the interface of the last provider in the chain (Ashgrove)",
+      "title": "Change the interface of the last provider in the chain (Emberlane)",
       "ok": true,
-      "before": "graphql \"VAT rate lookup\" ctry → ctry, vr",
-      "after": "openapi \"Get VAT rate\" jur → result.{jur, vatpct}"
+      "before": "openapi \"Get VAT rate\" cc → cc, vatpct",
+      "after": "graphql \"VAT rate inquiry\" ctry → result.{ctry, vr}"
     },
     {
       "n": 11,
       "title": "Recover without changing integration code",
       "ok": true,
       "healing": [
-        "API drift at http://127.0.0.1:54648/: graphql:127-0-0-1-54648-graphql → openapi:ashgrove; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:53250/: openapi:emberlane → graphql:127-0-0-1-53250-graphql; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "via": [
         "openapi:harbourly",
-        "mcp:mistral-depot",
-        "openapi:ashgrove"
+        "openapi:quillbase",
+        "graphql:127-0-0-1-53250-graphql"
       ],
-      "expected": 22.7,
-      "got": 22.7,
+      "expected": 8.5,
+      "got": 8.5,
       "ms": 9.5
     },
     {
       "n": 12,
-      "title": "Remove that provider (Ashgrove)",
+      "title": "Remove that provider (Emberlane)",
       "ok": true
     },
     {
@@ -136,38 +136,38 @@
       "ok": true,
       "status": "failed",
       "healing": [
-        "provider gone at http://127.0.0.1:54648/: withdrew openapi:ashgrove (1 capabilities, 1 pipeline(s) retired)"
+        "provider gone at http://127.0.0.1:53250/: withdrew graphql:127-0-0-1-53250-graphql (1 capabilities, 1 pipeline(s) retired)"
       ],
       "withdrawn": [
-        "Ashgrove"
+        "GraphQL 127.0.0.1:53250"
       ],
       "capabilities": "27 → 25",
       "savedPipelines": "1 → 0"
     },
     {
       "n": 14,
-      "title": "Introduce a different provider (Lumen Cargo, openapi): the objective works again",
+      "title": "Introduce a different provider (Mistral Depot, graphql): the objective works again",
       "ok": true,
       "learned": [
-        "openapi: 1 operations"
+        "graphql: 1 fields"
       ],
       "via": [
         "openapi:harbourly",
-        "mcp:mistral-depot",
-        "openapi:lumen-cargo"
+        "openapi:quillbase",
+        "graphql:127-0-0-1-53322-graphql"
       ],
-      "expected": 24.4,
-      "got": 24.4,
-      "ms": 3.1
+      "expected": 5.5,
+      "got": 5.5,
+      "ms": 2.4
     }
   ],
   "benchmarks": {
-    "startupMs": 124,
+    "startupMs": 121.5,
     "mcpLatencyMs": {
-      "p50": 0.04,
-      "p95": 0.12
+      "p50": 0.03,
+      "p95": 0.11
     },
-    "discoveryMs": 34.2,
+    "discoveryMs": 32.7,
     "graph": {
       "providers": 5,
       "capabilities": 26,
@@ -178,13 +178,13 @@
     },
     "graphStatsMs": 0.1,
     "planningMs": 3.4,
-    "executionMs": 5.8,
+    "executionMs": 5.1,
     "recoveryAfterChangeMs": 9.5,
-    "recoveryAfterNewProviderMs": 3.1,
-    "memoryMB": 138
+    "recoveryAfterNewProviderMs": 2.4,
+    "memoryMB": 142
   },
   "freeze": {
-    "commit": "202bcafddac43441b8540c307dabe724da947e91",
+    "commit": "bb5a98397eb2d2c79314b8f9138de68640a8c945",
     "tag": "lab-freeze-9",
     "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/core/authority.ts\nsrc/core/fields.ts\nsrc/core/graph.ts\nsrc/core/identities.ts\nsrc/core/planner.ts\nsrc/core/sandbox.ts\nsrc/core/satisfaction.ts\nsrc/core/semantics.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/core/yaml.ts\nsrc/entry/durable.ts\nsrc/entry/edge.ts\nsrc/interface/http.ts\nsrc/interface/tools.ts\nsrc/reflectors/cli.ts\nsrc/reflectors/discover.ts\nsrc/reflectors/graphql.ts\nsrc/reflectors/mcp.ts\nsrc/reflectors/net.ts\nsrc/reflectors/openapi.ts\nsrc/reflectors/platform.ts\nsrc/runtime.ts",
     "uncommittedProductChanges": "",
@@ -199,44 +199,44 @@
       "input": "acct_ref",
       "outputs": [
         "acct_ref",
-        "cref",
-        "bal"
+        "hldr",
+        "amt"
       ]
     },
     {
       "service": "kyc",
-      "brand": "Mistral Depot",
-      "protocol": "mcp",
+      "brand": "Quillbase",
+      "protocol": "openapi",
       "operation": "Holder lookup",
-      "input": "cust_ref",
+      "input": "cref",
       "outputs": [
-        "cust_ref",
-        "fullnm",
+        "cref",
+        "nm",
         "ctry"
       ]
     },
     {
       "service": "vat",
-      "brand": "Ashgrove",
-      "protocol": "graphql",
-      "operation": "VAT rate lookup",
-      "input": "ctry",
+      "brand": "Emberlane",
+      "protocol": "openapi",
+      "operation": "Get VAT rate",
+      "input": "cc",
       "outputs": [
-        "ctry",
-        "vr"
+        "cc",
+        "vatpct"
       ]
     }
   ],
   "firstRunProviders": [
     "openapi:harbourly",
-    "mcp:mistral-depot",
-    "graphql:127-0-0-1-54648-graphql"
+    "openapi:quillbase",
+    "openapi:emberlane"
   ],
   "receipts": {
     "count": 21,
     "intact": true,
     "brokenAt": null,
-    "head": "b328dc2e0def292112eebc66e71c544847c5c15b8364c1ca653a01f02ed3e58f"
+    "head": "a4160c57f88c3f1aa7da51c16327adca2560d8e5e8cb0d5eea177a5cd4c4b46f"
   },
   "passed": 14,
   "total": 14

@@ -1,8 +1,8 @@
 {
-  "seed": 57979905,
+  "seed": 22940735,
   "domain": "logistics",
   "gateway": false,
-  "startedAt": "2026-10-17T02:28:29.323Z",
+  "startedAt": "2026-10-17T09:05:16.812Z",
   "steps": [
     {
       "n": 1,
@@ -17,7 +17,7 @@
       "title": "Connect an MCP client to RightClick X (stdio)",
       "ok": true,
       "tools": 13,
-      "startupMs": 132.4
+      "startupMs": 121.1
     },
     {
       "n": 3,
@@ -43,11 +43,11 @@
       "ok": true,
       "found": [
         "openapi",
-        "mcp",
-        "mcp"
+        "graphql",
+        "openapi"
       ],
       "newCapabilities": 3,
-      "ms": 37.5
+      "ms": 31.3
     },
     {
       "n": 5,
@@ -56,78 +56,78 @@
       "candidatePlans": 2,
       "best": [
         "Shipment details",
-        "Warehouse details",
-        "Get shipping rate"
+        "Warehouse Details",
+        "City shipping rate"
       ],
-      "planningMs": 2.8
+      "planningMs": 2.6
     },
     {
       "n": 6,
       "title": "Compose a multi-provider workflow",
       "ok": true,
       "steps": [
-        "Shipment details ← shipment_id=$in.shipment_id",
-        "Warehouse details ← warehouseId=0.warehouse_number",
-        "Get shipping rate ← city=1.location"
+        "Shipment details ← shipmentId=$in.shipment_id",
+        "Warehouse Details ← warehouse_id=0.warehouse_number",
+        "City shipping rate ← city=1.location"
       ]
     },
     {
       "n": 7,
       "title": "Execute the workflow",
       "ok": true,
-      "input": "SHP-1005",
+      "input": "SHP-1004",
       "pipeline": [
         "Shipment details",
-        "Warehouse details",
-        "Get shipping rate"
+        "Warehouse Details",
+        "City shipping rate"
       ],
-      "ms": 5.7
+      "ms": 5.3
     },
     {
       "n": 8,
       "title": "Verify against independently held test data",
       "ok": true,
-      "expected": 9,
-      "got": 9
+      "expected": 32.6,
+      "got": 32.6
     },
     {
       "n": 9,
       "title": "Save the successful composition and reuse it",
       "ok": true,
-      "saved": "Shipping rate shipment warehouse city: Shipment details → Warehouse details → Get shipping rate",
+      "saved": "Shipping rate shipment warehouse city: Shipment details → Warehouse Details → City shipping rate",
       "reusedAs": [
-        "Shipping rate shipment warehouse city: Shipment details → Warehouse details → Get shipping rate"
+        "Shipping rate shipment warehouse city: Shipment details → Warehouse Details → City shipping rate"
       ],
-      "expected": 8.2,
-      "got": 8.2,
-      "ms": 3.7
+      "expected": 2.6,
+      "got": 2.6,
+      "ms": 2.4
     },
     {
       "n": 10,
-      "title": "Change the interface of the last provider in the chain (Mistral Depot)",
+      "title": "Change the interface of the last provider in the chain (Cobaltix)",
       "ok": true,
-      "before": "mcp \"Get shipping rate\" city → city, shipping_rate",
-      "after": "openapi \"Shipping rate by city\" town → result.{town, price_per_kg}"
+      "before": "openapi \"City shipping rate\" city → city, rate",
+      "after": "graphql \"Get shipping rate\" location → result.{location, shipping_rate}"
     },
     {
       "n": 11,
       "title": "Recover without changing integration code",
       "ok": true,
       "healing": [
-        "API drift at http://127.0.0.1:53771/: mcp:mistral-depot → openapi:mistral-depot; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:52373/: openapi:cobaltix → graphql:127-0-0-1-52373-graphql; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "via": [
-        "mcp:paperhaus",
-        "openapi:brightmark",
-        "openapi:mistral-depot"
+        "openapi:harbourly",
+        "graphql:127-0-0-1-52372-graphql",
+        "graphql:127-0-0-1-52373-graphql"
       ],
-      "expected": 8.2,
-      "got": 8.2,
-      "ms": 8.5
+      "expected": 28,
+      "got": 28,
+      "ms": 8.7
     },
     {
       "n": 12,
-      "title": "Remove that provider (Mistral Depot)",
+      "title": "Remove that provider (Cobaltix)",
       "ok": true
     },
     {
@@ -136,38 +136,38 @@
       "ok": true,
       "status": "failed",
       "healing": [
-        "provider gone at http://127.0.0.1:53771/: withdrew openapi:mistral-depot (1 capabilities, 1 pipeline(s) retired)"
+        "provider gone at http://127.0.0.1:52373/: withdrew graphql:127-0-0-1-52373-graphql (1 capabilities, 1 pipeline(s) retired)"
       ],
       "withdrawn": [
-        "Mistral Depot"
+        "GraphQL 127.0.0.1:52373"
       ],
       "capabilities": "27 → 25",
       "savedPipelines": "1 → 0"
     },
     {
       "n": 14,
-      "title": "Introduce a different provider (Tallyport, graphql): the objective works again",
+      "title": "Introduce a different provider (Ledgerline, mcp): the objective works again",
       "ok": true,
       "learned": [
-        "graphql: 1 fields"
+        "mcp: 1 tools"
       ],
       "via": [
-        "mcp:paperhaus",
-        "openapi:brightmark",
-        "graphql:127-0-0-1-53844-graphql"
+        "openapi:harbourly",
+        "graphql:127-0-0-1-52372-graphql",
+        "mcp:ledgerline"
       ],
-      "expected": 8.2,
-      "got": 8.2,
-      "ms": 2.2
+      "expected": 32.6,
+      "got": 32.6,
+      "ms": 1.8
     }
   ],
   "benchmarks": {
-    "startupMs": 132.4,
+    "startupMs": 121.1,
     "mcpLatencyMs": {
-      "p50": 0.03,
+      "p50": 0.04,
       "p95": 0.13
     },
-    "discoveryMs": 37.5,
+    "discoveryMs": 31.3,
     "graph": {
       "providers": 5,
       "capabilities": 26,
@@ -177,14 +177,14 @@
       "total": 114
     },
     "graphStatsMs": 0.1,
-    "planningMs": 2.8,
-    "executionMs": 5.7,
-    "recoveryAfterChangeMs": 8.5,
-    "recoveryAfterNewProviderMs": 2.2,
-    "memoryMB": 142
+    "planningMs": 2.6,
+    "executionMs": 5.3,
+    "recoveryAfterChangeMs": 8.7,
+    "recoveryAfterNewProviderMs": 1.8,
+    "memoryMB": 137
   },
   "freeze": {
-    "commit": "202bcafddac43441b8540c307dabe724da947e91",
+    "commit": "bb5a98397eb2d2c79314b8f9138de68640a8c945",
     "tag": "lab-freeze-9",
     "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/core/authority.ts\nsrc/core/fields.ts\nsrc/core/graph.ts\nsrc/core/identities.ts\nsrc/core/planner.ts\nsrc/core/sandbox.ts\nsrc/core/satisfaction.ts\nsrc/core/semantics.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/core/yaml.ts\nsrc/entry/durable.ts\nsrc/entry/edge.ts\nsrc/interface/http.ts\nsrc/interface/tools.ts\nsrc/reflectors/cli.ts\nsrc/reflectors/discover.ts\nsrc/reflectors/graphql.ts\nsrc/reflectors/mcp.ts\nsrc/reflectors/net.ts\nsrc/reflectors/openapi.ts\nsrc/reflectors/platform.ts\nsrc/runtime.ts",
     "uncommittedProductChanges": "",
@@ -193,50 +193,50 @@
   "environment": [
     {
       "service": "shipments",
-      "brand": "Paperhaus",
-      "protocol": "mcp",
+      "brand": "Harbourly",
+      "protocol": "openapi",
       "operation": "Shipment details",
-      "input": "shipment_id",
+      "input": "shipmentId",
       "outputs": [
-        "shipment_id",
+        "shipmentId",
         "warehouse_number",
-        "weight"
+        "gross_weight"
       ]
     },
     {
       "service": "warehouses",
-      "brand": "Brightmark",
-      "protocol": "openapi",
+      "brand": "Northwind Billing",
+      "protocol": "graphql",
       "operation": "Warehouse details",
-      "input": "warehouseId",
+      "input": "warehouse_id",
       "outputs": [
-        "warehouseId",
+        "warehouse_id",
         "location",
         "email"
       ]
     },
     {
       "service": "rates",
-      "brand": "Mistral Depot",
-      "protocol": "mcp",
-      "operation": "Get shipping rate",
+      "brand": "Cobaltix",
+      "protocol": "openapi",
+      "operation": "City shipping rate",
       "input": "city",
       "outputs": [
         "city",
-        "shipping_rate"
+        "rate"
       ]
     }
   ],
   "firstRunProviders": [
-    "mcp:paperhaus",
-    "openapi:brightmark",
-    "mcp:mistral-depot"
+    "openapi:harbourly",
+    "graphql:127-0-0-1-52372-graphql",
+    "openapi:cobaltix"
   ],
   "receipts": {
     "count": 21,
     "intact": true,
     "brokenAt": null,
-    "head": "858ac3887500384df585ae458efbfd4e8ecc42e4d6f00fbeac1d495acaf95963"
+    "head": "daa21266835745ac6846e1eddb0a58d59a5bc03ac7f58fa399b337a7b9c22dd9"
   },
   "passed": 14,
   "total": 14

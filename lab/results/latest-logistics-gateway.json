@@ -1,8 +1,8 @@
 {
-  "seed": 428592426,
+  "seed": 405156287,
   "domain": "logistics",
   "gateway": true,
-  "startedAt": "2026-10-17T02:28:41.103Z",
+  "startedAt": "2026-10-17T09:05:28.250Z",
   "steps": [
     {
       "n": 1,
@@ -17,7 +17,7 @@
       "title": "Connect an MCP client to RightClick X (stdio)",
       "ok": true,
       "tools": 13,
-      "startupMs": 119
+      "startupMs": 118.3
     },
     {
       "n": 3,
@@ -44,11 +44,10 @@
       "found": [
         "graphql",
         "graphql",
-        "graphql",
-        "graphql"
+        "mcp"
       ],
       "newCapabilities": 3,
-      "ms": 36.6
+      "ms": 36
     },
     {
       "n": 5,
@@ -56,9 +55,9 @@
       "ok": true,
       "candidatePlans": 2,
       "best": [
-        "Track Shipment",
-        "Fetch Warehouse",
-        "Shipping rate by city"
+        "Shipment Details",
+        "Look Up Warehouse",
+        "Get shipping rate"
       ],
       "planningMs": 2.6
     },
@@ -67,9 +66,9 @@
       "title": "Compose a multi-provider workflow",
       "ok": true,
       "steps": [
-        "Track Shipment ← shipment_id=$in.shipment_id",
-        "Fetch Warehouse ← warehouseId=0.warehouse_number",
-        "Shipping rate by city ← town=1.location"
+        "Shipment Details ← shipmentId=$in.shipment_id",
+        "Look Up Warehouse ← warehouse_number=0.warehouse_number",
+        "Get shipping rate ← location=1.location"
       ]
     },
     {
@@ -78,57 +77,57 @@
       "ok": true,
       "input": "SHP-1001",
       "pipeline": [
-        "Track Shipment",
-        "Fetch Warehouse",
-        "Shipping rate by city"
+        "Shipment Details",
+        "Look Up Warehouse",
+        "Get shipping rate"
       ],
-      "ms": 4.9
+      "ms": 4.8
     },
     {
       "n": 8,
       "title": "Verify against independently held test data",
       "ok": true,
-      "expected": 34.4,
-      "got": 34.4
+      "expected": 33.5,
+      "got": 33.5
     },
     {
       "n": 9,
       "title": "Save the successful composition and reuse it",
       "ok": true,
-      "saved": "Shipping rate shipment warehouse city: Track Shipment → Fetch Warehouse → Shipping rate by city",
+      "saved": "Shipping rate shipment warehouse city: Shipment Details → Look Up Warehouse → Get shipping rate",
       "reusedAs": [
-        "Shipping rate shipment warehouse city: Track Shipment → Fetch Warehouse → Shipping rate by city"
+        "Shipping rate shipment warehouse city: Shipment Details → Look Up Warehouse → Get shipping rate"
       ],
-      "expected": 29.6,
-      "got": 29.6,
+      "expected": 7.1,
+      "got": 7.1,
       "ms": 2.3
     },
     {
       "n": 10,
-      "title": "Change the interface of the last provider in the chain (Cobaltix)",
+      "title": "Change the interface of the last provider in the chain (Brightmark)",
       "ok": true,
-      "before": "mcp \"Shipping rate by city\" town → town, freight_rate",
-      "after": "graphql \"City shipping rate\" location → result.{location, rate}"
+      "before": "mcp \"Get shipping rate\" location → location, price_per_kg",
+      "after": "openapi \"Lookup shipping rate for a city\" city → result.{city, rate}"
     },
     {
       "n": 11,
       "title": "Recover without changing integration code",
       "ok": true,
       "healing": [
-        "API drift at http://127.0.0.1:56292/: graphql:127-0-0-1-56289-graphql,graphql:127-0-0-1-56290-graphql,mcp:cobaltix → graphql:127-0-0-1-56289-graphql,graphql:127-0-0-1-56290-graphql,graphql:127-0-0-1-56291-graphql; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:54858/: graphql:127-0-0-1-54855-graphql,graphql:127-0-0-1-54856-graphql,mcp:brightmark → graphql:127-0-0-1-54855-graphql,graphql:127-0-0-1-54856-graphql,openapi:brightmark; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "via": [
-        "graphql:127-0-0-1-56289-graphql",
-        "graphql:127-0-0-1-56290-graphql",
-        "graphql:127-0-0-1-56291-graphql"
+        "graphql:127-0-0-1-54855-graphql",
+        "graphql:127-0-0-1-54856-graphql",
+        "openapi:brightmark"
       ],
-      "expected": 29.6,
-      "got": 29.6,
-      "ms": 15.9
+      "expected": 25.4,
+      "got": 25.4,
+      "ms": 17.9
     },
     {
       "n": 12,
-      "title": "Remove that provider (Cobaltix)",
+      "title": "Remove that provider (Brightmark)",
       "ok": true
     },
     {
@@ -137,17 +136,17 @@
       "ok": true,
       "status": "failed",
       "healing": [
-        "API drift at http://127.0.0.1:56292/: graphql:127-0-0-1-56289-graphql,graphql:127-0-0-1-56290-graphql,graphql:127-0-0-1-56291-graphql → graphql:127-0-0-1-56289-graphql,graphql:127-0-0-1-56290-graphql; +0 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:54858/: graphql:127-0-0-1-54855-graphql,graphql:127-0-0-1-54856-graphql,openapi:brightmark → graphql:127-0-0-1-54855-graphql,graphql:127-0-0-1-54856-graphql; +0 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "withdrawn": [
-        "GraphQL 127.0.0.1:56291"
+        "Brightmark"
       ],
       "capabilities": "27 → 25",
       "savedPipelines": "1 → 0"
     },
     {
       "n": 14,
-      "title": "Introduce a different provider (Duneworks, openapi): the objective works again",
+      "title": "Introduce a different provider (Tallyport, openapi): the objective works again",
       "ok": true,
       "learned": [
         "api-catalog: 3 services listed",
@@ -156,22 +155,22 @@
         "openapi: 1 operations"
       ],
       "via": [
-        "graphql:127-0-0-1-56289-graphql",
-        "graphql:127-0-0-1-56290-graphql",
-        "openapi:duneworks"
+        "graphql:127-0-0-1-54855-graphql",
+        "graphql:127-0-0-1-54856-graphql",
+        "openapi:tallyport"
       ],
-      "expected": 34.4,
-      "got": 34.4,
-      "ms": 2.4
+      "expected": 13.9,
+      "got": 13.9,
+      "ms": 1.9
     }
   ],
   "benchmarks": {
-    "startupMs": 119,
+    "startupMs": 118.3,
     "mcpLatencyMs": {
-      "p50": 0.03,
+      "p50": 0.04,
       "p95": 0.11
     },
-    "discoveryMs": 36.6,
+    "discoveryMs": 36,
     "graph": {
       "providers": 5,
       "capabilities": 26,
@@ -182,13 +181,13 @@
     },
     "graphStatsMs": 0.1,
     "planningMs": 2.6,
-    "executionMs": 4.9,
-    "recoveryAfterChangeMs": 15.9,
-    "recoveryAfterNewProviderMs": 2.4,
-    "memoryMB": 148
+    "executionMs": 4.8,
+    "recoveryAfterChangeMs": 17.9,
+    "recoveryAfterNewProviderMs": 1.9,
+    "memoryMB": 147
   },
   "freeze": {
-    "commit": "202bcafddac43441b8540c307dabe724da947e91",
+    "commit": "bb5a98397eb2d2c79314b8f9138de68640a8c945",
     "tag": "lab-freeze-9",
     "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/core/authority.ts\nsrc/core/fields.ts\nsrc/core/graph.ts\nsrc/core/identities.ts\nsrc/core/planner.ts\nsrc/core/sandbox.ts\nsrc/core/satisfaction.ts\nsrc/core/semantics.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/core/yaml.ts\nsrc/entry/durable.ts\nsrc/entry/edge.ts\nsrc/interface/http.ts\nsrc/interface/tools.ts\nsrc/reflectors/cli.ts\nsrc/reflectors/discover.ts\nsrc/reflectors/graphql.ts\nsrc/reflectors/mcp.ts\nsrc/reflectors/net.ts\nsrc/reflectors/openapi.ts\nsrc/reflectors/platform.ts\nsrc/runtime.ts",
     "uncommittedProductChanges": "",
@@ -199,48 +198,48 @@
       "service": "shipments",
       "brand": "Fjordsoft",
       "protocol": "graphql",
-      "operation": "Track shipment",
-      "input": "shipment_id",
+      "operation": "Shipment details",
+      "input": "shipmentId",
       "outputs": [
-        "shipment_id",
+        "shipmentId",
         "warehouse_number",
-        "weight"
+        "gross_weight"
       ]
     },
     {
       "service": "warehouses",
-      "brand": "Emberlane",
+      "brand": "Ashgrove",
       "protocol": "graphql",
-      "operation": "Fetch warehouse",
-      "input": "warehouseId",
+      "operation": "Look up warehouse",
+      "input": "warehouse_number",
       "outputs": [
-        "warehouseId",
+        "warehouse_number",
         "location",
-        "manager_email"
+        "contact_email"
       ]
     },
     {
       "service": "rates",
-      "brand": "Cobaltix",
+      "brand": "Brightmark",
       "protocol": "mcp",
-      "operation": "Shipping rate by city",
-      "input": "town",
+      "operation": "Get shipping rate",
+      "input": "location",
       "outputs": [
-        "town",
-        "freight_rate"
+        "location",
+        "price_per_kg"
       ]
     }
   ],
   "firstRunProviders": [
-    "graphql:127-0-0-1-56289-graphql",
-    "graphql:127-0-0-1-56290-graphql",
-    "mcp:cobaltix"
+    "graphql:127-0-0-1-54855-graphql",
+    "graphql:127-0-0-1-54856-graphql",
+    "mcp:brightmark"
   ],
   "receipts": {
     "count": 21,
     "intact": true,
     "brokenAt": null,
-    "head": "c5baa9a7ae41ecbaa8c5ac349e0a6003a947c8c22a7014eeb65cb4facdcd8234"
+    "head": "fa0a1508828861d4a4a50ed281efc952fa89df5d6541b0bc5c9ce9ac3cbf66ad"
   },
   "passed": 14,
   "total": 14

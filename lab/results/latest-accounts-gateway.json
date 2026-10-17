@@ -1,8 +1,8 @@
 {
-  "seed": 778251215,
+  "seed": 559069760,
   "domain": "accounts",
   "gateway": true,
-  "startedAt": "2026-10-17T02:28:45.134Z",
+  "startedAt": "2026-10-17T09:05:32.117Z",
   "steps": [
     {
       "n": 1,
@@ -17,7 +17,7 @@
       "title": "Connect an MCP client to RightClick X (stdio)",
       "ok": true,
       "tools": 13,
-      "startupMs": 129.8
+      "startupMs": 117.4
     },
     {
       "n": 3,
@@ -42,12 +42,12 @@
       "title": "Discover the environment's services from its catalog only (no service addresses, protocols or schemas given)",
       "ok": true,
       "found": [
-        "openapi",
         "mcp",
-        "mcp"
+        "mcp",
+        "graphql"
       ],
       "newCapabilities": 3,
-      "ms": 45.7
+      "ms": 37.8
     },
     {
       "n": 5,
@@ -55,79 +55,79 @@
       "ok": true,
       "candidatePlans": 3,
       "best": [
-        "Get account",
-        "Customer inquiry",
-        "VAT rate lookup"
+        "Account inquiry",
+        "Holder lookup",
+        "Get Vat Rate"
       ],
-      "planningMs": 3.7
+      "planningMs": 3.3
     },
     {
       "n": 6,
       "title": "Compose a multi-provider workflow",
       "ok": true,
       "steps": [
-        "Get account ← acctno=$in.account_id",
-        "Customer inquiry ← hldr=0.cref",
-        "VAT rate lookup ← ctry=1.cc"
+        "Account inquiry ← acctno=$in.account_id",
+        "Holder lookup ← hldr=0.hldr",
+        "Get Vat Rate ← cc=1.ctry"
       ]
     },
     {
       "n": 7,
       "title": "Execute the workflow",
       "ok": true,
-      "input": "ACC-1004",
+      "input": "ACC-1003",
       "pipeline": [
-        "Get account",
-        "Customer inquiry",
-        "VAT rate lookup"
+        "Account inquiry",
+        "Holder lookup",
+        "Get Vat Rate"
       ],
-      "ms": 6.2
+      "ms": 5.1
     },
     {
       "n": 8,
       "title": "Verify against independently held test data",
       "ok": true,
-      "expected": 14.2,
-      "got": 14.2
+      "expected": 20.3,
+      "got": 20.3
     },
     {
       "n": 9,
       "title": "Save the successful composition and reuse it",
       "ok": true,
-      "saved": "Vat rate account holder country: Get account → Customer inquiry → VAT rate lookup",
+      "saved": "Vat rate account holder country: Account inquiry → Holder lookup → Get Vat Rate",
       "reusedAs": [
-        "Vat rate account holder country: Get account → Customer inquiry → VAT rate lookup"
+        "Vat rate account holder country: Account inquiry → Holder lookup → Get Vat Rate"
       ],
-      "expected": 7.2,
-      "got": 7.2,
-      "ms": 2.8
+      "expected": 12.3,
+      "got": 12.3,
+      "ms": 3.1
     },
     {
       "n": 10,
-      "title": "Change the interface of the last provider in the chain (Cobaltix)",
+      "title": "Change the interface of the last provider in the chain (Paperhaus)",
       "ok": true,
-      "before": "mcp \"VAT rate lookup\" ctry → ctry, txr",
-      "after": "openapi \"VAT rate inquiry\" cc → result.{cc, vatpct}"
+      "before": "graphql \"Get VAT rate\" cc → cc, vr",
+      "after": "mcp \"VAT rate lookup\" ctry → result.{ctry, txr}"
     },
     {
       "n": 11,
       "title": "Recover without changing integration code",
       "ok": true,
       "healing": [
-        "API drift at http://127.0.0.1:57075/: openapi:emberlane,mcp:northwind-billing,mcp:cobaltix → openapi:emberlane,mcp:northwind-billing,openapi:cobaltix; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:55654/: mcp:emberlane,mcp:lumen-cargo,graphql:127-0-0-1-55653-graphql → mcp:emberlane,mcp:lumen-cargo,mcp:paperhaus; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "via": [
-        "openapi:emberlane",
-        "mcp:northwind-billing",
-        "openapi:cobaltix"
+        "mcp:emberlane",
+        "mcp:lumen-cargo",
+        "mcp:paperhaus"
       ],
-      "expected": 26.5,
-      "got": 26.5,
-      "ms": 18.6
+      "expected": 9,
+      "got": 9,
+      "ms": 17.2
     },
     {
       "n": 12,
-      "title": "Remove that provider (Cobaltix)",
+      "title": "Remove that provider (Paperhaus)",
       "ok": true
     },
     {
@@ -136,41 +136,41 @@
       "ok": true,
       "status": "failed",
       "healing": [
-        "API drift at http://127.0.0.1:57075/: openapi:emberlane,mcp:northwind-billing,openapi:cobaltix → openapi:emberlane,mcp:northwind-billing; +0 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:55654/: mcp:emberlane,mcp:lumen-cargo,mcp:paperhaus → mcp:emberlane,mcp:lumen-cargo; +0 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "withdrawn": [
-        "Cobaltix"
+        "Paperhaus"
       ],
       "capabilities": "27 → 25",
       "savedPipelines": "1 → 0"
     },
     {
       "n": 14,
-      "title": "Introduce a different provider (Paperhaus, openapi): the objective works again",
+      "title": "Introduce a different provider (Northwind Billing, mcp): the objective works again",
       "ok": true,
       "learned": [
         "api-catalog: 3 services listed",
-        "openapi: 1 operations",
         "mcp: 1 tools",
-        "openapi: 1 operations"
+        "mcp: 1 tools",
+        "mcp: 1 tools"
       ],
       "via": [
-        "openapi:emberlane",
-        "mcp:northwind-billing",
-        "openapi:paperhaus"
+        "mcp:emberlane",
+        "mcp:lumen-cargo",
+        "mcp:northwind-billing"
       ],
-      "expected": 11.7,
-      "got": 11.7,
-      "ms": 2.2
+      "expected": 12.3,
+      "got": 12.3,
+      "ms": 2
     }
   ],
   "benchmarks": {
-    "startupMs": 129.8,
+    "startupMs": 117.4,
     "mcpLatencyMs": {
       "p50": 0.04,
       "p95": 0.12
     },
-    "discoveryMs": 45.7,
+    "discoveryMs": 37.8,
     "graph": {
       "providers": 5,
       "capabilities": 26,
@@ -180,14 +180,14 @@
       "total": 132
     },
     "graphStatsMs": 0.1,
-    "planningMs": 3.7,
-    "executionMs": 6.2,
-    "recoveryAfterChangeMs": 18.6,
-    "recoveryAfterNewProviderMs": 2.2,
-    "memoryMB": 151
+    "planningMs": 3.3,
+    "executionMs": 5.1,
+    "recoveryAfterChangeMs": 17.2,
+    "recoveryAfterNewProviderMs": 2,
+    "memoryMB": 150
   },
   "freeze": {
-    "commit": "202bcafddac43441b8540c307dabe724da947e91",
+    "commit": "bb5a98397eb2d2c79314b8f9138de68640a8c945",
     "tag": "lab-freeze-9",
     "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/core/authority.ts\nsrc/core/fields.ts\nsrc/core/graph.ts\nsrc/core/identities.ts\nsrc/core/planner.ts\nsrc/core/sandbox.ts\nsrc/core/satisfaction.ts\nsrc/core/semantics.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/core/yaml.ts\nsrc/entry/durable.ts\nsrc/entry/edge.ts\nsrc/interface/http.ts\nsrc/interface/tools.ts\nsrc/reflectors/cli.ts\nsrc/reflectors/discover.ts\nsrc/reflectors/graphql.ts\nsrc/reflectors/mcp.ts\nsrc/reflectors/net.ts\nsrc/reflectors/openapi.ts\nsrc/reflectors/platform.ts\nsrc/runtime.ts",
     "uncommittedProductChanges": "",
@@ -197,49 +197,49 @@
     {
       "service": "ledger",
       "brand": "Emberlane",
-      "protocol": "openapi",
-      "operation": "Get account",
+      "protocol": "mcp",
+      "operation": "Account inquiry",
       "input": "acctno",
       "outputs": [
         "acctno",
-        "cref",
-        "amt"
+        "hldr",
+        "curbal"
       ]
     },
     {
       "service": "kyc",
-      "brand": "Northwind Billing",
+      "brand": "Lumen Cargo",
       "protocol": "mcp",
-      "operation": "Customer inquiry",
+      "operation": "Holder lookup",
       "input": "hldr",
       "outputs": [
         "hldr",
-        "nm",
-        "cc"
+        "lglnm",
+        "ctry"
       ]
     },
     {
       "service": "vat",
-      "brand": "Cobaltix",
-      "protocol": "mcp",
-      "operation": "VAT rate lookup",
-      "input": "ctry",
+      "brand": "Paperhaus",
+      "protocol": "graphql",
+      "operation": "Get VAT rate",
+      "input": "cc",
       "outputs": [
-        "ctry",
-        "txr"
+        "cc",
+        "vr"
       ]
     }
   ],
   "firstRunProviders": [
-    "openapi:emberlane",
-    "mcp:northwind-billing",
-    "mcp:cobaltix"
+    "mcp:emberlane",
+    "mcp:lumen-cargo",
+    "graphql:127-0-0-1-55653-graphql"
   ],
   "receipts": {
     "count": 21,
     "intact": true,
     "brokenAt": null,
-    "head": "7d007c27d3dd2677f6731cd5290d700ab1efe1f82c1121087a265f6619067313"
+    "head": "3a83cf428e7229b024d3ae129a7b8cdf26e29288fb67f29d9dad06142f9ebc8a"
   },
   "passed": 14,
   "total": 14
