@@ -1,8 +1,8 @@
 {
-  "seed": 732172485,
+  "seed": 199959122,
   "domain": "accounts",
   "gateway": false,
-  "startedAt": "2026-10-16T22:17:49.921Z",
+  "startedAt": "2026-10-17T02:12:18.932Z",
   "steps": [
     {
       "n": 1,
@@ -17,7 +17,7 @@
       "title": "Connect an MCP client to RightClick X (stdio)",
       "ok": true,
       "tools": 13,
-      "startupMs": 256.3
+      "startupMs": 124.4
     },
     {
       "n": 3,
@@ -47,87 +47,87 @@
         "mcp"
       ],
       "newCapabilities": 3,
-      "ms": 76.7
+      "ms": 33.3
     },
     {
       "n": 5,
       "title": "Identify suitable capabilities",
       "ok": true,
-      "candidatePlans": 3,
+      "candidatePlans": 2,
       "best": [
-        "Account inquiry",
-        "Holder Lookup",
+        "Get account",
+        "Customer Inquiry",
         "VAT rate inquiry"
       ],
-      "planningMs": 7
+      "planningMs": 3.3
     },
     {
       "n": 6,
       "title": "Compose a multi-provider workflow",
       "ok": true,
       "steps": [
-        "Account inquiry ← acctno=$in.account_id",
-        "Holder Lookup ← cust_ref=0.cref",
-        "VAT rate inquiry ← ctry=1.ctry"
+        "Get account ← a_ref=$in.account_id",
+        "Customer Inquiry ← hldr=0.hldr",
+        "VAT rate inquiry ← ctry=1.cc"
       ]
     },
     {
       "n": 7,
       "title": "Execute the workflow",
       "ok": true,
-      "input": "ACC-1006",
+      "input": "ACC-1004",
       "pipeline": [
-        "Account inquiry",
-        "Holder Lookup",
+        "Get account",
+        "Customer Inquiry",
         "VAT rate inquiry"
       ],
-      "ms": 12.8
+      "ms": 5.5
     },
     {
       "n": 8,
       "title": "Verify against independently held test data",
       "ok": true,
-      "expected": 24.5,
-      "got": 24.5
+      "expected": 12.5,
+      "got": 12.5
     },
     {
       "n": 9,
       "title": "Save the successful composition and reuse it",
       "ok": true,
-      "saved": "Vat rate account holder country: Account inquiry → Holder Lookup → VAT rate inquiry",
+      "saved": "Vat rate account holder country: Get account → Customer Inquiry → VAT rate inquiry",
       "reusedAs": [
-        "Vat rate account holder country: Account inquiry → Holder Lookup → VAT rate inquiry"
+        "Vat rate account holder country: Get account → Customer Inquiry → VAT rate inquiry"
       ],
-      "expected": 23.4,
-      "got": 23.4,
-      "ms": 5.9
+      "expected": 16.8,
+      "got": 16.8,
+      "ms": 2.7
     },
     {
       "n": 10,
-      "title": "Change the interface of the last provider in the chain (Mistral Depot)",
+      "title": "Change the interface of the last provider in the chain (Cobaltix)",
       "ok": true,
-      "before": "openapi \"VAT rate inquiry\" ctry → ctry, txr",
-      "after": "graphql \"Get VAT rate\" cc → result.{cc, vatpct}"
+      "before": "openapi \"VAT rate inquiry\" ctry → ctry, vatpct",
+      "after": "mcp \"Get VAT rate\" cc → result.{cc, vr}"
     },
     {
       "n": 11,
       "title": "Recover without changing integration code",
       "ok": true,
       "healing": [
-        "API drift at http://127.0.0.1:56642/: openapi:mistral-depot → graphql:127-0-0-1-56642-graphql; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:65328/: openapi:cobaltix → mcp:cobaltix; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "via": [
-        "mcp:lumen-cargo",
-        "graphql:127-0-0-1-56641-graphql",
-        "graphql:127-0-0-1-56642-graphql"
+        "mcp:harbourly",
+        "graphql:127-0-0-1-65327-graphql",
+        "mcp:cobaltix"
       ],
-      "expected": 23.4,
-      "got": 23.4,
-      "ms": 21.6
+      "expected": 12.5,
+      "got": 12.5,
+      "ms": 9.7
     },
     {
       "n": 12,
-      "title": "Remove that provider (Mistral Depot)",
+      "title": "Remove that provider (Cobaltix)",
       "ok": true
     },
     {
@@ -136,38 +136,38 @@
       "ok": true,
       "status": "failed",
       "healing": [
-        "provider gone at http://127.0.0.1:56642/: withdrew graphql:127-0-0-1-56642-graphql (1 capabilities, 1 pipeline(s) retired)"
+        "provider gone at http://127.0.0.1:65328/: withdrew mcp:cobaltix (1 capabilities, 1 pipeline(s) retired)"
       ],
       "withdrawn": [
-        "GraphQL 127.0.0.1:56642"
+        "Cobaltix"
       ],
       "capabilities": "27 → 25",
       "savedPipelines": "1 → 0"
     },
     {
       "n": 14,
-      "title": "Introduce a different provider (Harbourly, mcp): the objective works again",
+      "title": "Introduce a different provider (Ledgerline, graphql): the objective works again",
       "ok": true,
       "learned": [
-        "mcp: 1 tools"
+        "graphql: 1 fields"
       ],
       "via": [
-        "mcp:lumen-cargo",
-        "graphql:127-0-0-1-56641-graphql",
-        "mcp:harbourly"
+        "mcp:harbourly",
+        "graphql:127-0-0-1-65327-graphql",
+        "graphql:127-0-0-1-65400-graphql"
       ],
-      "expected": 23.4,
-      "got": 23.4,
-      "ms": 6.7
+      "expected": 13.7,
+      "got": 13.7,
+      "ms": 2.6
     }
   ],
   "benchmarks": {
-    "startupMs": 256.3,
+    "startupMs": 124.4,
     "mcpLatencyMs": {
-      "p50": 0.07,
-      "p95": 0.2
+      "p50": 0.03,
+      "p95": 0.12
     },
-    "discoveryMs": 76.7,
+    "discoveryMs": 33.3,
     "graph": {
       "providers": 5,
       "capabilities": 26,
@@ -176,15 +176,15 @@
       "chains3": 63,
       "total": 132
     },
-    "graphStatsMs": 0.3,
-    "planningMs": 7,
-    "executionMs": 12.8,
-    "recoveryAfterChangeMs": 21.6,
-    "recoveryAfterNewProviderMs": 6.7,
-    "memoryMB": 134
+    "graphStatsMs": 0.1,
+    "planningMs": 3.3,
+    "executionMs": 5.5,
+    "recoveryAfterChangeMs": 9.7,
+    "recoveryAfterNewProviderMs": 2.6,
+    "memoryMB": 138
   },
   "freeze": {
-    "commit": "02eca766e8da97a36239b64001ba6510bb582694",
+    "commit": "8849a5b860949b8b9389d510feab55b4d0e2a250",
     "tag": "lab-freeze-9",
     "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/core/authority.ts\nsrc/core/fields.ts\nsrc/core/graph.ts\nsrc/core/identities.ts\nsrc/core/planner.ts\nsrc/core/sandbox.ts\nsrc/core/satisfaction.ts\nsrc/core/semantics.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/core/yaml.ts\nsrc/entry/durable.ts\nsrc/entry/edge.ts\nsrc/interface/http.ts\nsrc/interface/tools.ts\nsrc/reflectors/cli.ts\nsrc/reflectors/discover.ts\nsrc/reflectors/graphql.ts\nsrc/reflectors/mcp.ts\nsrc/reflectors/net.ts\nsrc/reflectors/openapi.ts\nsrc/reflectors/platform.ts\nsrc/runtime.ts",
     "uncommittedProductChanges": "",
@@ -193,50 +193,50 @@
   "environment": [
     {
       "service": "ledger",
-      "brand": "Lumen Cargo",
+      "brand": "Harbourly",
       "protocol": "mcp",
-      "operation": "Account inquiry",
-      "input": "acctno",
+      "operation": "Get account",
+      "input": "a_ref",
       "outputs": [
-        "acctno",
-        "cref",
-        "amt"
+        "a_ref",
+        "hldr",
+        "curbal"
       ]
     },
     {
       "service": "kyc",
-      "brand": "Tallyport",
+      "brand": "Lumen Cargo",
       "protocol": "graphql",
-      "operation": "Holder lookup",
-      "input": "cust_ref",
+      "operation": "Customer inquiry",
+      "input": "hldr",
       "outputs": [
-        "cust_ref",
-        "fullnm",
-        "ctry"
+        "hldr",
+        "lglnm",
+        "cc"
       ]
     },
     {
       "service": "vat",
-      "brand": "Mistral Depot",
+      "brand": "Cobaltix",
       "protocol": "openapi",
       "operation": "VAT rate inquiry",
       "input": "ctry",
       "outputs": [
         "ctry",
-        "txr"
+        "vatpct"
       ]
     }
   ],
   "firstRunProviders": [
-    "mcp:lumen-cargo",
-    "graphql:127-0-0-1-56641-graphql",
-    "openapi:mistral-depot"
+    "mcp:harbourly",
+    "graphql:127-0-0-1-65327-graphql",
+    "openapi:cobaltix"
   ],
   "receipts": {
     "count": 21,
     "intact": true,
     "brokenAt": null,
-    "head": "ef626d8d0895b8524e3afefead58ef1571c9f4c93d6b97d2f8defa24c3a0f3b4"
+    "head": "6f2426fbee6fa5442beab398f2aef910f85e4a5c8a790cbbb263f9eb3a601968"
   },
   "passed": 14,
   "total": 14

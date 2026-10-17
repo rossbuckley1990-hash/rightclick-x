@@ -196,17 +196,24 @@ function buildSelection(field: Field, types: Map<string, FullType>): { selection
 function declaredFields(field: Field, types: Map<string, FullType>, ports: Port[]): DeclaredField[] {
   const selected = new Set(ports.map((p) => p.name).filter(Boolean));
   const out: DeclaredField[] = [];
-  const walk = (typeName: string | null | undefined, prefix: string, depth: number, seen: Set<string>) => {
-    const t = typeName ? types.get(typeName) : undefined;
-    if (!t || t.kind !== "OBJECT" || depth > 3 || seen.has(t.name!) || out.length > 400) return;
-    for (const f of t.fields ?? []) {
-      if (f.args.some((a) => a.type.kind === "NON_NULL")) continue;
-      const path = prefix ? `${prefix}.${f.name}` : f.name;
-      out.push({ path, selected: selected.has(path) });
-      walk(named(f.type).name, path, depth + 1, new Set([...seen, t.name!]));
+  // Breadth-first: every top-level field before any nested detail, so a bound never hides a
+  // shallow summary field behind the depths of earlier fields (rcsb_entry_info.resolution_combined).
+  let level: Array<{ typeName: string | null | undefined; prefix: string; seen: Set<string> }> = [{ typeName: named(field.type).name, prefix: "", seen: new Set() }];
+  for (let depth = 1; depth <= 3 && level.length && out.length < 1500; depth++) {
+    const next: typeof level = [];
+    for (const { typeName, prefix, seen } of level) {
+      const t = typeName ? types.get(typeName) : undefined;
+      if (!t || t.kind !== "OBJECT" || seen.has(t.name!)) continue;
+      for (const f of t.fields ?? []) {
+        if (f.args.some((a) => a.type.kind === "NON_NULL")) continue;
+        const path = prefix ? `${prefix}.${f.name}` : f.name;
+        if (out.length >= 1500) break;
+        out.push({ path, selected: selected.has(path) });
+        next.push({ typeName: named(f.type).name, prefix: path, seen: new Set([...seen, t.name!]) });
+      }
     }
-  };
-  walk(named(field.type).name, "", 1, new Set());
+    level = next;
+  }
   return out;
 }
 

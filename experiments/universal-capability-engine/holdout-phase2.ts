@@ -123,6 +123,36 @@ const TASKS_FREEZE5: Record<string, any> = {
   },
 };
 
+// Tasks for the uce-freeze-6 draws, written after phase 1 on uce-freeze-6 (and the programs'
+// documented usage), before these executions.
+const expandTabsAt = (s: string, n: number) => s.split("\n").map((line) => {
+  let out = "";
+  for (const ch of line) out += ch === "\t" ? " ".repeat(n - (out.length % n)) : ch;
+  return out;
+}).join("\n");
+const TASKS_FREEZE6: Record<string, any> = {
+  "net-snmp-create-v3-user": {
+    intent: "create a snmpv3 user named harbourwatch",
+    want: "text",
+    inputs: ["harbourwatch\n"],
+    check: (outs: unknown[]) => {
+      const o = String(outs[0] ?? "");
+      const created = /createUser\s+harbourwatch|adding the following line/i.test(o);
+      return { pass: created, detail: `output shows the user being created: ${created}` };
+    },
+  },
+  tab2space: {
+    intent: "expand tabs to spaces",
+    want: "text",
+    inputs: ["name\tqty\tprice\napple\t3\t0.5\n", "a\tbc\tdefghijkl\tm\n"],
+    check: (outs: unknown[], ins: string[]) => {
+      // Documented default: tabs set to 4 spaces, CRLF line ends; line ends are normalised here.
+      const ok = outs.map((o, i) => String(o ?? "").replace(/\r/g, "") === expandTabsAt(ins[i], 4));
+      return { pass: ok.every(Boolean), detail: `exact match with the harness's own 4-column expansion: ${ok.join(", ")}` };
+    },
+  },
+};
+
 const TASKS: Record<string, { intent: string; want: string; inputs: string[]; check: (outputs: unknown[], inputs: string[]) => { pass: boolean; detail: string } }> = {
   expand: {
     intent: "expand tabs to spaces",
@@ -152,7 +182,7 @@ const f = serverFiles(`${p1.bin}/../phase2`);
 const { copyFileSync } = await import("node:fs");
 copyFileSync(p1.state, f.state);
 for (const name of p1.chosen as string[]) {
-  const task = TASKS[name] ?? TASKS_FREEZE3[name] ?? TASKS_FREEZE4[name] ?? TASKS_FREEZE5[name];
+  const task = TASKS[name] ?? TASKS_FREEZE3[name] ?? TASKS_FREEZE4[name] ?? TASKS_FREEZE5[name] ?? TASKS_FREEZE6[name];
   if (!task) throw new Error(`no task written for ${name}`);
   const m = new Mcp(build.rcx, f);
   await m.init();

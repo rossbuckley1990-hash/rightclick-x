@@ -233,3 +233,15 @@ test("holdout uce-freeze-5: nested optional brackets are not operands, and an un
   assert.ok(r.executed?.titles.every((t) => t.startsWith("dumpish")), r.executed?.titles.join(" → "));
   assert.match(String(r.executed?.output), /110 141 162 142 157 165 162/);
 });
+
+test("holdout uce-freeze-6: stdin is tried even when the synopsis suggests a file operand (base64); prompts for terminal input are not results", { skip }, async () => {
+  const dir = realpathSync(mkdtempSync(join(tmpdir(), "rcx-prog-")));
+  const enc = program(dir, "enc64", `if [ "$1" = "--help" ]; then echo "Usage: enc64 [-b num] [-i in_file] [-o out_file]"; echo "  -b, --break  break lines"; exit 0; fi\nif [ -n "$1" ]; then echo "enc64: invalid argument $1" >&2; exit 64; fi\nbase64`);
+  const ask = program(dir, "askuser", `if [ "$1" = "--help" ]; then echo "usage: askuser [username]"; echo "  create a user"; exit 0; fi\nprintf 'Enter a user name to create: \\n'; read u; printf 'Enter pass-phrase: \\n'; echo "You must specify a pass-phrase"`);
+  const rc = await RightClick.create({ name: "b", directories: [], authority: { investigate: [`${dir}/`] } });
+  await rc.learn({ sources: [`cli:${enc}`, `cli:${ask}`] });
+  const e = rc.graph.list().find((c) => c.provider === "cli:enc64");
+  assert.ok(e, "enc64 learned via stdin");
+  assert.equal(String((await rc.run(e!.id, { [e!.inputs[0].name]: "hello\n" })).output).trim(), "aGVsbG8K");
+  assert.equal(rc.graph.list().filter((c) => c.provider === "cli:askuser").length, 0, "prompts are not a capability");
+});

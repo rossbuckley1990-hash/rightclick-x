@@ -1,8 +1,8 @@
 {
-  "seed": 712274781,
+  "seed": 981899465,
   "domain": "accounts",
   "gateway": true,
-  "startedAt": "2026-10-16T22:18:10.000Z",
+  "startedAt": "2026-10-17T02:12:30.291Z",
   "steps": [
     {
       "n": 1,
@@ -17,7 +17,7 @@
       "title": "Connect an MCP client to RightClick X (stdio)",
       "ok": true,
       "tools": 13,
-      "startupMs": 174
+      "startupMs": 118.3
     },
     {
       "n": 3,
@@ -42,12 +42,12 @@
       "title": "Discover the environment's services from its catalog only (no service addresses, protocols or schemas given)",
       "ok": true,
       "found": [
-        "openapi",
-        "mcp",
+        "graphql",
+        "graphql",
         "graphql"
       ],
       "newCapabilities": 3,
-      "ms": 57.7
+      "ms": 37.1
     },
     {
       "n": 5,
@@ -55,79 +55,79 @@
       "ok": true,
       "candidatePlans": 3,
       "best": [
-        "Account inquiry",
-        "Holder lookup",
-        "Vat Rate Lookup"
+        "Account Inquiry",
+        "Get Account Holder",
+        "Get Vat Rate"
       ],
-      "planningMs": 4.9
+      "planningMs": 3.5
     },
     {
       "n": 6,
       "title": "Compose a multi-provider workflow",
       "ok": true,
       "steps": [
-        "Account inquiry ← acct_ref=$in.account_id",
-        "Holder lookup ← hldr=0.cref",
-        "Vat Rate Lookup ← ctry=1.cc"
+        "Account Inquiry ← acctno=$in.account_id",
+        "Get Account Holder ← cref=0.hldr",
+        "Get Vat Rate ← ctry=1.jur"
       ]
     },
     {
       "n": 7,
       "title": "Execute the workflow",
       "ok": true,
-      "input": "ACC-1005",
+      "input": "ACC-1000",
       "pipeline": [
-        "Account inquiry",
-        "Holder lookup",
-        "Vat Rate Lookup"
+        "Account Inquiry",
+        "Get Account Holder",
+        "Get Vat Rate"
       ],
-      "ms": 9
+      "ms": 5.2
     },
     {
       "n": 8,
       "title": "Verify against independently held test data",
       "ok": true,
-      "expected": 9.4,
-      "got": 9.4
+      "expected": 22.3,
+      "got": 22.3
     },
     {
       "n": 9,
       "title": "Save the successful composition and reuse it",
       "ok": true,
-      "saved": "Vat rate account holder country: Account inquiry → Holder lookup → Vat Rate Lookup",
+      "saved": "Vat rate account holder country: Account Inquiry → Get Account Holder → Get Vat Rate",
       "reusedAs": [
-        "Vat rate account holder country: Account inquiry → Holder lookup → Vat Rate Lookup"
+        "Vat rate account holder country: Account Inquiry → Get Account Holder → Get Vat Rate"
       ],
-      "expected": 22.4,
-      "got": 22.4,
-      "ms": 3.8
+      "expected": 22.3,
+      "got": 22.3,
+      "ms": 2.6
     },
     {
       "n": 10,
-      "title": "Change the interface of the last provider in the chain (Harbourly)",
+      "title": "Change the interface of the last provider in the chain (Emberlane)",
       "ok": true,
-      "before": "graphql \"VAT rate lookup\" ctry → ctry, vatpct",
-      "after": "openapi \"VAT rate inquiry\" jur → result.{jur, txr}"
+      "before": "graphql \"Get VAT rate\" ctry → ctry, vatpct",
+      "after": "openapi \"VAT rate lookup\" cc → result.{cc, txr}"
     },
     {
       "n": 11,
       "title": "Recover without changing integration code",
       "ok": true,
       "healing": [
-        "API drift at http://127.0.0.1:59055/: openapi:kestrel-freight,mcp:mistral-depot,graphql:127-0-0-1-59054-graphql → openapi:kestrel-freight,mcp:mistral-depot,openapi:harbourly; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:51366/: graphql:127-0-0-1-51363-graphql,graphql:127-0-0-1-51364-graphql,graphql:127-0-0-1-51365-graphql → graphql:127-0-0-1-51363-graphql,graphql:127-0-0-1-51364-graphql,openapi:emberlane; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "via": [
-        "openapi:kestrel-freight",
-        "mcp:mistral-depot",
-        "openapi:harbourly"
+        "graphql:127-0-0-1-51363-graphql",
+        "graphql:127-0-0-1-51364-graphql",
+        "openapi:emberlane"
       ],
-      "expected": 12.8,
-      "got": 12.8,
-      "ms": 26.8
+      "expected": 22.3,
+      "got": 22.3,
+      "ms": 17.3
     },
     {
       "n": 12,
-      "title": "Remove that provider (Harbourly)",
+      "title": "Remove that provider (Emberlane)",
       "ok": true
     },
     {
@@ -136,41 +136,41 @@
       "ok": true,
       "status": "failed",
       "healing": [
-        "API drift at http://127.0.0.1:59055/: openapi:kestrel-freight,mcp:mistral-depot,openapi:harbourly → openapi:kestrel-freight,mcp:mistral-depot; +0 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:51366/: graphql:127-0-0-1-51363-graphql,graphql:127-0-0-1-51364-graphql,openapi:emberlane → graphql:127-0-0-1-51363-graphql,graphql:127-0-0-1-51364-graphql; +0 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "withdrawn": [
-        "Harbourly"
+        "Emberlane"
       ],
       "capabilities": "27 → 25",
       "savedPipelines": "1 → 0"
     },
     {
       "n": 14,
-      "title": "Introduce a different provider (Ashgrove, openapi): the objective works again",
+      "title": "Introduce a different provider (Brightmark, openapi): the objective works again",
       "ok": true,
       "learned": [
         "api-catalog: 3 services listed",
-        "openapi: 1 operations",
-        "mcp: 1 tools",
+        "graphql: 1 fields",
+        "graphql: 1 fields",
         "openapi: 1 operations"
       ],
       "via": [
-        "openapi:kestrel-freight",
-        "mcp:mistral-depot",
-        "openapi:ashgrove"
+        "graphql:127-0-0-1-51363-graphql",
+        "graphql:127-0-0-1-51364-graphql",
+        "openapi:brightmark"
       ],
-      "expected": 10,
-      "got": 10,
-      "ms": 3.1
+      "expected": 25.1,
+      "got": 25.1,
+      "ms": 1.9
     }
   ],
   "benchmarks": {
-    "startupMs": 174,
+    "startupMs": 118.3,
     "mcpLatencyMs": {
       "p50": 0.04,
-      "p95": 0.16
+      "p95": 0.11
     },
-    "discoveryMs": 57.7,
+    "discoveryMs": 37.1,
     "graph": {
       "providers": 5,
       "capabilities": 26,
@@ -179,15 +179,15 @@
       "chains3": 63,
       "total": 132
     },
-    "graphStatsMs": 0.2,
-    "planningMs": 4.9,
-    "executionMs": 9,
-    "recoveryAfterChangeMs": 26.8,
-    "recoveryAfterNewProviderMs": 3.1,
-    "memoryMB": 147
+    "graphStatsMs": 0.1,
+    "planningMs": 3.5,
+    "executionMs": 5.2,
+    "recoveryAfterChangeMs": 17.3,
+    "recoveryAfterNewProviderMs": 1.9,
+    "memoryMB": 152
   },
   "freeze": {
-    "commit": "02eca766e8da97a36239b64001ba6510bb582694",
+    "commit": "8849a5b860949b8b9389d510feab55b4d0e2a250",
     "tag": "lab-freeze-9",
     "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/core/authority.ts\nsrc/core/fields.ts\nsrc/core/graph.ts\nsrc/core/identities.ts\nsrc/core/planner.ts\nsrc/core/sandbox.ts\nsrc/core/satisfaction.ts\nsrc/core/semantics.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/core/yaml.ts\nsrc/entry/durable.ts\nsrc/entry/edge.ts\nsrc/interface/http.ts\nsrc/interface/tools.ts\nsrc/reflectors/cli.ts\nsrc/reflectors/discover.ts\nsrc/reflectors/graphql.ts\nsrc/reflectors/mcp.ts\nsrc/reflectors/net.ts\nsrc/reflectors/openapi.ts\nsrc/reflectors/platform.ts\nsrc/runtime.ts",
     "uncommittedProductChanges": "",
@@ -196,33 +196,33 @@
   "environment": [
     {
       "service": "ledger",
-      "brand": "Kestrel Freight",
-      "protocol": "openapi",
+      "brand": "Harbourly",
+      "protocol": "graphql",
       "operation": "Account inquiry",
-      "input": "acct_ref",
+      "input": "acctno",
       "outputs": [
-        "acct_ref",
-        "cref",
+        "acctno",
+        "hldr",
         "amt"
       ]
     },
     {
       "service": "kyc",
-      "brand": "Mistral Depot",
-      "protocol": "mcp",
-      "operation": "Holder lookup",
-      "input": "hldr",
+      "brand": "Fernway",
+      "protocol": "graphql",
+      "operation": "Get account holder",
+      "input": "cref",
       "outputs": [
-        "hldr",
-        "lglnm",
-        "cc"
+        "cref",
+        "nm",
+        "jur"
       ]
     },
     {
       "service": "vat",
-      "brand": "Harbourly",
+      "brand": "Emberlane",
       "protocol": "graphql",
-      "operation": "VAT rate lookup",
+      "operation": "Get VAT rate",
       "input": "ctry",
       "outputs": [
         "ctry",
@@ -231,15 +231,15 @@
     }
   ],
   "firstRunProviders": [
-    "openapi:kestrel-freight",
-    "mcp:mistral-depot",
-    "graphql:127-0-0-1-59054-graphql"
+    "graphql:127-0-0-1-51363-graphql",
+    "graphql:127-0-0-1-51364-graphql",
+    "graphql:127-0-0-1-51365-graphql"
   ],
   "receipts": {
     "count": 21,
     "intact": true,
     "brokenAt": null,
-    "head": "ebc33cd2537575f31cbe60c5d068e67083d2658b8969575ea7d59db490a1da62"
+    "head": "5a49a768cc3c181dfbcc59ee5d6ee63daeb2f686f3ccd980665d479c8f017c43"
   },
   "passed": 14,
   "total": 14

@@ -252,7 +252,8 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
   const samples = samplesFor(docs, seed);
   const kinds = [...new Set(samples.map((s) => s.kind))];
   const required = inv.operands.required.length;
-  const channels: Array<{ id: string; arity: number }> = required >= 2 ? [{ id: "files", arity: required }] : required === 1 ? [{ id: "files", arity: 1 }] : [{ id: "stdin", arity: 1 }, { id: "files", arity: 1 }];
+  // Operand parsing is the least reliable step: standard input is always tried as well.
+  const channels: Array<{ id: string; arity: number }> = required >= 2 ? [{ id: "files", arity: required }, { id: "stdin", arity: 1 }] : [{ id: "stdin", arity: 1 }, { id: "files", arity: Math.max(1, required) }];
 
   interface Trial { mode: string; flags: string[]; channel: string; kind: string; inputs: string[]; r: SandboxRun }
   const trials: Trial[] = [];
@@ -277,7 +278,9 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
     const o = out.trim();
     if (!o) return false;
     if (usage.trim() && (o === usage.trim() || usage.includes(o.split("\n")[0].trim()) && /usage/i.test(o.split("\n")[0]))) return true;
-    return /^\s*usage:/i.test(o);
+    if (/^\s*usage:/i.test(o)) return true;
+    // A program asking for input it cannot get ("Enter a user name:", "Password:") wants a terminal.
+    return /^(enter|please enter|password|pass-?phrase|username|login)\b[^\n]*:\s*$/im.test(o);
   };
   // A failure exit whose output shares nothing with the input's content is an error report (a
   // program saying "not a zipfile"), not a result. Diff-like programs exit 1 yet echo their input.

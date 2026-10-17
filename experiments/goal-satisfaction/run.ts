@@ -146,7 +146,9 @@ async function runBuild(tag: string) {
       r.pass = !r.ranking.some((p: any) => p.satisfaction?.status === "established") && !(r.executed && r.executed.status === "completed");
       ev.negatives.push(r);
     } else {
-      r.score = r.executed?.status === "completed" ? await score(task.id, r.output) : { pass: false, detail: r.outcome ? `outcome ${r.outcome.status}: ${r.outcome.reason ?? ""}` : "nothing executed", truth: null };
+      // A truth source failing (OLS answered HTTP 500 in run 7) is recorded, after one retry; it does not crash the run.
+      const scored = async () => { try { return await score(task.id, r.output); } catch { await new Promise((x) => setTimeout(x, 5000)); try { return await score(task.id, r.output); } catch (e2) { return { pass: false, detail: `truth unavailable: ${String((e2 as Error).message).slice(0, 200)}`, truth: null }; } } };
+      r.score = r.executed?.status === "completed" ? await scored() : { pass: false, detail: r.outcome ? `outcome ${r.outcome.status}: ${r.outcome.reason ?? ""}` : "nothing executed", truth: null };
       ev.tasks.push(r);
     }
     log(`  ${tag} ${task.id}: ${r.outcome?.status ?? "(no outcome)"} · executed ${r.executed?.status ?? "-"} · ${task.id.startsWith("N") ? (r.pass ? "control PASS" : "control FAIL") : r.score.pass ? "score PASS" : `score FAIL (${r.score.detail})`}`);
