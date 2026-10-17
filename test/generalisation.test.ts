@@ -242,3 +242,11 @@ test("documented-options interface offers options that write to standard output,
   assert.ok(allowed.includes("-o"), allowed.join(" "));
   assert.ok(!allowed.includes("-O"), allowed.join(" "));
 });
+
+test("options declared only in a synopsis or usage line are read, including bundled letters and long single-dash options", () => {
+  const u = "Usage: compx [-v] [-csuffix csuffix] [-except] [-strip|s pattern] [-typemap typemap]... file.xs\nusage: catx [-belnstuv] [file ...]";
+  const { options } = parseUsage(u);
+  const flags = options.map((o) => o.flags.join("/") + (o.arg ? ` <${o.arg}>` : ""));
+  for (const f of ["-v", "-csuffix <csuffix>", "-except", "-strip/-s <pattern>", "-typemap <typemap>", "-belnstuv", "-b", "-u"]) assert.ok(flags.includes(f), `${f} in ${flags.join(", ")}`);
+  assert.deepEqual(validateOptions(["-typemap", "my.map", "-except", "-bn"], options.map((o) => ({ flags: o.flags, arg: !!o.arg }))), ["-typemap", "my.map", "-except", "-bn"]);
+});

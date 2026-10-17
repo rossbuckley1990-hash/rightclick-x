@@ -83,6 +83,23 @@ export function parseUsage(text: string): { options: Investigation["options"]; s
     options.push({ flags, ...(arg ? { arg } : {}), ...(optionalArg ? { optionalArg } : {}), description: description.slice(0, 300) });
   }
   const synopsis = clean.split("\n").filter((l) => /^\s*(usage:|\s*[a-z][\w-]*\s+\[-)/i.test(l)).map((l) => l.trim()).slice(0, 6);
+  // Options a synopsis or usage line declares only in brackets ("[-typemap typemap]",
+  // "[-strip|s pattern]", "[-v]"): declared too, without descriptions, unless described elsewhere.
+  const manSynopsis = /SYNOPSIS\s*\n([\s\S]*?)\n\s*\n/.exec(clean)?.[1] ?? "";
+  for (const g of `${synopsis.join(" ")} ${manSynopsis}`.matchAll(/\[\s*(-{1,2}[A-Za-z0-9][\w-]*(?:\|-{0,2}[A-Za-z0-9][\w-]*)*)(?:[ =]+([A-Za-z][\w.-]*))?\s*\]/g)) {
+    const flags = g[1].split("|").map((f) => (f.startsWith("-") ? f : `-${f}`));
+    if (flags.some((f) => seen.has(f)) || options.length >= 120) continue;
+    // "[-belnstuv]" may be bundled single-letter flags (BSD) or one long single-dash option
+    // ("[-except]", Perl style). The text cannot tell them apart: both readings are declared.
+    if (/^-[A-Za-z0-9]{2,}$/.test(flags[0]) && flags.length === 1 && !g[2]) {
+      for (const ch of g[1].slice(1)) if (!seen.has(`-${ch}`)) {
+        seen.add(`-${ch}`);
+        options.push({ flags: [`-${ch}`], description: "(declared in the synopsis, as one of bundled single-letter flags)" });
+      }
+    }
+    for (const f of flags) seen.add(f);
+    options.push({ flags, ...(g[2] ? { arg: g[2] } : {}), description: "(declared in the synopsis)" });
+  }
   return { options: options.slice(0, 120), synopsis };
 }
 
@@ -353,8 +370,14 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
     if (usage) break;
   }
   let manual = "";
-  const m = await sandbox.run("/usr/bin/man", ["-P", "cat", name]).catch(() => null);
-  if (m && m.code === 0) manual = m.stdout.replace(/.\x08/g, "");
+  // Versioned installs (xsubpp5.34, pg_dump-17, python3.12) file their manual under the base name.
+  for (const page of [...new Set([name, name.replace(/[-_.]?\d+(?:\.\d+)*$/, "")])].filter(Boolean)) {
+    const m = await sandbox.run("/usr/bin/man", ["-P", "cat", page]).catch(() => null);
+    if (m && m.code === 0 && m.stdout.trim()) {
+      manual = m.stdout.replace(/.\x08/g, "");
+      break;
+    }
+  }
   // Purpose: the manual's NAME line; without a manual, the first prose line of the usage text.
   const prose = usage.split("\n").map((l) => l.trim()).find((l) => l && !/^(usage|options?|synopsis)\b/i.test(l) && !/^-/.test(l) && /[a-z]{3,}\s+[a-z]{3,}/i.test(l));
   inv.program.description = /NAME\s*\n\s*(.+?)\n\s*\n/s.exec(manual)?.[1]?.replace(/\s+/g, " ").trim() ?? (prose ? `${name} - ${prose}` : undefined);
