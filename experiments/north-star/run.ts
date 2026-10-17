@@ -58,11 +58,12 @@ function steps(p: any): Step[] {
   ].filter((s) => s.task) as Step[];
 }
 
+// Inputs are given as JSON strings: exact bytes, including whitespace and the final newline.
 function describeInput(t: Task): string {
   const parts: string[] = [];
-  if (t.input.stdin !== undefined) parts.push(`Standard input:\n<<<\n${t.input.stdin}>>>`);
-  for (const [name, content] of Object.entries(t.input.files ?? {})) parts.push(`File ${name}:\n<<<\n${content}>>>`);
-  return parts.join("\n\n") || "(no input)";
+  if (t.input.stdin !== undefined) parts.push(`Standard input (JSON string, exact content): ${JSON.stringify(t.input.stdin)}`);
+  for (const [name, content] of Object.entries(t.input.files ?? {})) parts.push(`File ${JSON.stringify(name)} (JSON string, exact content): ${JSON.stringify(content)}`);
+  return parts.join("\n") || "(no input)";
 }
 
 function prompt(arm: string, p: any, bin: string, t: Task): string {
