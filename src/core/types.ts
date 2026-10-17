@@ -155,8 +155,16 @@ export interface GoalInvoke {
 export interface CliInvoke {
   kind: "cli";
   bin: string;
-  /** argv after the program: literal flags, and {input} placeholders materialised as files. */
-  args: Array<string | { input: string }>;
+  /**
+   * argv after the program: literal flags; {input} placeholders materialised as files; and
+   * {input, literal} placeholders passed as argument text (patterns, sets, numbers).
+   */
+  args: Array<string | { input: string; literal?: boolean }>;
+  /**
+   * The documented-options interface: the caller may pass options from this declared list (and
+   * their arguments) in the input named `port`; anything else is refused before running.
+   */
+  options?: { port: string; allowed: Array<{ flags: string[]; arg: boolean }> };
   /** Input whose value is written to stdin. */
   stdin?: string;
   /** Exit codes observed together with real output for valid input. */
@@ -171,6 +179,12 @@ export interface CliInvoke {
    * changes it is not.
    */
   behaviour?: string;
+  /**
+   * Conformance examples: synthetic inputs from the investigation and the digest of the output
+   * they produced. Re-running them (in the sandbox) revalidates the capability somewhere else or
+   * after a change, without repeating the whole investigation.
+   */
+  examples?: Array<{ stdin?: string; files?: Record<string, string>; literals?: string[]; outputSha256: string; outputPreview: string }>;
 }
 
 export type Invoke =

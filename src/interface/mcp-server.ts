@@ -28,7 +28,7 @@ export async function handle(rc: RightClick, msg: JsonRpc): Promise<JsonRpc | nu
         capabilities: { tools: { listChanged: false } },
         serverInfo: { name: "rightclick-x", title: "RightClick X", version: VERSION },
         instructions:
-          "RightClick X is a live, self-composing capability graph. Start with context_research (optionally with a topic) to see what this environment can do, context_learn to add any URL, context_compose to turn what you have into what you want across providers, and context_run to execute. The tool list never changes; the graph behind it does.",
+          "RightClick X is a live, self-composing capability graph. Start with context_research (optionally with a topic) to see what this environment can do, context_learn to add any URL, context_compose to turn what you have into what you want across providers, and context_run to execute. The tool list never changes; the graph behind it does." + rc.retainedSummary(),
       });
     }
     case "ping":

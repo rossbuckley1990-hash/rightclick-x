@@ -145,6 +145,8 @@ export function plan(graph: CapabilityGraph, ledger: Ledger, goal: Goal): Plan[]
       (!risks || risks.has(c.risk)) &&
       // Investigated behaviour that experiments did not support is never composed automatically.
       !c.tags.includes("unsupported") &&
+      // Capabilities whose arguments a caller must choose (documented options, literal operands).
+      !c.tags.includes("direct-only") &&
       withinPolicy(c),
   );
   const start: Node = {
