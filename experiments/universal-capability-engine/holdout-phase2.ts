@@ -153,6 +153,32 @@ const TASKS_FREEZE6: Record<string, any> = {
   },
 };
 
+// Tasks for the uce-freeze-7 draws, written after phase 1 on uce-freeze-7, before these executions.
+const TASKS_FREEZE7: Record<string, any> = {
+  base64: {
+    intent: "base64 encode a text",
+    want: "text",
+    inputs: ["Harbour lights at dusk\n", "Copper wire, brass hinges\n"],
+    check: (outs: unknown[], ins: string[]) => {
+      const ok = outs.map((o, i) => String(o ?? "").replace(/\s+/g, "") === Buffer.from(ins[i]).toString("base64"));
+      return { pass: ok.every(Boolean), detail: `equal to the harness's own base64 encoding: ${ok.join(", ")}` };
+    },
+  },
+  uuname: {
+    intent: "list remote uucp sites",
+    want: "text",
+    // Takes no input data: a listing must be stable across inputs, not echo them, and not be an error.
+    inputs: ["first unrelated input\n", "second unrelated input\n"],
+    check: (outs: unknown[], ins: string[]) => {
+      const o = outs.map((x) => String(x ?? ""));
+      const stable = o.length === 2 && o[0] === o[1];
+      const echoes = o.some((x, i) => x.includes(ins[i].trim()));
+      const error = o.some((x) => /usage|error|not found|cannot|unable|invalid/i.test(x));
+      return { pass: stable && !echoes && !error && !!o[0].trim(), detail: `stable ${stable}; echoes input ${echoes}; error text ${error}` };
+    },
+  },
+};
+
 const TASKS: Record<string, { intent: string; want: string; inputs: string[]; check: (outputs: unknown[], inputs: string[]) => { pass: boolean; detail: string } }> = {
   expand: {
     intent: "expand tabs to spaces",
@@ -182,7 +208,7 @@ const f = serverFiles(`${p1.bin}/../phase2`);
 const { copyFileSync } = await import("node:fs");
 copyFileSync(p1.state, f.state);
 for (const name of p1.chosen as string[]) {
-  const task = TASKS[name] ?? TASKS_FREEZE3[name] ?? TASKS_FREEZE4[name] ?? TASKS_FREEZE5[name] ?? TASKS_FREEZE6[name];
+  const task = TASKS[name] ?? TASKS_FREEZE3[name] ?? TASKS_FREEZE4[name] ?? TASKS_FREEZE5[name] ?? TASKS_FREEZE6[name] ?? TASKS_FREEZE7[name];
   if (!task) throw new Error(`no task written for ${name}`);
   const m = new Mcp(build.rcx, f);
   await m.init();

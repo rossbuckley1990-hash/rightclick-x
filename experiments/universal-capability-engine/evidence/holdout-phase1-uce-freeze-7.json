@@ -1,0 +1,271 @@
+{
+  "tag": "uce-freeze-7",
+  "commit": "202bcafddac43441b8540c307dabe724da947e91",
+  "seedFrom": "frozen build 202bcafddac43441b8540c307dabe724da947e91",
+  "attempts": [
+    {
+      "program": "traptoemail",
+      "description": "traptoemail - snmptrapd handler script to convert snmp traps into emails",
+      "ms": 917,
+      "probes": [
+        {
+          "url": "cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-holdout-cbY262/bin/traptoemail",
+          "kind": "cli",
+          "ok": false,
+          "detail": "no input channel produced output for traptoemail (20 trials)"
+        }
+      ],
+      "capabilities": [],
+      "investigable": false,
+      "supported": false
+    },
+    {
+      "program": "hiutil",
+      "description": "hiutil - utility for creating and examining Help Viewer indices",
+      "ms": 427,
+      "probes": [
+        {
+          "url": "cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-holdout-cbY262/bin/hiutil",
+          "kind": "cli",
+          "ok": false,
+          "detail": "no input channel produced output for hiutil (20 trials)"
+        }
+      ],
+      "capabilities": [],
+      "investigable": false,
+      "supported": false
+    },
+    {
+      "program": "symbolscache",
+      "description": "symbolscache - display and modify symbolcache information",
+      "ms": 292,
+      "probes": [
+        {
+          "url": "cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-holdout-cbY262/bin/symbolscache",
+          "kind": "cli",
+          "ok": false,
+          "detail": "no input channel produced output for symbolscache (20 trials)"
+        }
+      ],
+      "capabilities": [],
+      "investigable": false,
+      "supported": false
+    },
+    {
+      "program": "ctf_insert",
+      "description": "ctf_insert - insert Compact C Type Format data into a mach_kernel file",
+      "ms": 8705,
+      "probes": [
+        {
+          "url": "cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-holdout-cbY262/bin/ctf_insert",
+          "kind": "cli",
+          "ok": false,
+          "detail": "no input channel produced output for ctf_insert (20 trials)"
+        }
+      ],
+      "capabilities": [],
+      "investigable": false,
+      "supported": false
+    },
+    {
+      "program": "infotocap",
+      "description": "infotocap - convert a terminfo description into a termcap description",
+      "ms": 279,
+      "probes": [
+        {
+          "url": "cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-holdout-cbY262/bin/infotocap",
+          "kind": "cli",
+          "ok": false,
+          "detail": "no input channel produced output for infotocap (20 trials)"
+        }
+      ],
+      "capabilities": [],
+      "investigable": false,
+      "supported": false
+    },
+    {
+      "program": "assetutil",
+      "description": "assetutil process asset catalog .car files",
+      "ms": 340,
+      "probes": [
+        {
+          "url": "cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-holdout-cbY262/bin/assetutil",
+          "kind": "cli",
+          "ok": false,
+          "detail": "no input channel produced output for assetutil (20 trials)"
+        }
+      ],
+      "capabilities": [],
+      "investigable": false,
+      "supported": false
+    },
+    {
+      "program": "applesingle",
+      "description": "applesingle, binhex, macbinary - encode and decode files",
+      "ms": 305,
+      "probes": [
+        {
+          "url": "cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-holdout-cbY262/bin/applesingle",
+          "kind": "cli",
+          "ok": false,
+          "detail": "no input channel produced output for applesingle (20 trials)"
+        }
+      ],
+      "capabilities": [],
+      "investigable": false,
+      "supported": false
+    },
+    {
+      "program": "uuname",
+      "description": "uuname - list remote UUCP sites",
+      "ms": 437,
+      "probes": [
+        {
+          "url": "cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-holdout-cbY262/bin/uuname",
+          "kind": "cli",
+          "ok": true,
+          "detail": "2 capabilities from 29 sandboxed runs (stdin; ok exit 0)"
+        }
+      ],
+      "capabilities": [
+        {
+          "id": "cli:uuname:default",
+          "title": "uuname: list remote UUCP sites",
+          "inputs": [
+            {
+              "name": "input",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "outputs": [
+            {
+              "name": "(result)",
+              "type": "text"
+            }
+          ],
+          "evidence": [
+            "documents its usage [declared]",
+            "purpose: uuname - list remote UUCP sites [declared]",
+            "options: 5 declared [declared]",
+            "operands: required [], optional [file] [inferred]",
+            "accepts html/xml/json/csv/text input via stdin and prints text [experimentally-supported]",
+            "deterministic for identical input [experimentally-supported]",
+            "side effects outside the sandbox [unknown]",
+            "output did not vary across the distinct inputs tried [observed]",
+            "equivalent to -a (--aliases: display aliases) [experimentally-supported]",
+            "on empty input exits 0 with output [observed]"
+          ],
+          "limitations": [
+            "side effects outside the sandbox [unknown]",
+            "runs only inside the host sandbox: no network, inputs passed as content"
+          ]
+        },
+        {
+          "id": "cli:uuname:l",
+          "title": "uuname -l: --local: print local name",
+          "inputs": [
+            {
+              "name": "input",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "outputs": [
+            {
+              "name": "(result)",
+              "type": "text"
+            }
+          ],
+          "evidence": [
+            "documents its usage [declared]",
+            "purpose: uuname - list remote UUCP sites [declared]",
+            "options: 5 declared [declared]",
+            "operands: required [], optional [file] [inferred]",
+            "accepts text input via stdin and prints text [experimentally-supported]",
+            "deterministic for identical input [experimentally-supported]",
+            "side effects outside the sandbox [unknown]",
+            "output did not vary across the distinct inputs tried [observed]",
+            "on empty input exits 0 with output [observed]"
+          ],
+          "limitations": [
+            "side effects outside the sandbox [unknown]",
+            "runs only inside the host sandbox: no network, inputs passed as content"
+          ]
+        }
+      ],
+      "investigable": true,
+      "supported": true
+    },
+    {
+      "program": "eyapp5.34",
+      "description": "eyapp - A Perl front-end to the Parse::Eyapp module",
+      "ms": 719,
+      "probes": [
+        {
+          "url": "cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-holdout-cbY262/bin/eyapp5.34",
+          "kind": "cli",
+          "ok": false,
+          "detail": "no input channel produced output for eyapp5.34 (20 trials)"
+        }
+      ],
+      "capabilities": [],
+      "investigable": false,
+      "supported": false
+    },
+    {
+      "program": "base64",
+      "description": "bintrans, uuencode, uudecode, b64encode, b64decode, base64 - encode / decode a binary file",
+      "ms": 345,
+      "probes": [
+        {
+          "url": "cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-holdout-cbY262/bin/base64",
+          "kind": "cli",
+          "ok": true,
+          "detail": "1 capability from 29 sandboxed runs (stdin; ok exit 0)"
+        }
+      ],
+      "capabilities": [
+        {
+          "id": "cli:base64:default",
+          "title": "base64: encode / decode a binary file",
+          "inputs": [
+            {
+              "name": "input",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "outputs": [
+            {
+              "name": "(result)",
+              "type": "text"
+            }
+          ],
+          "evidence": [
+            "documents its usage [declared]",
+            "purpose: bintrans, uuencode, uudecode, b64encode, b64decode, base64 - encode / decode a binary file [declared]",
+            "options: 13 declared [declared]",
+            "operands: required [uuencode, name, uudecode, output_file], optional [num, in_file, out_file, output_file], variadic [inferred]",
+            "accepts html/xml/json/csv/text input via stdin and prints text [experimentally-supported]",
+            "deterministic for identical input [experimentally-supported]",
+            "side effects outside the sandbox [unknown]",
+            "on empty input exits 0 without output [observed]"
+          ],
+          "limitations": [
+            "side effects outside the sandbox [unknown]",
+            "runs only inside the host sandbox: no network, inputs passed as content"
+          ]
+        }
+      ],
+      "investigable": true,
+      "supported": true
+    }
+  ],
+  "chosen": [
+    "uuname",
+    "base64"
+  ],
+  "state": "/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-holdout-cbY262/server/state.json",
+  "bin": "/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-holdout-cbY262/bin"
+}

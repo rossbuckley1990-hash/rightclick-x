@@ -1,8 +1,8 @@
 {
-  "seed": 981899465,
+  "seed": 778251215,
   "domain": "accounts",
   "gateway": true,
-  "startedAt": "2026-10-17T02:12:30.291Z",
+  "startedAt": "2026-10-17T02:28:45.134Z",
   "steps": [
     {
       "n": 1,
@@ -17,7 +17,7 @@
       "title": "Connect an MCP client to RightClick X (stdio)",
       "ok": true,
       "tools": 13,
-      "startupMs": 118.3
+      "startupMs": 129.8
     },
     {
       "n": 3,
@@ -42,92 +42,92 @@
       "title": "Discover the environment's services from its catalog only (no service addresses, protocols or schemas given)",
       "ok": true,
       "found": [
-        "graphql",
-        "graphql",
-        "graphql"
+        "openapi",
+        "mcp",
+        "mcp"
       ],
       "newCapabilities": 3,
-      "ms": 37.1
+      "ms": 45.7
     },
     {
       "n": 5,
       "title": "Identify suitable capabilities",
       "ok": true,
-      "candidatePlans": 3,
+      "candidatePlans": 2,
       "best": [
-        "Account Inquiry",
-        "Get Account Holder",
-        "Get Vat Rate"
+        "Get account",
+        "Customer inquiry",
+        "VAT rate lookup"
       ],
-      "planningMs": 3.5
+      "planningMs": 3.7
     },
     {
       "n": 6,
       "title": "Compose a multi-provider workflow",
       "ok": true,
       "steps": [
-        "Account Inquiry ← acctno=$in.account_id",
-        "Get Account Holder ← cref=0.hldr",
-        "Get Vat Rate ← ctry=1.jur"
+        "Get account ← acctno=$in.account_id",
+        "Customer inquiry ← hldr=0.cref",
+        "VAT rate lookup ← ctry=1.cc"
       ]
     },
     {
       "n": 7,
       "title": "Execute the workflow",
       "ok": true,
-      "input": "ACC-1000",
+      "input": "ACC-1004",
       "pipeline": [
-        "Account Inquiry",
-        "Get Account Holder",
-        "Get Vat Rate"
+        "Get account",
+        "Customer inquiry",
+        "VAT rate lookup"
       ],
-      "ms": 5.2
+      "ms": 6.2
     },
     {
       "n": 8,
       "title": "Verify against independently held test data",
       "ok": true,
-      "expected": 22.3,
-      "got": 22.3
+      "expected": 14.2,
+      "got": 14.2
     },
     {
       "n": 9,
       "title": "Save the successful composition and reuse it",
       "ok": true,
-      "saved": "Vat rate account holder country: Account Inquiry → Get Account Holder → Get Vat Rate",
+      "saved": "Vat rate account holder country: Get account → Customer inquiry → VAT rate lookup",
       "reusedAs": [
-        "Vat rate account holder country: Account Inquiry → Get Account Holder → Get Vat Rate"
+        "Vat rate account holder country: Get account → Customer inquiry → VAT rate lookup"
       ],
-      "expected": 22.3,
-      "got": 22.3,
-      "ms": 2.6
+      "expected": 7.2,
+      "got": 7.2,
+      "ms": 2.8
     },
     {
       "n": 10,
-      "title": "Change the interface of the last provider in the chain (Emberlane)",
+      "title": "Change the interface of the last provider in the chain (Cobaltix)",
       "ok": true,
-      "before": "graphql \"Get VAT rate\" ctry → ctry, vatpct",
-      "after": "openapi \"VAT rate lookup\" cc → result.{cc, txr}"
+      "before": "mcp \"VAT rate lookup\" ctry → ctry, txr",
+      "after": "openapi \"VAT rate inquiry\" cc → result.{cc, vatpct}"
     },
     {
       "n": 11,
       "title": "Recover without changing integration code",
       "ok": true,
       "healing": [
-        "API drift at http://127.0.0.1:51366/: graphql:127-0-0-1-51363-graphql,graphql:127-0-0-1-51364-graphql,graphql:127-0-0-1-51365-graphql → graphql:127-0-0-1-51363-graphql,graphql:127-0-0-1-51364-graphql,openapi:emberlane; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:57075/: openapi:emberlane,mcp:northwind-billing,mcp:cobaltix → openapi:emberlane,mcp:northwind-billing,openapi:cobaltix; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "via": [
-        "graphql:127-0-0-1-51363-graphql",
-        "graphql:127-0-0-1-51364-graphql",
-        "openapi:emberlane"
+        "openapi:emberlane",
+        "mcp:northwind-billing",
+        "openapi:cobaltix"
       ],
-      "expected": 22.3,
-      "got": 22.3,
-      "ms": 17.3
+      "expected": 26.5,
+      "got": 26.5,
+      "ms": 18.6
     },
     {
       "n": 12,
-      "title": "Remove that provider (Emberlane)",
+      "title": "Remove that provider (Cobaltix)",
       "ok": true
     },
     {
@@ -136,41 +136,41 @@
       "ok": true,
       "status": "failed",
       "healing": [
-        "API drift at http://127.0.0.1:51366/: graphql:127-0-0-1-51363-graphql,graphql:127-0-0-1-51364-graphql,openapi:emberlane → graphql:127-0-0-1-51363-graphql,graphql:127-0-0-1-51364-graphql; +0 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:57075/: openapi:emberlane,mcp:northwind-billing,openapi:cobaltix → openapi:emberlane,mcp:northwind-billing; +0 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "withdrawn": [
-        "Emberlane"
+        "Cobaltix"
       ],
       "capabilities": "27 → 25",
       "savedPipelines": "1 → 0"
     },
     {
       "n": 14,
-      "title": "Introduce a different provider (Brightmark, openapi): the objective works again",
+      "title": "Introduce a different provider (Paperhaus, openapi): the objective works again",
       "ok": true,
       "learned": [
         "api-catalog: 3 services listed",
-        "graphql: 1 fields",
-        "graphql: 1 fields",
+        "openapi: 1 operations",
+        "mcp: 1 tools",
         "openapi: 1 operations"
       ],
       "via": [
-        "graphql:127-0-0-1-51363-graphql",
-        "graphql:127-0-0-1-51364-graphql",
-        "openapi:brightmark"
+        "openapi:emberlane",
+        "mcp:northwind-billing",
+        "openapi:paperhaus"
       ],
-      "expected": 25.1,
-      "got": 25.1,
-      "ms": 1.9
+      "expected": 11.7,
+      "got": 11.7,
+      "ms": 2.2
     }
   ],
   "benchmarks": {
-    "startupMs": 118.3,
+    "startupMs": 129.8,
     "mcpLatencyMs": {
       "p50": 0.04,
-      "p95": 0.11
+      "p95": 0.12
     },
-    "discoveryMs": 37.1,
+    "discoveryMs": 45.7,
     "graph": {
       "providers": 5,
       "capabilities": 26,
@@ -180,14 +180,14 @@
       "total": 132
     },
     "graphStatsMs": 0.1,
-    "planningMs": 3.5,
-    "executionMs": 5.2,
-    "recoveryAfterChangeMs": 17.3,
-    "recoveryAfterNewProviderMs": 1.9,
-    "memoryMB": 152
+    "planningMs": 3.7,
+    "executionMs": 6.2,
+    "recoveryAfterChangeMs": 18.6,
+    "recoveryAfterNewProviderMs": 2.2,
+    "memoryMB": 151
   },
   "freeze": {
-    "commit": "8849a5b860949b8b9389d510feab55b4d0e2a250",
+    "commit": "202bcafddac43441b8540c307dabe724da947e91",
     "tag": "lab-freeze-9",
     "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/core/authority.ts\nsrc/core/fields.ts\nsrc/core/graph.ts\nsrc/core/identities.ts\nsrc/core/planner.ts\nsrc/core/sandbox.ts\nsrc/core/satisfaction.ts\nsrc/core/semantics.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/core/yaml.ts\nsrc/entry/durable.ts\nsrc/entry/edge.ts\nsrc/interface/http.ts\nsrc/interface/tools.ts\nsrc/reflectors/cli.ts\nsrc/reflectors/discover.ts\nsrc/reflectors/graphql.ts\nsrc/reflectors/mcp.ts\nsrc/reflectors/net.ts\nsrc/reflectors/openapi.ts\nsrc/reflectors/platform.ts\nsrc/runtime.ts",
     "uncommittedProductChanges": "",
@@ -196,50 +196,50 @@
   "environment": [
     {
       "service": "ledger",
-      "brand": "Harbourly",
-      "protocol": "graphql",
-      "operation": "Account inquiry",
+      "brand": "Emberlane",
+      "protocol": "openapi",
+      "operation": "Get account",
       "input": "acctno",
       "outputs": [
         "acctno",
-        "hldr",
+        "cref",
         "amt"
       ]
     },
     {
       "service": "kyc",
-      "brand": "Fernway",
-      "protocol": "graphql",
-      "operation": "Get account holder",
-      "input": "cref",
+      "brand": "Northwind Billing",
+      "protocol": "mcp",
+      "operation": "Customer inquiry",
+      "input": "hldr",
       "outputs": [
-        "cref",
+        "hldr",
         "nm",
-        "jur"
+        "cc"
       ]
     },
     {
       "service": "vat",
-      "brand": "Emberlane",
-      "protocol": "graphql",
-      "operation": "Get VAT rate",
+      "brand": "Cobaltix",
+      "protocol": "mcp",
+      "operation": "VAT rate lookup",
       "input": "ctry",
       "outputs": [
         "ctry",
-        "vatpct"
+        "txr"
       ]
     }
   ],
   "firstRunProviders": [
-    "graphql:127-0-0-1-51363-graphql",
-    "graphql:127-0-0-1-51364-graphql",
-    "graphql:127-0-0-1-51365-graphql"
+    "openapi:emberlane",
+    "mcp:northwind-billing",
+    "mcp:cobaltix"
   ],
   "receipts": {
     "count": 21,
     "intact": true,
     "brokenAt": null,
-    "head": "5a49a768cc3c181dfbcc59ee5d6ee63daeb2f686f3ccd980665d479c8f017c43"
+    "head": "7d007c27d3dd2677f6731cd5290d700ab1efe1f82c1121087a265f6619067313"
   },
   "passed": 14,
   "total": 14

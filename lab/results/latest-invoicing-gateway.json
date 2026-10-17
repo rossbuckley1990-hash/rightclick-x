@@ -1,8 +1,8 @@
 {
-  "seed": 504777366,
+  "seed": 957252304,
   "domain": "invoicing",
   "gateway": true,
-  "startedAt": "2026-10-17T02:12:22.855Z",
+  "startedAt": "2026-10-17T02:28:37.142Z",
   "steps": [
     {
       "n": 1,
@@ -17,7 +17,7 @@
       "title": "Connect an MCP client to RightClick X (stdio)",
       "ok": true,
       "tools": 13,
-      "startupMs": 115.1
+      "startupMs": 114.2
     },
     {
       "n": 3,
@@ -43,11 +43,11 @@
       "ok": true,
       "found": [
         "openapi",
-        "mcp",
-        "mcp"
+        "graphql",
+        "graphql"
       ],
       "newCapabilities": 3,
-      "ms": 38
+      "ms": 35.7
     },
     {
       "n": 5,
@@ -55,9 +55,9 @@
       "ok": true,
       "candidatePlans": 3,
       "best": [
-        "Fetch invoice details",
-        "Look up customer",
-        "Tax rate by country"
+        "Get invoice",
+        "Get Customer",
+        "Get Tax Rate"
       ],
       "planningMs": 3.4
     },
@@ -66,68 +66,68 @@
       "title": "Compose a multi-provider workflow",
       "ok": true,
       "steps": [
-        "Fetch invoice details ← invoice_id=$in.invoice_id",
-        "Look up customer ← customer_number=0.customerId",
-        "Tax rate by country ← countryCode=1.country"
+        "Get invoice ← invoice_id=$in.invoice_id",
+        "Get Customer ← customerId=0.customer_number",
+        "Get Tax Rate ← countryCode=1.country_code"
       ]
     },
     {
       "n": 7,
       "title": "Execute the workflow",
       "ok": true,
-      "input": "INV-1006",
+      "input": "INV-1004",
       "pipeline": [
-        "Fetch invoice details",
-        "Look up customer",
-        "Tax rate by country"
+        "Get invoice",
+        "Get Customer",
+        "Get Tax Rate"
       ],
-      "ms": 5.6
+      "ms": 5.9
     },
     {
       "n": 8,
       "title": "Verify against independently held test data",
       "ok": true,
-      "expected": 18.3,
-      "got": 18.3
+      "expected": 20.8,
+      "got": 20.8
     },
     {
       "n": 9,
       "title": "Save the successful composition and reuse it",
       "ok": true,
-      "saved": "Tax rate invoice customer country: Fetch invoice details → Look up customer → Tax rate by country",
+      "saved": "Tax rate invoice customer country: Get invoice → Get Customer → Get Tax Rate",
       "reusedAs": [
-        "Tax rate invoice customer country: Fetch invoice details → Look up customer → Tax rate by country"
+        "Tax rate invoice customer country: Get invoice → Get Customer → Get Tax Rate"
       ],
-      "expected": 21.2,
-      "got": 21.2,
-      "ms": 2.7
+      "expected": 25.5,
+      "got": 25.5,
+      "ms": 2.8
     },
     {
       "n": 10,
-      "title": "Change the interface of the last provider in the chain (Tallyport)",
+      "title": "Change the interface of the last provider in the chain (Emberlane)",
       "ok": true,
-      "before": "mcp \"Tax rate by country\" countryCode → countryCode, vat_rate",
-      "after": "graphql \"Lookup tax rate for a country\" country → result.{country, standard_rate}"
+      "before": "graphql \"Get tax rate\" countryCode → countryCode, standard_rate",
+      "after": "mcp \"Tax rate by country\" country → result.{country, tax_rate}"
     },
     {
       "n": 11,
       "title": "Recover without changing integration code",
       "ok": true,
       "healing": [
-        "API drift at http://127.0.0.1:49751/: openapi:fjordsoft,mcp:fernway,mcp:tallyport → openapi:fjordsoft,mcp:fernway,graphql:127-0-0-1-49750-graphql; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:55461/: openapi:kestrel-freight,graphql:127-0-0-1-55459-graphql,graphql:127-0-0-1-55460-graphql → openapi:kestrel-freight,graphql:127-0-0-1-55459-graphql,mcp:emberlane; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "via": [
-        "openapi:fjordsoft",
-        "mcp:fernway",
-        "graphql:127-0-0-1-49750-graphql"
+        "openapi:kestrel-freight",
+        "graphql:127-0-0-1-55459-graphql",
+        "mcp:emberlane"
       ],
-      "expected": 25.5,
-      "got": 25.5,
-      "ms": 17.7
+      "expected": 26.8,
+      "got": 26.8,
+      "ms": 17.9
     },
     {
       "n": 12,
-      "title": "Remove that provider (Tallyport)",
+      "title": "Remove that provider (Emberlane)",
       "ok": true
     },
     {
@@ -136,41 +136,41 @@
       "ok": true,
       "status": "failed",
       "healing": [
-        "API drift at http://127.0.0.1:49751/: openapi:fjordsoft,mcp:fernway,graphql:127-0-0-1-49750-graphql → openapi:fjordsoft,mcp:fernway; +0 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:55461/: openapi:kestrel-freight,graphql:127-0-0-1-55459-graphql,mcp:emberlane → openapi:kestrel-freight,graphql:127-0-0-1-55459-graphql; +0 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "withdrawn": [
-        "GraphQL 127.0.0.1:49750"
+        "Emberlane"
       ],
       "capabilities": "27 → 25",
       "savedPipelines": "1 → 0"
     },
     {
       "n": 14,
-      "title": "Introduce a different provider (Mistral Depot, graphql): the objective works again",
+      "title": "Introduce a different provider (Lumen Cargo, mcp): the objective works again",
       "ok": true,
       "learned": [
         "api-catalog: 3 services listed",
         "openapi: 1 operations",
-        "mcp: 1 tools",
-        "graphql: 1 fields"
+        "graphql: 1 fields",
+        "mcp: 1 tools"
       ],
       "via": [
-        "openapi:fjordsoft",
-        "mcp:fernway",
-        "graphql:127-0-0-1-49813-graphql"
+        "openapi:kestrel-freight",
+        "graphql:127-0-0-1-55459-graphql",
+        "mcp:lumen-cargo"
       ],
-      "expected": 18.3,
-      "got": 18.3,
-      "ms": 2.2
+      "expected": 26.8,
+      "got": 26.8,
+      "ms": 2.1
     }
   ],
   "benchmarks": {
-    "startupMs": 115.1,
+    "startupMs": 114.2,
     "mcpLatencyMs": {
       "p50": 0.04,
-      "p95": 0.12
+      "p95": 0.11
     },
-    "discoveryMs": 38,
+    "discoveryMs": 35.7,
     "graph": {
       "providers": 5,
       "capabilities": 26,
@@ -181,13 +181,13 @@
     },
     "graphStatsMs": 0.1,
     "planningMs": 3.4,
-    "executionMs": 5.6,
-    "recoveryAfterChangeMs": 17.7,
-    "recoveryAfterNewProviderMs": 2.2,
-    "memoryMB": 150
+    "executionMs": 5.9,
+    "recoveryAfterChangeMs": 17.9,
+    "recoveryAfterNewProviderMs": 2.1,
+    "memoryMB": 151
   },
   "freeze": {
-    "commit": "8849a5b860949b8b9389d510feab55b4d0e2a250",
+    "commit": "202bcafddac43441b8540c307dabe724da947e91",
     "tag": "lab-freeze-9",
     "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/core/authority.ts\nsrc/core/fields.ts\nsrc/core/graph.ts\nsrc/core/identities.ts\nsrc/core/planner.ts\nsrc/core/sandbox.ts\nsrc/core/satisfaction.ts\nsrc/core/semantics.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/core/yaml.ts\nsrc/entry/durable.ts\nsrc/entry/edge.ts\nsrc/interface/http.ts\nsrc/interface/tools.ts\nsrc/reflectors/cli.ts\nsrc/reflectors/discover.ts\nsrc/reflectors/graphql.ts\nsrc/reflectors/mcp.ts\nsrc/reflectors/net.ts\nsrc/reflectors/openapi.ts\nsrc/reflectors/platform.ts\nsrc/runtime.ts",
     "uncommittedProductChanges": "",
@@ -196,51 +196,51 @@
   "environment": [
     {
       "service": "invoices",
-      "brand": "Fjordsoft",
+      "brand": "Kestrel Freight",
       "protocol": "openapi",
-      "operation": "Fetch invoice details",
+      "operation": "Get invoice",
       "input": "invoice_id",
       "outputs": [
         "invoice_id",
-        "customerId",
+        "customer_number",
         "total",
         "currency"
       ]
     },
     {
       "service": "customers",
-      "brand": "Fernway",
-      "protocol": "mcp",
-      "operation": "Look up customer",
-      "input": "customer_number",
+      "brand": "Fjordsoft",
+      "protocol": "graphql",
+      "operation": "Get customer",
+      "input": "customerId",
       "outputs": [
-        "customer_number",
+        "customerId",
         "company_name",
-        "country"
+        "country_code"
       ]
     },
     {
       "service": "tax",
-      "brand": "Tallyport",
-      "protocol": "mcp",
-      "operation": "Tax rate by country",
+      "brand": "Emberlane",
+      "protocol": "graphql",
+      "operation": "Get tax rate",
       "input": "countryCode",
       "outputs": [
         "countryCode",
-        "vat_rate"
+        "standard_rate"
       ]
     }
   ],
   "firstRunProviders": [
-    "openapi:fjordsoft",
-    "mcp:fernway",
-    "mcp:tallyport"
+    "openapi:kestrel-freight",
+    "graphql:127-0-0-1-55459-graphql",
+    "graphql:127-0-0-1-55460-graphql"
   ],
   "receipts": {
     "count": 21,
     "intact": true,
     "brokenAt": null,
-    "head": "97607d392646e4f16cd64fd2360b5aeeef213b4ffd0f36b1a7c1b7d3c3ca5748"
+    "head": "0e1b8abf318692b7be36e9a23767049abb507f5407c9823c38cefcfee7afe3d8"
   },
   "passed": 14,
   "total": 14

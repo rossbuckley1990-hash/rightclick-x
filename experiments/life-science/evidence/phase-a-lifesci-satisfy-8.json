@@ -1,0 +1,955 @@
+{
+  "phase": "A",
+  "build": {
+    "tag": "lifesci-satisfy-8",
+    "commit": "202bcafddac43441b8540c307dabe724da947e91"
+  },
+  "at": "2026-10-17T02:28:56.918Z",
+  "perDatabaseAuthoring": {
+    "linesOfCode": 0,
+    "linesOfConfig": 0,
+    "note": "each source was given to context_learn as its URL only; nothing else exists"
+  },
+  "tools": [
+    "context_runtime",
+    "context_research",
+    "context_learn",
+    "context_forget",
+    "context_inspect",
+    "context_actions",
+    "context_explain",
+    "context_run",
+    "context_run_status",
+    "context_compose",
+    "context_graph",
+    "context_providers",
+    "context_watch"
+  ],
+  "sources": [
+    {
+      "key": "S1",
+      "name": "UniProtKB REST",
+      "url": "https://rest.uniprot.org/uniprotkb/api/docs",
+      "ok": true,
+      "ms": 1141,
+      "requests": 2,
+      "requestsDetail": [
+        "GET 500 https://rest.uniprot.org/uniprotkb/api/docs",
+        "GET 200 https://rest.uniprot.org/uniprotkb/api/docs"
+      ],
+      "probes": [
+        {
+          "url": "https://rest.uniprot.org/uniprotkb/api/docs",
+          "kind": "openapi",
+          "ok": true,
+          "detail": "3 operations"
+        }
+      ],
+      "learned": [
+        {
+          "provider": "openapi:openapi-definition",
+          "capabilitiesAdded": 3,
+          "powersBefore": 108,
+          "powersAfter": 285,
+          "newPowers": 177
+        }
+      ]
+    },
+    {
+      "key": "S2",
+      "name": "EBI Proteins API",
+      "url": "https://www.ebi.ac.uk/proteins/api/openapi.json",
+      "ok": true,
+      "ms": 3039,
+      "requests": 4,
+      "requestsDetail": [
+        "GET 200 https://www.ebi.ac.uk/proteins/api/openapi.json",
+        "GET 404 https://www.ebi.ac.uk/antigen",
+        "GET 404 https://www.ebi.ac.uk/coordinates",
+        "GET 400 https://www.ebi.ac.uk/proteins/api/antigen"
+      ],
+      "probes": [
+        {
+          "url": "https://www.ebi.ac.uk/proteins/api/openapi.json",
+          "kind": "openapi",
+          "ok": true,
+          "detail": "65 operations"
+        }
+      ],
+      "learned": [
+        {
+          "provider": "openapi:proteins-rest-api",
+          "capabilitiesAdded": 65,
+          "powersBefore": 285,
+          "powersAfter": 50623,
+          "newPowers": 50338
+        }
+      ]
+    },
+    {
+      "key": "S3",
+      "name": "RCSB PDB Data API (GraphQL)",
+      "url": "https://data.rcsb.org/graphql",
+      "ok": true,
+      "ms": 1377,
+      "requests": 2,
+      "requestsDetail": [
+        "GET 400 https://data.rcsb.org/graphql",
+        "POST 200 https://data.rcsb.org/graphql"
+      ],
+      "probes": [
+        {
+          "url": "https://data.rcsb.org/graphql",
+          "kind": "graphql",
+          "ok": true,
+          "detail": "29 fields"
+        }
+      ],
+      "learned": [
+        {
+          "provider": "graphql:data-rcsb-org-graphql",
+          "capabilitiesAdded": 29,
+          "powersBefore": 50623,
+          "powersAfter": 125089,
+          "newPowers": 74466
+        }
+      ]
+    },
+    {
+      "key": "S4",
+      "name": "RCSB PDB Search API",
+      "url": "https://search.rcsb.org/openapi.json",
+      "ok": true,
+      "ms": 362,
+      "requests": 1,
+      "requestsDetail": [
+        "GET 200 https://search.rcsb.org/openapi.json"
+      ],
+      "probes": [
+        {
+          "url": "https://search.rcsb.org/openapi.json",
+          "kind": "openapi",
+          "ok": true,
+          "detail": "7 operations"
+        }
+      ],
+      "learned": [
+        {
+          "provider": "openapi:rcsb-search-api",
+          "capabilitiesAdded": 7,
+          "powersBefore": 125089,
+          "powersAfter": 131924,
+          "newPowers": 6835
+        }
+      ]
+    },
+    {
+      "key": "S5",
+      "name": "EMBL-EBI OLS4",
+      "url": "https://www.ebi.ac.uk/ols4/v3/api-docs",
+      "ok": true,
+      "ms": 219,
+      "requests": 1,
+      "requestsDetail": [
+        "GET 200 https://www.ebi.ac.uk/ols4/v3/api-docs"
+      ],
+      "probes": [
+        {
+          "url": "https://www.ebi.ac.uk/ols4/v3/api-docs",
+          "kind": "openapi",
+          "ok": true,
+          "detail": "112 operations"
+        }
+      ],
+      "learned": [
+        {
+          "provider": "openapi:ols-service",
+          "capabilitiesAdded": 112,
+          "powersBefore": 131924,
+          "powersAfter": 441410,
+          "newPowers": 309486
+        }
+      ]
+    },
+    {
+      "key": "S6",
+      "name": "PDBe via third-party MCP wrapper (exploratory)",
+      "url": "https://gateway.pipeworx.io/pdbe/mcp",
+      "exploratory": true,
+      "ok": true,
+      "ms": 4086,
+      "requests": 5,
+      "requestsDetail": [
+        "GET 200 https://gateway.pipeworx.io/pdbe/mcp",
+        "POST 400 https://gateway.pipeworx.io/pdbe/mcp",
+        "POST 200 https://gateway.pipeworx.io/pdbe/mcp",
+        "POST 204 https://gateway.pipeworx.io/pdbe/mcp",
+        "POST 200 https://gateway.pipeworx.io/pdbe/mcp"
+      ],
+      "probes": [
+        {
+          "url": "https://gateway.pipeworx.io/pdbe/mcp",
+          "kind": "web",
+          "ok": false,
+          "detail": "0 forms, 0 hints"
+        },
+        {
+          "url": "https://gateway.pipeworx.io/pdbe/mcp",
+          "kind": "mcp",
+          "ok": true,
+          "detail": "44 tools"
+        }
+      ],
+      "learned": [
+        {
+          "provider": "mcp:pipeworx-gateway",
+          "capabilitiesAdded": 44,
+          "powersBefore": 441410,
+          "powersAfter": 1184865,
+          "newPowers": 743455
+        }
+      ]
+    }
+  ],
+  "perSource": [
+    {
+      "key": "S1",
+      "providers": [
+        "openapi:openapi-definition"
+      ],
+      "capabilities": 3,
+      "readOnly": 3,
+      "inputTypes": {
+        "id.stable": 1,
+        "text": 8,
+        "boolean": 3,
+        "number": 1
+      },
+      "outputTypes": {
+        "json": 13,
+        "list:text": 27,
+        "id.taxon": 1,
+        "text": 11,
+        "id.uniprotkb": 1,
+        "number": 3,
+        "datetime": 3,
+        "list:domain": 1,
+        "list:place": 1,
+        "boolean": 2
+      },
+      "identifierInputs": [
+        "getbyaccession.accession: id.stable",
+        "stream.query: text",
+        "searchcursor.query: text"
+      ]
+    },
+    {
+      "key": "S2",
+      "providers": [
+        "openapi:proteins-rest-api"
+      ],
+      "capabilities": 65,
+      "readOnly": 64,
+      "inputTypes": {
+        "text": 164,
+        "number": 63,
+        "id.antigen": 1,
+        "id.cross": 24,
+        "id.taxon": 20,
+        "boolean": 3,
+        "id.gene": 2,
+        "place": 7,
+        "id.reference": 1,
+        "id.uniprot": 1,
+        "id.iedb": 1,
+        "id.database": 3,
+        "id.assembly": 1,
+        "id.not": 1,
+        "id.rftax": 6,
+        "id.uniparc": 2,
+        "id.interpro": 1,
+        "id.cluster": 2,
+        "id.repmember": 1,
+        "id.repmemberentry": 1,
+        "id.repmembertax": 1,
+        "id.member": 1,
+        "id.memberentry": 1,
+        "id.membertax": 1,
+        "id.mim": 1,
+        "id.pubmed": 1
+      },
+      "outputTypes": {
+        "json": 85,
+        "text": 198,
+        "hash": 17,
+        "number": 49,
+        "id.getegene": 17,
+        "id.geteprotein": 17,
+        "list:text": 93,
+        "list:place": 2,
+        "id.entry": 9,
+        "datetime": 13,
+        "url": 4,
+        "language": 4
+      },
+      "identifierInputs": [
+        "getbyaccession.accession: text",
+        "search.accession: text",
+        "getbyaccession-1.accession: text",
+        "getgenomelocationbyaccession.accession: text",
+        "getgenomepositionbyaccession.accession: text",
+        "search-1.accession: text",
+        "search-1.gene: text",
+        "getallinteractionentries.accession: text",
+        "getbyaccession-2.accession: text",
+        "getentriesforisoforms.accession: text",
+        "search-2.accession: text",
+        "search-2.gene: text",
+        "search-2.exact_gene: text",
+        "getbyaccession-3.accession: text",
+        "search-3.accession: text",
+        "getbyaccession-4.accession: text",
+        "getbyaccession-4.Category type(s): MOLECULE_PROCESSING, TOPOLOGY, SEQUENCE_INFORMATION, STRUCTURAL, DOMAINS_AND_SITES, PTM, VARIANTS, MUTAGENESIS. Comma separated values accepted up to 20: text",
+        "search-4.accession: text",
+        "search-4.gene: text",
+        "search-4.exact_gene: text",
+        "getgenecentricbyaccession.accession: text",
+        "getgenecentricbyupid.accession: text",
+        "getgenecentricbyupid.gene: id.gene",
+        "getbyaccession-5.accession: text",
+        "search-5.accession: text",
+        "getbyaccession-6.accession: text",
+        "search-6.accession: text",
+        "getbyaccession-7.accession: text",
+        "search-7.accession: text",
+        "getbyaccession-8.accession: text",
+        "getnonptmbyaccession.accession: text",
+        "search-9.accession: text",
+        "searchnonptm.accession: text",
+        "getbyaccession-9.accession: text",
+        "search-10.accession: text",
+        "getbyaccession-10.accession: text",
+        "search-11.accession: text",
+        "getbyaccession-11.accession: text",
+        "search-12.accession: text",
+        "getuniparcbestguest.accession: text",
+        "getuniparcbestguest.gene: text",
+        "getuniparcentrybyuniprotaccession.accession: text",
+        "searchuniparc.accession: text",
+        "searchuniparc.gene: text",
+        "getunirefentrybyaccession.accession: text",
+        "getbyaccession-12.accession: text",
+        "search-13.accession: text",
+        "getvariation.accession: text",
+        "getvariationforaccessionlocation.accession_locations: text",
+        "search-14.accession: text"
+      ]
+    },
+    {
+      "key": "S3",
+      "providers": [
+        "graphql:data-rcsb-org-graphql"
+      ],
+      "capabilities": 29,
+      "readOnly": 29,
+      "inputTypes": {
+        "id.asym": 3,
+        "id.entry": 9,
+        "text": 29,
+        "list:id.component": 1,
+        "list:text": 12,
+        "id.assembly": 2,
+        "id.interface": 1,
+        "id.entity": 3,
+        "id.group": 3,
+        "id.pubmed": 1,
+        "id.groupprovenance": 1,
+        "id.comp": 1,
+        "id.uniprot": 1
+      },
+      "outputTypes": {
+        "json": 16,
+        "list:text": 642,
+        "list:id.labelasym": 8,
+        "list:id.labelcomp": 8,
+        "list:id.labelseq": 2,
+        "list:id.modifiedresidue": 4,
+        "list:id.modifiedresiduelabelasym": 2,
+        "list:id.pdbmodel": 12,
+        "list:id.authseq": 11,
+        "list:id.pdbxstructspecialsymmetry": 6,
+        "list:number": 314,
+        "id.rcsb": 34,
+        "text": 61,
+        "number": 67,
+        "datetime": 8,
+        "list:id.alt": 8,
+        "list:id.atom": 12,
+        "list:id.comp": 30,
+        "list:id.ligandalt": 4,
+        "list:id.ligandasym": 4,
+        "list:id.ligandatom": 4,
+        "id.asym": 3,
+        "id.authasym": 3,
+        "id.entity": 8,
+        "id.entry": 9,
+        "list:id.annotation": 17,
+        "list:id.feature": 15,
+        "list:id.rcsbpolymerstructconn": 2,
+        "list:id.ordinal": 6,
+        "id.pdbxpdb": 3,
+        "id.pdbxalt": 3,
+        "list:json": 13,
+        "list:id.chemcomp": 2,
+        "list:id.monnstdparentcomp": 2,
+        "list:id.component": 9,
+        "list:datetime": 16,
+        "list:language": 16,
+        "list:id.rcsbmodifiedresidue": 2,
+        "list:id.familyprd": 15,
+        "list:id.prd": 23,
+        "list:id.refentity": 10,
+        "list:id.link": 2,
+        "list:id.mon": 2,
+        "list:id.pdbxreferenceentitypolyseq": 2,
+        "list:id.parentmon": 2,
+        "list:id.entity": 8,
+        "list:id.source": 2,
+        "list:url": 3,
+        "list:id.citation": 4,
+        "list:id.structure": 4,
+        "list:id.database": 4,
+        "list:id.rcsbbirdcitation": 2,
+        "list:id.object": 4,
+        "list:id.group": 3,
+        "list:id.groupprovenance": 3,
+        "list:id.rcsb": 59,
+        "id.assembly": 3,
+        "id.interfaceentity": 1,
+        "id.interface": 1,
+        "list:id.rcsbprd": 1,
+        "list:id.chemrefdef": 3,
+        "list:id.entry": 9,
+        "list:id.nonpolymercomp": 1,
+        "list:id.pdbxstrand": 1,
+        "list:id.target": 1,
+        "list:id.expressionsystem": 2,
+        "list:id.natural": 2,
+        "list:id.organism": 4,
+        "list:id.pdbxbegseq": 4,
+        "list:id.ncbitaxonomy": 6,
+        "list:id.pdbxendseq": 2,
+        "list:id.pdbxsrc": 6,
+        "list:id.rcsbpfamclan": 2,
+        "list:id.cluster": 2,
+        "list:id.begseq": 4,
+        "list:id.host": 2,
+        "list:id.endseq": 4,
+        "list:id.taxonomy": 8,
+        "list:id.rcsbgenomiclineage": 2,
+        "list:id.rcsbmembranelineage": 2,
+        "list:id.isoform": 2,
+        "id.pdbxstrand": 1,
+        "id.target": 1,
+        "url": 1,
+        "id.chemrefdef": 3,
+        "id.prd": 3,
+        "id.group": 3,
+        "id.groupprovenance": 4,
+        "id.rcsbpubmedcentral": 1,
+        "id.pubmed": 1,
+        "id.persistent": 1,
+        "list:id.rcsbpubmedmeshdescriptorslineage": 1,
+        "id.pdbxstructassembly": 1,
+        "list:id.assembly": 9,
+        "list:id.pdbxstructassemblyauthevidence": 2,
+        "list:id.biol": 2,
+        "list:id.pdbxstructoperlist": 2,
+        "list:id.interface": 3,
+        "list:id.rcsbstructsymmetrylineage": 2,
+        "list:id.asym": 3,
+        "list:id.authasym": 3,
+        "list:id.rcsbbranchedstructconn": 2,
+        "list:id.pdbxpdb": 3,
+        "list:id.pdbxalt": 3,
+        "list:id.interfaceentity": 1,
+        "list:list:text": 1,
+        "list:id.pdbxstructassembly": 1,
+        "id.authseq": 1,
+        "id.comp": 2,
+        "list:id.rcsbnonpolymerstructconn": 2,
+        "list:id.targetasym": 2,
+        "list:id.targetatom": 2,
+        "list:id.targetauthseq": 2,
+        "list:id.targetcomp": 2,
+        "id.chemcomp": 2,
+        "id.component": 1,
+        "id.familyprd": 1,
+        "list:id.contributor": 2,
+        "list:place": 2,
+        "list:country": 2,
+        "list:id.crystal": 2,
+        "list:id.diffrn": 8,
+        "list:id.em2dcrystalentity": 2,
+        "list:id.imageprocessing": 10,
+        "list:id.em3dcrystalentity": 2,
+        "list:id.em3dfitting": 2,
+        "list:id.3dfitting": 2,
+        "list:id.em3dfittinglist": 2,
+        "list:id.pdbchain": 2,
+        "list:id.pdbentry": 2,
+        "list:id.em3dreconstruction": 2,
+        "list:id.emimageprocessing": 2,
+        "list:id.emctfcorrection": 2,
+        "list:id.emdiffraction": 2,
+        "list:id.imaging": 4,
+        "list:id.emdiffractionstats": 4,
+        "list:id.emdiffractionshell": 2,
+        "list:id.emembedding": 2,
+        "list:id.specimen": 2,
+        "list:id.ementityassembly": 2,
+        "list:id.sample": 2,
+        "list:id.parent": 2,
+        "id.entityassembly": 1,
+        "id.emexperiment": 1,
+        "list:id.emhelicalentity": 2,
+        "list:id.emimagerecording": 2,
+        "list:id.entityassembly": 1,
+        "list:id.emexperiment": 1,
+        "id.uniprot": 1,
+        "list:id.reference": 1,
+        "list:id.rcsbuniprotkeyword": 1,
+        "id.rcsbprd": 1,
+        "id.nonpolymercomp": 1
+      },
+      "identifierInputs": [
+        "polymer_entity_instance.entry_id: id.entry",
+        "chem_comps.comp_ids: list:id.component",
+        "interface.entry_id: id.entry",
+        "nonpolymer_entities.entity_ids: list:text",
+        "polymer_entities.entity_ids: list:text",
+        "polymer_entity.entity_id: id.entity",
+        "polymer_entity.entry_id: id.entry",
+        "assembly.entry_id: id.entry",
+        "branched_entity.entity_id: id.entity",
+        "branched_entity.entry_id: id.entry",
+        "branched_entity_instance.entry_id: id.entry",
+        "nonpolymer_entity_instance.entry_id: id.entry",
+        "chem_comp.comp_id: id.comp",
+        "entry.entry_id: id.entry",
+        "entries.entry_ids: list:text",
+        "branched_entities.entity_ids: list:text",
+        "uniprot.uniprot_id: id.uniprot",
+        "nonpolymer_entity.entity_id: id.entity",
+        "nonpolymer_entity.entry_id: id.entry"
+      ]
+    },
+    {
+      "key": "S4",
+      "providers": [
+        "openapi:rcsb-search-api"
+      ],
+      "capabilities": 7,
+      "readOnly": 6,
+      "inputTypes": {
+        "text": 4
+      },
+      "outputTypes": {
+        "json": 7
+      },
+      "identifierInputs": []
+    },
+    {
+      "key": "S5",
+      "providers": [
+        "openapi:ols-service"
+      ],
+      "capabilities": 112,
+      "readOnly": 101,
+      "inputTypes": {
+        "text": 114,
+        "list:id.ontology": 1,
+        "list:language": 1,
+        "number": 71,
+        "boolean": 131,
+        "id.ontology": 30,
+        "list:text": 46,
+        "language": 92,
+        "list:number": 2,
+        "url": 70,
+        "id.excludeontology": 1,
+        "id.obo": 16,
+        "id": 10
+      },
+      "outputTypes": {
+        "json": 238,
+        "number": 264,
+        "list:text": 88,
+        "text": 52,
+        "list:json": 1,
+        "id.page": 41,
+        "list:language": 1,
+        "language": 4,
+        "id.ontology": 1,
+        "hash": 1,
+        "id.config": 1,
+        "url": 1,
+        "list:url": 1,
+        "boolean": 13,
+        "id.obo": 3
+      },
+      "identifierInputs": [
+        "searchpropertiesbytext.q: text",
+        "getclass.class: url",
+        "getclassrelatedfrom.class: url",
+        "getclassindividuals.class: url",
+        "gethierarchicaldescendantsbyontology.class: url",
+        "gethierarchicalchildrenbyontology-1.class: url",
+        "gethierarchicalancestorsbyontology-1.class: url",
+        "getdescendantsbyontology.class: url",
+        "getchildrenbyontology-1.class: url",
+        "getchildrenbyontology-1.searchQuery: text",
+        "getancestorsbyontology-1.class: url",
+        "searchclassesbytextinontology.q: text",
+        "searchindividualsbytext.q: text",
+        "searchentitiesbytext.q: text",
+        "getclasssimilarity.class: url",
+        "getsimilarclasses.class: url",
+        "getclassembedding.class: url",
+        "searchclassesbytext.q: text",
+        "getterms-1.iri: url",
+        "getterms-1.obo_id: id.obo",
+        "gettermsbyiri.iri: url",
+        "gettermsbyidandisdefiningontology.iri: url",
+        "gettermsbyidandisdefiningontology.obo_id: id.obo",
+        "gettermsbyidandisdefiningontology-1.iri: url",
+        "suggest.q: text",
+        "select.q: text",
+        "search.q: text",
+        "search.queryFields: list:text",
+        "getallproperties.iri: url",
+        "getallproperties.obo_id: id.obo",
+        "getpropertiesbyiri.iri: url",
+        "getpropertiesbyidandisdefiningontology.iri: url",
+        "getpropertiesbyidandisdefiningontology.obo_id: id.obo",
+        "getpropertiesbyiriandisdefiningontology.iri: url",
+        "termsbyontology.iri: url",
+        "termsbyontology.obo_id: id.obo",
+        "getterm.iri: url",
+        "related.iri: url",
+        "related.property_iri: url",
+        "getparents.iri: url",
+        "graphjstree.iri: url",
+        "graphjstreechildren.iri: url",
+        "gethierarchicalparents.iri: url",
+        "gethierarchicaldescendants.iri: url",
+        "gethierarchicalchildren.iri: url",
+        "gethierarchicalancestors.iri: url",
+        "graphjson.iri: url",
+        "descendants.iri: url",
+        "children.iri: url",
+        "ancestors.iri: url",
+        "getallpropertiesbyontology.iri: url",
+        "getallpropertiesbyontology.obo_id: id.obo",
+        "getproperty-1.iri: url",
+        "getparents-1.iri: url",
+        "getjstree.iri: url",
+        "graphjstreechildren-1.iri: url",
+        "descendants-1.iri: url",
+        "children-1.iri: url",
+        "ancestors-1.iri: url",
+        "termparentsbyontology.iri: url"
+      ]
+    },
+    {
+      "key": "S6",
+      "providers": [
+        "mcp:pipeworx-gateway"
+      ],
+      "capabilities": 44,
+      "readOnly": 39,
+      "inputTypes": {
+        "text": 102,
+        "list:text": 8,
+        "number": 20,
+        "country": 3,
+        "json": 9,
+        "id": 7,
+        "boolean": 4,
+        "url": 7,
+        "quantity:money:USD:unknown": 1,
+        "place": 1,
+        "datetime": 2,
+        "quantity:money:USD:major": 1,
+        "id.pdb": 3
+      },
+      "outputTypes": {
+        "text": 55,
+        "json": 11,
+        "boolean": 1,
+        "id.no": 1,
+        "list:json": 7,
+        "number": 6,
+        "list:text": 2
+      },
+      "identifierInputs": [
+        "ask-pipeworx.query: text",
+        "ask-pipeworx.q: text",
+        "ask-pipeworx-beta.query: text",
+        "ask-pipeworx-beta.q: text",
+        "ask-pipeworx-grounded.query: text",
+        "ask-pipeworx-grounded.q: text",
+        "search-within.query: text",
+        "deep-research.query: text",
+        "deep-research.q: text",
+        "discover-tools.query: text",
+        "discover-tools.q: text"
+      ]
+    }
+  ],
+  "providers": [
+    {
+      "id": "builtin:core",
+      "title": "RightClick X core transforms",
+      "source": "builtin",
+      "origin": "rightclick-x",
+      "learnedAt": "2026-10-17T02:28:22.399Z",
+      "capabilities": 20
+    },
+    {
+      "id": "platform:node",
+      "title": "Platform: node",
+      "source": "platform",
+      "origin": "node",
+      "learnedAt": "2026-10-17T02:28:22.400Z",
+      "capabilities": 3
+    },
+    {
+      "id": "openapi:openapi-definition",
+      "title": "OpenAPI definition",
+      "source": "openapi",
+      "origin": "https://rest.uniprot.org/uniprotkb/api/docs",
+      "learnedAt": "2026-10-17T02:28:23.546Z",
+      "capabilities": 3
+    },
+    {
+      "id": "openapi:proteins-rest-api",
+      "title": "Proteins REST API",
+      "source": "openapi",
+      "origin": "https://www.ebi.ac.uk/proteins/api/openapi.json",
+      "learnedAt": "2026-10-17T02:28:23.825Z",
+      "capabilities": 65
+    },
+    {
+      "id": "graphql:data-rcsb-org-graphql",
+      "title": "GraphQL data.rcsb.org",
+      "source": "graphql",
+      "origin": "https://data.rcsb.org/graphql",
+      "learnedAt": "2026-10-17T02:28:27.960Z",
+      "capabilities": 29
+    },
+    {
+      "id": "openapi:rcsb-search-api",
+      "title": "RCSB Search API",
+      "source": "openapi",
+      "origin": "https://search.rcsb.org/openapi.json",
+      "learnedAt": "2026-10-17T02:28:28.324Z",
+      "capabilities": 7
+    },
+    {
+      "id": "openapi:ols-service",
+      "title": "OLS Service",
+      "source": "openapi",
+      "origin": "https://www.ebi.ac.uk/ols4/v3/api-docs",
+      "learnedAt": "2026-10-17T02:28:28.540Z",
+      "capabilities": 112
+    },
+    {
+      "id": "mcp:pipeworx-gateway",
+      "title": "pipeworx-gateway",
+      "source": "mcp",
+      "origin": "https://gateway.pipeworx.io/pdbe/mcp",
+      "learnedAt": "2026-10-17T02:28:32.626Z",
+      "capabilities": 44
+    }
+  ],
+  "stats": {
+    "providers": 8,
+    "capabilities": 283,
+    "edges": 17776,
+    "chains2": 17776,
+    "chains3": 1166806,
+    "total": 1184865
+  },
+  "crossProviderTypedLinks": {
+    "counts": {
+      "S1→S3": 36,
+      "S1→S6": 50,
+      "S1→S2": 78,
+      "S1→S4": 8,
+      "S1→S5": 96,
+      "S2→S1": 66,
+      "S2→S4": 132,
+      "S2→S5": 1696,
+      "S2→S6": 877,
+      "S2→S3": 789,
+      "S3→S6": 431,
+      "S3→S5": 822,
+      "S3→S1": 32,
+      "S3→S2": 624,
+      "S3→S4": 64,
+      "S5→S2": 1043,
+      "S5→S3": 948,
+      "S5→S6": 827,
+      "S5→S1": 46,
+      "S5→S4": 92,
+      "S6→S1": 88,
+      "S6→S2": 1716,
+      "S6→S4": 176,
+      "S6→S5": 2112,
+      "S6→S3": 12
+    },
+    "samples": [
+      "openapi:openapi-definition:getbyaccession → graphql:data-rcsb-org-graphql:query:nonpolymer_entity_groups",
+      "openapi:openapi-definition:getbyaccession → graphql:data-rcsb-org-graphql:query:polymer_entity_groups",
+      "openapi:openapi-definition:getbyaccession → graphql:data-rcsb-org-graphql:query:nonpolymer_entities",
+      "openapi:openapi-definition:getbyaccession → graphql:data-rcsb-org-graphql:query:polymer_entities",
+      "openapi:openapi-definition:getbyaccession → graphql:data-rcsb-org-graphql:query:branched_entity_instances",
+      "openapi:openapi-definition:getbyaccession → graphql:data-rcsb-org-graphql:query:polymer_entity_instances",
+      "openapi:openapi-definition:getbyaccession → graphql:data-rcsb-org-graphql:query:interfaces",
+      "openapi:openapi-definition:getbyaccession → graphql:data-rcsb-org-graphql:query:assemblies",
+      "openapi:openapi-definition:getbyaccession → graphql:data-rcsb-org-graphql:query:entries",
+      "openapi:openapi-definition:getbyaccession → graphql:data-rcsb-org-graphql:query:entry_groups",
+      "openapi:openapi-definition:getbyaccession → graphql:data-rcsb-org-graphql:query:branched_entities",
+      "openapi:openapi-definition:getbyaccession → graphql:data-rcsb-org-graphql:query:nonpolymer_entity_instances",
+      "openapi:openapi-definition:getbyaccession → mcp:pipeworx-gateway:compare-entities",
+      "openapi:openapi-definition:getbyaccession → mcp:pipeworx-gateway:classify-row",
+      "openapi:openapi-definition:getbyaccession → mcp:pipeworx-gateway:scan-competitor-ai-presence",
+      "openapi:openapi-definition:getbyaccession → openapi:proteins-rest-api:getbylocations",
+      "openapi:openapi-definition:getbyaccession → openapi:proteins-rest-api:getfeaturebylocations",
+      "openapi:openapi-definition:getbyaccession → openapi:proteins-rest-api:getproteinpositionbygenomelocation",
+      "openapi:openapi-definition:getbyaccession → openapi:proteins-rest-api:getproteinpositionbygenomelocation2",
+      "openapi:openapi-definition:getbyaccession → mcp:pipeworx-gateway:unsubscribe",
+      "openapi:openapi-definition:getbyaccession → mcp:pipeworx-gateway:remember",
+      "openapi:openapi-definition:getbyaccession → mcp:pipeworx-gateway:forget",
+      "openapi:openapi-definition:getbyaccession → openapi:proteins-rest-api:getbyaccession",
+      "openapi:openapi-definition:getbyaccession → openapi:proteins-rest-api:getbyaccession-1",
+      "openapi:openapi-definition:getbyaccession → openapi:proteins-rest-api:getbydbxref",
+      "openapi:openapi-definition:getbyaccession → openapi:proteins-rest-api:getgenomelocationbyaccession",
+      "openapi:openapi-definition:getbyaccession → openapi:proteins-rest-api:getgenomepositionbyaccession",
+      "openapi:openapi-definition:getbyaccession → openapi:proteins-rest-api:getallinteractionentries",
+      "openapi:openapi-definition:getbyaccession → openapi:proteins-rest-api:getbyaccession-2",
+      "openapi:openapi-definition:getbyaccession → openapi:proteins-rest-api:getentriesforisoforms",
+      "openapi:openapi-definition:getbyaccession → openapi:proteins-rest-api:getbyaccession-3",
+      "openapi:openapi-definition:getbyaccession → openapi:proteins-rest-api:getbyaccession-4",
+      "openapi:openapi-definition:getbyaccession → openapi:proteins-rest-api:searchfeaturetype",
+      "openapi:openapi-definition:getbyaccession → openapi:proteins-rest-api:getgenecentricbyaccession",
+      "openapi:openapi-definition:getbyaccession → openapi:proteins-rest-api:getbyaccession-5",
+      "openapi:openapi-definition:getbyaccession → openapi:proteins-rest-api:getbyaccession-6",
+      "openapi:openapi-definition:getbyaccession → openapi:proteins-rest-api:getbyaccession-7",
+      "openapi:openapi-definition:getbyaccession → openapi:proteins-rest-api:getbyupid",
+      "openapi:openapi-definition:getbyaccession → openapi:proteins-rest-api:getgenecentricbyupiddeprecated",
+      "openapi:openapi-definition:getbyaccession → openapi:proteins-rest-api:getproteinsbyupid"
+    ]
+  },
+  "smoke": [
+    {
+      "key": "S1",
+      "capability": "openapi:openapi-definition:getbyaccession",
+      "args": {
+        "accession": "P04637"
+      },
+      "ok": false,
+      "status": "completed",
+      "ms": 1265,
+      "expectPresent": false,
+      "neededFacts": [],
+      "outputBytes": 3813,
+      "outputHead": "{\"runId\":\"run_mvbs1zvm_1\",\"capability\":\"openapi:openapi-definition:getbyaccession\",\"provider\":\"openapi:openapi-definition\",\"title\":\"Get UniProtKB entry by a single accession.\",\"status\":\"completed\",\"startedAt\":\"2026-10-17T02:28:32.866Z\",\"durationMs\":1242.8,\"verification\":{\"status\":\"unverified\",\"results\":[]},\"receipt\":{\"runId\":\"run_mvbs1zvm_1\",\"capability\":\"openapi:openapi-definition:getbyaccession\",\"provider\":\"openapi:openapi-definition\",\"startedAt\":\"2026-10-17T02:28:32.866Z\",\"durationMs\":1242.8,\"status\":\"completed\",\"verification\":\"unverified\",\"seq\":1,\"inputDigest\":\"9ac710719c09ee896f06edf9b08c"
+    },
+    {
+      "key": "S2",
+      "capability": "openapi:proteins-rest-api:getbyaccession-2",
+      "args": {
+        "accession": "P04637"
+      },
+      "ok": false,
+      "status": "completed",
+      "ms": 1034,
+      "expectPresent": false,
+      "neededFacts": [],
+      "outputBytes": 2776,
+      "outputHead": "{\"runId\":\"run_mvbs20ur_2\",\"capability\":\"openapi:proteins-rest-api:getbyaccession-2\",\"provider\":\"openapi:proteins-rest-api\",\"title\":\"Get UniProt entry by accession\",\"status\":\"completed\",\"startedAt\":\"2026-10-17T02:28:34.131Z\",\"durationMs\":1016.1,\"verification\":{\"status\":\"unverified\",\"results\":[]},\"receipt\":{\"runId\":\"run_mvbs20ur_2\",\"capability\":\"openapi:proteins-rest-api:getbyaccession-2\",\"provider\":\"openapi:proteins-rest-api\",\"startedAt\":\"2026-10-17T02:28:34.131Z\",\"durationMs\":1016.1,\"status\":\"completed\",\"verification\":\"unverified\",\"seq\":2,\"inputDigest\":\"9ac710719c09ee896f06edf9b08c6bc485e63a98"
+    },
+    {
+      "key": "S3",
+      "capability": "graphql:data-rcsb-org-graphql:query:entry",
+      "args": {
+        "entry_id": "4HHB"
+      },
+      "ok": true,
+      "status": "completed",
+      "ms": 345,
+      "expectPresent": true,
+      "neededFacts": [
+        {
+          "fact": "X-RAY DIFFRACTION",
+          "present": false
+        },
+        {
+          "fact": "1.74",
+          "present": false
+        }
+      ],
+      "outputBytes": 3933,
+      "outputHead": "{\"runId\":\"run_mvbs21nh_3\",\"capability\":\"graphql:data-rcsb-org-graphql:query:entry\",\"provider\":\"graphql:data-rcsb-org-graphql\",\"title\":\"Entry\",\"status\":\"completed\",\"output\":{\"assemblies\":[{\"rcsb_id\":\"4HHB-1\",\"rcsb_struct_symmetry_provenance_code\":\"biojava-7.2.4\"}],\"audit_author\":[{\"identifier_ORCID\":null,\"name\":\"Fermi, G.\",\"pdbx_ordinal\":1},{\"identifier_ORCID\":null,\"name\":\"Perutz, M.F.\",\"pdbx_ordinal\":2}],\"branched_entities\":null,\"cell\":{\"Z_PDB\":4,\"angle_alpha\":90,\"angle_beta\":99.34,\"angle_gamma\":90,\"formula_units_Z\":null,\"length_a\":63.15,\"length_b\":83.59,\"length_c\":53.8},\"citation\":[{\"book_id_"
+    },
+    {
+      "key": "S4",
+      "capability": "openapi:rcsb-search-api:runjsonqueriesget",
+      "args": {
+        "json": "{\"query\":{\"type\":\"terminal\",\"service\":\"text\",\"parameters\":{\"attribute\":\"rcsb_id\",\"operator\":\"exact_match\",\"value\":\"4HHB\"}},\"return_type\":\"entry\"}"
+      },
+      "ok": true,
+      "status": "completed",
+      "ms": 354,
+      "expectPresent": true,
+      "neededFacts": [],
+      "outputBytes": 1103,
+      "outputHead": "{\"runId\":\"run_mvbs21x3_4\",\"capability\":\"openapi:rcsb-search-api:runjsonqueriesget\",\"provider\":\"openapi:rcsb-search-api\",\"title\":\"Released data search API endpoint allows you to perform GET requests with textual and scientific searches against current RCSB PDB entries\",\"status\":\"completed\",\"output\":{\"query_id\":\"58d2f809-a00c-422e-ba81-5dea61212ee3\",\"result_type\":\"entry\",\"total_count\":1,\"result_set\":[{\"identifier\":\"4HHB\",\"score\":1}]},\"startedAt\":\"2026-10-17T02:28:35.511Z\",\"durationMs\":353.2,\"verification\":{\"status\":\"unverified\",\"results\":[]},\"receipt\":{\"runId\":\"run_mvbs21x3_4\",\"capability\":\"open"
+    },
+    {
+      "key": "S5",
+      "capability": "openapi:ols-service:search",
+      "args": {
+        "q": "apoptosis"
+      },
+      "ok": false,
+      "status": "failed",
+      "ms": 20716,
+      "expectPresent": true,
+      "neededFacts": [
+        {
+          "fact": "GO:0006915",
+          "present": false
+        }
+      ],
+      "error": "timeout after 20000ms: https://www.ebi.ac.uk/ols4/api/search?q=apoptosis; re-reflected https://www.ebi.ac.uk/ols4/v3/api-docs: no contract change",
+      "outputBytes": 1341,
+      "outputHead": "{\"runId\":\"run_mvbs226x_5\",\"capability\":\"openapi:ols-service:search\",\"provider\":\"openapi:ols-service\",\"title\":\"Search\",\"status\":\"failed\",\"error\":\"timeout after 20000ms: https://www.ebi.ac.uk/ols4/api/search?q=apoptosis; re-reflected https://www.ebi.ac.uk/ols4/v3/api-docs: no contract change\",\"startedAt\":\"2026-10-17T02:28:35.865Z\",\"durationMs\":20712.8,\"verification\":{\"status\":\"refuted\",\"results\":[]},\"receipt\":{\"runId\":\"run_mvbs226x_5\",\"capability\":\"openapi:ols-service:search\",\"provider\":\"openapi:ols-service\",\"startedAt\":\"2026-10-17T02:28:35.865Z\",\"durationMs\":20712.8,\"status\":\"failed\",\"verificat"
+    }
+  ],
+  "network": {
+    "requests": 22,
+    "perHost": {
+      "rest.uniprot.org": 4,
+      "www.ebi.ac.uk": 8,
+      "data.rcsb.org": 3,
+      "search.rcsb.org": 2,
+      "gateway.pipeworx.io": 5
+    },
+    "refused": 0
+  },
+  "stateSha256": "10aa11e93b74c0dd15e31d6ca5d150891d3c2bd428e1fc92d58440153ded59b3",
+  "stateFile": "/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/rcx-lifesci/lifesci-satisfy-8/phase-a-state.json"
+}

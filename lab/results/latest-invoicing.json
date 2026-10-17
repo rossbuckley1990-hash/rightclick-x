@@ -1,8 +1,8 @@
 {
-  "seed": 952008171,
+  "seed": 369603430,
   "domain": "invoicing",
   "gateway": false,
-  "startedAt": "2026-10-17T02:12:11.974Z",
+  "startedAt": "2026-10-17T02:28:25.737Z",
   "steps": [
     {
       "n": 1,
@@ -17,7 +17,7 @@
       "title": "Connect an MCP client to RightClick X (stdio)",
       "ok": true,
       "tools": 13,
-      "startupMs": 113.2
+      "startupMs": 121
     },
     {
       "n": 3,
@@ -43,11 +43,11 @@
       "ok": true,
       "found": [
         "graphql",
-        "mcp",
+        "openapi",
         "mcp"
       ],
       "newCapabilities": 3,
-      "ms": 31.9
+      "ms": 37.1
     },
     {
       "n": 5,
@@ -55,79 +55,79 @@
       "ok": true,
       "candidatePlans": 3,
       "best": [
-        "Retrieve Invoice",
-        "Get customer",
-        "Get tax rate"
+        "Fetch Invoice Details",
+        "Fetch customer record",
+        "Lookup tax rate for a country"
       ],
-      "planningMs": 3.4
+      "planningMs": 3.7
     },
     {
       "n": 6,
       "title": "Compose a multi-provider workflow",
       "ok": true,
       "steps": [
-        "Retrieve Invoice ← invoice_number=$in.invoice_id",
-        "Get customer ← customer_id=0.customerId",
-        "Get tax rate ← countryCode=1.country_code"
+        "Fetch Invoice Details ← invoice_id=$in.invoice_id",
+        "Fetch customer record ← customerId=0.customerId",
+        "Lookup tax rate for a country ← countryCode=1.countryCode"
       ]
     },
     {
       "n": 7,
       "title": "Execute the workflow",
       "ok": true,
-      "input": "INV-1003",
+      "input": "INV-1002",
       "pipeline": [
-        "Retrieve Invoice",
-        "Get customer",
-        "Get tax rate"
+        "Fetch Invoice Details",
+        "Fetch customer record",
+        "Lookup tax rate for a country"
       ],
-      "ms": 5.6
+      "ms": 8.6
     },
     {
       "n": 8,
       "title": "Verify against independently held test data",
       "ok": true,
-      "expected": 18.3,
-      "got": 18.3
+      "expected": 18.8,
+      "got": 18.8
     },
     {
       "n": 9,
       "title": "Save the successful composition and reuse it",
       "ok": true,
-      "saved": "Tax rate invoice customer country: Retrieve Invoice → Get customer → Get tax rate",
+      "saved": "Tax rate invoice customer country: Fetch Invoice Details → Fetch customer record → Lookup tax rate for a country",
       "reusedAs": [
-        "Tax rate invoice customer country: Retrieve Invoice → Get customer → Get tax rate"
+        "Tax rate invoice customer country: Fetch Invoice Details → Fetch customer record → Lookup tax rate for a country"
       ],
-      "expected": 11.3,
-      "got": 11.3,
-      "ms": 3
+      "expected": 17.2,
+      "got": 17.2,
+      "ms": 4
     },
     {
       "n": 10,
-      "title": "Change the interface of the last provider in the chain (Harbourly)",
+      "title": "Change the interface of the last provider in the chain (Cobaltix)",
       "ok": true,
-      "before": "mcp \"Get tax rate\" countryCode → countryCode, vat_rate",
-      "after": "openapi \"Country tax rate\" country → result.{country, rate}"
+      "before": "mcp \"Lookup tax rate for a country\" countryCode → countryCode, rate",
+      "after": "graphql \"Get tax rate\" country → result.{country, standard_rate}"
     },
     {
       "n": 11,
       "title": "Recover without changing integration code",
       "ok": true,
       "healing": [
-        "API drift at http://127.0.0.1:63554/: mcp:harbourly → openapi:harbourly; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:52874/: mcp:cobaltix → graphql:127-0-0-1-52874-graphql; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "via": [
-        "graphql:127-0-0-1-63552-graphql",
-        "mcp:paperhaus",
-        "openapi:harbourly"
+        "graphql:127-0-0-1-52872-graphql",
+        "openapi:harbourly",
+        "graphql:127-0-0-1-52874-graphql"
       ],
-      "expected": 18.3,
-      "got": 18.3,
-      "ms": 9.7
+      "expected": 25.6,
+      "got": 25.6,
+      "ms": 10.4
     },
     {
       "n": 12,
-      "title": "Remove that provider (Harbourly)",
+      "title": "Remove that provider (Cobaltix)",
       "ok": true
     },
     {
@@ -136,38 +136,38 @@
       "ok": true,
       "status": "failed",
       "healing": [
-        "provider gone at http://127.0.0.1:63554/: withdrew openapi:harbourly (1 capabilities, 1 pipeline(s) retired)"
+        "provider gone at http://127.0.0.1:52874/: withdrew graphql:127-0-0-1-52874-graphql (1 capabilities, 1 pipeline(s) retired)"
       ],
       "withdrawn": [
-        "Harbourly"
+        "GraphQL 127.0.0.1:52874"
       ],
       "capabilities": "27 → 25",
       "savedPipelines": "1 → 0"
     },
     {
       "n": 14,
-      "title": "Introduce a different provider (Fernway, openapi): the objective works again",
+      "title": "Introduce a different provider (Fernway, graphql): the objective works again",
       "ok": true,
       "learned": [
-        "openapi: 1 operations"
+        "graphql: 1 fields"
       ],
       "via": [
-        "graphql:127-0-0-1-63552-graphql",
-        "mcp:paperhaus",
-        "openapi:fernway"
+        "graphql:127-0-0-1-52872-graphql",
+        "openapi:harbourly",
+        "graphql:127-0-0-1-52947-graphql"
       ],
-      "expected": 11.3,
-      "got": 11.3,
-      "ms": 2.4
+      "expected": 13.4,
+      "got": 13.4,
+      "ms": 2.5
     }
   ],
   "benchmarks": {
-    "startupMs": 113.2,
+    "startupMs": 121,
     "mcpLatencyMs": {
-      "p50": 0.04,
-      "p95": 0.11
+      "p50": 0.03,
+      "p95": 0.12
     },
-    "discoveryMs": 31.9,
+    "discoveryMs": 37.1,
     "graph": {
       "providers": 5,
       "capabilities": 26,
@@ -177,14 +177,14 @@
       "total": 132
     },
     "graphStatsMs": 0.1,
-    "planningMs": 3.4,
-    "executionMs": 5.6,
-    "recoveryAfterChangeMs": 9.7,
-    "recoveryAfterNewProviderMs": 2.4,
+    "planningMs": 3.7,
+    "executionMs": 8.6,
+    "recoveryAfterChangeMs": 10.4,
+    "recoveryAfterNewProviderMs": 2.5,
     "memoryMB": 140
   },
   "freeze": {
-    "commit": "8849a5b860949b8b9389d510feab55b4d0e2a250",
+    "commit": "202bcafddac43441b8540c307dabe724da947e91",
     "tag": "lab-freeze-9",
     "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/core/authority.ts\nsrc/core/fields.ts\nsrc/core/graph.ts\nsrc/core/identities.ts\nsrc/core/planner.ts\nsrc/core/sandbox.ts\nsrc/core/satisfaction.ts\nsrc/core/semantics.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/core/yaml.ts\nsrc/entry/durable.ts\nsrc/entry/edge.ts\nsrc/interface/http.ts\nsrc/interface/tools.ts\nsrc/reflectors/cli.ts\nsrc/reflectors/discover.ts\nsrc/reflectors/graphql.ts\nsrc/reflectors/mcp.ts\nsrc/reflectors/net.ts\nsrc/reflectors/openapi.ts\nsrc/reflectors/platform.ts\nsrc/runtime.ts",
     "uncommittedProductChanges": "",
@@ -193,12 +193,12 @@
   "environment": [
     {
       "service": "invoices",
-      "brand": "Emberlane",
+      "brand": "Duneworks",
       "protocol": "graphql",
-      "operation": "Retrieve invoice",
-      "input": "invoice_number",
+      "operation": "Fetch invoice details",
+      "input": "invoice_id",
       "outputs": [
-        "invoice_number",
+        "invoice_id",
         "customerId",
         "total",
         "currency"
@@ -206,38 +206,38 @@
     },
     {
       "service": "customers",
-      "brand": "Paperhaus",
-      "protocol": "mcp",
-      "operation": "Get customer",
-      "input": "customer_id",
+      "brand": "Harbourly",
+      "protocol": "openapi",
+      "operation": "Fetch customer record",
+      "input": "customerId",
       "outputs": [
-        "customer_id",
+        "customerId",
         "company_name",
-        "country_code"
+        "countryCode"
       ]
     },
     {
       "service": "tax",
-      "brand": "Harbourly",
+      "brand": "Cobaltix",
       "protocol": "mcp",
-      "operation": "Get tax rate",
+      "operation": "Lookup tax rate for a country",
       "input": "countryCode",
       "outputs": [
         "countryCode",
-        "vat_rate"
+        "rate"
       ]
     }
   ],
   "firstRunProviders": [
-    "graphql:127-0-0-1-63552-graphql",
-    "mcp:paperhaus",
-    "mcp:harbourly"
+    "graphql:127-0-0-1-52872-graphql",
+    "openapi:harbourly",
+    "mcp:cobaltix"
   ],
   "receipts": {
     "count": 21,
     "intact": true,
     "brokenAt": null,
-    "head": "7ecf8a29266e48b8f12a02a64eb6e5fcf370ddc2eb4f35f2597b9f9d22b459a5"
+    "head": "938b5cfe381d375e99c7147a014ff8f79a303eb4e840e73caaec7a128a2b8cd8"
   },
   "passed": 14,
   "total": 14

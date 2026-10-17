@@ -1,8 +1,8 @@
 {
-  "seed": 777190362,
+  "seed": 428592426,
   "domain": "logistics",
   "gateway": true,
-  "startedAt": "2026-10-17T02:12:26.566Z",
+  "startedAt": "2026-10-17T02:28:41.103Z",
   "steps": [
     {
       "n": 1,
@@ -17,7 +17,7 @@
       "title": "Connect an MCP client to RightClick X (stdio)",
       "ok": true,
       "tools": 13,
-      "startupMs": 110.1
+      "startupMs": 119
     },
     {
       "n": 3,
@@ -42,12 +42,12 @@
       "title": "Discover the environment's services from its catalog only (no service addresses, protocols or schemas given)",
       "ok": true,
       "found": [
-        "mcp",
         "graphql",
-        "openapi"
+        "graphql",
+        "mcp"
       ],
       "newCapabilities": 3,
-      "ms": 36.3
+      "ms": 36.6
     },
     {
       "n": 5,
@@ -55,79 +55,79 @@
       "ok": true,
       "candidatePlans": 2,
       "best": [
-        "Look up shipment",
-        "Look Up Warehouse",
+        "Track Shipment",
+        "Fetch Warehouse",
         "Shipping rate by city"
       ],
-      "planningMs": 2.5
+      "planningMs": 2.6
     },
     {
       "n": 6,
       "title": "Compose a multi-provider workflow",
       "ok": true,
       "steps": [
-        "Look up shipment ← shipmentId=$in.shipment_id",
-        "Look Up Warehouse ← warehouse_id=0.warehouseId",
-        "Shipping rate by city ← city=1.city"
+        "Track Shipment ← shipment_id=$in.shipment_id",
+        "Fetch Warehouse ← warehouseId=0.warehouse_number",
+        "Shipping rate by city ← town=1.location"
       ]
     },
     {
       "n": 7,
       "title": "Execute the workflow",
       "ok": true,
-      "input": "SHP-1003",
+      "input": "SHP-1001",
       "pipeline": [
-        "Look up shipment",
-        "Look Up Warehouse",
+        "Track Shipment",
+        "Fetch Warehouse",
         "Shipping rate by city"
       ],
-      "ms": 5.2
+      "ms": 4.9
     },
     {
       "n": 8,
       "title": "Verify against independently held test data",
       "ok": true,
-      "expected": 16.9,
-      "got": 16.9
+      "expected": 34.4,
+      "got": 34.4
     },
     {
       "n": 9,
       "title": "Save the successful composition and reuse it",
       "ok": true,
-      "saved": "Shipping rate shipment warehouse city: Look up shipment → Look Up Warehouse → Shipping rate by city",
+      "saved": "Shipping rate shipment warehouse city: Track Shipment → Fetch Warehouse → Shipping rate by city",
       "reusedAs": [
-        "Shipping rate shipment warehouse city: Look up shipment → Look Up Warehouse → Shipping rate by city"
+        "Shipping rate shipment warehouse city: Track Shipment → Fetch Warehouse → Shipping rate by city"
       ],
-      "expected": 38.8,
-      "got": 38.8,
-      "ms": 2.2
+      "expected": 29.6,
+      "got": 29.6,
+      "ms": 2.3
     },
     {
       "n": 10,
-      "title": "Change the interface of the last provider in the chain (Mistral Depot)",
+      "title": "Change the interface of the last provider in the chain (Cobaltix)",
       "ok": true,
-      "before": "openapi \"Shipping rate by city\" city → city, rate",
-      "after": "mcp \"Lookup shipping rate for a city\" town → result.{town, freight_rate}"
+      "before": "mcp \"Shipping rate by city\" town → town, freight_rate",
+      "after": "graphql \"City shipping rate\" location → result.{location, rate}"
     },
     {
       "n": 11,
       "title": "Recover without changing integration code",
       "ok": true,
       "healing": [
-        "API drift at http://127.0.0.1:50559/: mcp:ashgrove,graphql:127-0-0-1-50557-graphql,openapi:mistral-depot → mcp:ashgrove,graphql:127-0-0-1-50557-graphql,mcp:mistral-depot; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:56292/: graphql:127-0-0-1-56289-graphql,graphql:127-0-0-1-56290-graphql,mcp:cobaltix → graphql:127-0-0-1-56289-graphql,graphql:127-0-0-1-56290-graphql,graphql:127-0-0-1-56291-graphql; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "via": [
-        "mcp:ashgrove",
-        "graphql:127-0-0-1-50557-graphql",
-        "mcp:mistral-depot"
+        "graphql:127-0-0-1-56289-graphql",
+        "graphql:127-0-0-1-56290-graphql",
+        "graphql:127-0-0-1-56291-graphql"
       ],
-      "expected": 38.3,
-      "got": 38.3,
+      "expected": 29.6,
+      "got": 29.6,
       "ms": 15.9
     },
     {
       "n": 12,
-      "title": "Remove that provider (Mistral Depot)",
+      "title": "Remove that provider (Cobaltix)",
       "ok": true
     },
     {
@@ -136,41 +136,41 @@
       "ok": true,
       "status": "failed",
       "healing": [
-        "API drift at http://127.0.0.1:50559/: mcp:ashgrove,graphql:127-0-0-1-50557-graphql,mcp:mistral-depot → mcp:ashgrove,graphql:127-0-0-1-50557-graphql; +0 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:56292/: graphql:127-0-0-1-56289-graphql,graphql:127-0-0-1-56290-graphql,graphql:127-0-0-1-56291-graphql → graphql:127-0-0-1-56289-graphql,graphql:127-0-0-1-56290-graphql; +0 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "withdrawn": [
-        "Mistral Depot"
+        "GraphQL 127.0.0.1:56291"
       ],
       "capabilities": "27 → 25",
       "savedPipelines": "1 → 0"
     },
     {
       "n": 14,
-      "title": "Introduce a different provider (Cobaltix, graphql): the objective works again",
+      "title": "Introduce a different provider (Duneworks, openapi): the objective works again",
       "ok": true,
       "learned": [
         "api-catalog: 3 services listed",
-        "mcp: 1 tools",
         "graphql: 1 fields",
-        "graphql: 1 fields"
+        "graphql: 1 fields",
+        "openapi: 1 operations"
       ],
       "via": [
-        "mcp:ashgrove",
-        "graphql:127-0-0-1-50557-graphql",
-        "graphql:127-0-0-1-50621-graphql"
+        "graphql:127-0-0-1-56289-graphql",
+        "graphql:127-0-0-1-56290-graphql",
+        "openapi:duneworks"
       ],
-      "expected": 38.3,
-      "got": 38.3,
-      "ms": 2.3
+      "expected": 34.4,
+      "got": 34.4,
+      "ms": 2.4
     }
   ],
   "benchmarks": {
-    "startupMs": 110.1,
+    "startupMs": 119,
     "mcpLatencyMs": {
-      "p50": 0.04,
-      "p95": 0.12
+      "p50": 0.03,
+      "p95": 0.11
     },
-    "discoveryMs": 36.3,
+    "discoveryMs": 36.6,
     "graph": {
       "providers": 5,
       "capabilities": 26,
@@ -180,14 +180,14 @@
       "total": 114
     },
     "graphStatsMs": 0.1,
-    "planningMs": 2.5,
-    "executionMs": 5.2,
+    "planningMs": 2.6,
+    "executionMs": 4.9,
     "recoveryAfterChangeMs": 15.9,
-    "recoveryAfterNewProviderMs": 2.3,
+    "recoveryAfterNewProviderMs": 2.4,
     "memoryMB": 148
   },
   "freeze": {
-    "commit": "8849a5b860949b8b9389d510feab55b4d0e2a250",
+    "commit": "202bcafddac43441b8540c307dabe724da947e91",
     "tag": "lab-freeze-9",
     "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/core/authority.ts\nsrc/core/fields.ts\nsrc/core/graph.ts\nsrc/core/identities.ts\nsrc/core/planner.ts\nsrc/core/sandbox.ts\nsrc/core/satisfaction.ts\nsrc/core/semantics.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/core/yaml.ts\nsrc/entry/durable.ts\nsrc/entry/edge.ts\nsrc/interface/http.ts\nsrc/interface/tools.ts\nsrc/reflectors/cli.ts\nsrc/reflectors/discover.ts\nsrc/reflectors/graphql.ts\nsrc/reflectors/mcp.ts\nsrc/reflectors/net.ts\nsrc/reflectors/openapi.ts\nsrc/reflectors/platform.ts\nsrc/runtime.ts",
     "uncommittedProductChanges": "",
@@ -196,50 +196,50 @@
   "environment": [
     {
       "service": "shipments",
-      "brand": "Ashgrove",
-      "protocol": "mcp",
-      "operation": "Look up shipment",
-      "input": "shipmentId",
+      "brand": "Fjordsoft",
+      "protocol": "graphql",
+      "operation": "Track shipment",
+      "input": "shipment_id",
       "outputs": [
-        "shipmentId",
-        "warehouseId",
-        "gross_weight"
+        "shipment_id",
+        "warehouse_number",
+        "weight"
       ]
     },
     {
       "service": "warehouses",
-      "brand": "Northwind Billing",
+      "brand": "Emberlane",
       "protocol": "graphql",
-      "operation": "Look up warehouse",
-      "input": "warehouse_id",
+      "operation": "Fetch warehouse",
+      "input": "warehouseId",
       "outputs": [
-        "warehouse_id",
-        "city",
-        "email"
+        "warehouseId",
+        "location",
+        "manager_email"
       ]
     },
     {
       "service": "rates",
-      "brand": "Mistral Depot",
-      "protocol": "openapi",
+      "brand": "Cobaltix",
+      "protocol": "mcp",
       "operation": "Shipping rate by city",
-      "input": "city",
+      "input": "town",
       "outputs": [
-        "city",
-        "rate"
+        "town",
+        "freight_rate"
       ]
     }
   ],
   "firstRunProviders": [
-    "mcp:ashgrove",
-    "graphql:127-0-0-1-50557-graphql",
-    "openapi:mistral-depot"
+    "graphql:127-0-0-1-56289-graphql",
+    "graphql:127-0-0-1-56290-graphql",
+    "mcp:cobaltix"
   ],
   "receipts": {
     "count": 21,
     "intact": true,
     "brokenAt": null,
-    "head": "d4711fba981e628ef68e7b63c84aae48af4ec861ba70e8076566dc544f0ed210"
+    "head": "c5baa9a7ae41ecbaa8c5ac349e0a6003a947c8c22a7014eeb65cb4facdcd8234"
   },
   "passed": 14,
   "total": 14

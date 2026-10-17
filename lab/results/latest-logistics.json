@@ -1,8 +1,8 @@
 {
-  "seed": 944312107,
+  "seed": 57979905,
   "domain": "logistics",
   "gateway": false,
-  "startedAt": "2026-10-17T02:12:15.427Z",
+  "startedAt": "2026-10-17T02:28:29.323Z",
   "steps": [
     {
       "n": 1,
@@ -17,7 +17,7 @@
       "title": "Connect an MCP client to RightClick X (stdio)",
       "ok": true,
       "tools": 13,
-      "startupMs": 119.1
+      "startupMs": 132.4
     },
     {
       "n": 3,
@@ -42,12 +42,12 @@
       "title": "Discover contracts from root addresses only (no protocols, no schemas given)",
       "ok": true,
       "found": [
-        "graphql",
         "openapi",
+        "mcp",
         "mcp"
       ],
       "newCapabilities": 3,
-      "ms": 31.8
+      "ms": 37.5
     },
     {
       "n": 5,
@@ -55,79 +55,79 @@
       "ok": true,
       "candidatePlans": 2,
       "best": [
-        "Shipment Details",
-        "Get warehouse",
-        "Lookup shipping rate for a city"
+        "Shipment details",
+        "Warehouse details",
+        "Get shipping rate"
       ],
-      "planningMs": 2.6
+      "planningMs": 2.8
     },
     {
       "n": 6,
       "title": "Compose a multi-provider workflow",
       "ok": true,
       "steps": [
-        "Shipment Details ← shipmentId=$in.shipment_id",
-        "Get warehouse ← warehouse_id=0.warehouse_id",
-        "Lookup shipping rate for a city ← town=1.city"
+        "Shipment details ← shipment_id=$in.shipment_id",
+        "Warehouse details ← warehouseId=0.warehouse_number",
+        "Get shipping rate ← city=1.location"
       ]
     },
     {
       "n": 7,
       "title": "Execute the workflow",
       "ok": true,
-      "input": "SHP-1002",
+      "input": "SHP-1005",
       "pipeline": [
-        "Shipment Details",
-        "Get warehouse",
-        "Lookup shipping rate for a city"
+        "Shipment details",
+        "Warehouse details",
+        "Get shipping rate"
       ],
-      "ms": 5.2
+      "ms": 5.7
     },
     {
       "n": 8,
       "title": "Verify against independently held test data",
       "ok": true,
-      "expected": 30.9,
-      "got": 30.9
+      "expected": 9,
+      "got": 9
     },
     {
       "n": 9,
       "title": "Save the successful composition and reuse it",
       "ok": true,
-      "saved": "Shipping rate shipment warehouse city: Shipment Details → Get warehouse → Lookup shipping rate for a city",
+      "saved": "Shipping rate shipment warehouse city: Shipment details → Warehouse details → Get shipping rate",
       "reusedAs": [
-        "Shipping rate shipment warehouse city: Shipment Details → Get warehouse → Lookup shipping rate for a city"
+        "Shipping rate shipment warehouse city: Shipment details → Warehouse details → Get shipping rate"
       ],
-      "expected": 36.6,
-      "got": 36.6,
-      "ms": 2.5
+      "expected": 8.2,
+      "got": 8.2,
+      "ms": 3.7
     },
     {
       "n": 10,
-      "title": "Change the interface of the last provider in the chain (Emberlane)",
+      "title": "Change the interface of the last provider in the chain (Mistral Depot)",
       "ok": true,
-      "before": "mcp \"Lookup shipping rate for a city\" town → town, price_per_kg",
-      "after": "openapi \"Get shipping rate\" location → result.{location, shipping_rate}"
+      "before": "mcp \"Get shipping rate\" city → city, shipping_rate",
+      "after": "openapi \"Shipping rate by city\" town → result.{town, price_per_kg}"
     },
     {
       "n": 11,
       "title": "Recover without changing integration code",
       "ok": true,
       "healing": [
-        "API drift at http://127.0.0.1:64440/: mcp:emberlane → openapi:emberlane; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:53771/: mcp:mistral-depot → openapi:mistral-depot; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "via": [
-        "graphql:127-0-0-1-64438-graphql",
-        "openapi:fernway",
-        "openapi:emberlane"
+        "mcp:paperhaus",
+        "openapi:brightmark",
+        "openapi:mistral-depot"
       ],
-      "expected": 38.2,
-      "got": 38.2,
-      "ms": 7.6
+      "expected": 8.2,
+      "got": 8.2,
+      "ms": 8.5
     },
     {
       "n": 12,
-      "title": "Remove that provider (Emberlane)",
+      "title": "Remove that provider (Mistral Depot)",
       "ok": true
     },
     {
@@ -136,38 +136,38 @@
       "ok": true,
       "status": "failed",
       "healing": [
-        "provider gone at http://127.0.0.1:64440/: withdrew openapi:emberlane (1 capabilities, 1 pipeline(s) retired)"
+        "provider gone at http://127.0.0.1:53771/: withdrew openapi:mistral-depot (1 capabilities, 1 pipeline(s) retired)"
       ],
       "withdrawn": [
-        "Emberlane"
+        "Mistral Depot"
       ],
       "capabilities": "27 → 25",
       "savedPipelines": "1 → 0"
     },
     {
       "n": 14,
-      "title": "Introduce a different provider (Quillbase, openapi): the objective works again",
+      "title": "Introduce a different provider (Tallyport, graphql): the objective works again",
       "ok": true,
       "learned": [
-        "openapi: 1 operations"
+        "graphql: 1 fields"
       ],
       "via": [
-        "graphql:127-0-0-1-64438-graphql",
-        "openapi:fernway",
-        "openapi:quillbase"
+        "mcp:paperhaus",
+        "openapi:brightmark",
+        "graphql:127-0-0-1-53844-graphql"
       ],
-      "expected": 37.3,
-      "got": 37.3,
-      "ms": 2
+      "expected": 8.2,
+      "got": 8.2,
+      "ms": 2.2
     }
   ],
   "benchmarks": {
-    "startupMs": 119.1,
+    "startupMs": 132.4,
     "mcpLatencyMs": {
-      "p50": 0.04,
-      "p95": 0.11
+      "p50": 0.03,
+      "p95": 0.13
     },
-    "discoveryMs": 31.8,
+    "discoveryMs": 37.5,
     "graph": {
       "providers": 5,
       "capabilities": 26,
@@ -177,14 +177,14 @@
       "total": 114
     },
     "graphStatsMs": 0.1,
-    "planningMs": 2.6,
-    "executionMs": 5.2,
-    "recoveryAfterChangeMs": 7.6,
-    "recoveryAfterNewProviderMs": 2,
-    "memoryMB": 141
+    "planningMs": 2.8,
+    "executionMs": 5.7,
+    "recoveryAfterChangeMs": 8.5,
+    "recoveryAfterNewProviderMs": 2.2,
+    "memoryMB": 142
   },
   "freeze": {
-    "commit": "8849a5b860949b8b9389d510feab55b4d0e2a250",
+    "commit": "202bcafddac43441b8540c307dabe724da947e91",
     "tag": "lab-freeze-9",
     "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/core/authority.ts\nsrc/core/fields.ts\nsrc/core/graph.ts\nsrc/core/identities.ts\nsrc/core/planner.ts\nsrc/core/sandbox.ts\nsrc/core/satisfaction.ts\nsrc/core/semantics.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/core/yaml.ts\nsrc/entry/durable.ts\nsrc/entry/edge.ts\nsrc/interface/http.ts\nsrc/interface/tools.ts\nsrc/reflectors/cli.ts\nsrc/reflectors/discover.ts\nsrc/reflectors/graphql.ts\nsrc/reflectors/mcp.ts\nsrc/reflectors/net.ts\nsrc/reflectors/openapi.ts\nsrc/reflectors/platform.ts\nsrc/runtime.ts",
     "uncommittedProductChanges": "",
@@ -193,50 +193,50 @@
   "environment": [
     {
       "service": "shipments",
-      "brand": "Northwind Billing",
-      "protocol": "graphql",
+      "brand": "Paperhaus",
+      "protocol": "mcp",
       "operation": "Shipment details",
-      "input": "shipmentId",
+      "input": "shipment_id",
       "outputs": [
-        "shipmentId",
-        "warehouse_id",
-        "weight_kg"
+        "shipment_id",
+        "warehouse_number",
+        "weight"
       ]
     },
     {
       "service": "warehouses",
-      "brand": "Fernway",
+      "brand": "Brightmark",
       "protocol": "openapi",
-      "operation": "Get warehouse",
-      "input": "warehouse_id",
+      "operation": "Warehouse details",
+      "input": "warehouseId",
       "outputs": [
-        "warehouse_id",
-        "city",
-        "manager_email"
+        "warehouseId",
+        "location",
+        "email"
       ]
     },
     {
       "service": "rates",
-      "brand": "Emberlane",
+      "brand": "Mistral Depot",
       "protocol": "mcp",
-      "operation": "Lookup shipping rate for a city",
-      "input": "town",
+      "operation": "Get shipping rate",
+      "input": "city",
       "outputs": [
-        "town",
-        "price_per_kg"
+        "city",
+        "shipping_rate"
       ]
     }
   ],
   "firstRunProviders": [
-    "graphql:127-0-0-1-64438-graphql",
-    "openapi:fernway",
-    "mcp:emberlane"
+    "mcp:paperhaus",
+    "openapi:brightmark",
+    "mcp:mistral-depot"
   ],
   "receipts": {
     "count": 21,
     "intact": true,
     "brokenAt": null,
-    "head": "9866f6c72c2d08297bef3dc6455a1d07e3a70e228d354d8ec7cbd4af8d0702df"
+    "head": "858ac3887500384df585ae458efbfd4e8ecc42e4d6f00fbeac1d495acaf95963"
   },
   "passed": 14,
   "total": 14
