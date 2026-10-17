@@ -207,3 +207,38 @@ test("agent interface: unknown inputs are refused with the real ones listed; an 
   const r: any = await rc.compose({ have: { input: { type: "text", value: "abc\n" }, options: { value: ["-r"], fixed: true } }, want: "text", intent: "reverse each line", through: ["cli:shout:invoke"], run: true } as any);
   assert.equal(r.executed?.output, "CBA\n", JSON.stringify(r.executed ?? r.outcome));
 });
+
+test("manual pages: arguments with optional suffixes, optional arguments, and options that write to standard output", () => {
+  const page = `OPTIONS
+       -t, --trace=MACRO[:FORMAT]
+              trace invocations of MACRO
+       --color[=WHEN]
+              colourise the output; WHEN is always, never or auto
+       -o toformat
+           Write the file in the given format to STDOUT.
+       -O outname
+           Write the result to the given file instead of standard output.
+`;
+  const { options } = parseUsage(page);
+  const by = (f: string) => options.find((o) => o.flags.includes(f));
+  assert.deepEqual(by("-t")?.flags, ["-t", "--trace"]);
+  assert.equal(by("-t")?.arg, "MACRO");
+  assert.equal(by("--color")?.optionalArg, "WHEN");
+  assert.equal(by("--color")?.arg, undefined);
+  assert.equal(by("-o")?.arg, "toformat");
+  const allowed = [{ flags: ["-t", "--trace"], arg: true }, { flags: ["--color"], arg: false, optionalArg: true }];
+  assert.deepEqual(validateOptions(["--trace=FOO:$1", "-t", "BAR", "--color", "--color=always"], allowed), ["--trace=FOO:$1", "-t", "BAR", "--color", "--color=always"]);
+});
+
+test("documented-options interface offers options that write to standard output, not ones that write files", { skip, timeout: 60_000 }, async () => {
+  const dir = tmp("rcx-gen-");
+  const help = `usage: conv [-o toformat] [-O outname] [file]
+  -o toformat   Write the data in the given format to standard output.
+  -O outname    Write the result to the given file instead.`;
+  const p = program(dir, "conv", `if [ "$1" = "--help" ]; then cat <<'EOF'\n${help}\nEOF\nexit 0; fi\nif [ "$1" = "-o" ]; then shift 2; /usr/bin/tr a-z A-Z; else /bin/cat; fi`);
+  const rc = await RightClick.create({ directories: [], authority: { investigate: [`${dir}/`] } });
+  await rc.learn({ source: `cli:${p}` });
+  const allowed = ((rc.graph.get("cli:conv:invoke")?.invoke as any)?.options?.allowed ?? []).map((o: any) => o.flags[0]);
+  assert.ok(allowed.includes("-o"), allowed.join(" "));
+  assert.ok(!allowed.includes("-O"), allowed.join(" "));
+});

@@ -29,7 +29,7 @@ export interface Investigation {
   program: { bin: string; name: string; sha256: string; size: number; version?: string; description?: string };
   sandbox: string;
   runs: Array<{ id: number; purpose: string; args: string[]; stdinBytes: number; files: string[]; code: number | null; timedOut: boolean; stdoutBytes: number; stderrPreview: string; stdoutPreview: string; created: string[]; ms: number }>;
-  options: Array<{ flags: string[]; arg?: string; description: string }>;
+  options: Array<{ flags: string[]; arg?: string; optionalArg?: string; description: string }>;
   operands: { required: string[]; optional: string[]; variadic: boolean };
   claims: Claim[];
   limits: { maxRuns: number; timeoutMs: number; maxOutputBytes: number };
@@ -47,13 +47,15 @@ export function parseUsage(text: string): { options: Investigation["options"]; s
   const seen = new Set<string>();
   const lines = clean.split("\n");
   const indent = (l: string) => /^\s*/.exec(l)![0].length;
-  const OPTION_LINE = /^(\s{0,12})((?:-{1,2}[A-Za-z0-9?][\w-]*(?:[ =](?:<[^>]+>|[A-Z][A-Z_]+|\[[^\]]+\]))?(?:,\s*|\s+or\s+|\s+|$))+)(.*)$/;
+  // A flag, optionally with an argument: "=MACRO[:FORMAT]", " <file>", " NAME", "[=WHEN]" (optional).
+  const OPTION_LINE = /^(\s{0,12})((?:-{1,2}[A-Za-z0-9?][\w-]*(?:\[=[^\]]+\]|[ =](?:<[^>]+>|[A-Z][A-Z_]+|\[[^\]]+\])(?:\[[^\]]*\])*)?(?:,\s*|\s+or\s+|\s+|$))+)(.*)$/;
   for (let i = 0; i < lines.length; i++) {
     const m = OPTION_LINE.exec(lines[i]);
     if (!m) continue;
     const flags = [...m[2].matchAll(/-{1,2}[A-Za-z0-9?][\w-]*/g)].map((x) => x[0]);
     if (!flags.length || seen.has(flags[0])) continue;
-    let arg = /(?:[ =])(<[^>]+>|[A-Z][A-Z_]+|\[[^\]]+\])/.exec(m[2])?.[1];
+    const optionalArg = /\[=([^\]]+)\]/.exec(m[2])?.[1];
+    let arg = optionalArg ? undefined : /(?:[ =])(<[^>]+>|[A-Z][A-Z_]+|\[[^\]]+\])/.exec(m[2])?.[1];
     let rest = m[3];
     // Description lines that follow, indented further than the option itself (manual pages put
     // the description beside or below the flag and wrap it over several lines).
@@ -78,7 +80,7 @@ export function parseUsage(text: string): { options: Investigation["options"]; s
     }
     seen.add(flags[0]);
     const description = [rest.trim(), ...more].filter(Boolean).join(" ").replace(/\s+/g, " ");
-    options.push({ flags, ...(arg ? { arg } : {}), description: description.slice(0, 300) });
+    options.push({ flags, ...(arg ? { arg } : {}), ...(optionalArg ? { optionalArg } : {}), description: description.slice(0, 300) });
   }
   const synopsis = clean.split("\n").filter((l) => /^\s*(usage:|\s*[a-z][\w-]*\s+\[-)/i.test(l)).map((l) => l.trim()).slice(0, 6);
   return { options: options.slice(0, 120), synopsis };
@@ -154,7 +156,7 @@ export function literalSample(name: string, variant: number, sampleText: string)
  * documented short flags ("-ab"). Anything else is refused, so no undocumented option reaches the
  * program. Values are argv items; nothing is ever parsed by a shell.
  */
-export function validateOptions(value: unknown, allowed: Array<{ flags: string[]; arg: boolean }>): string[] {
+export function validateOptions(value: unknown, allowed: Array<{ flags: string[]; arg: boolean; optionalArg?: boolean }>): string[] {
   if (value === undefined || value === null || value === "") return [];
   const toks = Array.isArray(value) ? value.map(String) : String(value).trim().split(/\s+/);
   const byFlag = new Map(allowed.flatMap((o) => o.flags.map((f) => [f, o] as const)));
@@ -171,7 +173,7 @@ export function validateOptions(value: unknown, allowed: Array<{ flags: string[]
       continue;
     }
     const eq = /^(--[\w-]+)=(.*)$/.exec(t);
-    if (eq && byFlag.get(eq[1])?.arg) {
+    if (eq && (byFlag.get(eq[1])?.arg || byFlag.get(eq[1])?.optionalArg)) {
       out.push(t);
       continue;
     }
@@ -192,7 +194,7 @@ export function validateOptions(value: unknown, allowed: Array<{ flags: string[]
 }
 
 /** Documented options that are not offered: they write files, run commands or reach the network. */
-const UNOFFERED = /\b(write|writes|overwrite|in[- ]place|output file|outfile|save|delete|remove|execute|exec|shell|command|spawn|daemon|server|listen|network|connect|socket|url|http|password)\b/i;
+const UNOFFERED = /\b(output file|outfile|in[- ]place|overwrite|save[sd]? (it |them |the \w+ )?(to|in|into|as)\b|writes? (it |them |the \w+ |out )?(to|into|in) (?:(?:a|an|the|given|another|specified|named|output)\s+)*(file|files|disk|directory)|delete|remove (the )?files?|execute|exec|shell|run (a |the )?command|spawn|daemon|server|listen|network|connect|socket|url|http|password)\b/i;
 
 /**
  * Re-run a capability's conformance examples in the sandbox and compare output digests. All match:
@@ -601,14 +603,14 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
       source: "cli",
       inputs: [
         ...base.inputs.map((p0) => ({ ...p0, required: false })),
-        { name: "options", type: "list:text", required: false, description: `Documented options and their values, one item each: ${offered.slice(0, 40).map((o) => `${o.flags.join("/")}${o.arg ? ` <${o.arg}>` : ""}`).join(", ")}` },
+        { name: "options", type: "list:text", required: false, description: `Documented options and their values, one item each: ${offered.slice(0, 40).map((o) => `${o.flags.join("/")}${o.arg ? ` <${o.arg}>` : o.optionalArg ? `[=${o.optionalArg}]` : ""}`).join(", ")}` },
         { name: "files", type: "json", required: false, description: 'Named input files {"name.txt": "content"}: written into the sandbox and passed as operands in this order (refer to them by name in options that take a file)' },
       ],
       outputs: base.outputs,
       risk: "read",
       // Evidence about the program's default behaviour holds for this interface too.
       tags: [name, "declared-interface", "direct-only", ...base.tags.filter((t) => /^(nondeterministic|unsupported|input-independent-in-samples)$/.test(t)), ...(inv.program.description ?? "").toLowerCase().match(/[a-z]{3,}/g) ?? []].slice(0, 32),
-      invoke: { ...inv0, behaviour: inv0.behaviour ? `${inv0.behaviour}+options` : undefined, options: { port: "options", allowed: offered.map((o) => ({ flags: o.flags, arg: !!o.arg })) }, filesPort: "files" },
+      invoke: { ...inv0, behaviour: inv0.behaviour ? `${inv0.behaviour}+options` : undefined, options: { port: "options", allowed: offered.map((o) => ({ flags: o.flags, arg: !!o.arg, ...(o.optionalArg ? { optionalArg: true } : {}) })) }, filesPort: "files" },
     });
     claim(id, `offers ${offered.length} documented options; refuses any other`, "declared", `${inv.options.length - offered.length} documented options not offered (help/version, or they write files, run commands or use the network)`);
   }

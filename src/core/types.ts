@@ -164,7 +164,7 @@ export interface CliInvoke {
    * The documented-options interface: the caller may pass options from this declared list (and
    * their arguments) in the input named `port`; anything else is refused before running.
    */
-  options?: { port: string; allowed: Array<{ flags: string[]; arg: boolean }> };
+  options?: { port: string; allowed: Array<{ flags: string[]; arg: boolean; optionalArg?: boolean }> };
   /** Input holding named files ({name: content}) written into the sandbox and passed as operands, in order. */
   filesPort?: string;
   /** Input whose value is written to stdin. */
