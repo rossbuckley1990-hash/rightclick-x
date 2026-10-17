@@ -9,6 +9,15 @@ import { join } from "node:path";
 import { RightClick } from "../src/runtime.ts";
 import { hostSandbox } from "../src/core/sandbox.ts";
 import { isLiteralOperand, parseOperands, parseUsage, validateOptions } from "../src/reflectors/cli.ts";
+import { spawnSync } from "node:child_process";
+
+const spawnSyncOk = (cmd: string, args: string[]) => {
+  try {
+    return spawnSync(cmd, args, { encoding: "utf8" }).status === 0;
+  } catch {
+    return false;
+  }
+};
 
 const sandbox = await hostSandbox();
 const skip = sandbox ? false : "no host sandbox on this platform";
@@ -292,4 +301,33 @@ test("structured content (an object or array given for a json input) reaches the
   const port = cap.inputs[0].name;
   assert.equal(String((await rc.run(cap.id, { [port]: [1, "two", null] })).output).trim(), '[1,"two",null]');
   assert.equal(String((await rc.run(cap.id, { [port]: { a: 1 } })).output).trim(), '{"a":1}');
+});
+
+test("investigation tries two files for numbered operands, supplies an optional pattern when nothing works without it, and offers a documented program it cannot exercise as declared only", { skip, timeout: 120_000 }, async () => {
+  const dir = tmp("rcx-gen-");
+  const cmp = program(dir, "pairdiff", `if [ "$1" = "--help" ]; then echo "Usage: pairdiff [OPTION]... FILE1 [FILE2]"; echo "Compare FILE1 to FILE2 line by line."; exit 0; fi; [ $# -eq 2 ] || { echo "pairdiff: Invalid number of operands" >&2; exit 2; }; /usr/bin/diff "$1" "$2"; exit 0`);
+  const grepish = program(dir, "findlines", `if [ "$1" = "--help" ]; then echo "Usage: findlines [OPTION]... [PATTERN] [FILE]"; echo "Print lines matching PATTERN."; echo "  -c   count matching lines"; exit 0; fi; c=0; [ "$1" = "-c" ] && { c=1; shift; }; [ -n "$1" ] || { echo "Usage: findlines [OPTION]... [PATTERN] [FILE]" >&2; exit 2; }; if [ $c = 1 ]; then /usr/bin/grep -c -- "$1"; else /usr/bin/grep -- "$1"; fi`);
+  const decoder = program(dir, "undecode", `if [ "$1" = "--help" ]; then echo "usage: undecode [-p] [-v] [file]"; echo "  -p   write the decoded data to standard output"; echo "  -v   verbose"; exit 0; fi; /bin/cat >/dev/null; echo "undecode: missing or bad header line" >&2; exit 1`);
+  const rc = await RightClick.create({ directories: [], authority: { investigate: [`${dir}/`] } });
+  await rc.learn({ sources: [`cli:${cmp}`, `cli:${grepish}`, `cli:${decoder}`] });
+  const d = rc.graph.list().find((c) => c.provider === "cli:pairdiff" && c.id.endsWith(":default"));
+  assert.ok(d, "two-file comparison learned");
+  assert.equal(d!.inputs.filter((p) => !["options", "files"].includes(p.name)).length, 2);
+  const g = rc.graph.list().find((c) => c.provider === "cli:findlines" && c.id.endsWith(":default"));
+  assert.ok(g && g.inputs.some((p) => p.name.toLowerCase() === "pattern"), rc.graph.list().filter((c) => c.provider === "cli:findlines").map((c) => c.id).join(","));
+  const run = await rc.run(g!.id, { [g!.inputs.find((p) => p.name.toLowerCase() === "pattern")!.name]: "bee", input: "ant\nbee\ncat bee\n" });
+  assert.equal(run.output, "bee\ncat bee\n", String(run.error));
+  const u = rc.graph.list().find((c) => c.provider === "cli:undecode");
+  assert.ok(u && u.tags.includes("declared-only") && u.tags.includes("unsupported"), u?.tags.join(","));
+  assert.equal((rc.card(u!) as any).contract.status, "observed");
+  assert.equal((u!.invoke as any).behaviour, undefined, "no fingerprint, so never imported elsewhere");
+});
+
+test("a wrapper's options documented by the program it passes them to are declared", { skip: skip || (spawnSyncOk("/usr/bin/man", ["-w", "base64"]) ? false : "no manual for base64 here"), timeout: 60_000 }, async () => {
+  const dir = tmp("rcx-gen-");
+  const p = program(dir, "b64wrap", `if [ "$1" = "--help" ]; then echo "Usage: b64wrap [OPTION]... [FILE]"; echo "Encode FILE. OPTIONs are the same as for 'base64'."; exit 0; fi; exec /usr/bin/base64 "$@"`);
+  const rc = await RightClick.create({ directories: [], authority: { investigate: [`${dir}/`] } });
+  await rc.learn({ source: `cli:${p}` });
+  const inv = rc.investigations.get(p)!;
+  assert.ok(inv.options.some((o) => o.flags.some((f) => f === "-d" || f === "-D" || f === "--decode") && /documented by base64/.test(o.description)), inv.options.map((o) => o.flags[0]).join(" "));
 });

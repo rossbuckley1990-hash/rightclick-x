@@ -399,6 +399,20 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
   }
   const parsed = parseUsage(docs);
   inv.options = parsed.options;
+  // Wrappers that hand their options to another program ("OPTIONs are the same as for 'cmp' or
+  // 'diff'", zgrep -> grep): that program's documentation declares them.
+  const delegate = /options? (?:are|is) (?:the )?same as (?:for |those of |those for )?[`'"]?([a-z][\w.-]*)[`'"]?(?:\s+or\s+[`'"]?([a-z][\w.-]*)[`'"]?)?/i.exec(docs);
+  if (delegate) {
+    for (const other of [delegate[2], delegate[1]].filter(Boolean) as string[]) {
+      const om = await sandbox.run("/usr/bin/man", ["-P", "cat", other]).catch(() => null);
+      if (!om || om.code !== 0 || !om.stdout.trim()) continue;
+      const seenFlags = new Set(inv.options.flatMap((o) => o.flags));
+      const extra = parseUsage(om.stdout.replace(/.\x08/g, "")).options.filter((o) => !o.flags.some((f) => seenFlags.has(f)));
+      inv.options.push(...extra.map((o) => ({ ...o, description: `${o.description} (documented by ${other}, to which ${name} passes its options)` })));
+      claim(name, `options: ${extra.length} more declared by ${other}'s documentation, which ${name} says it passes them to`, "declared", delegate[0]);
+      break;
+    }
+  }
   const synopsis = [...parsed.synopsis, ...(/SYNOPSIS\s*\n([\s\S]*?)\n\s*\n/.exec(manual)?.[1]?.split("\n").map((l) => l.trim()) ?? [])];
   inv.operands = parseOperands(synopsis, name);
   if (inv.program.description) claim(name, `purpose: ${inv.program.description}`, "declared", "manual page NAME section");
@@ -414,6 +428,8 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
   const required = inv.operands.required.length - literalNames.length;
   // Operand parsing is the least reliable step: standard input is always tried as well.
   const channels: Array<{ id: string; arity: number }> = required >= 2 ? [{ id: "files", arity: required }, { id: "stdin", arity: 1 }] : [{ id: "stdin", arity: 1 }, { id: "files", arity: Math.max(1, required) }];
+  // Numbered file operands ("FILE1 [FILE2]"): a comparison wants two files even when the second is optional.
+  if (required < 2 && [...inv.operands.required, ...inv.operands.optional].some((n) => /2$/.test(n) && !isLiteralOperand(n))) channels.push({ id: "files", arity: 2 });
 
   interface Trial { mode: string; flags: string[]; channel: string; kind: string; inputs: string[]; literals: string[]; r: SandboxRun }
   const trials: Trial[] = [];
@@ -456,10 +472,22 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
 
   // Default mode on every channel and kind; keep the channels that work.
   const okChannels: Array<{ id: string; arity: number }> = [];
-  for (const ch of channels) {
-    let ok = false;
-    for (const k of kinds) for (const v of [0, 1]) if (works(await attempt("default", [], ch, k, v))) ok = true;
-    if (ok) okChannels.push(ch);
+  const tryChannels = async () => {
+    for (const ch of channels) {
+      let ok = false;
+      for (const k of kinds) for (const v of [0, 1]) if (works(await attempt("default", [], ch, k, v))) ok = true;
+      if (ok && !okChannels.includes(ch)) okChannels.push(ch);
+    }
+  };
+  await tryChannels();
+  // Nothing worked without them: supply an optional literal operand too ("[PATTERN] [FILE...]").
+  if (!okChannels.length) {
+    const optionalLiterals = inv.operands.optional.filter((n) => isLiteralOperand(n) && !optionArgs.has(n.toLowerCase().replace(/[^a-z0-9]/g, "")) && !literalNames.includes(n));
+    if (optionalLiterals.length) {
+      literalNames.push(optionalLiterals[0]);
+      claim(name, `needs the optional operand "${optionalLiterals[0]}" to produce output`, "observed", "no channel worked without it");
+      await tryChannels();
+    }
   }
   const best = okChannels[0];
   if (!best) {
@@ -469,6 +497,33 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
     const precondition = reasons.length >= Math.max(2, trials.length / 2) ? reasons[0].trim().slice(0, 160) : undefined;
     inv.summary = precondition ? `not investigable here: ${name} reports a missing precondition ("${precondition}") on every input tried (${trials.length} trials)` : `no input channel produced output for ${name} (${trials.length} trials)`;
     claim(name, "produces output for supplied input", trials.length ? "contradicted" : "unknown", inv.summary);
+    // Generic inputs cannot exercise every program (a decoder needs encoded input). If the program
+    // documents options, it is still offered, clearly as a declared interface: behaviour not
+    // observed, never composed automatically, no fingerprint (so never imported elsewhere).
+    const declared = inv.options.filter((o) => !/^-{1,2}(h|help|V|version|\?)$/.test(o.flags[0]) && !UNOFFERED.test(o.description) && !/^(file|outfile|output|output_file|path)$/i.test(o.arg ?? ""));
+    if (!precondition && declared.length && docs.trim()) {
+      const providerId = `cli:${slug(name)}`;
+      const id = `${providerId}:invoke`;
+      claim(id, "behaviour not observed: declared by the documentation only", "declared", inv.summary);
+      const cap: Capability = {
+        id,
+        title: `${name} with documented options (declared only, behaviour not observed): ${(inv.program.description ?? name).replace(/^[^-–]+[-–]\s*/, "")}`,
+        description: `${inv.program.description ?? name}. No experiment with generic inputs produced output (${inv.summary}), so its behaviour is declared by its documentation only. Pass content on standard input ("input") or as named files ("files"), and documented options ("options"); undocumented options are refused. Runs only in the sandbox.`.slice(0, 500),
+        provider: providerId,
+        source: "cli",
+        inputs: [
+          { name: "input", type: "text", required: false, anyText: true, description: "Content given on standard input" },
+          { name: "options", type: "list:text", required: false, description: `Documented options and their values, one item each: ${declared.slice(0, 40).map((o) => `${o.flags.join("/")}${o.arg ? ` <${o.arg}>` : o.optionalArg ? `[=${o.optionalArg}]` : ""}`).join(", ")}` },
+          { name: "files", type: "json", required: false, description: 'Named input files {"name.ext": "content"}: written into the sandbox and passed as operands in this order' },
+        ],
+        outputs: [{ name: "", type: "text", required: true }],
+        risk: "read",
+        tags: [name, "declared-interface", "declared-only", "direct-only", "unsupported"],
+        invoke: { kind: "cli", bin, args: [], stdin: "input", okExit: [0, 1], output: "text", sha256: inv.program.sha256, options: { port: "options", allowed: declared.map((o) => ({ flags: o.flags, arg: !!o.arg, ...(o.optionalArg ? { optionalArg: true } : {}) })) }, filesPort: "files" },
+      };
+      inv.summary += `; offered as a declared interface only (${declared.length} documented options)`;
+      return { reflection: { provider: { id: providerId, title: `${name} (command-line program)`, source: "cli", origin: bin, learnedAt: new Date().toISOString(), capabilityIds: [id], meta: { investigation: inv, sha256: inv.program.sha256, version: inv.program.version } }, capabilities: [cap] }, investigation: inv };
+    }
     return { reflection: null, investigation: inv };
   }
   // Modes: flags without arguments whose own description is about the output.
@@ -538,7 +593,12 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
     });
     const echoes = mt.every((t) => t.r.stdout.trim() === t.inputs[0].trim());
     const option = inv.options.find((o) => o.flags.some((f) => f.replace(/^-+/, "") === mode));
-    const portNames = best.id === "stdin" ? [inType === "html" ? "html" : inType === "json" ? "json" : "input"] : (inv.operands.required.filter((n) => !literalNames.includes(n)).length ? inv.operands.required.filter((n) => !literalNames.includes(n)) : ["file"]).slice(0, best.arity).map((n, i) => (/^[a-z][\w]*$/i.test(n) ? n : `file${i + 1}`));
+    const portNames = best.id === "stdin" ? [inType === "html" ? "html" : inType === "json" ? "json" : "input"] : Array.from({ length: best.arity }, (_, i) => {
+      // Required file operands first, then numbered optional ones ("FILE1 [FILE2]"), then file1, file2...
+      const fileOps = [...inv.operands.required.filter((n) => !literalNames.includes(n)), ...inv.operands.optional.filter((n) => /\d$/.test(n) && !isLiteralOperand(n))];
+      const n = fileOps[i];
+      return n && /^[a-z][\w]*$/i.test(n) ? n : `file${i + 1}`;
+    });
     // Several kinds of text worked (plain, markup, JSON, CSV): the input takes any text.
     const anyText = channelAnyText || (inKinds.length >= 2 && inKinds.includes("text"));
     // Typed by what the program says it is for (its documentation names one kind that worked, e.g.
