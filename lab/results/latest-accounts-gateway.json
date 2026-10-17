@@ -1,8 +1,8 @@
 {
-  "seed": 559069760,
+  "seed": 853388115,
   "domain": "accounts",
   "gateway": true,
-  "startedAt": "2026-10-17T09:05:32.117Z",
+  "startedAt": "2026-10-17T09:39:20.938Z",
   "steps": [
     {
       "n": 1,
@@ -17,7 +17,7 @@
       "title": "Connect an MCP client to RightClick X (stdio)",
       "ok": true,
       "tools": 13,
-      "startupMs": 117.4
+      "startupMs": 120.9
     },
     {
       "n": 3,
@@ -42,12 +42,12 @@
       "title": "Discover the environment's services from its catalog only (no service addresses, protocols or schemas given)",
       "ok": true,
       "found": [
-        "mcp",
-        "mcp",
-        "graphql"
+        "openapi",
+        "graphql",
+        "openapi"
       ],
       "newCapabilities": 3,
-      "ms": 37.8
+      "ms": 37.6
     },
     {
       "n": 5,
@@ -55,9 +55,9 @@
       "ok": true,
       "candidatePlans": 3,
       "best": [
-        "Account inquiry",
-        "Holder lookup",
-        "Get Vat Rate"
+        "Account lookup",
+        "Holder Lookup",
+        "VAT rate lookup"
       ],
       "planningMs": 3.3
     },
@@ -66,68 +66,68 @@
       "title": "Compose a multi-provider workflow",
       "ok": true,
       "steps": [
-        "Account inquiry ← acctno=$in.account_id",
-        "Holder lookup ← hldr=0.hldr",
-        "Get Vat Rate ← cc=1.ctry"
+        "Account lookup ← a_ref=$in.account_id",
+        "Holder Lookup ← hldr=0.hldr",
+        "VAT rate lookup ← jur=1.ctry"
       ]
     },
     {
       "n": 7,
       "title": "Execute the workflow",
       "ok": true,
-      "input": "ACC-1003",
+      "input": "ACC-1006",
       "pipeline": [
-        "Account inquiry",
-        "Holder lookup",
-        "Get Vat Rate"
+        "Account lookup",
+        "Holder Lookup",
+        "VAT rate lookup"
       ],
-      "ms": 5.1
+      "ms": 5.4
     },
     {
       "n": 8,
       "title": "Verify against independently held test data",
       "ok": true,
-      "expected": 20.3,
-      "got": 20.3
+      "expected": 13.4,
+      "got": 13.4
     },
     {
       "n": 9,
       "title": "Save the successful composition and reuse it",
       "ok": true,
-      "saved": "Vat rate account holder country: Account inquiry → Holder lookup → Get Vat Rate",
+      "saved": "Vat rate account holder country: Account lookup → Holder Lookup → VAT rate lookup",
       "reusedAs": [
-        "Vat rate account holder country: Account inquiry → Holder lookup → Get Vat Rate"
+        "Vat rate account holder country: Account lookup → Holder Lookup → VAT rate lookup"
       ],
-      "expected": 12.3,
-      "got": 12.3,
+      "expected": 16.5,
+      "got": 16.5,
       "ms": 3.1
     },
     {
       "n": 10,
-      "title": "Change the interface of the last provider in the chain (Paperhaus)",
+      "title": "Change the interface of the last provider in the chain (Ledgerline)",
       "ok": true,
-      "before": "graphql \"Get VAT rate\" cc → cc, vr",
-      "after": "mcp \"VAT rate lookup\" ctry → result.{ctry, txr}"
+      "before": "openapi \"VAT rate lookup\" jur → jur, vr",
+      "after": "graphql \"VAT rate inquiry\" ctry → result.{ctry, vatpct}"
     },
     {
       "n": 11,
       "title": "Recover without changing integration code",
       "ok": true,
       "healing": [
-        "API drift at http://127.0.0.1:55654/: mcp:emberlane,mcp:lumen-cargo,graphql:127-0-0-1-55653-graphql → mcp:emberlane,mcp:lumen-cargo,mcp:paperhaus; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:51231/: openapi:harbourly,graphql:127-0-0-1-51229-graphql,openapi:ledgerline → openapi:harbourly,graphql:127-0-0-1-51229-graphql,graphql:127-0-0-1-51230-graphql; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "via": [
-        "mcp:emberlane",
-        "mcp:lumen-cargo",
-        "mcp:paperhaus"
+        "openapi:harbourly",
+        "graphql:127-0-0-1-51229-graphql",
+        "graphql:127-0-0-1-51230-graphql"
       ],
-      "expected": 9,
-      "got": 9,
-      "ms": 17.2
+      "expected": 16.5,
+      "got": 16.5,
+      "ms": 18
     },
     {
       "n": 12,
-      "title": "Remove that provider (Paperhaus)",
+      "title": "Remove that provider (Ledgerline)",
       "ok": true
     },
     {
@@ -136,41 +136,41 @@
       "ok": true,
       "status": "failed",
       "healing": [
-        "API drift at http://127.0.0.1:55654/: mcp:emberlane,mcp:lumen-cargo,mcp:paperhaus → mcp:emberlane,mcp:lumen-cargo; +0 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:51231/: openapi:harbourly,graphql:127-0-0-1-51229-graphql,graphql:127-0-0-1-51230-graphql → openapi:harbourly,graphql:127-0-0-1-51229-graphql; +0 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "withdrawn": [
-        "Paperhaus"
+        "GraphQL 127.0.0.1:51230"
       ],
       "capabilities": "27 → 25",
       "savedPipelines": "1 → 0"
     },
     {
       "n": 14,
-      "title": "Introduce a different provider (Northwind Billing, mcp): the objective works again",
+      "title": "Introduce a different provider (Brightmark, mcp): the objective works again",
       "ok": true,
       "learned": [
         "api-catalog: 3 services listed",
-        "mcp: 1 tools",
-        "mcp: 1 tools",
+        "openapi: 1 operations",
+        "graphql: 1 fields",
         "mcp: 1 tools"
       ],
       "via": [
-        "mcp:emberlane",
-        "mcp:lumen-cargo",
-        "mcp:northwind-billing"
+        "openapi:harbourly",
+        "graphql:127-0-0-1-51229-graphql",
+        "mcp:brightmark"
       ],
-      "expected": 12.3,
-      "got": 12.3,
+      "expected": 16.5,
+      "got": 16.5,
       "ms": 2
     }
   ],
   "benchmarks": {
-    "startupMs": 117.4,
+    "startupMs": 120.9,
     "mcpLatencyMs": {
-      "p50": 0.04,
-      "p95": 0.12
+      "p50": 0.03,
+      "p95": 0.11
     },
-    "discoveryMs": 37.8,
+    "discoveryMs": 37.6,
     "graph": {
       "providers": 5,
       "capabilities": 26,
@@ -181,35 +181,35 @@
     },
     "graphStatsMs": 0.1,
     "planningMs": 3.3,
-    "executionMs": 5.1,
-    "recoveryAfterChangeMs": 17.2,
+    "executionMs": 5.4,
+    "recoveryAfterChangeMs": 18,
     "recoveryAfterNewProviderMs": 2,
-    "memoryMB": 150
+    "memoryMB": 147
   },
   "freeze": {
-    "commit": "bb5a98397eb2d2c79314b8f9138de68640a8c945",
+    "commit": "65ae92d03ec87558da97f665011f93ab52bcebf7",
     "tag": "lab-freeze-9",
-    "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/core/authority.ts\nsrc/core/fields.ts\nsrc/core/graph.ts\nsrc/core/identities.ts\nsrc/core/planner.ts\nsrc/core/sandbox.ts\nsrc/core/satisfaction.ts\nsrc/core/semantics.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/core/yaml.ts\nsrc/entry/durable.ts\nsrc/entry/edge.ts\nsrc/interface/http.ts\nsrc/interface/tools.ts\nsrc/reflectors/cli.ts\nsrc/reflectors/discover.ts\nsrc/reflectors/graphql.ts\nsrc/reflectors/mcp.ts\nsrc/reflectors/net.ts\nsrc/reflectors/openapi.ts\nsrc/reflectors/platform.ts\nsrc/runtime.ts",
+    "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/core/authority.ts\nsrc/core/fields.ts\nsrc/core/graph.ts\nsrc/core/identities.ts\nsrc/core/planner.ts\nsrc/core/programs.ts\nsrc/core/sandbox.ts\nsrc/core/satisfaction.ts\nsrc/core/secrets.ts\nsrc/core/semantics.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/core/yaml.ts\nsrc/entry/durable.ts\nsrc/entry/edge.ts\nsrc/interface/http.ts\nsrc/interface/mcp-server.ts\nsrc/interface/tools.ts\nsrc/reflectors/cli.ts\nsrc/reflectors/discover.ts\nsrc/reflectors/graphql.ts\nsrc/reflectors/mcp.ts\nsrc/reflectors/net.ts\nsrc/reflectors/openapi.ts\nsrc/reflectors/platform.ts\nsrc/runtime.ts",
     "uncommittedProductChanges": "",
     "frozen": false
   },
   "environment": [
     {
       "service": "ledger",
-      "brand": "Emberlane",
-      "protocol": "mcp",
-      "operation": "Account inquiry",
-      "input": "acctno",
+      "brand": "Harbourly",
+      "protocol": "openapi",
+      "operation": "Account lookup",
+      "input": "a_ref",
       "outputs": [
-        "acctno",
+        "a_ref",
         "hldr",
         "curbal"
       ]
     },
     {
       "service": "kyc",
-      "brand": "Lumen Cargo",
-      "protocol": "mcp",
+      "brand": "Ashgrove",
+      "protocol": "graphql",
       "operation": "Holder lookup",
       "input": "hldr",
       "outputs": [
@@ -220,26 +220,26 @@
     },
     {
       "service": "vat",
-      "brand": "Paperhaus",
-      "protocol": "graphql",
-      "operation": "Get VAT rate",
-      "input": "cc",
+      "brand": "Ledgerline",
+      "protocol": "openapi",
+      "operation": "VAT rate lookup",
+      "input": "jur",
       "outputs": [
-        "cc",
+        "jur",
         "vr"
       ]
     }
   ],
   "firstRunProviders": [
-    "mcp:emberlane",
-    "mcp:lumen-cargo",
-    "graphql:127-0-0-1-55653-graphql"
+    "openapi:harbourly",
+    "graphql:127-0-0-1-51229-graphql",
+    "openapi:ledgerline"
   ],
   "receipts": {
     "count": 21,
     "intact": true,
     "brokenAt": null,
-    "head": "3a83cf428e7229b024d3ae129a7b8cdf26e29288fb67f29d9dad06142f9ebc8a"
+    "head": "3999fc697dc6779200f8b4df8e3be5cac03e38b213cc5e7a3070292cd03c0724"
   },
   "passed": 14,
   "total": 14

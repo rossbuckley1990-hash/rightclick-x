@@ -1,8 +1,8 @@
 {
-  "seed": 758098722,
+  "seed": 124156111,
   "domain": "invoicing",
   "gateway": true,
-  "startedAt": "2026-10-17T09:05:24.430Z",
+  "startedAt": "2026-10-17T09:39:13.041Z",
   "steps": [
     {
       "n": 1,
@@ -17,7 +17,7 @@
       "title": "Connect an MCP client to RightClick X (stdio)",
       "ok": true,
       "tools": 13,
-      "startupMs": 121.4
+      "startupMs": 124.6
     },
     {
       "n": 3,
@@ -43,11 +43,11 @@
       "ok": true,
       "found": [
         "openapi",
-        "mcp",
+        "openapi",
         "mcp"
       ],
       "newCapabilities": 3,
-      "ms": 38.4
+      "ms": 39.1
     },
     {
       "n": 5,
@@ -56,10 +56,10 @@
       "candidatePlans": 3,
       "best": [
         "Invoice lookup",
-        "Customer profile",
-        "Tax rate by country"
+        "Fetch customer record",
+        "Get tax rate"
       ],
-      "planningMs": 3.6
+      "planningMs": 3.5
     },
     {
       "n": 6,
@@ -67,67 +67,67 @@
       "ok": true,
       "steps": [
         "Invoice lookup ← invoice_number=$in.invoice_id",
-        "Customer profile ← customer_number=0.customer_id",
-        "Tax rate by country ← countryCode=1.country"
+        "Fetch customer record ← customer_id=0.customerId",
+        "Get tax rate ← country=1.country"
       ]
     },
     {
       "n": 7,
       "title": "Execute the workflow",
       "ok": true,
-      "input": "INV-1000",
+      "input": "INV-1001",
       "pipeline": [
         "Invoice lookup",
-        "Customer profile",
-        "Tax rate by country"
+        "Fetch customer record",
+        "Get tax rate"
       ],
-      "ms": 5.6
+      "ms": 7.3
     },
     {
       "n": 8,
       "title": "Verify against independently held test data",
       "ok": true,
-      "expected": 26.2,
-      "got": 26.2
+      "expected": 17.2,
+      "got": 17.2
     },
     {
       "n": 9,
       "title": "Save the successful composition and reuse it",
       "ok": true,
-      "saved": "Tax rate invoice customer country: Invoice lookup → Customer profile → Tax rate by country",
+      "saved": "Tax rate invoice customer country: Invoice lookup → Fetch customer record → Get tax rate",
       "reusedAs": [
-        "Tax rate invoice customer country: Invoice lookup → Customer profile → Tax rate by country"
+        "Tax rate invoice customer country: Invoice lookup → Fetch customer record → Get tax rate"
       ],
-      "expected": 19.9,
-      "got": 19.9,
-      "ms": 2.7
+      "expected": 11,
+      "got": 11,
+      "ms": 2.9
     },
     {
       "n": 10,
-      "title": "Change the interface of the last provider in the chain (Fjordsoft)",
+      "title": "Change the interface of the last provider in the chain (Ashgrove)",
       "ok": true,
-      "before": "mcp \"Tax rate by country\" countryCode → countryCode, rate",
-      "after": "graphql \"Get tax rate\" country → result.{country, tax_rate}"
+      "before": "mcp \"Get tax rate\" country → country, standard_rate",
+      "after": "openapi \"Lookup tax rate for a country\" countryCode → result.{countryCode, tax_rate}"
     },
     {
       "n": 11,
       "title": "Recover without changing integration code",
       "ok": true,
       "healing": [
-        "API drift at http://127.0.0.1:54062/: openapi:cobaltix,mcp:mistral-depot,mcp:fjordsoft → openapi:cobaltix,mcp:mistral-depot,graphql:127-0-0-1-54061-graphql; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:49631/: openapi:harbourly,openapi:northwind-billing,mcp:ashgrove → openapi:harbourly,openapi:northwind-billing,openapi:ashgrove; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "via": [
-        "openapi:cobaltix",
-        "mcp:mistral-depot",
-        "graphql:127-0-0-1-54061-graphql"
+        "openapi:harbourly",
+        "openapi:northwind-billing",
+        "openapi:ashgrove"
       ],
-      "expected": 14.9,
-      "got": 14.9,
-      "ms": 18.9
+      "expected": 11,
+      "got": 11,
+      "ms": 18.7
     },
     {
       "n": 12,
-      "title": "Remove that provider (Fjordsoft)",
+      "title": "Remove that provider (Ashgrove)",
       "ok": true
     },
     {
@@ -136,41 +136,41 @@
       "ok": true,
       "status": "failed",
       "healing": [
-        "API drift at http://127.0.0.1:54062/: openapi:cobaltix,mcp:mistral-depot,graphql:127-0-0-1-54061-graphql → openapi:cobaltix,mcp:mistral-depot; +0 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:49631/: openapi:harbourly,openapi:northwind-billing,openapi:ashgrove → openapi:harbourly,openapi:northwind-billing; +0 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "withdrawn": [
-        "GraphQL 127.0.0.1:54061"
+        "Ashgrove"
       ],
       "capabilities": "27 → 25",
       "savedPipelines": "1 → 0"
     },
     {
       "n": 14,
-      "title": "Introduce a different provider (Emberlane, graphql): the objective works again",
+      "title": "Introduce a different provider (Quillbase, openapi): the objective works again",
       "ok": true,
       "learned": [
         "api-catalog: 3 services listed",
         "openapi: 1 operations",
-        "mcp: 1 tools",
-        "graphql: 1 fields"
+        "openapi: 1 operations",
+        "openapi: 1 operations"
       ],
       "via": [
-        "openapi:cobaltix",
-        "mcp:mistral-depot",
-        "graphql:127-0-0-1-54123-graphql"
+        "openapi:harbourly",
+        "openapi:northwind-billing",
+        "openapi:quillbase"
       ],
-      "expected": 5.7,
-      "got": 5.7,
-      "ms": 2.1
+      "expected": 10.4,
+      "got": 10.4,
+      "ms": 1.8
     }
   ],
   "benchmarks": {
-    "startupMs": 121.4,
+    "startupMs": 124.6,
     "mcpLatencyMs": {
       "p50": 0.04,
-      "p95": 0.1
+      "p95": 0.11
     },
-    "discoveryMs": 38.4,
+    "discoveryMs": 39.1,
     "graph": {
       "providers": 5,
       "capabilities": 26,
@@ -180,67 +180,67 @@
       "total": 132
     },
     "graphStatsMs": 0.1,
-    "planningMs": 3.6,
-    "executionMs": 5.6,
-    "recoveryAfterChangeMs": 18.9,
-    "recoveryAfterNewProviderMs": 2.1,
-    "memoryMB": 150
+    "planningMs": 3.5,
+    "executionMs": 7.3,
+    "recoveryAfterChangeMs": 18.7,
+    "recoveryAfterNewProviderMs": 1.8,
+    "memoryMB": 147
   },
   "freeze": {
-    "commit": "bb5a98397eb2d2c79314b8f9138de68640a8c945",
+    "commit": "65ae92d03ec87558da97f665011f93ab52bcebf7",
     "tag": "lab-freeze-9",
-    "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/core/authority.ts\nsrc/core/fields.ts\nsrc/core/graph.ts\nsrc/core/identities.ts\nsrc/core/planner.ts\nsrc/core/sandbox.ts\nsrc/core/satisfaction.ts\nsrc/core/semantics.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/core/yaml.ts\nsrc/entry/durable.ts\nsrc/entry/edge.ts\nsrc/interface/http.ts\nsrc/interface/tools.ts\nsrc/reflectors/cli.ts\nsrc/reflectors/discover.ts\nsrc/reflectors/graphql.ts\nsrc/reflectors/mcp.ts\nsrc/reflectors/net.ts\nsrc/reflectors/openapi.ts\nsrc/reflectors/platform.ts\nsrc/runtime.ts",
+    "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/core/authority.ts\nsrc/core/fields.ts\nsrc/core/graph.ts\nsrc/core/identities.ts\nsrc/core/planner.ts\nsrc/core/programs.ts\nsrc/core/sandbox.ts\nsrc/core/satisfaction.ts\nsrc/core/secrets.ts\nsrc/core/semantics.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/core/yaml.ts\nsrc/entry/durable.ts\nsrc/entry/edge.ts\nsrc/interface/http.ts\nsrc/interface/mcp-server.ts\nsrc/interface/tools.ts\nsrc/reflectors/cli.ts\nsrc/reflectors/discover.ts\nsrc/reflectors/graphql.ts\nsrc/reflectors/mcp.ts\nsrc/reflectors/net.ts\nsrc/reflectors/openapi.ts\nsrc/reflectors/platform.ts\nsrc/runtime.ts",
     "uncommittedProductChanges": "",
     "frozen": false
   },
   "environment": [
     {
       "service": "invoices",
-      "brand": "Cobaltix",
+      "brand": "Harbourly",
       "protocol": "openapi",
       "operation": "Invoice lookup",
       "input": "invoice_number",
       "outputs": [
         "invoice_number",
-        "customer_id",
-        "net_amount",
+        "customerId",
+        "total",
         "currency"
       ]
     },
     {
       "service": "customers",
-      "brand": "Mistral Depot",
-      "protocol": "mcp",
-      "operation": "Customer profile",
-      "input": "customer_number",
+      "brand": "Northwind Billing",
+      "protocol": "openapi",
+      "operation": "Fetch customer record",
+      "input": "customer_id",
       "outputs": [
-        "customer_number",
+        "customer_id",
         "legal_name",
         "country"
       ]
     },
     {
       "service": "tax",
-      "brand": "Fjordsoft",
+      "brand": "Ashgrove",
       "protocol": "mcp",
-      "operation": "Tax rate by country",
-      "input": "countryCode",
+      "operation": "Get tax rate",
+      "input": "country",
       "outputs": [
-        "countryCode",
-        "rate"
+        "country",
+        "standard_rate"
       ]
     }
   ],
   "firstRunProviders": [
-    "openapi:cobaltix",
-    "mcp:mistral-depot",
-    "mcp:fjordsoft"
+    "openapi:harbourly",
+    "openapi:northwind-billing",
+    "mcp:ashgrove"
   ],
   "receipts": {
     "count": 21,
     "intact": true,
     "brokenAt": null,
-    "head": "b8d64f1d1b1a6b675b715c29c3964e3954e9796b8b43e718c260ec2c720c1191"
+    "head": "de495edd72449ff1f69d088fdb5faa0aaa644a9000c0af2fc20a20692a03fb7a"
   },
   "passed": 14,
   "total": 14
