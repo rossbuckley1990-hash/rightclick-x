@@ -2027,7 +2027,8 @@ export class RightClick {
           }
           // With named files supplied instead, an unfilled content operand is left out.
           if (args[a.input] === undefined && inv.filesPort && args[inv.filesPort]) return null;
-          const name = `in${i}-${a.input.replace(/[^\w]/g, "")}.txt`;
+          // Named by what the content is (.json, .html, .xml, .svg): many programs choose a parser by extension.
+          const name = `in${i}-${a.input.replace(/[^\w]/g, "")}.${contentExtension(String(args[a.input] ?? ""))}`;
           files[name] = String(args[a.input] ?? "");
           return name;
         })].filter((x): x is string => x !== null);
@@ -2102,6 +2103,23 @@ const EXAMPLES: Record<string, unknown> = {
 /** A published goal's caller-facing parameters: its inputs minus the ones pinned at publish time. */
 export function goalParams(g: PublishedGoal): Array<[string, SemType]> {
   return Object.entries(g.have).filter(([k]) => !(g.fixed && k in g.fixed));
+}
+
+/** A file extension for content passed as a file operand, from what the content is. */
+function contentExtension(content: string): string {
+  const t = content.trim();
+  if (/^[{[]/.test(t)) {
+    try {
+      JSON.parse(t);
+      return "json";
+    } catch {
+      /* not JSON */
+    }
+  }
+  if (/^<svg\b|<svg[\s>]/i.test(t.slice(0, 500)) && /<\/svg>\s*$/i.test(t)) return "svg";
+  if (/^<\?xml\b/i.test(t) && !/<html\b/i.test(t)) return "xml";
+  if (/^<!doctype html|<html[\s>]/i.test(t.slice(0, 500))) return "html";
+  return "txt";
 }
 
 function coerceArgs(cap: Capability, args: Record<string, unknown>): Record<string, unknown> {

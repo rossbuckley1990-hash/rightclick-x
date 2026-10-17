@@ -250,3 +250,35 @@ test("options declared only in a synopsis or usage line are read, including bund
   for (const f of ["-v", "-csuffix <csuffix>", "-except", "-strip/-s <pattern>", "-typemap <typemap>", "-belnstuv", "-b", "-u"]) assert.ok(flags.includes(f), `${f} in ${flags.join(", ")}`);
   assert.deepEqual(validateOptions(["-typemap", "my.map", "-except", "-bn"], options.map((o) => ({ flags: o.flags, arg: !!o.arg }))), ["-typemap", "my.map", "-except", "-bn"]);
 });
+
+test("output that differs between identical runs only by date-times is deterministic apart from them; a behaviour-identical wrapper is still accepted", { skip, timeout: 120_000 }, async () => {
+  const dir = tmp("rcx-gen-");
+  const body = `if [ "$1" = "--help" ]; then echo "usage: stamp [file]"; echo "  report a text with the time it was processed"; exit 0; fi; /usr/bin/tr a-z A-Z; printf "Processed: 2026-10-17T14:%02d:%02dZ\\n" $(( $$ % 60 )) $(( ($$ / 60) % 60 ))`;
+  const p = program(dir, "stamp", body);
+  const rc = await RightClick.create({ directories: [], authority: { investigate: [`${dir}/`] } });
+  await rc.learn({ source: `cli:${p}` });
+  const cap = rc.graph.get("cli:stamp:default")!;
+  assert.equal((cap.invoke as any).volatile, "timestamps");
+  assert.ok(!cap.tags.includes("nondeterministic"), cap.tags.join(","));
+  // The same program behind a wrapper (another file): same behaviour, so it is not a different operation.
+  const real = join(dir, "stamp.real");
+  writeFileSync(real, `#!/bin/sh\n${body}\n`);
+  chmodSync(real, 0o755);
+  writeFileSync(p, `#!/bin/sh\nexec ${real} "$@"\n`);
+  chmodSync(p, 0o755);
+  const r = await rc.run(cap.id, { input: "abc\n" });
+  assert.equal(r.status, "completed", String(r.error));
+  assert.match(String(r.output), /^ABC\nProcessed: /);
+});
+
+test("content passed as a file operand is named by what it is (JSON as .json)", { skip, timeout: 60_000 }, async () => {
+  const dir = tmp("rcx-gen-");
+  const p = program(dir, "kindof", `if [ "$1" = "--help" ]; then echo "usage: kindof file"; echo "  print the name of the file"; exit 0; fi; [ -n "$1" ] || { echo "usage: kindof file" >&2; exit 2; }; /usr/bin/basename "$1"`);
+  const rc = await RightClick.create({ directories: [], authority: { investigate: [`${dir}/`] } });
+  await rc.learn({ source: `cli:${p}` });
+  const cap = rc.graph.list().find((c) => c.provider === "cli:kindof" && c.id.endsWith(":default"))!;
+  const port = cap.inputs[0].name;
+  assert.match(String((await rc.run(cap.id, { [port]: '{"a": 1}' })).output), /\.json$/m);
+  assert.match(String((await rc.run(cap.id, { [port]: "<html><body>x</body></html>" })).output), /\.html$/m);
+  assert.match(String((await rc.run(cap.id, { [port]: "plain words" })).output), /\.txt$/m);
+});

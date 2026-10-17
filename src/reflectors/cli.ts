@@ -144,6 +144,13 @@ export function parseOperands(synopsis: string[], name: string): Investigation["
   return { required: collapsed.slice(0, 4), optional: [...new Set(optional)].slice(0, 4), variadic };
 }
 
+// ---------------------------------------------------------------- volatile output
+
+/** Date-times such as file timestamps ("2026:10:17 14:47:38+01:00", "2026-10-17T14:47:38Z"). */
+const DATE_TIME = /\b\d{4}[:\-/]\d{2}[:\-/]\d{2}[ T]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:[+-]\d{2}:?\d{2}|Z)?/g;
+/** Output with date-times replaced: used only where two identical runs were shown to differ by them alone. */
+export const withoutTimes = (s: string) => s.replace(DATE_TIME, "<time>");
+
 // ---------------------------------------------------------------- operands: files or literal values
 
 /**
@@ -225,7 +232,8 @@ export async function replayExamples(inv: CliInvoke, sandbox: Sandbox): Promise<
   for (const [i, ex] of examples.entries()) {
     const argv = [...inv.args.filter((a): a is string => typeof a === "string"), ...(ex.literals ?? []), ...Object.keys(ex.files ?? {})];
     const r = await sandbox.run(inv.bin, argv, { stdin: ex.stdin ?? "", files: ex.files });
-    const out = r.workDir ? r.stdout.split(r.workDir).join("<work>").split(r.workDir.replace(/^\/private/, "")).join("<work>") : r.stdout;
+    const stripped = r.workDir ? r.stdout.split(r.workDir).join("<work>").split(r.workDir.replace(/^\/private/, "")).join("<work>") : r.stdout;
+    const out = inv.volatile === "timestamps" ? withoutTimes(stripped) : stripped;
     if (crypto.createHash("sha256").update(out).digest("hex") === ex.outputSha256) matched++;
     else mismatches.push(`example ${i + 1}: expected ${JSON.stringify(ex.outputPreview.slice(0, 60))}, got ${JSON.stringify(out.slice(0, 60))}`);
   }
@@ -512,7 +520,11 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
     const constant = distinctInputs >= 2 && new Set(mt.map((t) => t.r.stdout)).size === 1;
     const first = mt[0];
     const again = await run(`repeat for determinism (${mode})`, [...first.flags, ...first.literals, ...(first.channel === "files" ? first.inputs.map((_, i) => `input${i + 1}.${first.kind === "text" ? "txt" : first.kind}`) : [])], first.channel === "stdin" ? { stdin: first.inputs[0] } : { files: Object.fromEntries(first.inputs.map((t, i) => [`input${i + 1}.${first.kind === "text" ? "txt" : first.kind}`, t])) });
-    const deterministic = !!again && again.stdout === first.r.stdout;
+    // Identical runs that differ only by date-times (file timestamps) are deterministic apart from
+    // those values: they are normalised in this mode's fingerprint and examples, nowhere else.
+    const volatileTimes = !!again && again.stdout !== first.r.stdout && withoutTimes(again.stdout) === withoutTimes(first.r.stdout);
+    const deterministic = !!again && (again.stdout === first.r.stdout || volatileTimes);
+    const fp = (s: string) => (volatileTimes ? withoutTimes(s) : s);
     const outKinds = [...new Set(mt.map((t) => outputKind(t.r.stdout)))];
     const out = outKinds.length === 1 ? outKinds[0] : "text";
     const id = `${providerId}:${slug(mode)}`;
@@ -546,7 +558,7 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
     ];
     const behaviour = crypto
       .createHash("sha256")
-      .update(JSON.stringify(mt.map((t) => [[...t.literals, ...t.inputs].join("\u0000"), t.r.stdout]).sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0))))
+      .update(JSON.stringify(mt.map((t) => [[...t.literals, ...t.inputs].join("\u0000"), fp(t.r.stdout)]).sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0))))
       .digest("hex")
       .slice(0, 16);
     const invoke: CliInvoke = {
@@ -560,10 +572,11 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
       output: out,
       sha256: inv.program.sha256,
       behaviour,
+      ...(volatileTimes ? { volatile: "timestamps" as const } : {}),
       examples: mt.slice(0, 2).map((t) => ({
         ...(t.channel === "stdin" ? { stdin: t.inputs[0] } : { files: Object.fromEntries(t.inputs.map((x, i) => [`input${i + 1}.${t.kind === "text" ? "txt" : t.kind}`, x])) }),
         ...(t.literals.length ? { literals: t.literals } : {}),
-        outputSha256: crypto.createHash("sha256").update(t.r.stdout).digest("hex"),
+        outputSha256: crypto.createHash("sha256").update(fp(t.r.stdout)).digest("hex"),
         outputPreview: t.r.stdout.slice(0, 160),
       })),
     };
@@ -582,7 +595,7 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
       invoke,
     });
     claim(id, `accepts ${inKinds.join("/")} input via ${best.id} and prints ${out}`, supported ? "experimentally-supported" : "observed", `${mt.length} run(s) with distinct inputs; exit ${invoke.okExit.join("/")}`);
-    claim(id, "deterministic for identical input", again ? (deterministic ? "experimentally-supported" : "contradicted") : "unknown", again ? "repeated run compared byte for byte" : "no budget for a repeat");
+    claim(id, volatileTimes ? "deterministic for identical input, apart from date-time values (e.g. file timestamps)" : "deterministic for identical input", again ? (deterministic ? "experimentally-supported" : "contradicted") : "unknown", again ? (volatileTimes ? "repeated run identical once date-times are normalised" : "repeated run compared byte for byte") : "no budget for a repeat");
     if (preserves) claim(id, "output keeps every word of the input", supported ? "experimentally-supported" : "observed", "word sets compared");
     if (echoes) claim(id, "output equals the input (no transformation)", "observed", "byte comparison");
     if (mt.some((t) => t.r.created.length)) claim(id, `creates files: ${[...new Set(mt.flatMap((t) => t.r.created))].join(", ")}`, "observed", "contained in the sandbox's temporary directory");

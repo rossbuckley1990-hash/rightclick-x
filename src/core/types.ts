@@ -187,6 +187,8 @@ export interface CliInvoke {
    * after a change, without repeating the whole investigation.
    */
   examples?: Array<{ stdin?: string; files?: Record<string, string>; literals?: string[]; outputSha256: string; outputPreview: string }>;
+  /** Output values that vary between identical runs (file timestamps) and are normalised in fingerprints. */
+  volatile?: "timestamps";
 }
 
 export type Invoke =
