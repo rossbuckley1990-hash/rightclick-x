@@ -64,6 +64,10 @@ For each, write four tasks a user might ask that the API answers. Rules:
 - Choose facts that are stable over days (no current weather, prices, counts that change hourly, or "latest" items).
 FORMAT: {"apis":[{"name":"...","tasks":[{"request":"...","referenceUrl":"...","answerPaths":["..."]}]}]}`;
   const text = await evaluator(prompt);
+  if (/hit your (session |usage )?limit|usage limit|rate limit/i.test(text) && !/\{/.test(text)) {
+    console.log(`BLOCKED by a usage limit: ${text.slice(0, 120)}; re-run to resume`);
+    process.exit(2);
+  }
   ev.evaluatorReply = text;
   const j = JSON.parse(/\{[\s\S]*\}/.exec(text)![0]);
   for (const api of j.apis.slice(0, PILOT ? 1 : 3)) {

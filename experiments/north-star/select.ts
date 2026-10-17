@@ -137,16 +137,29 @@ const parse = (text: string): any => {
   return m ? JSON.parse(m[0]) : null;
 };
 
-const ev: any = { tag: TAG, commit: COMMIT, at: new Date().toISOString(), rules: RULES, model: "opus (Claude Code -p)", pool: {}, order: [], screened: [], programs: [], evaluatorCalls: [] };
+const FILE = PILOT ? `${OUT}/pilot-${TAG}.json` : `${OUT}/holdout-${TAG}.json`;
+const BLOCKED = /hit your (session |usage )?limit|usage limit|rate limit|overloaded/i;
+// Resumable (EVALUATION-PLAN §9): a call blocked by a usage limit decides nothing; selection stops
+// and later resumes on the same freeze from the first program without a real decision.
+const ev: any = existsSync(FILE) ? JSON.parse(readFileSync(FILE, "utf8")) : { tag: TAG, commit: COMMIT, at: new Date().toISOString(), rules: RULES, model: "opus (Claude Code -p)", pool: {}, order: [], screened: [], programs: [], evaluatorCalls: [] };
+{
+  const blockedBatches = new Set<string>((ev.evaluatorCalls ?? []).filter((c: any) => c.purpose === "screen" && BLOCKED.test(String(c.reply ?? "")) && !/\{/.test(String(c.reply ?? ""))).flatMap((c: any) => c.programs ?? []));
+  const before = ev.screened.length;
+  ev.screened = ev.screened.filter((x: any) => !(blockedBatches.has(x.name) && x.reason === "no decision returned"));
+  if (ev.screened.length !== before) (ev.repairs ??= []).push({ at: new Date().toISOString(), note: `${before - ev.screened.length} screening entries removed: their evaluator call was blocked by a usage limit, so no decision was made (harness defect in run 1)` });
+  for (const c of ev.evaluatorCalls ?? []) if (BLOCKED.test(String(c.reply ?? "")) && !/\{/.test(String(c.reply ?? ""))) c.blocked = true;
+}
 const all = pool();
 if (PILOT && PILOT.some((n) => !DEV.has(n))) throw new Error(`pilot programs must come from the development set: ${PILOT.filter((n) => !DEV.has(n)).join(", ")}`);
 const eligiblePool = PILOT ? all.filter((p) => PILOT.includes(p.name)) : all.filter((p) => !p.excluded);
 ev.pool = { total: all.length, excluded: Object.fromEntries([...new Set(all.map((p) => p.excluded).filter(Boolean))].map((r) => [r, all.filter((p) => p.excluded === r).length])), candidates: eligiblePool.length };
 const order = [...eligiblePool].sort((a, b) => createHash("sha256").update(`${COMMIT}:${a.name}`).digest("hex").localeCompare(createHash("sha256").update(`${COMMIT}:${b.name}`).digest("hex")));
 ev.order = order.slice(0, MAX_SCREENED).map((p) => p.name);
-const save = () => writeFileSync(PILOT ? `${OUT}/pilot-${TAG}.json` : `${OUT}/holdout-${TAG}.json`, JSON.stringify(ev, null, 2));
+const save = () => writeFileSync(FILE, JSON.stringify(ev, null, 2));
 
-let next = 0;
+// The draw order is fixed by the seed: resume after the programs already screened.
+let next = ev.screened.length;
+if (ev.screened.some((x: any, i: number) => x.name !== order[i]?.name)) throw new Error("screened programs are not a prefix of the seeded order");
 const validTasks = () => ev.programs.reduce((n: number, p: any) => n + p.tasks.filter((t: Task) => t.kind === "feasible" && t.valid).length, 0);
 while ((ev.programs.length < WANT_PROGRAMS || validTasks() < MIN_TASKS) && next < Math.min(order.length, MAX_SCREENED)) {
   const batch = order.slice(next, next + 6);
@@ -155,12 +168,20 @@ while ((ev.programs.length < WANT_PROGRAMS || validTasks() < MIN_TASKS) && next 
   const prompt = `${RULES}\n\n${docs.map((d) => `===== PROGRAM: ${d.name} =====\n${d.docs || "(no documentation available)"}`).join("\n\n")}`;
   const r = await evaluator(prompt);
   ev.evaluatorCalls.push({ purpose: "screen", programs: batch.map((p) => p.name), seconds: r.seconds, reply: r.text });
+  if (BLOCKED.test(r.text) && !/\{/.test(r.text)) {
+    ev.evaluatorCalls[ev.evaluatorCalls.length - 1].blocked = true;
+    save();
+    console.log(`BLOCKED by a usage limit: ${r.text.slice(0, 120)}; re-run to resume on the same freeze`);
+    process.exit(2);
+  }
   let j: any;
   try {
     j = parse(r.text);
   } catch (e) {
     ev.evaluatorCalls[ev.evaluatorCalls.length - 1].parseError = String(e);
   }
+  const batchStart = ev.screened.length;
+  const programsStart = ev.programs.length;
   for (const p of batch) {
     const d = j?.programs?.find((x: any) => x.name === p.name);
     ev.screened.push({ name: p.name, eligible: !!d?.eligible, reason: d?.reason ?? "no decision returned" });
@@ -174,6 +195,15 @@ while ((ev.programs.length < WANT_PROGRAMS || validTasks() < MIN_TASKS) && next 
     if (invalid.length) {
       const fix = await evaluator(`${RULES}\n\nSome tasks you wrote for ${p.name} could not be used because running their reference invocation failed. Write ${invalid.length} replacement feasible task(s) (same JSON task format, as {"tasks":[...]}), different from these:\n${invalid.map((t) => `- ${JSON.stringify({ request: t.request, reference: t.reference })}: ${t.invalidReason}`).join("\n")}\n\n===== PROGRAM: ${p.name} =====\n${docs.find((x) => x.name === p.name)!.docs}`);
       ev.evaluatorCalls.push({ purpose: `replace ${invalid.length} invalid task(s) for ${p.name}`, seconds: fix.seconds, reply: fix.text });
+      if (BLOCKED.test(fix.text) && !/\{/.test(fix.text)) {
+        // Undo this batch: it is screened again, whole, when selection resumes.
+        ev.evaluatorCalls[ev.evaluatorCalls.length - 1].blocked = true;
+        ev.screened.length = batchStart;
+        ev.programs.length = programsStart;
+        save();
+        console.log("BLOCKED by a usage limit during task replacement; re-run to resume on the same freeze");
+        process.exit(2);
+      }
       let fj: any;
       try {
         fj = parse(fix.text);

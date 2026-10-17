@@ -154,7 +154,8 @@ for (const client of ["claude", "codex"] as const) {
   const answer = /^BEGIN\s*$([\s\S]*?)^END\s*$/m.exec(r.output)?.[1]?.trim();
   const check = htmlCorrected(docB, answer);
   const stage = { client, seconds: r.seconds, turns: r.meta?.turns, usage: r.meta?.usage, toolCalls: tools.length, tools, relearnedProgram: relearned, executedThroughCapability: usedCli, independentCheck: check, pass: !relearned && usedCli && check.pass, tail: r.output.slice(-600) };
-  const blocked = /usage limit|rate limit|hit your/i.test(r.output) && !tools.length;
+  // A session cut off by the client's usage limit (even after some tool calls) is not a result.
+  const blocked = /usage limit|rate limit|hit your/i.test(r.output) && !/^BEGIN\s*$/m.test(r.output);
   if (blocked) Object.assign(stage, { blocked: true, pass: false, note: "client unavailable (usage limit); not a RightClick X result" });
   if (!check.pass && answer) ev.wrongOutcomes.push(`${client === "claude" ? "B" : "F"}: agent returned HTML failing the check (${check.detail})`);
   ev.stages[client === "claude" ? "B" : "F"] = stage;

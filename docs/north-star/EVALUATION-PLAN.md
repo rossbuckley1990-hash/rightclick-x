@@ -161,3 +161,8 @@ These were recorded on 2026-10-17, after the harness pilot on development progra
    - named list values bind to their ports.
 
    The pilot's first D run is kept as `pilot-benchmark-ns-pilot-run2.json`.
+5. **Usage limits during holdout selection (harness defect, `ns-freeze-1`).** In the first selection run, 10 of 14 evaluator calls were cut off by the Claude session limit ("You've hit your session limit"). The harness recorded the affected 60 programs as screened-ineligible ("no decision returned"), which is wrong: no decision was made.
+   - The run is preserved as `holdout-ns-freeze-1-run1-blocked-calls-recorded-as-ineligible.json`.
+   - The harness now stops on a blocked call and resumes on the same freeze, from the first program without a real decision, in the same seeded order. The 24 real decisions are kept.
+   - Agent-session and challenge harnesses also recognise "session limit" as blocked; challenge stage B on `ns-freeze-1` was cut off this way and is re-run.
+   - No product code changed, so the freeze is unchanged.
