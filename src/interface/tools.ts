@@ -11,7 +11,7 @@ const num = (description: string) => ({ type: "number", description });
 const bool = (description: string) => ({ type: "boolean", description });
 const predicates = {
   type: "array",
-  description: 'Outcome checks on the result, e.g. [{"op":"contains","value":"Lisbon"}, {"op":"gt","path":"temperature","value":-50}]. ops: exists, equals, contains, matches, type, gt, lt, length_gt.',
+  description: 'Outcome checks on the result, e.g. [{"op":"contains","value":"Lisbon"}, {"op":"gt","path":"temperature","value":-50}]. ops: exists, equals, contains, matches, type, gt, lt, length_gt. Passing them makes a result "checked"; only an independent witness makes it "verified".',
   items: { type: "object" },
 };
 const witnesses = {
@@ -94,7 +94,7 @@ export const TOOLS = [
         witnesses,
         maxSteps: num("Max pipeline length (default 4)."),
         confirm: bool("Required to run plans containing destructive capabilities."),
-        publish: str("After a successful run, save this goal as goal:<slug> in the graph AND as /x/<slug> in the synthesized API. Checks and witnesses are retained and re-run on every invocation. Supply checks/witnesses to establish verified outcomes."),
+        publish: str("After a successful run, save this goal as goal:<slug> in the graph AND as /x/<slug> in the synthesized API. Checks and witnesses are retained and re-run on every invocation. Stored predicates make a goal \"checked\"; an independent witness makes it \"verified\"."),
         acquire: bool("If nothing in the graph can do it: research public directories (APIs.guru, MCP Registry), learn the best candidates and re-plan."),
         through: { type: "array", items: { type: "string" }, description: "Anchors: capability ids or search phrases the pipeline must pass through; the planner wires the types between them." },
         risks: { type: "array", items: { type: "string", enum: ["read", "write", "external", "destructive"] }, description: 'Optional constraint: plan only with these risk labels, e.g. ["read"].' },

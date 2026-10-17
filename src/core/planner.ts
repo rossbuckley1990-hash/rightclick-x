@@ -420,7 +420,7 @@ function fitOf(graph: CapabilityGraph, node: Node): number {
 
 const TOKENS = new WeakMap<Capability, Set<string>>();
 
-function tokensOf(c: Capability): Set<string> {
+export function tokensOf(c: Capability): Set<string> {
   let t = TOKENS.get(c);
   // What a capability *is* (title, tags), not incidental words in its prose
   // description ("rate limit: 200 req/s" must not satisfy "exchange rates").

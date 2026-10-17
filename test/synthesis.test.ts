@@ -43,7 +43,7 @@ test("API synthesis: a published goal becomes an OpenAPI endpoint that another i
   const id = c.graph.list().find((x) => x.id.endsWith("weatherforaplaceinalanguage"))!.id;
   const out = await c.run(id, { place: "Nairobi", language: "es" }, { verify: [{ op: "contains", path: "result", value: "°C" }] });
   assert.equal(out.status, "completed");
-  assert.equal(out.verification.status, "verified");
+  assert.equal(out.verification.status, "checked"); // stored predicates passed: checked, not independently verified (North Star Stage 2)
   assert.equal(a.published.get("weather-for-a-place")!.calls, 2, "A served B's chained call and C's call through B");
 });
 
@@ -84,5 +84,5 @@ test("universal interface: an MCP-only tool answers GraphQL queries, and a peer 
   assert.deepEqual(cap.inputs.filter((p) => p.required).map((p) => [p.name, p.type]), [["place", "place"]]);
   assert.ok(cap.outputs.some((o) => o.name === "result" && o.type === "text"));
   const r = await b.run(cap.id, { place: "Nairobi" }, { verify: [{ op: "contains", path: "result", value: "°C" }] });
-  assert.equal(r.verification.status, "verified");
+  assert.equal(r.verification.status, "checked"); // stored predicates passed: checked, not independently verified (North Star Stage 2)
 });

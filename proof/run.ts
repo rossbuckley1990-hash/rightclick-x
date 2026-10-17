@@ -209,7 +209,7 @@ try {
     const run = result.executed ?? result;
     const expected = env.expected(orderId);
     const witnesses = run.witnesses ?? [];
-    const witnessVerified = witnesses.some((item: any) => item.capability === auditor.id && item.status === "completed" && item.verification?.status === "verified" && item.output?.valid === true);
+    const witnessVerified = witnesses.some((item: any) => item.capability === auditor.id && item.status === "completed" && ["checked", "verified"].includes(item.verification?.status) && item.output?.valid === true);
     const truthMatched = typeof run.output === "number" && Math.abs(run.output - expected) < 0.000001;
     const passed = run.status === "completed" && run.verification?.status === "verified" && truthMatched && witnessVerified;
     phases.push({ name, orderId, expected, result, truthMatched, witnessVerified });
@@ -274,7 +274,7 @@ try {
   check("published stable endpoint survives process restart", !!spec.paths?.[stablePath]);
   const consume = async (name: string, orderId: string) => {
     const response = await apiConsumer!.get(`${stablePath}?order_id=${encodeURIComponent(orderId)}`);
-    const witnessVerified = response.witnesses?.some((item: any) => item.capability === auditor.id && item.status === "completed" && item.verification?.status === "verified" && item.output?.valid === true);
+    const witnessVerified = response.witnesses?.some((item: any) => item.capability === auditor.id && item.status === "completed" && ["checked", "verified"].includes(item.verification?.status) && item.output?.valid === true);
     const truthMatched = typeof response.result === "number" && Math.abs(response.result - env.expected(orderId)) < 0.000001;
     check(name, response.ok === true && response.verification === "verified" && truthMatched && witnessVerified, { expected: env.expected(orderId), response });
   };

@@ -126,17 +126,20 @@ test("synthesis: a goal composed from investigated programs is saved with a capa
   assert.equal(u.published?.trust, "unverified");
   const card = rc.explain("goal:shout-backwards").card;
   assert.equal((card.verification as any).trust, "unverified");
-  assert.ok(card.limitations.some((l) => /no independent check/.test(l)));
+  assert.ok(card.limitations.some((l) => /no check passed/.test(l)));
   assert.ok(card.dependencies.length >= 1);
-  // With a stored check it passes and is verified.
+  // With a stored predicate it passes and is checked (by RightClick X itself, so not "verified").
   const v = await rc.compose({ ...goal, verify: [{ op: "matches", pattern: "^THREE\\nTWO\\nONE\\s*$" }], publish: "Shout backwards checked" });
-  assert.equal(v.published?.trust, "verified");
+  assert.equal(v.published?.trust, "checked");
   // Operator publication authority: verified-only refuses unverified goals.
   const strict = await mk({ publish: "verified" });
   await strict.learn({ sources: [`cli:${up}`, `cli:${rev}`] });
   const refused = await strict.compose({ ...goal, publish: "Unchecked" });
   assert.equal(refused.published, undefined);
   assert.match(String(refused.publishRefused), /only verified/);
+  // ...and a goal only checked by its own predicates is not independently verified either.
+  const checkedOnly = await strict.compose({ ...goal, verify: [{ op: "matches", pattern: "^THREE\\nTWO\\nONE\\s*$" }], publish: "Checked only" });
+  assert.equal(checkedOnly.published, undefined);
   // A program capability's card carries its investigation evidence and sandbox limitation.
   const pc = rc.explain(rc.graph.list().find((c) => c.provider === "cli:upcase")!.id).card;
   assert.ok(pc.identity.sha256);

@@ -82,7 +82,7 @@ export interface Receipt {
   startedAt: string;
   durationMs: number;
   status: "completed" | "failed";
-  verification: "verified" | "refuted" | "unverified";
+  verification: "verified" | "checked" | "refuted" | "unverified";
   inputDigest: string;
   outputDigest: string;
   prev: string;

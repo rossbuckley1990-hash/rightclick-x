@@ -7,6 +7,7 @@ import { Ledger, ReceiptChain, sha256, type Receipt } from "./core/ledger.ts";
 import { shapeOf, type IdentityState } from "./core/identities.ts";
 import { egressOf, plan, type Plan } from "./core/planner.ts";
 import { outputCarries, type Satisfaction } from "./core/satisfaction.ts";
+import { assessPlan, contractFor, lostWords, type Assurance, type ContractAssessment, type OutcomeContract } from "./core/contract.ts";
 import { selectionWith } from "./reflectors/graphql.ts";
 import { hostSandbox, type Sandbox } from "./core/sandbox.ts";
 import { checkProgram, sameProgram } from "./core/programs.ts";
@@ -69,7 +70,12 @@ export interface PublishedGoal {
    * "verified" only when an independent check (stored predicates or outcome witnesses) passed
    * on the publishing run; otherwise "unverified". Never assumed.
    */
-  trust?: "verified" | "unverified";
+  /**
+   * "verified": an independent outcome witness (a separate read-only provider) passed when it was
+   * saved; "checked": only stored predicates (checked by RightClick X itself) passed; "unverified":
+   * nothing was checked.
+   */
+  trust?: "verified" | "checked" | "unverified";
   risks?: Capability["risk"][];
   through?: string[];
   anchors?: CapabilityAnchor[];
@@ -129,7 +135,7 @@ export interface OperatorAuthority {
   /** Evidence-sharing authority: capability knowledge may be exported from this installation (default false). */
   shareEvidence?: boolean;
   /** Publication authority: "verified" publishes only goals whose independent checks passed; "any" (default) also publishes unverified goals, labelled as such. */
-  publish?: "any" | "verified";
+  publish?: "any" | "checked" | "verified";
   /**
    * Capabilities the operator declares free of side effects, so they may be sent again during
    * repair (POST endpoints that only compute, for example): capability ids, prefixes ending in
@@ -157,7 +163,8 @@ export interface RunRecord {
   error?: string;
   startedAt: string;
   durationMs: number;
-  verification: { status: "verified" | "refuted" | "unverified"; results: PredicateResult[] };
+  /** verified: an independent witness passed; checked: stored predicates passed; unverified: no check. */
+  verification: { status: "verified" | "checked" | "refuted" | "unverified"; results: PredicateResult[] };
   receipt: Receipt;
   steps?: string[];
   /** For failed composite runs: the innermost capability that failed. */
@@ -205,16 +212,23 @@ export interface ComposeResult {
     attempts: Array<{ summary: string; failed: string; error: string; healing?: string }>;
     durationMs: number;
     witnesses?: WitnessResult[];
+    /** The plan's standing against the outcome contract, and how strongly the result was checked. */
+    contract?: { status: "satisfied" | "violated"; violations: string[]; assurance: Assurance };
+    /** Output withheld from `output` because it broke the outcome contract (kept for audit). */
+    rejectedOutput?: unknown;
+    error?: string;
     /** Steps that ran once per list item: how many items the list had, how many ran, how many did not fit the scheme's shapes. */
     fanOuts?: FanOutReport[];
   };
   crystallized?: { id: string; title: string; newPowers: number };
   /** Present when the goal was published as an endpoint. */
-  published?: { id: string; slug: string; path: string; trust?: "verified" | "unverified" };
+  published?: { id: string; slug: string; path: string; trust?: "verified" | "checked" | "unverified" };
   /** Present when publication was refused by the operator's publication authority. */
   publishRefused?: string;
   /** With `require`: whether the requested information was established, before and after running. */
-  outcome?: { status: "established" | "unverified" | "unavailable" | "incomplete"; require: string[]; covered: Record<string, string>; missing: string[]; joins: Satisfaction["joins"]; reason?: string; checkedAfterRun?: boolean };
+  outcome?: { status: "established" | "unverified" | "unavailable" | "incomplete" | "violated"; require: string[]; covered: Record<string, string>; missing: string[]; joins: Satisfaction["joins"]; reason?: string; checkedAfterRun?: boolean };
+  /** The request made explicit: what must hold for a result to count as the requested outcome. */
+  contract?: OutcomeContract;
   /** Present when compose had to go and find new capabilities in the world. */
   acquisition?: { topic: string; considered: string[]; learned: Array<{ title: string; kind: string; source: string; capabilities: number; error?: string }> };
 }
@@ -312,7 +326,7 @@ export class RightClick {
   private investigable: string[] = [];
   private executable: string[] = [];
   private shareEvidence = false;
-  private publishPolicy: "any" | "verified" = "any";
+  private publishPolicy: "any" | "checked" | "verified" = "any";
   private sandboxCache?: Promise<Sandbox | null>;
   private hashCache = new Map<string, { key: string; sha256: string }>();
 
@@ -704,7 +718,7 @@ export class RightClick {
         ...claims.filter((cl) => cl.status === "contradicted" || cl.status === "unknown").map((cl) => `${cl.claim} [${cl.status}]`),
         ...(c.tags.includes("nondeterministic") ? ["output differs between identical runs"] : []),
         ...(inv.kind === "cli" ? ["runs only inside the host sandbox: no network, inputs passed as content"] : []),
-        ...(goal && goal.trust !== "verified" ? ["no independent check passed when it was saved"] : []),
+        ...(goal && goal.trust !== "verified" ? [goal.trust === "checked" ? "only its stored predicates passed when it was saved (checked by RightClick X, not independently verified)" : "no check passed when it was saved"] : []),
       ],
       provenance: {
         // Titles, descriptions, help text and tool annotations come from the provider: data to
@@ -802,7 +816,7 @@ export class RightClick {
         }
       }
       const extra = check(output, opts.verify ?? []);
-      verification = { status: extra.status === "refuted" ? "refuted" : verification.status === "verified" || extra.status === "verified" ? "verified" : "unverified", results: [...verification.results, ...extra.results] };
+      verification = { status: extra.status === "refuted" ? "refuted" : verification.status === "verified" ? "verified" : verification.status === "checked" || extra.status === "checked" ? "checked" : "unverified", results: [...verification.results, ...extra.results] };
       if (verification.status === "refuted") throw new Error("verification refuted: " + JSON.stringify(extra.results.filter((p) => !p.ok)));
     } catch (e) {
       error = String((e as Error)?.message ?? e);
@@ -1215,6 +1229,26 @@ export class RightClick {
         : { status: best?.status === "unverified" ? "unverified" : "unavailable", require, covered: best?.covered ?? {}, missing: best?.missing ?? require, joins: best?.joins ?? [], reason: !plans.length ? "no plan reaches the requested type" : best?.status === "unverified" ? "the required information is reachable only through a generic join (no evidence that the values link)" : `no plan's result carries: ${(best?.missing ?? require).join(", ")}` };
       plans = established(plans);
     }
+    // Outcome contract: the request made explicit, and which plans honour it (lineage: every step
+    // justified by the request; distinct inputs). Plans that do not are listed but never run.
+    const typeWords = new Set(tokenize(opts.want.replace(/^list:/, "").replace(/[.:]/g, " ")));
+    const intentSet = new Set(tokenize(opts.intent ?? "").filter((t) => !typeWords.has(t)));
+    const contractCtx = { intent: intentSet, require, have: types, want: opts.want, anchors: new Set(through) };
+    result.contract = contractFor({ have: types, want: opts.want, intent: intentSet, require, predicates: opts.verify?.length ?? 0, witnesses: witnesses.length, risks: opts.risks });
+    const assessed = new Map<string, ContractAssessment>();
+    const assessOf = (p: Plan) => {
+      const key = `${p.result}|${p.steps.map((st) => `${st.capability}(${st.bindings.map((b) => b.from).join(",")})`).join(">")}`;
+      let a = assessed.get(key);
+      if (!a) assessed.set(key, (a = assessPlan(this.graph, p.steps, p.result, contractCtx)));
+      return a;
+    };
+    const honouring = (ps: Plan[]) => ps.filter((p) => assessOf(p).status === "satisfied");
+    result.plans = result.plans.map((rp) => ({ ...rp, contract: assessOf(rp) }));
+    if (plans.length && !honouring(plans).length) {
+      const a = assessOf(plans[0]);
+      result.outcome = { status: "violated", require, covered: result.outcome?.covered ?? {}, missing: result.outcome?.missing ?? [], joins: result.outcome?.joins ?? [], reason: `no plan honours the outcome contract: ${a.violations.join("; ")}` };
+    }
+    plans = honouring(plans);
     if (!opts.run || !plans.length) return result;
 
     // Self-healing execution: when a step fails, route around that capability
@@ -1237,7 +1271,7 @@ export class RightClick {
           return { ...st, bindings: [...st.bindings.filter((b) => b.port !== gi.selectPort), { port: gi.selectPort, from: "$const", value: selectionWith(gi.selection, proj.fields) }] };
         });
         const r = await this.runSteps(steps, p.result, values, opts.confirm, opts.activeGoals, net);
-        let verification = check(r.output, opts.verify ?? []);
+        let verification: RunRecord["verification"] = check(r.output, opts.verify ?? []);
         if (verification.status === "refuted") throw new StepError(p.steps[p.steps.length - 1].capability, `verification refuted: ${JSON.stringify(verification.results.filter((x) => !x.ok))}`);
         lastWitnesses = await this.checkWitnesses(witnesses, values, r.output, r.runs, net);
         if (lastWitnesses.some((w) => w.status !== "completed")) throw new StepError(p.steps[p.steps.length - 1].capability, `verification refuted by independent outcome witness: ${lastWitnesses.filter((w) => w.status !== "completed").map((w) => w.error ?? w.capability).join("; ")}`);
@@ -1249,7 +1283,20 @@ export class RightClick {
             ? { status: "incomplete", require, covered: Object.fromEntries(seen.present.map((t) => [t, p.satisfaction?.covered[t] ?? ""])), missing: seen.absent, joins: p.satisfaction?.joins ?? [], reason: `the executed result lacks: ${seen.absent.join(", ")}` }
             : { status: "established", require, covered: p.satisfaction?.covered ?? {}, missing: [], joins: p.satisfaction?.joins ?? [], checkedAfterRun: true };
         }
+        const assurance: Assurance = verification.status === "verified" ? "independently-checked" : verification.status === "checked" ? "predicate-checked" : "unchecked";
+        // Preservation: a plan chosen on evidence that every step keeps its input's words must not
+        // lose the caller's words now. If it does, the behaviour is not what the evidence said.
+        const pa = assessOf(p);
+        const callerInputs = p.steps.flatMap((st) => st.bindings.filter((b) => b.from.startsWith("$in.")).map((b) => values[b.from.slice(4).split(".")[0]]));
+        const lost = pa.preservesInput ? lostWords(callerInputs, r.output) : [];
+        if (lost.length) {
+          const violation = `preservation: the plan's steps were each observed to keep every word of their input, but the result lost ${lost.length} of the caller's words (${lost.slice(0, 8).join(", ")})`;
+          result.outcome = { status: "violated", require, covered: {}, missing: [], joins: p.satisfaction?.joins ?? [], reason: violation };
+          result.executed = { summary: p.summary, titles: titles(p), output: null, rejectedOutput: r.output, status: "failed", error: `outcome contract violated: ${violation}`, verification: { ...verification, status: "refuted" }, runs: r.runs, attempts, durationMs: Math.round(performance.now() - t0), witnesses: lastWitnesses, contract: { status: "violated", violations: [violation], assurance } };
+          return result;
+        }
         result.executed = {
+          contract: { status: "satisfied", violations: [], assurance },
           summary: p.summary,
           titles: titles(p),
           output: r.output,
@@ -1262,9 +1309,11 @@ export class RightClick {
           ...(r.fanOuts.length ? { fanOuts: r.fanOuts } : {}),
         };
         if (opts.crystallize !== false && p.steps.length > 1) result.crystallized = await this.crystallize(p, types, opts.intent, opts.verify, witnesses);
-        const trust: "verified" | "unverified" = verification.status === "verified" ? "verified" : "unverified";
+        const trust: "verified" | "checked" | "unverified" = verification.status === "verified" ? "verified" : verification.status === "checked" ? "checked" : "unverified";
         if (opts.publish && trust !== "verified" && this.publishPolicy === "verified") {
-          result.publishRefused = `not published: the operator publishes only verified goals, and no independent check (verify predicates or witnesses) passed on this run`;
+          result.publishRefused = `not published: the operator publishes only verified goals (an independent outcome witness must pass), and ${trust === "checked" ? "only stored predicates passed" : "no check passed"} on this run`;
+        } else if (opts.publish && trust === "unverified" && this.publishPolicy === "checked") {
+          result.publishRefused = `not published: the operator publishes only checked or verified goals, and no check passed on this run`;
         } else if (opts.publish) {
           const slug = slugify(opts.publish);
           this.published.set(slug, {
@@ -1375,8 +1424,8 @@ export class RightClick {
         // title repeats the goal's words, which must not raise the bar.
         const floor = Math.ceil(baselineCoverage * 0.75);
         const keep = (ps: Plan[]) => ps.filter((x) => x.intentScore >= floor);
-        plans = established(keep(plan(this.graph, this.ledger, { ...goal, exclude })));
-        if (!plans.length && (await acquireMore())) plans = established(keep(plan(this.graph, this.ledger, { ...goal, exclude })));
+        plans = honouring(established(keep(plan(this.graph, this.ledger, { ...goal, exclude }))));
+        if (!plans.length && (await acquireMore())) plans = honouring(established(keep(plan(this.graph, this.ledger, { ...goal, exclude }))));
       }
     }
     result.executed = {
@@ -1414,7 +1463,7 @@ export class RightClick {
     const risk = risks.includes("destructive") ? "destructive" : risks.includes("write") ? "write" : risks.includes("external") ? "external" : "read";
     this.graph.addCapability({
       id: `goal:${g.slug}`, title: g.title, provider: "goal:published", source: "composite",
-      description: `${g.trust === "verified" ? "Verified" : "Unverified (no independent check passed when it was saved)"} reusable goal: ${g.intent ?? g.want}. Finds a current implementation on every call, repairs changed APIs, and re-runs its stored checks${g.witnesses?.length ? ` plus ${g.witnesses.length} independent outcome witness(es)` : ""}. Invoke with context_run; no need to reconstruct the pipeline.`,
+      description: `${g.trust === "verified" ? "Verified (an independent witness passed)" : g.trust === "checked" ? "Checked (its stored predicates passed; not independently verified)" : "Unverified (no check passed when it was saved)"} reusable goal: ${g.intent ?? g.want}. Finds a current implementation on every call, repairs changed APIs, and re-runs its stored checks${g.witnesses?.length ? ` plus ${g.witnesses.length} independent outcome witness(es)` : ""}. Invoke with context_run; no need to reconstruct the pipeline.`,
       inputs: goalParams(g).map(([name, type]) => ({ name, type, required: true })),
       outputs: [{ name: "", type: g.want, required: true }], risk,
       tags: ["saved", "goal", "reusable", g.trust ?? "unverified", ...(g.intent ?? g.title).split(/\s+/)],
@@ -1492,7 +1541,7 @@ export class RightClick {
                     properties: {
                       result: { ...jsonSchemaFor(g.want), "x-rightclick-type": g.want },
                       pipeline: { type: "array", items: { type: "string" } },
-                      verification: { type: "string", enum: ["verified", "refuted", "unverified"] },
+                      verification: { type: "string", enum: ["verified", "checked", "refuted", "unverified"] },
                       receipt: { type: "string", description: "Head of this instance's receipt hash chain" },
                     },
                   },

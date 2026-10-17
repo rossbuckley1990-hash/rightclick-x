@@ -428,6 +428,8 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
     // Behaviour only observed, never supported by distinct repeatable inputs: available to call
     // directly with its evidence, but not chosen by automatic composition.
     if (!supported) (capabilities[capabilities.length - 1].tags as string[]).push("unsupported");
+    // Evidence that this mode keeps every word of its input (an outcome contract invariant).
+    if (preserves && supported && !echoes) (capabilities[capabilities.length - 1].tags as string[]).push("preserves-input-words");
     if (constant) {
       claim(id, "output did not vary across the distinct inputs tried", "observed", `${distinctInputs} distinct inputs gave identical output`);
       (capabilities[capabilities.length - 1].tags as string[]).push("input-independent-in-samples", "unsupported");

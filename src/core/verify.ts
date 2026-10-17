@@ -32,7 +32,7 @@ export interface WitnessResult {
   capability: string;
   runId: string;
   status: "completed" | "failed";
-  verification: ReturnType<typeof check>;
+  verification: { status: "verified" | "checked" | "refuted" | "unverified"; results: PredicateResult[] };
   output?: unknown;
   error?: string;
 }
@@ -49,7 +49,11 @@ export function pick(value: unknown, path?: string): unknown {
   return cur;
 }
 
-export function check(value: unknown, predicates: Predicate[]): { status: "verified" | "refuted" | "unverified"; results: PredicateResult[] } {
+/**
+ * Stored predicates checked by RightClick X itself on the output. Passing them is a check
+ * ("checked"), not independent verification: only a separate witness provider verifies.
+ */
+export function check(value: unknown, predicates: Predicate[]): { status: "checked" | "refuted" | "unverified"; results: PredicateResult[] } {
   if (!predicates?.length) return { status: "unverified", results: [] };
   const results = predicates.map((p) => {
     const actual = pick(value, p.path);
@@ -82,7 +86,7 @@ export function check(value: unknown, predicates: Predicate[]): { status: "verif
     }
     return { predicate: p, ok, actual: summarize(actual) };
   });
-  return { status: results.every((r) => r.ok) ? "verified" : "refuted", results };
+  return { status: results.every((r) => r.ok) ? "checked" : "refuted", results };
 }
 
 function summarize(v: unknown): unknown {
