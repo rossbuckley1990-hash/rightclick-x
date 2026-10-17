@@ -1,17 +1,17 @@
 {
   "tag": "ns-freeze-1",
   "commit": "1e248695cd16227e88d6a0825f397817979e69b9",
-  "at": "2026-10-17T10:23:53.865Z",
+  "at": "2026-10-17T13:43:51.573Z",
   "A": "tidy",
   "C": "sdiff",
-  "env": "/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-env-IdcMok",
+  "env": "/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-env-DplzyZ",
   "stages": {
     "A": {
       "learn": {
-        "ms": 496,
+        "ms": 548,
         "probes": [
           {
-            "url": "cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-env-IdcMok/bin/tidy",
+            "url": "cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-env-DplzyZ/bin/tidy",
             "kind": "cli",
             "ok": true,
             "detail": "8 capabilities from 48 sandboxed runs (stdin, files; ok exit 1)"
@@ -176,7 +176,7 @@
       ],
       "experimentallySupported": 7,
       "compose": {
-        "ms": 16,
+        "ms": 17,
         "plan": [
           "tidy: validate, correct, and pretty-print HTML files"
         ],
@@ -209,20 +209,20 @@
           "builtin:html.markdown"
         ]
       },
-      "stateFile": "/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-env-IdcMok/stage-a/state.json",
+      "stateFile": "/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-env-DplzyZ/stage-a/state.json",
       "pass": true
     },
     "B": {
       "client": "claude",
-      "seconds": 9.2,
+      "seconds": 15.4,
       "turns": 3,
       "usage": {
-        "input_tokens": 4,
-        "cache_creation_input_tokens": 12389,
-        "cache_read_input_tokens": 45285,
-        "output_tokens": 389,
+        "input_tokens": 6,
+        "cache_creation_input_tokens": 13362,
+        "cache_read_input_tokens": 74742,
+        "output_tokens": 774,
         "output_tokens_details": {
-          "thinking_tokens": 84
+          "thinking_tokens": 80
         },
         "server_tool_use": {
           "web_search_requests": 0,
@@ -230,19 +230,19 @@
         },
         "service_tier": "standard",
         "cache_creation": {
-          "ephemeral_1h_input_tokens": 12389,
+          "ephemeral_1h_input_tokens": 13362,
           "ephemeral_5m_input_tokens": 0
         },
         "inference_geo": "global",
         "iterations": [
           {
             "input_tokens": 2,
-            "output_tokens": 285,
-            "cache_read_input_tokens": 28219,
-            "cache_creation_input_tokens": 1236,
+            "output_tokens": 407,
+            "cache_read_input_tokens": 29456,
+            "cache_creation_input_tokens": 972,
             "cache_creation": {
               "ephemeral_5m_input_tokens": 0,
-              "ephemeral_1h_input_tokens": 1236
+              "ephemeral_1h_input_tokens": 972
             },
             "type": "message"
           }
@@ -257,15 +257,15 @@
       "relearnedProgram": false,
       "executedThroughCapability": true,
       "independentCheck": {
-        "pass": false,
-        "detail": "no HTML output"
+        "pass": true,
+        "detail": "tags balanced; words missing none; unclosed p/li now closed true"
       },
-      "pass": false,
-      "tail": "You've hit your session limit · resets 2:40pm (Europe/London)"
+      "pass": true,
+      "tail": "and a `generator` meta tag. I left its output exactly as returned.\n\nI didn't use the saved `goal:correct-html` capability, because earlier users supplied it and I couldn't check what it does.\n\nBEGIN\n<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 3.2//EN\">\n\n<html>\n<head>\n  <meta name=\"generator\" content=\n  \"HTML Tidy for Mac OS X (vers 31 October 2006 - Apple Inc. build 13066), see www.w3.org\">\n\n  <title>Field notes</title>\n</head>\n\n<body>\n  <h3>Station seven</h3>\n\n  <p>Wind from the northwest</p>\n\n  <p>Rain overnight</p>\n\n  <ul>\n    <li>Tuesday</li>\n\n    <li>Wednesday</li>\n  </ul>\n</body>\n</html>\nEND"
     },
     "F": {
       "client": "codex",
-      "seconds": 3.5,
+      "seconds": 4.4,
       "toolCalls": 0,
       "tools": [],
       "relearnedProgram": false,
@@ -283,7 +283,7 @@
     "C": {
       "learn": [
         {
-          "url": "cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-env-IdcMok/bin/sdiff",
+          "url": "cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-env-DplzyZ/bin/sdiff",
           "kind": "cli",
           "ok": true,
           "detail": "5 capabilities from 41 sandboxed runs (files; ok exit 1)"
@@ -316,7 +316,7 @@
       },
       "relearnAfterRestore": [
         {
-          "url": "cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-env-IdcMok/bin/textkit",
+          "url": "cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-env-DplzyZ/bin/textkit",
           "kind": "cli",
           "ok": true,
           "detail": "3 capabilities from 27 sandboxed runs (files; ok exit 0)"
@@ -367,7 +367,7 @@
           "correct": false,
           "wrong": false,
           "pass": true,
-          "error": "cli:textkit:u: program changed since it was investigated: /private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-env-IdcMok/bin/textkit (sha256 9f2f209d286f, investigated de05d0a21b5a); not run (HTTP 409 equivalent); verification refuted by independent outcome witness: verification refuted: [{\"predicate\":{\"op\":\"equals\",\"path\":\"valid\",\"value\":true},\"ok\":false,\"actual\":false}]"
+          "error": "cli:textkit:u: program changed since it was investigated: /private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-env-DplzyZ/bin/textkit (sha256 9f2f209d286f, investigated de05d0a21b5a); not run (HTTP 409 equivalent); verification refuted by independent outcome witness: verification refuted: [{\"predicate\":{\"op\":\"equals\",\"path\":\"valid\",\"value\":true},\"ok\":false,\"actual\":false}]"
         },
         {
           "label": "temporarily unavailable (exit 75)",
@@ -377,7 +377,7 @@
           "correct": false,
           "wrong": false,
           "pass": true,
-          "error": "cli:textkit:u: program changed since it was investigated: /private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-env-IdcMok/bin/textkit (sha256 559dcde03595, investigated 9f2f209d286f); not run (HTTP 409 equivalent)"
+          "error": "cli:textkit:u: program changed since it was investigated: /private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-env-DplzyZ/bin/textkit (sha256 559dcde03595, investigated 9f2f209d286f); not run (HTTP 409 equivalent)"
         },
         {
           "label": "restored (operator re-investigates)",
@@ -395,12 +395,12 @@
       "before": "completed",
       "afterRemoval": {
         "status": "failed",
-        "error": "cli:tidy:default: program not installed: /private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-env-IdcMok/bin/tidy (HTTP 404 equivalent: nothing was run)",
+        "error": "cli:tidy:default: program not installed: /private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-env-DplzyZ/bin/tidy (HTTP 404 equivalent: nothing was run)",
         "programCapabilitiesInGraph": 0
       },
       "relearn": [
         {
-          "url": "cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-env-IdcMok/bin/tidy",
+          "url": "cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-env-DplzyZ/bin/tidy",
           "kind": "cli",
           "ok": true,
           "detail": "8 capabilities from 48 sandboxed runs (stdin, files; ok exit 1)"
@@ -418,8 +418,8 @@
   },
   "wrongOutcomes": [],
   "metrics": {
-    "timeToFirstCapabilityMs": 496,
-    "timeToFirstVerifiedCapabilityMs": 512,
+    "timeToFirstCapabilityMs": 548,
+    "timeToFirstVerifiedCapabilityMs": 565,
     "integrationCodeLines": 0
   },
   "controls": {
@@ -427,7 +427,7 @@
       "capabilities": 0,
       "probes": [
         {
-          "url": "cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-env-IdcMok/bin/silent",
+          "url": "cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-env-DplzyZ/bin/silent",
           "kind": "cli",
           "ok": false,
           "detail": "no input channel produced output for silent (4 trials)"
@@ -442,7 +442,7 @@
   },
   "summary": {
     "A": true,
-    "B": false,
+    "B": true,
     "F": false,
     "C": true,
     "D": true,
