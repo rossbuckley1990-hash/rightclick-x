@@ -282,3 +282,14 @@ test("content passed as a file operand is named by what it is (JSON as .json)", 
   assert.match(String((await rc.run(cap.id, { [port]: "<html><body>x</body></html>" })).output), /\.html$/m);
   assert.match(String((await rc.run(cap.id, { [port]: "plain words" })).output), /\.txt$/m);
 });
+
+test("structured content (an object or array given for a json input) reaches the program as JSON", { skip, timeout: 60_000 }, async () => {
+  const dir = tmp("rcx-gen-");
+  const p = program(dir, "echojson", `if [ "$1" = "--help" ]; then echo "usage: echojson"; echo "  read JSON on standard input and print it"; exit 0; fi; /bin/cat`);
+  const rc = await RightClick.create({ directories: [], authority: { investigate: [`${dir}/`] } });
+  await rc.learn({ source: `cli:${p}` });
+  const cap = rc.graph.list().find((c) => c.provider === "cli:echojson" && c.id.endsWith(":default"))!;
+  const port = cap.inputs[0].name;
+  assert.equal(String((await rc.run(cap.id, { [port]: [1, "two", null] })).output).trim(), '[1,"two",null]');
+  assert.equal(String((await rc.run(cap.id, { [port]: { a: 1 } })).output).trim(), '{"a":1}');
+});

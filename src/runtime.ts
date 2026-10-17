@@ -2028,8 +2028,8 @@ export class RightClick {
           // With named files supplied instead, an unfilled content operand is left out.
           if (args[a.input] === undefined && inv.filesPort && args[inv.filesPort]) return null;
           // Named by what the content is (.json, .html, .xml, .svg): many programs choose a parser by extension.
-          const name = `in${i}-${a.input.replace(/[^\w]/g, "")}.${contentExtension(String(args[a.input] ?? ""))}`;
-          files[name] = String(args[a.input] ?? "");
+          const name = `in${i}-${a.input.replace(/[^\w]/g, "")}.${contentExtension(asContent(args[a.input]))}`;
+          files[name] = asContent(args[a.input]);
           return name;
         })].filter((x): x is string => x !== null);
         // Named files the caller supplied (documented-options interface): written and passed as operands.
@@ -2037,11 +2037,11 @@ export class RightClick {
         if (named && typeof named === "object" && !Array.isArray(named)) {
           for (const [n, content] of Object.entries(named as Record<string, unknown>)) {
             const safe = n.replace(/[^\w.-]/g, "_").replace(/^\.+/, "").slice(0, 80) || "input.txt";
-            files[safe] = String(content ?? "");
+            files[safe] = asContent(content);
             argv.push(safe);
           }
         }
-        const r = await sb.run(inv.bin, argv, { stdin: inv.stdin ? String(args[inv.stdin] ?? "") : "", files });
+        const r = await sb.run(inv.bin, argv, { stdin: inv.stdin ? asContent(args[inv.stdin]) : "", files });
         // A file swapped while it ran: its output belongs to a program nobody checked.
         if (!(await sameProgram(inv.bin, id))) throw new Error(`${inv.bin} was replaced while it ran; its output is discarded (HTTP 409 equivalent)`);
         if (r.limit && r.limit !== "time" && r.limit !== "output") throw new Error(`${inv.bin} exceeded the sandbox's ${r.limit} limit`);
@@ -2103,6 +2103,15 @@ const EXAMPLES: Record<string, unknown> = {
 /** A published goal's caller-facing parameters: its inputs minus the ones pinned at publish time. */
 export function goalParams(g: PublishedGoal): Array<[string, SemType]> {
   return Object.entries(g.have).filter(([k]) => !(g.fixed && k in g.fixed));
+}
+
+/**
+ * Content for a program's standard input or a file operand: text as given; structured values (a
+ * JSON object or array an agent passed for a "json" input) as JSON, never as "[object Object]".
+ */
+function asContent(v: unknown): string {
+  if (v === undefined || v === null) return "";
+  return typeof v === "string" ? v : typeof v === "object" ? JSON.stringify(v) : String(v);
 }
 
 /** A file extension for content passed as a file operand, from what the content is. */
