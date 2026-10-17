@@ -179,3 +179,12 @@ test("knowledge import revalidates on the receiving host: accepted when the prog
   assert.equal(r4.programs[0].revalidationRuns, 0);
   void cold;
 });
+
+test("documented-options interface: several named input files are passed as operands in order", { skip, timeout: 60_000 }, async () => {
+  const dir = tmp("rcx-gen-");
+  const p = program(dir, "joiner", `if [ "$1" = "--help" ]; then echo "usage: joiner [-n] [file ...]"; echo "  -n   number the output lines"; exit 0; fi; n=0; [ "$1" = "-n" ] && { n=1; shift; }; if [ $n = 1 ]; then /bin/cat "$@" | /usr/bin/nl -ba; else /bin/cat "$@"; fi`);
+  const rc = await RightClick.create({ directories: [], authority: { investigate: [`${dir}/`] } });
+  await rc.learn({ source: `cli:${p}` });
+  const r = await rc.run("cli:joiner:invoke", { files: { "a.txt": "one\n", "b.txt": "two\n" } });
+  assert.equal(r.output, "one\ntwo\n", String(r.error));
+});

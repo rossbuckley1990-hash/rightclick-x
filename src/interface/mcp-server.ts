@@ -16,6 +16,16 @@ export interface JsonRpc {
   error?: { code: number; message: string };
 }
 
+/** What an audit entry records about a result: its status and how it was checked, never its data. */
+function outcomeOf(out: any): Record<string, unknown> | undefined {
+  if (!out || typeof out !== "object") return undefined;
+  const ex = out.executed ?? out;
+  const status = ex?.status;
+  const verification = ex?.verification?.status;
+  if (!status && !verification && !out.outcome) return undefined;
+  return { ...(status ? { status } : {}), ...(verification ? { verification } : {}), ...(out.outcome?.status ? { outcome: out.outcome.status } : {}), ...(ex?.contract?.status ? { contract: ex.contract.status } : {}) };
+}
+
 export async function handle(rc: RightClick, msg: JsonRpc): Promise<JsonRpc | null> {
   const reply = (result: unknown): JsonRpc => ({ jsonrpc: "2.0", id: msg.id ?? null, result });
   const fail = (code: number, message: string): JsonRpc => ({ jsonrpc: "2.0", id: msg.id ?? null, error: { code, message } });
@@ -41,11 +51,11 @@ export async function handle(rc: RightClick, msg: JsonRpc): Promise<JsonRpc | nu
       const t0 = performance.now();
       const args = msg.params?.arguments ?? {};
       // The audit log never holds credentials: values under credential names are redacted.
-      const audit = (ok: boolean, error?: string) =>
-        rc.toolCallSink?.({ at: new Date().toISOString(), tool: name, args: redact(args), ok, ms: Math.round((performance.now() - t0) * 10) / 10, ...(error ? { error: redactText(error).slice(0, 300) } : {}) });
+      const audit = (ok: boolean, error?: string, out?: any) =>
+        rc.toolCallSink?.({ at: new Date().toISOString(), tool: name, args: redact(args), ok, ms: Math.round((performance.now() - t0) * 10) / 10, ...(error ? { error: redactText(error).slice(0, 300) } : {}), ...(outcomeOf(out) ? { outcome: outcomeOf(out) } : {}) });
       try {
         const out = await dispatch(rc, name, args);
-        audit(true);
+        audit(true, undefined, out);
         const structured = out && typeof out === "object" && !Array.isArray(out) ? out : { result: out };
         return reply({ content: [{ type: "text", text: JSON.stringify(out, null, 2) }], structuredContent: structured, isError: false });
       } catch (e) {

@@ -599,12 +599,16 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
       description: `${inv.program.description ?? name}. Runs the program with options chosen by the caller from the ${offered.length} its documentation declares (pass them in "options", e.g. ["${offered[0].flags[0]}"${offered[0].arg ? `, "<${offered[0].arg}>"` : ""}]); undocumented options are refused. Option effects are declared by the documentation; see the card's evidence for those tested. Runs only in the sandbox.`.slice(0, 500),
       provider: providerId,
       source: "cli",
-      inputs: [...base.inputs, { name: "options", type: "list:text", required: false, description: `Documented options and their values, one item each: ${offered.slice(0, 40).map((o) => `${o.flags.join("/")}${o.arg ? ` <${o.arg}>` : ""}`).join(", ")}` }],
+      inputs: [
+        ...base.inputs.map((p0) => ({ ...p0, required: false })),
+        { name: "options", type: "list:text", required: false, description: `Documented options and their values, one item each: ${offered.slice(0, 40).map((o) => `${o.flags.join("/")}${o.arg ? ` <${o.arg}>` : ""}`).join(", ")}` },
+        { name: "files", type: "json", required: false, description: 'Named input files {"name.txt": "content"}: written into the sandbox and passed as operands in this order (refer to them by name in options that take a file)' },
+      ],
       outputs: base.outputs,
       risk: "read",
       // Evidence about the program's default behaviour holds for this interface too.
       tags: [name, "declared-interface", "direct-only", ...base.tags.filter((t) => /^(nondeterministic|unsupported|input-independent-in-samples)$/.test(t)), ...(inv.program.description ?? "").toLowerCase().match(/[a-z]{3,}/g) ?? []].slice(0, 32),
-      invoke: { ...inv0, behaviour: inv0.behaviour ? `${inv0.behaviour}+options` : undefined, options: { port: "options", allowed: offered.map((o) => ({ flags: o.flags, arg: !!o.arg })) } },
+      invoke: { ...inv0, behaviour: inv0.behaviour ? `${inv0.behaviour}+options` : undefined, options: { port: "options", allowed: offered.map((o) => ({ flags: o.flags, arg: !!o.arg })) }, filesPort: "files" },
     });
     claim(id, `offers ${offered.length} documented options; refuses any other`, "declared", `${inv.options.length - offered.length} documented options not offered (help/version, or they write files, run commands or use the network)`);
   }

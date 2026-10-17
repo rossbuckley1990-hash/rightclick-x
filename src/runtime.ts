@@ -311,7 +311,7 @@ export class RightClick {
   /** Ids re-learning pointed at a different operation; id-addressed runs refuse them until acknowledged. */
   readonly meaningChanges = new Map<string, MeaningChange>();
   /** Optional sink for an audit log of MCP tool calls (set by hosts, e.g. RCX_MCP_LOG). */
-  toolCallSink?: (entry: { at: string; tool: string; args: unknown; ok: boolean; ms: number; error?: string }) => void;
+  toolCallSink?: (entry: { at: string; tool: string; args: unknown; ok: boolean; ms: number; error?: string; outcome?: Record<string, unknown> }) => void;
   private directories: Directory[];
   private builtins = new Map<string, BuiltinFn>();
   private platformFns = new Map<string, PlatformFn>();
@@ -2001,10 +2001,21 @@ export class RightClick {
             if (v.startsWith("-")) throw new Error(`argument "${a.input}" may not start with "-"; pass options through the documented options input (HTTP 400 equivalent: nothing was run)`);
             return v;
           }
+          // With named files supplied instead, an unfilled content operand is left out.
+          if (args[a.input] === undefined && inv.filesPort && args[inv.filesPort]) return null;
           const name = `in${i}-${a.input.replace(/[^\w]/g, "")}.txt`;
           files[name] = String(args[a.input] ?? "");
           return name;
-        })];
+        })].filter((x): x is string => x !== null);
+        // Named files the caller supplied (documented-options interface): written and passed as operands.
+        const named = inv.filesPort ? args[inv.filesPort] : undefined;
+        if (named && typeof named === "object" && !Array.isArray(named)) {
+          for (const [n, content] of Object.entries(named as Record<string, unknown>)) {
+            const safe = n.replace(/[^\w.-]/g, "_").replace(/^\.+/, "").slice(0, 80) || "input.txt";
+            files[safe] = String(content ?? "");
+            argv.push(safe);
+          }
+        }
         const r = await sb.run(inv.bin, argv, { stdin: inv.stdin ? String(args[inv.stdin] ?? "") : "", files });
         // A file swapped while it ran: its output belongs to a program nobody checked.
         if (!(await sameProgram(inv.bin, id))) throw new Error(`${inv.bin} was replaced while it ran; its output is discarded (HTTP 409 equivalent)`);
