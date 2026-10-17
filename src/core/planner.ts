@@ -145,8 +145,9 @@ export function plan(graph: CapabilityGraph, ledger: Ledger, goal: Goal): Plan[]
       (!risks || risks.has(c.risk)) &&
       // Investigated behaviour that experiments did not support is never composed automatically.
       !c.tags.includes("unsupported") &&
-      // Capabilities whose arguments a caller must choose (documented options, literal operands).
-      !c.tags.includes("direct-only") &&
+      // Capabilities whose arguments a caller must choose (documented options, literal operands):
+      // only when the caller named them (through).
+      (!c.tags.includes("direct-only") || anchors.has(c.id)) &&
       withinPolicy(c),
   );
   const start: Node = {
@@ -314,7 +315,10 @@ function bind(cap: Capability, values: Value[], intent: Set<string>, consumed: S
       // contract types it url); and a caller input named after an entity identifies it (id.province).
       const callerName = v.step === -1 ? v.ref.slice(4).toLowerCase().replace(/[^a-z0-9]/g, "") : "";
       const stringLike = (t: string) => !/^(number|boolean|json|list:|quantity:|geo\.)/.test(t);
-      const bridged = v.step === -1 && (port.type === `id.${callerName}` || (callerName === port.name.toLowerCase().replace(/[^a-z0-9]/g, "") && stringLike(port.type) && stringLike(v.type)));
+      const portName = port.name.toLowerCase().replace(/[^a-z0-9]/g, "");
+      // ...and a caller value given under the port's exact name goes to that port even when it is a
+      // list or JSON port (options, files): the caller named it.
+      const bridged = v.step === -1 && (port.type === `id.${callerName}` || (callerName === portName && ((stringLike(port.type) && stringLike(v.type)) || port.type.startsWith("list:") || port.type === "json")));
       // Observed to carry the same identifiers, whatever each contract calls them.
       const linked = schemeFits(port, v.type, v.schemes);
       let each: Binding["each"] | undefined;

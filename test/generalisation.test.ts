@@ -188,3 +188,22 @@ test("documented-options interface: several named input files are passed as oper
   const r = await rc.run("cli:joiner:invoke", { files: { "a.txt": "one\n", "b.txt": "two\n" } });
   assert.equal(r.output, "one\ntwo\n", String(r.error));
 });
+
+test("agent interface: unknown inputs are refused with the real ones listed; an unchanged program is not re-investigated; new sessions are told what is learned", { skip, timeout: 60_000 }, async () => {
+  const dir = tmp("rcx-gen-");
+  const p = program(dir, "shout", `if [ "$1" = "--help" ]; then echo "usage: shout [-r] [file]"; echo "  -r   reverse each line"; exit 0; fi; if [ "$1" = "-r" ]; then /usr/bin/tr a-z A-Z | /usr/bin/rev; else /usr/bin/tr a-z A-Z; fi`);
+  const rc = await RightClick.create({ directories: [], authority: { investigate: [`${dir}/`] } });
+  await rc.learn({ source: `cli:${p}` });
+  const runsBefore = rc.investigations.get(p)!.runs.length;
+  const bad = await rc.run("cli:shout:invoke", { input: "abc\n", reverse: true });
+  assert.equal(bad.status, "failed");
+  assert.match(String(bad.error), /unknown input\(s\) "reverse".*options \(optional\)/);
+  assert.equal(bad.healing, undefined);
+  const again = await rc.learn({ source: `cli:${p}` });
+  assert.match(String(again.results[0].probes?.[0]?.detail), /already learned and unchanged/);
+  assert.equal(rc.investigations.get(p)!.runs.length, runsBefore, "nothing re-run");
+  assert.match(rc.retainedSummary(), /cli:shout:invoke: .*options: .*-r/);
+  // A caller value named like the options port binds to it in a composition.
+  const r: any = await rc.compose({ have: { input: { type: "text", value: "abc\n" }, options: { value: ["-r"], fixed: true } }, want: "text", intent: "reverse each line", through: ["cli:shout:invoke"], run: true } as any);
+  assert.equal(r.executed?.output, "CBA\n", JSON.stringify(r.executed ?? r.outcome));
+});

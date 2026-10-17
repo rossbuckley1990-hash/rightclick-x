@@ -781,6 +781,17 @@ export class RightClick {
           goals.map((g) => `- goal:${g.slug} [${g.trust ?? "unverified"}] ${JSON.stringify(g.title).slice(0, 120)}; inputs: ${goalParams(g).map(([k, t]) => `${k} (${t})`).join(", ") || "none"}`).join("\n"),
       );
     }
+    const learned = this.graph.list().filter((c) => c.invoke.kind === "cli").slice(0, 25);
+    if (learned.length) {
+      parts.push(
+        `\n\nAlready learned (no need to learn again; run with context_run {"id": ..., "args": {...}}; context_explain {"id": ...} shows the full card):\n` +
+          learned.map((c) => {
+            const inv = c.invoke as any;
+            const opts = inv.options ? `; options: ${inv.options.allowed.slice(0, 30).map((o: any) => o.flags[0] + (o.arg ? " <v>" : "")).join(" ")}` : "";
+            return `- ${c.id}: ${JSON.stringify(c.title).slice(0, 100)}; inputs: ${c.inputs.map((p) => `${p.name}${p.required ? "" : "?"}`).join(", ")}${opts}${c.tags.includes("unsupported") ? " [observed only]" : ""}`;
+          }).join("\n"),
+      );
+    }
     if (this.investigable.length) parts.push(`\n\nLocal programs the operator authorised (learn one with context_learn {"source":"cli:<path>"}): ${this.investigable.slice(0, 30).join(", ")}`);
     return parts.join("");
   }
@@ -937,6 +948,19 @@ export class RightClick {
     if (!check.ok) return { reflections: [], probes: [{ url: `cli:${bin}`, kind: "cli", ok: false, detail: check.reason }] };
     const sb = await this.sandbox();
     if (!sb) throw new Error(`unavailable: no sandbox on this host, so ${bin} is not investigated or run`);
+    // Already learned and unchanged (same bytes): what was learned stands; nothing is re-run.
+    {
+      const fs = await import("node:fs");
+      const { createHash } = await import("node:crypto");
+      const sha = createHash("sha256").update(fs.readFileSync(check.identity.real)).digest("hex");
+      const known = [...this.graph.providers.values()].find((p) => p.meta?.source === `cli:${bin}` && p.meta?.sha256 === sha);
+      const caps = known ? (known.capabilityIds.map((id) => this.graph.get(id)).filter(Boolean) as Capability[]) : [];
+      if (known && caps.length) {
+        const inv = known.meta?.investigation as Investigation | undefined;
+        if (inv) this.investigations.set(bin, inv);
+        return { reflections: [{ provider: known, capabilities: caps }], probes: [{ url: `cli:${bin}`, kind: "cli", ok: true, detail: `already learned and unchanged (sha256 ${sha.slice(0, 12)}): ${caps.length} capabilit${caps.length === 1 ? "y" : "ies"}: ${caps.map((c) => c.id).join(", ")}; nothing re-run` }] };
+      }
+    }
     const { reflection, investigation } = await investigateCli(bin, sb);
     if (!(await sameProgram(bin, check.identity))) throw new Error(`${bin} changed while it was being investigated; nothing learned`);
     this.investigations.set(bin, investigation);
@@ -2081,6 +2105,13 @@ export function goalParams(g: PublishedGoal): Array<[string, SemType]> {
 }
 
 function coerceArgs(cap: Capability, args: Record<string, unknown>): Record<string, unknown> {
+  // A program capability has a closed set of inputs: an unknown name would be silently ignored and
+  // the program run without what the caller meant ("decode": true). Refuse it and say what exists.
+  if (cap.invoke.kind === "cli") {
+    const known = new Set(cap.inputs.map((p) => p.name));
+    const unknown = Object.keys(args).filter((k) => !known.has(k));
+    if (unknown.length) throw new Error(`unknown input(s) ${unknown.map((k) => JSON.stringify(k)).join(", ")} for ${cap.id}; its inputs are: ${cap.inputs.map((p) => `${p.name}${p.required ? "" : " (optional)"}: ${p.description ?? p.type}`).join(" | ")} (HTTP 400 equivalent: nothing was run)`);
+  }
   const out: Record<string, unknown> = { ...args };
   for (const p of cap.inputs) {
     const v = out[p.name];
@@ -2090,6 +2121,13 @@ function coerceArgs(cap: Capability, args: Record<string, unknown>): Record<stri
     const numericQuantityWire = p.type.startsWith("quantity:") && !["builtin", "composite", "goal", "peer"].includes(cap.invoke.kind);
     if ((p.type === "number" || p.type.startsWith("geo.") || numericQuantityWire) && typeof v === "string" && v.trim() !== "" && !isNaN(Number(v))) out[p.name] = Number(v);
     if (p.type === "boolean" && typeof v === "string") out[p.name] = v === "true";
+    if (p.type === "json" && typeof v === "string" && /^\s*[{[]/.test(v)) {
+      try {
+        out[p.name] = JSON.parse(v);
+      } catch {
+        /* left as text */
+      }
+    }
   }
   const missing = cap.inputs.filter((p) => p.required && (out[p.name] === undefined || out[p.name] === null)).map((p) => p.name);
   if (missing.length) throw new Error(`missing required input(s): ${missing.join(", ")}`);
