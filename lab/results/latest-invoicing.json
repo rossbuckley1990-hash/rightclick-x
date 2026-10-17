@@ -1,8 +1,8 @@
 {
-  "seed": 375030655,
+  "seed": 650299656,
   "domain": "invoicing",
   "gateway": false,
-  "startedAt": "2026-10-17T09:48:21.089Z",
+  "startedAt": "2026-10-17T10:22:32.443Z",
   "steps": [
     {
       "n": 1,
@@ -17,7 +17,7 @@
       "title": "Connect an MCP client to RightClick X (stdio)",
       "ok": true,
       "tools": 13,
-      "startupMs": 121.8
+      "startupMs": 123
     },
     {
       "n": 3,
@@ -42,12 +42,12 @@
       "title": "Discover contracts from root addresses only (no protocols, no schemas given)",
       "ok": true,
       "found": [
+        "openapi",
         "graphql",
-        "mcp",
-        "mcp"
+        "graphql"
       ],
       "newCapabilities": 3,
-      "ms": 34.5
+      "ms": 31.5
     },
     {
       "n": 5,
@@ -55,79 +55,79 @@
       "ok": true,
       "candidatePlans": 3,
       "best": [
-        "Get invoice",
+        "Retrieve invoice",
         "Customer Profile",
-        "Tax rate by country"
+        "Tax Rate By Country"
       ],
-      "planningMs": 4.1
+      "planningMs": 4
     },
     {
       "n": 6,
       "title": "Compose a multi-provider workflow",
       "ok": true,
       "steps": [
-        "Get invoice ← invoice_id=$in.invoice_id",
+        "Retrieve invoice ← invoice_id=$in.invoice_id",
         "Customer Profile ← customerId=0.customer_id",
-        "Tax rate by country ← country=1.countryCode"
+        "Tax Rate By Country ← country_code=1.country_code"
       ]
     },
     {
       "n": 7,
       "title": "Execute the workflow",
       "ok": true,
-      "input": "INV-1000",
+      "input": "INV-1005",
       "pipeline": [
-        "Get invoice",
+        "Retrieve invoice",
         "Customer Profile",
-        "Tax rate by country"
+        "Tax Rate By Country"
       ],
-      "ms": 6.2
+      "ms": 6.8
     },
     {
       "n": 8,
       "title": "Verify against independently held test data",
       "ok": true,
-      "expected": 13,
-      "got": 13
+      "expected": 15.8,
+      "got": 15.8
     },
     {
       "n": 9,
       "title": "Save the successful composition and reuse it",
       "ok": true,
-      "saved": "Tax rate invoice customer country: Get invoice → Customer Profile → Tax rate by country",
+      "saved": "Tax rate invoice customer country: Retrieve invoice → Customer Profile → Tax Rate By Country",
       "reusedAs": [
-        "Tax rate invoice customer country: Get invoice → Customer Profile → Tax rate by country"
+        "Tax rate invoice customer country: Retrieve invoice → Customer Profile → Tax Rate By Country"
       ],
-      "expected": 22,
-      "got": 22,
-      "ms": 3.2
+      "expected": 10.9,
+      "got": 10.9,
+      "ms": 3.4
     },
     {
       "n": 10,
-      "title": "Change the interface of the last provider in the chain (Kestrel Freight)",
+      "title": "Change the interface of the last provider in the chain (Fernway)",
       "ok": true,
-      "before": "mcp \"Tax rate by country\" country → country, tax_rate",
-      "after": "openapi \"Lookup tax rate for a country\" country_code → result.{country_code, standard_rate}"
+      "before": "graphql \"Tax rate by country\" country_code → country_code, vat_rate",
+      "after": "mcp \"Lookup tax rate for a country\" country → result.{country, tax_rate}"
     },
     {
       "n": 11,
       "title": "Recover without changing integration code",
       "ok": true,
       "healing": [
-        "API drift at http://127.0.0.1:58468/: mcp:kestrel-freight → openapi:kestrel-freight; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:65145/: graphql:127-0-0-1-65145-graphql → mcp:fernway; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "via": [
-        "mcp:fjordsoft",
-        "graphql:127-0-0-1-58467-graphql",
-        "openapi:kestrel-freight"
+        "openapi:lumen-cargo",
+        "graphql:127-0-0-1-65144-graphql",
+        "mcp:fernway"
       ],
-      "expected": 20.8,
-      "got": 20.8,
-      "ms": 10.7
+      "expected": 13.6,
+      "got": 13.6,
+      "ms": 10.2
     },
     {
       "n": 12,
-      "title": "Remove that provider (Kestrel Freight)",
+      "title": "Remove that provider (Fernway)",
       "ok": true
     },
     {
@@ -136,38 +136,38 @@
       "ok": true,
       "status": "failed",
       "healing": [
-        "provider gone at http://127.0.0.1:58468/: withdrew openapi:kestrel-freight (1 capabilities, 1 pipeline(s) retired)"
+        "provider gone at http://127.0.0.1:65145/: withdrew mcp:fernway (1 capabilities, 1 pipeline(s) retired)"
       ],
       "withdrawn": [
-        "Kestrel Freight"
+        "Fernway"
       ],
       "capabilities": "27 → 25",
       "savedPipelines": "1 → 0"
     },
     {
       "n": 14,
-      "title": "Introduce a different provider (Northwind Billing, openapi): the objective works again",
+      "title": "Introduce a different provider (Duneworks, openapi): the objective works again",
       "ok": true,
       "learned": [
         "openapi: 1 operations"
       ],
       "via": [
-        "mcp:fjordsoft",
-        "graphql:127-0-0-1-58467-graphql",
-        "openapi:northwind-billing"
+        "openapi:lumen-cargo",
+        "graphql:127-0-0-1-65144-graphql",
+        "openapi:duneworks"
       ],
-      "expected": 20.8,
-      "got": 20.8,
-      "ms": 3
+      "expected": 13.6,
+      "got": 13.6,
+      "ms": 2.1
     }
   ],
   "benchmarks": {
-    "startupMs": 121.8,
+    "startupMs": 123,
     "mcpLatencyMs": {
-      "p50": 0.04,
-      "p95": 0.1
+      "p50": 0.03,
+      "p95": 0.11
     },
-    "discoveryMs": 34.5,
+    "discoveryMs": 31.5,
     "graph": {
       "providers": 5,
       "capabilities": 26,
@@ -177,67 +177,67 @@
       "total": 132
     },
     "graphStatsMs": 0.1,
-    "planningMs": 4.1,
-    "executionMs": 6.2,
-    "recoveryAfterChangeMs": 10.7,
-    "recoveryAfterNewProviderMs": 3,
-    "memoryMB": 141
+    "planningMs": 4,
+    "executionMs": 6.8,
+    "recoveryAfterChangeMs": 10.2,
+    "recoveryAfterNewProviderMs": 2.1,
+    "memoryMB": 140
   },
   "freeze": {
-    "commit": "5f0faa956c6a983648695e07396b132c9f5442fd",
+    "commit": "02c96d4af5f4d92208321a0145ab31deb3572b35",
     "tag": "lab-freeze-9",
-    "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/core/authority.ts\nsrc/core/contract.ts\nsrc/core/fields.ts\nsrc/core/graph.ts\nsrc/core/identities.ts\nsrc/core/ledger.ts\nsrc/core/planner.ts\nsrc/core/programs.ts\nsrc/core/sandbox.ts\nsrc/core/satisfaction.ts\nsrc/core/secrets.ts\nsrc/core/semantics.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/core/yaml.ts\nsrc/entry/durable.ts\nsrc/entry/edge.ts\nsrc/interface/http.ts\nsrc/interface/mcp-server.ts\nsrc/interface/tools.ts\nsrc/reflectors/cli.ts\nsrc/reflectors/discover.ts\nsrc/reflectors/graphql.ts\nsrc/reflectors/mcp.ts\nsrc/reflectors/net.ts\nsrc/reflectors/openapi.ts\nsrc/reflectors/platform.ts\nsrc/runtime.ts",
+    "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/core/authority.ts\nsrc/core/contract.ts\nsrc/core/fields.ts\nsrc/core/graph.ts\nsrc/core/identities.ts\nsrc/core/knowledge.ts\nsrc/core/ledger.ts\nsrc/core/planner.ts\nsrc/core/programs.ts\nsrc/core/sandbox.ts\nsrc/core/satisfaction.ts\nsrc/core/secrets.ts\nsrc/core/semantics.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/core/yaml.ts\nsrc/entry/durable.ts\nsrc/entry/edge.ts\nsrc/interface/http.ts\nsrc/interface/mcp-server.ts\nsrc/interface/tools.ts\nsrc/reflectors/cli.ts\nsrc/reflectors/discover.ts\nsrc/reflectors/graphql.ts\nsrc/reflectors/mcp.ts\nsrc/reflectors/net.ts\nsrc/reflectors/openapi.ts\nsrc/reflectors/platform.ts\nsrc/runtime.ts",
     "uncommittedProductChanges": "",
     "frozen": false
   },
   "environment": [
     {
       "service": "invoices",
-      "brand": "Fjordsoft",
-      "protocol": "mcp",
-      "operation": "Get invoice",
+      "brand": "Lumen Cargo",
+      "protocol": "openapi",
+      "operation": "Retrieve invoice",
       "input": "invoice_id",
       "outputs": [
         "invoice_id",
         "customer_id",
-        "net_amount",
-        "currency_code"
+        "total",
+        "currency"
       ]
     },
     {
       "service": "customers",
-      "brand": "Ashgrove",
+      "brand": "Harbourly",
       "protocol": "graphql",
       "operation": "Customer profile",
       "input": "customerId",
       "outputs": [
         "customerId",
-        "legal_name",
-        "countryCode"
+        "display_name",
+        "country_code"
       ]
     },
     {
       "service": "tax",
-      "brand": "Kestrel Freight",
-      "protocol": "mcp",
+      "brand": "Fernway",
+      "protocol": "graphql",
       "operation": "Tax rate by country",
-      "input": "country",
+      "input": "country_code",
       "outputs": [
-        "country",
-        "tax_rate"
+        "country_code",
+        "vat_rate"
       ]
     }
   ],
   "firstRunProviders": [
-    "mcp:fjordsoft",
-    "graphql:127-0-0-1-58467-graphql",
-    "mcp:kestrel-freight"
+    "openapi:lumen-cargo",
+    "graphql:127-0-0-1-65144-graphql",
+    "graphql:127-0-0-1-65145-graphql"
   ],
   "receipts": {
     "count": 21,
     "intact": true,
     "brokenAt": null,
-    "head": "33bea41d30fc6b256a0ace932e84898c363b01bdac581893be0094a7b5e60447"
+    "head": "e6f5cb7176b70cf8fc47fcde91c5db28bd53bd21b1139c62d0323e155df8dd47"
   },
   "passed": 14,
   "total": 14

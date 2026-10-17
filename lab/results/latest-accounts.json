@@ -1,8 +1,8 @@
 {
-  "seed": 340994431,
+  "seed": 293705969,
   "domain": "accounts",
   "gateway": false,
-  "startedAt": "2026-10-17T09:48:28.347Z",
+  "startedAt": "2026-10-17T10:22:39.620Z",
   "steps": [
     {
       "n": 1,
@@ -17,7 +17,7 @@
       "title": "Connect an MCP client to RightClick X (stdio)",
       "ok": true,
       "tools": 13,
-      "startupMs": 118.9
+      "startupMs": 121.2
     },
     {
       "n": 3,
@@ -42,12 +42,12 @@
       "title": "Discover contracts from root addresses only (no protocols, no schemas given)",
       "ok": true,
       "found": [
-        "openapi",
-        "openapi",
-        "mcp"
+        "graphql",
+        "graphql",
+        "graphql"
       ],
       "newCapabilities": 3,
-      "ms": 32.6
+      "ms": 31.7
     },
     {
       "n": 5,
@@ -55,31 +55,31 @@
       "ok": true,
       "candidatePlans": 2,
       "best": [
-        "Get account",
-        "Customer inquiry",
-        "VAT rate inquiry"
+        "Account Lookup",
+        "Customer Inquiry",
+        "Get Vat Rate"
       ],
-      "planningMs": 3.8
+      "planningMs": 4
     },
     {
       "n": 6,
       "title": "Compose a multi-provider workflow",
       "ok": true,
       "steps": [
-        "Get account ← acct_ref=$in.account_id",
-        "Customer inquiry ← cust_ref=0.cref",
-        "VAT rate inquiry ← jur=1.ctry"
+        "Account Lookup ← a_ref=$in.account_id",
+        "Customer Inquiry ← cust_ref=0.cref",
+        "Get Vat Rate ← ctry=1.jur"
       ]
     },
     {
       "n": 7,
       "title": "Execute the workflow",
       "ok": true,
-      "input": "ACC-1005",
+      "input": "ACC-1002",
       "pipeline": [
-        "Get account",
-        "Customer inquiry",
-        "VAT rate inquiry"
+        "Account Lookup",
+        "Customer Inquiry",
+        "Get Vat Rate"
       ],
       "ms": 5.5
     },
@@ -87,47 +87,47 @@
       "n": 8,
       "title": "Verify against independently held test data",
       "ok": true,
-      "expected": 11.9,
-      "got": 11.9
+      "expected": 8.4,
+      "got": 8.4
     },
     {
       "n": 9,
       "title": "Save the successful composition and reuse it",
       "ok": true,
-      "saved": "Vat rate account holder country: Get account → Customer inquiry → VAT rate inquiry",
+      "saved": "Vat rate account holder country: Account Lookup → Customer Inquiry → Get Vat Rate",
       "reusedAs": [
-        "Vat rate account holder country: Get account → Customer inquiry → VAT rate inquiry"
+        "Vat rate account holder country: Account Lookup → Customer Inquiry → Get Vat Rate"
       ],
-      "expected": 7,
-      "got": 7,
-      "ms": 2.8
+      "expected": 7.7,
+      "got": 7.7,
+      "ms": 3
     },
     {
       "n": 10,
-      "title": "Change the interface of the last provider in the chain (Brightmark)",
+      "title": "Change the interface of the last provider in the chain (Harbourly)",
       "ok": true,
-      "before": "openapi \"VAT rate inquiry\" jur → jur, vatpct",
-      "after": "graphql \"VAT rate lookup\" ctry → result.{ctry, txr}"
+      "before": "graphql \"Get VAT rate\" ctry → ctry, txr",
+      "after": "openapi \"VAT rate lookup\" jur → result.{jur, vatpct}"
     },
     {
       "n": 11,
       "title": "Recover without changing integration code",
       "ok": true,
       "healing": [
-        "API drift at http://127.0.0.1:60215/: openapi:brightmark → graphql:127-0-0-1-60215-graphql; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:50517/: graphql:127-0-0-1-50517-graphql → openapi:harbourly; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "via": [
-        "mcp:ashgrove",
-        "openapi:quillbase",
-        "graphql:127-0-0-1-60215-graphql"
+        "graphql:127-0-0-1-50515-graphql",
+        "graphql:127-0-0-1-50516-graphql",
+        "openapi:harbourly"
       ],
-      "expected": 23.9,
-      "got": 23.9,
-      "ms": 9.9
+      "expected": 10,
+      "got": 10,
+      "ms": 10.2
     },
     {
       "n": 12,
-      "title": "Remove that provider (Brightmark)",
+      "title": "Remove that provider (Harbourly)",
       "ok": true
     },
     {
@@ -136,38 +136,38 @@
       "ok": true,
       "status": "failed",
       "healing": [
-        "provider gone at http://127.0.0.1:60215/: withdrew graphql:127-0-0-1-60215-graphql (1 capabilities, 1 pipeline(s) retired)"
+        "provider gone at http://127.0.0.1:50517/: withdrew openapi:harbourly (1 capabilities, 1 pipeline(s) retired)"
       ],
       "withdrawn": [
-        "GraphQL 127.0.0.1:60215"
+        "Harbourly"
       ],
       "capabilities": "27 → 25",
       "savedPipelines": "1 → 0"
     },
     {
       "n": 14,
-      "title": "Introduce a different provider (Mistral Depot, graphql): the objective works again",
+      "title": "Introduce a different provider (Cobaltix, mcp): the objective works again",
       "ok": true,
       "learned": [
-        "graphql: 1 fields"
+        "mcp: 1 tools"
       ],
       "via": [
-        "mcp:ashgrove",
-        "openapi:quillbase",
-        "graphql:127-0-0-1-60286-graphql"
+        "graphql:127-0-0-1-50515-graphql",
+        "graphql:127-0-0-1-50516-graphql",
+        "mcp:cobaltix"
       ],
-      "expected": 6.7,
-      "got": 6.7,
-      "ms": 2.3
+      "expected": 7.7,
+      "got": 7.7,
+      "ms": 2.2
     }
   ],
   "benchmarks": {
-    "startupMs": 118.9,
+    "startupMs": 121.2,
     "mcpLatencyMs": {
-      "p50": 0.03,
-      "p95": 0.1
+      "p50": 0.04,
+      "p95": 0.11
     },
-    "discoveryMs": 32.6,
+    "discoveryMs": 31.7,
     "graph": {
       "providers": 5,
       "capabilities": 26,
@@ -177,66 +177,66 @@
       "total": 132
     },
     "graphStatsMs": 0.1,
-    "planningMs": 3.8,
+    "planningMs": 4,
     "executionMs": 5.5,
-    "recoveryAfterChangeMs": 9.9,
-    "recoveryAfterNewProviderMs": 2.3,
-    "memoryMB": 140
+    "recoveryAfterChangeMs": 10.2,
+    "recoveryAfterNewProviderMs": 2.2,
+    "memoryMB": 142
   },
   "freeze": {
-    "commit": "5f0faa956c6a983648695e07396b132c9f5442fd",
+    "commit": "02c96d4af5f4d92208321a0145ab31deb3572b35",
     "tag": "lab-freeze-9",
-    "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/core/authority.ts\nsrc/core/contract.ts\nsrc/core/fields.ts\nsrc/core/graph.ts\nsrc/core/identities.ts\nsrc/core/ledger.ts\nsrc/core/planner.ts\nsrc/core/programs.ts\nsrc/core/sandbox.ts\nsrc/core/satisfaction.ts\nsrc/core/secrets.ts\nsrc/core/semantics.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/core/yaml.ts\nsrc/entry/durable.ts\nsrc/entry/edge.ts\nsrc/interface/http.ts\nsrc/interface/mcp-server.ts\nsrc/interface/tools.ts\nsrc/reflectors/cli.ts\nsrc/reflectors/discover.ts\nsrc/reflectors/graphql.ts\nsrc/reflectors/mcp.ts\nsrc/reflectors/net.ts\nsrc/reflectors/openapi.ts\nsrc/reflectors/platform.ts\nsrc/runtime.ts",
+    "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/core/authority.ts\nsrc/core/contract.ts\nsrc/core/fields.ts\nsrc/core/graph.ts\nsrc/core/identities.ts\nsrc/core/knowledge.ts\nsrc/core/ledger.ts\nsrc/core/planner.ts\nsrc/core/programs.ts\nsrc/core/sandbox.ts\nsrc/core/satisfaction.ts\nsrc/core/secrets.ts\nsrc/core/semantics.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/core/yaml.ts\nsrc/entry/durable.ts\nsrc/entry/edge.ts\nsrc/interface/http.ts\nsrc/interface/mcp-server.ts\nsrc/interface/tools.ts\nsrc/reflectors/cli.ts\nsrc/reflectors/discover.ts\nsrc/reflectors/graphql.ts\nsrc/reflectors/mcp.ts\nsrc/reflectors/net.ts\nsrc/reflectors/openapi.ts\nsrc/reflectors/platform.ts\nsrc/runtime.ts",
     "uncommittedProductChanges": "",
     "frozen": false
   },
   "environment": [
     {
       "service": "ledger",
-      "brand": "Ashgrove",
-      "protocol": "mcp",
-      "operation": "Get account",
-      "input": "acct_ref",
+      "brand": "Northwind Billing",
+      "protocol": "graphql",
+      "operation": "Account lookup",
+      "input": "a_ref",
       "outputs": [
-        "acct_ref",
+        "a_ref",
         "cref",
-        "bal"
+        "curbal"
       ]
     },
     {
       "service": "kyc",
-      "brand": "Quillbase",
-      "protocol": "openapi",
+      "brand": "Fernway",
+      "protocol": "graphql",
       "operation": "Customer inquiry",
       "input": "cust_ref",
       "outputs": [
         "cust_ref",
-        "lglnm",
-        "ctry"
+        "nm",
+        "jur"
       ]
     },
     {
       "service": "vat",
-      "brand": "Brightmark",
-      "protocol": "openapi",
-      "operation": "VAT rate inquiry",
-      "input": "jur",
+      "brand": "Harbourly",
+      "protocol": "graphql",
+      "operation": "Get VAT rate",
+      "input": "ctry",
       "outputs": [
-        "jur",
-        "vatpct"
+        "ctry",
+        "txr"
       ]
     }
   ],
   "firstRunProviders": [
-    "mcp:ashgrove",
-    "openapi:quillbase",
-    "openapi:brightmark"
+    "graphql:127-0-0-1-50515-graphql",
+    "graphql:127-0-0-1-50516-graphql",
+    "graphql:127-0-0-1-50517-graphql"
   ],
   "receipts": {
     "count": 21,
     "intact": true,
     "brokenAt": null,
-    "head": "765dfbf07a9691e0ac674fc10b9e3010dc5bce78659dae2d473edd771b0a52a0"
+    "head": "39f13a099d27881a5aed504e6c36d178bfd2d0b5a783167afec4936f4fa35944"
   },
   "passed": 14,
   "total": 14

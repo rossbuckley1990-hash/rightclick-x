@@ -1,0 +1,162 @@
+{
+  "tag": "ns-pilot",
+  "commit": "02c96d4af5f4d92208321a0145ab31deb3572b35",
+  "apis": [
+    {
+      "name": "Countries GraphQL (development API)",
+      "root": "https://countries.trevorblades.com"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "Countries GraphQL (development API)#1",
+      "api": "Countries GraphQL (development API)",
+      "root": "https://countries.trevorblades.com",
+      "request": "What is the capital city of Brazil?",
+      "referenceUrl": "https://countries.trevorblades.com/?query=%7Bcountry%28code%3A%22BR%22%29%7Bname%20capital%7D%7D",
+      "answerPaths": [
+        "data.country.capital"
+      ],
+      "expected": [
+        "Brasília"
+      ],
+      "valid": true
+    },
+    {
+      "id": "Countries GraphQL (development API)#2",
+      "api": "Countries GraphQL (development API)",
+      "root": "https://countries.trevorblades.com",
+      "request": "Which currency is used in Japan?",
+      "referenceUrl": "https://countries.trevorblades.com/?query=%7Bcountry%28code%3A%22JP%22%29%7Bname%20currency%7D%7D",
+      "answerPaths": [
+        "data.country.currency"
+      ],
+      "expected": [
+        "JPY"
+      ],
+      "valid": true
+    },
+    {
+      "id": "Countries GraphQL (development API)#3",
+      "api": "Countries GraphQL (development API)",
+      "root": "https://countries.trevorblades.com",
+      "request": "What is the international dialing code for Germany?",
+      "referenceUrl": "https://countries.trevorblades.com/?query=%7Bcountry%28code%3A%22DE%22%29%7Bname%20phone%7D%7D",
+      "answerPaths": [
+        "data.country.phone"
+      ],
+      "expected": [
+        "49"
+      ],
+      "valid": true
+    },
+    {
+      "id": "Countries GraphQL (development API)#4",
+      "api": "Countries GraphQL (development API)",
+      "root": "https://countries.trevorblades.com",
+      "request": "Which continent is Egypt on?",
+      "referenceUrl": "https://countries.trevorblades.com/?query=%7Bcountry%28code%3A%22EG%22%29%7Bname%20continent%7Bname%7D%7D%7D",
+      "answerPaths": [
+        "data.country.continent.name"
+      ],
+      "expected": [
+        "Africa"
+      ],
+      "valid": true
+    }
+  ],
+  "sessions": [
+    {
+      "key": "A|Countries GraphQL (development API)#1",
+      "arm": "A",
+      "task": "Countries GraphQL (development API)#1",
+      "api": "Countries GraphQL (development API)",
+      "correct": true,
+      "wrong": false,
+      "unable": null,
+      "executed": true,
+      "seconds": 7.2,
+      "tokens": 81992,
+      "costUsd": 0.0505391,
+      "turns": 3,
+      "toolCalls": 1,
+      "tools": [
+        "http_get"
+      ],
+      "reply": "BEGIN\nBrasília\nEND"
+    },
+    {
+      "key": "D|Countries GraphQL (development API)#1",
+      "arm": "D",
+      "task": "Countries GraphQL (development API)#1",
+      "api": "Countries GraphQL (development API)",
+      "correct": true,
+      "wrong": false,
+      "unable": null,
+      "executed": true,
+      "seconds": 12.3,
+      "tokens": 158224,
+      "costUsd": 0.0869795,
+      "turns": 5,
+      "toolCalls": 3,
+      "tools": [
+        "context_learn",
+        "context_compose",
+        "context_run"
+      ],
+      "reply": "BEGIN\nBrasília\nEND"
+    },
+    {
+      "key": "A|Countries GraphQL (development API)#2",
+      "arm": "A",
+      "task": "Countries GraphQL (development API)#2",
+      "api": "Countries GraphQL (development API)",
+      "correct": true,
+      "wrong": false,
+      "unable": null,
+      "executed": true,
+      "seconds": 9.2,
+      "tokens": 82064,
+      "costUsd": 0.051090500000000004,
+      "turns": 3,
+      "toolCalls": 1,
+      "tools": [
+        "http_get"
+      ],
+      "reply": "BEGIN\nJapan uses the Japanese yen (JPY).\nEND"
+    },
+    {
+      "key": "D|Countries GraphQL (development API)#2",
+      "arm": "D",
+      "task": "Countries GraphQL (development API)#2",
+      "api": "Countries GraphQL (development API)",
+      "correct": true,
+      "wrong": false,
+      "unable": null,
+      "executed": true,
+      "seconds": 13.2,
+      "tokens": 123692,
+      "costUsd": 0.077143,
+      "turns": 4,
+      "toolCalls": 2,
+      "tools": [
+        "context_learn",
+        "context_compose"
+      ],
+      "reply": "BEGIN\nJPY (Japanese yen)\nEND"
+    }
+  ],
+  "evaluatorReply": "{\"apis\":[{\"name\":\"Countries GraphQL (development API)\",\"tasks\":[{\"request\":\"What is the capital city of Brazil?\",\"referenceUrl\":\"https://countries.trevorblades.com/?query=%7Bcountry%28code%3A%22BR%22%29%7Bname%20capital%7D%7D\",\"answerPaths\":[\"data.country.capital\"]},{\"request\":\"Which currency is used in Japan?\",\"referenceUrl\":\"https://countries.trevorblades.com/?query=%7Bcountry%28code%3A%22JP%22%29%7Bname%20currency%7D%7D\",\"answerPaths\":[\"data.country.currency\"]},{\"request\":\"What is the international dialing code for Germany?\",\"referenceUrl\":\"https://countries.trevorblades.com/?query=%7Bcountry%28code%3A%22DE%22%29%7Bname%20phone%7D%7D\",\"answerPaths\":[\"data.country.phone\"]},{\"request\":\"Which continent is Egypt on?\",\"referenceUrl\":\"https://countries.trevorblades.com/?query=%7Bcountry%28code%3A%22EG%22%29%7Bname%20continent%7Bname%7D%7D%7D\",\"answerPaths\":[\"data.country.continent.name\"]}]}]}",
+  "summary": {
+    "A": {
+      "n": 2,
+      "correct": 2,
+      "wrong": 0
+    },
+    "D": {
+      "n": 2,
+      "correct": 2,
+      "wrong": 0
+    }
+  }
+}

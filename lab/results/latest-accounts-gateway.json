@@ -1,8 +1,8 @@
 {
-  "seed": 857165760,
+  "seed": 231632113,
   "domain": "accounts",
   "gateway": true,
-  "startedAt": "2026-10-17T09:48:40.351Z",
+  "startedAt": "2026-10-17T10:22:51.246Z",
   "steps": [
     {
       "n": 1,
@@ -17,7 +17,7 @@
       "title": "Connect an MCP client to RightClick X (stdio)",
       "ok": true,
       "tools": 13,
-      "startupMs": 129.7
+      "startupMs": 119.9
     },
     {
       "n": 3,
@@ -43,11 +43,11 @@
       "ok": true,
       "found": [
         "openapi",
-        "graphql",
-        "openapi"
+        "openapi",
+        "mcp"
       ],
       "newCapabilities": 3,
-      "ms": 41.1
+      "ms": 35.7
     },
     {
       "n": 5,
@@ -55,19 +55,19 @@
       "ok": true,
       "candidatePlans": 3,
       "best": [
-        "Get account",
-        "Holder Lookup",
+        "Account inquiry",
+        "Holder lookup",
         "VAT rate lookup"
       ],
-      "planningMs": 4.1
+      "planningMs": 3.7
     },
     {
       "n": 6,
       "title": "Compose a multi-provider workflow",
       "ok": true,
       "steps": [
-        "Get account ← a_ref=$in.account_id",
-        "Holder Lookup ← cref=0.cust_ref",
+        "Account inquiry ← acct_ref=$in.account_id",
+        "Holder lookup ← hldr=0.cref",
         "VAT rate lookup ← ctry=1.jur"
       ]
     },
@@ -75,59 +75,59 @@
       "n": 7,
       "title": "Execute the workflow",
       "ok": true,
-      "input": "ACC-1000",
+      "input": "ACC-1003",
       "pipeline": [
-        "Get account",
-        "Holder Lookup",
+        "Account inquiry",
+        "Holder lookup",
         "VAT rate lookup"
       ],
-      "ms": 6.4
+      "ms": 7.6
     },
     {
       "n": 8,
       "title": "Verify against independently held test data",
       "ok": true,
-      "expected": 20.6,
-      "got": 20.6
+      "expected": 6.7,
+      "got": 6.7
     },
     {
       "n": 9,
       "title": "Save the successful composition and reuse it",
       "ok": true,
-      "saved": "Vat rate account holder country: Get account → Holder Lookup → VAT rate lookup",
+      "saved": "Vat rate account holder country: Account inquiry → Holder lookup → VAT rate lookup",
       "reusedAs": [
-        "Vat rate account holder country: Get account → Holder Lookup → VAT rate lookup"
+        "Vat rate account holder country: Account inquiry → Holder lookup → VAT rate lookup"
       ],
-      "expected": 20.6,
-      "got": 20.6,
+      "expected": 9.1,
+      "got": 9.1,
       "ms": 3.1
     },
     {
       "n": 10,
-      "title": "Change the interface of the last provider in the chain (Fernway)",
+      "title": "Change the interface of the last provider in the chain (Cobaltix)",
       "ok": true,
-      "before": "openapi \"VAT rate lookup\" ctry → ctry, txr",
-      "after": "mcp \"VAT rate inquiry\" jur → result.{jur, vatpct}"
+      "before": "mcp \"VAT rate lookup\" ctry → ctry, vatpct",
+      "after": "openapi \"Get VAT rate\" jur → result.{jur, vr}"
     },
     {
       "n": 11,
       "title": "Recover without changing integration code",
       "ok": true,
       "healing": [
-        "API drift at http://127.0.0.1:62645/: openapi:brightmark,graphql:127-0-0-1-62643-graphql,openapi:fernway → openapi:brightmark,graphql:127-0-0-1-62643-graphql,mcp:fernway; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:52919/: openapi:quillbase,openapi:duneworks,mcp:cobaltix → openapi:quillbase,openapi:duneworks,openapi:cobaltix; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "via": [
-        "openapi:brightmark",
-        "graphql:127-0-0-1-62643-graphql",
-        "mcp:fernway"
+        "openapi:quillbase",
+        "openapi:duneworks",
+        "openapi:cobaltix"
       ],
-      "expected": 6.3,
-      "got": 6.3,
-      "ms": 19.1
+      "expected": 9.1,
+      "got": 9.1,
+      "ms": 16.1
     },
     {
       "n": 12,
-      "title": "Remove that provider (Fernway)",
+      "title": "Remove that provider (Cobaltix)",
       "ok": true
     },
     {
@@ -136,41 +136,41 @@
       "ok": true,
       "status": "failed",
       "healing": [
-        "API drift at http://127.0.0.1:62645/: openapi:brightmark,graphql:127-0-0-1-62643-graphql,mcp:fernway → openapi:brightmark,graphql:127-0-0-1-62643-graphql; +0 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:52919/: openapi:quillbase,openapi:duneworks,openapi:cobaltix → openapi:quillbase,openapi:duneworks; +0 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "withdrawn": [
-        "Fernway"
+        "Cobaltix"
       ],
       "capabilities": "27 → 25",
       "savedPipelines": "1 → 0"
     },
     {
       "n": 14,
-      "title": "Introduce a different provider (Quillbase, graphql): the objective works again",
+      "title": "Introduce a different provider (Emberlane, openapi): the objective works again",
       "ok": true,
       "learned": [
         "api-catalog: 3 services listed",
         "openapi: 1 operations",
-        "graphql: 1 fields",
-        "graphql: 1 fields"
+        "openapi: 1 operations",
+        "openapi: 1 operations"
       ],
       "via": [
-        "openapi:brightmark",
-        "graphql:127-0-0-1-62643-graphql",
-        "graphql:127-0-0-1-62714-graphql"
+        "openapi:quillbase",
+        "openapi:duneworks",
+        "openapi:emberlane"
       ],
-      "expected": 5.2,
-      "got": 5.2,
-      "ms": 2.4
+      "expected": 6.7,
+      "got": 6.7,
+      "ms": 2
     }
   ],
   "benchmarks": {
-    "startupMs": 129.7,
+    "startupMs": 119.9,
     "mcpLatencyMs": {
       "p50": 0.04,
-      "p95": 0.12
+      "p95": 0.11
     },
-    "discoveryMs": 41.1,
+    "discoveryMs": 35.7,
     "graph": {
       "providers": 5,
       "capabilities": 26,
@@ -180,66 +180,66 @@
       "total": 132
     },
     "graphStatsMs": 0.1,
-    "planningMs": 4.1,
-    "executionMs": 6.4,
-    "recoveryAfterChangeMs": 19.1,
-    "recoveryAfterNewProviderMs": 2.4,
+    "planningMs": 3.7,
+    "executionMs": 7.6,
+    "recoveryAfterChangeMs": 16.1,
+    "recoveryAfterNewProviderMs": 2,
     "memoryMB": 149
   },
   "freeze": {
-    "commit": "5f0faa956c6a983648695e07396b132c9f5442fd",
+    "commit": "02c96d4af5f4d92208321a0145ab31deb3572b35",
     "tag": "lab-freeze-9",
-    "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/core/authority.ts\nsrc/core/contract.ts\nsrc/core/fields.ts\nsrc/core/graph.ts\nsrc/core/identities.ts\nsrc/core/ledger.ts\nsrc/core/planner.ts\nsrc/core/programs.ts\nsrc/core/sandbox.ts\nsrc/core/satisfaction.ts\nsrc/core/secrets.ts\nsrc/core/semantics.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/core/yaml.ts\nsrc/entry/durable.ts\nsrc/entry/edge.ts\nsrc/interface/http.ts\nsrc/interface/mcp-server.ts\nsrc/interface/tools.ts\nsrc/reflectors/cli.ts\nsrc/reflectors/discover.ts\nsrc/reflectors/graphql.ts\nsrc/reflectors/mcp.ts\nsrc/reflectors/net.ts\nsrc/reflectors/openapi.ts\nsrc/reflectors/platform.ts\nsrc/runtime.ts",
+    "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/core/authority.ts\nsrc/core/contract.ts\nsrc/core/fields.ts\nsrc/core/graph.ts\nsrc/core/identities.ts\nsrc/core/knowledge.ts\nsrc/core/ledger.ts\nsrc/core/planner.ts\nsrc/core/programs.ts\nsrc/core/sandbox.ts\nsrc/core/satisfaction.ts\nsrc/core/secrets.ts\nsrc/core/semantics.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/core/yaml.ts\nsrc/entry/durable.ts\nsrc/entry/edge.ts\nsrc/interface/http.ts\nsrc/interface/mcp-server.ts\nsrc/interface/tools.ts\nsrc/reflectors/cli.ts\nsrc/reflectors/discover.ts\nsrc/reflectors/graphql.ts\nsrc/reflectors/mcp.ts\nsrc/reflectors/net.ts\nsrc/reflectors/openapi.ts\nsrc/reflectors/platform.ts\nsrc/runtime.ts",
     "uncommittedProductChanges": "",
     "frozen": false
   },
   "environment": [
     {
       "service": "ledger",
-      "brand": "Brightmark",
+      "brand": "Quillbase",
       "protocol": "openapi",
-      "operation": "Get account",
-      "input": "a_ref",
+      "operation": "Account inquiry",
+      "input": "acct_ref",
       "outputs": [
-        "a_ref",
-        "cust_ref",
-        "curbal"
+        "acct_ref",
+        "cref",
+        "bal"
       ]
     },
     {
       "service": "kyc",
-      "brand": "Ashgrove",
-      "protocol": "graphql",
+      "brand": "Duneworks",
+      "protocol": "openapi",
       "operation": "Holder lookup",
-      "input": "cref",
+      "input": "hldr",
       "outputs": [
-        "cref",
-        "fullnm",
+        "hldr",
+        "nm",
         "jur"
       ]
     },
     {
       "service": "vat",
-      "brand": "Fernway",
-      "protocol": "openapi",
+      "brand": "Cobaltix",
+      "protocol": "mcp",
       "operation": "VAT rate lookup",
       "input": "ctry",
       "outputs": [
         "ctry",
-        "txr"
+        "vatpct"
       ]
     }
   ],
   "firstRunProviders": [
-    "openapi:brightmark",
-    "graphql:127-0-0-1-62643-graphql",
-    "openapi:fernway"
+    "openapi:quillbase",
+    "openapi:duneworks",
+    "mcp:cobaltix"
   ],
   "receipts": {
     "count": 21,
     "intact": true,
     "brokenAt": null,
-    "head": "009f34af9f2b2202650c5ec932bb19d8f1e1e7b442b5d916217e3fc460d18c41"
+    "head": "6f85fa3db16b45c040913706d8f060dee2b1c0960b3c779f4023591481ccd831"
   },
   "passed": 14,
   "total": 14

@@ -1,8 +1,8 @@
 {
-  "seed": 180933617,
+  "seed": 454599595,
   "domain": "logistics",
   "gateway": false,
-  "startedAt": "2026-10-17T09:48:24.673Z",
+  "startedAt": "2026-10-17T10:22:35.988Z",
   "steps": [
     {
       "n": 1,
@@ -47,7 +47,7 @@
         "mcp"
       ],
       "newCapabilities": 3,
-      "ms": 31.3
+      "ms": 30.3
     },
     {
       "n": 5,
@@ -59,36 +59,36 @@
         "Look up warehouse",
         "Shipping rate by city"
       ],
-      "planningMs": 3.1
+      "planningMs": 3
     },
     {
       "n": 6,
       "title": "Compose a multi-provider workflow",
       "ok": true,
       "steps": [
-        "Track shipment ← shipment_id=$in.shipment_id",
-        "Look up warehouse ← warehouse_number=0.warehouse_number",
-        "Shipping rate by city ← town=1.town"
+        "Track shipment ← shipmentId=$in.shipment_id",
+        "Look up warehouse ← warehouse_number=0.warehouseId",
+        "Shipping rate by city ← city=1.location"
       ]
     },
     {
       "n": 7,
       "title": "Execute the workflow",
       "ok": true,
-      "input": "SHP-1006",
+      "input": "SHP-1003",
       "pipeline": [
         "Track shipment",
         "Look up warehouse",
         "Shipping rate by city"
       ],
-      "ms": 5.1
+      "ms": 4.9
     },
     {
       "n": 8,
       "title": "Verify against independently held test data",
       "ok": true,
-      "expected": 21,
-      "got": 21
+      "expected": 35.4,
+      "got": 35.4
     },
     {
       "n": 9,
@@ -98,36 +98,36 @@
       "reusedAs": [
         "Shipping rate shipment warehouse city: Track shipment → Look up warehouse → Shipping rate by city"
       ],
-      "expected": 21.1,
-      "got": 21.1,
+      "expected": 26.6,
+      "got": 26.6,
       "ms": 2.8
     },
     {
       "n": 10,
-      "title": "Change the interface of the last provider in the chain (Quillbase)",
+      "title": "Change the interface of the last provider in the chain (Kestrel Freight)",
       "ok": true,
-      "before": "mcp \"Shipping rate by city\" town → town, shipping_rate",
-      "after": "openapi \"City shipping rate\" city → result.{city, freight_rate}"
+      "before": "mcp \"Shipping rate by city\" city → city, rate",
+      "after": "openapi \"Get shipping rate\" location → result.{location, shipping_rate}"
     },
     {
       "n": 11,
       "title": "Recover without changing integration code",
       "ok": true,
       "healing": [
-        "API drift at http://127.0.0.1:59336/: mcp:quillbase → openapi:quillbase; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:49625/: mcp:kestrel-freight → openapi:kestrel-freight; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "via": [
-        "mcp:fjordsoft",
+        "mcp:northwind-billing",
         "mcp:emberlane",
-        "openapi:quillbase"
+        "openapi:kestrel-freight"
       ],
-      "expected": 21,
-      "got": 21,
-      "ms": 9.4
+      "expected": 26.6,
+      "got": 26.6,
+      "ms": 9.3
     },
     {
       "n": 12,
-      "title": "Remove that provider (Quillbase)",
+      "title": "Remove that provider (Kestrel Freight)",
       "ok": true
     },
     {
@@ -136,38 +136,38 @@
       "ok": true,
       "status": "failed",
       "healing": [
-        "provider gone at http://127.0.0.1:59336/: withdrew openapi:quillbase (1 capabilities, 1 pipeline(s) retired)"
+        "provider gone at http://127.0.0.1:49625/: withdrew openapi:kestrel-freight (1 capabilities, 1 pipeline(s) retired)"
       ],
       "withdrawn": [
-        "Quillbase"
+        "Kestrel Freight"
       ],
       "capabilities": "27 → 25",
       "savedPipelines": "1 → 0"
     },
     {
       "n": 14,
-      "title": "Introduce a different provider (Kestrel Freight, graphql): the objective works again",
+      "title": "Introduce a different provider (Quillbase, openapi): the objective works again",
       "ok": true,
       "learned": [
-        "graphql: 1 fields"
+        "openapi: 1 operations"
       ],
       "via": [
-        "mcp:fjordsoft",
+        "mcp:northwind-billing",
         "mcp:emberlane",
-        "graphql:127-0-0-1-59411-graphql"
+        "openapi:quillbase"
       ],
-      "expected": 20.7,
-      "got": 20.7,
-      "ms": 2.1
+      "expected": 26.6,
+      "got": 26.6,
+      "ms": 2
     }
   ],
   "benchmarks": {
     "startupMs": 118.5,
     "mcpLatencyMs": {
       "p50": 0.04,
-      "p95": 0.11
+      "p95": 0.12
     },
-    "discoveryMs": 31.3,
+    "discoveryMs": 30.3,
     "graph": {
       "providers": 5,
       "capabilities": 26,
@@ -177,30 +177,30 @@
       "total": 114
     },
     "graphStatsMs": 0.1,
-    "planningMs": 3.1,
-    "executionMs": 5.1,
-    "recoveryAfterChangeMs": 9.4,
-    "recoveryAfterNewProviderMs": 2.1,
+    "planningMs": 3,
+    "executionMs": 4.9,
+    "recoveryAfterChangeMs": 9.3,
+    "recoveryAfterNewProviderMs": 2,
     "memoryMB": 138
   },
   "freeze": {
-    "commit": "5f0faa956c6a983648695e07396b132c9f5442fd",
+    "commit": "02c96d4af5f4d92208321a0145ab31deb3572b35",
     "tag": "lab-freeze-9",
-    "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/core/authority.ts\nsrc/core/contract.ts\nsrc/core/fields.ts\nsrc/core/graph.ts\nsrc/core/identities.ts\nsrc/core/ledger.ts\nsrc/core/planner.ts\nsrc/core/programs.ts\nsrc/core/sandbox.ts\nsrc/core/satisfaction.ts\nsrc/core/secrets.ts\nsrc/core/semantics.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/core/yaml.ts\nsrc/entry/durable.ts\nsrc/entry/edge.ts\nsrc/interface/http.ts\nsrc/interface/mcp-server.ts\nsrc/interface/tools.ts\nsrc/reflectors/cli.ts\nsrc/reflectors/discover.ts\nsrc/reflectors/graphql.ts\nsrc/reflectors/mcp.ts\nsrc/reflectors/net.ts\nsrc/reflectors/openapi.ts\nsrc/reflectors/platform.ts\nsrc/runtime.ts",
+    "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/core/authority.ts\nsrc/core/contract.ts\nsrc/core/fields.ts\nsrc/core/graph.ts\nsrc/core/identities.ts\nsrc/core/knowledge.ts\nsrc/core/ledger.ts\nsrc/core/planner.ts\nsrc/core/programs.ts\nsrc/core/sandbox.ts\nsrc/core/satisfaction.ts\nsrc/core/secrets.ts\nsrc/core/semantics.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/core/yaml.ts\nsrc/entry/durable.ts\nsrc/entry/edge.ts\nsrc/interface/http.ts\nsrc/interface/mcp-server.ts\nsrc/interface/tools.ts\nsrc/reflectors/cli.ts\nsrc/reflectors/discover.ts\nsrc/reflectors/graphql.ts\nsrc/reflectors/mcp.ts\nsrc/reflectors/net.ts\nsrc/reflectors/openapi.ts\nsrc/reflectors/platform.ts\nsrc/runtime.ts",
     "uncommittedProductChanges": "",
     "frozen": false
   },
   "environment": [
     {
       "service": "shipments",
-      "brand": "Fjordsoft",
+      "brand": "Northwind Billing",
       "protocol": "mcp",
       "operation": "Track shipment",
-      "input": "shipment_id",
+      "input": "shipmentId",
       "outputs": [
-        "shipment_id",
-        "warehouse_number",
-        "gross_weight"
+        "shipmentId",
+        "warehouseId",
+        "weight_kg"
       ]
     },
     {
@@ -211,32 +211,32 @@
       "input": "warehouse_number",
       "outputs": [
         "warehouse_number",
-        "town",
+        "location",
         "manager_email"
       ]
     },
     {
       "service": "rates",
-      "brand": "Quillbase",
+      "brand": "Kestrel Freight",
       "protocol": "mcp",
       "operation": "Shipping rate by city",
-      "input": "town",
+      "input": "city",
       "outputs": [
-        "town",
-        "shipping_rate"
+        "city",
+        "rate"
       ]
     }
   ],
   "firstRunProviders": [
-    "mcp:fjordsoft",
+    "mcp:northwind-billing",
     "mcp:emberlane",
-    "mcp:quillbase"
+    "mcp:kestrel-freight"
   ],
   "receipts": {
     "count": 21,
     "intact": true,
     "brokenAt": null,
-    "head": "8fb06176c87f47bc83e0f3c5f2b0d1ef733c7fd929cb36131d31b5130cf764e6"
+    "head": "1ccf7710ef55303f97985c921d0ecdcb393e913a708df66286c3ab1b703cfa7a"
   },
   "passed": 14,
   "total": 14

@@ -74,10 +74,12 @@ if (D) {
   const correctnessOk = s5 ? perArm.D.feasible.rate >= perArm[strongest].feasible.rate - 0.05 && !(s5.feasible.onlyB > s5.feasible.onlyA && s5.feasible.mcnemarP < 0.05) : false;
   const safetyOk = strongest ? perArm.D.wrongPresentedAsCorrect <= perArm[strongest].wrongPresentedAsCorrect : false;
   const speedOk = s5 ? median(by("D", (s) => s.phase === "reuse").map((s) => s.seconds)) <= 0.5 * median(by(strongest, (s) => s.phase === "reuse").map((s) => s.seconds)) || median(by("D", (s) => s.phase === "reuse").map((s) => s[unit])) <= 0.5 * median(by(strongest, (s) => s.phase === "reuse").map((s) => s[unit])) : false;
-  const effortOk = strongest ? perArm.D.authoredBytes <= 0.5 * perArm[strongest].authoredBytes : false;
-  gates.stage5 = { rule: "vs strongest baseline: (a) correctness not lower by >5 points nor significantly lower; (b) no more wrong-presented-as-correct; (c) reuse time or cost <= 0.5x, or <= 50% authored integration material", strongest, a: correctnessOk, b: safetyOk, cTime: speedOk, cEffort: effortOk, breakEvenUses: breakEven, unit, pass: correctnessOk && safetyOk && (speedOk || effortOk) };
+  // Clarification recorded before any holdout result (EVALUATION-PLAN.md §10): the effort clause is
+  // evaluable only when the strongest baseline authors material; "≤ 50% of nothing" is no benefit.
+  const effortOk = strongest ? perArm[strongest].authoredBytes > 0 && perArm.D.authoredBytes <= 0.5 * perArm[strongest].authoredBytes : false;
+  gates.stage5 = { rule: "vs strongest baseline: (a) correctness not lower by >5 points nor significantly lower; (b) no more wrong-presented-as-correct; (c) reuse time or cost <= 0.5x, or <= 50% of the authored integration material when the baseline authors any", strongest, a: correctnessOk, b: safetyOk, cTime: speedOk, cEffort: effortOk, breakEvenUses: Number.isFinite(breakEven) ? breakEven : "never", unit, pass: correctnessOk && safetyOk && (speedOk || effortOk) };
 }
 
-const report = { file, tag: bench.tag, commit: bench.commit, model: bench.model, programs, arms, sessions: S.length, blocked: bench.sessions.length - S.length, perArm, strongestBaseline: strongest, comparisons, breakEven: { uses: breakEven, unit, firstExtra, reuseSaving }, gates };
+const report = { file, tag: bench.tag, commit: bench.commit, model: bench.model, programs, arms, sessions: S.length, blocked: bench.sessions.length - S.length, perArm, strongestBaseline: strongest, comparisons, breakEven: { uses: Number.isFinite(breakEven) ? breakEven : "never (RightClick X's reuse is not cheaper)", unit, firstExtra, reuseSaving }, gates };
 writeFileSync(file.replace(/\.json$/, ".report.json"), JSON.stringify(report, null, 2));
 console.log(JSON.stringify(report, null, 2));

@@ -146,3 +146,18 @@ This is a development suite, designed by us and therefore not a holdout. Each ca
 - **Agent sessions.** Domain 1 has 4 arms × 10 programs × 8 sessions = 320 sessions; Domain 2 has 24. If a vendor usage limit blocks a run, the run is recorded as **BLOCKED** and resumed later on the same freeze, without changes.
 - **No paid services.** Containers are local Docker only.
 - **Untested environments.** Windows is not available here and will be reported as untested. Linux is tested in local containers only.
+
+## 10. Clarifications and deviations (recorded before any holdout result)
+
+These were recorded on 2026-10-17, after the harness pilot on development programs (`docs/north-star/evidence/pilot-*`) and **before** the freeze and the holdout draw.
+
+1. **§7 Stage 5 (c), effort clause.** "≤ 50% of the authored integration material" counts only when the strongest baseline authors some. If it authors none (arms A and B never save anything), "≤ 50% of nothing" is not a measured benefit, and only the time/cost clause can satisfy (c). This is the stricter reading.
+2. **Answer transport.** Agents return results between `BEGIN`/`END` lines, which cannot carry a final newline. The comparison mode `exact` therefore ignores one trailing newline.
+3. **Task inputs** are given to agents as exact JSON strings. The pilot's first run showed that delimiter lines made the final newline ambiguous; that run is kept as `pilot-benchmark-ns-pilot-run1-delimiter-defect.json`.
+4. **Arm D's interface fixes found in the pilot** were made on a development program before the freeze, and are part of the frozen build. They are recorded in commit `713908d`:
+   - unknown inputs are refused;
+   - unchanged programs are not re-investigated;
+   - learned capabilities are announced to new sessions;
+   - named list values bind to their ports.
+
+   The pilot's first D run is kept as `pilot-benchmark-ns-pilot-run2.json`.
