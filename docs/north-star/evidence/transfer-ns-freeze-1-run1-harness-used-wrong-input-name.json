@@ -1,0 +1,271 @@
+{
+  "at": "2026-10-17T13:48:03.302Z",
+  "platform": "linux/arm64",
+  "programs": [
+    {
+      "name": "sum",
+      "macPath": "/usr/bin/sum",
+      "local": "/usr/bin/sum",
+      "cold": {
+        "ms": 95,
+        "runs": 24,
+        "capabilities": 2,
+        "detail": "2 capabilities from 24 sandboxed runs (stdin, files; ok exit 0)"
+      },
+      "importFromMac": {
+        "ms": 11,
+        "status": "refused",
+        "revalidationRuns": 4,
+        "sameBytes": false,
+        "accepted": [],
+        "refused": [
+          {
+            "id": "cli:sum:default",
+            "reason": "behaves differently here: example 1: expected \"10245 1\\n\", got \"10245     1\\n\"; example 2: expected \"33421 1\\n\", got \"33421     1\\n\""
+          },
+          {
+            "id": "cli:sum:invoke",
+            "reason": "behaves differently here: example 1: expected \"10245 1\\n\", got \"10245     1\\n\"; example 2: expected \"33421 1\\n\", got \"33421     1\\n\""
+          }
+        ]
+      },
+      "tasks": [
+        {
+          "task": "sum#1",
+          "status": "not run: no revalidated capability"
+        },
+        {
+          "task": "sum#2",
+          "status": "not run: no revalidated capability"
+        },
+        {
+          "task": "sum#3",
+          "status": "reference invalid here",
+          "reason": "no output (exit 1; /usr/bin/sum: invalid option -- 'o'\nTry '/usr/bin/sum --help' for more information.\n)"
+        },
+        {
+          "task": "sum#4",
+          "status": "reference invalid here",
+          "reason": "no output (exit 1; /usr/bin/sum: invalid option -- 'o'\nTry '/usr/bin/sum --help' for more information.\n)"
+        }
+      ],
+      "linuxToLinux": {
+        "ms": 10,
+        "status": "accepted",
+        "revalidationRuns": 4,
+        "accepted": 2,
+        "refused": 0
+      }
+    },
+    {
+      "name": "json_xs",
+      "macPath": "/usr/bin/json_xs",
+      "local": "/usr/bin/json_xs",
+      "cold": {
+        "ms": 280,
+        "runs": 24,
+        "capabilities": 1,
+        "detail": "1 capability from 24 sandboxed runs (stdin; ok exit 0)"
+      },
+      "importFromMac": {
+        "ms": 41,
+        "status": "accepted",
+        "revalidationRuns": 4,
+        "sameBytes": true,
+        "accepted": [
+          "cli:json-xs:default",
+          "cli:json-xs:invoke"
+        ],
+        "refused": []
+      },
+      "tasks": [
+        {
+          "task": "json_xs#1",
+          "status": "failed",
+          "correct": false,
+          "wrong": false,
+          "error": "unknown input(s) \"input\" for cli:json-xs:invoke; its inputs are: json (optional): Content given on standard input | options (optional): Documented options and their values, one item each: -v, -f <from"
+        },
+        {
+          "task": "json_xs#2",
+          "status": "failed",
+          "correct": false,
+          "wrong": false,
+          "error": "unknown input(s) \"input\" for cli:json-xs:invoke; its inputs are: json (optional): Content given on standard input | options (optional): Documented options and their values, one item each: -v, -f <from"
+        },
+        {
+          "task": "json_xs#3",
+          "status": "failed",
+          "correct": false,
+          "wrong": false,
+          "error": "unknown input(s) \"input\" for cli:json-xs:invoke; its inputs are: json (optional): Content given on standard input | options (optional): Documented options and their values, one item each: -v, -f <from"
+        },
+        {
+          "task": "json_xs#4",
+          "status": "failed",
+          "correct": false,
+          "wrong": false,
+          "error": "unknown input(s) \"input\" for cli:json-xs:invoke; its inputs are: json (optional): Content given on standard input | options (optional): Documented options and their values, one item each: -v, -f <from"
+        }
+      ],
+      "linuxToLinux": {
+        "ms": 21,
+        "status": "accepted",
+        "revalidationRuns": 2,
+        "accepted": 1,
+        "refused": 0
+      }
+    },
+    {
+      "name": "xsubpp5.34",
+      "macPath": "/usr/bin/xsubpp5.34",
+      "local": null,
+      "status": "absent here"
+    },
+    {
+      "name": "autom4te",
+      "macPath": "/opt/homebrew/bin/autom4te",
+      "local": "/usr/bin/autom4te",
+      "cold": {
+        "ms": 872,
+        "runs": 34,
+        "capabilities": 3,
+        "detail": "3 capabilities from 34 sandboxed runs (files; ok exit 0)"
+      },
+      "importFromMac": {
+        "ms": 159,
+        "status": "accepted",
+        "revalidationRuns": 6,
+        "sameBytes": false,
+        "accepted": [
+          "cli:autom4te:default",
+          "cli:autom4te:verbose",
+          "cli:autom4te:invoke"
+        ],
+        "refused": []
+      },
+      "tasks": [
+        {
+          "task": "autom4te#1",
+          "status": "failed",
+          "correct": false,
+          "wrong": false,
+          "error": "unknown input(s) \"input\" for cli:autom4te:invoke; its inputs are: file (optional): Content passed as a file operand | options (optional): Documented options and their values, one item each: -v/--verbo"
+        },
+        {
+          "task": "autom4te#2",
+          "status": "failed",
+          "correct": false,
+          "wrong": false,
+          "error": "unknown input(s) \"input\" for cli:autom4te:invoke; its inputs are: file (optional): Content passed as a file operand | options (optional): Documented options and their values, one item each: -v/--verbo"
+        },
+        {
+          "task": "autom4te#3",
+          "status": "failed",
+          "correct": false,
+          "wrong": false,
+          "error": "unknown input(s) \"input\" for cli:autom4te:invoke; its inputs are: file (optional): Content passed as a file operand | options (optional): Documented options and their values, one item each: -v/--verbo"
+        },
+        {
+          "task": "autom4te#4",
+          "status": "failed",
+          "correct": false,
+          "wrong": false,
+          "error": "unknown input(s) \"input\" for cli:autom4te:invoke; its inputs are: file (optional): Content passed as a file operand | options (optional): Documented options and their values, one item each: -v/--verbo"
+        }
+      ],
+      "linuxToLinux": {
+        "ms": 159,
+        "status": "accepted",
+        "revalidationRuns": 6,
+        "accepted": 3,
+        "refused": 0
+      }
+    },
+    {
+      "name": "exiftool",
+      "macPath": "/opt/homebrew/bin/exiftool",
+      "local": "/usr/bin/exiftool",
+      "cold": {
+        "ms": 336,
+        "runs": 10,
+        "capabilities": 1,
+        "detail": "1 capability from 10 sandboxed runs (stdin, files; ok exit 0)"
+      },
+      "importFromMac": {
+        "ms": 646,
+        "status": "refused",
+        "revalidationRuns": 20,
+        "sameBytes": false,
+        "accepted": [],
+        "refused": [
+          {
+            "id": "cli:exiftool:default",
+            "reason": "behaves differently here: example 1: expected \"ExifTool Version Number         : 13.55\\nFile Name           \", got \"ExifTool Version Number         : 12.57\\nFile Name           \"; example 2: expected "
+          },
+          {
+            "id": "cli:exiftool:args",
+            "reason": "behaves differently here: example 1: expected \"-ExifToolVersion=13.55\\n-FileName=input1.txt\\n-Directory=.\\n-Fi\", got \"-ExifToolVersion=12.57\\n-FileName=input1.txt\\n-Directory=.\\n-Fi\"; example 2: expec"
+          },
+          {
+            "id": "cli:exiftool:b",
+            "reason": "behaves differently here: example 1: expected \"13.55input1.txt.662026:10:17 14:47:38+01:002026:10:17 14:47:\", got \"12.57input1.txt.662026:10:17 13:48:05+00:002026:10:17 13:48:\"; example 2: expected \"1"
+          },
+          {
+            "id": "cli:exiftool:d",
+            "reason": "behaves differently here: example 1: expected \"    - ExifTool Version Number         : 13.55\\n    - File Nam\", got \"    - ExifTool Version Number         : 12.57\\n    - File Nam\"; example 2: expected "
+          },
+          {
+            "id": "cli:exiftool:ec",
+            "reason": "behaves differently here: example 1: expected \"ExifTool Version Number         : 13.55\\nFile Name           \", got \"ExifTool Version Number         : 12.57\\nFile Name           \"; example 2: expected "
+          },
+          {
+            "id": "cli:exiftool:h",
+            "reason": "behaves differently here: example 1: expected \"     - ExifTool Version Number         : 13.55\\n     - File N\", got \"     - ExifTool Version Number         : 12.57\\n     - File N\"; example 2: expected "
+          },
+          {
+            "id": "cli:exiftool:l",
+            "reason": "behaves differently here: example 1: expected \"ExifTool Version Number\\n      13.55\\nFile Name\\n      input1.t\", got \"ExifTool Version Number\\n      12.57\\nFile Name\\n      input1.t\"; example 2: expec"
+          },
+          {
+            "id": "cli:exiftool:plot",
+            "reason": "behaves differently here: example 1: expected \"<?xml version=\\\"1.0\\\" standalone=\\\"no\\\"?>\\n<!DOCTYPE svg PUBLIC \\\"\", got \"\"; example 2: expected \"<?xml version=\\\"1.0\\\" standalone=\\\"no\\\"?>\\n<!DOCTYPE sv"
+          },
+          {
+            "id": "cli:exiftool:s",
+            "reason": "behaves differently here: example 1: expected \"ExifToolVersion: 13.55\\nFileName: input1.txt\\nDirectory: .\\nFil\", got \"ExifToolVersion: 12.57\\nFileName: input1.txt\\nDirectory: .\\nFil\"; example 2: expec"
+          },
+          {
+            "id": "cli:exiftool:invoke",
+            "reason": "behaves differently here: example 1: expected \"ExifTool Version Number         : 13.55\\nFile Name           \", got \"ExifTool Version Number         : 12.57\\nFile Name           \"; example 2: expected "
+          }
+        ]
+      },
+      "tasks": [
+        {
+          "task": "exiftool#1",
+          "status": "not run: no revalidated capability"
+        },
+        {
+          "task": "exiftool#2",
+          "status": "not run: no revalidated capability"
+        },
+        {
+          "task": "exiftool#3",
+          "status": "not run: no revalidated capability"
+        },
+        {
+          "task": "exiftool#4",
+          "status": "not run: no revalidated capability"
+        }
+      ],
+      "linuxToLinux": {
+        "ms": 59,
+        "status": "accepted",
+        "revalidationRuns": 2,
+        "accepted": 1,
+        "refused": 0
+      }
+    }
+  ]
+}

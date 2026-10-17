@@ -65,7 +65,13 @@ if (mode === "export") {
       }
       const files = Object.keys(t.input.files ?? {});
       const options = t.reference!.argv.filter((x: string) => !files.includes(x));
-      const r = await warm.run(invId, { input: t.input.stdin ?? "", options, ...(files.length ? { files: Object.fromEntries(files.filter((f) => t.reference!.argv.includes(f)).map((f) => [f, t.input.files![f]])) } : {}) });
+      // The capability's own content input (named by the investigation: input, json, html, file...).
+      const cap = warm.graph.get(invId)!;
+      const content = cap.inputs.find((p) => !["options", "files"].includes(p.name))?.name;
+      const args: Record<string, unknown> = { options };
+      if (t.input.stdin !== undefined && content) args[content] = t.input.stdin;
+      if (files.length) args.files = Object.fromEntries(files.filter((f) => t.reference!.argv.includes(f)).map((f) => [f, t.input.files![f]]));
+      const r = await warm.run(invId, args);
       const correct = r.status === "completed" && matches(truth, String(r.output ?? ""));
       entry.tasks.push({ task: t.id, status: r.status, correct, wrong: r.status === "completed" && !correct, ...(r.error ? { error: r.error.slice(0, 200) } : {}) });
     }
