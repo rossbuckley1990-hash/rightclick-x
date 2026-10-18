@@ -43,13 +43,7 @@ if (process.argv[2] === "--worker") {
   const learned = cfg.mode === "seed" || cfg.mode === "return-learn" ? await rc.learn({ source: `cli:${cfg.program}` }) : undefined;
   const cap: Capability | undefined = rc.graph.get("cli:json-xs:stdout");
   let response: unknown;
-  if (cfg.mode === "seed") {
-    if (!cap || cap.invoke.kind !== "cli") throw new Error("no retained raw-output capability");
-    response = await rc.compose({ have: { document: { type: "json", value: cfg.input } }, want: "text", through: [cap.id],
-      origins: [], run: true, crystallize: false, publish: "repair pretty json", verify: [{ op: "matches", pattern: "\\n {2,}" }] });
-  } else if (cfg.route === "goal") {
-    response = await rc.run("goal:repair-pretty-json", { document: cfg.input });
-  } else {
+  {
     // Port belongs to the retained contract, not to special product code.
     const port = cap?.invoke.kind === "cli" ? cap.invoke.stdin : cfg.port;
     response = await rc.run("cli:json-xs:stdout", { [port]: cfg.input }, { verify: [{ op: "matches", pattern: "\\n {2,}" }] });
@@ -96,7 +90,7 @@ if (process.argv[2] === "--worker") {
     const state = `${out}/${name}.state.json`, result = `${out}/${name}.result.json`;
     if (stateSource) copyFileSync(stateSource, state);
     const path = `${out}/${name}.config.json`;
-    save(path, { ...cfg, root, program, state, result });
+    save(path, { ...cfg, root, program, state, result, port: "json" });
     const start = performance.now();
     try {
       const stdout = execFileSync(process.execPath, [self, "--worker", path], { cwd: root, timeout: 60_000, encoding: "utf8" });
@@ -112,23 +106,19 @@ if (process.argv[2] === "--worker") {
   };
   const seed = invoke("seed", { mode: "seed", input: '["seed",1,true]' });
   const seedReport = JSON.parse(readFileSync(`${out}/seed.result.json`, "utf8"));
-  if (seedReport.response.executed?.status !== "completed") throw new Error("seed failed; preserved artifacts");
-  for (const route of ["direct", "goal"]) invoke(`warm-${route}`, { route, input: '["warm",2,null]' }, seed);
+  if (seedReport.response.status !== "completed") throw new Error("seed failed; preserved artifacts");
+  invoke("warm-direct", { input: '["warm",2,null]' }, seed);
   unlinkSync(program); writeFileSync(program, compatible, { mode: 0o755, flag: "wx" });
-  for (const route of ["direct", "goal"]) {
-    const repaired = invoke(`compatible-${route}`, { route, input: '["compatible",3,false]' }, seed);
-    invoke(`reused-${route}`, { route, input: '["reused",4,true]' }, repaired);
-  }
-  for (const denied of ["investigation", "execution"]) for (const route of ["direct", "goal"]) {
-    invoke(`revoked-${denied}-${route}`, { route, denied, input: '["revoked",5]' }, seed);
+  const repaired = invoke("compatible-direct", { input: '["compatible",3,false]' }, seed);
+  invoke("reused-direct", { input: '["reused",4,true]' }, repaired);
+  for (const denied of ["investigation", "execution"]) {
+    invoke(`revoked-${denied}-direct`, { denied, input: '["revoked",5]' }, seed);
   }
   unlinkSync(program); writeFileSync(program, incompatible, { mode: 0o755, flag: "wx" });
-  for (const route of ["direct", "goal"]) invoke(`incompatible-${route}`, { route, input: '["incompatible",6]' }, seed);
+  invoke("incompatible-direct", { input: '["incompatible",6]' }, seed);
   unlinkSync(program);
-  const removedStates: Record<string, string> = {};
-  for (const route of ["direct", "goal"]) removedStates[route] = invoke(`removed-${route}`, { route, input: '["removed",7]' }, seed);
+  const removed = invoke("removed-direct", { input: '["removed",7]' }, seed);
   writeFileSync(program, compatible, { mode: 0o755, flag: "wx" });
-  invoke("returned-without-learn", { route: "goal", input: '["returned",8]' }, removedStates.goal);
-  invoke("returned-after-learn", { mode: "return-learn", route: "goal", input: '["returned",9]' }, removedStates.goal);
+  invoke("returned-after-learn", { mode: "return-learn", input: '["returned",9]' }, removed);
   console.log(JSON.stringify({ commit, cases: cases.length, out }));
 }

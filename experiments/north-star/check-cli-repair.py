@@ -7,9 +7,9 @@ import subprocess
 import sys
 
 REPO = Path(__file__).resolve().parents[2]
-NAMES = ['seed', 'warm-direct', 'warm-goal', 'compatible-direct', 'reused-direct', 'compatible-goal', 'reused-goal',
-         'revoked-investigation-direct', 'revoked-investigation-goal', 'revoked-execution-direct', 'revoked-execution-goal',
-         'incompatible-direct', 'incompatible-goal', 'removed-direct', 'removed-goal', 'returned-without-learn', 'returned-after-learn']
+NAMES = ['seed', 'warm-direct', 'compatible-direct', 'reused-direct',
+         'revoked-investigation-direct', 'revoked-execution-direct',
+         'incompatible-direct', 'removed-direct', 'returned-after-learn']
 
 
 def sha(data):
@@ -56,8 +56,8 @@ def check(data, after):
             stage = 'original' if name == 'seed' or name.startswith('warm-') else 'incompatible' if name.startswith('incompatible-') else 'compatible'
             expected_hash = m['original']['sha256'] if stage == 'original' else sha(m[stage].encode())
             assert w['before']['sha256'] == expected_hash, (name, 'wrong program bytes')
-        response = r['response']['executed'] if name == 'seed' else r['response']
-        succeeds = name in ['seed', 'warm-direct', 'warm-goal', 'returned-after-learn'] or after and name.startswith(('compatible-', 'reused-'))
+        response = r['response']
+        succeeds = name in ['seed', 'warm-direct', 'returned-after-learn'] or after and name.startswith(('compatible-', 'reused-'))
         assert response['status'] == ('completed' if succeeds else 'failed'), (name, response.get('error'))
         assert response['verification']['status'] != 'verified', 'structural checks are not independent witnesses'
         assert len(executions) == (1 if succeeds else 0), (name, 'wrong task dispatch count')
@@ -79,8 +79,6 @@ def check(data, after):
             assert 'equivalent' in json.dumps(response) or 'anchor' in json.dumps(response)
         if name.startswith('removed-'):
             assert (r['finalCapabilities'] == []) == after
-        if after and name == 'returned-without-learn':
-            assert 'unresolved required anchor' in response['error']
         summary.append({'name': name, 'status': response['status'], 'investigations': len(r['investigations']),
                         'probes': len(probes), 'executions': len(executions),
                         'operationMs': r['operationMs'], 'childMs': case['childMs']})
@@ -104,11 +102,14 @@ if __name__ == '__main__':
             r['response']['output'] = '[\n   "wrong"\n]\n'
             next(w for w in r['wires'] if w['opts']['purpose'] == 'execution')['result']['stdout'] = r['response']['output']
         elif kind == 'dispatch-on-refusal':
-            forged['rows']['incompatible-direct']['wires'].append(next(w for w in forged['rows']['compatible-direct']['wires'] if w['opts']['purpose'] == 'execution'))
+            r = forged['rows']['incompatible-direct']
+            wire = copy.deepcopy(next(w for w in forged['rows']['compatible-direct']['wires'] if w['opts']['purpose'] == 'execution'))
+            wire['before'] = wire['after'] = copy.deepcopy(r['wires'][0]['before'])
+            r['wires'].append(wire)
         elif kind == 'hidden-network':
-            forged['rows']['compatible-goal']['network'].append('https://unapproved.test')
+            forged['rows']['compatible-direct']['network'].append('https://unapproved.test')
         else:
-            forged['rows']['revoked-execution-goal']['authority']['execute'] = [after['manifest']['program']]
+            forged['rows']['revoked-execution-direct']['authority']['execute'] = [after['manifest']['program']]
         try:
             check(forged, True)
         except AssertionError:

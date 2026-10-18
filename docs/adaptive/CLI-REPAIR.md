@@ -28,4 +28,10 @@ node experiments/north-star/cli-repair-diagnostic.ts AFTER_EXPORT AFTER_FREEZE N
 python3 experiments/north-star/check-cli-repair.py NEW_BEFORE_DIR NEW_AFTER_DIR
 ```
 
-Result pending the frozen replay. Release remains NO-GO pending the full [acceptance matrix](ACCEPTANCE-MATRIX.md).
+## Preserved initial replay failure and follow-up
+
+Freeze `c52b128` passed 256/256 full regressions, zero skips. Both real-software replays stopped at seed publication: `cli:json-xs:stdout` inherited `unsupported` because the investigator observed only one distinct usable JSON sample, so the planner refused to compose it. No task dispatch occurred. The proposed 17-process real-software goal experiment **did not pass**. The source snapshots, empty plans, probe evidence and runner errors remain in `evidence/cli-repair-policy/{before,after}-c52b128` and their replay logs. This is a real general discovery/evidence limitation, not grounds to remove the planner's evidence requirement or manually promote the capability.
+
+The next frozen follow-up isolates the measured direct-call repair defect with nine fresh processes per source: acquisition plus direct execution, warm reuse, compatible change, reuse after repair, investigation revocation, execution revocation, incompatible change, removal and explicit rediscovery on return. It keeps all applicable outcome, dispatch, authority and network checks above. It does not claim the blocked saved-goal cases passed; those routes have synthetic regression coverage only at this checkpoint. The same separate checker reports the reduced direct-call scope explicitly. Improving distinct synthetic sample coverage and then retrying real saved-goal composition remains separate work.
+
+Result pending the direct-call follow-up. Release remains NO-GO pending the full [acceptance matrix](ACCEPTANCE-MATRIX.md).
