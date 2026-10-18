@@ -1,0 +1,201 @@
+{
+  "verdict": "PASS",
+  "correctOutputs": 5,
+  "expected": [
+    {
+      "label": "first",
+      "values": [
+        1,
+        2
+      ],
+      "enabled": false
+    },
+    {
+      "label": "fresh",
+      "values": [
+        3
+      ],
+      "exact": "00123"
+    },
+    {
+      "label": "stdin",
+      "values": [],
+      "nested": {
+        "text": "雪\n"
+      }
+    }
+  ],
+  "outputs": [
+    {
+      "runId": "run_mvdmv12r_1",
+      "capability": "cli:json-xs:stdout",
+      "provider": "cli:json-xs",
+      "title": "json_xs: exact standard output text",
+      "status": "completed",
+      "output": "{\n   \"enabled\" : false,\n   \"label\" : \"first\",\n   \"values\" : [\n      1,\n      2\n   ]\n}\n",
+      "startedAt": "2026-10-18T09:38:42.099Z",
+      "durationMs": 381.6,
+      "verification": {
+        "status": "unverified",
+        "results": []
+      },
+      "receipt": {
+        "runId": "run_mvdmv12r_1",
+        "capability": "cli:json-xs:stdout",
+        "provider": "cli:json-xs",
+        "startedAt": "2026-10-18T09:38:42.099Z",
+        "durationMs": 381.6,
+        "status": "completed",
+        "verification": "unverified",
+        "seq": 1,
+        "inputDigest": "e07746b3de30647fd53310cfc0a944267bb0108075782875493463c3e822c494",
+        "outputDigest": "ee9fdfd391ddcd46081c8a1934f5c1c0cf5d769ee6adba6071717df0d7200482",
+        "prev": "0000000000000000000000000000000000000000000000000000000000000000",
+        "hash": "29dde109f9e0fe3d4688659e15ac0c22b4cdfbd4fa3b4fb11df4a38ed92fc21e"
+      }
+    },
+    {
+      "runId": "run_mvdmv21g_1",
+      "capability": "cli:json-xs:stdout",
+      "provider": "cli:json-xs",
+      "title": "json_xs: exact standard output text",
+      "status": "completed",
+      "output": "{\n   \"exact\" : \"00123\",\n   \"label\" : \"fresh\",\n   \"values\" : [\n      3\n   ]\n}\n",
+      "startedAt": "2026-10-18T09:38:43.348Z",
+      "durationMs": 255.1,
+      "verification": {
+        "status": "unverified",
+        "results": []
+      },
+      "receipt": {
+        "runId": "run_mvdmv21g_1",
+        "capability": "cli:json-xs:stdout",
+        "provider": "cli:json-xs",
+        "startedAt": "2026-10-18T09:38:43.348Z",
+        "durationMs": 255.1,
+        "status": "completed",
+        "verification": "unverified",
+        "seq": 2,
+        "inputDigest": "308dc2c291a0fa448b5f0e84483039b8388a48f239dc85f4ae066ed73cb92fc6",
+        "outputDigest": "95e5423923efd2f587ace34d6eb7e7ca7747d539052202ddc5dd2c7784e455ca",
+        "prev": "29dde109f9e0fe3d4688659e15ac0c22b4cdfbd4fa3b4fb11df4a38ed92fc21e",
+        "hash": "afe610033b4d39e6eb30f1e5650f5d6df2d40a115b1cab06a23db3f3b53a4ca2"
+      }
+    },
+    {
+      "runId": "run_mvdmv300_1",
+      "capability": "cli:json-xs:stdout",
+      "provider": "cli:json-xs",
+      "title": "json_xs: exact standard output text",
+      "status": "completed",
+      "output": "{\n   \"label\" : \"stdin\",\n   \"nested\" : {\n      \"text\" : \"雪\\n\"\n   },\n   \"values\" : []\n}\n",
+      "startedAt": "2026-10-18T09:38:44.592Z",
+      "durationMs": 148.1,
+      "verification": {
+        "status": "unverified",
+        "results": []
+      },
+      "receipt": {
+        "runId": "run_mvdmv300_1",
+        "capability": "cli:json-xs:stdout",
+        "provider": "cli:json-xs",
+        "startedAt": "2026-10-18T09:38:44.592Z",
+        "durationMs": 148.1,
+        "status": "completed",
+        "verification": "unverified",
+        "seq": 3,
+        "inputDigest": "491d14241a2f0d9a77f815ace9f6d2e8b40a8721383997f8103c5c94a5fd9050",
+        "outputDigest": "0a10ad0549b9e15ba79824bf7d3977ccaf79e136e199e68528ba867bb9ac54ab",
+        "prev": "afe610033b4d39e6eb30f1e5650f5d6df2d40a115b1cab06a23db3f3b53a4ca2",
+        "hash": "90b268de4beb82dd8b04484b03207c0fd23b802455d3e138b6a9f6af9bc21767"
+      }
+    }
+  ],
+  "namedInputs": [
+    {
+      "files": {
+        "a input.txt": "orange\nbanana\n",
+        "b input.txt": "pear\napple\n"
+      },
+      "expected": "pear\norange\nbanana\napple\n"
+    },
+    {
+      "files": {
+        "a input.txt": "grape\n",
+        "b input.txt": "cherry\nfig\n"
+      },
+      "expected": "grape\nfig\ncherry\n"
+    }
+  ],
+  "namedOutputs": [
+    {
+      "runId": "run_mvdmv3bb_1",
+      "capability": "cli:sort:invoke",
+      "provider": "cli:sort",
+      "title": "sort with documented options: sort or merge records (lines) of text and binary files",
+      "status": "completed",
+      "output": "pear\norange\nbanana\napple\n",
+      "startedAt": "2026-10-18T09:38:44.999Z",
+      "durationMs": 98.6,
+      "verification": {
+        "status": "unverified",
+        "results": []
+      },
+      "receipt": {
+        "runId": "run_mvdmv3bb_1",
+        "capability": "cli:sort:invoke",
+        "provider": "cli:sort",
+        "startedAt": "2026-10-18T09:38:44.999Z",
+        "durationMs": 98.6,
+        "status": "completed",
+        "verification": "unverified",
+        "seq": 4,
+        "inputDigest": "29c3f6e8ad4765667c12695ce1b327f8ff9535c291cf0b3aabd679d5a6e4bf47",
+        "outputDigest": "66e0362f32300b87d36cd7c7bc7dd201f45f62972d6241ed9f4f68b5c44e35b3",
+        "prev": "90b268de4beb82dd8b04484b03207c0fd23b802455d3e138b6a9f6af9bc21767",
+        "hash": "e3beaee4b88668884fac13da94334be923eaab8af9dbe436a7a4840f52a168e0"
+      }
+    },
+    {
+      "runId": "run_mvdmv5qw_1",
+      "capability": "cli:sort:invoke",
+      "provider": "cli:sort",
+      "title": "sort with documented options: sort or merge records (lines) of text and binary files",
+      "status": "completed",
+      "output": "grape\nfig\ncherry\n",
+      "startedAt": "2026-10-18T09:38:48.152Z",
+      "durationMs": 191.1,
+      "verification": {
+        "status": "unverified",
+        "results": []
+      },
+      "receipt": {
+        "runId": "run_mvdmv5qw_1",
+        "capability": "cli:sort:invoke",
+        "provider": "cli:sort",
+        "startedAt": "2026-10-18T09:38:48.152Z",
+        "durationMs": 191.1,
+        "status": "completed",
+        "verification": "unverified",
+        "seq": 5,
+        "inputDigest": "067e0cab1828e8bff76beb3faab9febbdd3234447efe6ccf896c88fd2aa1478d",
+        "outputDigest": "962614afc7c0486562b58c5bbca2735960840088bcc7837a6b33b253fc3b3ed8",
+        "prev": "e3beaee4b88668884fac13da94334be923eaab8af9dbe436a7a4840f52a168e0",
+        "hash": "0f3819c34f5b81212e6b71fafa2b59e059f5e34384d5e70418c9ae7a33f6c70a"
+      }
+    }
+  ],
+  "retainedReflectionUnchanged": true,
+  "separateFreshProcesses": true,
+  "postDiscoveryInvestigationPermission": false,
+  "operatorRefusal": true,
+  "toolCount": 13,
+  "uninstall": true,
+  "packageBytes": 414004,
+  "packageSha256": "043eae3d265d83e6d3f19d937c5644d070726338a70b76a765d6117ea40f96e2",
+  "limitations": [
+    "Exposed two-program developer check, not an unfamiliar-user trial or economic comparison.",
+    "No independent-author review or universal containment claim.",
+    "The aliases are staged outside the home-directory sandbox exclusion; private installed program paths remain unresolved."
+  ]
+}
