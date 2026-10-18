@@ -20,7 +20,9 @@ function probe(mode:string,quick=false) {
 test('sandbox refuses availability when the resource observer fails', {skip},()=>{
   const p=probe('ps-error');
   assert.equal(p.result.sandbox,null);
-  assert.equal(p.events.filter((e:any)=>e.kind==='spawn').length,1,'only the bounded availability probe was dispatched');
+  // Linux tries both configured bwrap paths; macOS has one candidate. All
+  // candidates must fail their availability probe before any workload is run.
+  assert.equal(p.events.filter((e:any)=>e.kind==='spawn').length,process.platform==='linux'?2:1,'only bounded availability probes were dispatched');
 });
 test('sandbox rejects malformed resource snapshots instead of treating them as zero usage', {skip},()=>{
   assert.equal(probe('malformed').result.sandbox,null);
