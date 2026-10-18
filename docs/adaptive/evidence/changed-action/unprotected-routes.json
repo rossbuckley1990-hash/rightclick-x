@@ -1,0 +1,34 @@
+{
+  "scope": "unprotected in-memory fixture; local bookkeeping is not an execution boundary",
+  "retained": {
+    "status": "failed",
+    "error": "blocked by execution policy: openapi:unprotected-diagnostic:append: openapi:unprotected-diagnostic:append changed meaning when https://unprotected.fixture/openapi.json was re-learned (2026-10-18T08:50:48.926Z): it called POST /old (write), it now calls POST /changed (write). Not run. The new operation is separately discoverable as openapi:unprotected-diagnostic:append@op-ce3489a3cee211ef; its authority must be established independently. Caller acknowledgement cannot clear this refusal; this retained identifier no longer names the original operation.",
+    "effects": 0
+  },
+  "freshIdentity": {
+    "id": "openapi:unprotected-diagnostic:append@op-ce3489a3cee211ef",
+    "status": "completed"
+  },
+  "reset": {
+    "status": "completed",
+    "warningPresent": false
+  },
+  "effects": [
+    {
+      "method": "POST",
+      "path": "/changed",
+      "body": ""
+    },
+    {
+      "method": "POST",
+      "path": "/changed",
+      "body": "direct alternative route"
+    },
+    {
+      "method": "POST",
+      "path": "/changed",
+      "body": ""
+    }
+  ],
+  "independentContainment": false
+}

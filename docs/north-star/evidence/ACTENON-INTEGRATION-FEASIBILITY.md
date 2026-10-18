@@ -10,6 +10,8 @@ Further evidence: [no-grant discovery and worker experiment](ACTENON-WORKERS-RES
 
 Resource follow-up: the [resource-owned experiment](ACTENON-RESOURCE-RESULT.md) passes 36 bounded checks. The resource receives only the public issuer key and calls native authority operations over private IPC; its write is guarded at the sole HTTP service, including direct network bypass probes. This closes that local fixture case, while production custody, general route coverage, released installation and comparative economics remain open. Original source-audit findings below are historical, not silently rewritten as full integration acceptance.
 
+Later compatibility checkpoint: [changed-operation integration](../../adaptive/CHANGED-ACTION.md) preserves failures at 11/20 and 19/20, then passes a strengthened 23-check lifecycle on corrected RightClick source. Separate checking binds 22 exact-request proofs and 29 signed artifacts to raw requests and operator transitions. The unchanged resource-owned fixture again passes 36 checks and verifies 45 signed artifacts. An unprotected reset/direct-route diagnostic remains deliberately successful, reinforcing the boundary prerequisite. No cryptographic code or mandatory Actenon dependency is added to RightClick; commercial superiority and production release maturity remain unestablished.
+
 ## 1. Source and release maturity
 
 These are fresh read-only clones of the five requested public repositories, not assumptions from cached web pages. All five use Apache-2.0 licensing. Exact commits and initial clean state are in [source audit](actenon-source-audit.json). Public registry and GitHub release responses were saved on the audit date in [registry summary](actenon/registry-summary.json).

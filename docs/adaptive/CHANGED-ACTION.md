@@ -17,3 +17,47 @@ The remediation separates a discovered changed operation into a deterministic fr
 The first identity-remediation regression run passes **280/281** and preserves a failure caused by over-restricting an existing compatible nested REST repair. The refinement excludes known changed lineage from heuristic repair without changing that test's completion requirement. Thirteen focused checks are also run against the original `6b0961d` source, with raw failures preserved. Additional checks cover stable replacement identity, fresh operator allowlists, retained compositions and same-title substitution after a rename. `experiments/north-star/changed-meaning-reset.ts` explicitly exercises an unprotected fresh identity, direct API request and reset/re-discovery; these routes must remain reported as outside containment, not scored as protected refusals.
 
 Frozen product `abfc295` passes 283 native regressions and the unchanged Actenon lifecycle at **19/20**. The remaining original assertion requires the retained goal's error to come from the external authority boundary. It now refuses earlier with a known changed-operation error. All six expected effects, the fresh operator-grant transition, subsequent removal/return, independent outcome checks and both explicit/replanned external denials pass. That original 19/20 run is retained unchanged. The lifecycle harness is then strengthened: require the precise earlier semantic refusal, require actual independent-authority denial for both fresh routes (previously only their failed status was required), count exactly those two POST requests, check distinct operation identity, and require the old changed identifier to remain refused after fresh operator approval. This adds three checks while preserving all effect, proof, replay and verification obligations. It is a documented error-layer change, not an acceptance threshold reduction.
+
+## Verified checkpoint
+
+Product and regression source is `abfc295714df4de6c3f71fccb49e9beec0d4e976`; the strengthened lifecycle harness is `edab7162d85420edfb140131d52020e47d8bdf9e`, with identical product source. The optional integration remains an experiment using native source-pinned Actenon APIs, not a core dependency or a released installation path.
+
+| Evidence | Result |
+|---|---|
+| Thirteen new checks against original `6b0961d` | 0/13 pass, 13 expected failures, zero skips |
+| Native macOS regressions | 283/283, zero skips |
+| Frozen Linux changed-meaning, drift, migration, disclosure and execution-policy checks | 41/41, zero skips; cached image, network disabled, source read-only |
+| Typecheck | Pass |
+| Unchanged real `json_xs` fresh-process lifecycle | 19/19 requirements; ten correct task executions, nine required refusals; six original and four continuity corruption controls rejected |
+| Black-box MCP/REST proof | 28/28, product hashes unchanged |
+| Offline package/install/thirteen tools/uninstall | Pass; 410,616-byte package |
+| Strengthened Actenon lifecycle | 23/23; six expected journal effects, fresh grant for changed target; old identifier still refused |
+| Separate lifecycle checker | 22 historical exact-request proof signatures/hashes and 29 linked signed receipt/refusal artifacts verified; all 29 altered artifacts and four record corruptions refused |
+| Unchanged resource-owned Actenon experiment | 36/36; separate checker verifies 45 signed artifacts, three durable journal-prefix commitments and direct API/shell/socket refusals |
+
+All result and failed-attempt files are bound by `evidence/changed-action-verification.json`. The first uncommitted identity candidate also has an explicitly labelled post-run patch reconstruction; replay reproduces its single compatible-repair failure (31/32 focused checks), without pretending it was a pre-run source freeze. The lifecycle and resource checkers use native Actenon cryptographic APIs in separate processes. They share the implementation author. The available security-review skill requires a specialised reviewer not exposed in this environment; no independent review was run. Neither separate-process checking nor passing signatures establishes independent-author certification.
+
+The unprotected diagnostic records **zero writes** after an old-id acknowledgement attempt, followed by **three successful writes** through a fresh identity, a direct API call and reset/re-discovery. These are intentionally exposed local fixture effects, not unauthorised external operations. The result demonstrates why no local map or capability naming convention is a security boundary. It also prevents falsely claiming that these changes solve the uncontained model pilot's authority problem. Model choice of a fresh operation still needs independent exact-action enforcement at the resource or sole broker. Existing title/type repair heuristics remain hypotheses, not proof that two different targets have identical semantics.
+
+No new live-model sessions or economics result is claimed. The prior D warm median of 17.2 seconds remains slower than A 12.2 and B 10.4, with its recorded sleep-related timing caveat. The new graph adds a separate descriptor only for observed changed operations; its disclosure, state and maintenance costs must count in later comparisons. This checkpoint establishes bounded reliability and authority-preserving compatibility, not the required material competitive advantage. Release **NO-GO**. Original holdout, model/vendor transfer, independent review, released optional installation and human commercial gates remain open.
+
+## Reproduction
+
+Export product `abfc295` to a new directory; do not switch or reset the programme branch. Include `experiments/north-star/changed-meaning-reset.ts` for the diagnostic below. Run the ordinary regression/typecheck, proof and offline package commands described in [disclosure reproduction](DISCLOSURE.md#reproduction), substituting this product revision. The Linux check uses the same cached immutable image and sandbox prerequisites, with the five test files listed above. These results do not imply a portable registry-only Actenon install.
+
+For real-program lifecycle replay, use the unchanged [sample-coverage procedure](CLI-SAMPLE-COVERAGE.md#reproduction), this product revision and the preserved `cli-migration/before-final` version-22 seed. Use a new output directory; both lifecycle and continuity checkers must pass. The reset diagnostic runs directly from the product export:
+
+```sh
+node experiments/north-star/changed-meaning-reset.ts
+```
+
+Export the experiment directory from `edab716` alongside the product. With the pinned audit environment from the [feasibility assessment](../north-star/evidence/ACTENON-INTEGRATION-FEASIBILITY.md) and the recorded cached Linux image, run the following from that checkout using new output paths:
+
+```sh
+python experiments/actenon/lifecycle.py --image sha256:5e95a1b7bdb5ddd279c4c18760a007a98f94c6fb24236433c19b61831bc4e4f5 --output NEW_LIFECYCLE_DIR
+python experiments/actenon/resource-experiment.py --image sha256:5e95a1b7bdb5ddd279c4c18760a007a98f94c6fb24236433c19b61831bc4e4f5 --output NEW_RESOURCE_DIR
+python experiments/actenon/check-changed-lifecycle.py NEW_LIFECYCLE_DIR
+python experiments/actenon/check-resource.py NEW_RESOURCE_DIR
+```
+
+The new separate checker is frozen at `3c6088cafc36eb85c90e1e092c5c16493b405033` (its exact file hash is in the verification manifest), rather than the earlier experiment freeze. That commit contains the same product and strengthened harness, so it can also be used as one combined reproduction checkout. These harnesses check Git provenance and pinned Actenon sources; use the committed checkout for them or retain the corresponding Git history alongside an export. The target services and grants are disposable fixtures. No push, merge, publication, purchase, outreach or live account operation is required. Next resume the original unfamiliar multi-step/maintenance challenge when its independently selected evaluation route is available; continue generic usability work in the meantime, without additional single-target security fixtures standing in for commercial evidence.

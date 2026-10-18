@@ -1,0 +1,171 @@
+✖ changed meaning cannot be self-authorised through acknowledged (27.92525ms)
+✖ changed meaning cannot be self-authorised through planned (1.475292ms)
+✖ changed meaning cannot be self-authorised through mcp (7.675334ms)
+✖ changed meaning cannot be self-authorised through http (2.772958ms)
+✖ changed meaning cannot be self-authorised through compose (6.358875ms)
+✖ changed meaning cannot be self-authorised through composite (1.108833ms)
+✖ policy-denied acknowledgement cannot erase the warning before persistence (0.854166ms)
+✖ a changed leaf is disclosed as unavailable without changing operator policy (0.61675ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 0
+ℹ fail 8
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 229.014
+
+✖ failing tests:
+
+test at test/changed-meaning.test.ts:35:3
+✖ changed meaning cannot be self-authorised through acknowledged (27.92525ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'completed'
+  - 'failed'
+  
+      at TestContext.<anonymous> (file:///Users/ross/src/rightclick-x-adaptive/test/changed-meaning.test.ts:40:14)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'completed',
+    expected: 'failed',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/changed-meaning.test.ts:35:3
+✖ changed meaning cannot be self-authorised through planned (1.475292ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'completed'
+  - 'failed'
+  
+      at TestContext.<anonymous> (file:///Users/ross/src/rightclick-x-adaptive/test/changed-meaning.test.ts:40:14)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'completed',
+    expected: 'failed',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/changed-meaning.test.ts:35:3
+✖ changed meaning cannot be self-authorised through mcp (7.675334ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(result.result.isError || result.result.structuredContent.status === "failed")
+  
+      at TestContext.<anonymous> (file:///Users/ross/src/rightclick-x-adaptive/test/changed-meaning.test.ts:44:14)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at test/changed-meaning.test.ts:35:3
+✖ changed meaning cannot be self-authorised through http (2.772958ms)
+  AssertionError [ERR_ASSERTION]: neither the changed operation nor an earlier composite effect may dispatch
+  + actual - expected
+  
+  + [
+  +   'GET /changed'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///Users/ross/src/rightclick-x-adaptive/test/changed-meaning.test.ts:58:12)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'GET /changed' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at test/changed-meaning.test.ts:35:3
+✖ changed meaning cannot be self-authorised through compose (6.358875ms)
+  AssertionError [ERR_ASSERTION]: Expected "actual" to be strictly unequal to:
+  
+  'completed'
+      at TestContext.<anonymous> (file:///Users/ross/src/rightclick-x-adaptive/test/changed-meaning.test.ts:50:14)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'completed',
+    expected: 'completed',
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at test/changed-meaning.test.ts:35:3
+✖ changed meaning cannot be self-authorised through composite (1.108833ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'completed'
+  - 'failed'
+  
+      at TestContext.<anonymous> (file:///Users/ross/src/rightclick-x-adaptive/test/changed-meaning.test.ts:56:14)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'completed',
+    expected: 'failed',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/changed-meaning.test.ts:63:1
+✖ policy-denied acknowledgement cannot erase the warning before persistence (0.854166ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + undefined
+  - {
+  -   after: 'GET /changed',
+  -   at: '2026-10-18T08:36:35.755Z',
+  -   before: 'GET /old',
+  -   id: 'openapi:meaning-fixture:readvalue',
+  -   source: 'https://meaning.test/openapi.json'
+  - }
+  
+      at TestContext.<anonymous> (file:///Users/ross/src/rightclick-x-adaptive/test/changed-meaning.test.ts:68:10)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: { id: 'openapi:meaning-fixture:readvalue', source: 'https://meaning.test/openapi.json', at: '2026-10-18T08:36:35.755Z', before: 'GET /old', after: 'GET /changed' },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at test/changed-meaning.test.ts:76:1
+✖ a changed leaf is disclosed as unavailable without changing operator policy (0.61675ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (file:///Users/ross/src/rightclick-x-adaptive/test/changed-meaning.test.ts:80:10)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

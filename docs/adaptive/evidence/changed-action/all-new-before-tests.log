@@ -1,0 +1,250 @@
+✖ changed meaning cannot be self-authorised through acknowledged (20.37975ms)
+✖ changed meaning cannot be self-authorised through planned (2.723667ms)
+✖ changed meaning cannot be self-authorised through mcp (4.197125ms)
+✖ changed meaning cannot be self-authorised through http (1.42675ms)
+✖ changed meaning cannot be self-authorised through compose (8.98ms)
+✖ changed meaning cannot be self-authorised through composite (1.1045ms)
+✖ policy-denied acknowledgement cannot erase the warning before persistence (0.805625ms)
+✖ a changed leaf is disclosed as unavailable without changing operator policy (0.73475ms)
+✖ a newly discovered operation has a stable separate identity and no inherited execution experience (0.806458ms)
+✖ new operation identities still obey operator execution restrictions (0.432041ms)
+✖ an exact capability allowlist does not transfer to its newly discovered replacement (0.820333ms)
+✖ unchanged rereads keep a new operation's proven composition available (0.435916ms)
+✖ missing saved ids cannot fall back to the same title and ports after their operation changes (6.568542ms)
+ℹ tests 13
+ℹ suites 0
+ℹ pass 0
+ℹ fail 13
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 203.279167
+
+✖ failing tests:
+
+test at test/changed-meaning.test.ts:37:3
+✖ changed meaning cannot be self-authorised through acknowledged (20.37975ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'completed'
+  - 'failed'
+  
+      at TestContext.<anonymous> (file:///private/tmp/rcx-changed-action-before-6b0961d/test/changed-meaning.test.ts:42:14)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'completed',
+    expected: 'failed',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/changed-meaning.test.ts:37:3
+✖ changed meaning cannot be self-authorised through planned (2.723667ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'completed'
+  - 'failed'
+  
+      at TestContext.<anonymous> (file:///private/tmp/rcx-changed-action-before-6b0961d/test/changed-meaning.test.ts:42:14)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'completed',
+    expected: 'failed',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/changed-meaning.test.ts:37:3
+✖ changed meaning cannot be self-authorised through mcp (4.197125ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(result.result.isError || result.result.structuredContent.status === "failed")
+  
+      at TestContext.<anonymous> (file:///private/tmp/rcx-changed-action-before-6b0961d/test/changed-meaning.test.ts:46:14)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at test/changed-meaning.test.ts:37:3
+✖ changed meaning cannot be self-authorised through http (1.42675ms)
+  AssertionError [ERR_ASSERTION]: neither the changed operation nor an earlier composite effect may dispatch
+  + actual - expected
+  
+  + [
+  +   'GET /changed'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///private/tmp/rcx-changed-action-before-6b0961d/test/changed-meaning.test.ts:60:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'GET /changed' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at test/changed-meaning.test.ts:37:3
+✖ changed meaning cannot be self-authorised through compose (8.98ms)
+  AssertionError [ERR_ASSERTION]: Expected "actual" to be strictly unequal to:
+  
+  'completed'
+      at TestContext.<anonymous> (file:///private/tmp/rcx-changed-action-before-6b0961d/test/changed-meaning.test.ts:52:14)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'completed',
+    expected: 'completed',
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at test/changed-meaning.test.ts:37:3
+✖ changed meaning cannot be self-authorised through composite (1.1045ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'completed'
+  - 'failed'
+  
+      at TestContext.<anonymous> (file:///private/tmp/rcx-changed-action-before-6b0961d/test/changed-meaning.test.ts:58:14)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'completed',
+    expected: 'failed',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/changed-meaning.test.ts:65:1
+✖ policy-denied acknowledgement cannot erase the warning before persistence (0.805625ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + undefined
+  - {
+  -   after: 'GET /changed',
+  -   at: '2026-10-18T08:49:44.583Z',
+  -   before: 'GET /old',
+  -   id: 'openapi:meaning-fixture:readvalue',
+  -   source: 'https://meaning.test/openapi.json'
+  - }
+  
+      at TestContext.<anonymous> (file:///private/tmp/rcx-changed-action-before-6b0961d/test/changed-meaning.test.ts:70:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: { id: 'openapi:meaning-fixture:readvalue', source: 'https://meaning.test/openapi.json', at: '2026-10-18T08:49:44.583Z', before: 'GET /old', after: 'GET /changed' },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at test/changed-meaning.test.ts:78:1
+✖ a changed leaf is disclosed as unavailable without changing operator policy (0.73475ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (file:///private/tmp/rcx-changed-action-before-6b0961d/test/changed-meaning.test.ts:82:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/changed-meaning.test.ts:87:1
+✖ a newly discovered operation has a stable separate identity and no inherited execution experience (0.806458ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(current && current !== cap.id)
+  
+      at TestContext.<anonymous> (file:///private/tmp/rcx-changed-action-before-6b0961d/test/changed-meaning.test.ts:92:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at test/changed-meaning.test.ts:109:1
+✖ new operation identities still obey operator execution restrictions (0.432041ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(current)
+  
+      at TestContext.<anonymous> (file:///private/tmp/rcx-changed-action-before-6b0961d/test/changed-meaning.test.ts:113:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at test/changed-meaning.test.ts:118:1
+✖ an exact capability allowlist does not transfer to its newly discovered replacement (0.820333ms)
+  Error: unknown capability: undefined
+      at RightClick.run (file:///private/tmp/rcx-changed-action-before-6b0961d/src/runtime.ts:937:21)
+      at TestContext.<anonymous> (file:///private/tmp/rcx-changed-action-before-6b0961d/test/changed-meaning.test.ts:124:35)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at test/changed-meaning.test.ts:132:1
+✖ unchanged rereads keep a new operation's proven composition available (0.435916ms)
+  TypeError [Error]: Cannot read properties of undefined (reading 'replace')
+      at tokenize (file:///private/tmp/rcx-changed-action-before-6b0961d/src/core/graph.ts:378:6)
+      at CapabilityGraph.search (file:///private/tmp/rcx-changed-action-before-6b0961d/src/core/graph.ts:303:19)
+      at file:///private/tmp/rcx-changed-action-before-6b0961d/src/runtime.ts:1262:90
+      at Array.map (<anonymous>)
+      at RightClick.pinAnchors (file:///private/tmp/rcx-changed-action-before-6b0961d/src/runtime.ts:1259:20)
+      at RightClick.compose (file:///private/tmp/rcx-changed-action-before-6b0961d/src/runtime.ts:1349:42)
+      at TestContext.<anonymous> (file:///private/tmp/rcx-changed-action-before-6b0961d/test/changed-meaning.test.ts:136:29)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at test/changed-meaning.test.ts:149:1
+✖ missing saved ids cannot fall back to the same title and ports after their operation changes (6.568542ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'completed'
+  - 'failed'
+  
+      at TestContext.<anonymous> (file:///private/tmp/rcx-changed-action-before-6b0961d/test/changed-meaning.test.ts:159:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'completed',
+    expected: 'failed',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

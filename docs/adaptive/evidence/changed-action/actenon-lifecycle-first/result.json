@@ -1,0 +1,52 @@
+{
+  "checks": {
+    "verified_goal_published": true,
+    "fresh_process_verified_reuse": true,
+    "warm_no_provider_rediscovery": true,
+    "composite_refuses_unapproved_input": true,
+    "generated_rest_refuses_unapproved_input": true,
+    "generated_graphql_refuses_unapproved_input": true,
+    "federated_runtime_inherits_capability": true,
+    "federation_does_not_grant_authority": true,
+    "compatible_contract_rename_reuses_goal": true,
+    "retained_goal_cannot_gain_changed_target_authority": false,
+    "acknowledgement_cannot_grant_changed_target": true,
+    "automatic_replanning_cannot_grant_changed_target": false,
+    "changed_target_has_zero_effect_before_operator_authority": true,
+    "operator_approved_target_gets_fresh_verified_goal": false,
+    "changed_target_proofs_use_new_operator_grant": false,
+    "incompatible_method_refused_before_effect": false,
+    "removed_provider_refused": false,
+    "return_revalidated_and_verified": false,
+    "false_acknowledgement_never_verified": false,
+    "independent_effect_journal_matches_exact_sequence": false
+  },
+  "passed": 11,
+  "total": 20,
+  "observer": {
+    "effects": [
+      {
+        "label": "initial",
+        "path": "/entries"
+      },
+      {
+        "label": "warm",
+        "path": "/entries"
+      },
+      {
+        "label": "peer",
+        "path": "/entries"
+      },
+      {
+        "label": "compatible",
+        "path": "/entries"
+      }
+    ],
+    "verified_attestations": {
+      "receipt": 16,
+      "refusal": 4
+    },
+    "tampered_attestations_refused": 20
+  },
+  "scope": "exposed development fixture; same-principal runtime federation; no model-swap, production resource-owned edge or economics claim"
+}
