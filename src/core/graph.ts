@@ -6,10 +6,9 @@
 // every change is an event that watchers (MCP context_watch, the dashboard
 // stream, federation peers) can follow.
 //
-// "Powers" are what the graph can do, not what it lists: every capability,
-// plus every 2- and 3-step pipeline the edges allow. Adding one provider can
-// add far more powers than capabilities, because its nodes connect to
-// everything already present. That is the number the dashboard shows.
+// The legacy "powers" API counts descriptors and potential typed walks through
+// two or three operation nodes. These are topology statistics, not evidence of
+// executable, authorised, semantically valid or verified workflows.
 
 import { IdentityEvidence, schemeOnly } from "./identities.ts";
 import { accepts, distance, isNominal, parentOf, strongly } from "./semantics.ts";

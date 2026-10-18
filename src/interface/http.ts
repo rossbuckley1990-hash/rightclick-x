@@ -14,6 +14,7 @@
 
 import { VERSION, type RightClick } from "../runtime.ts";
 import { DASHBOARD_HTML } from "./dashboard.ts";
+import { dashboardMetrics } from "./dashboard-state.ts";
 import { executeGraphQL } from "./graphql-server.ts";
 import { handle, type JsonRpc } from "./mcp-server.ts";
 import { TOOLS, dispatch } from "./tools.ts";
@@ -152,7 +153,7 @@ export function createHandler(rc: RightClick, opts: HttpOptions = {}): (req: Req
 function viz(rc: RightClick) {
   const nodes = rc.graph.list().map((c) => ({ id: c.id, title: c.title, provider: c.provider, source: c.source }));
   const links = rc.graph.sampleEdges(4000);
-  return { nodes, links, powers: rc.graph.powers(), providers: rc.providers(), runtime: rc.runtime(), recent: rc.runStatus({ limit: 15 }) };
+  return { nodes, links, powers: rc.graph.powers(), metrics: dashboardMetrics(rc), providers: rc.providers(), runtime: rc.runtime(), recent: rc.runStatus({ limit: 15 }) };
 }
 
 function events(rc: RightClick, since: number): Response {

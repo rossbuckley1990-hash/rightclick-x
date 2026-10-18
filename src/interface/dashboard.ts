@@ -16,7 +16,7 @@ header{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:s
 h1{font-size:18px;margin:0;letter-spacing:.02em}h1 span{color:var(--accent)}
 .meta{color:var(--muted);font-size:12px}
 .stats{display:flex;gap:18px;flex-wrap:wrap}.stat b{display:block;font-size:22px;font-variant-numeric:tabular-nums}.stat small{color:var(--muted)}
-.stat.powers b{color:var(--accent)}
+.stat.powers b{color:var(--muted)}.stat.unknown b{font-size:14px;color:var(--warn);padding-top:10px}.metric-note{margin:0;padding:9px 18px;color:var(--muted);border-bottom:1px solid var(--line);font-size:12px}
 main{display:grid;grid-template-columns:1fr 380px;height:calc(100vh - 66px)}
 @media (max-width:900px){main{grid-template-columns:1fr;height:auto}main>div:first-child{height:55vh}}
 #graph{width:100%;height:100%;display:block}
@@ -38,12 +38,16 @@ pre{white-space:pre-wrap;word-break:break-word;font-size:12px;margin:6px 0 0;max
 <header>
   <div><h1>RightClick <span>X</span></h1><div class="meta" id="meta">connecting…</div></div>
   <div class="stats">
-    <div class="stat"><b id="s-prov">–</b><small>providers</small></div>
-    <div class="stat"><b id="s-caps">–</b><small>capabilities</small></div>
-    <div class="stat"><b id="s-edges">–</b><small>typed links</small></div>
-    <div class="stat powers"><b id="s-powers">–</b><small>composite powers</small></div>
+    <div class="stat"><b id="s-prov">NOT AVAILABLE</b><small>providers</small></div>
+    <div class="stat"><b id="s-caps">NOT AVAILABLE</b><small>discovered operations</small></div>
+    <div class="stat powers"><b id="s-paths">NOT AVAILABLE</b><small>potential typed paths</small></div>
+    <div class="stat unknown"><b id="s-verified">NOT ASSESSED</b><small>independently verified capabilities</small></div>
+    <div class="stat unknown"><b id="s-authorised">UNKNOWN</b><small>authorised capabilities</small></div>
+    <div class="stat"><b id="s-reusable">NOT AVAILABLE</b><small>retained reusable contracts</small></div>
   </div>
 </header>
+<p class="metric-note">Graph scale measures potential connections. Discovery does not establish execution authority or verified outcomes. <button id="metrics-toggle" type="button" aria-expanded="false" aria-controls="metric-sources">Metric sources</button></p>
+<section id="metric-sources" hidden aria-label="Metric sources and limitations"></section>
 <main>
   <div style="position:relative;min-height:320px"><canvas id="graph" style="position:absolute;inset:0"></canvas>
     <div class="legend" style="position:absolute;left:12px;bottom:10px" id="legend"></div></div>
@@ -71,8 +75,7 @@ async function api(path,body){const h={'content-type':'application/json'};if(tok
   if(r.status===401){token=prompt('RightClick X access token (RCX_TOKEN):');try{sessionStorage.setItem('rcx-token',token)}catch{};return api(path,body)}
   return r.json()}
 const fmt=n=>Number(n).toLocaleString();
-function bump(el,to){const from=Number(el.dataset.v||0);el.dataset.v=to;const t0=performance.now();
-  (function f(t){const k=Math.min(1,(t-t0)/700);el.textContent=fmt(Math.round(from+(to-from)*(1-Math.pow(1-k,3))));if(k<1)requestAnimationFrame(f)})(t0)}
+function metric(el,m){el.textContent=m.value===null?(m.status==='not-assessed'?'NOT ASSESSED':'UNKNOWN'):fmt(m.value);el.title=m.source+'. '+m.limitation}
 function feed(html){const li=document.createElement('li');li.innerHTML=html;$('#feed').prepend(li);while($('#feed').children.length>80)$('#feed').lastChild.remove()}
 const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 
@@ -84,7 +87,8 @@ let nodes=new Map(),links=[];
 function sync(v){const keep=new Set();for(const n of v.nodes){keep.add(n.id);if(!nodes.has(n.id)){nodes.set(n.id,{...n,x:W/2+(Math.random()-.5)*80,y:H/2+(Math.random()-.5)*80,vx:0,vy:0,born:performance.now(),glow:0})}}
   for(const id of [...nodes.keys()])if(!keep.has(id))nodes.delete(id);temp=Math.max(temp,25);
   links=v.links.filter(([a,b])=>nodes.has(a)&&nodes.has(b));
-  const s=v.powers;bump($('#s-prov'),v.providers.length);bump($('#s-caps'),s.capabilities);bump($('#s-edges'),s.edges);bump($('#s-powers'),s.total);
+  for(const [id,key] of Object.entries({'s-prov':'providers','s-caps':'discovered','s-paths':'potentialPaths','s-verified':'independentlyVerified','s-authorised':'authorised','s-reusable':'reusable'}))metric($('#'+id),v.metrics[key]);
+  $('#metric-sources').replaceChildren();for(const m of Object.values(v.metrics)){const p=document.createElement('p');p.textContent=m.label+' — '+m.source+'. '+m.limitation;$('#metric-sources').append(p)}
   const rt=v.runtime.runtime;$('#meta').textContent=v.runtime.name+' · '+rt.name+(rt.version?' '+rt.version:'')+(rt.region?' · '+rt.region:'')+' · receipts '+v.runtime.receipts.count;
   const srcs=[...new Set(v.nodes.map(n=>n.source))];$('#legend').innerHTML=srcs.map(s=>'<span><i style="background:'+color(s)+'"></i>'+s+'</span>').join('')}
 let temp=60;
@@ -116,14 +120,14 @@ async function stream(){const h={};if(token)h.authorization='Bearer '+token;
       while((i=buf.indexOf('\\n\\n'))>=0){const blk=buf.slice(0,i);buf=buf.slice(i+2);const line=blk.split('\\n').find(l=>l.startsWith('data:'));if(line)onEvent(JSON.parse(line.slice(5)))}}}catch{}
   setTimeout(stream,2000)}
 function onEvent(e){const d=e.data;
-  if(e.kind==='provider.learned'){feed('<b>'+esc(d.title)+'</b> learned ('+d.source+'): +'+d.capabilitiesAdded+' capabilities, <span class="plus">+'+fmt(d.newPowers)+' powers</span>');refresh()}
-  else if(e.kind==='capability.crystallized'){feed('Crystallized <b>'+esc(d.title)+'</b> <span class="plus">+'+fmt(d.newPowers)+' powers</span>');refresh()}
+  if(e.kind==='provider.learned'){feed('<b>'+esc(d.title)+'</b> contract read ('+esc(d.source)+'): '+d.capabilitiesAdded+' operations reflected');refresh()}
+  else if(e.kind==='capability.crystallized'){feed('Retained composite: <b>'+esc(d.title)+'</b>. Inspect its outcome checks before relying on it.');refresh()}
   else if(e.kind==='provider.forgotten'){feed('Forgot '+esc(d.provider));refresh()}
   else if(e.kind==='run.completed'){const n=nodes.get(d.capability);if(n)n.glow=1;feed((d.ok?'✓':'✗')+' '+esc(d.title)+' <span class="meta">'+d.durationMs+'ms · '+d.verification+'</span>')}
   else if(e.kind==='research'){feed('Researched “'+esc(d.topic||'environment')+'”: '+d.candidates+' candidates')}}
 
 $('#learn-go').onclick=async()=>{const u=$('#learn-url').value.trim();if(!u)return;$('#learn-out').textContent='learning…';
-  const r=await api('/api/learn',{source:u,deep:true});$('#learn-out').textContent=r.error||('+'+r.totalNewCapabilities+' capabilities, +'+fmt(r.totalNewPowers)+' powers\\n'+r.results.flatMap(x=>x.probes).map(p=>(p.ok?'✓ ':'· ')+p.kind+' '+p.url+(p.detail?' — '+p.detail:'')).join('\\n'))};
+  const r=await api('/api/learn',{source:u,deep:true});$('#learn-out').textContent=r.error||('Operations reflected: '+r.totalNewCapabilities+' (execution and authority assessed separately)\\n'+r.results.flatMap(x=>x.probes).map(p=>(p.ok?'✓ ':'· ')+p.kind+' '+p.url+(p.detail?' — '+p.detail:'')).join('\\n'))};
 $('#c-go').onclick=async()=>{$('#c-out').textContent='planning…';let have;try{have=JSON.parse($('#c-have').value)}catch{$('#c-out').textContent='have must be JSON';return}
   const r=await api('/api/compose',{have,want:$('#c-want').value,intent:$('#c-intent').value||undefined,run:true});
   if(r.error){$('#c-out').textContent=r.error;return}
@@ -131,6 +135,7 @@ $('#c-go').onclick=async()=>{$('#c-out').textContent='planning…';let have;try{
 $('#r-go').onclick=async()=>{const t=$('#r-topic').value.trim();$('#r-out').textContent='searching directories…';const r=await api('/api/research',{topic:t,limit:5});
   $('#r-out').innerHTML=r.directories.map(d=>'<div class="meta">'+esc(d.title)+(d.reachable?'':' — unreachable: '+esc(d.error))+'</div>'+d.candidates.map(c=>'<div class="cand"><span>'+esc(c.title)+' <span class="meta">'+c.kind+'</span></span><button data-src="'+esc(c.source)+'">learn</button></div>').join('')).join('');
   for(const b of $('#r-out').querySelectorAll('button'))b.onclick=async()=>{b.textContent='…';const x=await api('/api/learn',{source:b.dataset.src});b.textContent=x.totalNewCapabilities?'+'+x.totalNewCapabilities:'✗'}};
+$('#metrics-toggle').onclick=()=>{const panel=$('#metric-sources');panel.hidden=!panel.hidden;$('#metrics-toggle').setAttribute('aria-expanded',String(!panel.hidden))};
 size();refresh().then(()=>{tick();stream()});setInterval(refresh,15000);
 </script>
 </body>
