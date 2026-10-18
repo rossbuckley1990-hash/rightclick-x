@@ -1,0 +1,51 @@
+✖ old operation identity survives new probe coverage, restart and compatible repair without repinning (906.4055ms)
+✔ migration refuses mismatched evidence, changed invocation and unresolved prior meaning (5012.156542ms)
+✔ migration continuity does not supply investigation, execution authority or a sandbox (1861.467875ms)
+✖ portable knowledge declares inference version and cannot import stale contracts or local lineage (852.691542ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 2
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 8831.532166
+
+✖ failing tests:
+
+test at ../../../../private/tmp/rcx-cli-migration-before/test/cli-migration.test.ts:60:1
+✖ old operation identity survives new probe coverage, restart and compatible repair without repinning (906.4055ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'failed'
+  - 'completed'
+  
+      at TestContext.<anonymous> (file:///private/tmp/rcx-cli-migration-before/test/cli-migration.test.ts:63:10)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'failed',
+    expected: 'completed',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at ../../../../private/tmp/rcx-cli-migration-before/test/cli-migration.test.ts:120:1
+✖ portable knowledge declares inference version and cannot import stale contracts or local lineage (852.691542ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  undefined !== 25
+  
+      at TestContext.<anonymous> (file:///private/tmp/rcx-cli-migration-before/test/cli-migration.test.ts:124:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: 25,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

@@ -14,7 +14,7 @@ export const KNOWLEDGE_FORMAT = "rightclick-x/capability-knowledge@1";
 export interface KnowledgeBundle {
   format: typeof KNOWLEDGE_FORMAT;
   exportedAt: string;
-  source: { os?: string; arch?: string; runtime: string; version: string };
+  source: { os?: string; arch?: string; runtime: string; version: string; semantics?: number };
   programs: Array<{
     name: string;
     path: string;

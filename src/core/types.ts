@@ -189,6 +189,10 @@ export interface CliInvoke {
    * after a change, without repeating the whole investigation.
    */
   examples?: Array<{ stdin?: string; files?: Record<string, string>; literals?: string[]; outputSha256: string; outputPreview: string }>;
+  /** Local operation identities retained across inference upgrades by matching old examples
+   * against fresh evidence for the same binary and invocation contract. Not portable authority
+   * or universal semantic equivalence; export/import removes this local lineage. */
+  continuity?: Array<{ behaviour: string; examples: NonNullable<CliInvoke["examples"]> }>;
   /** Output values that vary between identical runs (file timestamps) and are normalised in fingerprints. */
   volatile?: "timestamps";
 }

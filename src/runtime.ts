@@ -11,6 +11,7 @@ import { assessPlan, contractFor, lostWords, type Assurance, type ContractAssess
 import { selectionWith } from "./reflectors/graphql.ts";
 import { hostSandbox, type Sandbox } from "./core/sandbox.ts";
 import { validateFileNames } from "./core/cli-files.ts";
+import { carryCliContinuity, withoutCliContinuity } from "./core/cli-continuity.ts";
 import { checkProgram, sameProgram } from "./core/programs.ts";
 import { isSensitiveName, scrub, sensitiveValues } from "./core/secrets.ts";
 import { investigateCli, replayExamples, validateOptions, type Investigation } from "./reflectors/cli.ts";
@@ -297,6 +298,13 @@ function operationOf(c: Capability): string | undefined {
   return c.risk === "read" ? op : `${op} (${c.risk})`;
 }
 
+function carriesOperation(c: Capability, operation: string): boolean {
+  if (operationOf(c) === operation) return true;
+  const inv = c.invoke;
+  return inv.kind === "cli" && !!inv.continuity?.some(e =>
+    operationOf({ ...c, invoke: { ...inv, behaviour: e.behaviour } }) === operation);
+}
+
 const HEALABLE = new Set(["http", "graphql", "mcp", "cli"]);
 /** A failed plain run re-reads a contract at most this often (transient 5xx, timeouts and rate limits repeat). */
 const HEAL_REREAD_MS = 60_000;
@@ -406,12 +414,17 @@ export class RightClick {
         const kinds: Record<string, SourceKind> = {};
         const programs: string[] = [];
         const operations = new Map<string, Map<string, string | undefined>>();
+        const oldCli = new Map<string, Capability>();
         for (const p of rc.graph.providers.values()) {
           if (["openapi", "graphql", "mcp", "web", "peer"].includes(p.source)) kinds[(p.meta?.source as string | undefined) ?? p.origin] = p.source as SourceKind;
           if (p.source === "cli") {
             const source = `cli:${p.origin}`;
             programs.push(source);
             operations.set(source, new Map(p.capabilityIds.map(id => [id, rc.graph.get(id) ? operationOf(rc.graph.get(id)!) : undefined] as const)));
+            for (const id of p.capabilityIds) {
+              const cap = rc.graph.get(id);
+              if (cap) oldCli.set(id, cap);
+            }
             // Retire stale invocations before a possibly refused/failed migration.
             // Published anchors remain pinned; migration never silently rebinds them.
             rc.graph.forget(p.id);
@@ -424,6 +437,10 @@ export class RightClick {
             const cap = rc.graph.get(id);
             return cap && rc.graph.providers.get(cap.provider)?.meta?.source === source;
           });
+          for (const id of present) {
+            const cap = rc.graph.get(id)!;
+            Object.assign(cap, carryCliContinuity(oldCli.get(id), cap, true));
+          }
           rc.noteMeaningChanges(source, present, before);
         }
         rc.persist();
@@ -541,6 +558,10 @@ export class RightClick {
             return;
           }
           d.reflections = d.reflections.map((r) => this.distinctIdentity(r, source));
+          d.reflections = d.reflections.map(r => ({ ...r, capabilities: r.capabilities.map(cap => {
+            const prior = this.graph.get(cap.id);
+            return prior && previous.some(p => p.id === prior.provider) ? carryCliContinuity(prior, cap) : cap;
+          }) }));
           const ids = new Set(d.reflections.map((r) => r.provider.id));
           const compositesBefore = this.graph.list().filter((c) => c.source === "composite").map((c) => c.id);
           for (const p of previous) if (!ids.has(p.id)) this.graph.forget(p.id);
@@ -592,12 +613,12 @@ export class RightClick {
       const now = this.graph.get(id)!;
       const after = operationOf(now);
       const seen = this.meaningChanges.get(id)?.before ?? operationsBefore.get(id);
-      if (!seen || !after || seen === after) {
+      if (!seen || !after || carriesOperation(now, seen)) {
         this.meaningChanges.delete(id);
         continue;
       }
       changed.push(id);
-      const successors = fromSource.filter((c) => c.id !== id && operationOf(c) === seen);
+      const successors = fromSource.filter((c) => c.id !== id && carriesOperation(c, seen));
       this.meaningChanges.set(id, { id, source, at: new Date().toISOString(), before: seen, after, ...(successors.length === 1 ? { successor: successors[0].id } : {}) });
     }
     return changed;
@@ -1079,9 +1100,9 @@ export class RightClick {
     const current = this.graph.get(cap.id);
     const change = this.meaningChanges.get(cap.id);
     if (change) note += `; ${cap.id} now calls ${change.after}, not ${change.before}`;
-    const equivalent = current && !change && operationOf(current) === meant
+    const equivalent = current && !change && !!meant && carriesOperation(current, meant)
       ? [current]
-      : this.graph.list().filter((c) => this.graph.providers.get(c.provider)?.meta?.source === source && operationOf(c) === meant);
+      : this.graph.list().filter((c) => this.graph.providers.get(c.provider)?.meta?.source === source && !!meant && carriesOperation(c, meant));
     if (equivalent.length !== 1) return done(`${note}; ${equivalent.length ? "ambiguous" : "no"} equivalent of ${meant}`);
     const next = equivalent[0];
     healing.retried = next.id;
@@ -1196,7 +1217,7 @@ export class RightClick {
       const equivalent = (cap: Capability) => sameRole(cap) && this.describeAnchor(cap).title === anchor.title;
       // What the anchor invoked when pinned; an older pin learns it from a recorded change of meaning.
       const pinned = anchor.operation ?? this.meaningChanges.get(anchor.id)?.before;
-      const carriesPinned = (cap: Capability) => !!pinned && sameRole(cap) && this.operationField(cap).operation === pinned;
+      const carriesPinned = (cap: Capability) => !!pinned && sameRole(cap) && carriesOperation(cap, pinned);
       const exact = this.graph.get(anchor.id);
       if (exact) {
         if (pinned ? carriesPinned(exact) : equivalent(exact)) return exact.id;
@@ -1831,7 +1852,7 @@ export class RightClick {
         sha256: investigation.program.sha256,
         version: investigation.program.version,
         investigation: { runs: investigation.runs.length, summary: investigation.summary },
-        capabilities: caps.map((c) => ({ id: c.id, title: c.title, description: c.description, inputs: c.inputs, outputs: c.outputs, risk: c.risk, tags: c.tags, invoke: c.invoke })),
+        capabilities: caps.map((c) => ({ id: c.id, title: c.title, description: c.description, inputs: c.inputs, outputs: c.outputs, risk: c.risk, tags: c.tags, invoke: withoutCliContinuity(c.invoke) })),
         claims: investigation.claims.map((cl) => ({ subject: cl.subject, claim: cl.claim, status: cl.status })),
       });
     }
@@ -1842,10 +1863,10 @@ export class RightClick {
     return {
       format: KNOWLEDGE_FORMAT,
       exportedAt: new Date().toISOString(),
-      source: { os: g.process?.platform, arch: g.process?.arch, runtime: this.name, version: VERSION },
+      source: { os: g.process?.platform, arch: g.process?.arch, runtime: this.name, version: VERSION, semantics: SEMANTICS },
       programs,
       goals,
-      excluded: ["credentials", "caller inputs and outputs", "run records and receipts", "fixed goal values", "published goals' checks bound to caller data"],
+      excluded: ["credentials", "caller inputs and outputs", "run records and receipts", "fixed goal values", "published goals' checks bound to caller data", "local operation continuity"],
     };
   }
 
@@ -1857,6 +1878,12 @@ export class RightClick {
   async importKnowledge(bundle: KnowledgeBundle): Promise<ImportReport> {
     if (bundle?.format !== KNOWLEDGE_FORMAT) throw new Error(`not capability knowledge: expected format ${KNOWLEDGE_FORMAT}`);
     const report: ImportReport = { format: bundle.format, from: bundle.source, programs: [], goals: [] };
+    if (bundle.source?.semantics !== SEMANTICS) {
+      const reason = `inference version ${bundle.source?.semantics ?? "unknown"} is not supported here (${SEMANTICS}); re-investigate the authorised source before exporting again`;
+      report.programs = (bundle.programs ?? []).map(p => ({ name: p.name, status: "refused", reason, capabilities: [], revalidationRuns: 0, ms: 0 }));
+      report.goals = (bundle.goals ?? []).map(g => ({ slug: g.slug, status: "skipped", reason }));
+      return report;
+    }
     const sb = await this.sandbox();
     const fs = await import("node:fs");
     const { createHash } = await import("node:crypto");
@@ -1895,7 +1922,7 @@ export class RightClick {
           entry.capabilities.push({ id: cap.id, status: "refused", reason: "no conformance examples to revalidate it with" });
           continue;
         }
-        const here = { ...inv, bin: local, sha256: localSha };
+        const here = { ...withoutCliContinuity(inv), bin: local, sha256: localSha };
         const r = await replayExamples(here, sb);
         entry.revalidationRuns += r.runs;
         if (r.matched === r.total) accepted.push({ ...(cap as Capability), provider: `cli:${prog.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`, source: "cli", invoke: here, tags: [...cap.tags.filter((t) => t !== "imported"), "imported"] });
