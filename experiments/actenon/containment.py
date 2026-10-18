@@ -244,7 +244,7 @@ def contained(docker, image, stage, boundary, phase, state):
         with (boundary.output / f"client-{phase}.stderr.log").open("x") as errors:
             process = subprocess.Popen([docker.binary, "start", "-a", "-i", name], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=errors, env=docker.environment)
             process.stdin.write((json.dumps({"config": {"phase": phase, "origin": boundary.origin,
-                "directOrigin": boundary.origin.replace("127.0.0.1", "host.docker.internal"), "state": state}}) + "\n").encode())
+                "directOrigin": boundary.direct_origin, "state": state}}) + "\n").encode())
             process.stdin.flush()
             selector = selectors.DefaultSelector()
             selector.register(process.stdout, selectors.EVENT_READ)
@@ -327,10 +327,11 @@ def run(output, image):
             # ordinary Docker networking. A bad address is not a containment pass.
             control = docker.call(["run", "--rm", "--pull", "never", "--network", "bridge", "--read-only", "--cap-drop", "ALL",
                 "--user", "10000:10000", "--security-opt", "no-new-privileges", "--entrypoint", "node", image_id, "-e",
-                'fetch(process.argv[1],{signal:AbortSignal.timeout(3000)}).then(async r=>{if(r.status!==200)process.exit(2);console.log(JSON.stringify({status:r.status,spec:await r.json()}))}).catch(()=>process.exit(3))',
+                '(async()=>{const dns=await import("node:dns/promises");const u=new URL(process.argv[1]);const address=await dns.lookup(u.hostname,{family:4});u.hostname=address.address;const r=await fetch(u,{signal:AbortSignal.timeout(3000)});if(r.status!==200)process.exit(2);console.log(JSON.stringify({status:r.status,origin:u.origin,spec:await r.json()}))})().catch(()=>process.exit(3))',
                 origin.replace("127.0.0.1", "host.docker.internal") + "/openapi.json"])
             (output / "network-positive-control.json").write_text(control)
             checks["same_target_reachable_without_network_isolation"] = json.loads(control)["status"] == 200
+            boundary.direct_origin = json.loads(control)["origin"]
             before = contained(docker, image_id, stage, boundary, "discover", None)
             checks["discovery_without_write_authority"] = before["results"]["run"]["status"] == "failed" and not (output / "provider.jsonl").read_text()
             boundary.authorize(writes=True)

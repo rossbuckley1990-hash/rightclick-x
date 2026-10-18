@@ -20,12 +20,16 @@ The default Kernel credential broker produces references only. This experiment u
 - [Attempt 2](actenon/integration-attempt-2/result.json): 24/24 development checks. No reconciliation or network-reachability positive control yet.
 - [Attempt 3](actenon/integration-attempt-3/result.json): 27/27, adding forged signature, unavailable revocation source and trusted reconciliation.
 - [Attempt 4](actenon/integration-attempt-4/result.json): 29/29, adding the reachable-target control and native-socket refusal. These successive development runs are not independent samples or fresh holdouts.
+- [Frozen b5e2557](actenon/integration-frozen-b5e2557/result.json): 29/29 from the committed source with exact expected refusal-code assertions. The existing regression suite also passed 226/226, zero skips; core and experimental TypeScript type checking passed.
+- [Attempt 5](actenon/integration-attempt-5/result.json): 29/29 after strengthening the reachability control to resolve and successfully fetch the fixture's numeric host IP. All contained bypass probes use that same numeric IP; the native socket returns `ENETUNREACH`. This closes the earlier test's DNS-only explanation without changing acceptance criteria.
 
 The observer is a separate process, importing neither RightClick nor the boundary runner. It reads the provider-owned append journal and public signature artifacts. It observed exactly `approved` and `lost`, once each; no refused attempt added an entry. Fourteen receipts and twelve refusals verified using the public key; all 26 deliberately altered artifacts failed verification. This is an independent observation path, not independent authorship or security certification.
 
 Both HTTP acknowledgement and lost response initially produce `AMBIGUOUS` finality. RightClick's acknowledged run remains unverified. Permit blocks duplicate dispatch and retains ownership; only the trusted host's separate observer result reconciles the two effects to `COMMITTED`. Agent RPC attempts to grant authority or reconcile effects are refused. Signed transport attestations are not treated as business truth.
 
 Exact-target/body/method/header/audience mutation, expired proof (controlled boundary clock), forged signature, unavailable revocation state, replay through a recreated edge, preissued-proof revocation, changed parameters, generated `/api/run`, direct broker misuse, shell and raw network probes are covered. Saved capabilities do not recover revoked authority. The final freeze strengthens reason-code assertions so a generic failure cannot stand in for the expected refusal.
+
+No independent security-review agent or external auditor has reviewed this change. The installed review skill requires an explicit `/review-security` invocation and was not run. The independent observer remains a separate evidence path authored within this programme; it does not satisfy an independent-author review gate.
 
 ## Preregistered scope still outstanding
 
