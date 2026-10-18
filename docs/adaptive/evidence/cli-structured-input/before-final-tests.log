@@ -1,0 +1,165 @@
+✖ CLI structured arguments preserve arrays, nested values, Unicode and literal strings (214.290291ms)
+✖ CLI accepts a JSON file and piped JSON in fresh processes (210.8385ms)
+✖ CLI compose accepts typed structured inputs and retains scalar argument spelling (100.722791ms)
+✖ ambiguous or lossy CLI arguments refuse before creating runtime state (101.349709ms)
+✖ invalid file encoding and missing input files refuse before runtime state (101.829042ms)
+✖ CLI execution restrictions remain effective and failed runs exit unsuccessfully (103.168625ms)
+✖ oversized structured files refuse before creating state (108.876167ms)
+✖ failed CLI composition and refuted checks do not report shell success (109.379125ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 0
+ℹ fail 8
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1128.335916
+
+✖ failing tests:
+
+test at test/command-input.test.ts:57:1
+✖ CLI structured arguments preserve arrays, nested values, Unicode and literal strings (214.290291ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + undefined
+  - {
+  -   value: {
+  -     empty: {},
+  -     exact: '9007199254740993',
+  -     items: [
+  -       1,
+  -       false,
+  -       null,
+  -       {
+  -         text: '雪\n`$HOME`"'
+  -       }
+  -     ]
+  -   }
+  - }
+  
+      at TestContext.<anonymous> (file:///private/tmp/rcx-cli-input-before-8fffc02/test/command-input.test.ts:65:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: { value: { items: [Array], empty: {}, exact: '9007199254740993' } },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at test/command-input.test.ts:70:1
+✖ CLI accepts a JSON file and piped JSON in fresh processes (210.8385ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + undefined
+  - {
+  -   value: {
+  -     files: {
+  -       'a b.txt': 'data\n',
+  -       ['__proto__']: 'literal'
+  -     },
+  -     operands: [],
+  -     options: [
+  -       '-e',
+  -       'print'
+  -     ]
+  -   }
+  - }
+  
+      at TestContext.<anonymous> (file:///private/tmp/rcx-cli-input-before-8fffc02/test/command-input.test.ts:80:14)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: { value: { files: [Object], operands: [], options: [Array] } },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at test/command-input.test.ts:86:1
+✖ CLI compose accepts typed structured inputs and retains scalar argument spelling (100.722791ms)
+  TypeError [Error]: Cannot read properties of undefined (reading 'status')
+      at TestContext.<anonymous> (file:///private/tmp/rcx-cli-input-before-8fffc02/test/command-input.test.ts:91:52)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at test/command-input.test.ts:98:1
+✖ ambiguous or lossy CLI arguments refuse before creating runtime state (101.349709ms)
+  AssertionError [ERR_ASSERTION]: ["--args","[]"]
+      at TestContext.<anonymous> (file:///private/tmp/rcx-cli-input-before-8fffc02/test/command-input.test.ts:110:14)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 0,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at test/command-input.test.ts:117:1
+✖ invalid file encoding and missing input files refuse before runtime state (101.829042ms)
+  AssertionError [ERR_ASSERTION]: Expected "actual" to be strictly unequal to: 0
+      at TestContext.<anonymous> (file:///private/tmp/rcx-cli-input-before-8fffc02/test/command-input.test.ts:124:14)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 0,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at test/command-input.test.ts:130:1
+✖ CLI execution restrictions remain effective and failed runs exit unsuccessfully (103.168625ms)
+  AssertionError [ERR_ASSERTION]: Expected "actual" to be strictly unequal to: 0
+      at TestContext.<anonymous> (file:///private/tmp/rcx-cli-input-before-8fffc02/test/command-input.test.ts:134:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 0,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at test/command-input.test.ts:143:1
+✖ oversized structured files refuse before creating state (108.876167ms)
+  AssertionError [ERR_ASSERTION]: Expected "actual" to be strictly unequal to: 0
+      at TestContext.<anonymous> (file:///private/tmp/rcx-cli-input-before-8fffc02/test/command-input.test.ts:149:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 0,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at test/command-input.test.ts:155:1
+✖ failed CLI composition and refuted checks do not report shell success (109.379125ms)
+  AssertionError [ERR_ASSERTION]: Expected "actual" to be strictly unequal to: 0
+      at TestContext.<anonymous> (file:///private/tmp/rcx-cli-input-before-8fffc02/test/command-input.test.ts:159:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 0,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }

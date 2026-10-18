@@ -1,0 +1,87 @@
+✖ CLI structured arguments preserve arrays, nested values, Unicode and literal strings (109.071958ms)
+✖ CLI accepts a JSON file and piped JSON in fresh processes (98.237708ms)
+✖ CLI compose accepts typed structured inputs and retains scalar argument spelling (100.367333ms)
+✔ ambiguous or lossy CLI arguments refuse before creating runtime state (1314.144958ms)
+✔ invalid file encoding and missing input files refuse before runtime state (198.680458ms)
+✖ CLI execution restrictions remain effective and failed runs exit unsuccessfully (100.871667ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 2
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1993.236166
+
+✖ failing tests:
+
+test at test/command-input.test.ts:20:1
+✖ CLI structured arguments preserve arrays, nested values, Unicode and literal strings (109.071958ms)
+  AssertionError [ERR_ASSERTION]: Error: unknown capability: builtin:json.stringify
+      at RightClick.run (file:///Users/ross/src/rightclick-x-adaptive/src/runtime.ts:970:21)
+      at dispatch (file:///Users/ross/src/rightclick-x-adaptive/src/interface/tools.ts:181:26)
+      at main (file:///Users/ross/src/rightclick-x-adaptive/bin/rcx.ts:174:19)
+  
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (file:///Users/ross/src/rightclick-x-adaptive/test/command-input.test.ts:27:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/command-input.test.ts:32:1
+✖ CLI accepts a JSON file and piped JSON in fresh processes (98.237708ms)
+  AssertionError [ERR_ASSERTION]: Error: unknown capability: builtin:json.stringify
+      at RightClick.run (file:///Users/ross/src/rightclick-x-adaptive/src/runtime.ts:970:21)
+      at dispatch (file:///Users/ross/src/rightclick-x-adaptive/src/interface/tools.ts:181:26)
+      at main (file:///Users/ross/src/rightclick-x-adaptive/bin/rcx.ts:174:19)
+  
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (file:///Users/ross/src/rightclick-x-adaptive/test/command-input.test.ts:40:14)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/command-input.test.ts:46:1
+✖ CLI compose accepts typed structured inputs and retains scalar argument spelling (100.367333ms)
+  TypeError [Error]: Cannot read properties of undefined (reading 'status')
+      at TestContext.<anonymous> (file:///Users/ross/src/rightclick-x-adaptive/test/command-input.test.ts:51:52)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at test/command-input.test.ts:90:1
+✖ CLI execution restrictions remain effective and failed runs exit unsuccessfully (100.871667ms)
+  SyntaxError [Error]: Unexpected end of JSON input
+      at JSON.parse (<anonymous>)
+      at TestContext.<anonymous> (file:///Users/ross/src/rightclick-x-adaptive/test/command-input.test.ts:95:22)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
