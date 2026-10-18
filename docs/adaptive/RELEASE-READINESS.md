@@ -17,6 +17,9 @@ The original [acceptance matrix](ACCEPTANCE-MATRIX.md) and [evaluation plan](../
 
 ## Current material issues
 
+- The [completed Codex pilot](CODEX-DEVELOPMENT-RESULT.md) confirms fresh discovery reuse but no runtime/model-effort advantage. All 252 current regression tests pass; the result does not satisfy the commercial or holdout gates.
+- Automatic repair incorrectly applies an HTTP-origin restriction to a local `cli:` source. Agents can manually relearn and acknowledge changed meaning; final-agent refusal after structurally checked bad output is not independent semantic enforcement. This is a measured blocker, not a passing adaptation claim.
+
 - Four exposed ExifTool selector tasks remain refused. Generic dynamic option families require bounded disclosure, collision handling and revalidation; adding a provider-specific selector list would not satisfy the objective.
 - The macOS sandbox deliberately denies home-directory file reads. Authorising a program path does not automatically make a home-directory executable or alias readable there. The Codex development runner exposed this mismatch and now stages only disposable executable aliases outside the private evidence tree. This harness correction is not a general solution for private installed software and does not relax the sandbox.
 - `rcx run` accepts string-valued `k=v` arguments only. It cannot express the arrays/maps exposed by many discovered capabilities; MCP can express them. A tested structured argument path is needed before claiming an exceptionally simple CLI flow.

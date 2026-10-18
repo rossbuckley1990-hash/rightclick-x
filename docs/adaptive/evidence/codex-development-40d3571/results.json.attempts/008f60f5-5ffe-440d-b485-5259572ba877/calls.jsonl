@@ -1,0 +1,1 @@
+{"at":"2026-10-18T04:38:12.269Z","tool":"run_program","args":["-e","require HTTP::Tiny; my $r = HTTP::Tiny->new(timeout => 15)->get('https://open.er-api.com/v6/latest/USD'); die \"Fetch failed: $r->{status} $r->{reason}: $r->{content}\\n\" unless $r->{success}; $_ = JSON::XS::decode_json($r->{content});"],"stdinBytes":2,"files":[],"exit":22}

@@ -9,6 +9,7 @@ import re
 import statistics
 import sys
 import subprocess
+import tomllib
 
 
 def read(path):
@@ -42,6 +43,9 @@ def main():
     assert result["schema"] == 4 and result["developmentOnly"] and result["client"] == "codex"
     assert result["commit"] == manifest["commit"]
     assert result["holdoutSha256"] == hashlib.sha256((root / "manifest.json").read_bytes()).hexdigest()
+    source = Path(__file__).resolve().parents[2] / manifest["sourceManifest"]["path"]
+    assert hashlib.sha256(source.read_bytes()).hexdigest() == manifest["sourceManifest"]["sha256"]
+    assert read(source)["programs"] == manifest["programs"], "exposed tasks/docs/oracles must be unchanged"
     assert not result["previousAttempts"], "retry effort requires separate reconciliation"
     account_ids = set()
     for location in result["preflights"]:
@@ -54,9 +58,17 @@ def main():
         account_ids.add(allowance["accountIdSha256"])
     assert len(account_ids) == 1 and None not in account_ids
     tasks = {t["id"]: t for p in manifest["programs"] for t in p["tasks"]}
+    expected_keys = {}
+    for program in manifest["programs"]:
+        feasible = [t for t in program["tasks"] if t["kind"] == "feasible"]
+        infeasible = next(t for t in program["tasks"] if t["kind"] == "infeasible")
+        steps = [("t" + str(i + 1), t["id"]) for i, t in enumerate(feasible[:4])] + [("infeasible", infeasible["id"]), ("compatible", feasible[0]["id"]), ("incompatible", feasible[1]["id"]), ("removed", feasible[2]["id"])]
+        expected_keys.update({f"{arm}|{program['name']}|{step}": task for arm in "ABCD" for step, task in steps})
+    assert len({r["key"] for r in result["sessions"]}) == len(result["sessions"])
     ids = set()
     summaries = []
     for row in result["sessions"]:
+        assert expected_keys[row["key"]] == row["task"]
         directory = root / "results.json.attempts" / row["attemptId"]
         assert read(directory / "result.json") == row
         request = read(directory / "request.json")
@@ -100,6 +112,13 @@ def main():
         invocation = read(directory / "agent-invocation.json")
         assert invocation["cwd"] != str(directory) and 'forced_login_method="chatgpt"' in invocation["args"]
         assert set(invocation["environmentKeys"]) <= {"PATH", "HOME", "USER", "LOGNAME", "SHELL", "TMPDIR", "LANG", "LC_ALL", "TERM"}
+        config = [tomllib.loads(arg)["mcp_servers"] for arg in invocation["args"] if arg.startswith("mcp_servers.")]
+        assert len(config) == 1 and set(config[0]) == {server}
+        configured = config[0][server]
+        expected_tools = {"context_runtime", "context_research", "context_learn", "context_forget", "context_inspect", "context_actions", "context_explain", "context_run", "context_run_status", "context_compose", "context_graph", "context_providers", "context_watch"} if server == "rightclick-x" else {"run_program", "list_skills", "read_skill", "save_skill"}
+        assert configured["required"] and configured["default_tools_approval_mode"] == "prompt"
+        assert set(configured["enabled_tools"]) == expected_tools and set(configured["tools"]) == expected_tools
+        assert all(settings == {"approval_mode": "approve"} for settings in configured["tools"].values())
         if row["phase"] in ("first", "reuse", "compatible-change"):
             preflight = read(directory / "launch-preflight.json")
             assert preflight["result"]["code"] == 0 and matches(task, preflight["result"]["stdout"])
@@ -162,7 +181,8 @@ def main():
         warm = [s for s in group if s["key"].split("|")[-1] in ("t2", "t3", "t4")]
         if group:
             groups[arm] = {"sessions": len(group), "correct": sum(s["correct"] for s in group), "wrong": sum(s["wrong"] for s in group), "tokens": sum(s["tokens"] for s in group), "seconds": sum(s["seconds"] for s in group), "warmMedianSeconds": statistics.median(s["seconds"] for s in warm) if warm else None}
-    print(json.dumps({"scope": "exposed development pilot; separate implementation, same author; no commercial or holdout acceptance", "sessionsChecked": len(summaries), "fullPlanned32": len(summaries) == 32, "groups": groups, "sessions": summaries}, indent=2))
+    complete = {r["key"] for r in result["sessions"]} == set(expected_keys)
+    print(json.dumps({"scope": "exposed development pilot; separate implementation, same author; no commercial or holdout acceptance", "sessionsChecked": len(summaries), "fullPlanned32": complete and len(summaries) == 32, "groups": groups, "sessions": summaries}, indent=2))
 
 
 if __name__ == "__main__":
