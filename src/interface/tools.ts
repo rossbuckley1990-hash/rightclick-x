@@ -47,8 +47,8 @@ export const TOOLS = [
   {
     name: "context_learn",
     description:
-      "Point RightClick X at any URL. It detects what is there (OpenAPI/Swagger spec, GraphQL endpoint, MCP server, another RightClick X peer, or a web page whose forms become capabilities), reflects it into typed capabilities, and reports how many new capabilities and composite powers the graph gained.",
-    inputSchema: obj({ source: str("URL of a spec, endpoint, server, peer or page."), sources: { type: "array", items: { type: "string" } }, deep: bool("Also probe well-known locations at the origin.") }),
+      "Discover capabilities from a URL (OpenAPI, GraphQL, MCP, peer or web page) or an operator-authorised local program (cli:/absolute/path). Reports learned capabilities and graph changes; discovery never grants execution authority.",
+    inputSchema: obj({ source: str("URL or cli:/absolute/path to an authorised program."), sources: { type: "array", items: { type: "string" } }, deep: bool("Also probe well-known locations at the origin.") }),
   },
   {
     name: "context_forget",
@@ -67,8 +67,8 @@ export const TOOLS = [
   },
   {
     name: "context_explain",
-    description: "Everything about one capability: typed ports, provider, risk label, how it is invoked, its neighbours in the graph, observed reliability and latency, and example arguments.",
-    inputSchema: obj({ id: str("Capability id (or a search phrase).") }, ["id"]),
+    description: "Get a capability's execution contract: all typed inputs, options and outputs, authority, current restrictions, evidence grade, stored checks and limitations. Default detail: run. Request full for raw synthetic examples, the full card, graph neighbours and run history.",
+    inputSchema: obj({ id: str("Capability id (or a search phrase)."), detail: { type: "string", enum: ["run", "full"], description: "run (default) keeps execution constraints and evidence; full adds underlying detail." } }, ["id"]),
   },
   {
     name: "context_run",
@@ -172,7 +172,8 @@ export async function dispatch(rc: RightClick, name: string, a: Record<string, a
     case "context_actions":
       return rc.actions({ value: a.value, type: a.type, limit: a.limit });
     case "context_explain":
-      return rc.explain(a.id);
+      if (a.detail !== undefined && !["run", "full"].includes(a.detail)) throw new Error("detail must be run or full");
+      return a.detail === "full" ? rc.explain(a.id) : rc.explainForRun(a.id);
     case "context_run": {
       // Validate the view before running: a malformed view must not cost a side effect.
       const v = parseView(a.view);

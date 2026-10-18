@@ -55,7 +55,7 @@ const HELP = `RightClick X ${VERSION} — a live capability graph that composes 
   rcx forget <provider>
   rcx inspect <value>               semantic type of a value
   rcx actions <value>               what can be done with it, directly and through pipelines
-  rcx explain <capability-id>
+  rcx explain <capability-id> [--full]
   rcx run <capability-id> [k=v ...] [--verify '<json predicates>']
   rcx compose k=v ... --want <type> [--intent "..."] [--run]
   rcx graph [stats|types|search|neighbors|paths|edges] [--query q] [--id id] [--from t] [--to t]
@@ -164,9 +164,11 @@ async function main() {
     case "actions":
       out = await dispatch(rc, "context_actions", { value: rest.join(" ") });
       break;
-    case "explain":
-      out = await dispatch(rc, "context_explain", { id: rest[0] });
+    case "explain": {
+      const full = !!flag("full");
+      out = await dispatch(rc, "context_explain", { id: rest[0], detail: full ? "full" : "run" });
       break;
+    }
     case "run": {
       const verify = flag("verify");
       out = await dispatch(rc, "context_run", { id: rest[0], args: kv(rest.slice(1)), verify: verify ? JSON.parse(verify) : undefined });

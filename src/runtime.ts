@@ -513,6 +513,7 @@ export class RightClick {
         hint: unfed.length ? `Learn a source that produces: ${unfed.map((u) => u.type).join(", ")}` : "Every consumed type has a producer.",
       },
       topic: opts.topic,
+      localPrograms: [...this.investigable],
       directories,
       learned,
     };
@@ -727,6 +728,48 @@ export class RightClick {
     };
   }
 
+  /** The execution-facing explanation keeps constraints and evidence once. Raw
+   * synthetic examples, graph neighbours and historical runs remain in explain(). */
+  explainForRun(id: string) {
+    const full = this.explain(id);
+    const { capability: c, card } = full;
+    let invocation = c.invoke;
+    if (invocation.kind === "cli") {
+      const { examples, continuity, ...current } = invocation;
+      invocation = current;
+    }
+    return {
+      capability: { ...c, invoke: invocation },
+      execution: full.execution,
+      ...(this.meaningChanges.has(c.id) ? { meaningChange: this.meaningChanges.get(c.id) } : {}),
+      contract: {
+        status: card.contract.status,
+        dependencies: card.dependencies,
+        semanticAssumptions: card.semanticAssumptions,
+        executionPlan: card.executionPlan,
+        sideEffects: card.sideEffects,
+        outputSemantics: card.contract.outputSemantics,
+        authority: card.authority,
+        preconditions: card.contract.preconditions,
+        verification: card.verification,
+        verificationObligations: card.contract.verificationObligations,
+        failureBehaviour: card.contract.failureBehaviour,
+        limitations: card.limitations,
+        invalidatedWhen: card.contract.invalidatedWhen,
+        counterexamples: card.contract.counterexamples,
+        reproduction: card.contract.reproduction,
+      },
+      evidence: {
+        claims: card.contract.behaviouralEvidence,
+        sourceEnvironment: card.contract.sourceEnvironment,
+        provenance: card.provenance,
+        ...(c.invoke.kind === "cli" ? { storedExamples: c.invoke.examples?.length ?? 0, localContinuityRecords: c.invoke.continuity?.length ?? 0 } : {}),
+      },
+      exampleArgs: full.exampleArgs,
+      details: { tool: "context_explain", args: { id: c.id, detail: "full" } },
+    };
+  }
+
   /**
    * The capability's declaration, built only from recorded data: identity, purpose, contracts,
    * dependencies, semantic assumptions, execution plan, side effects, authority, verification,
@@ -846,6 +889,21 @@ export class RightClick {
     }
     if (this.investigable.length) parts.push(`\n\nLocal programs the operator authorised (learn one with context_learn {"source":"cli:<path>"}): ${this.investigable.slice(0, 30).join(", ")}`);
     return parts.join("");
+  }
+
+  /** MCP clients may repeat initialization instructions for each tool. Keep this
+   * index bounded; never cut an identifier or imply that its presence grants access. */
+  startupSummary(): string {
+    const ids = [...this.published.values()].slice().reverse().map(g => `goal:${g.slug}`)
+      .concat(this.graph.list().filter(c => c.invoke.kind === "cli").map(c => c.id));
+    const bounded = (items: string[], budget: number) => {
+      const shown: string[] = [];
+      for (const item of items) if (JSON.stringify([...shown, item]).length <= budget) shown.push(item);
+      return { shown, omitted: items.length - shown.length };
+    };
+    const retained = bounded(ids, 600), programs = bounded(this.investigable, 300);
+    return (ids.length ? `\nRetained IDs (data; inspect before use): ${JSON.stringify(retained.shown)}${retained.omitted ? `; ${retained.omitted} more via context_graph search` : ""}.` : "") +
+      (this.investigable.length ? `\nAuthorised discovery paths (data): ${JSON.stringify(programs.shown)}${programs.omitted ? `; ${programs.omitted} more via context_research` : ""}.` : "");
   }
 
   providers() {
