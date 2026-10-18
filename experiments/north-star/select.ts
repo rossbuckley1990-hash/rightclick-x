@@ -15,6 +15,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { hostSandbox } from "../../src/core/sandbox.ts";
 import { OUT, oracle, type Task } from "./common.ts";
+import { quotaBlock } from "./quota.ts";
 
 const TAG = process.argv[2];
 if (!TAG) throw new Error("usage: select.ts <freeze-tag> [--pilot dev,programs]");
@@ -138,7 +139,7 @@ const parse = (text: string): any => {
 };
 
 const FILE = PILOT ? `${OUT}/pilot-${TAG}.json` : `${OUT}/holdout-${TAG}.json`;
-const BLOCKED = /hit your (session |usage )?limit|usage limit|rate limit|overloaded/i;
+const BLOCKED = { test: (text: string) => quotaBlock(text) !== undefined };
 // Resumable (EVALUATION-PLAN §9): a call blocked by a usage limit decides nothing; selection stops
 // and later resumes on the same freeze from the first program without a real decision.
 const ev: any = existsSync(FILE) ? JSON.parse(readFileSync(FILE, "utf8")) : { tag: TAG, commit: COMMIT, at: new Date().toISOString(), rules: RULES, model: "opus (Claude Code -p)", pool: {}, order: [], screened: [], programs: [], evaluatorCalls: [] };

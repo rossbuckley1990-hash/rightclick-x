@@ -5,6 +5,7 @@ import { mkdtempSync, readFileSync, realpathSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { hostSandbox } from "../../src/core/sandbox.ts";
+import { quotaBlock } from "./quota.ts";
 
 export const OUT = "docs/north-star/evidence";
 
@@ -105,11 +106,12 @@ export function claudeSession(opts: { prompt: string; servers: Record<string, un
         const u = j.usage ?? {};
         const tokens = (u.input_tokens ?? 0) + (u.output_tokens ?? 0) + (u.cache_creation_input_tokens ?? 0) + (u.cache_read_input_tokens ?? 0);
         const reply = String(j.result ?? "");
-        const blocked = /hit your (session |usage )?limit|usage limit|rate limit|overloaded/i.test(reply) && !/BEGIN/.test(reply) ? reply.slice(0, 200) : undefined;
+        const blocked = quotaBlock(reply);
         done({ reply, seconds, turns: j.num_turns, costUsd: j.total_cost_usd, tokens, exit: code, ...(blocked ? { blocked } : {}) });
       } catch {
         const text = (out + err).slice(-2000);
-        done({ reply: text, seconds, exit: code, ...(/hit your (session |usage )?limit|usage limit|rate limit/i.test(text) ? { blocked: text.slice(0, 200) } : {}) });
+        const blocked = quotaBlock(text);
+        done({ reply: text, seconds, exit: code, ...(blocked ? { blocked } : {}) });
       }
     });
   });
