@@ -1,0 +1,30 @@
+✔ direct CLI repair works with network denied; changed meaning and removal stay refused (1974.620542ms)
+✔ a persisted goal repairs its local step without widening egress or dropping its anchor (1360.836375ms)
+✔ closed-network repair cannot revive revoked program authority or an unavailable sandbox (2190.805916ms)
+✔ a withdrawn local goal stays refused until its authorised source is rediscovered (1074.228584ms)
+✔ a plain run of a moved operation re-learns its contract, reports the drift and retries the same operation (37.01225ms)
+✔ a failed plain run with no contract change fails with the re-reflection note (1.917458ms)
+✔ an operation id reassigned to a different operation is refused until acknowledged, and names its successor (2.738875ms)
+✔ re-learning an id back to the operation callers last saw clears its refusal (0.825959ms)
+✔ when a failed id now names a different operation, repair retries the operation it used to name, never the new one (4.022084ms)
+✔ plan steps are chosen by their current contract: compose is not refused by a changed id (8.618834ms)
+✔ repeated failures re-read the contract once, not on every call (1.796916ms)
+✔ a saved goal anchored on an id follows the operation it was built on when the id is reassigned (13.226542ms)
+✔ workspace: a symlink inside the workspace cannot read or write outside it (31.701833ms)
+✔ no automatic retry of a non-idempotent step: a failed POST is not sent again by healing (8.740292ms)
+✔ published goals: GET never executes a goal that can write; POST is required (5.328167ms)
+✔ ambiguous side effects: an MCP tool without annotations is not executable as if it were safe (1.600625ms)
+✔ authority: an agent's confirm: true is not operator approval for a destructive operation (2.271167ms)
+✔ keyed maps: v1's rates map answers one currency, and two ports never share one value when another fits (35.80775ms)
+✔ genuine-change shape: v1 retired -> the published goal keeps working via v2 from the same origin, no intervention (10.794167ms)
+✔ egress policy: a repair never routes the customer's data to an origin they did not approve; it fails closed (7.903125ms)
+✔ egress policy covers repair traffic too: a contract mirrored elsewhere is not re-read; the successor is found at the API's own origin (OW8b attempt 1) (6.373292ms)
+✔ egress policy holds across redirects: an approved origin cannot hand the call to an unapproved one (OW8b attempt 2) (6.585833ms)
+ℹ tests 22
+ℹ suites 0
+ℹ pass 22
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6817.433

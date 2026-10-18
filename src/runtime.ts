@@ -1040,9 +1040,12 @@ export class RightClick {
     const source = provider?.meta?.source as string | undefined;
     const healing: NonNullable<RunRecord["healing"]> = { source: source ?? "", error, note: "" };
     const done = (note: string) => ({ healing: { ...healing, note }, healed: false });
+    if (cap.invoke.kind === "cli" && /HTTP 403 equivalent/.test(error)) return done("program authority refused execution; not re-investigated");
     if (!source) return done("no contract source to re-read");
     const allowed = net.policy?.origins;
-    if (allowed && !allowed.includes(new URL(source).origin)) return done(`contract source ${new URL(source).origin} is outside the egress policy; not re-read`);
+    // CLI rereads go through investigate's program authority and sandbox checks,
+    // not the HTTP origin policy. They cannot use a network discovery fallback.
+    if (!source.startsWith("cli:") && allowed && !allowed.includes(new URL(source).origin)) return done(`contract source ${new URL(source).origin} is outside the egress policy; not re-read`);
     // The rate limit protects remote servers; a local program's presence is a cheap local fact.
     const last = source.startsWith("cli:") ? undefined : this.healReads.get(source);
     if (last !== undefined && Date.now() - last < HEAL_REREAD_MS) return done(`contract at ${source} was re-read ${Math.round((Date.now() - last) / 1000)}s ago for an earlier failure; not re-read again yet`);
@@ -1458,7 +1461,8 @@ export class RightClick {
         let gone = false;
         if (e instanceof ConfirmationRequired) attempt.healing = "not run: destructive step needs confirm: true; looking for a non-destructive route";
         else if (e instanceof FanOutRefused) attempt.healing = "not run: the list is longer than the fan-out cap; looking for another route";
-        else if (source && !allowedOrigin(source) && !refreshed.has(source)) {
+        else if (this.graph.get(failed)?.invoke.kind === "cli" && /HTTP 403 equivalent/.test(attempt.error)) attempt.healing = "program authority refused execution; not re-investigated";
+        else if (source && !source.startsWith("cli:") && !allowedOrigin(source) && !refreshed.has(source)) {
           refreshed.add(source);
           attempt.healing = `contract source ${new URL(source).origin} is outside the egress policy; not re-read`;
           gone = /HTTP (404|410)\b/.test(attempt.error);
@@ -1482,7 +1486,7 @@ export class RightClick {
         // contract's origin and the API's own origin - never anywhere the policy does not allow.
         if (gone) {
           const homes = new Set<string>();
-          if (source) homes.add(`${new URL(source).origin}/`);
+          if (source && !source.startsWith("cli:")) homes.add(`${new URL(source).origin}/`);
           if (failedEgress !== "anywhere") for (const o of failedEgress) homes.add(`${o}/`);
           for (const home of homes) {
             if (refreshed.has(home) || !allowedOrigin(home)) continue;
