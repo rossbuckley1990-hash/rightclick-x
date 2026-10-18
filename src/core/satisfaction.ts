@@ -112,6 +112,15 @@ export function assess(graph: CapabilityGraph, steps: PlanStep[], result: string
         const [si, ...pp] = b.from.split(".");
         const src = graph.get(steps[Number(si)]?.capability ?? "");
         const out = src?.outputs.find((o) => o.name === pp.join("."));
+        // A downstream join needs its producer's declared field just as a final
+        // outcome does. Merely exposing a typed port must not imply it is in the
+        // default GraphQL response.
+        const field = src?.fields?.find(f => f.path === pp.join("."));
+        if (field?.selected === false && src?.invoke.kind === "graphql" && src.invoke.selectPort) {
+          const existing = projection.find(p => p.step === Number(si));
+          if (existing) { if (!existing.fields.includes(field.path)) existing.fields.push(field.path); }
+          else projection.push({ step: Number(si), fields: [field.path] });
+        }
         const outType = out?.type.replace(/^list:/, "") ?? "json";
         const portType = port?.type.replace(/^list:/, "") ?? "json";
         if (port?.schemes?.length && out?.schemes?.some((s) => port.schemes!.includes(s))) kind = "evidence";

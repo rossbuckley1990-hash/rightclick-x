@@ -143,6 +143,7 @@ export interface CompositeInvoke {
   signatures?: string[];
   /** Checks travel with a saved capability and run on every new invocation. */
   verify?: Predicate[];
+  require?: string[];
   witnesses?: OutcomeWitness[];
 }
 
@@ -211,6 +212,8 @@ export type Invoke =
 /** A field the provider's contract declares in this capability's result (paths may cross arrays). */
 export interface DeclaredField {
   path: string;
+  /** Semantic type when the contract describes a selectable scalar leaf. */
+  type?: SemType;
   /** For providers that choose what to return (GraphQL): whether the default request selects it. */
   selected?: boolean;
 }

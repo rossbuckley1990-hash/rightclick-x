@@ -32,7 +32,7 @@ import { detectRuntime, platformReflection, type PlatformFn, type RuntimeInfo } 
 
 export const VERSION = "0.1.0";
 /** Bump whenever semantic inference changes: persisted reflections are then re-derived from their sources. */
-export const SEMANTICS = 25;
+export const SEMANTICS = 26;
 
 export interface Store {
   load(): Promise<PersistedState | null>;
@@ -69,6 +69,8 @@ export interface PublishedGoal {
   want: SemType;
   intent?: string;
   verify?: Predicate[];
+  /** Required output information must survive publication and replanning. */
+  require?: string[];
   witnesses?: OutcomeWitness[];
   /** Inputs pinned when the goal was published; part of the goal, not parameters of its API. */
   fixed?: Record<string, unknown>;
@@ -1057,6 +1059,8 @@ export class RightClick {
         steps = r.runs;
         verification = check(output, cap.invoke.verify ?? []);
         if (verification.status === "refuted") throw new Error("stored verification refuted");
+        const absent = outputCarries(output, cap.invoke.require ?? []).absent;
+        if (absent.length) throw new Error(`stored required information missing: ${absent.join(", ")}`);
         witnesses = await this.checkWitnesses(cap.invoke.witnesses ?? [], coerced, output, r.runs, opts.net);
         if (witnesses.some((w) => w.status !== "completed")) throw new Error("independent outcome witness refuted: " + witnesses.filter((w) => w.status !== "completed").map((w) => w.error ?? w.capability).join("; "));
         if (witnesses.length) verification = { ...verification, status: "verified" };
@@ -1541,11 +1545,17 @@ export class RightClick {
       const p = plans[0];
       try {
         // Ask providers for required fields they declare but do not return by default.
+        const usedResults = [p.result, ...p.steps.flatMap(st => st.bindings.map(b => b.from))];
         const steps = p.steps.map((st, i) => {
-          const proj = p.satisfaction?.projection.find((x) => x.step === i);
-          const gi = this.graph.get(st.capability)?.invoke as any;
-          if (!proj || gi?.kind !== "graphql" || !gi.selectPort) return st;
-          return { ...st, bindings: [...st.bindings.filter((b) => b.port !== gi.selectPort), { port: gi.selectPort, from: "$const", value: selectionWith(gi.selection, proj.fields) }] };
+          const c = this.graph.get(st.capability), gi = c?.invoke;
+          if (gi?.kind !== "graphql" || !gi.selectPort) return st;
+          const used = new Set(usedResults.filter(ref => ref.startsWith(`${i}.`)).map(ref => ref.slice(String(i).length + 1)));
+          const fields = [...new Set([
+            ...(p.satisfaction?.projection.find(x => x.step === i)?.fields ?? []),
+            ...(c?.fields ?? []).filter(f => f.selected === false && used.has(f.path)).map(f => f.path),
+          ])];
+          if (!fields.length) return st;
+          return { ...st, bindings: [...st.bindings.filter((b) => b.port !== gi.selectPort), { port: gi.selectPort, from: "$const", value: selectionWith(gi.selection, fields) }] };
         });
         const r = await this.runSteps(steps, p.result, values, opts.confirm, opts.activeGoals, net);
         let verification: RunRecord["verification"] = check(r.output, opts.verify ?? []);
@@ -1559,6 +1569,7 @@ export class RightClick {
           result.outcome = seen.absent.length
             ? { status: "incomplete", require, covered: Object.fromEntries(seen.present.map((t) => [t, p.satisfaction?.covered[t] ?? ""])), missing: seen.absent, joins: p.satisfaction?.joins ?? [], reason: `the executed result lacks: ${seen.absent.join(", ")}` }
             : { status: "established", require, covered: p.satisfaction?.covered ?? {}, missing: [], joins: p.satisfaction?.joins ?? [], checkedAfterRun: true };
+          if (seen.absent.length) throw new StepError(p.steps[p.steps.length - 1].capability, `required output information missing: ${seen.absent.join(", ")}`);
         }
         const assurance: Assurance = verification.status === "verified" ? "independently-checked" : verification.status === "checked" ? "predicate-checked" : "unchecked";
         // Preservation: a plan chosen on evidence that every step keeps its input's words must not
@@ -1585,7 +1596,7 @@ export class RightClick {
           witnesses: lastWitnesses,
           ...(r.fanOuts.length ? { fanOuts: r.fanOuts } : {}),
         };
-        if (opts.crystallize !== false && p.steps.length > 1) result.crystallized = await this.crystallize(p, types, opts.intent, opts.verify, witnesses);
+        if (opts.crystallize !== false && p.steps.length > 1) result.crystallized = await this.crystallize({ ...p, steps }, types, opts.intent, opts.verify, witnesses, require);
         const trust: "verified" | "checked" | "unverified" = verification.status === "verified" ? "verified" : verification.status === "checked" ? "checked" : "unverified";
         if (opts.publish && trust !== "verified" && this.publishPolicy === "verified") {
           result.publishRefused = `not published: the operator publishes only verified goals (an independent outcome witness must pass), and ${trust === "checked" ? "only stored predicates passed" : "no check passed"} on this run`;
@@ -1601,6 +1612,7 @@ export class RightClick {
             want: opts.want,
             intent: opts.intent,
             verify: structuredClone(opts.verify),
+            require: structuredClone(require),
             witnesses,
             ...(Object.keys(fixed).length ? { fixed: structuredClone(fixed) } : {}),
             ...(origins ? { origins } : {}),
@@ -1772,7 +1784,7 @@ export class RightClick {
       const value = (t === "number" || t.startsWith("geo.")) && typeof raw === "string" ? Number(raw) : raw;
       have[k] = { type: t, value };
     }
-    const r = await this.compose({ have, want: g.want, intent: g.intent, verify: g.verify, witnesses: g.witnesses, risks: g.risks, through: g.through, anchors: g.anchors, maxSteps: g.maxSteps, origins: g.origins, run: true, confirm, activeGoals: [...activeGoals, slug] });
+    const r = await this.compose({ have, want: g.want, intent: g.intent, verify: g.verify, require: g.require, witnesses: g.witnesses, risks: g.risks, through: g.through, anchors: g.anchors, maxSteps: g.maxSteps, origins: g.origins, run: true, confirm, activeGoals: [...activeGoals, slug] });
     g.calls++;
     if (r.executed?.status === "completed") {
       g.lastPipeline = r.executed.titles;
@@ -1847,8 +1859,8 @@ export class RightClick {
   }
 
   /** Save a successful pipeline with the checks that justified keeping it. */
-  private async crystallize(p: Plan, types: Record<string, SemType>, intent?: string, verify?: Predicate[], witnesses?: OutcomeWitness[]) {
-    const id = `composite:${(await sha256(JSON.stringify({ steps: p.steps, result: p.result, types, verify, witnesses }))).slice(0, 12)}`;
+  private async crystallize(p: Plan, types: Record<string, SemType>, intent?: string, verify?: Predicate[], witnesses?: OutcomeWitness[], require?: string[]) {
+    const id = `composite:${(await sha256(JSON.stringify({ steps: p.steps, result: p.result, types, verify, witnesses, require }))).slice(0, 12)}`;
     if (this.graph.get(id)) return { id, title: this.graph.get(id)!.title, newPowers: 0 };
     const usedInputs = new Set(p.steps.flatMap((s) => s.bindings.map((b) => b.from)).filter((f) => f.startsWith("$in.")).map((f) => f.slice(4)));
     for (const w of witnesses ?? []) for (const b of Object.values(w.args)) if ("input" in b) usedInputs.add(b.input.split(".")[0]);
@@ -1864,7 +1876,7 @@ export class RightClick {
       outputs: [{ name: "", type: p.resultType, required: true }],
       risk: stepCaps.some((c) => c.risk === "destructive") ? "destructive" : stepCaps.some((c) => c.risk === "write") ? "write" : stepCaps.some((c) => c.risk === "external") ? "external" : "read",
       tags: [...new Set([...(intent ? intent.split(/\s+/) : []), "composite", "crystallized", ...stepCaps.flatMap((c) => c.tags)])].slice(0, 30),
-      invoke: { kind: "composite", steps: p.steps, result: p.result, signatures: stepCaps.map(signature), verify: structuredClone(verify), witnesses: structuredClone(witnesses) },
+      invoke: { kind: "composite", steps: p.steps, result: p.result, signatures: stepCaps.map(signature), verify: structuredClone(verify), witnesses: structuredClone(witnesses), require: structuredClone(require) },
     };
     const delta = this.graph.addCapability(cap, {
       id: "composite:crystallized",

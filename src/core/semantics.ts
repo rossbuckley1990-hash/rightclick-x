@@ -221,6 +221,9 @@ export function inferType(name: string, schema: SchemaLike = {}, description = "
     if (/\biso ?639\b|\blanguage\b|\blocale\b|\bbcp ?47\b/.test(d)) return "language";
     return "language";
   }
+  // DOI is a shared identifier scheme, including qualified schema field names.
+  // Do not match incidental substrings (e.g. medoid) or override numeric/URI wire types.
+  if (/(^|_)doi$/.test(n)) return "id.doi";
   for (const [re, t] of NAME_RULES) {
     if (re.test(n) || re.test(compact)) return t;
   }

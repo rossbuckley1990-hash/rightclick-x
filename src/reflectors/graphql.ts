@@ -109,6 +109,13 @@ export function reflectGraphQL(introspection: any, endpoint: string, title?: str
         inputs.push({ name: selectPort, type: "text", required: false, wire: "selection set", description: `Optional GraphQL selection set for the returned ${named(field.type).name}, e.g. "{ id name nested { field } }"; replaces the default selection.${shown}` });
       }
       const declared = declaredFields(field, types, ports);
+      // Default selections are response-size bounds, not the extent of a
+      // provider's contract. Expose up to 64 additional, specifically typed
+      // identifier leaves for joins; execution must explicitly project them.
+      const portNames = new Set(ports.map(p => p.name));
+      for (const f of declared.filter(f => f.type && /^(list:)?id\./.test(f.type) && !portNames.has(f.path)).slice(0, 64)) {
+        ports.push({ name: f.path, type: f.type!, required: false });
+      }
       capabilities.push({
         id: `${providerId}:${operation}:${field.name}`,
         ...(declared.length ? { fields: declared } : {}),
@@ -198,18 +205,20 @@ function declaredFields(field: Field, types: Map<string, FullType>, ports: Port[
   const out: DeclaredField[] = [];
   // Breadth-first: every top-level field before any nested detail, so a bound never hides a
   // shallow summary field behind the depths of earlier fields (rcsb_entry_info.resolution_combined).
-  let level: Array<{ typeName: string | null | undefined; prefix: string; seen: Set<string> }> = [{ typeName: named(field.type).name, prefix: "", seen: new Set() }];
+  let level: Array<{ typeName: string | null | undefined; prefix: string; seen: Set<string>; lists: number }> = [{ typeName: named(field.type).name, prefix: "", seen: new Set(), lists: named(field.type).list ? 1 : 0 }];
   for (let depth = 1; depth <= 3 && level.length && out.length < 1500; depth++) {
     const next: typeof level = [];
-    for (const { typeName, prefix, seen } of level) {
+    for (const { typeName, prefix, seen, lists } of level) {
       const t = typeName ? types.get(typeName) : undefined;
       if (!t || t.kind !== "OBJECT" || seen.has(t.name!)) continue;
       for (const f of t.fields ?? []) {
         if (f.args.some((a) => a.type.kind === "NON_NULL")) continue;
         const path = prefix ? `${prefix}.${f.name}` : f.name;
         if (out.length >= 1500) break;
-        out.push({ path, selected: selected.has(path) });
-        next.push({ typeName: named(f.type).name, prefix: path, seen: new Set([...seen, t.name!]) });
+        const n = named(f.type), ft = n.name ? types.get(n.name) : undefined;
+        const type = ft && ["SCALAR", "ENUM"].includes(ft.kind) ? "list:".repeat(lists) + semantic(f.name, f.type, f.description ?? "", t.name) : undefined;
+        out.push({ path, selected: selected.has(path), ...(type ? { type } : {}) });
+        next.push({ typeName: n.name, prefix: path, seen: new Set([...seen, t.name!]), lists: lists + (n.list ? 1 : 0) });
       }
     }
     level = next;
