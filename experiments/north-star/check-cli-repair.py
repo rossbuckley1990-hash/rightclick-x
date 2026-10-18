@@ -51,8 +51,14 @@ def check(data, after):
         probes = [w for w in r['wires'] if w['opts']['purpose'] == 'investigation']
         assert len(executions) + len(probes) == len(r['wires'])
         for w in r['wires']:
-            assert w['program'] == m['program'] and w['before'] == w['after'] and w['before']
+            assert w['before'] == w['after'] and w['before']
             assert not w['result']['timedOut'] and not w['result']['truncated'] and not w['result'].get('limit')
+            if w['program'] == '/usr/bin/man':
+                assert w['opts']['purpose'] == 'investigation' and w['args'] == ['-P', 'cat', 'json_xs']
+                assert not w['opts'].get('stdin') and not w['opts'].get('files')
+                assert w['before']['real'] == '/usr/bin/man'
+                continue
+            assert w['program'] == m['program']
             stage = 'original' if name == 'seed' or name.startswith('warm-') else 'incompatible' if name.startswith('incompatible-') else 'compatible'
             expected_hash = m['original']['sha256'] if stage == 'original' else sha(m[stage].encode())
             assert w['before']['sha256'] == expected_hash, (name, 'wrong program bytes')
@@ -90,6 +96,9 @@ if __name__ == '__main__':
     before, after = [load(p) for p in sys.argv[1:]]
     assert before['manifest']['harnessHashes'] == after['manifest']['harnessHashes']
     assert before['manifest']['original'] == after['manifest']['original']
+    manuals = [w['before']['sha256'] for data in [before, after] for r in data['rows'].values()
+               for w in r['wires'] if w['program'] == '/usr/bin/man']
+    assert manuals and len(set(manuals)) == 1, 'manual helper identity changed'
     for name in NAMES:
         assert before['rows'][name]['cfg']['input'] == after['rows'][name]['cfg']['input']
     result = {'scope': 'exposed deterministic development; no agent economics or independent-author claim',
@@ -104,7 +113,7 @@ if __name__ == '__main__':
         elif kind == 'dispatch-on-refusal':
             r = forged['rows']['incompatible-direct']
             wire = copy.deepcopy(next(w for w in forged['rows']['compatible-direct']['wires'] if w['opts']['purpose'] == 'execution'))
-            wire['before'] = wire['after'] = copy.deepcopy(r['wires'][0]['before'])
+            wire['before'] = wire['after'] = copy.deepcopy(next(w['before'] for w in r['wires'] if w['program'] == after['manifest']['program']))
             r['wires'].append(wire)
         elif kind == 'hidden-network':
             forged['rows']['compatible-direct']['network'].append('https://unapproved.test')

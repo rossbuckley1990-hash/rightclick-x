@@ -34,4 +34,24 @@ Freeze `c52b128` passed 256/256 full regressions, zero skips. Both real-software
 
 The next frozen follow-up isolates the measured direct-call repair defect with nine fresh processes per source: acquisition plus direct execution, warm reuse, compatible change, reuse after repair, investigation revocation, execution revocation, incompatible change, removal and explicit rediscovery on return. It keeps all applicable outcome, dispatch, authority and network checks above. It does not claim the blocked saved-goal cases passed; those routes have synthetic regression coverage only at this checkpoint. The same separate checker reports the reduced direct-call scope explicitly. Improving distinct synthetic sample coverage and then retrying real saved-goal composition remains separate work.
 
-Result pending the direct-call follow-up. Release remains NO-GO pending the full [acceptance matrix](ACCEPTANCE-MATRIX.md).
+## Direct-call result
+
+The follow-up harness freeze is `e2bc62e`; product source remains `c52b1287186923da4a8f41760b947f5033717cab`. Nine fresh processes ran against each source, in sequential before/after runs. [Checked raw evidence](evidence/cli-repair-policy/direct-checker-attempt-2.json) records all 18 cases, state and program hashes, and four rejected negative controls. The checker initially assumed every probe invoked the target; the existing investigator also reads `/usr/bin/man -P cat json_xs` in the sandbox. That checker failure is preserved, and the correction accepts only that exact helper/arguments for investigation, with stable helper identity across both runs. No execution or outcome requirement was relaxed. The final checker file's hash is recorded separately from its original harness-freeze hash.
+
+| Phase | Previous source | Repaired source | Repaired investigation / probes / task executions |
+|---|---|---|---|
+| Acquire, then execute | Correct | Correct | 1 / 30 / 1 |
+| Fresh warm call | Correct | Correct | 0 / 0 / 1 |
+| Compatible change | Refused by HTTP-origin guard | Correct in one public call | 1 / 30 / 1 |
+| Fresh reuse after change | Still refused | Correct | 0 / 0 / 1 |
+| Investigation authority revoked | Refused | Refused | 0 / 0 / 0 |
+| Execution authority revoked | Refused | Refused | 0 / 0 / 0 |
+| Incompatible change | Stale fingerprint refused | Meaning change refused | 1 / 30 / 0 |
+| Removed | Refused, stale capabilities retained | Refused, capabilities withdrawn | 0 / 0 / 0 |
+| Returned, explicitly rediscovered | Correct | Correct | 1 / 30 / 1 |
+
+Compatible repair took **896.6 ms** within the runtime call, **1,029.1 ms** including the fresh child process. Subsequent reuse took **28.8 ms / 171.9 ms**, with no investigation. Acquisition took **700.3 ms / 831.2 ms**. These single observations include local investigation and execution, not a model conversation, and establish no statistical or coding-agent economic advantage. All completed outputs matched their dispatched inputs under a separate JSON and pretty-print check. The runtime grades remain `checked`, not independently `verified`. The weaker caller-acknowledgement path remains a separate blocker.
+
+Full regressions pass **256/256**, zero skips; product and diagnostic typechecks pass. The exact final four-test file from `c52b128` also fails **4/4** against the previous `d67e95c` source, independently of the earlier three-test attempt; [frozen baseline failures](evidence/cli-repair-policy/frozen-before-tests.log). The existing MCP black-box proof passes **28/28** on a frozen export, seed `20261018`; [raw proof](evidence/cli-repair-policy/black-box-proof.json). An initial invocation supplied a non-integer seed and was rejected before the proof; its log is retained. No model sessions or paid resources were used in this remediation. Source, tests, logs, failed experiments and [hashes](evidence/cli-repair-verification.json) are retained locally.
+
+Next: correct the generic shortage of distinct JSON/XML/CSV probe inputs without lowering evidence requirements, then retry the blocked real saved-goal experiment. Continue compact sufficient disclosure work against measured model overhead, independent holdouts, exact-action authority and the full lifecycle comparison. Release remains NO-GO pending the full [acceptance matrix](ACCEPTANCE-MATRIX.md).
