@@ -1,0 +1,53 @@
+{
+  "checks": {
+    "same_target_reachable_without_network_isolation": true,
+    "discovery_without_write_authority": true,
+    "fresh_process_reuses_without_discovery": true,
+    "authorized_execution": true,
+    "transport_success_not_verified": true,
+    "duplicate_refused": true,
+    "changed_parameters_refused": true,
+    "generated_api_refused": true,
+    "lost_response_retry_refused": true,
+    "alternate_requests_refused": true,
+    "direct_and_shell_network_refused": true,
+    "native_socket_refused": true,
+    "trusted_material_not_mounted": true,
+    "proof_binds_target": true,
+    "proof_binds_parameters": true,
+    "proof_binds_method": true,
+    "proof_binds_headers": true,
+    "proof_binds_audience": true,
+    "expired_proof_refused": true,
+    "unavailable_revocation_source_refused": true,
+    "forged_signature_refused": true,
+    "invalid_proofs_zero_dispatch": true,
+    "original_proof_still_works": true,
+    "replay_refused_after_edge_restart": true,
+    "revoked_preissued_proof_refused": true,
+    "retained_capability_cannot_restore_revoked_authority": true,
+    "independent_provider_effects_exactly_two": true,
+    "signed_receipts_and_refusals_verified": true,
+    "ambiguous_until_trusted_observer_reconciles": true
+  },
+  "passed": 29,
+  "total": 29,
+  "observer": {
+    "effects": [
+      {
+        "label": "approved",
+        "path": "/entries"
+      },
+      {
+        "label": "lost",
+        "path": "/entries"
+      }
+    ],
+    "verified_attestations": {
+      "receipt": 14,
+      "refusal": 12
+    },
+    "tampered_attestations_refused": 26
+  },
+  "scope": "local development fixture; no live model, general software holdout, production credential broker or commercial benchmark"
+}

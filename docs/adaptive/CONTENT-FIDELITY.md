@@ -37,7 +37,7 @@ npm run build
 node ci/adaptive-package-smoke.ts
 ```
 
-Use a new artifact path; the diagnostic refuses to overwrite earlier evidence. Frozen source, hashes, regression/package results and any Actenon reruns are recorded in `evidence/content-fidelity/verification.json` after the source commit. Earlier failed observations remain intact.
+Use a new artifact path; the diagnostic refuses to overwrite earlier evidence. Frozen source `50f8c84a31b6c325a37c8d9dc776d097c1a098d7` passed **242/242 regression tests, zero skips**, both typechecks, **28/28 black-box proof checks**, the exact-input/output diagnostic, its separate checker, and offline package/thirteen-tool/uninstall checks. Existing Actenon suites also pass against this freeze: **29/29 containment checks and 20/20 lifecycle checks**, with their original bounded scope unchanged. [Verification and hashes](evidence/content-fidelity/verification.json) bind the raw artifacts. Earlier failed observations remain intact.
 
 ## Next acceptance work
 
