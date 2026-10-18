@@ -105,6 +105,12 @@ interface Value {
   schemes?: string[];
 }
 
+interface BindingValue {
+  callerName: string;
+  leaf: string;
+  intentBonus: number;
+}
+
 interface Node {
   values: Value[];
   steps: PlanStep[];
@@ -162,15 +168,34 @@ export function plan(graph: CapabilityGraph, ledger: Ledger, goal: Goal): Plan[]
 
   const results: Plan[] = [];
   const seen = new Set<string>();
+  // Values are shared by descendant search nodes. Parse each name once in this
+  // search; nothing is retained across calls or changes to the graph/intent.
+  const bindingValues = new WeakMap<Value, BindingValue>();
+  const describeValue = (v: Value): BindingValue => {
+    let info = bindingValues.get(v);
+    if (!info) {
+      const leaf = v.ref.replace(/^(\$in|\d+)\./, "").split(".").pop() ?? "";
+      const leafToks = v.step >= 0 ? tokenize(leaf) : [];
+      info = {
+        callerName: v.step === -1 ? v.ref.slice(4).toLowerCase().replace(/[^a-z0-9]/g, "") : "",
+        leaf,
+        intentBonus: leafToks.length ? (5 * leafToks.filter((t) => intent.has(t)).length) / leafToks.length : 0,
+      };
+      bindingValues.set(v, info);
+    }
+    return info;
+  };
   let frontier: Node[] = [start];
   for (let depth = 0; depth < maxSteps && frontier.length; depth++) {
     const next: Node[] = [];
     let expansions = 0;
     for (const node of frontier) {
       if (expansions > DEPTH_BUDGET) break;
+      const consumed = consumedSteps(node);
+      const covered = new Set(node.steps.flatMap((st) => [...tokensOf(graph.get(st.capability)!)]).filter((t) => intent.has(t)));
       for (const cap of caps) {
         if (node.used.has(cap.id)) continue;
-        const bindings = bind(cap, node.values, intent, consumedSteps(node), shapes);
+        const bindings = bind(cap, node.values, describeValue, consumed, shapes);
         if (!bindings) continue;
         if (++expansions > DEPTH_BUDGET) break;
         // A step must consume something produced or supplied, not only constants,
@@ -195,7 +220,6 @@ export function plan(graph: CapabilityGraph, ledger: Ledger, goal: Goal): Plan[]
         const informs = !!goal.require?.length && goal.require.some((t) => [...cap.outputs.map((o) => o.name), ...(cap.fields ?? []).map((f) => f.path)].some((path) => carries(path, t)));
         // So is intent: a type-preserving transformation (html -> corrected html) that covers intent
         // words the plan has not covered yet is progress, even as an intermediate step.
-        const covered = new Set(node.steps.flatMap((st) => [...tokensOf(graph.get(st.capability)!)]).filter((t) => intent.has(t)));
         const advances = [...tokensOf(cap)].some((t) => intent.has(t) && !covered.has(t));
         const novel = informs || advances || produced.some((v) => !node.values.some((h) => h.type === v.type && (v.schemes ?? []).every((s) => h.schemes?.includes(s))));
         if (!novel && !finishes && !anchors.has(cap.id)) continue;
@@ -232,9 +256,14 @@ export function plan(graph: CapabilityGraph, ledger: Ledger, goal: Goal): Plan[]
   // Inputs the caller supplied are part of the question: a plan that ignores one answers a
   // different question ("USD to EUR" answered without EUR). Fewer ignored inputs rank first.
   const supplied = Object.keys(goal.have);
+  const ignoredInputs = new WeakMap<Plan, number>();
   const ignored = (p: Plan) => {
+    const cached = ignoredInputs.get(p);
+    if (cached !== undefined) return cached;
     const used = new Set(p.steps.flatMap((s) => s.bindings.map((b) => b.from)).filter((f) => f.startsWith("$in.")).map((f) => f.slice(4).split(".")[0]));
-    return supplied.filter((k) => !used.has(k)).length;
+    const count = supplied.filter((k) => !used.has(k)).length;
+    ignoredInputs.set(p, count);
+    return count;
   };
   // With required information: established beats unverified beats incomplete, then coverage.
   const rank = (p: Plan) => (p.satisfaction ? STATUS_RANK[p.satisfaction.status] : 0);
@@ -303,19 +332,19 @@ function fanOut(cap: Capability, port: Port, v: Value, shapes: Map<string, strin
 }
 
 /** Bind every required input of `cap` to the best available value, or null. At most one port fans out. */
-function bind(cap: Capability, values: Value[], intent: Set<string>, consumed: Set<number> = new Set(), shapes: Map<string, string[]> = new Map()): Binding[] | null {
+function bind(cap: Capability, values: Value[], describeValue: (v: Value) => BindingValue, consumed: Set<number>, shapes: Map<string, string[]>): Binding[] | null {
   // Score every acceptable value for every port first, then bind the most
   // constrained ports first, preferring values from branches nobody has used
   // yet, so a join draws each input from a different upstream system.
   const options = cap.inputs.map((port) => {
     const scored: Array<{ v: Value; score: number; each?: Binding["each"] }> = [];
+    const portName = port.name.toLowerCase().replace(/[^a-z0-9]/g, "");
     for (const v of values) {
       // A caller input named after an entity ("province") identifies it: it can fill id.province.
       // A caller input given under the port's own name is that value (a "purl" is a purl, even if the
       // contract types it url); and a caller input named after an entity identifies it (id.province).
-      const callerName = v.step === -1 ? v.ref.slice(4).toLowerCase().replace(/[^a-z0-9]/g, "") : "";
+      const { callerName, leaf, intentBonus } = describeValue(v);
       const stringLike = (t: string) => !/^(number|boolean|json|list:|quantity:|geo\.)/.test(t);
-      const portName = port.name.toLowerCase().replace(/[^a-z0-9]/g, "");
       // ...and a caller value given under the port's exact name goes to that port even when it is a
       // list or JSON port (options, files): the caller named it.
       const bridged = v.step === -1 && (port.type === `id.${callerName}` || (callerName === portName && ((stringLike(port.type) && stringLike(v.type)) || port.type.startsWith("list:") || port.type === "json")));
@@ -328,15 +357,12 @@ function bind(cap: Capability, values: Value[], intent: Set<string>, consumed: S
       if (!port.required && v.ref !== `$in.${port.name}`) continue;
       // A port with a fixed set of allowed values takes a caller's choice, never another step's output.
       if (port.enum && v.step >= 0) continue;
-      const leaf = v.ref.replace(/^(\$in|\d+)\./, "").split(".").pop() ?? "";
       // Name-like ports (title, name, q) take names, not prose fields like body/description.
       if (isNominal(port.name, port.type) && CONTENT.test(leaf)) continue;
       // Prefer exact types, recent values, the caller's names, and values named like the intent.
       const d = bridged || linked ? 0 : distance(port.type, each ? v.type.slice(5) : v.type);
       const nameBonus = v.ref === `$in.${port.name}` ? (port.type === "text" ? 1.5 : 5) : 0;
-      const leafToks = tokenize(leaf);
-      // Intent words often name the caller's own inputs ("question"); only produced values earn this.
-      const intentBonus = v.step >= 0 && leafToks.length ? (5 * leafToks.filter((t) => intent.has(t)).length) / leafToks.length : 0;
+      // Only produced values earn the precomputed intent bonus.
       const contentBonus = port.type === "text" && CONTENT.test(leaf) ? 2 : 0;
       // The caller's own value of the exact type beats one derived through a detour.
       // (Identities only: free text is meant to be transformed, so the latest version wins.)
