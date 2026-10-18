@@ -125,6 +125,8 @@ def start_resource(private, output, config, name):
 def run(output, image):
     docker, image_id = prepare(output, image)
     checks = {}
+    def checkpoint():
+        (output / "checks.json").write_text(json.dumps(checks, indent=2))
     # macOS Unix socket paths have a small fixed limit; use this short local root.
     with tempfile.TemporaryDirectory(prefix="rcx-resource-", dir="/private/tmp") as temp:
         private = Path(temp)
@@ -178,6 +180,7 @@ def run(output, image):
             def rows():
                 return [json.loads(line) for line in (output / "provider.jsonl").read_text().splitlines()]
             checks["all_direct_bypass_probes_have_zero_effect"] = [r["label"] for r in rows()] == ["approved", "lost"]
+            checkpoint()
             wire = {"method": "POST", "url": boundary.origin + "/entries", "headers": {"content-type": "application/json"}, "body": base64.b64encode(b'{"label":"proof-control"}').decode()}
             intent, proof = boundary.issue(wire)
             mutations = {"method": {"method": "DELETE"}, "path": {"url": boundary.origin + "/other"},
@@ -198,7 +201,7 @@ def run(output, image):
             response = boundary.execute(wire, intent, unsupported)
             checks["unsupported_profile_refused"] = not response["ok"]
             foreign = PCCBMinter(signer=resolve_signer(), issuer=PartyRef(type="service", id="actenon-permit")).mint(intent,
-                PolicyDecision(outcome="allow", summary="disposable wrong-audience test"),
+                PolicyDecision(outcome="allow", summary="disposable wrong-audience test", rule_evaluations=()),
                 DynamicContextInput(request_id="wrong-audience", audience=AudienceRef(type="service", id="other-boundary"), scope_capabilities=("http.post",), now=datetime.now(UTC)),
                 extensions=proof.extensions)
             response = boundary.execute(wire, intent, foreign)
@@ -207,6 +210,7 @@ def run(output, image):
             (output / "mutation-results.json").write_text(json.dumps(mutation_results, indent=2))
             response = boundary.execute(wire, intent, proof)
             checks["unchanged_proof_executes_once"] = response["ok"] and [r["label"] for r in rows()] == ["approved", "lost", "proof-control"]
+            checkpoint()
             process.terminate(); process.wait(timeout=5); errors.close()
             config["port"] = urlsplit(boundary.origin).port
             process, errors, restarted = start_resource(private, output, config, "restart")
@@ -234,6 +238,7 @@ def run(output, image):
                 commitments.append(effect)
             (output / "committed-effects.json").write_text(json.dumps(commitments, indent=2, default=str))
             checks["resource_owned_commit_evidence_settled_each_effect"] = len(commitments) == 3 and all(r["state"] == "COMMITTED" for r in commitments)
+            checkpoint()
             observed = subprocess.run([sys.executable, str(Path(__file__).with_name("observe.py")), str(output)], capture_output=True, text=True,
                 env={"PATH": os.environ["PATH"], "HOME": str(private), "PYTHONDONTWRITEBYTECODE": "1"})
             (output / "observer.stdout.log").write_text(observed.stdout)
