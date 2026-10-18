@@ -1,0 +1,128 @@
+✖ execution disclosure preserves contracts, authority and evidence with full detail available (291.157833ms)
+✖ execution disclosure reports denial without granting or executing a capability (1.047208ms)
+✖ MCP text stays lossless JSON while avoiding presentation whitespace (22.147791ms)
+✖ startup disclosure keeps complete retained IDs in a bounded index (95.409083ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 0
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 663.846083
+
+✖ failing tests:
+
+test at ../../../../private/tmp/rcx-disclosure-before/test/disclosure.test.ts:8:1
+✖ execution disclosure preserves contracts, authority and evidence with full detail available (291.157833ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + undefined
+  - {
+  -   args: {
+  -     detail: 'full',
+  -     id: 'builtin:quantity.money.usd.minor-to-major'
+  -   },
+  -   tool: 'context_explain'
+  - }
+  
+      at TestContext.<anonymous> (file:///private/tmp/rcx-disclosure-before/test/disclosure.test.ts:17:12)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: { tool: 'context_explain', args: { id: 'builtin:quantity.money.usd.minor-to-major', detail: 'full' } },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at ../../../../private/tmp/rcx-disclosure-before/test/disclosure.test.ts:40:1
+✖ execution disclosure reports denial without granting or executing a capability (1.047208ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + undefined
+  - {
+  -   after: 'changed action',
+  -   at: '2026-10-18T06:10:47.752Z',
+  -   before: 'old action',
+  -   id: 'builtin:quantity.money.usd.minor-to-major',
+  -   source: 'fixture:changed-contract'
+  - }
+  
+      at TestContext.<anonymous> (file:///private/tmp/rcx-disclosure-before/test/disclosure.test.ts:47:10)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: { id: 'builtin:quantity.money.usd.minor-to-major', source: 'fixture:changed-contract', at: '2026-10-18T06:10:47.752Z', before: 'old action', after: 'changed action' },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at ../../../../private/tmp/rcx-disclosure-before/test/disclosure.test.ts:55:1
+✖ MCP text stays lossless JSON while avoiding presentation whitespace (22.147791ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + '{\n' +
+  +   '  "product": "RightClick X",\n' +
+  +   '  "version": "0.1.0",\n' +
+  +   '  "name": "rightclick-x",\n' +
+  +   '  "runtime": {\n' +
+  +   '    "name": "node",\n' +
+  +   '    "version": "24.16.0",\n' +
+  +   '    "features": [\n' +
+  +   '      "fetch",\n' +
+  +   '      "webcrypto",\n' +
+  +   '      "websocket",\n' +
+  +   '      "fs",\n' +
+  +   '      "env"\n' +
+  +   '    ]\n' +
+  +   '  },\n' +
+  +   '  "uptimeSeconds": 0,\n' +
+  +   '  "graph": {\n' +
+  +   '    "providers": 1,\n' +
+  +   '    "capabilities": 20,\n' +
+  +   '    "edges": 26,\n' +
+  +   '    "chains2": 26,\n' +
+  +   '    "chains3": 33,\n' +
+  +   '    "total": 79\n' +
+  +   '  },\n' +
+  +   '  "runs": 0,\n' +
+  +   '  "receipts": {\n' +
+  +   '    "count": 0,\n' +
+  +   '    "head": "0000000000000000000000000000000000000000000000000000000000000000"\n' +
+  +   '  },\n' +
+  +   '  "eventCursor": 1,\n' +
+  +   '  "memoryMB": 123\n' +
+  +   '}'
+  - '{"product":"RightClick X","version":"0.1.0","name":"rightclick-x","runtime":{"name":"node","version":"24.16.0","features":["fetch","webcrypto","websocket","fs","env"]},"uptimeSeconds":0,"graph":{"providers":1,"capabilities":20,"edges":26,"chains2":26,"chains3":33,"total":79},"runs":0,"receipts":{"count":0,"head":"0000000000000000000000000000000000000000000000000000000000000000"},"eventCursor":1,"memoryMB":123}'
+  
+      at TestContext.<anonymous> (file:///private/tmp/rcx-disclosure-before/test/disclosure.test.ts:63:12)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '{\n  "product": "RightClick X",\n  "version": "0.1.0",\n  "name": "rightclick-x",\n  "runtime": {\n    "name": "node",\n    "version": "24.16.0",\n    "features": [\n      "fetch",\n      "webcrypto",\n      "websocket",\n      "fs",\n      "env"\n    ]\n  },\n  "uptimeSeconds": 0,\n  "graph": {\n    "providers": 1,\n    "capabilities": 20,\n    "edges": 26,\n    "chains2": 26,\n    "chains3": 33,\n    "total": 79\n  },\n  "runs": 0,\n  "receipts": {\n    "count": 0,\n    "head": "0000000000000000000000000000000000000000000000000000000000000000"\n  },\n  "eventCursor": 1,\n  "memoryMB": 123\n}',
+    expected: '{"product":"RightClick X","version":"0.1.0","name":"rightclick-x","runtime":{"name":"node","version":"24.16.0","features":["fetch","webcrypto","websocket","fs","env"]},"uptimeSeconds":0,"graph":{"providers":1,"capabilities":20,"edges":26,"chains2":26,"chains3":33,"total":79},"runs":0,"receipts":{"count":0,"head":"0000000000000000000000000000000000000000000000000000000000000000"},"eventCursor":1,"memoryMB":123}',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at ../../../../private/tmp/rcx-disclosure-before/test/disclosure.test.ts:69:1
+✖ startup disclosure keeps complete retained IDs in a bounded index (95.409083ms)
+  AssertionError [ERR_ASSERTION]: 2163
+      at TestContext.<anonymous> (file:///private/tmp/rcx-disclosure-before/test/disclosure.test.ts:81:10)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

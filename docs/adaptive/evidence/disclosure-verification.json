@@ -1,0 +1,219 @@
+{
+  "at": "2026-10-18T06:14:20.500103+00:00",
+  "productSource": "59706d435f3854881184d25820bd4342203bab70",
+  "baselineSource": "f47b76274a6227ff11bd976488cb630c62881294",
+  "branch": "programme/adaptive-capability-plane",
+  "scope": "Exposed same-state disclosure fidelity and serialized handler frames. Same-author separate checking, not independent-author review or model economics.",
+  "developmentVerdict": "PASS",
+  "release": "NO-GO",
+  "regression": {
+    "tests": 270,
+    "pass": 270,
+    "fail": 0,
+    "skipped": 0,
+    "cancelled": 0
+  },
+  "sameFinalTestsOnBaseline": {
+    "tests": 4,
+    "pass": 0,
+    "fail": 4,
+    "skipped": 0,
+    "cancelled": 0
+  },
+  "restrictedHostAttempt": {
+    "tests": 270,
+    "pass": 204,
+    "fail": 0,
+    "skipped": 66,
+    "cancelled": 0
+  },
+  "linuxTargeted": {
+    "results": {
+      "tests": 18,
+      "pass": 18,
+      "fail": 0,
+      "skipped": 0,
+      "cancelled": 0
+    },
+    "image": "sha256:5e95a1b7bdb5ddd279c4c18760a007a98f94c6fb24236433c19b61831bc4e4f5",
+    "network": "none",
+    "fullLinuxSuite": false
+  },
+  "blackBoxProof": {
+    "pass": 28,
+    "total": 28,
+    "seed": 20261018,
+    "sourceManifestVerifiedAgainstCommit": true,
+    "sourceFiles": 43
+  },
+  "frozenExport": {
+    "verifiedFiles": 212,
+    "excludedGeneratedResult": "proof/results/latest.json",
+    "productAndTestFilesUnchanged": true
+  },
+  "comparison": {
+    "verdict": "PASS",
+    "scope": "same-state disclosure fidelity and wire bytes only; no model-economic advantage established",
+    "measurement": {
+      "capabilities": [
+        {
+          "id": "cli:json-xs:default",
+          "beforeWireBytes": 18449,
+          "afterWireBytes": 11178,
+          "beforePayloadBytes": 7507,
+          "afterPayloadBytes": 5312
+        },
+        {
+          "id": "cli:json-xs:invoke",
+          "beforeWireBytes": 24641,
+          "afterWireBytes": 14490,
+          "beforePayloadBytes": 10057,
+          "afterPayloadBytes": 6917
+        },
+        {
+          "id": "cli:json-xs:stdout",
+          "beforeWireBytes": 20621,
+          "afterWireBytes": 11216,
+          "beforePayloadBytes": 8316,
+          "afterPayloadBytes": 5319
+        },
+        {
+          "id": "goal:repair-pretty-json",
+          "beforeWireBytes": 8373,
+          "afterWireBytes": 4964,
+          "beforePayloadBytes": 3250,
+          "afterPayloadBytes": 2292
+        }
+      ],
+      "explanationWireBytesBefore": 72084,
+      "explanationWireBytesAfter": 41848,
+      "initializationWireBytes": {
+        "before": 1487,
+        "after": 711
+      },
+      "initializationInstructionBytes": {
+        "before": 1250,
+        "after": 490
+      },
+      "toolsListWireBytes": {
+        "before": 16909,
+        "after": 17091
+      },
+      "clientPrefixReplicationProjection": {
+        "copies": 13,
+        "beforeBytes": 16250,
+        "afterBytes": 6370,
+        "scope": "projection from the historical client behavior; not a new observed client trace"
+      }
+    },
+    "negativeControls": {
+      "options": "rejected",
+      "authority": "rejected",
+      "verification": "rejected",
+      "evidence": "rejected"
+    }
+  },
+  "stateSha256": "cf0aac92ef8e76b47a4348064bbe8b53c587bd108634ecdba6461a2466c93ae0",
+  "typechecks": "PASS: product/test and replay script",
+  "offlinePackage": {
+    "bytes": 408096,
+    "tools": 13,
+    "uninstall": "PASS",
+    "cliFullRetrieval": "PASS"
+  },
+  "preservedFailures": [
+    "partial baseline stopped after repeated goal publication remained active for 3m18s",
+    "first patched test compared JS undefined properties with serialized JSON",
+    "restricted-host run skipped 66 native tests; full native run separately passes"
+  ],
+  "limitations": [
+    "One exposed target, no unfamiliar holdout",
+    "No new live model tokens or latency measured; prior unfavorable benchmark unchanged",
+    "No independent-author validation",
+    "No universal execution containment claim",
+    "Repeated goal-publication performance diagnostic unresolved"
+  ],
+  "artifacts": {
+    "bin/rcx.ts": "3605942af975052872598417263885eed2bf206edfc1027903678860d61cf316",
+    "docs/adaptive/ACCEPTANCE-MATRIX.md": "d549b781293fe5570d079ebbee92ef13adf097c24290054218870a0405da1cca",
+    "docs/adaptive/DISCLOSURE.md": "2083d446f34f8c4451c55821ca68c802325b4d73821afb5f42374cf7450760ac",
+    "docs/adaptive/RELEASE-READINESS.md": "89a9b95fd7f5ff62560f2d613dd7f9ea557e1e7132f82d5b969ca1bc0266b0ac",
+    "docs/adaptive/evidence/cli-migration/after-final/seed.state.json": "cf0aac92ef8e76b47a4348064bbe8b53c587bd108634ecdba6461a2466c93ae0",
+    "docs/adaptive/evidence/disclosure/after-capture.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "docs/adaptive/evidence/disclosure/after.json": "cf43abd9e51d86cb5c1705f7472a28f9d2f0483ecc333180e07d21199e7f2a44",
+    "docs/adaptive/evidence/disclosure/before-capture.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "docs/adaptive/evidence/disclosure/before-corrected-tests.log": "449225cc439b61fd5e0fbade3b02349af6859ef13ee1ca68a8c1e4259e5b52bb",
+    "docs/adaptive/evidence/disclosure/before-final-tests.log": "a0f0b3e771ce65ba5794bc88597a37b58630aaf276c6d886bf68b465d76ae12f",
+    "docs/adaptive/evidence/disclosure/before-tests-stop.json": "5a9e457acd5ae8d010c3b2317daee09d1f31e02e72f7e53c1049481db78cb89a",
+    "docs/adaptive/evidence/disclosure/before-tests.log": "4f4e1f0777f1e2cc88c1a3175f946b1c28ce874dd22f1d503e1aef8980d52b6b",
+    "docs/adaptive/evidence/disclosure/before.json": "7c682b178dfddada43f99c595b9ade46ab5ad8d2bd98ed1bf02cc04d23e43986",
+    "docs/adaptive/evidence/disclosure/build.log": "83d302bae41eb789a459a947127ddb430ba61028c43e576103a8dc4d3c0da4a6",
+    "docs/adaptive/evidence/disclosure/checker.json": "5c5a5bb0e7b0dd579dac0ae4ca758b1b757203467ba200694039b4e4416c26dc",
+    "docs/adaptive/evidence/disclosure/checker.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "docs/adaptive/evidence/disclosure/cli-smoke.json": "fae41d68af45f28f8b3d74882c500eec34dccd99bb3b515dc7d4eee2ba0ab9b3",
+    "docs/adaptive/evidence/disclosure/diagnostic-before.json": "8603a1ca6a23bea4113debb196091be1f14ac9e0a2cdcfa2312983b784e960fe",
+    "docs/adaptive/evidence/disclosure/diagnostic-before.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "docs/adaptive/evidence/disclosure/focused-tests-attempt-2.log": "fe0d9f15b72743e6b14fef68028b5a03e406a1a69e42df6677da400d9964ee3d",
+    "docs/adaptive/evidence/disclosure/focused-tests.log": "aa412da7f25cdfb01d1d48fce067774029333a2be73e795b440e70d0ee05f208",
+    "docs/adaptive/evidence/disclosure/full-tests-final.log": "f740f1b80f45737e9c93a1ad6f3d418ee60f0059f0b24cffe885e1b045e70358",
+    "docs/adaptive/evidence/disclosure/full-tests-native.log": "e14ecfe8eed8934f83bd10ef8a5bab7dcc591d6479faa1c4b0707334fb02c608",
+    "docs/adaptive/evidence/disclosure/full-tests.log": "350d7de4df9dd7f8705ff444afe570facb97b966d6fd8d06256d04986569b275",
+    "docs/adaptive/evidence/disclosure/harness-typecheck-final.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "docs/adaptive/evidence/disclosure/harness-typecheck.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "docs/adaptive/evidence/disclosure/linux-targeted.log": "a2b1bba5dbaf6b0c416173b2f7778613e854e5e7cdb2e31eda292bbe31808a0f",
+    "docs/adaptive/evidence/disclosure/package.json": "5c323105c26409df321b496eee873babea508e77072317ca129fe3a13dbcc71d",
+    "docs/adaptive/evidence/disclosure/package.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "docs/adaptive/evidence/disclosure/proof.json": "619438bf7f66046c6683a4b56b90e6c603b94a36b63a9ad054c50284b5364c39",
+    "docs/adaptive/evidence/disclosure/proof.log": "a49fdb1a861162ee3f70b424dff03eb92a0113ac4ae4682406b26d38dcf333da",
+    "docs/adaptive/evidence/disclosure/typecheck-final-2.log": "41c3ad8d876478272253fc75833d8ee001a600b99877624ded8da68b27d50d28",
+    "docs/adaptive/evidence/disclosure/typecheck-final.log": "41c3ad8d876478272253fc75833d8ee001a600b99877624ded8da68b27d50d28",
+    "docs/adaptive/evidence/disclosure/typecheck.log": "41c3ad8d876478272253fc75833d8ee001a600b99877624ded8da68b27d50d28",
+    "docs/north-star/EVALUATION-PLAN.md": "f57aa58be4a28de4313931e4ff5fd383a2d07c6f521d99fc7cef55c2f141d8bb",
+    "experiments/north-star/analyze-disclosure.py": "3c97e9c63d326ddc95f97a61679424a12560d11cce96d9766d2bea6f83c66f40",
+    "experiments/north-star/check-disclosure.py": "8ebcbd56c0a9625c6cc589bc567efb20c5397572503b258c33b924941c14ce2d",
+    "experiments/north-star/disclosure-replay.ts": "080868d3bb225f0af1ab84387504752371bb084b5ba4322e675b6ca74e885e81",
+    "src/core/authority.ts": "029ee45d0ca6fb89d9be7b1b93dec02e836371d181de006ac7ec833a06797df8",
+    "src/core/cli-continuity.ts": "efb0ca8524132fd8a90bc4a6efe4ff3fd6b78e8ec1348aa617ddd18db78f820f",
+    "src/core/cli-files.ts": "7a6e8f562204b1200ebe8b98772e1a269e526d13915138d2a0198f2fdade859b",
+    "src/core/contract.ts": "44caedd06af603ec5ce3140b4f63b209740b6c881e537bcd2ce7498404e6a815",
+    "src/core/execution-policy.ts": "3689e662c0740cfeb10b60792a5a3cc4174fa356cc5e8b91ea8efc8414ee4aa1",
+    "src/core/fields.ts": "fa58a1c39d7a1294c4dfe74c53a80aeaa70b03c8ed5eefabd755730871cadf09",
+    "src/core/graph.ts": "584bd2a12427b83b925f59c728339d9825d65f6cc6ffde3c1ce6dab388377ad1",
+    "src/core/identities.ts": "efc886834bb1d5b4c569831ab63d3665e702430874e42c614c36ba20abe90a9e",
+    "src/core/json.ts": "10ce20eb7bcb5fad723a959e0b694ab8e5eabf3ab2e9c39b0399a7981949d194",
+    "src/core/knowledge.ts": "58dc37518cf3d1cffee692e201361d8dc8633570894f4b7fb380e402b3e3b19c",
+    "src/core/ledger.ts": "4288b1fdc3cce124798fe3dd2a53efbc6d87142f74f9791f7d9cab17a0aca341",
+    "src/core/planner.ts": "376493cd64e14ae95c7d5dfe0105e716d94c000d9572994974674a6eaef06455",
+    "src/core/programs.ts": "5c3f0b40083dd15bfe350962319b54efec7e85c4b6cb70881e0c728f98e2f634",
+    "src/core/quantities.ts": "a3b07566762e786ce7a46f15a7e24b66f83a31f5fd4ca4924ce9830f5c9a5d16",
+    "src/core/sandbox.ts": "eaa663c64a62900f038f86e764ea7763727e592b1ac23e11d555943ac1602fb2",
+    "src/core/satisfaction.ts": "0bae0da4af4a5eff8d4c64266f9b3afaeb938eb097f775d2382e2bb5e9836abe",
+    "src/core/secrets.ts": "c8b294e0052410d0ca8b09b3b4e65066fb93de03259eb25b3f7e3aedef4ad0ee",
+    "src/core/semantics.ts": "72efff09a7684132fa8f391212c46ddeb133ca36d6575d2e4ab9421e002d832c",
+    "src/core/types.ts": "c9191c27149c88ea0fb7d7d2378ddf20d9cf802f7d9e9c772f0ab4b6daa902a8",
+    "src/core/verify.ts": "5b13aabf50ff0af62f9fd03b0d78dc3f7fccc4bef565aaaca543a6194f2923d4",
+    "src/core/view.ts": "b76ee73e697c7f30c4be3e3cf7137a4a740083225017b38520d81151ee456944",
+    "src/core/yaml.ts": "8ab0f701d51452df24814dfdd71a8180b520970bf545037730337f050565e40a",
+    "src/entry/durable.ts": "a3512ca8ed26b62258fa5bc7b87a2fab0053860433be30e80423fbc5aabeec22",
+    "src/entry/edge.ts": "ef004d8910905c3188b4834246519a4ff6189275cca1862362eaca4f4a1fb61a",
+    "src/entry/node-host.ts": "19a4ceb88c719b56dba86833ded9c54c63c3a972d4e4b5d9f848df56604b8d30",
+    "src/index.ts": "109b5eaa654911a790e4a4ddedd0911d1320fb1b3d6c8f943933ef21dbe53d96",
+    "src/interface/dashboard.ts": "9c98b7d6ae7b7cb9e5467e8dad9e7ef8ce3ccecda614db53e2c5a9bab8c407c2",
+    "src/interface/graphql-server.ts": "923e5205922f30d54c51ec7f98a13fd33117735f06a5fc6af218156cc4827bed",
+    "src/interface/http.ts": "1fb94cff3112c4c474e1ae7aaeddd882efb4207a852ecf5b55b42f298ebdcdb3",
+    "src/interface/mcp-server.ts": "70e5dff56bfcd8f567ce3fcadcdfe4be19681f669074dd7b6cf8a2fdf77a977b",
+    "src/interface/tools.ts": "7e2937d937a96c0fc782073af8e2ac69cdf6ec70b3f24e51b709f165f5cae0a8",
+    "src/reflectors/builtins.ts": "ea92aba6d1ec86c50774bf05184ed21c17b4dd42e0da2eed160763cd3fe492eb",
+    "src/reflectors/cli.ts": "fa1e00cb0768ac46d433ed27c3aad4ed83e38782ba659cdca9fd679f51e72e85",
+    "src/reflectors/directories.ts": "e9107659fc7e50738b6000a7800c4da1d3b6025ae5d29065ebec4b16bb9dece2",
+    "src/reflectors/discover.ts": "a3dce3562e41560471e760714c8ada461599623322cd44a8f2021eb975081aa2",
+    "src/reflectors/graphql.ts": "74992bbe3b3aa39713a81ee8270b15ad35980525b01ad3e1619fdee89b61ede1",
+    "src/reflectors/mcp.ts": "634dec12cbcef9521e5caa6913b6db85f6d0af2a323eb68b3e8094723924355b",
+    "src/reflectors/net.ts": "4efbf2e74e793d5ddac059b4fe49efc885661b84f57310c1bccd4390c158a993",
+    "src/reflectors/openapi.ts": "c7c79ad8e0f9ea267c229d13a679ff0dff4142c3d9222db7f06356b2d86f21ff",
+    "src/reflectors/platform.ts": "473828892af5d32236c2785a86f28e513dd558d58072496137b9b09e2ff14141",
+    "src/reflectors/web.ts": "7b80ccf10cc7faa94fe0d5859014bc005a34299cb374e3be8fb2504ed290b6d2",
+    "src/runtime.ts": "7d6a1578bed68d3e1360e3df7a223cb64e2954c9ca2f1335697b5e9bc8832f76",
+    "test/disclosure.test.ts": "41d34c47b203a68261775ea7bb200c554ee18059f4aa9d3f09d343ada9cb948d"
+  }
+}
