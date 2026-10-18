@@ -258,12 +258,18 @@ export function samplesFor(docs: string, seed: number): Sample[] {
   const out: Sample[] = [];
   const all = /./.test(d); // every generic kind is tried; documentation words only add emphasis
   if (all || /\bx?html\b/.test(d)) {
-    out.push({ kind: "html", content: `<html><head><title>${sentence(1)}</title></head><body><h1>${sentence(2)}</h1><p>${sentence(3)}<p>${sentence(4)}<ul><li>${pick(words, 5)}<li>${pick(words, 6)}</ul></body></html>\n` });
-    out.push({ kind: "html", content: `<!DOCTYPE html>\n<html>\n<head><title>${sentence(5)}</title></head>\n<body>\n<div><b>${sentence(6)}</div>\n<table><tr><td>${pick(words, 8)}<td>${pick(words, 9)}</table>\n</body>\n</html>\n` });
+    for (const v of [0, 4]) {
+      out.push({ kind: "html", content: `<html><head><title>${sentence(1 + v)}</title></head><body><h1>${sentence(2 + v)}</h1><p>${sentence(3 + v)}<p>${sentence(4 + v)}<ul><li>${pick(words, 5 + v)}<li>${pick(words, 6 + v)}</ul></body></html>\n` });
+      out.push({ kind: "html", content: `<!DOCTYPE html>\n<html>\n<head><title>${sentence(5 + v)}</title></head>\n<body>\n<div><b>${sentence(6 + v)}</div>\n<table><tr><td>${pick(words, 8 + v)}<td>${pick(words, 9 + v)}</table>\n</body>\n</html>\n` });
+    }
   }
-  if (all || /\bxml\b/.test(d)) out.push({ kind: "xml", content: `<?xml version="1.0"?>\n<items><item id="${seed % 97}">${sentence(1)}</item><item id="${(seed + 1) % 97}">${sentence(2)}</item></items>\n` });
-  if (all || /\bjson\b/.test(d)) out.push({ kind: "json", content: JSON.stringify({ name: pick(words, 1), count: seed % 50, tags: [pick(words, 2), pick(words, 3)] }) + "\n" });
-  if (all || /\bcsv\b|comma.separated/.test(d)) out.push({ kind: "csv", content: `name,count\n${pick(words, 1)},${seed % 9}\n${pick(words, 2)},${(seed + 3) % 9}\n` });
+  // Two distinct unary inputs or two distinct two-file pairs. The investigator
+  // already budgets two variants; repeating one document cannot support transfer.
+  for (const v of [0, 1, 2, 3]) {
+    if (all || /\bxml\b/.test(d)) out.push({ kind: "xml", content: `<?xml version="1.0"?>\n<items><item id="${(seed + 2 * v) % 97}">${sentence(1 + v)}</item><item id="${(seed + 2 * v + 1) % 97}">${sentence(2 + v)}</item></items>\n` });
+    if (all || /\bjson\b/.test(d)) out.push({ kind: "json", content: JSON.stringify({ name: pick(words, 1 + v), count: (seed + v) % 50, tags: [pick(words, 2 + v), pick(words, 3 + v)] }) + "\n" });
+    if (all || /\bcsv\b|comma.separated/.test(d)) out.push({ kind: "csv", content: `name,count\n${pick(words, 1 + v)},${(seed + v) % 9}\n${pick(words, 2 + v)},${(seed + v + 3) % 9}\n` });
+  }
   // A feature-rich text that exercises common behaviours (tabs, repeats, blank lines, case,
   // numbers, runs of spaces), so a program's operative transformation is actually observed.
   out.push({ kind: "text", content: `${pick(words, 2)}\t${seed % 90 + 10}\t${pick(words, 4).toUpperCase()}\n${pick(words, 5)}  ${pick(words, 6)}   end\n\n${pick(words, 2)}\t${seed % 90 + 10}\t${pick(words, 4).toUpperCase()}\nZeta 3\nalpha 21\n` });
@@ -660,7 +666,7 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
       tags: [name, ...(inv.program.description ?? "").toLowerCase().match(/[a-z]{3,}/g) ?? [], ...(option ? option.description.toLowerCase().match(/[a-z]{3,}/g) ?? [] : [])].slice(0, 30),
       invoke,
     });
-    claim(id, `accepts ${inKinds.join("/")} input via ${best.id} and prints ${out}`, supported ? "experimentally-supported" : "observed", `${mt.length} run(s) with distinct inputs; exit ${invoke.okExit.join("/")}`);
+    claim(id, `accepts ${inKinds.join("/")} input via ${best.id} and prints ${out}`, supported ? "experimentally-supported" : "observed", `${mt.length} run(s) across ${distinctInputs} distinct input(s); exit ${invoke.okExit.join("/")}`);
     claim(id, volatileTimes ? "deterministic for identical input, apart from date-time values (e.g. file timestamps)" : "deterministic for identical input", again ? (deterministic ? "experimentally-supported" : "contradicted") : "unknown", again ? (volatileTimes ? "repeated run identical once date-times are normalised" : "repeated run compared byte for byte") : "no budget for a repeat");
     if (preserves) claim(id, "output keeps every word of the input", supported ? "experimentally-supported" : "observed", "word sets compared");
     if (echoes) claim(id, "output equals the input (no transformation)", "observed", "byte comparison");

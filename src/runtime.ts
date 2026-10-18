@@ -30,7 +30,7 @@ import { detectRuntime, platformReflection, type PlatformFn, type RuntimeInfo } 
 
 export const VERSION = "0.1.0";
 /** Bump whenever semantic inference changes: persisted reflections are then re-derived from their sources. */
-export const SEMANTICS = 22;
+export const SEMANTICS = 23;
 
 export interface Store {
   load(): Promise<PersistedState | null>;
@@ -400,14 +400,22 @@ export class RightClick {
         };
         rc.ledger.forgive((id, e) => changed.has(originOf(id)) && /\b(401|403|429)\b|rate limit/i.test(e.lastError ?? ""));
       }
-      // Reflections typed by older inference rules are re-derived from their sources,
-      // one targeted probe each (the kind is known), so upgrades reach persisted graphs.
+      // Reflections typed by older inference rules are re-derived from their sources.
+      // CLI evidence needs fresh bounded investigation, not the unchanged-byte cache.
       if (stale) {
         const kinds: Record<string, SourceKind> = {};
+        const programs: string[] = [];
         for (const p of rc.graph.providers.values()) {
           if (["openapi", "graphql", "mcp", "web", "peer"].includes(p.source)) kinds[(p.meta?.source as string | undefined) ?? p.origin] = p.source as SourceKind;
+          if (p.source === "cli") {
+            programs.push(`cli:${p.origin}`);
+            // Retire stale invocations before a possibly refused/failed migration.
+            // Published anchors remain pinned; migration never silently rebinds them.
+            rc.graph.forget(p.id);
+          }
         }
         if (Object.keys(kinds).length) await rc.learn({ sources: Object.keys(kinds), kinds });
+        if (programs.length) await rc.learn({ sources: programs });
         rc.persist();
       }
     }

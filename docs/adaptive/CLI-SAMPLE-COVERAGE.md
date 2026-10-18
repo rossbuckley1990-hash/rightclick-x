@@ -1,0 +1,31 @@
+# Structured probe coverage and retained goals
+
+This continues the failed real saved-goal experiment in [CLI repair](CLI-REPAIR.md). It does not replace the original North Star objective, unfavorable agent economics, unfamiliar holdouts or acceptance thresholds.
+
+## Diagnosis and change
+
+The investigator asks for two probe variants but supplied only one JSON, XML or CSV document. Its modulo selection repeated that document. A two-file program could also receive the same pair twice; with just one format sample it could receive an unrelated plain-text fallback. These observations cannot satisfy the existing requirement for distinct repeatable inputs. Composition correctly refused the exposed `json_xs` goal.
+
+The correction supplies four generic documents for each structured format: two distinct unary inputs or two distinct pairs. HTML also gets a second pair. The existing two-variant loop and 80-run limit remain unchanged; no application-specific code, acceptance downgrade or automatic promotion is added. Evidence text now reports both run count and distinct-input count accurately. Constant output and only one successful distinct input remain unsupported for composition.
+
+Inspection also showed that the semantic-version migration re-derived remote contracts but left CLI byte-only caches intact. Version **23** now discards stale CLI invocations and dependent crystallized pipelines before attempting bounded re-investigation under current program authority. Denied or unavailable migration leaves those invocations absent. Saved goal anchors are preserved, not silently repinned; if their old operation cannot be re-established, the goal refuses. This incurs acquisition work once on upgrade, and may require a goal to be explicitly re-established. Same-version fresh-process reuse is measured separately. Earlier statements that the version bump alone re-derived all CLI caches were too broad; this checkpoint adds that missing behavior.
+
+The new generic regression file initially failed three of four cases on `f147635`: distinct unary coverage, distinct file-pair coverage and CLI migration. The constant/single-success negative controls already passed. The first patched run exposed a fixture binding error: a JSON value named `document` did not establish the discovered input role named `json`. The fixture now supplies the actual contract port name while retaining the same unseen content, output and dispatch requirements. The 24-test focused suite passed before the final migration-anchor control was added; full verification follows below. All failed logs are retained.
+
+## Frozen replay protocol
+
+Freeze the product, [runner](../../experiments/north-star/cli-goal-samples.ts) and [separate checker](../../experiments/north-star/check-cli-goal-samples.py) before execution. Use the exposed `/usr/bin/json_xs`, disposable authorised aliases, native no-network sandbox and exact same compatible/incompatible wrappers as the earlier experiment. No model or paid resource is involved.
+
+The before source is `f147635`, with semantic version 22. It must still refuse seed goal publication for insufficient distinct evidence. The after source must execute the original 17 fresh-process phases: seed acquisition/publication; direct and saved-goal warm calls; compatible changes and reuse; investigation and execution revocation on both routes; incompatible changes; disappearance; return without discovery; and return after explicit discovery. The goal uses the discovered stdin port name explicitly. A generic JSON type does not by itself establish the intended role among optional JSON ports. That harness amendment is recorded rather than changing the planner's binding rules.
+
+Two additional fresh processes load the actual before-state snapshot using the after source, then reuse the upgraded state. Record all upgrade investigation and timings; require a fresh investigation on version change and zero investigation on subsequent reuse. The initial real goal's failure is retained and is not relabeled a successful baseline.
+
+Every successful task must have one actual target execution, correct raw input/output/identity and an external JSON/pretty-print comparison. All incompatible, revoked, missing and unrelearned-return cases must have zero task executions. Compatible repair must complete in one public call, preserve the pinned operation and stored predicates, and the next process must need zero probes. The runtime grades remain `checked`, not independently `verified`; the external checker does not become a runtime witness. The checker has the same author and is not independent-author review, OS attestation or full semantic proof.
+
+```sh
+node experiments/north-star/cli-goal-samples.ts BEFORE_EXPORT f147635 NEW_BEFORE_DIR
+node experiments/north-star/cli-goal-samples.ts AFTER_EXPORT AFTER_FREEZE NEW_AFTER_DIR NEW_BEFORE_DIR
+python3 experiments/north-star/check-cli-goal-samples.py NEW_BEFORE_DIR NEW_AFTER_DIR
+```
+
+Results pending the frozen run. Full holdout, authority-boundary, cross-model, economic and human commercial gates remain open; release NO-GO.
