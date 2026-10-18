@@ -24,16 +24,18 @@ Input presence is exact content matching across supplied stdin/files/literal arg
 
 The core test separately exercises cached learning in one process, persisted reuse in a new runtime, and portable-knowledge revalidation. Eight observation/accounting tests cover wrong target, wrong input, wrong output, failed launches, resource limits, identity changes, corrupted/interrupted logs, missing oracle eligibility, duplicate input requirements, missing usage and environment isolation. Reporter controls reject incomplete measurements, altered counts/provenance and unaccounted retries. All synthetic test rows are explicitly synthetic and excluded from economic evidence.
 
-The first full development run passed 235 tests with zero failures/skips. One subsequent reporter control was added; the frozen verification records the final suite count. The experimental-host typecheck initially failed because `NetworkPolicy.blockPrivate` was omitted. The diagnostic is retained in `evidence/telemetry/harness-types-attempt-2.log`; the explicit `blockPrivate: true` fix passes. First process observations are preserved, not overwritten. Frozen results and digests are recorded separately after the source commit.
+The first full development run passed 235 tests with zero failures/skips. One subsequent reporter control was added; the frozen verification records the final suite count. The experimental-host typecheck initially failed because `NetworkPolicy.blockPrivate` was omitted. The diagnostic is retained in `evidence/telemetry/harness-types-attempt-2.log`; the explicit `blockPrivate: true` fix passes. First process observations are preserved, not overwritten. Frozen source `b8b460bb5b023a7f8249239ea381e5a76a3e6c2e` passes **236/236 tests, zero skips**, both typechecks, the four-process smoke, six positive/negative resume-preflight cases, build and offline package install/thirteen-tool/uninstall checks. Results and digests are in [verification.json](evidence/telemetry/verification.json). A separate Python stdlib checker validates the raw fixture observations without importing the runtime or TypeScript scorer; it rejects a wrong-output control even after its log digest is recomputed. This is a separate implementation by the same author, not independent-author validation.
 
 ## Reproduce without a model or network
 
-From the source freeze recorded in `evidence/telemetry/verification.json`:
+From the evidence commit containing this document (product and measurement source match the freeze recorded in `evidence/telemetry/verification.json`; the separate Python checker was added with the evidence):
 
 ```sh
 npm run typecheck
 npm test
 node experiments/north-star/measurement-smoke.ts /tmp/rcx-measurement-new-output
+# The evidence commit also includes this separately implemented checker:
+python3 experiments/north-star/check-measurement-smoke.py /tmp/rcx-measurement-new-output
 npm run build
 node ci/adaptive-package-smoke.ts
 ```

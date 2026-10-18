@@ -10,7 +10,7 @@ This is an additive execution plan for the original eight outcomes and complete 
 | Fresh-agent and cross-model reuse | Saved state, pipelines and knowledge mechanisms exist | Real vendor/model swap with new inputs, no repeated investigation; conversation removed |
 | Safe compatible adaptation / incompatible refusal | 28 deterministic lifecycle proof checks and 6 negative controls pass | New targets plus independent authority retained through repair; changed target/body/action/audience requires fresh valid proof |
 | Superior economics or maintenance | Historical corrected candidate 3/20 common feasible tasks vs strongest baseline 12/20; no cost advantage | Fair A/B/C/D with equal authority boundary, access, information, model and budgets; all acquisition/verification/reuse/change costs |
-| Regression/security/semantic/holdout evaluation | RightClick X prior checkpoint 226/226 tests; measurement development run 235/235 with zero skips (frozen count in linked measurement verification); earlier product proof 28/28 | New sealed holdouts, full integration/bypass suite, independent review; preserve all failed freezes |
+| Regression/security/semantic/holdout evaluation | RightClick X frozen measurement checkpoint 236/236 tests, zero skips; separate raw-fixture checker and offline package/thirteen-tool/uninstall checks pass; earlier product proof 28/28 | New sealed holdouts, full integration/bypass suite, independent review; preserve all failed freezes |
 | Simple install/developer experience | Offline package install/13 tools/uninstall passes | Optional Actenon install and compatibility check, clean end-to-end demo by unfamiliar developers; registry-only stack currently unavailable |
 
 ## Revised critical path
