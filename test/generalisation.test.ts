@@ -77,8 +77,8 @@ test("documented options: only documented flags and their values pass; nothing e
   const allowed = [{ flags: ["-n"], arg: false }, { flags: ["-b"], arg: false }, { flags: ["-w", "--width"], arg: true }];
   assert.deepEqual(validateOptions(["-w", "20", "-n"], allowed), ["-w", "20", "-n"]);
   assert.deepEqual(validateOptions(["--width=20"], allowed), ["--width=20"]);
-  assert.deepEqual(validateOptions(["-w20"], allowed), ["-w20"]);
-  assert.deepEqual(validateOptions(["-nb"], allowed), ["-nb"]);
+  assert.deepEqual(validateOptions(["-w20"], allowed), ["-w", "20"]);
+  assert.deepEqual(validateOptions(["-nb"], allowed), ["-n", "-b"]);
   assert.deepEqual(validateOptions("-w 20", allowed), ["-w", "20"]);
   assert.throws(() => validateOptions(["-x"], allowed), /not one this program documents/);
   assert.throws(() => validateOptions(["-n", "extra"], allowed), /not one this program documents/);
@@ -119,7 +119,7 @@ test("documented-options interface: a caller chooses a documented option with a 
   assert.equal(r.output, "abcd\nefgh\nij\n", String(r.error));
   const refused = await rc.run(inv!.id, { input: "abc\n", options: ["-o", "out.txt"] });
   assert.equal(refused.status, "failed");
-  assert.match(String(refused.error), /not one this program documents/);
+  assert.match(String(refused.error), /excluded from this capability/);
   assert.equal(refused.healing, undefined, "a caller's mistake triggers no repair");
   const card: any = rc.card(inv!);
   assert.ok(card.verification.evidence.some((e: string) => /option -w width .* changes the output/.test(e)), card.verification.evidence.join(" | "));
@@ -252,12 +252,15 @@ test("documented-options interface offers options that write to standard output,
   assert.ok(!allowed.includes("-O"), allowed.join(" "));
 });
 
-test("options declared only in a synopsis or usage line are read, including bundled letters and long single-dash options", () => {
+test("synopsis spellings are retained without inventing constituent single-letter options", () => {
   const u = "Usage: compx [-v] [-csuffix csuffix] [-except] [-strip|s pattern] [-typemap typemap]... file.xs\nusage: catx [-belnstuv] [file ...]";
   const { options } = parseUsage(u);
   const flags = options.map((o) => o.flags.join("/") + (o.arg ? ` <${o.arg}>` : ""));
-  for (const f of ["-v", "-csuffix <csuffix>", "-except", "-strip/-s <pattern>", "-typemap <typemap>", "-belnstuv", "-b", "-u"]) assert.ok(flags.includes(f), `${f} in ${flags.join(", ")}`);
-  assert.deepEqual(validateOptions(["-typemap", "my.map", "-except", "-bn"], options.map((o) => ({ flags: o.flags, arg: !!o.arg }))), ["-typemap", "my.map", "-except", "-bn"]);
+  for (const f of ["-v", "-csuffix <csuffix>", "-except", "-strip/-s <pattern>", "-typemap <typemap>", "-belnstuv"]) assert.ok(flags.includes(f), `${f} in ${flags.join(", ")}`);
+  for (const f of ["-e", "-x", "-c", "-p", "-t", "-b", "-u"]) assert.ok(!flags.includes(f), `undeclared ${f}`);
+  const allowed = options.map(o => ({ flags: o.flags, arg: !!o.arg }));
+  assert.deepEqual(validateOptions(["-typemap", "my.map", "-except", "-belnstuv"], allowed), ["-typemap", "my.map", "-except", "-belnstuv"]);
+  assert.throws(() => validateOptions(["-bn"], allowed), /not one this program documents/);
 });
 
 test("output that differs between identical runs only by date-times is deterministic apart from them; a behaviour-identical wrapper is still accepted", { skip, timeout: 120_000 }, async () => {

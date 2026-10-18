@@ -89,14 +89,8 @@ export function parseUsage(text: string): { options: Investigation["options"]; s
   for (const g of `${synopsis.join(" ")} ${manSynopsis}`.matchAll(/\[\s*(-{1,2}[A-Za-z0-9][\w-]*(?:\|-{0,2}[A-Za-z0-9][\w-]*)*)(?:[ =]+([A-Za-z][\w.-]*))?\s*\]/g)) {
     const flags = g[1].split("|").map((f) => (f.startsWith("-") ? f : `-${f}`));
     if (flags.some((f) => seen.has(f)) || options.length >= 120) continue;
-    // "[-belnstuv]" may be bundled single-letter flags (BSD) or one long single-dash option
-    // ("[-except]", Perl style). The text cannot tell them apart: both readings are declared.
-    if (/^-[A-Za-z0-9]{2,}$/.test(flags[0]) && flags.length === 1 && !g[2]) {
-      for (const ch of g[1].slice(1)) if (!seen.has(`-${ch}`)) {
-        seen.add(`-${ch}`);
-        options.push({ flags: [`-${ch}`], description: "(declared in the synopsis, as one of bundled single-letter flags)" });
-      }
-    }
+    // A single-dash word can be one option or a compact bundle. Only the whole spelling is
+    // declared here. Individual letters need their own declarations; do not invent flags.
     for (const f of flags) seen.add(f);
     options.push({ flags, ...(g[2] ? { arg: g[2] } : {}), description: "(declared in the synopsis)" });
   }
@@ -178,15 +172,19 @@ export function literalSample(name: string, variant: number, sampleText: string)
  * The caller's options, checked against the documented list before anything runs: each item must
  * be a documented flag (with its argument if it takes one), "--flag=value", "-wVALUE", or bundled
  * documented short flags ("-ab"). Anything else is refused, so no undocumented option reaches the
- * program. Values are argv items; nothing is ever parsed by a shell.
+ * program. Compact short forms are expanded before dispatch, so a target cannot interpret
+ * them as a different single-dash long option. Known exclusions take precedence over expansion.
+ * Values are argv items; nothing is ever parsed by a shell.
  */
-export function validateOptions(value: unknown, allowed: Array<{ flags: string[]; arg: boolean; optionalArg?: boolean }>): string[] {
+export function validateOptions(value: unknown, allowed: Array<{ flags: string[]; arg: boolean; optionalArg?: boolean }>, excluded: string[] = []): string[] {
   if (value === undefined || value === null || value === "") return [];
   const toks = Array.isArray(value) ? value.map(String) : String(value).trim().split(/\s+/);
   const byFlag = new Map(allowed.flatMap((o) => o.flags.map((f) => [f, o] as const)));
+  const denied = new Set(excluded);
   const out: string[] = [];
   for (let i = 0; i < toks.length; i++) {
     const t = toks[i];
+    if (denied.has(t) || denied.has(t.split("=", 1)[0])) throw new Error(`option ${JSON.stringify(t)} is excluded from this capability (HTTP 400 equivalent: nothing was run)`);
     const exact = byFlag.get(t);
     if (exact) {
       out.push(t);
@@ -204,11 +202,12 @@ export function validateOptions(value: unknown, allowed: Array<{ flags: string[]
     const attached = /^(-[A-Za-z0-9])(.+)$/.exec(t);
     if (attached) {
       if (byFlag.get(attached[1])?.arg) {
-        out.push(t);
+        if (denied.has(attached[1])) throw new Error(`option ${attached[1]} is excluded from this capability (HTTP 400 equivalent: nothing was run)`);
+        out.push(attached[1], attached[2]);
         continue;
       }
-      if (t.slice(1).split("").every((l) => byFlag.has(`-${l}`) && !byFlag.get(`-${l}`)!.arg)) {
-        out.push(t);
+      if (t.slice(1).split("").every((l) => byFlag.has(`-${l}`) && !byFlag.get(`-${l}`)!.arg && !byFlag.get(`-${l}`)!.optionalArg && !denied.has(`-${l}`))) {
+        out.push(...t.slice(1).split("").map(l => `-${l}`));
         continue;
       }
     }
@@ -219,6 +218,12 @@ export function validateOptions(value: unknown, allowed: Array<{ flags: string[]
 
 /** Documented options that are not offered: they write files, run commands or reach the network. */
 const UNOFFERED = /\b(output file|outfile|in[- ]place|overwrite|save[sd]? (it |them |the \w+ )?(to|in|into|as)\b|writes? (it |them |the \w+ |out )?(to|into|in) (?:(?:a|an|the|given|another|specified|named|output)\s+)*(file|files|disk|directory)|delete|remove (the )?files?|execute|exec|shell|run (a |the )?command|spawn|daemon|server|listen|network|connect|socket|url|http|password)\b/i;
+
+const offeredOption = (o: Investigation["options"][number]) => !/^-{1,2}(h|help|V|version|\?)$/.test(o.flags[0]) && !UNOFFERED.test(o.description) && !/^(file|outfile|output|output_file|path)$/i.test(o.arg ?? "");
+function optionContract(options: Investigation["options"]): NonNullable<CliInvoke["options"]> {
+  const excluded = [...new Set(options.filter(o => !offeredOption(o)).flatMap(o => o.flags))];
+  return { port: "options", allowed: options.filter(offeredOption).map(o => ({ flags: o.flags.filter(f => !excluded.includes(f)), arg: !!o.arg, ...(o.optionalArg ? { optionalArg: true } : {}) })).filter(o => o.flags.length > 0), excluded };
+}
 
 /**
  * Re-run a capability's conformance examples in the sandbox and compare output digests. All match:
@@ -500,7 +505,7 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
     // Generic inputs cannot exercise every program (a decoder needs encoded input). If the program
     // documents options, it is still offered, clearly as a declared interface: behaviour not
     // observed, never composed automatically, no fingerprint (so never imported elsewhere).
-    const declared = inv.options.filter((o) => !/^-{1,2}(h|help|V|version|\?)$/.test(o.flags[0]) && !UNOFFERED.test(o.description) && !/^(file|outfile|output|output_file|path)$/i.test(o.arg ?? ""));
+    const declared = inv.options.filter(offeredOption);
     if (!precondition && declared.length && docs.trim()) {
       const providerId = `cli:${slug(name)}`;
       const id = `${providerId}:invoke`;
@@ -520,7 +525,7 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
         outputs: [{ name: "", type: "text", required: true }],
         risk: "read",
         tags: [name, "declared-interface", "declared-only", "direct-only", "unsupported"],
-        invoke: { kind: "cli", bin, args: [], stdin: "input", okExit: [0, 1], output: "text", sha256: inv.program.sha256, options: { port: "options", allowed: declared.map((o) => ({ flags: o.flags, arg: !!o.arg, ...(o.optionalArg ? { optionalArg: true } : {}) })) }, filesPort: "files", operandsPort: "operands" },
+        invoke: { kind: "cli", bin, args: [], stdin: "input", okExit: [0, 1], output: "text", sha256: inv.program.sha256, options: optionContract(inv.options), filesPort: "files", operandsPort: "operands" },
       };
       inv.summary += `; offered as a declared interface only (${declared.length} documented options)`;
       return { reflection: { provider: { id: providerId, title: `${name} (command-line program)`, source: "cli", origin: bin, learnedAt: new Date().toISOString(), capabilityIds: [id], meta: { investigation: inv, sha256: inv.program.sha256, version: inv.program.version } }, capabilities: [cap] }, investigation: inv };
@@ -677,7 +682,7 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
   // The documented-options interface: the program run with options its documentation declares,
   // chosen by a caller who knows what it needs (an agent asking for "wrap at 20 columns").
   // Each option's effect is declared, and tested here where the budget allows.
-  const offered = inv.options.filter((o) => !/^-{1,2}(h|help|V|version|\?)$/.test(o.flags[0]) && !UNOFFERED.test(o.description) && !/^(file|outfile|output|output_file|path)$/i.test(o.arg ?? ""));
+  const offered = inv.options.filter(offeredOption);
   const base = capabilities.find((c) => c.id === `${providerId}:default`) ?? capabilities[0];
   if (offered.length && base && base.invoke.kind === "cli") {
     const id = `${providerId}:invoke`;
@@ -708,7 +713,7 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
       risk: "read",
       // Evidence about the program's default behaviour holds for this interface too.
       tags: [name, "declared-interface", "direct-only", ...base.tags.filter((t) => /^(nondeterministic|unsupported|input-independent-in-samples)$/.test(t)), ...(inv.program.description ?? "").toLowerCase().match(/[a-z]{3,}/g) ?? []].slice(0, 32),
-      invoke: { ...inv0, behaviour: inv0.behaviour ? `${inv0.behaviour}+options` : undefined, options: { port: "options", allowed: offered.map((o) => ({ flags: o.flags, arg: !!o.arg, ...(o.optionalArg ? { optionalArg: true } : {}) })) }, filesPort: "files", operandsPort: "operands" },
+      invoke: { ...inv0, behaviour: inv0.behaviour ? `${inv0.behaviour}+options` : undefined, options: optionContract(inv.options), filesPort: "files", operandsPort: "operands" },
     });
     claim(id, `offers ${offered.length} documented options; refuses any other`, "declared", `${inv.options.length - offered.length} documented options not offered (help/version, or they write files, run commands or use the network)`);
   }

@@ -30,7 +30,7 @@ import { detectRuntime, platformReflection, type PlatformFn, type RuntimeInfo } 
 
 export const VERSION = "0.1.0";
 /** Bump whenever semantic inference changes: persisted reflections are then re-derived from their sources. */
-export const SEMANTICS = 21;
+export const SEMANTICS = 22;
 
 export interface Store {
   load(): Promise<PersistedState | null>;
@@ -2075,7 +2075,7 @@ export class RightClick {
         if (cached.sha256 !== inv.sha256) throw new Error(`program changed since it was investigated: ${inv.bin} (sha256 ${cached.sha256.slice(0, 12)}, investigated ${inv.sha256.slice(0, 12)}); not run (HTTP 409 equivalent)`);
         const files: Record<string, string> = Object.create(null);
         // Documented options chosen by the caller, checked against the declared list first.
-        const chosen = inv.options ? validateOptions(args[inv.options.port], inv.options.allowed) : [];
+        const chosen = inv.options ? validateOptions(args[inv.options.port], inv.options.allowed, inv.options.excluded) : [];
         const argv = [...chosen, ...inv.args.map((a, i) => {
           if (typeof a === "string") return a;
           if (a.literal) {

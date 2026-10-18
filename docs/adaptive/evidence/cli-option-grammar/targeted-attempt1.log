@@ -1,0 +1,48 @@
+✔ known exclusions precede all compact-option encodings and conflicting allowed aliases (1.548375ms)
+✔ excluded long options never dispatch through compact syntax, persistence or import (1017.729917ms)
+✔ manual pages: lower-case argument names, wrapped descriptions and rendering artefacts are read (1.727833ms)
+✔ operands: values (patterns, sets, numbers) are told apart from files (0.25ms)
+✔ documented options: only documented flags and their values pass; nothing else reaches the program (0.867166ms)
+✔ a program taking literal operands (two character sets) is investigated and runs with caller-chosen values (834.346542ms)
+✖ documented-options interface: a caller chooses a documented option with a value; undocumented ones are refused before running (715.130542ms)
+✔ capability contract: a learned program capability states its status, environment, invalidation conditions and reproduction examples (664.555625ms)
+✔ knowledge export needs the operator's evidence-sharing authority, and carries no credential or caller data (995.670958ms)
+✔ knowledge import revalidates on the receiving host: accepted when the program reproduces its examples, refused when it differs, is absent or is not authorised (977.764833ms)
+✔ documented-options interface: several named input files are passed as operands in order (657.256667ms)
+✔ agent interface: unknown inputs are refused with the real ones listed; an unchanged program is not re-investigated; new sessions are told what is learned (722.47375ms)
+✔ manual pages: arguments with optional suffixes, optional arguments, and options that write to standard output (0.201708ms)
+✔ documented-options interface offers options that write to standard output, not ones that write files (685.672542ms)
+✔ synopsis spellings are retained without inventing constituent single-letter options (0.209167ms)
+✔ output that differs between identical runs only by date-times is deterministic apart from them; a behaviour-identical wrapper is still accepted (1497.147333ms)
+✔ content passed as a file operand is named by what it is (JSON as .json) (639.901958ms)
+✔ structured content (an object or array given for a json input) reaches the program as JSON (657.76775ms)
+✔ investigation tries two files for numbered operands, supplies an optional pattern when nothing works without it, and offers a documented program it cannot exercise as declared only (1416.023917ms)
+✔ a wrapper's options documented by the program it passes them to are declared (890.691833ms)
+✔ discovered JSON programs retain an exact stdout capability across stores and imports (855.745333ms)
+ℹ tests 21
+ℹ suites 0
+ℹ pass 20
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 12576.915709
+
+✖ failing tests:
+
+test at test/generalisation.test.ts:106:1
+✖ documented-options interface: a caller chooses a documented option with a value; undocumented ones are refused before running (715.130542ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /not one this program documents/. Input:
+  
+  'option "-o" is excluded from this capability (HTTP 400 equivalent: nothing was run)'
+  
+      at TestContext.<anonymous> (file:///Users/ross/src/rightclick-x-adaptive/test/generalisation.test.ts:122:10)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'option "-o" is excluded from this capability (HTTP 400 equivalent: nothing was run)',
+    expected: /not one this program documents/,
+    operator: 'match',
+    diff: 'simple'
+  }

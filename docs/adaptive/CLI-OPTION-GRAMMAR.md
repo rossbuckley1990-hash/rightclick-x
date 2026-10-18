@@ -11,3 +11,9 @@ Dynamic families will not be opened with a broad `-NAME` wildcard. ExifTool's lo
 ```sh
 node experiments/north-star/cli-option-collision.ts /tmp/rcx-options-before.json
 ```
+
+Frozen reproduction `e3b721a` confirmed both excluded forms were dispatched and returned `REMOVED`; the allowed separated/attached controls returned the original record with the requested format. The [before artifact](evidence/cli-option-grammar/before.json) retains exact argv and runtime outputs. These observations establish dispatch of the excluded fixture branch; they do not claim an independently observed production resource effect.
+
+The correction retains documented exclusions in each invocation contract and checks them before interpreting compact spellings. Allowed short bundles and attached values are expanded to separate documented flags and values before dispatch, so the native parser never receives an ambiguous combined token. A synopsis word such as `-except` no longer invents `-e`, `-x`, `-c`, `-p` or `-t` flags. A documented whole spelling remains available; individual letters need their own declarations. Existing unit expectations that asserted fabricated letters or raw compact argv are corrected to assert the stricter contract; no benchmark task or acceptance threshold changes. Semantic version 22 re-derives cached contracts on runtime upgrade.
+
+The first targeted test run passed the new security regressions and failed one old message assertion: excluded `-o` is now accurately labelled excluded rather than undocumented. That failed log is retained as `targeted-attempt1.log`; the assertion now requires the explicit exclusion message, with the original failed-status/no-healing requirements preserved.
