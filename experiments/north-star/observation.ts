@@ -53,7 +53,7 @@ const object = (x: unknown): x is Record<string, any> => !!x && typeof x === "ob
 const strings = (x: unknown) => object(x) && Object.values(x).every(v => typeof v === "string");
 const validIdentity = (x: any) => x === null || object(x) && typeof x.real === "string" && /^[a-f0-9]{64}$/.test(x.sha256);
 function validResult(r: any): r is SandboxRun {
-  return object(r) && (r.code === null || Number.isInteger(r.code)) && typeof r.stdout === "string" && typeof r.stderr === "string" && typeof r.timedOut === "boolean" && typeof r.truncated === "boolean" && Number.isFinite(r.durationMs) && r.durationMs >= 0 && typeof r.workDir === "string" && Array.isArray(r.created) && r.created.every((s: unknown) => typeof s === "string") && (r.limit === undefined || ["time", "cpu", "memory", "processes", "output", "file-size"].includes(r.limit));
+  return object(r) && (r.code === null || Number.isInteger(r.code)) && typeof r.stdout === "string" && typeof r.stderr === "string" && typeof r.timedOut === "boolean" && typeof r.truncated === "boolean" && Number.isFinite(r.durationMs) && r.durationMs >= 0 && typeof r.workDir === "string" && Array.isArray(r.created) && r.created.every((s: unknown) => typeof s === "string") && (r.limit === undefined || ["time", "cpu", "memory", "processes", "output", "file-size", "supervision"].includes(r.limit));
 }
 // Input may be transported as stdin, files or a literal argv value, but every requested byte
 // must occur in one submitted input. Equal content supplied twice requires two occurrences.

@@ -1,8 +1,9 @@
 // Confined execution of local programs: the only way RightClick X runs a command-line program.
 // No shell parses anything a caller or program supplies (argv only), no network, writes only into
 // a fresh temporary directory that is deleted afterwards, no reads under user home directories
-// except that directory, a scrubbed environment, and hard limits on wall time, CPU time, memory,
-// processes, file size, open files and output. Every run is its own process group, and the whole
+// except that directory, a scrubbed environment, and limits on wall time, CPU time, file size,
+// open files and output. Memory/process count use a sampled watchdog, NOT a hard kernel bound:
+// short peaks and non-resident/compressed memory may escape observation. Every run is its own process group, and the whole
 // group is terminated when the program exits or exceeds a limit, so nothing it started outlives it.
 // Where the OS offers no such sandbox, execution is refused ("unavailable"), never run unconfined.
 
@@ -11,7 +12,7 @@ import { validateFileNames } from "./cli-files.ts";
 export interface SandboxLimits {
   timeoutMs: number;
   maxOutputBytes: number;
-  /** Resident memory of the whole process group. */
+  /** Sampled resident-memory budget of the process group; not a hard allocation/footprint bound. */
   maxMemoryBytes: number;
   /** Processes alive at once in the run's process group. */
   maxProcesses: number;
@@ -19,7 +20,7 @@ export interface SandboxLimits {
   maxFileBytes: number;
 }
 
-export type LimitHit = "time" | "cpu" | "memory" | "processes" | "output" | "file-size";
+export type LimitHit = "time" | "cpu" | "memory" | "processes" | "output" | "file-size" | "supervision";
 
 export interface SandboxRun {
   code: number | null;
@@ -88,13 +89,17 @@ async function groupUsage(pgid: number): Promise<{ rss: number; procs: number } 
   return new Promise((done) => {
     execFile("/bin/ps", ["-A", "-o", "pgid=,rss="], { timeout: 2000 }, (err, out) => {
       if (err) return done(null);
+      if (!String(out).trim()) return done(null);
       let rss = 0;
       let procs = 0;
       for (const line of String(out).split("\n")) {
-        const [g, r] = line.trim().split(/\s+/).map(Number);
+        if (!line.trim()) continue;
+        const values = line.trim().split(/\s+/).map(Number);
+        const [g, r] = values;
+        if (values.length !== 2 || !Number.isSafeInteger(g) || g < 0 || !Number.isSafeInteger(r) || r < 0) return done(null);
         if (g === pgid) {
           procs++;
-          rss += (r || 0) * 1024;
+          rss += r * 1024;
         }
       }
       done({ rss, procs });
@@ -111,7 +116,8 @@ function makeSandbox(kind: Sandbox["kind"], bwrap = ""): Sandbox {
       "no reads under home directories",
       "scrubbed environment",
       "argv only",
-      "wall-time, CPU-time, memory, process-count, file-size, open-file and output limits",
+      "wall-time, CPU-time, file-size, open-file and output limits",
+      "sampled resident-memory/process-count watchdog; not a hard kernel bound; observer loss refuses results",
       "the run's whole process group is terminated when it ends",
     ],
     async run(bin, args, opts = {}) {
@@ -160,6 +166,7 @@ function makeSandbox(kind: Sandbox["kind"], bwrap = ""): Sandbox {
         let truncated = false;
         let limit: LimitHit | undefined;
         let finished = false;
+        let ending = false;
         const killGroup = () => {
           try {
             if (p.pid) process.kill(-p.pid, "SIGKILL");
@@ -169,7 +176,7 @@ function makeSandbox(kind: Sandbox["kind"], bwrap = ""): Sandbox {
         };
         const stop = (why: LimitHit) => {
           limit ??= why;
-          killGroup();
+          if (!ending) killGroup();
         };
         const take = (which: "out" | "err") => (d: Buffer) => {
           const cur = which === "out" ? out : err;
@@ -190,27 +197,37 @@ function makeSandbox(kind: Sandbox["kind"], bwrap = ""): Sandbox {
           timedOut = true;
           stop("time");
         }, limits.timeoutMs);
-        // Memory and process count, polled for the whole group (rlimits cannot bound either on
-        // macOS). Most runs end before the first poll.
-        const monitor = setInterval(async () => {
-          if (finished || !p.pid) return;
-          const u = await groupUsage(p.pid);
-          if (!u || finished) return;
-          if (u.rss > limits.maxMemoryBytes) stop("memory");
-          else if (u.procs > limits.maxProcesses) stop("processes");
-        }, 100);
+        // Start immediately and allow one observation at a time. Failure is not
+        // evidence of zero usage. This remains sampled supervision, not a kernel
+        // memory boundary, even when every observation succeeds.
+        let poll: Promise<void> | null = null;
+        const checkResources = () => {
+          if (finished || ending || !p.pid || poll) return;
+          poll = groupUsage(p.pid).then(u => {
+            if (finished) return;
+            if (!u) stop("supervision");
+            else if (u.rss > limits.maxMemoryBytes) stop("memory");
+            else if (u.procs > limits.maxProcesses) stop("processes");
+          }).catch(() => stop("supervision")).finally(() => { poll = null; });
+        };
+        const monitor = setInterval(checkResources, 100);
+        checkResources();
         // The program exited: whatever it left running in its group goes with it.
         p.on("exit", (_code, signal) => {
           if (signal === "SIGXFSZ") limit ??= "file-size";
           if (signal === "SIGXCPU") limit ??= "cpu";
           killGroup();
         });
-        const finish = (code: number | null) => {
-          if (finished) return;
-          finished = true;
+        const finish = async (code: number | null) => {
+          if (finished || ending) return;
+          ending = true;
           clearTimeout(timer);
           clearInterval(monitor);
           killGroup();
+          // A fast child's exit must not publish success while an already
+          // requested supervision check can still report that monitoring failed.
+          await poll;
+          finished = true;
           let created: string[] = [];
           try {
             created = fs.readdirSync(work).filter((f) => !given.has(f));
@@ -218,7 +235,7 @@ function makeSandbox(kind: Sandbox["kind"], bwrap = ""): Sandbox {
             /* gone */
           }
           fs.rmSync(work, { recursive: true, force: true });
-          done({ code, stdout: out.toString("utf8"), stderr: err.toString("utf8"), timedOut, truncated, durationMs: Date.now() - t0, created, workDir: work, ...(limit ? { limit } : {}) });
+          done({ code: limit === "supervision" ? -1 : code, stdout: limit === "supervision" ? "" : out.toString("utf8"), stderr: err.toString("utf8"), timedOut, truncated, durationMs: Date.now() - t0, created, workDir: work, ...(limit ? { limit } : {}) });
         };
         p.on("close", finish);
         p.on("error", () => finish(-1));

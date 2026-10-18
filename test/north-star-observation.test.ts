@@ -47,6 +47,14 @@ test("builtin-only sessions cannot become target execution even when MCP reporte
   assert.equal(assess(path).taskExecutionObserved, false);
 });
 
+test("supervision refusal remains a complete observation without becoming usable execution", async () => {
+  const observed = assess(await fixture({ result: { code: -1, stdout: "", limit: "supervision" } }));
+  assert.equal(observed.complete, true);
+  assert.equal(observed.targetExecuted, false);
+  assert.equal(observed.taskExecutionObserved, false);
+  assert.equal(observed.invocations!.execution, 1);
+});
+
 test("missing, truncated, mismatched and interrupted observations are unknown, never zero", async () => {
   assert.equal(assess(join(dir(), "missing")).investigationsStarted, null);
   for (const change of [
