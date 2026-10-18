@@ -81,13 +81,18 @@ def worker(payload_path):
     boundary.verifier = Ed25519PublicKeyVerifier([json.loads((private / "public.json").read_text())])
     # Disposable attestation signing material belongs to the trusted edge.
     os.environ["ACTENON_ED25519_KEY_FILE"] = str(private / "key.json")
+    # Permit verifies the native HMAC grant when claiming its reservation.
+    # These workers are trusted authority processes, not public-key-only edges.
+    os.environ["ACTENON_SIGNING_KEY"] = (private / "grant-signing-key").read_text()
     boundary.attester = OutcomeAttestationService(signer=resolve_signer(), issuer=PartyRef(type="service", id="experiment-edge"))
     intent, proof = ActionIntent.from_dict(payload["intent"]), PCCB.from_dict(payload["proof"])
     boundary.grant = boundary.store.get_grant(proof.extensions["authority"]["grant_id"])
     boundary.dispatches = 0
     boundary.edge, boundary.effect_edge = boundary.make_edge(), boundary.make_edge(effects=True)
     options = {}
+    fault_calls = []
     def unavailable(*_args, **_kwargs):
+        fault_calls.append(payload["fault"])
         raise ConnectionError("PRIVATE_FAULT_MARKER")
     if payload.get("fault") == "revocation-outage":
         options["revocation_checker"] = unavailable
@@ -104,7 +109,7 @@ def worker(payload_path):
     started = time.perf_counter_ns()
     try:
         result = boundary.execute(payload["wire"], intent, proof, edge)
-        result.update(pid=os.getpid(), dispatches=boundary.dispatches, elapsed_ns=time.perf_counter_ns() - started)
+        result.update(pid=os.getpid(), dispatches=boundary.dispatches, elapsed_ns=time.perf_counter_ns() - started, fault_calls=fault_calls)
         (output / "result.json").write_text(json.dumps(result, indent=2))
         print(json.dumps(result), flush=True)
     finally:
@@ -175,6 +180,9 @@ def run(output, image):
         boundary = PublicDiscoveryBoundary(private, output, origin)
         boundary.direct_origin = origin
         (private / "public.json").write_bytes((output / "public.json").read_bytes())
+        secret_fd = os.open(private / "grant-signing-key", os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        with os.fdopen(secret_fd, "w") as stream:
+            stream.write(os.environ["ACTENON_SIGNING_KEY"])
         def wire(label):
             return {"method": "POST", "url": origin + "/entries", "headers": {"content-type": "application/json"},
                     "body": base64.b64encode(json.dumps({"label": label}, separators=(",", ":")).encode()).decode()}
@@ -237,7 +245,7 @@ def run(output, image):
                 request = wire(fault)
                 intent, proof = boundary.issue(request)
                 r = workers(boundary, private, output, fault, request, intent, proof, fault=fault)[0]
-                checks[fault + "_refuses_without_dispatch"] = not r["ok"] and r["dispatches"] == 0
+                checks[fault + "_refuses_without_dispatch"] = not r["ok"] and r["dispatches"] == 0 and r["fault_calls"] == [fault]
                 artifacts = (output / "workers" / f"{fault}-0" / "edge.jsonl").read_text()
                 checks[fault + "_does_not_expose_private_error"] = "PRIVATE_FAULT_MARKER" not in artifacts
             checks["only_two_operator_authorized_effects"] = rows() == [{"path": "/entries", "label": "approved"}, {"path": "/entries", "label": "race"}]
