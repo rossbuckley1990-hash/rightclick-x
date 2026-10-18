@@ -6,6 +6,7 @@ import { signature } from "../src/core/graph.ts";
 import type { OutcomeWitness, Predicate } from "../src/core/verify.ts";
 import { dispatch } from "../src/interface/tools.ts";
 import { MemoryStore } from "./helpers.ts";
+import { capabilityState } from "../src/interface/dashboard-state.ts";
 
 const RATE = "openapi:rates:taxrate";
 const AUDIT = "openapi:audit:checkoutcome";
@@ -85,6 +86,10 @@ test("MCP composition saves independent witness input/output bindings and repeat
   assert.equal(savedGoal.status, "completed");
   assert.equal(savedGoal.output, 20);
   assert.ok(savedGoal.witnesses?.length);
+  const state = capabilityState(world.rc, "goal:tax-for-order");
+  assert.equal(state.states.assurance.state, "witness-passed-on-run");
+  assert.equal(state.states.authority.state, "unknown", "witness success is not an exact-action grant");
+  assert.deepEqual(state.lastObservation!.witnessRuns, savedGoal.witnesses!.map(w => w.runId));
 });
 
 test("saved witness checks survive restart and reject a plausible result on another input", async () => {
@@ -107,6 +112,7 @@ test("saved witness checks survive restart and reject a plausible result on anot
   const badGoal = await restarted.run("goal:tax-for-order", { order_id: "A-2" }, { verify: [{ op: "type", value: "number" }] });
   assert.equal(badGoal.status, "failed");
   assert.equal(badGoal.verification.status, "refuted");
+  assert.equal(capabilityState(restarted, "goal:tax-for-order").states.assurance.state, "last-failed", "new failed checks displace historical successful assurance");
   await restarted.flush();
 });
 

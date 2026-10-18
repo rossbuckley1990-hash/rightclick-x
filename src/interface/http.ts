@@ -14,7 +14,7 @@
 
 import { VERSION, type RightClick } from "../runtime.ts";
 import { DASHBOARD_HTML } from "./dashboard.ts";
-import { dashboardMetrics } from "./dashboard-state.ts";
+import { dashboardMetrics, capabilityPage, capabilityState } from "./dashboard-state.ts";
 import { executeGraphQL } from "./graphql-server.ts";
 import { handle, type JsonRpc } from "./mcp-server.ts";
 import { TOOLS, dispatch } from "./tools.ts";
@@ -130,6 +130,19 @@ export function createHandler(rc: RightClick, opts: HttpOptions = {}): (req: Req
         return json(out, out.ok ? 200 : 502);
       }
       if (req.method === "GET" && path === "/api/viz") return json(viz(rc));
+      if (req.method === "GET" && path === "/api/overview") return json({
+        metrics: dashboardMetrics(rc), runtime: rc.runtime(), providers: rc.providers().slice(0, 200).map(p => ({ id: p.id, title: p.title, source: p.source, capabilities: p.capabilities })),
+        providerCount: rc.graph.providers.size, providersOmitted: Math.max(0, rc.graph.providers.size - 200),
+      });
+      if (req.method === "GET" && path === "/api/activity") return json(rc.activity.read({
+        after: url.searchParams.has("after") ? Number(url.searchParams.get("after")) : undefined,
+        epoch: url.searchParams.get("epoch") ?? undefined, limit: url.searchParams.has("limit") ? Number(url.searchParams.get("limit")) : undefined,
+      }));
+      if (req.method === "GET" && path === "/api/capability") return json(capabilityState(rc, url.searchParams.get("id") ?? ""));
+      if (req.method === "GET" && path === "/api/capabilities") return json(capabilityPage(rc, {
+        search: url.searchParams.get("search") ?? undefined, provider: url.searchParams.get("provider") ?? undefined,
+        offset: Number(url.searchParams.get("offset") ?? 0), limit: Number(url.searchParams.get("limit") ?? 25),
+      }));
       if (req.method === "GET" && path === "/events") return events(rc, Number(url.searchParams.get("since") ?? rc.graph.cursor));
       if (req.method === "GET" && path === "/api/tools") return json(TOOLS);
       if (req.method === "POST" && path === "/api/run") {

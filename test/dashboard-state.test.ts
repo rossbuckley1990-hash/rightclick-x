@@ -63,4 +63,8 @@ test("dashboard labels potential paths honestly and gives keyboard-accessible me
   assert.match(DASHBOARD_HTML, /aria-controls="metric-sources"/);
   assert.match(DASHBOARD_HTML, /document.createElement\('p'\)/);
   assert.doesNotMatch(DASHBOARD_HTML, /composite powers|d\.newPowers|function bump/);
+  assert.doesNotMatch(DASHBOARD_HTML, /innerHTML|requestAnimationFrame|Math\.random|prompt\(/, "untrusted titles render as text, bounded views need no force simulation or recursive token prompt");
+  for (const view of ["environment", "intelligence", "abilities", "authority", "evidence"]) assert.ok(DASHBOARD_HTML.includes(`data-panel="${view}"`));
+  assert.match(DASHBOARD_HTML, /prefers-reduced-motion/);
+  assert.match(DASHBOARD_HTML, /Displayed observations may be stale/);
 });

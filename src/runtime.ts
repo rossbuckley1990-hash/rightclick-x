@@ -2,6 +2,7 @@
 // the whole context_* family. Every interface (MCP, HTTP API, CLI, dashboard,
 // federation) is a thin shell around this class.
 
+import { ActivityLog, reference, type ActivityState, type ContractReference } from "./core/activity.ts";
 import { CapabilityGraph, signature, tokenize, type GraphEvent, type LearnDelta } from "./core/graph.ts";
 import { Ledger, ReceiptChain, sha256, type Receipt } from "./core/ledger.ts";
 import { shapeOf, type IdentityState } from "./core/identities.ts";
@@ -52,6 +53,8 @@ export interface PersistedState {
   identities?: IdentityState;
   /** Capability ids that no longer name their previously retained operation. */
   meaningChanges?: MeaningChange[];
+  /** Bounded local observations; never used to grant authority or select an execution. */
+  activity?: ActivityState;
 }
 
 /**
@@ -71,10 +74,6 @@ export interface PublishedGoal {
   fixed?: Record<string, unknown>;
   /** The customer's egress policy: origins this goal may send data to, in every run and repair. */
   origins?: string[];
-  /**
-   * "verified" only when an independent check (stored predicates or outcome witnesses) passed
-   * on the publishing run; otherwise "unverified". Never assumed.
-   */
   /**
    * "verified": an independent outcome witness (a separate read-only provider) passed when it was
    * saved; "checked": only stored predicates (checked by RightClick X itself) passed; "unverified":
@@ -162,6 +161,17 @@ export function provedNotApplied(error: string): boolean {
   return /blocked by (network|egress) policy|ECONNREFUSED|connection refused|ENOTFOUND|getaddrinfo|is destructive|missing required|unknown capability/i.test(error);
 }
 
+export interface RunOptions {
+  verify?: Predicate[];
+  confirm?: boolean;
+  /** @deprecated Caller acknowledgement cannot clear a changed-operation refusal. */
+  acknowledgeChange?: boolean;
+  activeGoals?: string[];
+  net?: Net;
+  /** Internal: a plan step or pinned witness. Its caller chose it by current contract and does its own repair. */
+  planned?: boolean;
+}
+
 export interface RunRecord {
   runId: string;
   capability: string;
@@ -207,9 +217,38 @@ class StepError extends Error {
 /** A fan-out step refused before any call: its list is longer than the cap. The provider did nothing wrong. */
 class FanOutRefused extends StepError {}
 
+export interface ComposeOptions {
+  have: Record<string, unknown>;
+  want: SemType;
+  intent?: string;
+  run?: boolean;
+  verify?: Predicate[];
+  witnesses?: OutcomeWitness[];
+  maxSteps?: number;
+  limit?: number;
+  crystallize?: boolean;
+  risks?: Capability["risk"][];
+  /** Capability ids or search phrases the pipeline must pass through. */
+  through?: string[];
+  /** Internal persisted anchor contracts; callers specify through instead. */
+  anchors?: CapabilityAnchor[];
+  /** Egress policy: only use capabilities that send data to these origins, including during repair. */
+  origins?: string[];
+  /** Required output information (e.g. ["resolution"]): only plans established to carry it run. */
+  require?: string[];
+  /** If the graph can't do it, research public directories, learn candidates and re-plan. */
+  acquire?: boolean;
+  /** After a verified run, publish this goal as an API endpoint under this name. */
+  publish?: string;
+  /** Required to run plans that contain destructive capabilities. */
+  confirm?: boolean;
+  /** Internal recursion guard, carried through nested saved goals. */
+  activeGoals?: string[];
+}
+
 export interface ComposeResult {
   goal: { have: Record<string, SemType>; want: SemType; intent?: string; through?: string[] };
-  plans: Array<Plan & { titles: string[] }>;
+  plans: Array<Plan & { titles: string[]; contract?: ContractAssessment }>;
   executed?: {
     summary: string;
     titles: string[];
@@ -318,6 +357,8 @@ export class RightClick {
   readonly ledger = new Ledger();
   readonly chain = new ReceiptChain();
   readonly runs = new Map<string, RunRecord>();
+  readonly activity = new ActivityLog();
+  private observing = false;
   readonly net: Net;
   readonly info: RuntimeInfo;
   readonly name: string;
@@ -395,6 +436,8 @@ export class RightClick {
         rc.registerGoal(g);
       }
       for (const m of saved.meaningChanges ?? []) if (rc.graph.get(m.id)) rc.meaningChanges.set(m.id, m);
+      rc.activity.restore(saved.activity);
+      rc.observeActivity();
       // Credentials changed for an origin: its past auth and rate-limit failures no longer apply.
       const now = await rc.net.auth.fingerprints();
       const changed = new Set(Object.keys(now).filter((o) => saved.authFingerprints?.[o] !== now[o]));
@@ -448,6 +491,7 @@ export class RightClick {
         rc.persist();
       }
     }
+    rc.observeActivity();
     return rc;
   }
 
@@ -952,20 +996,27 @@ export class RightClick {
 
   // ================================================================ context_run
 
-  async run(
-    id: string,
-    args: Record<string, unknown> = {},
-    opts: {
-      verify?: Predicate[];
-      confirm?: boolean;
-      /** @deprecated Caller acknowledgement cannot clear a changed-operation refusal. */
-      acknowledgeChange?: boolean;
-      activeGoals?: string[];
-      net?: Net;
-      /** Internal: a plan step or pinned witness. Its caller chose it by current contract and does its own repair. */
-      planned?: boolean;
-    } = {},
-  ): Promise<RunRecord> {
+  async run(id: string, args: Record<string, unknown> = {}, opts: RunOptions = {}): Promise<RunRecord> {
+    const cap = this.graph.get(id);
+    const contracts = cap ? [reference(cap)] : [];
+    const request = this.activity.append({ kind: "execution.requested", status: "requested", subjects: [id], contracts });
+    try {
+      const rec = await this.runNow(id, args, opts);
+      const dependencies = this.observedRuns([...(rec.steps ?? []), ...(rec.witnesses ?? []).map(w => w.runId)]);
+      this.activity.append({ kind: "execution.finished", related: request.id, subjects: [id], providers: [rec.provider], runs: [rec.runId], contracts: [...contracts, ...dependencies.contracts], truncated: dependencies.truncated,
+        status: rec.status === "completed" ? "completed" : rec.changedMeaning || rec.error?.includes("blocked by execution policy") ? "refused" : "failed",
+        verification: rec.verification.status, durationMs: rec.durationMs, predicates: rec.verification.results.length, predicatesPassed: rec.verification.results.filter(p => p.ok).length,
+        witnessRuns: (rec.witnesses ?? []).map(w => w.runId), witnessesPassed: (rec.witnesses ?? []).filter(w => w.status === "completed").length,
+        attempts: rec.attempts?.length ?? 0, receipt: rec.receipt.hash });
+      return rec;
+    } catch (e) {
+      this.activity.append({ kind: "execution.finished", related: request.id, subjects: [id], contracts,
+        status: e instanceof ConfirmationRequired || !cap ? "refused" : "failed", reason: e instanceof ConfirmationRequired ? "destructive-approval-required" : !cap ? "unknown-capability" : "execution-error" });
+      throw e;
+    } finally { this.persist(); }
+  }
+
+  private async runNow(id: string, args: Record<string, unknown>, opts: RunOptions): Promise<RunRecord> {
     const cap = this.graph.get(id);
     if (!cap) throw new Error(`unknown capability: ${id}`);
     // Destructive effects keep the user's authority. The agent may ask (confirm), but under the
@@ -1332,34 +1383,28 @@ export class RightClick {
 
   // ================================================================ context_compose
 
-  async compose(opts: {
-    have: Record<string, unknown>;
-    want: SemType;
-    intent?: string;
-    run?: boolean;
-    verify?: Predicate[];
-    witnesses?: OutcomeWitness[];
-    maxSteps?: number;
-    limit?: number;
-    crystallize?: boolean;
-    risks?: Capability["risk"][];
-    /** Capability ids or search phrases the pipeline must pass through. */
-    through?: string[];
-    /** Internal persisted anchor contracts; callers specify through instead. */
-    anchors?: CapabilityAnchor[];
-    /** Egress policy: only use capabilities that send data to these origins, including during repair. */
-    origins?: string[];
-    /** Required output information (e.g. ["resolution"]): only plans established to carry it run. */
-    require?: string[];
-    /** If the graph can't do it, research public directories, learn candidates and re-plan. */
-    acquire?: boolean;
-    /** After a verified run, publish this goal as an API endpoint under this name. */
-    publish?: string;
-    /** Required to run plans that contain destructive capabilities. */
-    confirm?: boolean;
-    /** Internal recursion guard, carried through nested saved goals. */
-    activeGoals?: string[];
-  }): Promise<ComposeResult> {
+  async compose(opts: ComposeOptions): Promise<ComposeResult> {
+    const request = this.activity.append({ kind: "composition.requested", status: "requested" });
+    try {
+      const result = await this.composeNow(opts);
+      const ex = result.executed;
+      const subjects = [result.published?.id, result.crystallized?.id].filter((id): id is string => !!id);
+      const observed = this.observedRuns([...(ex?.runs ?? []), ...(ex?.witnesses ?? []).map(w => w.runId)]);
+      this.activity.append({ kind: "composition.finished", related: request.id, subjects,
+        status: result.outcome?.status === "incomplete" ? "incomplete" : ex?.status ?? (result.plans.some(p => p.contract?.status === "satisfied") ? "planned" : "unavailable"),
+        reason: result.publishRefused ? "publication-policy-refused" : undefined,
+        plans: result.plans.length, runs: ex?.runs ?? [], contracts: [...subjects.flatMap(id => { const c = this.graph.get(id); return c ? [reference(c)] : []; }), ...observed.contracts], truncated: observed.truncated,
+        providers: [...new Set(observed.contracts.map(c => c.provider))], verification: ex?.verification.status,
+        durationMs: ex?.durationMs, predicates: ex?.verification.results.length, predicatesPassed: ex?.verification.results.filter(p => p.ok).length,
+        witnessRuns: (ex?.witnesses ?? []).map(w => w.runId), witnessesPassed: (ex?.witnesses ?? []).filter(w => w.status === "completed").length, attempts: ex?.attempts.length });
+      return result;
+    } catch (e) {
+      this.activity.append({ kind: "composition.finished", related: request.id, status: "failed", reason: "composition-error" });
+      throw e;
+    } finally { this.persist(); }
+  }
+
+  private async composeNow(opts: ComposeOptions): Promise<ComposeResult> {
     const witnesses = this.pinWitnesses(opts.witnesses ?? []);
     const values: Record<string, unknown> = {};
     const types: Record<string, SemType> = {};
@@ -2105,6 +2150,14 @@ export class RightClick {
     if (!assessment.allowed) throw new ExecutionDenied(assessment);
   }
 
+  /** Read-only local assessment; neither an exact-action grant nor a connectivity probe. */
+  capabilityExecution(id: string) {
+    const c = this.graph.get(id);
+    if (!c) return undefined;
+    return { ...this.executionAssessment(c), destructiveApproval: consequentialRisks(c).includes("destructive")
+      ? { mode: this.destructivePolicy, operatorApproved: this.approved(c.id), callerConfirmationRequired: this.destructivePolicy !== "allow" } : undefined };
+  }
+
   /** Analysis covers this runtime's mediated capabilities, not other tools an agent may possess. */
   auditExecution() {
     const capabilities = this.graph.list().map((c) => {
@@ -2294,6 +2347,28 @@ export class RightClick {
     }
   }
 
+  // Observations never participate in planning, proof validation or authority.
+  private observeActivity(): void {
+    if (this.observing) return;
+    this.observing = true;
+    this.activity.append({ kind: "runtime.started", status: "observed" });
+    this.graph.subscribe(e => { this.activity.observe(e, this.graph); this.persist(); });
+  }
+
+  private observedRuns(ids: string[]): { contracts: ContractReference[]; truncated: boolean } {
+    const contracts: ContractReference[] = [];
+    let truncated = ids.length > 128;
+    for (const id of ids.slice(0, 128)) {
+      const e = this.activity.forRun(id);
+      if (!e || e.truncated) truncated = true;
+      for (const c of e?.contracts ?? []) {
+        if (!contracts.some(old => old.capability === c.capability && old.contract === c.contract)) contracts.push(c);
+        if (contracts.length > 128) return { contracts: contracts.slice(0, 128), truncated: true };
+      }
+    }
+    return { contracts, truncated };
+  }
+
   // ================================================================ persistence
 
   persist(): void {
@@ -2313,7 +2388,7 @@ export class RightClick {
     const reflections: Reflection[] = [...this.graph.providers.values()]
       .filter((p) => p.source !== "builtin" && p.source !== "platform")
       .map((p) => ({ provider: p, capabilities: p.capabilityIds.map((id) => this.graph.get(id)!).filter(Boolean) }));
-    await this.store.save({ version: 1, reflections, ledger: this.ledger.toJSON(), receipts: this.chain.receipts.slice(-300), published: [...this.published.values()], meaningChanges: [...this.meaningChanges.values()], authFingerprints: await this.net.auth.fingerprints(), semantics: SEMANTICS, identities: this.graph.identities.toJSON() });
+    await this.store.save({ version: 1, reflections, ledger: this.ledger.toJSON(), receipts: this.chain.receipts.slice(-300), published: [...this.published.values()], meaningChanges: [...this.meaningChanges.values()], activity: this.activity.snapshot(), authFingerprints: await this.net.auth.fingerprints(), semantics: SEMANTICS, identities: this.graph.identities.toJSON() });
   }
 }
 
