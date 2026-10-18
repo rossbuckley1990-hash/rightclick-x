@@ -6,12 +6,12 @@ const json=(value:unknown)=>new Response(JSON.stringify(value),{headers:{'conten
 const scalar={kind:'SCALAR',name:'String',ofType:null};
 const object=(name:string)=>({kind:'OBJECT',name,ofType:null});
 const field=(name:string,type:unknown=scalar,args:unknown[]=[])=>({name,description:'',type,args});
-function fixture(list=false,needsArgument=false){
+function fixture(list=false,needsArgument=false,early=false){
  const calls:string[]=[];
  let omitPublisher=false;
  const intro={data:{__schema:{queryType:{name:'Query'},mutationType:null,types:[
   {kind:'OBJECT',name:'Query',fields:[field('record',object('Record'),[{name:'record_id',description:'Record identifier',type:{kind:'NON_NULL',name:null,ofType:scalar},defaultValue:null}])]},
-  {kind:'OBJECT',name:'Record',fields:[...Array.from({length:27},(_,i)=>field(`f${i}`)),field('references',list?{kind:'LIST',name:null,ofType:object('Reference')}:object('Reference'))]},
+  {kind:'OBJECT',name:'Record',fields:[...Array.from({length:early?0:27},(_,i)=>field(`f${i}`)),field('references',list?{kind:'LIST',name:null,ofType:object('Reference')}:object('Reference'))]},
   {kind:'OBJECT',name:'Reference',fields:[field('reference_id',scalar,needsArgument?[{name:'secret',type:{kind:'NON_NULL',name:null,ofType:scalar},defaultValue:null}]:[])]},
   {kind:'SCALAR',name:'String'}
  ]}}};
@@ -73,7 +73,7 @@ test('a late identifier used as the final result is projected without require te
 });
 
 test('required output information survives both retained forms and prevents publication of missing results',async()=>{
- const {fetcher,omit}=fixture();const rc=await RightClick.create({fetch:fetcher,sandbox:null,authority:{publish:'checked'}});
+ const {fetcher,omit}=fixture(false,false,true);const rc=await RightClick.create({fetch:fetcher,sandbox:null,authority:{publish:'checked'}});
  await rc.learn({sources:['https://records.test/graphql','https://facts.test/openapi.json'],kinds:{'https://records.test/graphql':'graphql','https://facts.test/openapi.json':'openapi'}});
  const goal={have:{record_id:'K100'},want:'json',require:['publisher'],maxSteps:2,run:true,verify:[{op:'type' as const,value:'object' as const}],publish:'Required facts'};
  const first=await rc.compose(goal);assert.equal(first.executed?.status,'completed');assert.ok(first.crystallized&&first.published);
