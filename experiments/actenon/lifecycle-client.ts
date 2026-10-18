@@ -48,6 +48,11 @@ if (config.phase === "initial" || config.phase === "approved-move") {
   result.compose = await rc.compose({ have: { label: { type: "text", value: config.task.label } }, want: "hash",
     through: [operation.id, fingerprint.id], intent: "append entry and fingerprint label", witnesses, run: true,
     publish: config.phase === "initial" ? "Record label" : "Record moved label" });
+  if (config.phase === "approved-move") {
+    const changed = [...rc.meaningChanges.values()].find(c => c.current === operation.id);
+    if (!changed) throw new Error("new operation lost its changed-identity lineage");
+    result.retainedChangedId = await rc.run(changed.id, { label: config.task.label }, { confirm: true, acknowledgeChange: true });
+  }
 } else {
   result.run = await attempt(() => rc.run(goal, { label: config.task.label }, { confirm: true }));
 }

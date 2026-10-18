@@ -177,9 +177,17 @@ def run(output, image):
             checks["compatible_contract_rename_reuses_goal"] = passed_run(compatible["run"])
             before = (output / "provider.jsonl").read_text().splitlines()
             moved = phase("moved", "moved")
-            checks["retained_goal_cannot_gain_changed_target_authority"] = moved["run"].get("status") == "failed" and "independent authority refused" in moved["run"].get("error", "")
-            checks["acknowledgement_cannot_grant_changed_target"] = moved["explicitChangedTarget"].get("status") == "failed"
-            checks["automatic_replanning_cannot_grant_changed_target"] = moved["replanChangedTarget"].get("executed", {}).get("status") == "failed"
+            # The retained goal now refuses a known incompatible operation locally.
+            # Keep actual external denial mandatory for both fresh changed-target routes.
+            # This replaces the old error-location assertion, not the zero-effect gate.
+            checks["retained_goal_cannot_gain_changed_target_authority"] = moved["run"].get("status") == "failed" and "required anchor contract changed meaning" in moved["run"].get("error", "")
+            checks["acknowledgement_cannot_grant_changed_target"] = moved["explicitChangedTarget"].get("status") == "failed" and "independent authority refused" in moved["explicitChangedTarget"].get("error", "")
+            replanned = moved["replanChangedTarget"].get("executed", {})
+            checks["automatic_replanning_cannot_grant_changed_target"] = replanned.get("status") == "failed" and any("independent authority refused" in a.get("error", "") for a in replanned.get("attempts", []))
+            requests = [r["request"] for r in map(json.loads, (output / "client-moved.jsonl").read_text().splitlines()) if r.get("op") == "fetch" and r["request"]["method"] == "POST"]
+            checks["both_fresh_routes_reach_boundary_without_retained_goal_dispatch"] = len(requests) == 2 and all(r["url"] == origin + "/entries-v2" for r in requests)
+            changed = [c for c in state.get("meaningChanges", []) if c.get("current") == moved["explicitChangedTarget"].get("capability")]
+            checks["changed_operation_has_distinct_identity"] = len(changed) == 1 and changed[0]["id"] != changed[0]["current"]
             checks["changed_target_has_zero_effect_before_operator_authority"] = unchanged_since(before)
             # Explicit host/operator transition, never driven by a client message.
             old_grant = boundary.grant.id
@@ -190,6 +198,7 @@ def run(output, image):
                 "grant": boundary.grant.model_dump(mode="json"), "targets": sorted(boundary.approved_targets), "labels": sorted(LABELS)})
             approved = phase("approved-move", "moved")
             checks["operator_approved_target_gets_fresh_verified_goal"] = approved["compose"].get("published", {}).get("trust") == "verified"
+            checks["fresh_authority_cannot_reactivate_changed_retained_id"] = approved["retainedChangedId"].get("status") == "failed" and "changed meaning" in approved["retainedChangedId"].get("error", "")
             issued = [json.loads(line)["proof"] for line in (output / "edge.jsonl").read_text().splitlines()]
             moved_proofs = [proof for proof in issued if proof["target"]["resource_id"] == origin + "/entries-v2"]
             checks["changed_target_proofs_use_new_operator_grant"] = len(moved_proofs) == 1 and moved_proofs[0]["extensions"]["authority"]["grant_id"] == boundary.grant.id and boundary.grant.id != old_grant
