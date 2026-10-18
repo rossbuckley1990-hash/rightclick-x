@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { hostSandbox } from '../src/core/sandbox.ts';
@@ -22,7 +22,8 @@ test('sandbox refuses availability when the resource observer fails', {skip},()=
   assert.equal(p.result.sandbox,null);
   // Linux tries both configured bwrap paths; macOS has one candidate. All
   // candidates must fail their availability probe before any workload is run.
-  assert.equal(p.events.filter((e:any)=>e.kind==='spawn').length,process.platform==='linux'?2:1,'only bounded availability probes were dispatched');
+  const candidates=process.platform==='linux'?['/usr/bin/bwrap','/bin/bwrap'].filter(existsSync).length:1;
+  assert.equal(p.events.filter((e:any)=>e.kind==='spawn').length,candidates,'only bounded availability probes were dispatched');
 });
 test('sandbox rejects malformed resource snapshots instead of treating them as zero usage', {skip},()=>{
   assert.equal(probe('malformed').result.sandbox,null);
