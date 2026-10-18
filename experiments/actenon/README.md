@@ -2,6 +2,21 @@
 
 This is a source audit, not a released integration or a live model benchmark.
 Use a disposable directory and Python 3.12. Install no production credentials.
+
+For the preregistered deterministic equal-control comparison, after the same
+pinned environment and cached Docker image setup below:
+
+```sh
+/absolute/audit-root/.venv/bin/python experiments/actenon/compare-reuse.py \
+  --output /absolute/new-comparison-evidence
+/absolute/audit-root/.venv/bin/python experiments/actenon/check-reuse-comparison.py \
+  /absolute/new-comparison-evidence
+```
+
+This compares 20 fresh-process warm pairs against a saved script under the same
+resource-owned Actenon boundary. It uses no models and does not measure authored
+integration work or software-change maintenance. The first result favored the
+script on warm runtime cost; see the [result](../../docs/north-star/evidence/ACTENON-EQUAL-CONTROL-RESULT.md).
 Clone the five Actenon repositories beneath an audit root, then detach each at
 its exact commit in `docs/north-star/evidence/actenon-source-audit.json`.
 No repository source is modified by the audit.

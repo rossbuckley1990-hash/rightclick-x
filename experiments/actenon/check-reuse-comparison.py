@@ -7,8 +7,9 @@ import random
 import statistics
 import sys
 
-from actenon.models import PCCB, PartyRef
-from actenon.proof.canonical import canonicalize_bytes
+from actenon.models import ActionIntent, PCCB, PartyRef
+from actenon.proof import build_action_hash_input
+from actenon.proof.canonical import canonicalize_bytes, sha256_hex
 from actenon.receipts import OutcomeAttestationService
 from actenon_permit.boundary.proofs import Ed25519PublicKeyVerifier
 
@@ -37,6 +38,7 @@ for i, row in enumerate(journal):
     edge = by_proof[row["proof"]]
     proof = PCCB.from_dict(edge["proof"])
     assert verifier.verify(canonicalize_bytes(proof.unsigned_payload()), proof.signature)
+    assert sha256_hex(build_action_hash_input(ActionIntent.from_dict(edge["intent"]))) == proof.action_hash.value
     grant_ids.add(proof.extensions["authority"]["grant_id"])
     params = edge["intent"]["action"]["parameters"]
     assert params["method"] == "POST" and json.loads(base64.b64decode(params["body"])) == {"label": row["label"]}
@@ -46,6 +48,7 @@ for i, row in enumerate(journal):
     assert evidence["outcome"] == "COMMITTED" and evidence["execution_occurred"] is True and evidence["evidence_hash"] == digest
     settled = states[evidence["effect_id"]]
     assert settled["state"] == "COMMITTED" and settled["evidence"]["evidence_hash"] == digest
+    assert settled["action_hash"] == proof.action_hash.value and settled["reference"] == proof.extensions["effect"]
 assert len(grant_ids) == 1
 
 receipt_verifier = Ed25519PublicKeyVerifier([read("public.json")])
@@ -54,6 +57,11 @@ attestations = lines("attestations.jsonl")
 assert len(attestations) == 42
 for signed in attestations:
     attester.verify_receipt_attestation(signed, verifier=receipt_verifier)
+    artifact = signed["unsigned_payload"]["outcome_artifact"]
+    edge = by_proof[artifact["correlation"]["pccb_id"]]
+    assert artifact == edge["outcome"]["receipt"]
+    assert artifact["action"] == edge["intent"]["action"] and artifact["target"] == edge["intent"]["target"]
+    assert artifact["intent_id"] == edge["intent"]["intent_id"] and artifact["correlation"]["action_hash"] == edge["proof"]["action_hash"]
     signed["unsigned_payload"]["outcome_artifact"]["summary"] = "altered by checker"
     try: attester.verify_receipt_attestation(signed, verifier=receipt_verifier)
     except Exception: pass
@@ -89,6 +97,8 @@ for record in records:
         assert len(wire_events) == (4 if record["pair"] == 0 else 2) and all(e["ok"] for e in host_events)
     else:
         assert value["status"] == "failed" and len(wire_events) == 1 and not host_events[0]["ok"]
+        expected_reason = {"duplicate": "effect already reserved, committed, or unresolved", "out-of-bounds": "outside operator-approved exact request bounds", "revoked": "grant status is revoked"}[phase[2:]]
+        assert host_events[0]["reason"] == expected_reason
 assert {r["phase"] for r in records if not r["expectedSuccess"]} == {a+"-"+p for a in ("C", "D") for p in ("duplicate", "out-of-bounds", "revoked")}
 assert [e["phase"] for e in lines("operator-transitions.jsonl")] == ["authorize", "revoke"]
 
@@ -99,9 +109,13 @@ for arm in ("C", "D"):
     total = statistics.median(r["containerLifecycleMs"] for r in warm)
     assert result["summary"][arm]["warmClientMs"]["median"] == client
     assert result["summary"][arm]["warmContainerLifecycleMs"]["median"] == total
+    for key, samples in [("warmClientMs", [r["result"]["clientMs"] for r in warm]), ("warmContainerLifecycleMs", [r["containerLifecycleMs"] for r in warm]), ("warmStateBytes", [r["result"]["stateBytes"] for r in warm])]:
+        assert result["summary"][arm][key] == {"n": 20, "median": statistics.median(samples), "p95": sorted(samples)[18]}
     broker_ms = [sum(e["elapsedNs"] for e in timings if e["phase"] == r["phase"]) / 1e6 for r in warm]
     summary[arm] = {"warmClientMedianMs": client, "warmContainerMedianMs": total, "warmBrokerMedianMs": statistics.median(broker_ms),
                     "medianStateBytes": statistics.median(r["result"]["stateBytes"] for r in warm)}
+assert result["rightclickToScriptWarmClientRatio"] == summary["D"]["warmClientMedianMs"] / summary["C"]["warmClientMedianMs"]
+assert result["rightclickToScriptWarmContainerRatio"] == summary["D"]["warmContainerMedianMs"] / summary["C"]["warmContainerMedianMs"]
 print(json.dumps({"checkedEffects": 42, "checkedRefusals": 6, "sameGrant": True, "freshContainedProcesses": 48,
     "warmContractFetches": 0, "signedReceipts": 42, "tamperedReceiptsRejected": 42, "summary": summary,
     "scope": "same-author separate raw verification; no live model, software change, holdout or commercial advantage established"}, indent=2))
