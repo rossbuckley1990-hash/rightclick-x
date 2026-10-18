@@ -555,7 +555,8 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
 
   // 3. Behaviours: group working trials by mode; keep modes whose output differs from default.
   const okExit = [...new Set(trials.filter(works).map((t) => t.r.code ?? -1))].sort();
-  const defaultOut = trials.find((t) => t.mode === "default" && t.channel === best.id && t.kind === primaryKind && works(t))?.r.stdout;
+  const trialInput = (t: Trial) => JSON.stringify([t.channel, t.kind, t.literals, t.inputs]);
+  const defaultOutputs = new Map(trials.filter(t => t.mode === "default" && works(t)).map(t => [trialInput(t), t.r.stdout]));
   const modes = [...new Set(trials.map((t) => t.mode))];
   const capabilities: Capability[] = [];
   const providerId = `cli:${slug(name)}`;
@@ -565,7 +566,9 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
       if (mode !== "default") claim(`${providerId}:${slug(mode)}`, `option ${trials.find((t) => t.mode === mode)?.flags.join(" ")} produces output`, "contradicted", "ran with a valid sample; no output");
       continue;
     }
-    if (mode !== "default" && mt.every((t) => t.r.stdout === defaultOut)) {
+    // Compare the option and default on the same data; different inputs can
+    // legitimately yield different outputs without the flag having any effect.
+    if (mode !== "default" && mt.every((t) => t.r.stdout === defaultOutputs.get(trialInput(t)))) {
       claim(`${providerId}:${slug(mode)}`, `option ${mt[0].flags.join(" ")} changes the output`, "contradicted", "output identical to the default mode");
       // The option is equivalent to the default: its description still describes what the default
       // does, so keep it there (otherwise the only account of the behaviour is lost).

@@ -14,13 +14,14 @@ const skip = native ? false : "no host sandbox";
 type Format = "json" | "xml" | "csv";
 const input: Record<Format, string> = { json: '{"unseen":[17,"later"]}\n', xml: '<?xml version="1.0"?><item>unseen</item>\n', csv: 'name,count\nunseen,17\n' };
 
-async function fixture(format: Format, pair = false, control?: "constant" | "singleton") {
+async function fixture(format: Format, pair = false, control?: "constant" | "singleton" | "noop") {
   const dir = realpathSync(mkdtempSync(`${tmpdir()}/rcx-probe-coverage-`));
   const program = `${dir}/structured`;
   const pattern = format === "json" ? "'{'*" : format === "xml" ? "'<?xml'*" : "'name,count'*";
   const first = samplesFor("structured data", 7).find(s => s.kind === format)!.content.trimEnd();
   writeFileSync(program, `#!/bin/sh
-if [ "$1" = "--help" ]; then printf 'usage: structured ${pair ? "FILE1 FILE2" : "[FILE]"}\\n'; exit 0; fi
+if [ "$1" = "--help" ]; then printf 'usage: structured ${pair ? "FILE1 FILE2" : "[FILE]"}\\n${control === "noop" ? "  -q    print quiet output\\n" : ""}'; exit 0; fi
+${control === "noop" ? '[ "$1" != "-q" ] || shift' : ""}
 ${pair ? '[ "$#" = 2 ] || exit 65\na=$(cat "$1"); b=$(cat "$2"); input="$a"' : '[ "$#" = 0 ] || exit 65\ninput=$(cat)'}
 case "$input" in ${pattern}) ;; *) exit 65;; esac
 ${pair ? `case "$b" in ${pattern}) ;; *) exit 65;; esac` : ""}
@@ -58,6 +59,15 @@ test("structured unary programs receive distinct probes and compose on unseen in
     assert.equal(f.wires.slice(before).filter(w => w.purpose === "execution").length, 1);
     assert.ok(!f.rc.investigations.get(f.program)!.claims.some(c => c.status === "verified"));
   }
+});
+
+test("a no-op flag is compared with the default on each matching probe input", { skip }, async () => {
+  const f = await fixture("json", false, "noop");
+  assert.equal(f.rc.graph.get("cli:structured:q"), undefined, "different input values do not establish an option effect");
+  const cap = f.rc.graph.get("cli:structured:default")!;
+  assert.ok(cap && !cap.tags.includes("unsupported"));
+  assert.match(cap.description, /Equivalent to -q/);
+  assert.ok(f.rc.investigations.get(f.program)!.claims.some(c => c.subject === cap.id && /equivalent to -q/.test(c.claim)));
 });
 
 test("structured two-file programs receive two distinct pairs, then compose both new inputs", { skip }, async () => {

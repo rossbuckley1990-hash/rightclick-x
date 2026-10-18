@@ -119,7 +119,7 @@ if __name__ == '__main__':
     assert after['rows']['upgrade']['cfg']['inputStateSha256'] == sha(before['states']['seed'])
     assert after['rows']['upgraded-reuse']['cfg']['inputStateSha256'] == sha(after['states']['upgrade'])
     assert json.loads(before['states']['seed'])['semantics'] == 22
-    assert json.loads(after['states']['upgrade'])['semantics'] == 23
+    assert json.loads(after['states']['upgrade'])['semantics'] == 24
     manuals = [w['before']['sha256'] for data in [before, after] for r in data['rows'].values()
                for w in r['wires'] if w['program'] == '/usr/bin/man']
     assert manuals and len(set(manuals)) == 1, 'manual helper identity changed'

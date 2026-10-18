@@ -28,4 +28,10 @@ node experiments/north-star/cli-goal-samples.ts AFTER_EXPORT AFTER_FREEZE NEW_AF
 python3 experiments/north-star/check-cli-goal-samples.py NEW_BEFORE_DIR NEW_AFTER_DIR
 ```
 
-Results pending the frozen run. Full holdout, authority-boundary, cross-model, economic and human commercial gates remain open; release NO-GO.
+## First freeze and additional semantic finding
+
+Freeze `548a0b4` (inference version 23) passed 260 regressions, the 19-process after replay, four checker corruption controls, 28 MCP black-box checks and offline package/install/thirteen-tool/uninstall checks. Its old-source seed still refused correctly. All artifacts are preserved under `evidence/cli-sample-coverage/{before,after}-548a0b4`. An initial build of the source export omitted the demo directory; the missing-file failure and successful build after restoring the frozen demo files are both retained.
+
+The new investigation used 31 probes instead of the previous 30. Reviewing that difference exposed a semantic defect: mode runs on different inputs were all compared with the first default output. A no-op flag therefore appeared to change the output merely because its input changed. The new no-op regression fails on `548a0b4`. The correction compares each mode run with the default's identical input, literal operands, channel and format. Existing true transformations must remain distinct; supported-but-equivalent flags remain available through the documented options interface. The workflow results at the first freeze remain valid within their tested scope, but do not prove all inferred option meanings.
+
+Inference version **24** incorporates that correction and triggers the same authority-checked migration. The second freeze repeats the complete replay and verification; no original acceptance criterion or task outcome requirement is reduced. Results pending that run. Full holdout, authority-boundary, cross-model, economic and human commercial gates remain open; release NO-GO.
