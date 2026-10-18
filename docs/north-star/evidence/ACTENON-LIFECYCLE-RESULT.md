@@ -52,6 +52,7 @@ refusals; complete refusal attestation remains an integration requirement.
 | [4](actenon/integration-lifecycle-attempt-4/result.json) | 19/19 | Full lifecycle and route coverage; descriptive check name corrected to identify external authority denial rather than semantic-anchor refusal |
 | [5](actenon/integration-lifecycle-attempt-5/result.json) | 20/20 | New target explicitly receives a new operator grant; proof binding checked |
 | [Containment regression](actenon/integration-query-regression/result.json) | 29/29 | Prior exact-action, replay, revocation, numeric-IP isolation and reconciliation checks still pass after query correction |
+| [Frozen reproduction](actenon/integration-lifecycle-frozen-1/result.json) | 20/20 | Reproduced from exact source commit `9840f2b`; fresh private state, containers and observer |
 
 Every run preserves exact harness sources, hashes, image identity, raw IPC,
 provider requests/effects, witness observations and signed native artifacts.
