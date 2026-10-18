@@ -1,0 +1,171 @@
+{
+  "sourceCommit": "3cb8860e29e624fa903149ba6da1b3e334836c18",
+  "at": "2026-10-18T01:20:18.865071+00:00",
+  "environment": {
+    "platform": "macOS-26.4.1-arm64-arm-64bit-Mach-O",
+    "node": "v24.16.0"
+  },
+  "verdict": "PARTIAL",
+  "release": "NO-GO",
+  "sourceUnchangedDuringFrozenChecks": true,
+  "checks": [
+    {
+      "command": "npm run check",
+      "exitCode": 0,
+      "evidence": "stage1-frozen-check.log",
+      "sha256": "52ac42f30c63bedcde2bc31e70877332f5bae0af378694d1453d5fdadeae740f",
+      "results": {
+        "tests": 213,
+        "passed": 213,
+        "skipped": 0
+      }
+    },
+    {
+      "command": "node proof/run.ts",
+      "exitCode": 0,
+      "evidence": "stage1-frozen-proof.json",
+      "sha256": "9c2432989ffcf9b96ae326823105d17186d68ae24815bd703a579c87dd2dbfc4",
+      "results": {
+        "checks": 28,
+        "passed": 28
+      }
+    },
+    {
+      "command": "node experiments/open-world/negative-controls.ts",
+      "exitCode": 0,
+      "evidence": "stage1-frozen-negative.json",
+      "sha256": "fea3a73225c3e77ef71a78f5eb616b0c71acf3d61c25c079cc1dc0285455b6d6",
+      "results": {
+        "checks": 6,
+        "passed": 6
+      }
+    },
+    {
+      "command": "npm run build",
+      "exitCode": 0,
+      "evidence": "stage1-final-build.log",
+      "sha256": "89d3af6140c363892582ab7f5ef5c32a3cf72077d428314a623f34e166a730fc",
+      "results": {
+        "node": "PASS",
+        "edge": "COMPILE_ONLY"
+      }
+    },
+    {
+      "command": "node ci/adaptive-package-smoke.ts",
+      "exitCode": 0,
+      "evidence": "stage1-package-smoke.json",
+      "sha256": "405d138e7e7b2f50dbcf8745ec070b7a78e07eb645e48b6de244820cd215d2bc",
+      "results": {
+        "install": "PASS",
+        "uninstall": "PASS",
+        "mcpTools": 13
+      }
+    },
+    {
+      "command": "npx tsc -p tsconfig.harness.json",
+      "exitCode": 0,
+      "evidence": "stage1-harness-typecheck.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "results": {
+        "typecheck": "PASS"
+      }
+    }
+  ],
+  "sourceFilesSha256": {
+    "bin/rcx.ts": "5848b42454b6d6a9923119bee0b522b807bd811f10bc59c226771719c466c085",
+    "ci/adaptive-package-smoke.ts": "aca87292b75194945074043470a3827b19f834f5883b39638b7b2182ebd18b1d",
+    "ci/check-links.ts": "3de1417105d08b097fc308e106c556fd21824e12011c925f0a5fb7203158917b",
+    "ci/linux.Dockerfile": "c784277ede1c4655a3b7f1c3c78c66476132f4092a51ac81d1cd764c4e951bae",
+    "ci/transfer.Dockerfile": "2cbf4f1e3081c8cd6b35d85b07e8cd9cb4167b77a3674a6dcdf83bfb7f85f216",
+    "experiments/north-star/common.ts": "af9ad158b71567edbd5660c5caa3c31767b4cc90c80685c03ace6caa58ded638",
+    "experiments/north-star/correct-quota.ts": "5bffd42add48a4677ab2217df8de73de3ed8554a9dbb0d8d2401087eaa002b68",
+    "experiments/north-star/domain2.ts": "217d130d3f93051be4fdd0475a7fa67a9c8f7f293aeaa6e4baca19ecfa343270",
+    "experiments/north-star/measure-policy.ts": "2e963b13f0a5d636a8cb3561064e9d5ec16fcc2d14cbc7c935094d3b0861807c",
+    "experiments/north-star/quota.ts": "aacdeab16e84fa6d799e615d960915b203b59f52c80f192b601b7882f5161ed9",
+    "experiments/north-star/report.ts": "4ac16163e5c03c963dabd1193ce5dab3a850c488a6449dac7dcd06b5f932caa7",
+    "experiments/north-star/run.ts": "01754db9e0bedeab5e43b15b4a061f109dd014e9a9c4dd64b2034d9bb6f13503",
+    "experiments/north-star/select.ts": "8e37d14dbc42b0be22a2e6f47d5b6b123c5fc9e6a8769362b1d5821f932b72ca",
+    "experiments/north-star/surface.ts": "bd9e60fa0eefb2f58934e77da5b4151853fc8a12621b27da895b05db485d2b1e",
+    "experiments/north-star/transfer.ts": "4e3700cddd88c2702f7fb71e0dd8593dec5fd1705c812b8fd81fa942ebd79704",
+    "src/core/authority.ts": "029ee45d0ca6fb89d9be7b1b93dec02e836371d181de006ac7ec833a06797df8",
+    "src/core/contract.ts": "44caedd06af603ec5ce3140b4f63b209740b6c881e537bcd2ce7498404e6a815",
+    "src/core/execution-policy.ts": "3689e662c0740cfeb10b60792a5a3cc4174fa356cc5e8b91ea8efc8414ee4aa1",
+    "src/core/fields.ts": "fa58a1c39d7a1294c4dfe74c53a80aeaa70b03c8ed5eefabd755730871cadf09",
+    "src/core/graph.ts": "584bd2a12427b83b925f59c728339d9825d65f6cc6ffde3c1ce6dab388377ad1",
+    "src/core/identities.ts": "efc886834bb1d5b4c569831ab63d3665e702430874e42c614c36ba20abe90a9e",
+    "src/core/knowledge.ts": "c2483ccd0a9f2b1dad6b281fedf75387cbdbc6dc8a3a1e238a70fda885b590b0",
+    "src/core/ledger.ts": "4288b1fdc3cce124798fe3dd2a53efbc6d87142f74f9791f7d9cab17a0aca341",
+    "src/core/planner.ts": "376493cd64e14ae95c7d5dfe0105e716d94c000d9572994974674a6eaef06455",
+    "src/core/programs.ts": "5c3f0b40083dd15bfe350962319b54efec7e85c4b6cb70881e0c728f98e2f634",
+    "src/core/quantities.ts": "a3b07566762e786ce7a46f15a7e24b66f83a31f5fd4ca4924ce9830f5c9a5d16",
+    "src/core/sandbox.ts": "cb156db24509ca36ac6a6796716a307bfcc7820a0d31392ee504ecd3e382a412",
+    "src/core/satisfaction.ts": "0bae0da4af4a5eff8d4c64266f9b3afaeb938eb097f775d2382e2bb5e9836abe",
+    "src/core/secrets.ts": "c8b294e0052410d0ca8b09b3b4e65066fb93de03259eb25b3f7e3aedef4ad0ee",
+    "src/core/semantics.ts": "b04d70162b6c4939655b967cb998103bc63aaf3d40d5964341ec3ddd417c36dd",
+    "src/core/types.ts": "1543663c8f2317b8c5de58da0665bd131ddde017362df11ae286fa32afc8d5f4",
+    "src/core/verify.ts": "5b13aabf50ff0af62f9fd03b0d78dc3f7fccc4bef565aaaca543a6194f2923d4",
+    "src/core/view.ts": "b76ee73e697c7f30c4be3e3cf7137a4a740083225017b38520d81151ee456944",
+    "src/core/yaml.ts": "8ab0f701d51452df24814dfdd71a8180b520970bf545037730337f050565e40a",
+    "src/entry/durable.ts": "a3512ca8ed26b62258fa5bc7b87a2fab0053860433be30e80423fbc5aabeec22",
+    "src/entry/edge.ts": "ef004d8910905c3188b4834246519a4ff6189275cca1862362eaca4f4a1fb61a",
+    "src/entry/node-host.ts": "19a4ceb88c719b56dba86833ded9c54c63c3a972d4e4b5d9f848df56604b8d30",
+    "src/index.ts": "109b5eaa654911a790e4a4ddedd0911d1320fb1b3d6c8f943933ef21dbe53d96",
+    "src/interface/dashboard.ts": "9c98b7d6ae7b7cb9e5467e8dad9e7ef8ce3ccecda614db53e2c5a9bab8c407c2",
+    "src/interface/graphql-server.ts": "923e5205922f30d54c51ec7f98a13fd33117735f06a5fc6af218156cc4827bed",
+    "src/interface/http.ts": "1fb94cff3112c4c474e1ae7aaeddd882efb4207a852ecf5b55b42f298ebdcdb3",
+    "src/interface/mcp-server.ts": "d8d381d26a1a9f4dfd1336d7ebc0fc30aea4115ea143a087997f5d3707b03fda",
+    "src/interface/tools.ts": "8ac0046e88377ab066d5e2c82cbcc94f341eeb46657af93080cb1637af9ea702",
+    "src/reflectors/builtins.ts": "ea92aba6d1ec86c50774bf05184ed21c17b4dd42e0da2eed160763cd3fe492eb",
+    "src/reflectors/cli.ts": "7ab13c78d57924a82e9e047988b7d30c2eaf90693747c3ca3aba48217612a537",
+    "src/reflectors/directories.ts": "e9107659fc7e50738b6000a7800c4da1d3b6025ae5d29065ebec4b16bb9dece2",
+    "src/reflectors/discover.ts": "a3dce3562e41560471e760714c8ada461599623322cd44a8f2021eb975081aa2",
+    "src/reflectors/graphql.ts": "74992bbe3b3aa39713a81ee8270b15ad35980525b01ad3e1619fdee89b61ede1",
+    "src/reflectors/mcp.ts": "634dec12cbcef9521e5caa6913b6db85f6d0af2a323eb68b3e8094723924355b",
+    "src/reflectors/net.ts": "4efbf2e74e793d5ddac059b4fe49efc885661b84f57310c1bccd4390c158a993",
+    "src/reflectors/openapi.ts": "c7c79ad8e0f9ea267c229d13a679ff0dff4142c3d9222db7f06356b2d86f21ff",
+    "src/reflectors/platform.ts": "473828892af5d32236c2785a86f28e513dd558d58072496137b9b09e2ff14141",
+    "src/reflectors/web.ts": "7b80ccf10cc7faa94fe0d5859014bc005a34299cb374e3be8fb2504ed290b6d2",
+    "src/runtime.ts": "24cd6c19a151254db135d2a7c44dd1e1e9ce0af2661ceb1fec85668106c7ca11",
+    "test/benchmark-accounting.test.ts": "6aba74b49ccd03f928b8b1c821cdbe2cd1b37e99bd2057d41b568c89e6dc1b6f",
+    "test/contracts.test.ts": "b94d829e6387ff6c7cd867c0292a2950508fdcec93b345a261975ee1c71a0006",
+    "test/drift.test.ts": "e3bb3b56a187cf971b31e0ac22e0bc778c29fdb5b3b5030ed2bf5287cd10e8be",
+    "test/execution-policy.test.ts": "ee54ba4a3b9c7651e882d2f77037a3490addbd7e360f2f773954a149c39aa898",
+    "test/fan-out.test.ts": "9856be6c1e1bbeda696ba0a8e11e5806b81d798151816679ef6a277483276b5a",
+    "test/fixed-inputs.test.ts": "139fe6e6ddbdfe4407c040e71c92019e4aa6f1cd52d779286274727710e35e49",
+    "test/generalisation.test.ts": "5565e62a782a2118261e379b05c0ebe603eea23fb7c832f7ab32dba56f3b160e",
+    "test/goal-satisfaction.test.ts": "c845dc0e6b96fa3f53ee0f8a66cf801a14ccb118dc4b653a96477d35a9cf1a03",
+    "test/graph.test.ts": "763d475aa46b8224776d455905f123462e610fbd0c20a8afaca18ee34b062f9b",
+    "test/helpers.ts": "56fae0d061ee581f0751f9b176efe841fa51fea5d7d51a2aa0e25aacbce63f54",
+    "test/identities.test.ts": "d1f54e60976a25fde177d6d72b3339e800ec99d77b83a4468b4c98ffd83cfb99",
+    "test/interface.test.ts": "fd871af23fbe6e66c7436868b9c64f047a7bdc51061402790c348d9dfcfe46b0",
+    "test/investigation.test.ts": "25d302aba483185d41f0401a5948af8d5eefe5ddd259c70164b8ec420a151180",
+    "test/north-star-security.test.ts": "efd7398d9fa9fd0043a08a75a7373e456f858bd83ac3f7b78c7c02aa055b0994",
+    "test/outcomes.test.ts": "5fc4ce0d18ad57ac50e085ac16877542577d888f84057c4099d4cb94fb062bfe",
+    "test/output-views.test.ts": "58a7eaf29e6c29afd747f90be0873f275e2944c72019d21b5ddb42f3a4dcf0bd",
+    "test/planning-rules.test.ts": "831b29327dc1e3c39e79028e7cc253c08ed858f312fea0dac82df54311b83f86",
+    "test/quantities.test.ts": "05d85196bf921da58a51a3c95487b344c4f3b317d12ef0d74fa32cf78546a4e3",
+    "test/reflectors.test.ts": "f96f5c7b39fa15f9ee334dd3c4d0277f5adeb9512d960a0ec3e9875a16119e38",
+    "test/run-drift.test.ts": "63670f0f913d4aea7be2896a7cfd9e05509b7d56956c84243d7e1077b524ee2f",
+    "test/runtime.test.ts": "8a0a7ab529a0b92319b1907a012ee528d378717015deb78e377a55da1926ea4e",
+    "test/security-boundaries.test.ts": "b9530cd594a3f83b7f0c0f5a7770ddda0be0b853440c2902f66aab2ab6f24662",
+    "test/security.test.ts": "c266a0e34fe9217e7b989f9390c5e133fd18a83fc8263247310affa2adefb70d",
+    "test/semantic-acceptance.test.ts": "a52cd508ee11c8a1e9c6f0f79ee8cb059ab0ecbac434cec7468f7d9b54dca368",
+    "test/semantics.test.ts": "6ae88210d65aacfabc327635e17e54839efcc23bb9b4712214dfc00b33a517e8",
+    "test/synthesis.test.ts": "89a6336d98d4458d53a76b35afbaba5306f87c08f8a4c85600444d8fc854cbf2",
+    "test/upstream-change.test.ts": "45958676b5992dad1e10c4f59150479d23d0acb318968240f35d4752167196eb",
+    "test/yaml.test.ts": "6556013740a083aab7cae6f11dd604e924b8dd9b8bece748255e931c4b203f09"
+  },
+  "independence": {
+    "fixtureOutcomeOracles": "direct observations independent of the policy decision within programme-authored tests",
+    "externalSecurityReview": "NOT DONE",
+    "independentDeveloperInstallation": "NOT DONE",
+    "crossModelExperiment": "NOT DONE",
+    "unfamiliarHoldout": "NOT DONE"
+  },
+  "limitations": [
+    "Runtime policy enforcement within mediated paths only.",
+    "No live revocation or authenticated principals yet.",
+    "Microbenchmark is not end-to-end model economics.",
+    "All prior acceptance criteria remain; this is not mission completion."
+  ]
+}
