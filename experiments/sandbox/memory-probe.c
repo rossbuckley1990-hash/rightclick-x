@@ -5,6 +5,9 @@
 #include <stdint.h>
 #include <sys/resource.h>
 #include <unistd.h>
+#ifdef __APPLE__
+#include <libproc.h>
+#endif
 int main(int argc, char **argv) {
   if (argc != 3) return 2;
   unsigned long mib = strtoul(argv[1], NULL, 10), hold_ms = strtoul(argv[2], NULL, 10);
@@ -18,10 +21,13 @@ int main(int argc, char **argv) {
   if (getrusage(RUSAGE_SELF, &usage)) return 4;
 #ifdef __APPLE__
   unsigned long long peak = usage.ru_maxrss;
+  struct rusage_info_v4 info = {0};
+  if (proc_pid_rusage(getpid(), RUSAGE_INFO_V4, (rusage_info_t *)&info)) return 5;
+  printf("{\"allocated\":%zu,\"peakRSS\":%llu,\"resident\":%llu,\"footprint\":%llu,\"peakFootprint\":%llu,\"done\":true}\n", bytes, peak, info.ri_resident_size, info.ri_phys_footprint, info.ri_lifetime_max_phys_footprint);
 #else
   unsigned long long peak = (unsigned long long)usage.ru_maxrss * 1024;
-#endif
   printf("{\"allocated\":%zu,\"peakRSS\":%llu,\"done\":true}\n", bytes, peak);
+#endif
   free((void *)p);
   return 0;
 }
