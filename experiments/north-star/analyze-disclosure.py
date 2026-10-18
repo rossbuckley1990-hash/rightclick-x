@@ -53,7 +53,7 @@ def analyze(directory):
                     response = {'candidateToolsInCall': names, 'visibleEnvelopeBytes': len(text.encode()),
                         'structuredBytes': size(structured), 'textJsonBytes': len(encoded[0].encode()) if len(encoded) == 1 else None,
                         'equivalentRepresentations': equivalent}
-                    if isinstance(structured, dict) and isinstance(structured.get('capability'), dict) and 'card' in structured:
+                    if isinstance(structured, dict) and isinstance(structured.get('capability'), dict) and ('card' in structured or 'contract' in structured):
                         response['explanationFields'] = {k: size(v) for k, v in structured.items()}
                     if isinstance(structured, dict) and 'plans' in structured:
                         response['composeExecuted'] = 'executed' in structured
