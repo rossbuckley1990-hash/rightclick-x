@@ -1,0 +1,26 @@
+{
+  "key": "A|json_xs|incompatible",
+  "attemptId": "555a5440-5b87-4cbf-b93d-bfb77132b949",
+  "commit": "ccfa38ffcd927eb3dcb8f2ec94a0691e2391b928",
+  "holdoutSha256": "8d4760271dc8e341913160930118af94f64320eaf0a115bcf0517c8d04546122",
+  "model": "gpt-6.1-sol",
+  "task": {
+    "id": "json_xs#2",
+    "program": "json_xs",
+    "kind": "feasible",
+    "request": "Squash this nicely formatted JSON down to a single compact line with no extra spaces.",
+    "input": {
+      "stdin": "[\n  [1, 2],\n  [3, \"x\"],\n  true\n]\n"
+    },
+    "reference": {
+      "argv": [
+        "-t",
+        "json"
+      ]
+    },
+    "compare": "trim",
+    "expected": "[[1,2],[3,\"x\"],true]",
+    "valid": true
+  },
+  "prompt": "You have one MCP tool, run_program, which runs the program /private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/ns-codex-bins-a16f3ceb2f6a5dd4067f/A/json_xs/json_xs in a sandbox. Use only it.\n\nTask for the program /private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/ns-codex-bins-a16f3ceb2f6a5dd4067f/A/json_xs/json_xs:\nSquash this nicely formatted JSON down to a single compact line with no extra spaces.\n\nStandard input (JSON string, exact content): \"[\\n  [1, 2],\\n  [3, \\\"x\\\"],\\n  true\\n]\\n\"\n\nUse your tools to run the program and produce the result; do not compute or write the result yourself. Check that the result is correct for the request.\nIf it cannot be done correctly with this program, reply with a line 'UNABLE: <reason>' instead of a result.\nOtherwise reply with the exact result between a line containing only BEGIN and a line containing only END."
+}

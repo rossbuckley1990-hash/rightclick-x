@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { codexEvents, codexSummary, inspectCodeMode, toml } from "../experiments/north-star/codex-session.ts";
+import { benchmarkServer, codexEvents, codexSummary, inspectCodeMode, toml } from "../experiments/north-star/codex-session.ts";
 
 test("Codex accounting includes cached input once and never substitutes missing usage", () => {
   const events = [
@@ -14,6 +14,16 @@ test("Codex accounting includes cached input once and never substitutes missing 
   assert.equal(codexSummary([{ type: "turn.completed", usage: { input_tokens: -1, output_tokens: 1 } }]).tokens, undefined);
   assert.equal(codexSummary([{ type: "turn.failed", error: { message: "quota" } }]).errors.length, 1);
   assert.throws(() => codexEvents('{"type":"turn.completed"}\nmalformed'));
+});
+
+test("benchmark MCP approval is limited to the explicit local fixture tool set", () => {
+  const candidate = benchmarkServer("rightclick-x", { command: "/node", args: ["/fixture.ts"] });
+  assert.equal(candidate.default_tools_approval_mode, "prompt");
+  assert.equal(candidate.enabled_tools.length, 13);
+  assert.equal(candidate.tools.context_learn.approval_mode, "approve");
+  assert.deepEqual(benchmarkServer("surface", {}).enabled_tools, ["run_program", "list_skills", "read_skill", "save_skill"]);
+  assert.throws(() => benchmarkServer("unrelated", {}));
+  assert.equal(codexSummary([{ type: "item.completed", item: { type: "mcp_tool_call", error: { message: "MCP tool call requires approval, but approval policy is never" } } }]).errors.length, 1);
 });
 
 test("Code Mode audit distinguishes literal program arguments from JavaScript execution", () => {

@@ -19,7 +19,17 @@ export function codexSummary(events: any[]) {
   const tokens = validUsage ? completed.reduce((sum, e) => sum + e.usage.input_tokens + e.usage.output_tokens, 0) : undefined;
   const messages = events.filter(e => e.type === "item.completed" && e.item?.type === "agent_message");
   return { reply: messages.at(-1)?.item.text ?? "", tokens, turns: completed.length || undefined,
-    errors: events.filter(e => e.type === "error" || e.type === "turn.failed") };
+    errors: events.filter(e => e.type === "error" || e.type === "turn.failed" || e.type === "item.completed" && e.item?.type === "mcp_tool_call" && /requires approval|approval policy/i.test(e.item?.error?.message ?? "")) };
+}
+
+export function benchmarkServer(name: string, server: unknown) {
+  const names = name === "rightclick-x"
+    ? ["context_runtime", "context_research", "context_learn", "context_forget", "context_inspect", "context_actions", "context_explain", "context_run", "context_run_status", "context_compose", "context_graph", "context_providers", "context_watch"]
+    : name === "surface" ? ["run_program", "list_skills", "read_skill", "save_skill"] : undefined;
+  if (!names || !server || typeof server !== "object" || Array.isArray(server)) throw new Error("unexpected benchmark server");
+  // Operator-authorised fixture tools only. Other tools remain unavailable and
+  // all program execution still passes through the same host sandbox.
+  return { ...server, required: true, default_tools_approval_mode: "prompt", enabled_tools: names, tools: Object.fromEntries(names.map(name => [name, { approval_mode: "approve" }])) };
 }
 
 export function inspectCodeMode(code: string, allowed: string): string[] {
@@ -81,7 +91,7 @@ export async function codexSession(opts: { prompt: string; servers: Record<strin
   for (const feature of ["shell_tool", "apps", "plugins", "multi_agent", "multi_agent_v2", "browser_use", "computer_use", "image_generation", "remote_plugin", "hooks", "skill_search", "skill_mcp_dependency_install"])
     args.push("--disable", feature);
   for (const [name, server] of Object.entries(opts.servers)) {
-    args.push("-c", `mcp_servers.${name}=${toml(server)}`);
+    args.push("-c", `mcp_servers.${name}=${toml(benchmarkServer(name, server))}`);
   }
   args.push(opts.prompt);
   writeFileSync(join(opts.evidenceDir, "agent-invocation.json"), JSON.stringify({ command: "codex", args, cwd: work, timeoutMs: opts.timeoutMs ?? 600_000, environmentKeys: Object.keys(subscriptionEnvironment(process.env)).sort() }, null, 2));
