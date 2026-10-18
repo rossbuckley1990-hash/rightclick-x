@@ -4,6 +4,8 @@
 
 **Decision: conditional GO for a bounded, optional integration experiment; NO-GO for a production integration or a containment claim.** Reuse Actenon's authority and execution mechanisms rather than creating another grant issuer, cryptographic verifier, replay store or effect ledger inside RightClick X. Existing RightClick X execution restrictions remain useful defence in depth, but are not independent containment when an agent can change that runtime or use another tool.
 
+Follow-up: the [bounded integration experiment](ACTENON-INTEGRATION-EXPERIMENT.md) now supplies local execution, denial, containment-probe and independent-observer evidence. The full preregistered experiment below remains partial; the original source-audit conclusions and production NO-GO are preserved.
+
 ## 1. Source and release maturity
 
 These are fresh read-only clones of the five requested public repositories, not assumptions from cached web pages. All five use Apache-2.0 licensing. Exact commits and initial clean state are in [source audit](actenon-source-audit.json). Public registry and GitHub release responses were saved on the audit date in [registry summary](actenon/registry-summary.json).

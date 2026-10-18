@@ -46,3 +46,33 @@ The unmodified upstream verifier benchmark fails because it sets development
 intent to `benchmark`. The measurement wrapper retains the benchmark functions
 and sets explicit `test` intent after import. It measures pure verification
 only, excluding stateful enforcement, network, inference and RightClick X.
+
+## Run the bounded integration experiment
+
+After the pinned source installation above, with Bun and a local Linux Docker
+engine, provide an already-present trusted image containing Node >=22.18 and
+`/bin/sh`. The recorded run used `rightclick-x-linux-test:latest`, whose image ID
+is pinned in each result. `ci/linux.Dockerfile` describes how that test image was
+built. The experiment never pulls images or installs dependencies automatically.
+Docker Desktop's `host.docker.internal` is required for the read-only network
+positive control. This is a development environment, not a simple release install.
+
+```sh
+/absolute/audit-root/.venv/bin/python experiments/actenon/containment.py \
+  --image rightclick-x-linux-test:latest \
+  --output /absolute/new-evidence-directory
+```
+
+The output directory must not exist. The runner refuses source revision drift,
+records source snapshots and exact image identity, and preserves failures. It
+starts a disposable loopback provider, runs three no-network containers, checks
+provider state with a separate process, verifies signed receipts/refusals, and
+cleans up its own containers and temporary private keys. No model, real provider,
+remote Git operation or spending occurs. Inspect `result.json`, the raw bridge
+and edge journals, observer output, container configuration and reconciliation.
+Do not share private material from a separately configured real broker.
+
+This experiment does not install an Actenon dependency into RightClick X. Its
+generic fetch bridge and trusted fixture boundary remain under `experiments/`.
+The [experiment assessment](../../docs/north-star/evidence/ACTENON-INTEGRATION-EXPERIMENT.md)
+records the narrower scope and unpassed preregistered cases.

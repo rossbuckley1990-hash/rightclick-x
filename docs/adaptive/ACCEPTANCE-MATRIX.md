@@ -17,7 +17,7 @@ This is an additive execution plan for the original eight outcomes and complete 
 
 1. Preserve operator-policy and reporter commits. **DONE**. Their limits are recorded; do not relabel the in-process policy independent containment.
 2. Audit Actenon before adding security/proof mechanisms. **DONE for source feasibility**: [assessment](../north-star/evidence/ACTENON-INTEGRATION-FEASIBILITY.md). Kernel/Permit are candidate implementations; Scan is supplementary evidence; Airlock is optional containment research. No cryptography, grants or effect ledger will be reimplemented inside RightClick X.
-3. Execute the smallest frozen, local development experiment in assessment §7. Start read-only, then only explicitly scoped disposable effects. First demonstrate resource-owned denial with no proof and exact request binding. Add revocation, duplicate/ambiguous execution and alternative-route probes before promoting a transport bridge.
+3. Execute the smallest frozen, local development experiment in assessment §7. **PARTIAL:** the [bounded integration experiment](../north-star/evidence/ACTENON-INTEGRATION-EXPERIMENT.md) passes 29 development checks using three fresh Node containers, native Actenon, exact requests and a separate observer. Preserve the failed read/effect gate experiment. Complete the preregistered no-grant discovery/resource-owned edge, concurrency/federation and provider lifecycle cases before promoting the bridge.
 4. Extend the existing capability contract to reference authority requirements and evidence without storing grants, credentials, issuer keys or reusable execution proofs. Separate semantic evidence from authorization and signed transport receipts.
 5. Measure deterministic retained execution with every verification/authorization obligation preserved. Compare against saved scripts protected by the **same** Actenon boundary. A cryptographic microbenchmark is not agent economics.
 6. Freeze, select fresh holdouts independently, run fair A/B/C/D and the full Capability Plane Challenge A–H, including real model replacement and clean installation. Keep exposed development targets excluded.
@@ -25,20 +25,20 @@ This is an additive execution plan for the original eight outcomes and complete 
 
 ## Additional exact-action authority gates
 
-Each row is required for the claimed integration scope. None is currently passed by an integrated RightClick X/Actenon run.
+Each row is required for the claimed integration scope. The local integration supplies bounded evidence below; no row is promoted to full acceptance where required cases remain untested.
 
 | ID | Required observation | Status |
 |---|---|---|
-| AX1 | Discovery, import, publication and composition do not create/extend authority; no-grant effects denied | NOT RUN |
-| AX2 | Edge derives actual action/target/all consequential parameters/audience; post-issuance mutations refused with zero effect | NOT RUN |
-| AX3 | Expiry, revoked grant/ancestor and unavailable revocation source refuse before dispatch | COMPONENT TESTS PASS; INTEGRATION NOT RUN |
-| AX4 | Concurrent/restarted/federated callers share replay and effect ownership; no alternate route uses a proof twice | COMPONENT LOCAL-STORE TESTS PASS; INTEGRATION NOT RUN |
-| AX5 | Lost/ambiguous responses cannot trigger blind retries, refunds or repair-induced duplicate effects; trusted reconciliation only | COMPONENT TESTS PASS; INTEGRATION NOT RUN |
-| AX6 | Shell/native/direct API/SDK/generated endpoint/alternative tool routes cannot access fixture resource without equivalent protection; no standing credential or writable trusted state in agent | NOT RUN; local Docker/image available only |
+| AX1 | Discovery, import, publication and composition do not create/extend authority; no-grant effects denied | PARTIAL: discovery and retained state cannot grant writes; composition/publication still open |
+| AX2 | Edge derives actual action/target/all consequential parameters/audience; post-issuance mutations refused with zero effect | BOUNDED FIXTURE PASS for actual HTTP method/URL/body/headers/audience; arbitrary provider semantics open |
+| AX3 | Expiry, revoked grant/ancestor and unavailable revocation source refuse before dispatch | PARTIAL: proof expiry, revoked grant and failed source pass; integrated ancestor/real-time grant expiry open |
+| AX4 | Concurrent/restarted/federated callers share replay and effect ownership; no alternate route uses a proof twice | PARTIAL: recreated edge/durable replay and duplicate effects pass; edge process restart/concurrency/federation open |
+| AX5 | Lost/ambiguous responses cannot trigger blind retries, refunds or repair-induced duplicate effects; trusted reconciliation only | BOUNDED FIXTURE PASS: lost reply held, retries refused, separate journal observer reconciles; external provider/change cases open |
+| AX6 | Shell/native/direct API/SDK/generated endpoint/alternative tool routes cannot access fixture resource without equivalent protection; no standing credential or writable trusted state in agent | PARTIAL: inspected no-network container, reachable-target control, HTTP/shell/native socket, generated run API and broker misuse pass; other tools/federation/credential vault open |
 | AX7 | Compatible semantic replacement never inherits broader authority; changed target/body/action/boundary gets new proof under operator limits | NOT RUN |
-| AX8 | Receipt/refusal signature and binding verified outside RCX; provider state observed separately; unknown finality remains unknown | NOT RUN |
-| AX9 | Unsupported protocol/profile, missing broker/ledger and unsafe downgrade fail closed; no fallback to unprotected execution | NOT RUN |
+| AX8 | Receipt/refusal signature and binding verified outside RCX; provider state observed separately; unknown finality remains unknown | BOUNDED FIXTURE PASS: public-key observer verifies 26 artifacts and rejects tampering; two effects independently observed; no external certification |
+| AX9 | Unsupported protocol/profile, missing broker/ledger and unsafe downgrade fail closed; no fallback to unprotected execution | PARTIAL: unknown bridge operations/requests and unavailable revocation source refused; all outage/downgrade cases open |
 | AX10 | Same controls for direct/docs/skills/candidate; complete costs and maintenance observations; no token-only proxy for success | NOT RUN |
-| AX11 | Scoped optional installation, uninstall and version compatibility pass; RCX remains independently usable with thirteen tools | CORE PASS; OPTIONAL INTEGRATION NOT RUN |
+| AX11 | Scoped optional installation, uninstall and version compatibility pass; RCX remains independently usable with thirteen tools | CORE PASS; source-pinned development harness runs without core dependency/tool changes; simple released install/uninstall open |
 
 Uninstrumented paths stay UNKNOWN. An unavailable platform or quota is BLOCKED/PARTIAL evidence, never a simulated pass. Component fixtures are not a complete integration proof, and a full passing integration is still not customer demand.
