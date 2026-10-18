@@ -265,6 +265,8 @@ export interface MeaningChange {
   after: string;
   /** The one capability that now carries the operation this id used to name, if there is one. */
   successor?: string;
+  /** Fresh identity for the newly discovered operation; inherits no execution experience or approval. */
+  current?: string;
 }
 
 /**
@@ -323,7 +325,7 @@ export class RightClick {
   readonly published = new Map<string, PublishedGoal>();
   /** When a failed plain run last re-read each contract source, so repeated failures do not re-read it on every call. */
   private healReads = new Map<string, number>();
-  /** Ids re-learning pointed at a different operation; id-addressed runs refuse them until acknowledged. */
+  /** Ids re-learning pointed at a different operation; caller acknowledgement cannot clear them. */
   readonly meaningChanges = new Map<string, MeaningChange>();
   /** Optional sink for an audit log of MCP tool calls (set by hosts, e.g. RCX_MCP_LOG). */
   toolCallSink?: (entry: { at: string; tool: string; args: unknown; ok: boolean; ms: number; error?: string; outcome?: Record<string, unknown> }) => void;
@@ -441,7 +443,7 @@ export class RightClick {
             const cap = rc.graph.get(id)!;
             Object.assign(cap, carryCliContinuity(oldCli.get(id), cap, true));
           }
-          rc.noteMeaningChanges(source, present, before);
+          await rc.noteMeaningChanges(source, present, before);
         }
         rc.persist();
       }
@@ -563,6 +565,7 @@ export class RightClick {
             const prior = this.graph.get(cap.id);
             return prior && previous.some(p => p.id === prior.provider) ? carryCliContinuity(prior, cap) : cap;
           }) }));
+          d.reflections = await Promise.all(d.reflections.map(r => this.separateOperations(r, source, operationsBefore)));
           const ids = new Set(d.reflections.map((r) => r.provider.id));
           const compositesBefore = this.graph.list().filter((c) => c.source === "composite").map((c) => c.id);
           for (const p of previous) if (!ids.has(p.id)) this.graph.forget(p.id);
@@ -580,7 +583,7 @@ export class RightClick {
               retired: compositesBefore.filter((id) => !this.graph.get(id)),
             };
             drift.changed = !!(drift.added.length || drift.removed.length || drift.modified.length);
-            drift.changedMeaning = this.noteMeaningChanges(source, drift.modified, operationsBefore);
+            drift.changedMeaning = await this.noteMeaningChanges(source, drift.modified, operationsBefore);
             if (drift.changed) this.graph.emit("provider.drifted", { source, ...drift });
           }
           results.push({ source, probes: d.probes, learned, drift });
@@ -607,7 +610,36 @@ export class RightClick {
    * The second kind is recorded so an id-addressed run cannot follow it
    * silently; the change is measured against what callers last saw.
    */
-  private noteMeaningChanges(source: string, modified: string[], operationsBefore: Map<string, string | undefined>): string[] {
+  private async operationIdentity(cap: Capability, source: string): Promise<string> {
+    return `${cap.id}@op-${(await sha256(JSON.stringify([source, cap.id, operationOf(cap)]))).slice(0, 16)}`;
+  }
+
+  /** Keep a reused id quarantined while exposing the new operation as a fresh capability.
+   * This names discovery, never authority. Exact-action checks still belong at the protected edge.
+   * Do this before graph replacement so stable current identities retain their composites. */
+  private async separateOperations(r: Reflection, source: string, before: Map<string, string | undefined>): Promise<Reflection> {
+    const capabilities = new Map<string, Capability>();
+    for (const cap of r.capabilities) {
+      const seen = this.meaningChanges.get(cap.id)?.before ?? before.get(cap.id);
+      if (seen && operationOf(cap) && !carriesOperation(cap, seen)) {
+        const id = await this.operationIdentity(cap, source);
+        const prior = this.graph.get(id);
+        const incoming = r.capabilities.find(c => c.id === id);
+        // An unchanged CLI investigation can return the already separated reflection.
+        // All other collisions fail closed instead of overwriting another identity.
+        const expected = { ...cap, id };
+        if ((prior && (this.meaningChanges.get(cap.id)?.current !== id || prior.provider !== cap.provider || operationOf(prior) !== operationOf(cap))) ||
+            (incoming && (this.meaningChanges.get(cap.id)?.current !== id || signature(incoming) !== signature(expected)))) {
+          throw new Error(`operation identity collision: ${id}`);
+        }
+        capabilities.set(id, expected);
+      }
+      capabilities.set(cap.id, cap);
+    }
+    return { ...r, capabilities: [...capabilities.values()] };
+  }
+
+  private async noteMeaningChanges(source: string, modified: string[], operationsBefore: Map<string, string | undefined>): Promise<string[]> {
     const fromSource = this.graph.list().filter((c) => this.graph.providers.get(c.provider)?.meta?.source === source);
     const changed: string[] = [];
     for (const id of modified) {
@@ -620,7 +652,8 @@ export class RightClick {
       }
       changed.push(id);
       const successors = fromSource.filter((c) => c.id !== id && carriesOperation(c, seen));
-      this.meaningChanges.set(id, { id, source, at: new Date().toISOString(), before: seen, after, ...(successors.length === 1 ? { successor: successors[0].id } : {}) });
+      const current = await this.operationIdentity(now, source);
+      this.meaningChanges.set(id, { id, source, at: new Date().toISOString(), before: seen, after, ...(successors.length === 1 ? { successor: successors[0].id } : {}), ...(this.graph.get(current) ? { current } : {}) });
     }
     return changed;
   }
@@ -1282,8 +1315,16 @@ export class RightClick {
         if (successors.length === 1) return successors[0].id;
         throw new Error(`required anchor contract changed meaning: ${anchor.id}${pinned && this.operationField(exact).operation !== pinned ? ` (it called ${pinned}, it now calls ${this.operationField(exact).operation})` : ""}`);
       }
-      let candidates = anchor.source ? this.graph.list().filter(equivalent) : [];
-      if (!candidates.length && anchor.source) candidates = this.graph.list().filter(carriesPinned);
+      const available = anchor.source ? this.graph.list().filter(c => !this.meaningChanges.has(c.id)) : [];
+      const knownChanges = new Set([...this.meaningChanges.values()].flatMap(c => [c.id, ...(c.current ? [c.current] : [])]));
+      // Keep compatible contract re-discovery (renamed id, path and result shape)
+      // when no recorded observation contradicts it. A separated changed operation
+      // is not such a candidate: a fresh id must not erase its observed lineage.
+      // This heuristic is not authority or proof of semantic equivalence. Execution
+      // restrictions and the saved outcome checks still apply to the selected route.
+      let candidates = pinned ? available.filter(carriesPinned) : [];
+      if (!candidates.length) candidates = available.filter(c => equivalent(c) && !knownChanges.has(c.id));
+      if (!candidates.length && pinned && available.some(equivalent)) throw new Error(`required anchor contract changed meaning: ${anchor.id}; no current operation matches ${pinned}`);
       if (candidates.length !== 1) throw new Error(`${candidates.length ? "ambiguous" : "unresolved"} required anchor: ${anchor.id}; expected one equivalent operation at ${anchor.source ?? "its original identity"}, found ${candidates.length}`);
       return candidates[0].id;
     });
@@ -2036,7 +2077,7 @@ export class RightClick {
   private changedMeaningRefusal(id: string): string | undefined {
     const change = this.meaningChanges.get(id);
     if (!change) return undefined;
-    return `${id} changed meaning when ${change.source} was re-learned (${change.at}): it called ${change.before}, it now calls ${change.after}. Not run.${change.successor ? ` The operation it used to call is now ${change.successor}.` : ""} Caller acknowledgement cannot clear this refusal; this retained identifier no longer names the original operation.`;
+    return `${id} changed meaning when ${change.source} was re-learned (${change.at}): it called ${change.before}, it now calls ${change.after}. Not run.${change.successor ? ` The operation it used to call is now ${change.successor}.` : ""}${change.current ? ` The new operation is separately discoverable as ${change.current}; its authority must be established independently.` : ""} Caller acknowledgement cannot clear this refusal; this retained identifier no longer names the original operation.`;
   }
 
   private executionAssessment(cap: Capability) {

@@ -111,7 +111,8 @@ test("an operation id reassigned to a different operation stays refused despite 
   assert.equal(refused.status, "failed");
   assert.equal(svc.calls.length, before, "the new operation was not called");
   assert.match(refused.error!, /changed meaning.*GET \/api\/classes\/\{\}\/children.*GET \/api\/individuals\/\{\}\/children.*Not run/);
-  assert.deepEqual({ ...refused.changedMeaning, at: undefined }, { id, source: SOURCE, at: undefined, before: "GET /api/classes/{}/children", after: "GET /api/individuals/{}/children", successor });
+  assert.deepEqual({ ...refused.changedMeaning, at: undefined }, { id, source: SOURCE, at: undefined, before: "GET /api/classes/{}/children", after: "GET /api/individuals/{}/children", successor, current: rc.meaningChanges.get(id)!.current });
+  assert.ok(refused.changedMeaning?.current && refused.changedMeaning.current !== id);
   assert.equal(rc.ledger.get(id)!.runs, runsBefore, "a refusal is not evidence about the operation");
   assert.deepEqual((await rc.run(successor, { term: "T1" })).output, ["child-a", "child-b"]);
 
