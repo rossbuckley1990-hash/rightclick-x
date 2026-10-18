@@ -34,7 +34,7 @@ Freeze `548a0b4` (inference version 23) passed 260 regressions, the 19-process a
 
 The new investigation used 31 probes instead of the previous 30. Reviewing that difference exposed a semantic defect: mode runs on different inputs were all compared with the first default output. A no-op flag therefore appeared to change the output merely because its input changed. The new no-op regression fails on `548a0b4`. The correction compares each mode run with the default's identical input, literal operands, channel and format. Existing true transformations must remain distinct; supported-but-equivalent flags remain available through the documented options interface. The workflow results at the first freeze remain valid within their tested scope, but do not prove all inferred option meanings.
 
-Inference version **24** incorporates that correction and triggers the same authority-checked migration. The second freeze repeats the complete replay and verification; no original acceptance criterion or task outcome requirement is reduced. Results pending that run. Full holdout, authority-boundary, cross-model, economic and human commercial gates remain open; release NO-GO.
+Inference version **24** incorporates that correction and triggers the same authority-checked migration. The second freeze repeated the complete replay and verification, with results below; no original acceptance criterion or task outcome requirement was reduced. Full holdout, authority-boundary, cross-model, economic and human commercial gates remain open; release NO-GO.
 
 ## Migration refusal preservation
 
@@ -43,3 +43,49 @@ Freeze `236b4a4` passed 261 regressions, the 19-case replay and six strengthened
 A final migration review then found a direct-call safety defect introduced by dropping the old CLI contract before re-investigation: its old operation identity was also lost. A regression changing a disposable JSON echo program to a constant-result program during an inference upgrade returned the wrong new result as `unverified`. That failed execution is preserved in `migration-meaning-before.log`. Saved goals retained their anchors; the missing protection was for callers of the old direct capability ID.
 
 Version **25** preserves old operation identities across migration and applies the existing changed-meaning refusal after re-investigation. This is deliberately conservative when different inference versions use different synthetic probes: automatic equivalence for old direct IDs may remain unestablished even when the program bytes are unchanged. The original requirement for a successful automatic upgrade is **not relaxed**. The checker now reports any such migration cases as unmet requirements and an overall PARTIAL result, while still requiring zero task dispatch and a changed-meaning reason. Normal same-version lifecycle and reuse must continue to pass. No implicit acknowledgement or repinning is introduced. A future migration proof must establish compatibility rather than discard the old identity.
+
+## Final frozen result
+
+Source, runner and checker freeze **`7d431fb8cf3b6f5da76aaf3f7cc4c259f12d955f`**, inference version 25, yields **PARTIAL**. The original 17 lifecycle cases meet their requirements: eight correct task executions and nine required refusals. Both automatic-upgrade cases remain unmet: they refuse the old operation ID before task dispatch because equivalence across inference versions is unestablished. These two refusals are not counted as successful upgrades. The old-source seed still cannot publish the goal. See the [raw checker result](evidence/cli-sample-coverage/checker-v25.json) and [checkpoint manifest](evidence/cli-sample-coverage-verification.json).
+
+| Check | Result |
+|---|---|
+| Full native macOS regression suite | 262/262 pass; zero skipped |
+| Targeted Linux native-sandbox regressions | 10/10 pass; zero skipped; cached container image, network disabled |
+| Product and experiment TypeScript checks | Pass |
+| Deterministic MCP/REST lifecycle proof | 28/28 pass; source hashes unchanged and matched to the freeze |
+| Separate raw replay checker | 17 required lifecycle outcomes met; two upgrade requirements unmet; PARTIAL |
+| Corrupted-record controls | Six rejected: wrong output, dispatch on refusal, hidden network, changed authority, substituted task input, repinned goal |
+| Offline package smoke | Build, clean package install, thirteen MCP tools and uninstall pass |
+
+The checker verifies all eight actual task inputs and outputs, not only the runtime's result field. All eleven observed refusals have zero task executions. Saved goal anchors and predicates remain unchanged; current authority and zero network callbacks are checked. Across the 19 fresh processes, seven investigations perform 210 probes. Subsequent same-version direct and goal reuse needs zero probes. Windows and independently operated machines are not tested here. The checker and fixtures share the implementation author; this is reproducible separate checking, not independent-author validation.
+
+Selected measured times, each from one exposed deterministic case:
+
+| Phase | Runtime operation, including state load (ms) | Entire child process (ms) | Probes | Task executions |
+|---|---:|---:|---:|---:|
+| Seed discovery and goal publication | 676.8 | 795.1 | 30 | 1 |
+| Fresh saved-goal reuse | 45.0 | 159.1 | 0 | 1 |
+| Compatible change through saved goal | 824.2 | 945.6 | 30 | 1 |
+| Fresh reuse after that repair | 49.6 | 171.9 | 0 | 1 |
+| Inference upgrade, refused | 728.2 | 855.1 | 30 | 0 |
+| Fresh reuse of upgraded state, refused | 18.5 | 135.3 | 0 | 0 |
+
+All 19 after-cases total 6,470.8 ms of runtime operations and 8,726.1 ms of child-process wall time. Those sums include deliberately separate state branches and refusals; they are not a user-workload cost estimate. No model calls or economic comparison were run in this checkpoint. The unfavorable saved-script and Codex comparisons remain unchanged.
+
+To reproduce the replay from this repository without changing branches or existing evidence, export both frozen sources into new directories. Node 24 and macOS's native sandbox are required for this exposed `/usr/bin/json_xs` experiment. The generic targeted Linux tests use the repository's container sandbox setup instead.
+
+```sh
+replay_root=$(mktemp -d /private/tmp/rcx-samples-replay.XXXXXX)
+mkdir "$replay_root/before-source" "$replay_root/after-source"
+git archive f14763550130a67da491ead5171c3c92379ddc42 src package.json | tar -x -C "$replay_root/before-source"
+git archive 7d431fb8cf3b6f5da76aaf3f7cc4c259f12d955f src package.json | tar -x -C "$replay_root/after-source"
+git diff --exit-code 7d431fb8cf3b6f5da76aaf3f7cc4c259f12d955f -- experiments/north-star/cli-goal-samples.ts experiments/north-star/check-cli-goal-samples.py
+node experiments/north-star/cli-goal-samples.ts "$replay_root/before-source" f14763550130a67da491ead5171c3c92379ddc42 "$replay_root/before"
+node experiments/north-star/cli-goal-samples.ts "$replay_root/after-source" 7d431fb8cf3b6f5da76aaf3f7cc4c259f12d955f "$replay_root/after" "$replay_root/before"
+python3 experiments/north-star/check-cli-goal-samples.py "$replay_root/before" "$replay_root/after"
+```
+
+Run these commands from the repository root, with the two experiment files still matching `7d431fb`; the `git diff` check must pass before proceeding. Both scripts resolve Git history relative to their repository paths. The runner records the current harness commit/hashes as well as the frozen product hashes and refuses mismatched source contents. The expected checker result is PARTIAL with `upgrade` and `upgraded-reuse` unmet, not a clean pass.
+
+Next, establish migration compatibility using retained evidence without treating a new fingerprint as permission or silently changing saved intent. Keep changed-program, revoked-authority and unavailable-sandbox controls binding. That work must also cover persisted state versus exported knowledge before a broad upgrade claim. Then measure whether smaller, sufficient disclosure reduces the observed agent overhead and resume the original unfamiliar challenge. This checkpoint removes the real saved-goal sample blocker; it does not establish the North Star release claim.
