@@ -4,6 +4,8 @@
 
 Latest implementation: [runtime-backed lifecycle and five views](LIVING-LIFECYCLE.md), product `7d5de67`. Six separate dimensions, bounded persisted observations, paginated search and fixture-backed browser checks are implemented. Independent authority decisions, the public-provider challenge, complete traces, large-graph browser evaluation and economic advantage remain open.
 
+Latest security checkpoint: [sandbox resource diagnosis](SANDBOX-RESOURCES.md) corrects observer loss and overlapping polls. Frozen product `997580d` passes 308 native tests, 34 focused Linux checks and 28 proof checks. A short allocation still exceeds its sampled budget and completes; hard native memory containment remains failed. This partial remediation does not close G11/G15 or replace the public-provider challenge.
+
 ## Baseline and ownership
 
 Work remains in `/Users/ross/src/rightclick-x-adaptive`, branch `programme/adaptive-capability-plane`. The audit began at `114d501` with planner product `f0bb7d3`; performance evidence was preserved at `4f7f511` before dashboard edits. The first dashboard metric stage is frozen at **`f20eac7`**. The worktree inventory is [retained](evidence/living-stage2/worktrees.txt); the main checkout and older North Star checkout have unrelated generated changes and were not edited. The collaboration inventory contained only this agent. No new branch, worktree or delegated agent was created.
@@ -74,11 +76,11 @@ These gates do not supersede [the original acceptance matrix](ACCEPTANCE-MATRIX.
 | G8 safe compatible adaptation | PARTIAL | Existing bounded lifecycle passes; live headline workflow and dashboard transition remain |
 | G9 incompatible/removed refusal | PARTIAL | Known changed-action safeguards and removal tests; live status/tombstone display remains |
 | G10 truthful lifecycle visualisation | PARTIAL | Bounded persisted composition/execution/withdrawal observations and five views demonstrated; detailed attempt traces and full challenge remain |
-| G11 complete regression suite | FAIL | Final lifecycle revision 302/302 native and 24/24 focused Linux checks, but the preceding 290/291 memory-limit failure is not diagnosed/remediated; retain failed acceptance until the instability is resolved |
+| G11 complete regression suite | FAIL | Latest observer correction: 308/308 native and 34/34 focused Linux; earlier C2 failure preserved. Short-allocation escape reproduced after the fix; hard resource gate remains failed despite passing regression runs |
 | G12 reproducible headline demo | BLOCKED | Complete vertical slice/evaluator/command not yet implemented; do not relabel the toy demo |
 | G13 actual benchmark cost/correctness | PARTIAL | Preserved adverse agent results and bounded planner measurements; full new lifecycle comparison remains |
 | G14 thirteen-tool compatibility | PASS | Tool list unchanged; authenticated HTTP/interface regressions pass |
-| G15 no high-severity regression | PARTIAL | Hostile labels rendered inert in browser; history changes preserve controls. Unresolved memory failure, comprehensive UI/security evaluation and independent review remain |
+| G15 no high-severity regression | PARTIAL | Hostile labels rendered inert in browser; history changes preserve controls. Observer loss corrected; native memory escape, comprehensive UI/security evaluation and independent review remain |
 | G16 advantage or explicit absence | PASS | Reporting clause only: **advantage not established**. The original goal still requires a demonstrated advantage |
 
 ## Required deliverable tracking
