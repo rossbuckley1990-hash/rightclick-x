@@ -17,6 +17,7 @@ import tempfile
 import threading
 from types import SimpleNamespace
 from urllib.parse import urlsplit
+from uuid import uuid4
 
 sys.dont_write_bytecode = True
 from containment import NAMESPACE, REPO, append, contained, prepare
@@ -149,6 +150,9 @@ def run(output, image):
             boundary.direct_origin = boundary.origin
             checks["resource_receives_no_issuer_signing_environment"] = ready["receivedSigningEnvironment"] == [] and ready["separateReceiptKey"]
             checks["single_resource_listener_no_raw_backend"] = ready["listeners"] == [boundary.origin] and ready["backendListener"] is None
+            listeners = subprocess.run(["/usr/sbin/lsof", "-nP", "-a", "-p", str(ready["pid"]), "-iTCP", "-sTCP:LISTEN", "-F", "pn"], capture_output=True, text=True)
+            (output / "resource-listeners.json").write_text(json.dumps({"pid": ready["pid"], "exit": listeners.returncode, "stdout": listeners.stdout, "stderr": listeners.stderr}, indent=2))
+            checks["os_observes_only_protected_resource_tcp_listener"] = listeners.returncode == 0 and [line[1:] for line in listeners.stdout.splitlines() if line.startswith("n")] == [boundary.origin.removeprefix("http://")]
             build = subprocess.run(["bun", "build", "experiments/actenon/contained-client.ts", "--target", "node", "--outfile", str(stage / "client.mjs")], cwd=REPO, capture_output=True, text=True)
             (output / "build.log").write_text(build.stdout + build.stderr)
             assert build.returncode == 0
@@ -167,9 +171,18 @@ def run(output, image):
             checks["lost_response_fresh_retry_refused"] = r["lostResponse"]["status"] == "failed" and r["lostRetry"]["status"] == "failed"
             checks["agent_cannot_issue_grant_or_reconcile"] = all("error" in r[k] for k in ["selfGrant", "selfReconcile"])
             checks["agent_has_no_secret_mount_or_docker_socket"] = not r["secretEnvironment"] and not r["dockerSocket"] and not r["trustedState"] and r["readOnlyInput"]
-            probes = docker.call(["run", "--rm", "--pull", "never", "--network", "bridge", "--read-only", "--user", "10000:10000",
-                "--cap-drop", "ALL", "--security-opt", "no-new-privileges", "--mount", f"type=bind,src={stage},dst=/input,readonly",
-                "--entrypoint", "node", image_id, "/input/probe.mjs", boundary.origin.replace("127.0.0.1", "host.docker.internal")])
+            probe_name = "rcx-resource-probe-" + uuid4().hex[:12]
+            docker.call(["create", "--name", probe_name, "--network", "bridge", "--read-only", "--user", "10000:10000",
+                "--cap-drop", "ALL", "--security-opt", "no-new-privileges", "--pids-limit", "64", "--memory", "512m", "--cpus", "1",
+                "--mount", f"type=bind,src={stage},dst=/input,readonly", "--entrypoint", "node", image_id, "/input/probe.mjs",
+                boundary.origin.replace("127.0.0.1", "host.docker.internal")])
+            try:
+                info = docker.json(["inspect", probe_name])[0]
+                (output / "network-probe-container.json").write_text(json.dumps({"image": info["Image"], "host": info["HostConfig"], "mounts": info["Mounts"], "user": info["Config"]["User"]}, indent=2))
+                checks["network_probe_has_no_trusted_mounts"] = info["HostConfig"]["NetworkMode"] == "bridge" and info["HostConfig"]["ReadonlyRootfs"] and info["Config"]["User"] == "10000:10000" and len(info["Mounts"]) == 1 and info["Mounts"][0]["Source"] == str(stage) and not info["Mounts"][0]["RW"]
+                probes = docker.call(["start", "-a", probe_name])
+            finally:
+                docker.call(["rm", "-f", probe_name])
             (output / "direct-probes.json").write_text(probes)
             p = json.loads(probes)["results"]
             checks["network_enabled_agent_reaches_same_resource"] = p["publicDocument"]["status"] == 200
@@ -196,14 +209,17 @@ def run(output, image):
             damaged["signature"]["value"] = "A" * len(damaged["signature"]["value"])
             response = boundary.execute(wire, intent, damaged)
             checks["forged_signature_refused_at_resource"] = response["reason"] == "SIGNATURE_INVALID" and not response["ok"]
-            unsupported = copy.deepcopy(proof.to_dict())
-            unsupported["extensions"]["effect"]["profile"] = "unsupported-profile"
+            def minted(audience, extensions):
+                return PCCBMinter(signer=resolve_signer(), issuer=PartyRef(type="service", id="actenon-permit")).mint(intent,
+                    PolicyDecision(outcome="allow", summary="disposable boundary negative control", rule_evaluations=()),
+                    DynamicContextInput(request_id="boundary-negative-control", audience=AudienceRef(type="service", id=audience), scope_capabilities=("http.post",), now=datetime.now(UTC)),
+                    extensions=extensions)
+            unsupported_extensions = copy.deepcopy(proof.extensions)
+            unsupported_extensions["effect"]["profile"] = "unsupported-profile"
+            unsupported = minted("actenon-permit-gateway", unsupported_extensions)
             response = boundary.execute(wire, intent, unsupported)
-            checks["unsupported_profile_refused"] = not response["ok"]
-            foreign = PCCBMinter(signer=resolve_signer(), issuer=PartyRef(type="service", id="actenon-permit")).mint(intent,
-                PolicyDecision(outcome="allow", summary="disposable wrong-audience test", rule_evaluations=()),
-                DynamicContextInput(request_id="wrong-audience", audience=AudienceRef(type="service", id="other-boundary"), scope_capabilities=("http.post",), now=datetime.now(UTC)),
-                extensions=proof.extensions)
+            checks["validly_signed_unsupported_profile_refused"] = not response["ok"] and response["reason"] == "MALFORMED_REQUEST"
+            foreign = minted("other-boundary", proof.extensions)
             response = boundary.execute(wire, intent, foreign)
             checks["valid_foreign_audience_proof_refused"] = response["reason"] == "AUDIENCE_MISMATCH" and not response["ok"]
             checks["mutated_proofs_have_zero_effect"] = [r["label"] for r in rows()] == ["approved", "lost"]
