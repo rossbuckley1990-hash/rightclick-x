@@ -20,7 +20,7 @@ assert accounting['excludedAttempts'] == [s['attemptId'] for s in result['previo
 assert json.loads((root / 'manifest.json').read_text())['programs'] == json.loads((previous / 'manifest.json').read_text())['programs']
 
 
-def summarize(data):
+def summarize(data, data_root):
     groups = {}
     for arm in 'ABCD':
         group = [s for s in data['sessions'] if s['arm'] == arm]
@@ -29,13 +29,15 @@ def summarize(data):
         assert len(group) == 8 and len(warm) == 3 and len(feasible) == 4
         setup_seconds = 0
         for s in group:
-            file = Path(s['evidenceDir']) / 'launch-preflight.json'
+            file = data_root / 'results.json.attempts' / s['attemptId'] / 'launch-preflight.json'
             if file.exists():
                 setup_seconds += json.loads(file.read_text())['seconds']
         groups[arm] = {
             'feasibleCorrect': sum(s['correct'] for s in feasible),
             'prescribedCorrect': sum(s['correct'] for s in group),
             'scorerWrong': sum(s['wrong'] for s in group),
+            'wrongValueAnswers': sum(s['wrong'] and not s['matchesOracle'] for s in group),
+            'correctValuesFailingRefusal': sum(s['wrong'] and s['matchesOracle'] for s in group),
             'coldSeconds': next(s['seconds'] for s in group if s['phase'] == 'first'),
             'warmMedianSeconds': statistics.median(s['seconds'] for s in warm),
             'warmMedianReportedTokens': statistics.median(s['tokens'] for s in warm),
@@ -49,7 +51,7 @@ def summarize(data):
     return groups
 
 
-groups, oldgroups = summarize(result), summarize(old)
+groups, oldgroups = summarize(result, root), summarize(old, previous)
 report = {'freeze': result['commit'], 'developmentOnly': True,
           'scope': 'Same exposed tasks, new fresh sessions; fixed order and uncontrolled service variation. Descriptive only, no causal or monetary claim.',
           'groups': groups, 'previousGroups': oldgroups,

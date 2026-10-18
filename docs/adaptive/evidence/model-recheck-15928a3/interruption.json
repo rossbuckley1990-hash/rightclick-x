@@ -1,0 +1,21 @@
+{
+  "at": "2026-10-18T08:17:02.355680+00:00",
+  "key": "A|json_xs|t1",
+  "attemptId": "74f70d4b-96cc-4f0f-a5af-40bfe48d6921",
+  "status": "INVALID TIMING / INCOMPLETE MODEL SESSION; NOT SCORED AS A BASELINE FAILURE",
+  "recordedSeconds": 6937.8,
+  "configuredDeadlineSeconds": 600,
+  "exit": {
+    "code": 0,
+    "timedOut": true
+  },
+  "observation": {
+    "targetTaskOutputCorrect": true,
+    "sandboxRuntimeMs": 44
+  },
+  "causeEvidence": "Host power logs show sleep/dark-wake cycles during the session and user wake immediately before tool completion. Timer callback was delayed; host-monotonic elapsed is not usable model service latency.",
+  "completedTurnTokens": null,
+  "recoveredReportedTokens": 15723,
+  "usageScope": "Incomplete-session token_count snapshot; not guaranteed final total",
+  "plan": "Preserve this stopped snapshot, resume the exact same freeze/path after fresh no-spend preflight, keep invalid attempt in previousAttempts, and separately reconcile every excluded attempt before using completed-session checker results. No timed-out row is converted into a correct model result."
+}

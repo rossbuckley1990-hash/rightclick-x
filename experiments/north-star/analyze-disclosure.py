@@ -15,11 +15,11 @@ def size(value):
 
 
 def analyze(directory):
-    root = Path(directory)
+    root = Path(directory).resolve()
     result = json.loads((root / 'results.json').read_text())
     rows, hashes = [], {}
     for session in result['sessions']:
-        path = Path(session['evidenceDir']) / 'agent-tools.jsonl'
+        path = root / 'results.json.attempts' / session['attemptId'] / 'agent-tools.jsonl'
         raw = path.read_bytes()
         hashes[str(path)] = hashlib.sha256(raw).hexdigest()
         events = [json.loads(line)['payload'] for line in raw.splitlines() if line]
