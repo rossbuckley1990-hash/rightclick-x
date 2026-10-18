@@ -1,0 +1,103 @@
+# Actenon integration feasibility assessment
+
+2026-10-18. Existing RightClick X programme branch: `programme/adaptive-capability-plane`. Starting baseline remains `03d5bf76c428d3c9ce88caad2737a63ebc2f71cb`; authority implementation is frozen at `3cb8860e29e624fa903149ba6da1b3e334836c18`; reporting checkpoint is `77f95de`. No objective, branch, acceptance criterion or previous evidence was replaced.
+
+**Decision: conditional GO for a bounded, optional integration experiment; NO-GO for a production integration or a containment claim.** Reuse Actenon's authority and execution mechanisms rather than creating another grant issuer, cryptographic verifier, replay store or effect ledger inside RightClick X. Existing RightClick X execution restrictions remain useful defence in depth, but are not independent containment when an agent can change that runtime or use another tool.
+
+## 1. Source and release maturity
+
+These are fresh read-only clones of the five requested public repositories, not assumptions from cached web pages. All five use Apache-2.0 licensing. Exact commits and initial clean state are in [source audit](actenon-source-audit.json). Public registry and GitHub release responses were saved on the audit date in [registry summary](actenon/registry-summary.json).
+
+| Component | Audited commit | Source version | PyPI latest observed | Implication |
+|---|---|---|---|---|
+| Kernel | `da4b534bbee1850b18ce6ffc5d3dccba0c3a5dcf` | 1.3.0 | 1.2.1 | Current edge/effect work is ahead of the published package |
+| Permit | `5290b1304eead3e638c5a4aa1600fa63ba3137e8` | 2.0.0rc1 | 1.4.0 | Release candidate; requires Kernel >=1.3.0 and Protocol >=1.6.0 |
+| Protocol | `8e5bc9e342f694767508bae9a392749c6a8df2cc` | 1.6.0 | 1.4.0 | Consequential-effect wire profile is not in the latest registry package |
+| Airlock | `f998a100748950e05004d22a403c159f1552d686` | 0.1.0.dev0 | No package (404) | Installable source prototype, no published release |
+| Scan | `ee971b43c78ed8b58f5f7fb59382ab20ce9b8a5c` | 1.6.0 | 1.5.0 | New authority-provenance work is source ahead of registry |
+
+A normal registry installation cannot reproduce this source stack today. Airlock additionally pins older exact Kernel/Permit/Protocol commits than these newly audited heads. The tests below deliberately use the five audited heads together with local editable installs; this is a source compatibility experiment, not verification of Airlock's pinned release inputs. We did not modify any Actenon source or publish packages. Kernel's SemVer promise excludes alpha surfaces and does not make every adapter stable. Signed Outcome Attestation is explicitly `v2alpha1`; the TypeScript verifier SDK is 0.2.0 and is intentionally narrower than the Python executor. [Kernel version policy](https://github.com/Actenon/actenon-kernel/blob/da4b534bbee1850b18ce6ffc5d3dccba0c3a5dcf/VERSIONING.md), [Airlock pins](https://github.com/Actenon/actenon-airlock/blob/f998a100748950e05004d22a403c159f1552d686/evidence/dependency-pins.json).
+
+## 2. Functionality to reuse
+
+| Required mechanism | Actual implementation and audit result | Boundary of the claim |
+|---|---|---|
+| Scoped, expiring, attenuable grants | Permit `Grant`, `Scopes`, `PDP`, store-backed revocation and ancestry checks; aggregate delegated budgets have transaction/concurrency tests | Native scopes are action patterns, not a general signed target/parameter-policy language. A fresh exact proof can still authorize a bad action if issuer policy is too broad |
+| Exact-action proof | Kernel `PCCBVerifier`: signatures, validity window, audience/boundary, target, action, parameter digest, declared edge constraints and revocable authority | Verification compares supplied intent with proof. The trusted edge must also bind that intent to the actual request it executes |
+| Credential brokering | Kernel calls `CredentialBroker.acquire` after verification, replay/effect claims and escrow; Permit has credential-reference providers and broker execution | Kernel's default in-memory broker is a demo reference, not a production secret manager. Real credential custody and provider access controls remain deployment work |
+| Replay protection | Kernel durable SQLite replay store; PostgreSQL replay implementation; shared-state/cross-process tests | Stateless verification alone does not consume a proof. Do not use development in-memory replay or fail-open downgrades |
+| Consequential-effect reservation | Protocol `ACTENON-EFFECT-1`; Permit reserves effect and budget; Kernel `EffectProtector` recomputes identity and atomically claims ownership before dispatch | A resource owner must define namespace, identity projection and authoritative store. Exact payload identity is not automatically business-effect identity |
+| Ambiguous outcomes | Permit effect states/settlement and Airlock reconciliation; source tests cover lost replies, held budget and refusal of fresh-proof retries | Generic HTTP 200 does not prove COMMITTED. Provider-specific finality observations may still be needed. Kernel's older generic `OperationReconciler` is absent and two tests skip |
+| Receipts/refusals | Kernel structured artifacts and optional Ed25519 outcome attestation; Airlock signed, chained local receipts | Signature proves origin/integrity, not business truth. Valid-prefix truncation needs an external anchor; receipt signing custody is trusted |
+| Independent execution process | Airlock Protected Mode uses a host supervisor and two network-disabled Linux containers, no standing agent credentials, bounded IPC, inspected mounts and immutable image ID | Development candidate. Cooperative Local Mode is not a hostile-code boundary. Protected Mode has unimplemented acceptance gates and no workspace disk quota |
+| Consequence evidence | Scan has static sink/guard analysis and structured Python authority evidence | Bounded, incomplete static analysis; not a complete capability inventory or proof that all routes are protected |
+
+Source anchors: [executor ordering](https://github.com/Actenon/actenon-kernel/blob/da4b534bbee1850b18ce6ffc5d3dccba0c3a5dcf/actenon/execution/protected_executor.py), [effect verifier](https://github.com/Actenon/actenon-kernel/blob/da4b534bbee1850b18ce6ffc5d3dccba0c3a5dcf/actenon/execution/effects.py), [Permit integration tests](https://github.com/Actenon/actenon-permit/blob/5290b1304eead3e638c5a4aa1600fa63ba3137e8/tests/test_effect_kernel_integration.py), [revocation](https://github.com/Actenon/actenon-permit/blob/5290b1304eead3e638c5a4aa1600fa63ba3137e8/src/actenon_permit/revocation.py), [effect semantics](https://github.com/Actenon/actenon-protocol/blob/8e5bc9e342f694767508bae9a392749c6a8df2cc/protocol/15-consequential-effects.md), [Protected Mode](https://github.com/Actenon/actenon-airlock/blob/f998a100748950e05004d22a403c159f1552d686/docs/protected-mode.md).
+
+## 3. Reproduced tests, failures and limits
+
+[Machine-readable results](actenon/test-summary.json) retain per-case skips and failures. [Audit runner](../../../experiments/actenon/audit.py) records exact commands and commits. Child test processes use fresh homes and an explicit environment without inherited model/cloud credentials. These are independently rerun upstream-authored fixtures, not an independent security certification, a new unfamiliar holdout or a live AI experiment.
+
+- Kernel targeted conformance/security/replay/credential/boundary/independence suite: **522 passed, 2 skipped** after adding the required MCP test extra. The earlier run, 510 passed/14 skipped, is retained. The remaining two skips name the unimplemented generic reconciliation API.
+- Permit targeted adversarial, authority, effect, budget, concurrency, settlement and control-plane suite: **310 passed, zero skips**.
+- Protocol pytest: **346 passed, 22 skipped** because different parametrized test paths handle JSON-text versus Python-object vectors. The standalone runner separately executes **161/161 vectors, zero skips**, and the vector hash lock passes. These counts describe different test units and must not be added as independent cases.
+- Scan targeted authority/coverage/adversarial suite: **141 passed, 7 skipped**. Three skips are explicitly unfixed soundness challenges; three exercise absent Go extras (installed here), and one is a language-inapplicable case. Known misses remain unresolved, not passed.
+- Airlock's first full suite: **196 passed, 2 failed, 1 skipped**. The audit initially installed OpenAI 3.35.1 and Anthropic 1.15.0, outside Airlock's declared `<3` / `<1` ranges. Their newer `httpx2` path attempted native macOS Security-library loading and was denied. This is a retained out-of-range compatibility failure, not evidence of a defect within the declared SDK range. The unchanged suite with declared SDK ranges then passed **198 tests, zero failures, one container-test skip**. Both runs are preserved.
+- Airlock's full container acceptance test is skipped in these runs. A local Linux Docker engine and an existing compute image are available, but availability is not execution evidence. The upstream test contains a remote `git push` attempt, even though intended to be network-blocked. It was not enabled under this programme's no-push instruction. A separately scoped probe with no remote Git operation is required; the original test must not be relabelled passed.
+
+Scan was also run on RightClick X's `src` and `bin`: **39 TypeScript files scanned, zero capabilities and zero findings**. Its separate `authority` command analysed **zero files** because that extractor is Python-only. RightClick X demonstrably has HTTP, local CLI, generated API and federation dispatch paths, so neither result establishes their protection. [Raw static scan](actenon/rightclick-scan.json), [authority extraction](actenon/rightclick-authority.json). Scan can augment source review; it cannot supply the complete RightClick X consequence graph as-is.
+
+## 4. Required trust boundaries and compatibility
+
+Use an optional **resource-owned Actenon boundary**, or a broker outside the agent's OS authority that is the sole credentialed path to the resource. RightClick X supplies a proposed, fully resolved action through a generic transport bridge. It must not issue grants, hold issuer keys, approve itself, select verifier roots or decide whether the external edge can be bypassed. No Actenon cryptographic implementation is copied into RightClick X, and its core remains independently installable with thirteen `context_*` tools.
+
+The operator controls issuer policy, grant/principal identity, permitted action/target/parameter space, boundary audience, credentials, replay/effect stores and reconciliation authority. The resource owner reconstructs the action from the actual request: method, canonical target, all consequential parameters and relevant headers/body, with no undeclared executable hook. It rejects unknown/unmapped consequential fields. Discovery describes availability; it is never a grant-creation event.
+
+Composition and generated REST/GraphQL reuse the same external edge for every leaf. Federation does not transitively trust a peer's ALLOW claim. A changed target, parameter set, action or boundary is a new exact authorization request, even when RightClick X believes the replacement is semantically compatible. Semantic compatibility is not authority compatibility. A proof is single-use execution authority, never reusable capability knowledge.
+
+The Python `ActenonGate`/`ProtectedExecutor` plus durable replay and `EffectProtector` is the strongest starting point. The TypeScript SDK explicitly excludes replay, escrow, receipt generation and provider execution; adding it inside the agent would not supply independent enforcement. Permit Boundary Middleware is configurable: unmatched routes pass through, observe/warn modes allow, and only mapped request fields are bound. Its current Kernel boundary can use shared durable replay, while its older-kernel fallback uses process-local replay. Do not treat the middleware's presence as protection of the whole service. [Middleware source](https://github.com/Actenon/actenon-permit/blob/5290b1304eead3e638c5a4aa1600fa63ba3137e8/src/actenon_permit/boundary/middleware.py), [SDK scope](https://github.com/Actenon/actenon-kernel/blob/da4b534bbee1850b18ce6ffc5d3dccba0c3a5dcf/sdk/typescript/README.md).
+
+Protocol parsing/canonicalization must stay in the maintained Actenon implementation. Ordinary JavaScript JSON parsing can lose number lexemes, duplicate keys and integer precision. Start with supported bounded integer/string values, preserve raw proof bytes, and refuse unsupported profiles or versions. A generic HTTP adapter still requires a reviewed method/target/body mapping; arbitrary CLI effects and hidden service internals cannot be safely inferred from tool descriptions.
+
+## 5. Bypass assessment
+
+| Potential route | Required condition / test | Current status |
+|---|---|---|
+| Direct provider HTTP, SDK, browser session | Backend requires edge-held credentials or verifies proof itself; anonymous/standing-agent credential paths unavailable | Not established for an integrated RightClick X environment |
+| Shell, subprocess, native code, custom tool | Separate OS boundary, no credential/key/store mounts, no alternative egress, no Docker socket; same-user host adversary excluded | Airlock has relevant implementation; our protected runtime probe pending |
+| Generated endpoint or replanning successor | Resolve exact leaf first; fresh proof; all changed target/body/audience cases denied without authority | RCX local policy regressions pass; external integration pending |
+| Federation/second runtime/parallel worker | Resource authenticates caller and exact action independently; shared replay/effect ownership across all effectful edges | Actenon source tests cover local shared stores; RCX federation proof pending |
+| Alternate unlisted route or legacy service | Inventory and close/protect every alias, admin path, queue and legacy integration reachable by the agent | Static Scan cannot prove this complete; deployment obligation |
+| Signer/store/credential theft | Agent cannot read or write operator state, signing keys, credentials or trust roots | Same-user cooperative runtime does not satisfy this |
+| Lost response followed by repair/new proof | Persist ambiguity; deny duplicate effects until trusted reconciliation; new proof IDs do not reset ownership | Permit/Kernel local tests pass; RCX retry interaction pending |
+| Receipt or semantic evidence laundering | Verify signature and exact artifact binding, then separately check requested outcome | Signed authorization alone is never independent outcome verification |
+
+The critical guarantee is conditional: the protected resource has no agent-reachable unprotected route. Neither ecosystem presently proves that condition for an arbitrary authorised environment. This is consistent with [Kernel's own scope statement](https://github.com/Actenon/actenon-kernel/blob/da4b534bbee1850b18ce6ffc5d3dccba0c3a5dcf/docs/SCOPE_AND_GUARANTEES.md).
+
+## 6. Performance implications
+
+On this macOS arm64/Python 3.12.13 host, 1,000 stateless checks per path measured HMAC p50 **0.112 ms**, p99 **0.172 ms**; Ed25519 p50 **0.148 ms**, p99 **0.337 ms**. [Raw result](actenon/verifier-benchmark-test-intent.json). The untouched upstream benchmark failed because `ACTENON_ENV=benchmark` is not accepted development signing intent; that failure is retained. The first wrapper also failed because it omitted module registration required by Python dataclasses; that is an audit harness error, retained separately. The working wrapper calls the same upstream functions with explicit test intent and no upstream edits.
+
+These numbers exclude authority lookup, SQLite fsync/contention, effect claims, signatures on outcomes, IPC/network hops, container startup and provider latency. No end-to-end advantage is established. Expect the optional broker to add deployment and operating cost; measure p50/p95/p99, cold start, throughput, failures and developer setup time before claiming otherwise. Expiring proofs cannot be cached as a reuse optimization. Reusable plans may be cached, but every consequential dispatch still needs current authority and verification.
+
+## 7. Smallest meaningful experiment and next decision
+
+Pre-register one bounded development experiment, separate from fresh holdouts:
+
+1. Freeze the reviewed source commits and RightClick X. Run a disposable resource with ordinary OpenAPI discovery, a private effect store, an independent read-only outcome observer, and a sole resource-owned Actenon execution edge. No RightClick-specific provider reflector is written.
+2. Start RightClick X with no issuer key, provider credential or control-store access. Initially discover read-only capabilities with **no grant**; prove discovery does not authorize an effect.
+3. Operator installs a short-lived grant for one disposable effect and explicit target/parameter limits. RightClick X resolves an action, obtains fresh exact proof through the approved broker and invokes the protected resource. Independently inspect the resource and signed receipt/refusal.
+4. Mutate action, target, parameter/body, audience, grant, expiry and endpoint after issuance. Exercise direct API, composed route, generated endpoint, federation, concurrent worker, revoked grant and process restart. Every prohibited effect counter must remain unchanged.
+5. Lose a response after an observed commit. Demonstrate held ownership and no blind retry; reconcile through the separate observer. Change/remove/return the provider and require new authority for any changed action, even when semantic revalidation succeeds.
+6. Run the agent/runtime inside a verified credential-free OS boundary for the bypass portion. Probe shell/native/alternative-client routes using only disposable/local targets; perform no remote Git or real provider mutations. Report every uninstrumented path as unknown. An uncontained local test cannot pass this gate.
+7. Compare direct authorised tools and a retained script using the **same Actenon edge** with RightClick X. Otherwise the apparent security advantage merely comes from denying the baseline equivalent controls. Record full discovery, authorization, execution, observation, reuse and change costs. Stop widening the integration if the simpler baseline is superior without a compensating measured reliability/maintenance gain.
+
+A successful development result justifies a thin optional transport integration and a new independent holdout freeze. A bypass, ambiguous retry or unauthorised widening blocks promotion. Failure is preserved and fixed generally; exposed targets do not become new holdouts. The first deliverable does not claim the integration or the challenge already exists.
+
+## 8. Commercial assessment
+
+**Potential improvement, not validated demand:** independent resource enforcement separates model-independent authority from model-assisted discovery. That is a more defensible enterprise proposition than an agent-controlled policy toggle. Existing Actenon mechanisms may reduce security engineering duplication and time to pilot while preserving both ecosystems' independent value.
+
+The cost is real: another service/runtime, operator grant configuration, protected-resource deployment, key custody and an unreleased source stack. The integration does not remove the need to model business consequences or independently observe finality. Scan's lack of useful inventory on RightClick X prevents an immediate universal visibility claim. No customer interview, deployment, willingness to pay, lower integration-maintenance cost or advantage over strong coding agents is established by this audit.
+
+Proceed only as an optional module with a tested compatibility manifest. Keep the open core useful without Actenon. Do not add billing, cloud dependencies, a new product brand or copied cryptography. The next commercial falsifier is whether the combined path saves lifecycle engineering/review effort **against a baseline protected by the same boundary**.

@@ -1,0 +1,303 @@
+[
+  {
+    "file": "airlock-20261018T012949.xml",
+    "name": "pytest",
+    "errors": "0",
+    "failures": "2",
+    "skipped": "1",
+    "tests": "199",
+    "time": "70.438",
+    "timestamp": "2026-10-18T02:29:49.776661+01:00",
+    "hostname": "Rosss-MacBook-Air.local",
+    "passed": 196,
+    "skips": [
+      {
+        "test": "test_same_contained_environment_runs_engineering_workflow_and_refuses_bypass",
+        "reason": "Protected container acceptance runs in its required separate CI job"
+      }
+    ],
+    "failuresDetail": [
+      {
+        "test": "test_real_sdk_through_real_permit_kernel_without_live_provider[from openai import OpenAI\\nr=OpenAI().chat.completions.create(model=\"test\", messages=[{\"role\":\"user\",\"content\":\"hello\"}])\\nassert r.choices[0].message.content == \"offline\"\\n-OPENAI_API_KEY-body0]",
+        "reason": "AssertionError: assert 3 == 0\n +  where 3 = launch(PosixPath('/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/pytest-of-ross/pytest-458/test_real_sdk_through_real_per0'), ['main.py'])\n +    where PosixPath('/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/pytest-of-ross/pytest-458/test_real_sdk_through_real_per0') = <actenon_airlock.state.State object at 0x10a8d3c80>.root"
+      },
+      {
+        "test": "test_real_sdk_through_real_permit_kernel_without_live_provider[from anthropic import Anthropic\\nr=Anthropic().messages.create(model=\"test\", max_tokens=10, messages=[{\"role\":\"user\",\"content\":\"hello\"}])\\nassert r.content[0].text == \"offline\"\\n-ANTHROPIC_API_KEY-body1]",
+        "reason": "AssertionError: assert 3 == 0\n +  where 3 = launch(PosixPath('/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/pytest-of-ross/pytest-458/test_real_sdk_through_real_per1'), ['main.py'])\n +    where PosixPath('/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/pytest-of-ross/pytest-458/test_real_sdk_through_real_per1') = <actenon_airlock.state.State object at 0x10a671be0>.root"
+      }
+    ]
+  },
+  {
+    "file": "airlock-20261018T013235.xml",
+    "name": "pytest",
+    "errors": "0",
+    "failures": "0",
+    "skipped": "1",
+    "tests": "199",
+    "time": "79.684",
+    "timestamp": "2026-10-18T02:32:36.014581+01:00",
+    "hostname": "Rosss-MacBook-Air.local",
+    "passed": 198,
+    "skips": [
+      {
+        "test": "test_same_contained_environment_runs_engineering_workflow_and_refuses_bypass",
+        "reason": "Protected container acceptance runs in its required separate CI job"
+      }
+    ],
+    "failuresDetail": []
+  },
+  {
+    "file": "kernel-20261018T012947.xml",
+    "name": "pytest",
+    "errors": "0",
+    "failures": "0",
+    "skipped": "14",
+    "tests": "524",
+    "time": "7.612",
+    "timestamp": "2026-10-18T02:29:48.157211+01:00",
+    "hostname": "Rosss-MacBook-Air.local",
+    "passed": 510,
+    "skips": [
+      {
+        "test": "test_mcp_server_non_demo_refuses_process_local_replay[unset]",
+        "reason": "could not import 'mcp': No module named 'mcp'"
+      },
+      {
+        "test": "test_mcp_server_non_demo_refuses_process_local_replay[prd]",
+        "reason": "could not import 'mcp': No module named 'mcp'"
+      },
+      {
+        "test": "test_mcp_server_non_demo_refuses_process_local_replay[production]",
+        "reason": "could not import 'mcp': No module named 'mcp'"
+      },
+      {
+        "test": "test_mcp_server_non_demo_refuses_undeclared_capabilities[unset]",
+        "reason": "could not import 'mcp': No module named 'mcp'"
+      },
+      {
+        "test": "test_mcp_server_non_demo_refuses_undeclared_capabilities[prd]",
+        "reason": "could not import 'mcp': No module named 'mcp'"
+      },
+      {
+        "test": "test_mcp_server_non_demo_refuses_undeclared_capabilities[production]",
+        "reason": "could not import 'mcp': No module named 'mcp'"
+      },
+      {
+        "test": "test_mcp_demo_is_explicit_development_intent[unset]",
+        "reason": "could not import 'mcp': No module named 'mcp'"
+      },
+      {
+        "test": "test_mcp_demo_is_explicit_development_intent[development]",
+        "reason": "could not import 'mcp': No module named 'mcp'"
+      },
+      {
+        "test": "test_mcp_demo_is_explicit_development_intent[dev]",
+        "reason": "could not import 'mcp': No module named 'mcp'"
+      },
+      {
+        "test": "test_mcp_demo_is_explicit_development_intent[test]",
+        "reason": "could not import 'mcp': No module named 'mcp'"
+      },
+      {
+        "test": "test_mcp_demo_refused_outside_development[prd]",
+        "reason": "could not import 'mcp': No module named 'mcp'"
+      },
+      {
+        "test": "test_mcp_demo_refused_outside_development[production]",
+        "reason": "could not import 'mcp': No module named 'mcp'"
+      },
+      {
+        "test": "test_5_unauthorised_reconciliation_is_denied",
+        "reason": "Reconciliation module not yet implemented (Phase 4B)"
+      },
+      {
+        "test": "test_6_reconciliation_cannot_mutate_original_action",
+        "reason": "Reconciliation module not yet implemented (Phase 4B)"
+      }
+    ],
+    "failuresDetail": []
+  },
+  {
+    "file": "kernel-20261018T013137.xml",
+    "name": "pytest",
+    "errors": "0",
+    "failures": "0",
+    "skipped": "2",
+    "tests": "524",
+    "time": "7.248",
+    "timestamp": "2026-10-18T02:31:37.667116+01:00",
+    "hostname": "Rosss-MacBook-Air.local",
+    "passed": 522,
+    "skips": [
+      {
+        "test": "test_5_unauthorised_reconciliation_is_denied",
+        "reason": "Reconciliation module not yet implemented (Phase 4B)"
+      },
+      {
+        "test": "test_6_reconciliation_cannot_mutate_original_action",
+        "reason": "Reconciliation module not yet implemented (Phase 4B)"
+      }
+    ],
+    "failuresDetail": []
+  },
+  {
+    "file": "permit-20261018T012948.xml",
+    "name": "pytest",
+    "errors": "0",
+    "failures": "0",
+    "skipped": "0",
+    "tests": "310",
+    "time": "4.107",
+    "timestamp": "2026-10-18T02:29:49.095875+01:00",
+    "hostname": "Rosss-MacBook-Air.local",
+    "passed": 310,
+    "skips": [],
+    "failuresDetail": []
+  },
+  {
+    "file": "protocol-20261018T012948.xml",
+    "name": "pytest",
+    "errors": "0",
+    "failures": "0",
+    "skipped": "22",
+    "tests": "368",
+    "time": "1.357",
+    "timestamp": "2026-10-18T02:29:49.094879+01:00",
+    "hostname": "Rosss-MacBook-Air.local",
+    "passed": 346,
+    "skips": [
+      {
+        "test": "test_invalid_canonicalisation[deeply_nested_exceeds_limit.json]",
+        "reason": "vector 'deeply_nested_exceeds_limit.json' has no 'input' field (uses input_json or is Python-only)"
+      },
+      {
+        "test": "test_invalid_canonicalisation[duplicate_keys.json]",
+        "reason": "vector 'duplicate_keys.json' has no 'input' field (uses input_json or is Python-only)"
+      },
+      {
+        "test": "test_invalid_canonicalisation[escaped_duplicate_member.json]",
+        "reason": "vector 'escaped_duplicate_member.json' has no 'input' field (uses input_json or is Python-only)"
+      },
+      {
+        "test": "test_invalid_canonicalisation[float_deep_nested.json]",
+        "reason": "vector 'float_deep_nested.json' has no 'input' field (uses input_json or is Python-only)"
+      },
+      {
+        "test": "test_invalid_canonicalisation[float_exponent.json]",
+        "reason": "vector 'float_exponent.json' has no 'input' field (uses input_json or is Python-only)"
+      },
+      {
+        "test": "test_invalid_canonicalisation[float_in_array.json]",
+        "reason": "vector 'float_in_array.json' has no 'input' field (uses input_json or is Python-only)"
+      },
+      {
+        "test": "test_invalid_canonicalisation[float_in_object.json]",
+        "reason": "vector 'float_in_object.json' has no 'input' field (uses input_json or is Python-only)"
+      },
+      {
+        "test": "test_invalid_canonicalisation[float_infinity.json]",
+        "reason": "vector 'float_infinity.json' has no 'input' field (uses input_json or is Python-only)"
+      },
+      {
+        "test": "test_invalid_canonicalisation[float_nan.json]",
+        "reason": "vector 'float_nan.json' has no 'input' field (uses input_json or is Python-only)"
+      },
+      {
+        "test": "test_invalid_canonicalisation[float_neg_infinity.json]",
+        "reason": "vector 'float_neg_infinity.json' has no 'input' field (uses input_json or is Python-only)"
+      },
+      {
+        "test": "test_invalid_canonicalisation[float_top_level.json]",
+        "reason": "vector 'float_top_level.json' has no 'input' field (uses input_json or is Python-only)"
+      },
+      {
+        "test": "test_invalid_canonicalisation[float_zero.json]",
+        "reason": "vector 'float_zero.json' has no 'input' field (uses input_json or is Python-only)"
+      },
+      {
+        "test": "test_invalid_canonicalisation[non_string_key.json]",
+        "reason": "vector 'non_string_key.json' has no 'input' field (uses input_json or is Python-only)"
+      },
+      {
+        "test": "test_invalid_canonicalisation[oversized_structure.json]",
+        "reason": "vector 'oversized_structure.json' has no 'input' field (uses input_json or is Python-only)"
+      },
+      {
+        "test": "test_invalid_canonicalisation[rounded_fractional_number.json]",
+        "reason": "vector 'rounded_fractional_number.json' has no 'input' field (uses input_json or is Python-only)"
+      },
+      {
+        "test": "test_invalid_canonicalisation[unsupported_type_bytes.json]",
+        "reason": "vector 'unsupported_type_bytes.json' has no 'input' field (uses input_json or is Python-only)"
+      },
+      {
+        "test": "test_invalid_canonicalisation[unsupported_type_set.json]",
+        "reason": "vector 'unsupported_type_set.json' has no 'input' field (uses input_json or is Python-only)"
+      },
+      {
+        "test": "test_invalid_canonicalisation_json_vectors[duplicate_keys.json]",
+        "reason": "vector 'duplicate_keys.json' has no input_json field"
+      },
+      {
+        "test": "test_invalid_canonicalisation_json_vectors[non_string_key.json]",
+        "reason": "vector 'non_string_key.json' has no input_json field"
+      },
+      {
+        "test": "test_invalid_canonicalisation_json_vectors[oversized_structure.json]",
+        "reason": "vector 'oversized_structure.json' has no input_json field"
+      },
+      {
+        "test": "test_invalid_canonicalisation_json_vectors[unsupported_type_bytes.json]",
+        "reason": "vector 'unsupported_type_bytes.json' has no input_json field"
+      },
+      {
+        "test": "test_invalid_canonicalisation_json_vectors[unsupported_type_set.json]",
+        "reason": "vector 'unsupported_type_set.json' has no input_json field"
+      }
+    ],
+    "failuresDetail": []
+  },
+  {
+    "file": "scan-20261018T012949.xml",
+    "name": "pytest",
+    "errors": "0",
+    "failures": "0",
+    "skipped": "7",
+    "tests": "148",
+    "time": "2.082",
+    "timestamp": "2026-10-18T02:29:49.341414+01:00",
+    "hostname": "Rosss-MacBook-Air.local",
+    "passed": 141,
+    "skips": [
+      {
+        "test": "test_go_guard_state[defeated_try_except_swallow]",
+        "reason": "Go has no try/catch; defer-recover does not defeat the guard (panic unwinds)"
+      },
+      {
+        "test": "test_go_directory_reports_unsupported_without_extra",
+        "reason": "[go] extra is installed \u2014 Go is supported"
+      },
+      {
+        "test": "test_go_shows_install_hint_when_extra_absent",
+        "reason": "[go] extra is installed \u2014 Go is supported"
+      },
+      {
+        "test": "test_single_go_file_reports_unsupported_without_extra",
+        "reason": "[go] extra is installed \u2014 Go is supported"
+      },
+      {
+        "test": "test_challenge_challenge-001",
+        "reason": "Open challenge case \u2014 not yet fixed (see scoreboard)"
+      },
+      {
+        "test": "test_challenge_challenge-002",
+        "reason": "Open challenge case \u2014 not yet fixed (see scoreboard)"
+      },
+      {
+        "test": "test_challenge_challenge-005",
+        "reason": "Open challenge case \u2014 not yet fixed (see scoreboard)"
+      }
+    ],
+    "failuresDetail": []
+  }
+]
