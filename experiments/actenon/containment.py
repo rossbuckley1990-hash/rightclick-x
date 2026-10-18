@@ -153,6 +153,12 @@ class Boundary:
                                                         lambda request: self.descriptor(request.intent))
         return ActenonGate(**{**defaults, **options})
 
+    def request_bounds(self, wire, body):
+        method, url = wire["method"], wire["url"]
+        read = method == "GET" and url == self.origin + "/openapi.json" and not body
+        write = self.writes and method == "POST" and url == self.origin + "/entries" and body in (b'{"label":"approved"}', b'{"label":"lost"}')
+        return read or write, write
+
     def issue(self, wire):
         if set(wire) != {"method", "url", "headers", "body"}:
             raise ValueError("unsupported request profile")
@@ -160,9 +166,8 @@ class Boundary:
             raise ValueError("unsupported header")
         body = base64.b64decode(wire["body"], validate=True)
         method, url = wire["method"], wire["url"]
-        read = method == "GET" and url == self.origin + "/openapi.json" and not body
-        write = self.writes and method == "POST" and url == self.origin + "/entries" and body in (b'{"label":"approved"}', b'{"label":"lost"}')
-        if not (read or write):
+        allowed, write = self.request_bounds(wire, body)
+        if not allowed:
             raise ValueError("outside operator-approved exact request bounds")
         grant = self.store.get_grant(self.grant.id)
         action = Action(grant_id=grant.id, type="http." + method.lower(), target=url,
@@ -188,7 +193,8 @@ class Boundary:
             url = urlsplit(wire["url"])
             connection = http.client.HTTPConnection(url.hostname, url.port, timeout=3)
             try:
-                connection.request(wire["method"], url.path, body=base64.b64decode(wire["body"], validate=True), headers=wire["headers"])
+                target = (url.path or "/") + ("?" + url.query if url.query else "")
+                connection.request(wire["method"], target, body=base64.b64decode(wire["body"], validate=True), headers=wire["headers"])
                 received = connection.getresponse()
                 response.update(status=received.status, headers=dict(received.getheaders()), body=base64.b64encode(received.read(LIMIT)).decode())
             finally:
@@ -226,7 +232,7 @@ class Boundary:
         return result
 
 
-def contained(docker, image, stage, boundary, phase, state):
+def contained(docker, image, stage, boundary, phase, state, *, task=None):
     name = "rcx-actenon-" + uuid4().hex[:12]
     docker.call(["create", "--name", name, "-i", "--network", "none", "--read-only", "--user", "10000:10000",
                  "--cap-drop", "ALL", "--security-opt", "no-new-privileges", "--pids-limit", "64", "--memory", "512m", "--cpus", "1",
@@ -244,7 +250,7 @@ def contained(docker, image, stage, boundary, phase, state):
         with (boundary.output / f"client-{phase}.stderr.log").open("x") as errors:
             process = subprocess.Popen([docker.binary, "start", "-a", "-i", name], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=errors, env=docker.environment)
             process.stdin.write((json.dumps({"config": {"phase": phase, "origin": boundary.origin,
-                "directOrigin": boundary.direct_origin, "state": state}}) + "\n").encode())
+                "directOrigin": boundary.direct_origin, "state": state, "task": task}}) + "\n").encode())
             process.stdin.flush()
             selector = selectors.DefaultSelector()
             selector.register(process.stdout, selectors.EVENT_READ)
@@ -287,7 +293,7 @@ def contained(docker, image, stage, boundary, phase, state):
         docker.call(["rm", "-f", name])
 
 
-def run(output, image):
+def prepare(output, image):
     # This experiment uses unreleased surfaces. Refuse a different source stack
     # until it has been audited; a successful import is not a compatibility check.
     import importlib
@@ -310,6 +316,11 @@ def run(output, image):
     (output / "sources").mkdir()
     for name in provenance["sources"]:
         shutil.copyfile(Path(__file__).parent / name, output / "sources" / name)
+    return docker, image_id
+
+
+def run(output, image):
+    docker, image_id = prepare(output, image)
     with tempfile.TemporaryDirectory(prefix="rcx-actenon-private-") as temporary:
         private = Path(temporary)
         stage = private / "stage"

@@ -76,3 +76,21 @@ This experiment does not install an Actenon dependency into RightClick X. Its
 generic fetch bridge and trusted fixture boundary remain under `experiments/`.
 The [experiment assessment](../../docs/north-star/evidence/ACTENON-INTEGRATION-EXPERIMENT.md)
 records the narrower scope and unpassed preregistered cases.
+
+## Reproduce retained-capability lifecycle checks
+
+Use the same pinned environment and a new output directory:
+
+```sh
+/absolute/audit-root/.venv/bin/python experiments/actenon/lifecycle.py \
+  --image rightclick-x-linux-test:latest \
+  --output /absolute/new-lifecycle-evidence-directory
+```
+
+The suite discovers ordinary OpenAPI surfaces, publishes a verified append-and-
+fingerprint workflow, reuses it in fresh Node processes, exercises generated and
+federated entry points, changes/removes/returns the provider, and checks actual
+effects through a separate observer. The fixture's operator bounds are fixed
+independently of discovery; only an explicit host transition approves the moved
+target and installs a new grant. This uses no live models or remote resources.
+See [results and limits](../../docs/north-star/evidence/ACTENON-LIFECYCLE-RESULT.md).

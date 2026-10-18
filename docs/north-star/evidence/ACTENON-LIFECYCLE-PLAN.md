@@ -30,3 +30,17 @@ source commits and the same no-network container boundary. Production credential
 brokering, resource-owned enforcement against uncontained callers, real model
 replacement, multiple independent workers and fair economic benchmarks remain
 separate gates. These tests must not be used as evidence for those claims.
+
+Development corrections (original expectations above remain binding): the first
+observer had a syntax error; the first running observer exposed query stripping
+in the transport bridge. A later harness assumption incorrectly expected a
+single-step goal to crystallize: RightClick deliberately crystallizes only
+multi-step plans. The workflow now appends **and fingerprints** a label, using
+the existing SHA-256 builtin; the observer verifies both journal presence and
+the computed hash. This exercises a real two-step composite rather than adding
+a fabricated saved capability. The exact expected effect sequence is unchanged.
+
+The moved-target check observes external authority denial, not a claim that
+semantic matching rejects every URL change. At the explicit operator transition
+the old grant is revoked, a new grant is installed and the newly issued proof
+must reference it. This strengthens the existing exact-action expectation.
