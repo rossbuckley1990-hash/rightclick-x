@@ -1,7 +1,7 @@
 // Development transport for the unchanged North Star tasks/sandbox/scoring.
 // ChatGPT subscription only. A current read-only allowance preflight is required by run-codex.ts.
 import { spawn } from "node:child_process";
-import { mkdtempSync, readFileSync, readdirSync, realpathSync, writeFileSync } from "node:fs";
+import { appendFileSync, mkdtempSync, readFileSync, readdirSync, realpathSync, writeFileSync } from "node:fs";
 import { tmpdir, homedir } from "node:os";
 import { join } from "node:path";
 import { subscriptionEnvironment, type Session } from "./common.ts";
@@ -65,10 +65,12 @@ export async function codexSession(opts: { prompt: string; servers: Record<strin
   args.push(opts.prompt);
   writeFileSync(join(opts.evidenceDir, "agent-invocation.json"), JSON.stringify({ command: "codex", args, cwd: work, timeoutMs: opts.timeoutMs ?? 600_000, environmentKeys: Object.keys(subscriptionEnvironment(process.env)).sort() }, null, 2));
   const started = performance.now();
+  writeFileSync(join(opts.evidenceDir, "agent.stdout"), "", { flag: "wx" });
+  writeFileSync(join(opts.evidenceDir, "agent.stderr"), "", { flag: "wx" });
   const child = spawn("codex", args, { cwd: work, env: subscriptionEnvironment(process.env), detached: true, stdio: ["ignore", "pipe", "pipe"] });
   let stdout = "", stderr = "", timedOut = false;
-  child.stdout.on("data", data => stdout += data);
-  child.stderr.on("data", data => stderr += data);
+  child.stdout.on("data", data => { stdout += data; appendFileSync(join(opts.evidenceDir, "agent.stdout"), data); });
+  child.stderr.on("data", data => { stderr += data; appendFileSync(join(opts.evidenceDir, "agent.stderr"), data); });
   const kill = () => { try { if (child.pid) process.kill(-child.pid, "SIGTERM"); } catch {} };
   let hard: ReturnType<typeof setTimeout> | undefined;
   const timer = setTimeout(() => { timedOut = true; kill(); hard = setTimeout(() => { try { if (child.pid) process.kill(-child.pid, "SIGKILL"); } catch {} }, 3000); }, opts.timeoutMs ?? 600_000);

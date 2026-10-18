@@ -12,6 +12,7 @@ import { assessObservation, sha256 } from "./observation.ts";
 import { OUT, extract, matches, readJsonl, type Task } from "./common.ts";
 
 import { codexSession } from "./codex-session.ts";
+import { hostSandbox } from "../../src/core/sandbox.ts";
 
 const args = process.argv.slice(2);
 const TAG = args[0];
@@ -24,6 +25,9 @@ const RESULTS = opt("out") ?? `${OUT}/benchmark-${TAG}.json`;
 const ARMS = (opt("arms") ?? "A,B,C,D").split(",");
 const ONLY = opt("programs")?.split(",");
 const MODEL = "gpt-6.1-sol";
+const sessionLimit = Number(opt("session-limit") ?? Infinity);
+if (!(sessionLimit > 0) || (sessionLimit !== Infinity && !Number.isSafeInteger(sessionLimit))) throw new Error("invalid session limit");
+let completedNow = 0;
 
 if (!TAG || ARMS.some(a => !["A", "B", "C", "D"].includes(a)) || new Set(ARMS).size !== ARMS.length) throw new Error("freeze commit and distinct A/B/C/D arms required");
 const COMMIT = execFileSync("git", ["rev-parse", "--verify", "--end-of-options", `${TAG}^{commit}`], { encoding: "utf8" }).trim();
@@ -127,7 +131,9 @@ for (const p of holdout.programs) {
     if (!/^[a-zA-Z0-9_.-]+$/.test(p.name) || [".", ".."].includes(p.name) || typeof p.path !== "string" || !p.path.startsWith("/")) throw new Error("invalid holdout program path/name");
     // Persistent state belongs to this result set, never another run of the same commit.
     const ENV = `${evidenceRoot}/state/${arm}/${p.name}`;
-    const BIN = `${ENV}/bin`;
+    // The private evidence/state tree is under /Users, deliberately unreadable to
+    // the target sandbox. Only disposable executable aliases belong in /tmp.
+    const BIN = `${realpathSync(tmpdir())}/ns-codex-bins-${sha256(RESULTS).slice(0, 20)}/${arm}/${p.name}`;
     const bin = `${BIN}/${p.name}`;
     mkdirSync(BIN, { recursive: true });
     for (const s of steps(p)) {
@@ -144,12 +150,21 @@ for (const p of holdout.programs) {
       symlinkSync(p.path, bin);
       for (const prior of steps(p).filter((x) => x.mutate && order.indexOf(x.step) <= idx)) prior.mutate!(bin, p.path);
       if (done(key)) continue;
+      if (existsSync(`${RESULTS}.stop`)) { console.log("operator stop marker present; preserving attempts"); process.exit(2); }
       const attemptId = randomUUID();
       const dir = `${evidenceRoot}/${attemptId}`;
       mkdirSync(dir);
       const log = `${dir}/calls.jsonl`;
       const observationLog = `${dir}/sandbox.jsonl`;
       writeFileSync(`${dir}/request.json`, JSON.stringify({ key, attemptId, commit: COMMIT, holdoutSha256, model: MODEL, task: s.task, prompt: prompt(arm, p, bin, s.task) }, null, 2));
+      if (["first", "reuse", "compatible-change"].includes(s.phase)) {
+        const sandbox = await hostSandbox();
+        if (!sandbox || !s.task.reference) throw new Error("usable oracle sandbox required before model execution");
+        const started = performance.now();
+        const probe = await sandbox.run(bin, s.task.reference.argv, { stdin: s.task.input.stdin, files: s.task.input.files });
+        writeFileSync(`${dir}/launch-preflight.json`, JSON.stringify({ bin, kind: sandbox.kind, seconds: (performance.now() - started) / 1000, result: probe }, null, 2));
+        if (probe.code !== 0 || probe.timedOut || probe.truncated || probe.limit || !matches(s.task, probe.stdout)) throw new Error("oracle preflight failed; no model call made for this attempt");
+      }
       const servers =
         arm === "D"
           ? { "rightclick-x": { command: process.execPath, args: [CANDIDATE], env: { RCX_OBSERVATION_LOG: observationLog, RCX_SESSION_ID: attemptId, RCX_STATE_FILE: `${ENV}/state.json`, RCX_MCP_LOG: log, RCX_INVESTIGATE: bin } } }
@@ -157,6 +172,7 @@ for (const p of holdout.programs) {
       const r = await codexSession({ prompt: prompt(arm, p, bin, s.task), servers, allowed: arm === "D" ? "mcp__rightclick-x" : "mcp__surface", model: MODEL, evidenceDir: dir });
       const calls = readJsonl(log);
       const observation = assessObservation(observationLog, attemptId, bin, s.task);
+      if (!r.blocked && ["first", "reuse", "compatible-change"].includes(s.phase) && readJsonl(observationLog).some((e: any) => e.type === "finished" && [126, 127].includes(e.result?.code))) r.blocked = "launcher failure: inspect environment before resuming";
       const executed = observation.targetExecuted;
       const { answer, unable } = extract(r.reply);
       const matchesOracle = answer !== undefined && s.task.kind === "feasible" && matches(s.task, answer);
@@ -185,6 +201,7 @@ for (const p of holdout.programs) {
         console.log("blocked: stopping; retain this attempt and inspect the reason before resuming");
         process.exit(2);
       }
+      if (++completedNow >= sessionLimit) { console.log("requested session checkpoint reached; resume the same freeze to continue"); process.exit(0); }
     }
   }
 }
