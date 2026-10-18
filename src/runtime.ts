@@ -14,6 +14,7 @@ import { checkProgram, sameProgram } from "./core/programs.ts";
 import { isSensitiveName, scrub, sensitiveValues } from "./core/secrets.ts";
 import { investigateCli, replayExamples, validateOptions, type Investigation } from "./reflectors/cli.ts";
 import { KNOWLEDGE_FORMAT, type ImportReport, type KnowledgeBundle } from "./core/knowledge.ts";
+import { assessExecution, consequentialRisks, ExecutionDenied, intersectOrigins, parseExecutionPolicy, type ExecutionPolicy } from "./core/execution-policy.ts";
 import { distance, inferType, inspectValue, type Inspection } from "./core/semantics.ts";
 import type { Capability, CapabilityAnchor, FetchLike, PlanStep, Reflection, SemType } from "./core/types.ts";
 import { check, pick, type Predicate, type PredicateResult, type OutcomeWitness, type WitnessResult } from "./core/verify.ts";
@@ -111,6 +112,8 @@ export interface RuntimeOptions {
 }
 
 export interface OperatorAuthority {
+  /** Restrictions across all mediated execution paths; only operator configuration sets them. */
+  execution?: ExecutionPolicy;
   /**
    * How destructive capabilities are authorised:
    * - "operator" (default): only capabilities the operator approved (`approve`), and only when the
@@ -321,6 +324,7 @@ export class RightClick {
   private runCounter = 0;
   private destructivePolicy: "operator" | "agent-confirm" | "allow" = "operator";
   private approvals: string[] = [];
+  private executionPolicy: ExecutionPolicy;
   /** The last investigation of each local program (evidence for context_explain / audits). */
   investigations = new Map<string, Investigation>();
   private retrySafe: string[] = [];
@@ -332,11 +336,13 @@ export class RightClick {
   private hashCache = new Map<string, { key: string; sha256: string }>();
 
   private constructor(opts: RuntimeOptions) {
+    this.executionPolicy = parseExecutionPolicy(opts.authority?.execution);
+    const origins = intersectOrigins(opts.network?.origins, this.executionPolicy.allowedOrigins);
     this.net = {
       fetch: opts.fetch ?? ((i, init) => fetch(i, init)),
       auth: opts.auth ?? new Authority(),
       timeoutMs: opts.timeoutMs ?? 20_000,
-      policy: opts.network,
+      policy: origins === undefined ? opts.network : { blockPrivate: false, ...opts.network, origins },
     };
     this.directories = opts.directories ?? DEFAULT_DIRECTORIES;
     this.info = { ...detectRuntime(), region: opts.region };
@@ -665,6 +671,7 @@ export class RightClick {
     const prov = this.graph.providers.get(c.provider);
     return {
       card: this.card(c),
+      execution: this.executionAssessment(c),
       capability: c,
       // The full investigation log is evidence, not something every agent needs to read.
       provider: prov ? { ...prov, meta: prov.meta?.investigation ? { ...prov.meta, investigation: (prov.meta.investigation as Investigation).summary } : prov.meta } : undefined,
@@ -827,7 +834,7 @@ export class RightClick {
     if (!cap) throw new Error(`unknown capability: ${id}`);
     // Destructive effects keep the user's authority. The agent may ask (confirm), but under the
     // default policy only an operator's approval, made in configuration, authorises the capability.
-    if (cap.risk === "destructive" && this.destructivePolicy !== "allow") {
+    if (consequentialRisks(cap).includes("destructive") && this.destructivePolicy !== "allow") {
       if (this.destructivePolicy === "operator" && !this.approved(cap.id)) throw new ConfirmationRequired(cap.id, cap.title, true);
       if (!opts.confirm) throw new ConfirmationRequired(cap.id, cap.title);
     }
@@ -849,6 +856,7 @@ export class RightClick {
     let attempts: RunRecord["attempts"];
     let healing: RunRecord["healing"];
     try {
+      this.assertExecution(cap);
       if (refused) throw new Error(refused);
       const coerced = coerceArgs(cap, args);
       if (cap.invoke.kind === "goal") {
@@ -874,7 +882,7 @@ export class RightClick {
         } catch (e) {
           // A caller's own mistake (an undocumented option, a literal that looks like an option)
           // says nothing about the provider: no repair, no re-investigation.
-          if (opts.planned || !HEALABLE.has(cap.invoke.kind) || /HTTP 400 equivalent|is not one this program documents|needs a value/.test(String((e as Error)?.message ?? e))) throw e;
+          if (e instanceof ExecutionDenied || opts.planned || !HEALABLE.has(cap.invoke.kind) || /HTTP 400 equivalent|is not one this program documents|needs a value/.test(String((e as Error)?.message ?? e))) throw e;
           const h = await this.healRun(cap, args, String((e as Error)?.message ?? e), opts.net);
           healing = h.healing;
           if (!h.healed) throw new Error(`${healing.error}; ${healing.note}`);
@@ -893,7 +901,7 @@ export class RightClick {
     const ok = !error && verification.status !== "refuted";
     // A refusal says nothing about how the operation behaves.
     // Recorded experience is persisted: errors that echo a credential are stored without it.
-    if (!refused) this.ledger.record(cap.id, ok, durationMs, error ? scrub(error, sensitiveValues(args)) : error);
+    if (!refused && !error?.includes("blocked by execution policy")) this.ledger.record(cap.id, ok, durationMs, error ? scrub(error, sensitiveValues(args)) : error);
     // Identifier values a successful call accepted and returned link ports across providers.
     if (ok && cap.invoke.kind !== "composite" && cap.invoke.kind !== "goal" && this.graph.identities.observe(cap, args, output)) this.graph.relink();
     const receipt = await this.chain.append(
@@ -1077,7 +1085,8 @@ export class RightClick {
     if (!Array.isArray(witnesses) || witnesses.length > 16) throw new Error("witnesses must be an array of at most 16 checks");
     return witnesses.map((w) => {
       const c = this.graph.get(w.capability);
-      if (!c || c.risk !== "read" || c.invoke.kind === "goal" || c.invoke.kind === "composite") throw new Error(`witness must be an available read-only provider capability: ${w.capability}`);
+      if (!c || consequentialRisks(c).some((r) => r !== "read") || c.invoke.kind === "goal" || c.invoke.kind === "composite") throw new Error(`witness must be an available read-only provider capability: ${w.capability}`);
+      this.assertExecution(c);
       if (!Array.isArray(w.verify) || !w.verify.length) throw new Error(`witness needs nonempty verification predicates: ${w.capability}`);
       if (w.contract && w.contract !== signature(c)) throw new Error(`witness contract changed: ${w.capability}; establish a new check explicitly`);
       for (const binding of Object.values(w.args ?? {})) {
@@ -1240,8 +1249,8 @@ export class RightClick {
       seen.add(c.id);
       return c.invoke.steps.some((s) => { const child = this.graph.get(s.capability); return !!child && containsActive(child, seen); });
     };
-    const blocked = new Set(this.graph.list().filter((c) => containsActive(c)).map((c) => c.id));
-    const origins = opts.origins?.length ? opts.origins.map((o) => new URL(o).origin) : undefined;
+    const blocked = new Set(this.graph.list().filter((c) => containsActive(c) || !this.executionAssessment(c).allowed).map((c) => c.id));
+    const origins = intersectOrigins(this.net.policy?.origins, opts.origins?.map((o) => new URL(o).origin));
     // Everything this goal does on the network - its steps, checks and repairs, including
     // every redirect hop - goes through a handle that enforces the caller's origins.
     const net: Net = origins ? { ...this.net, policy: { blockPrivate: false, ...this.net.policy, origins } } : this.net;
@@ -1553,6 +1562,10 @@ export class RightClick {
   private async executeGoal(slug: string, args: Record<string, unknown>, confirm?: boolean, activeGoals: string[] = []): Promise<ComposeResult> {
     const g = this.published.get(slug);
     if (!g) throw new Error(`no published goal: ${slug}`);
+    const capability = this.graph.get(`goal:${slug}`);
+    if (!capability) throw new Error(`saved goal is unavailable: ${slug}`);
+    // Generated REST/GraphQL enter here directly rather than through run().
+    this.assertExecution(capability);
     if (activeGoals.includes(slug) || activeGoals.length >= 8) throw new Error(`recursive saved goal: ${slug}`);
     // Older persisted goals can acquire descriptors only while their original
     // anchors still exist. Missing old ids fail explicitly rather than weaken.
@@ -1678,6 +1691,13 @@ export class RightClick {
   }
 
   private async runSteps(steps: PlanStep[], resultRef: string, inputs: Record<string, unknown>, confirm?: boolean, activeGoals?: string[], net?: Net) {
+    // Check every known dependency before the first effect, including nested composites.
+    for (const step of steps) {
+      const cap = this.graph.get(step.capability);
+      if (!cap) throw new StepError(step.capability, `missing capability ${step.capability}`);
+      try { this.assertExecution(cap); }
+      catch (e) { throw new StepError(cap.id, String((e as Error).message)); }
+    }
     const outputs: unknown[] = [];
     const runs: string[] = [];
     const fanOuts: FanOutReport[] = [];
@@ -1738,6 +1758,8 @@ export class RightClick {
 
   graphQuery(opts: { op: string; id?: string; query?: string; from?: SemType; to?: SemType; limit?: number }) {
     switch (opts.op) {
+      case "authority":
+        return this.auditExecution();
       case "stats":
         return { providers: this.graph.providers.size, ...this.graph.powers() };
       case "types":
@@ -1757,7 +1779,7 @@ export class RightClick {
       case "edges":
         return this.graph.sampleEdges(opts.limit ?? 2000);
       default:
-        throw new Error(`unknown graph op: ${opts.op} (stats|types|search|neighbors|paths|export|knowledge|edges)`);
+        throw new Error(`unknown graph op: ${opts.op} (stats|types|search|neighbors|paths|export|knowledge|edges|authority)`);
     }
   }
 
@@ -1901,6 +1923,32 @@ export class RightClick {
 
   // ================================================================ execution
 
+  private executionAssessment(cap: Capability) {
+    return assessExecution(cap, this.graph, this.executionPolicy);
+  }
+
+  private assertExecution(cap: Capability) {
+    const assessment = this.executionAssessment(cap);
+    if (!assessment.allowed) throw new ExecutionDenied(assessment);
+  }
+
+  /** Analysis covers this runtime's mediated capabilities, not other tools an agent may possess. */
+  auditExecution() {
+    const capabilities = this.graph.list().map((c) => {
+      const assessment = this.executionAssessment(c);
+      return { ...assessment, provider: c.provider, invocation: c.invoke.kind,
+        destructiveApproval: consequentialRisks(c).includes("destructive") ? { mode: this.destructivePolicy, operatorApproved: this.approved(c.id), callerConfirmationRequired: this.destructivePolicy !== "allow" } : undefined };
+    });
+    return {
+      scope: "Capabilities mediated by this RightClick X runtime only",
+      policy: structuredClone(this.executionPolicy),
+      limitations: ["Other agent tools, shells and credentials are outside this boundary; the operator must isolate or remove them.", "Provider risk labels are declarations. Transport semantics establish lower bounds, not arbitrary business effects.", "Allowed means the execution policy permits it; program authority, sandbox availability, destructive approval and outcome checks still apply.", "Saved goals re-plan; every selected operation is checked again before dispatch."],
+      destinationCoverage: "Origins describe this runtime's immediate transports, not a remote provider's internal network or credential reach. Opaque host bindings have unknown destinations and are denied when an origin allowlist is set.",
+      counts: { total: capabilities.length, allowed: capabilities.filter((c) => c.allowed).length, denied: capabilities.filter((c) => !c.allowed).length },
+      capabilities,
+    };
+  }
+
   mcp(endpoint: string, net: Net = this.net): McpClient {
     // A policy-scoped handle gets its own session; shared sessions use the unscoped network.
     if (net !== this.net) return new McpClient(endpoint, net);
@@ -1910,6 +1958,10 @@ export class RightClick {
   }
 
   private async execute(cap: Capability, args: Record<string, unknown>, net: Net = this.net): Promise<unknown> {
+    // Also guards internal repair, which calls execute directly after re-reflection.
+    this.assertExecution(cap);
+    const origins = intersectOrigins(this.net.policy?.origins, net.policy?.origins);
+    if (origins !== undefined) net = { ...net, policy: { blockPrivate: false, ...net.policy, origins } };
     const inv = cap.invoke;
     switch (inv.kind) {
       case "builtin": {

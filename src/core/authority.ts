@@ -8,6 +8,7 @@
 //                     the programs that may be investigated
 //   RCX_SHARE_EVIDENCE = "1" lets capability knowledge be exported from this installation
 import type { OperatorAuthority } from "../runtime.ts";
+import { parseExecutionPolicy } from "./execution-policy.ts";
 
 const list = (v: unknown) => String(v ?? "").split(",").map((x) => x.trim()).filter(Boolean);
 
@@ -15,6 +16,7 @@ export function authorityFromEnv(env: Record<string, unknown>): OperatorAuthorit
   const d = String(env.RCX_DESTRUCTIVE ?? "operator");
   if (!["operator", "agent-confirm", "allow"].includes(d)) throw new Error(`RCX_DESTRUCTIVE must be operator, agent-confirm or allow (got ${d})`);
   return {
+    ...(env.RCX_EXECUTION_POLICY !== undefined ? { execution: parseExecutionPolicy(JSON.parse(String(env.RCX_EXECUTION_POLICY))) } : {}),
     destructive: d as OperatorAuthority["destructive"],
     approve: list(env.RCX_APPROVE),
     retry: list(env.RCX_RETRY),

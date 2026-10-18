@@ -42,6 +42,7 @@ const HELP = `RightClick X ${VERSION} — a live capability graph that composes 
                                     --authorise lets that client's agents investigate and run the
                                     listed local programs (comma-separated; directories end in "/")
   rcx doctor                        check this host: Node, sandbox, state, authority
+  rcx audit                         report execution risks and operator restrictions as JSON
   rcx investigate <program-path...> investigate local programs you authorise (this command is your
                                     authority for this run) and explain what was found
   rcx capabilities [--json]         what this installation can do now, with each capability's status
@@ -145,6 +146,9 @@ async function main() {
   const rest = argv;
   let out: unknown;
   switch (cmd) {
+    case "audit":
+      out = rc.auditExecution();
+      break;
     case "research":
       out = await dispatch(rc, "context_research", { topic: rest[0], learn: Number(flag("learn") ?? 0) || undefined });
       break;

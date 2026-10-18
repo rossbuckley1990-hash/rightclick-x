@@ -16,3 +16,5 @@ export { createHandler } from "./interface/http.ts";
 export { handle as handleMcp } from "./interface/mcp-server.ts";
 export { TOOLS, dispatch } from "./interface/tools.ts";
 export type * from "./core/types.ts";
+export type { ExecutionPolicy, ExecutionAssessment } from "./core/execution-policy.ts";
+export type { OperatorAuthority } from "./runtime.ts";

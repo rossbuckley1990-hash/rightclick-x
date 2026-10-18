@@ -107,7 +107,7 @@ export const TOOLS = [
   },
   {
     name: "context_graph",
-    description: "Query the live graph. op: stats | types | search (query) | neighbors (id) | paths (from, to) | edges | export.",
+    description: "Query the live graph. op: stats | types | search (query) | neighbors (id) | paths (from, to) | edges | export | authority. authority audits consequential execution capabilities and operator restrictions; it cannot change policy.",
     inputSchema: obj({ op: str("Operation."), id: str("Capability id."), query: str("Search text."), from: str("From semantic type."), to: str("To semantic type."), limit: num("Max results.") }, ["op"]),
   },
   {
