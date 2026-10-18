@@ -2,6 +2,8 @@
 
 Assessment: **NO-GO for the North Star claim**. Continue the existing programme; a bounded development demonstration is not the required commercial, independently checked release. No merge, push, publication, purchase or outreach has been performed for this checkpoint.
 
+Latest additive dashboard checkpoint: [Living Capability Plane](LIVING-CAPABILITY-PLAN.md), product `f20eac7`. Truthful, sourced metrics are implemented; 295/295 native regressions, typecheck and 28/28 proof checks pass. The preceding memory-limit failure is preserved and unresolved because no sandbox remediation occurred. Five-view redesign, complete lifecycle/evidence model and the seven-act challenge remain incomplete. A later passing suite does not close that security issue or the original release gates.
+
 | Required outcome | Evidence available | Release blocker |
 |---|---|---|
 | Open-ended unfamiliar discovery | Existing generic reflectors and CLI investigation; exposed development diagnostics; preserved failures | Independently selected, sealed unfamiliar-software holdouts at the original and expanded sample sizes and thresholds |

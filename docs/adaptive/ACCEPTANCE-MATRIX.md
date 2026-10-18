@@ -2,6 +2,8 @@
 
 This is an additive execution plan for the original eight outcomes and complete Master Execution Specification. It is not a replacement goal. Status at the Actenon audit checkpoint: **PARTIAL; release NO-GO**. Existing North Star thresholds remain binding; the expanded 20-target/100-task/90% research targets remain unmet. No external commercial validation has occurred.
 
+The [Living Capability Plane update](LIVING-CAPABILITY-PLAN.md) adds the dashboard/lifecycle challenge, G1–G16 and all twenty deliverables. Its current `f20eac7` metric stage passes 295 regressions, typecheck and 28 proof checks, while preserving the preceding intermittent memory-limit failure as unresolved. Unknown authority/verification counts are displayed honestly. The original holdout/economics/human gates remain unchanged; the new G16 reporting clause does not waive the original requirement for a demonstrated advantage.
+
 | Original outcome | Current evidence | Remaining acceptance |
 |---|---|---|
 | Unfamiliar discovery without application-specific integration | Existing reflectors/investigator; baseline regression proofs reproduced | Fresh independently selected holdouts; no hand-built RightClick provider adapter |
