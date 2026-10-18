@@ -13,6 +13,7 @@ import { hostSandbox, type Sandbox } from "./core/sandbox.ts";
 import { checkProgram, sameProgram } from "./core/programs.ts";
 import { isSensitiveName, scrub, sensitiveValues } from "./core/secrets.ts";
 import { investigateCli, replayExamples, validateOptions, type Investigation } from "./reflectors/cli.ts";
+import { JsonRepresentationError, parseJsonValue } from "./core/json.ts";
 import { KNOWLEDGE_FORMAT, type ImportReport, type KnowledgeBundle } from "./core/knowledge.ts";
 import { assessExecution, consequentialRisks, ExecutionDenied, intersectOrigins, parseExecutionPolicy, type ExecutionPolicy } from "./core/execution-policy.ts";
 import { distance, inferType, inspectValue, type Inspection } from "./core/semantics.ts";
@@ -28,7 +29,7 @@ import { detectRuntime, platformReflection, type PlatformFn, type RuntimeInfo } 
 
 export const VERSION = "0.1.0";
 /** Bump whenever semantic inference changes: persisted reflections are then re-derived from their sources. */
-export const SEMANTICS = 19;
+export const SEMANTICS = 20;
 
 export interface Store {
   load(): Promise<PersistedState | null>;
@@ -886,7 +887,7 @@ export class RightClick {
         } catch (e) {
           // A caller's own mistake (an undocumented option, a literal that looks like an option)
           // says nothing about the provider: no repair, no re-investigation.
-          if (e instanceof ExecutionDenied || opts.planned || !HEALABLE.has(cap.invoke.kind) || /HTTP 400 equivalent|is not one this program documents|needs a value/.test(String((e as Error)?.message ?? e))) throw e;
+          if (e instanceof ExecutionDenied || e instanceof JsonRepresentationError || opts.planned || !HEALABLE.has(cap.invoke.kind) || /HTTP 400 equivalent|is not one this program documents|needs a value/.test(String((e as Error)?.message ?? e))) throw e;
           const h = await this.healRun(cap, args, String((e as Error)?.message ?? e), opts.net);
           healing = h.healing;
           if (!h.healed) throw new Error(`${healing.error}; ${healing.note}`);
@@ -2107,8 +2108,9 @@ export class RightClick {
         if (!inv.okExit.includes(r.code ?? -1) || !r.stdout.trim()) throw new Error(`${inv.bin} exited ${r.code}${r.stdout.trim() ? "" : " without output"}: ${r.stderr.slice(0, 300)}`);
         if (inv.output === "json") {
           try {
-            return JSON.parse(r.stdout);
-          } catch {
+            return parseJsonValue(r.stdout);
+          } catch (error) {
+            if (error instanceof JsonRepresentationError) throw new JsonRepresentationError(`${error.message}; use ${cap.provider}:stdout for exact output text`);
             throw new Error(`${inv.bin} did not print JSON this time`);
           }
         }
@@ -2200,6 +2202,7 @@ function coerceArgs(cap: Capability, args: Record<string, unknown>): Record<stri
   for (const p of cap.inputs) {
     const v = out[p.name];
     if (v === undefined) continue;
+    if (cap.invoke.kind === "cli" && p.name !== cap.invoke.filesPort) continue;
     // Keep decimal text intact across reusable wrappers until a converter or
     // the concrete numeric wire contract consumes it.
     const numericQuantityWire = p.type.startsWith("quantity:") && !["builtin", "composite", "goal", "peer"].includes(cap.invoke.kind);
@@ -2207,8 +2210,9 @@ function coerceArgs(cap: Capability, args: Record<string, unknown>): Record<stri
     if (p.type === "boolean" && typeof v === "string") out[p.name] = v === "true";
     if (p.type === "json" && typeof v === "string" && /^\s*[{[]/.test(v)) {
       try {
-        out[p.name] = JSON.parse(v);
-      } catch {
+        out[p.name] = parseJsonValue(v);
+      } catch (error) {
+        if (error instanceof JsonRepresentationError) throw error;
         /* left as text */
       }
     }

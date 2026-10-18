@@ -331,3 +331,36 @@ test("a wrapper's options documented by the program it passes them to are declar
   const inv = rc.investigations.get(p)!;
   assert.ok(inv.options.some((o) => o.flags.some((f) => f === "-d" || f === "-D" || f === "--decode") && /documented by base64/.test(o.description)), inv.options.map((o) => o.flags[0]).join(" "));
 });
+
+test("discovered JSON programs retain an exact stdout capability across stores and imports", { skip, timeout: 60_000 }, async () => {
+  const { MemoryStore } = await import("./helpers.ts");
+  const dir = tmp("rcx-json-output-");
+  const p = program(dir, "jsonmeasure", `if [ "$1" = "--help" ]; then echo "usage: jsonmeasure"; echo "Read standard input and print JSON describing its length"; exit 0; fi; n=$(/usr/bin/wc -c); printf '{"bytes":%s}\\n' "$n"`);
+  const store = new MemoryStore();
+  const rc = await RightClick.create({ directories: [], store, authority: { investigate: [p], shareEvidence: true } });
+  await rc.learn({ source: `cli:${p}` });
+  const raw = rc.graph.get("cli:jsonmeasure:stdout");
+  assert.ok(raw && raw.invoke.kind === "cli" && raw.invoke.stdin);
+  assert.equal(raw.outputs.length, 1, "raw text cannot claim structured JSON field projections");
+  assert.equal(raw.outputs[0].type, "text");
+  const input = ' {"identifier":9007199254740993} \n';
+  const result = await rc.run(raw.id, { [raw.invoke.stdin]: input });
+  assert.equal(result.status, "completed", result.error);
+  assert.equal(typeof result.output, "string");
+  assert.equal(JSON.parse(String(result.output)).bytes, Buffer.byteLength(input));
+  assert.equal(result.verification.status, "unverified", "preserving representation does not independently verify an outcome");
+  await rc.flush();
+  let investigations = 0;
+  const fresh = await RightClick.create({ directories: [], store, authority: { investigate: [p] }, onInvestigationStart: () => investigations++ });
+  const again = await fresh.run(raw.id, { [raw.invoke.stdin]: input + "\n" });
+  assert.equal(JSON.parse(String(again.output)).bytes, Buffer.byteLength(input) + 1);
+  assert.equal(investigations, 0);
+  const imported = await RightClick.create({ directories: [], authority: { investigate: [p] } });
+  const validation = await imported.importKnowledge(rc.exportKnowledge());
+  assert.ok(validation.programs[0].capabilities.some(c => c.id === raw.id && c.status === "accepted"));
+  assert.equal((await imported.run(raw.id, { [raw.invoke.stdin]: input })).output, result.output);
+  const restricted = await RightClick.create({ directories: [], store, authority: { investigate: [p], execution: { allowedCapabilities: ["cli:jsonmeasure:default"] } } });
+  const refused = await restricted.run(raw.id, { [raw.invoke.stdin]: input });
+  assert.equal(refused.status, "failed");
+  assert.match(refused.error!, /blocked by execution policy/);
+});

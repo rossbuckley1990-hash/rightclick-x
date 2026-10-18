@@ -1,0 +1,99 @@
+{
+  "capability": "cli:json-xs:default",
+  "freshReuse": {
+    "investigations": 0,
+    "input": "{\"account\":9007199254740995}\n",
+    "response": {
+      "runId": "run_mvd81hpu_1",
+      "capability": "cli:json-xs:stdout",
+      "provider": "cli:json-xs",
+      "title": "json_xs: exact JSON output text",
+      "status": "completed",
+      "output": "{\n   \"account\" : 9007199254740995\n}\n",
+      "startedAt": "2026-10-18T02:43:49.362Z",
+      "durationMs": 23.2,
+      "verification": {
+        "status": "unverified",
+        "results": []
+      },
+      "receipt": {
+        "runId": "run_mvd81hpu_1",
+        "capability": "cli:json-xs:stdout",
+        "provider": "cli:json-xs",
+        "startedAt": "2026-10-18T02:43:49.362Z",
+        "durationMs": 23.2,
+        "status": "completed",
+        "verification": "unverified",
+        "seq": 9,
+        "inputDigest": "79d224e886c74a82bcbb797ca421906b9f0a7ad6c30f9756624302c36160c5aa",
+        "outputDigest": "48ef45183b65101b37d0b5539b87ac53ab0e8b2e71acdae9db267d2ea496182a",
+        "prev": "57ba89adb204d173dc17a053797b59893c6c9ee16bb8b64528e5526db02ceeee",
+        "hash": "83400770c426ab46c7f103955790e5383fb8fb37451624ee1de59ee3e19ab8e2"
+      }
+    },
+    "wire": {
+      "program": "/usr/bin/json_xs",
+      "args": [],
+      "stdin": "{\"account\":9007199254740995}\n",
+      "stdout": "{\n   \"account\" : 9007199254740995\n}\n",
+      "code": 0
+    },
+    "correct": true
+  },
+  "observations": [
+    {
+      "name": "whitespace",
+      "suppliedInputPreserved": true,
+      "input": " { \"name\" : \"same\", \"count\" : 2 }\n",
+      "wireInput": " { \"name\" : \"same\", \"count\" : 2 }\n",
+      "rawOutput": "{\n   \"count\" : 2,\n   \"name\" : \"same\"\n}\n",
+      "status": "completed",
+      "exposedOutput": {
+        "count": 2,
+        "name": "same"
+      },
+      "rawOutputPreserved": true,
+      "rawMatchesDirect": true
+    },
+    {
+      "name": "integer-precision",
+      "suppliedInputPreserved": true,
+      "input": "{\"account\":9007199254740993}\n",
+      "wireInput": "{\"account\":9007199254740993}\n",
+      "rawOutput": "{\n   \"account\" : 9007199254740993\n}\n",
+      "status": "failed",
+      "rawOutputPreserved": true,
+      "rawMatchesDirect": true
+    },
+    {
+      "name": "duplicate-key",
+      "suppliedInputPreserved": true,
+      "input": "{\"value\":1,\"value\":2}\n",
+      "wireInput": "{\"value\":1,\"value\":2}\n",
+      "rawOutput": "{\n   \"value\" : 2\n}\n",
+      "status": "completed",
+      "exposedOutput": {
+        "value": 2
+      },
+      "rawOutputPreserved": true,
+      "rawMatchesDirect": true
+    },
+    {
+      "name": "structured-object",
+      "suppliedInputPreserved": true,
+      "input": {
+        "name": "structured",
+        "count": 2
+      },
+      "wireInput": "{\"name\":\"structured\",\"count\":2}",
+      "rawOutput": "{\n   \"count\" : 2,\n   \"name\" : \"structured\"\n}\n",
+      "status": "completed",
+      "exposedOutput": {
+        "count": 2,
+        "name": "structured"
+      },
+      "rawOutputPreserved": true,
+      "rawMatchesDirect": true
+    }
+  ]
+}

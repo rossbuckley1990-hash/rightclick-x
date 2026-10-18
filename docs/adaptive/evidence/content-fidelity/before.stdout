@@ -1,0 +1,50 @@
+{
+  "capability": "cli:json-xs:default",
+  "observations": [
+    {
+      "name": "whitespace",
+      "suppliedInputPreserved": false,
+      "input": " { \"name\" : \"same\", \"count\" : 2 }\n",
+      "wireInput": "{\"name\":\"same\",\"count\":2}",
+      "rawOutput": "{\n   \"count\" : 2,\n   \"name\" : \"same\"\n}\n",
+      "exposedOutput": {
+        "count": 2,
+        "name": "same"
+      }
+    },
+    {
+      "name": "integer-precision",
+      "suppliedInputPreserved": false,
+      "input": "{\"account\":9007199254740993}\n",
+      "wireInput": "{\"account\":9007199254740992}",
+      "rawOutput": "{\n   \"account\" : 9007199254740992\n}\n",
+      "exposedOutput": {
+        "account": 9007199254740992
+      }
+    },
+    {
+      "name": "duplicate-key",
+      "suppliedInputPreserved": false,
+      "input": "{\"value\":1,\"value\":2}\n",
+      "wireInput": "{\"value\":2}",
+      "rawOutput": "{\n   \"value\" : 2\n}\n",
+      "exposedOutput": {
+        "value": 2
+      }
+    },
+    {
+      "name": "structured-object",
+      "suppliedInputPreserved": true,
+      "input": {
+        "name": "structured",
+        "count": 2
+      },
+      "wireInput": "{\"name\":\"structured\",\"count\":2}",
+      "rawOutput": "{\n   \"count\" : 2,\n   \"name\" : \"structured\"\n}\n",
+      "exposedOutput": {
+        "count": 2,
+        "name": "structured"
+      }
+    }
+  ]
+}

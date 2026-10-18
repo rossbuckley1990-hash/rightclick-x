@@ -614,7 +614,7 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
     const literalPort = (n: string) => (/^[a-z][\w]*$/i.test(n) ? n : `value${literalNames.indexOf(n) + 1}`);
     const inputs: Port[] = [
       ...literalNames.map((n): Port => ({ name: literalPort(n), type: "text", required: true, description: `Literal operand "${n}" (passed as an argument, not as file content); experiments used e.g. ${JSON.stringify(mt[0]?.literals[literalNames.indexOf(n)] ?? "")}` })),
-      ...names.map((n): Port => ({ name: n, type: portType, required: true, ...(anyText ? { anyText: true } : {}), description: best.id === "stdin" ? "Content given on standard input" : "Content passed as a file operand" })),
+      ...names.map((n): Port => ({ name: n, type: portType, required: true, ...(anyText ? { anyText: true } : {}), description: (best.id === "stdin" ? "Content given on standard input" : "Content passed as a file operand") + ". Supply text to preserve its bytes; objects and arrays are serialized as JSON." })),
     ];
     const behaviour = crypto
       .createHash("sha256")
@@ -709,6 +709,20 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
       invoke: { ...inv0, behaviour: inv0.behaviour ? `${inv0.behaviour}+options` : undefined, options: { port: "options", allowed: offered.map((o) => ({ flags: o.flags, arg: !!o.arg, ...(o.optionalArg ? { optionalArg: true } : {}) })) }, filesPort: "files" },
     });
     claim(id, `offers ${offered.length} documented options; refuses any other`, "declared", `${inv.options.length - offered.length} documented options not offered (help/version, or they write files, run commands or use the network)`);
+  }
+  // A representation option, discovered generically: exact stdout remains available when JSON
+  // cannot be represented as JavaScript values (large numbers, duplicate keys), or bytes matter.
+  const jsonSource = [...capabilities].reverse().find(c => c.invoke.kind === "cli" && c.invoke.output === "json");
+  if (jsonSource && jsonSource.invoke.kind === "cli") {
+    const id = `${providerId}:stdout`;
+    capabilities.push({ ...jsonSource, id,
+      title: `${name}: exact standard output text`,
+      description: `Same authorised invocation as ${jsonSource.id}, preserving standard output exactly as text. Use for exact formatting, large numbers or duplicate object keys. No JSON value conversion or inferred field projection.`,
+      outputs: [{ name: "", type: "text", required: true }],
+      tags: [...jsonSource.tags, "exact-stdout", "json-text"],
+      invoke: { ...jsonSource.invoke, output: "text", behaviour: jsonSource.invoke.behaviour ? `${jsonSource.invoke.behaviour}+stdout` : undefined },
+    });
+    claim(id, "returns exact standard output without JSON value conversion", "declared", "runtime representation; same program, arguments, sandbox and authority checks");
   }
   if (empty) claim(name, `on empty input exits ${empty.code}${empty.stdout.trim() ? " with output" : " without output"}`, "observed", empty.stderr.slice(0, 120));
   inv.summary = `${capabilities.length} capabilit${capabilities.length === 1 ? "y" : "ies"} from ${inv.runs.length} sandboxed runs (${okChannels.map((c) => c.id).join(", ")}; ok exit ${okExit.join("/")})`;
