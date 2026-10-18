@@ -9,7 +9,9 @@
 // Never exported: credentials, caller inputs or outputs, run records, receipts, fixed goal values.
 import type { Capability, SemType } from "./types.ts";
 
-export const KNOWLEDGE_FORMAT = "rightclick-x/capability-knowledge@1";
+// Version 2 requires an understood inference profile. Older receivers must reject
+// this envelope rather than silently ignore a field added to the version-1 format.
+export const KNOWLEDGE_FORMAT = "rightclick-x/capability-knowledge@2";
 
 export interface KnowledgeBundle {
   format: typeof KNOWLEDGE_FORMAT;

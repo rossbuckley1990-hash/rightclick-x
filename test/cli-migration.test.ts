@@ -121,6 +121,7 @@ test("portable knowledge declares inference version and cannot import stale cont
   const f = await fixture();
   const current = await f.create();
   const bundle = current.exportKnowledge();
+  assert.equal(bundle.format, "rightclick-x/capability-knowledge@2");
   assert.equal((bundle.source as any).semantics, SEMANTICS);
   assert.ok(bundle.programs.every(p => p.capabilities.every(c => !(c.invoke as any).continuity)));
   for (const version of [undefined, 22, SEMANTICS + 1]) {
@@ -133,6 +134,7 @@ test("portable knowledge declares inference version and cannot import stale cont
     assert.equal(receiver.graph.get(id), undefined);
   }
   const receiver = await RightClick.create({ directories: [], sandbox: native, authority: { investigate: [f.program] } });
+  await assert.rejects(() => receiver.importKnowledge({ ...bundle, format: "rightclick-x/capability-knowledge@1" } as any), /expected format/);
   (bundle.programs[0].capabilities[0].invoke as any).continuity = [{ behaviour: "forged-old-identity", examples: [] }];
   const result = await receiver.importKnowledge(bundle);
   assert.ok(result.programs[0].capabilities.some(c => c.id === id && c.status === "accepted"));
