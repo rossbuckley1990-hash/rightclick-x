@@ -1,6 +1,6 @@
 # CLI invocation fidelity development experiment
 
-Status: planned local diagnostic; full mission PARTIAL and release NO-GO. Original acceptance thresholds and historical scores remain unchanged.
+Status: reproduced and corrected at source freeze `37394b0`; full mission PARTIAL and release NO-GO. Original acceptance thresholds and historical scores remain unchanged.
 
 The next product checkpoint tests exposed xsubpp5.34, autom4te, lzdiff and exiftool cases against direct sandbox execution. The diagnostic supplies the existing oracle's options; this is deliberately **not** an agent, unfamiliar-software holdout or economic result. Its purpose is to distinguish invocation defects from agent selection/discovery failures. It retains every feasible task, including refused or unmappable invocations, and records exact inputs, actual argv/stdout, direct outputs, source hashes and capability contracts. Only temporary sandbox files may be written by the programs.
 
@@ -23,3 +23,25 @@ Generic fixture regressions then failed all four tests on the unchanged product:
 The implementation now offers `operands`, an optional ordered list of names from `files`. Omission retains all files as operands; `[]` selects none. This is explicit because a filename-looking option value may be a pattern rather than a file. Every selected name must exist in the supplied map. File names are preserved, including spaces and Unicode; traversal, leading dashes, reserved `.rcx.` names, control characters, overlong names and portable case/normalization collisions are refused. The host sandbox also validates names and exclusively creates them, so filesystem-specific aliases cannot overwrite another supplied file. Invalid inputs cannot trigger execution, healing or retry. No new option is allowed and no program-specific rules are added.
 
 Semantic version 21 causes existing cached contracts to be re-derived by the established migration path. Zero-investigation reuse applies only to state learned under this version, not migration across this upgrade. Program authorization and the existing sandbox remain required. The new operand selector is not independently enforced exact-action authority; Actenon's separately documented boundary is unchanged.
+
+## Verified development result
+
+The identical 16 exposed cases at frozen source `37394b0` now have **12 exact direct-output matches**, up from 11. The added match is the typemap case, whose actual argv now equals the direct oracle. All four ExifTool selector cases remain explicit refusals with zero program dispatch. Every case and complete contract is retained in [before](evidence/cli-files/before.json) and [after](evidence/cli-files/after.json). The diagnostic uses known reference options and, when the capability exposes it, their explicit operand list. It does not demonstrate that an AI agent can select them unaided. Its first-use discovery cost and oracle guidance cannot count as competitive savings.
+
+The Python [raw checker](../../experiments/north-star/check-cli-files.py) imports no product code. It checks all 16 cases against the unchanged task manifest, frozen source hashes, supplied file contents, actual argv, exit codes, exact stdout and unchanged refusal cases. It does not trust recorded success booleans. Its negative controls reject a duplicate operand and changed file contents even when success flags and output are unchanged. This is separate-implementation verification by the same author; independent-author review remains open.
+
+The frozen implementation passes **246/246 tests with zero skips**, both typechecks, Node/browser builds, offline package installation with the original thirteen tools and uninstall, and **28/28 black-box lifecycle proof checks**. The proof ran from an isolated Git archive; every recorded product source hash matches the freeze. Generic behavioral regressions cover fresh runtime reuse with new input and zero investigation, exact names/content/order, empty operand lists, nineteen malformed file/operand cases refusing without dispatch or healing, and direct sandbox validation. A completed fixture invocation remains unverified unless supplied with a real independent outcome witness. [Verification and artifact hashes](evidence/cli-files/verification.json) bind this checkpoint.
+
+Reproduce the corrected frozen product and the checker from this evidence commit:
+
+```sh
+npm run typecheck
+npx --no-install tsc -p tsconfig.harness.json
+npm test
+node experiments/north-star/cli-files-diagnostic.ts /tmp/rcx-cli-files-new.json
+python3 experiments/north-star/check-cli-files.py docs/adaptive/evidence/cli-files/before.json /tmp/rcx-cli-files-new.json
+npm run build
+node ci/adaptive-package-smoke.ts
+```
+
+The diagnostic requires the installed, exposed macOS programs and a working host sandbox; it is not an unfamiliar-environment installation proof. Run `node proof/run.ts` in a separate source export because it writes `proof/results/latest.json`. Windows and fresh-host usability remain untested. No model was called, and the quota-blocked Claude pilot remains at its existing freeze. Next product work must address generic discovery limitations and agent usability without hand-built application adapters, followed by fresh independent holdouts and the original fair A/B/C/D gates. No economic advantage or release readiness is established here.

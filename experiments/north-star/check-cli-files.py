@@ -1,9 +1,11 @@
 """Raw development evidence checker, separate implementation; NOT independent-author review."""
 import hashlib
+import copy
 import json
 import pathlib
 import subprocess
 import sys
+import tempfile
 
 root = pathlib.Path(__file__).resolve().parents[2]
 manifest_path = "docs/north-star/evidence/holdout-ns-freeze-1.json"
@@ -64,4 +66,24 @@ def check(path, after):
 
 if __name__ == "__main__":
     assert len(sys.argv) == 3, "provide before.json and after.json"
-    print(json.dumps({"scope": "exposed oracle-guided development diagnostic only", "before": check(pathlib.Path(sys.argv[1]), False), "after": check(pathlib.Path(sys.argv[2]), True)}, indent=2))
+    before, after = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2])
+    result = {"scope": "exposed oracle-guided development diagnostic only", "before": check(before, False), "after": check(after, True)}
+    controls = []
+    with tempfile.TemporaryDirectory(prefix="rcx-cli-files-check-") as stage:
+        for name in ("duplicated-operand", "altered-input"):
+            altered = copy.deepcopy(json.loads(after.read_text()))
+            obs = next(o for p in altered["programs"] for o in p["observations"] if o["task"]["id"] == "xsubpp5.34#4")
+            if name == "duplicated-operand":
+                obs["wires"][0]["args"].append("mytypemap")
+            else:
+                obs["wires"][0]["options"]["files"]["mytypemap"] = "wrong mapping\n"
+            path = pathlib.Path(stage) / (name + ".json")
+            path.write_text(json.dumps(altered))
+            try:
+                check(path, True)
+            except AssertionError as error:
+                controls.append({"case": name, "rejected": True, "reason": str(error)})
+            else:
+                raise AssertionError("checker accepted " + name)
+    result["negativeControls"] = controls
+    print(json.dumps(result, indent=2))
