@@ -105,7 +105,7 @@ export function claudeSession(opts: { prompt: string; servers: Record<string, un
   writeFileSync(`${dir}/mcp.json`, JSON.stringify({ mcpServers: opts.servers }));
   const t0 = performance.now();
   return new Promise((done) => {
-    const p = spawn("claude", ["-p", opts.prompt, "--model", opts.model, "--mcp-config", `${dir}/mcp.json`, "--strict-mcp-config", "--setting-sources", "", "--tools", "", "--allowedTools", opts.allowed, "--disallowedTools", "Bash,Read,Write,Edit,MultiEdit,WebFetch,WebSearch,Glob,Grep,Task,Agent,NotebookEdit,TodoWrite", "--output-format", "json", "--max-turns", String(opts.maxTurns ?? 30)], { cwd: dir, env: subscriptionEnvironment(process.env), detached: true, stdio: ["ignore", "pipe", "pipe"] });
+    const p = spawn("claude", ["-p", opts.prompt, "--model", opts.model, "--mcp-config", `${dir}/mcp.json`, "--strict-mcp-config", "--setting-sources", "", "--settings", '{"disableAllHooks":true}', "--no-session-persistence", "--tools", "", "--allowedTools", opts.allowed, "--disallowedTools", "Bash,Read,Write,Edit,MultiEdit,WebFetch,WebSearch,Glob,Grep,Task,Agent,NotebookEdit,TodoWrite", "--output-format", "json", "--max-turns", String(opts.maxTurns ?? 30)], { cwd: dir, env: { ...subscriptionEnvironment(process.env), CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: "1" }, detached: true, stdio: ["ignore", "pipe", "pipe"] });
     let out = "";
     let err = "";
     p.stdout.on("data", (d) => (out += d));
