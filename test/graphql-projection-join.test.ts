@@ -8,6 +8,7 @@ const object=(name:string)=>({kind:'OBJECT',name,ofType:null});
 const field=(name:string,type:unknown=scalar,args:unknown[]=[])=>({name,description:'',type,args});
 function fixture(list=false,needsArgument=false){
  const calls:string[]=[];
+ let omitPublisher=false;
  const intro={data:{__schema:{queryType:{name:'Query'},mutationType:null,types:[
   {kind:'OBJECT',name:'Query',fields:[field('record',object('Record'),[{name:'record_id',description:'Record identifier',type:{kind:'NON_NULL',name:null,ofType:scalar},defaultValue:null}])]},
   {kind:'OBJECT',name:'Record',fields:[...Array.from({length:27},(_,i)=>field(`f${i}`)),field('references',list?{kind:'LIST',name:null,ofType:object('Reference')}:object('Reference'))]},
@@ -31,9 +32,9 @@ function fixture(list=false,needsArgument=false){
    return json({data:{record:{f0:'metadata',...(/\breference_id\b/.test(query)?{references:list?refs:refs[0]}:{})}}});
   }
   if(u.pathname==='/openapi.json')return json(spec);
-  calls.push(u.href);return json({publisher:'Fixture publisher',reference_id:decodeURIComponent(u.pathname.split('/').at(-1)!)});
+  calls.push(u.href);return json({...(omitPublisher?{}:{publisher:'Fixture publisher'}),reference_id:decodeURIComponent(u.pathname.split('/').at(-1)!)});
  }) as typeof fetch;
- return {fetcher,calls};
+ return {fetcher,calls,omit:()=>{omitPublisher=true}};
 }
 for(const list of [false,true])test(`unselected GraphQL identifier joins a second provider (${list?'list':'scalar'}) and remains reusable`,async()=>{
  const {fetcher,calls}=fixture(list);let state:any=null;
@@ -62,4 +63,24 @@ test('DOI field names identify the same scheme without matching incidental subst
  for(const name of ['doi','publication_doi','pdbx_database_id_DOI'])assert.equal(inferType(name,{type:'string'}),'id.doi');
  assert.equal(inferType('medoid',{type:'string'}),'text');
  assert.equal(inferType('doi',{type:'number'}),'number');
+});
+
+test('a late identifier used as the final result is projected without require terms',async()=>{
+ const {fetcher}=fixture();const rc=await RightClick.create({fetch:fetcher,sandbox:null});
+ await rc.learn({source:'https://records.test/graphql',kinds:{'https://records.test/graphql':'graphql'}});
+ const result=await rc.compose({have:{record_id:'K100'},want:'id.reference',maxSteps:1,run:true});
+ assert.equal(result.executed?.status,'completed');assert.equal(result.executed?.output,'R100');
+});
+
+test('required output information survives both retained forms and prevents publication of missing results',async()=>{
+ const {fetcher,omit}=fixture();const rc=await RightClick.create({fetch:fetcher,sandbox:null,authority:{publish:'checked'}});
+ await rc.learn({sources:['https://records.test/graphql','https://facts.test/openapi.json'],kinds:{'https://records.test/graphql':'graphql','https://facts.test/openapi.json':'openapi'}});
+ const goal={have:{record_id:'K100'},want:'json',require:['publisher'],maxSteps:2,run:true,verify:[{op:'type' as const,value:'object' as const}],publish:'Required facts'};
+ const first=await rc.compose(goal);assert.equal(first.executed?.status,'completed');assert.ok(first.crystallized&&first.published);
+ omit();
+ for(const id of [first.crystallized!.id,first.published!.id]){
+  const changed=await rc.run(id,{record_id:'K200'});assert.equal(changed.status,'failed',JSON.stringify(changed));assert.equal(changed.verification.status,'refuted');
+ }
+ const bad=await rc.compose({...goal,publish:'Must not publish'});
+ assert.notEqual(bad.executed?.status,'completed');assert.equal(bad.published,undefined);
 });
