@@ -8,6 +8,7 @@ import { dispatch } from "../src/interface/tools.ts";
 import { FileStore, serve, serveStdio } from "../src/entry/node-host.ts";
 import { Authority } from "../src/reflectors/net.ts";
 import { RightClick, VERSION } from "../src/runtime.ts";
+import { commandInput } from "./command-input.ts";
 
 const proc = (globalThis as any).process;
 const argv: string[] = proc.argv.slice(2);
@@ -19,15 +20,6 @@ function flag(name: string): string | undefined {
   const v = argv[i + 1];
   argv.splice(i, v && !v.startsWith("--") ? 2 : 1);
   return v && !v.startsWith("--") ? v : "true";
-}
-
-function kv(args: string[]): Record<string, unknown> {
-  const out: Record<string, unknown> = {};
-  for (const a of args) {
-    const i = a.indexOf("=");
-    if (i > 0) out[a.slice(0, i)] = a.slice(i + 1);
-  }
-  return out;
 }
 
 const HELP = `RightClick X ${VERSION} — a live capability graph that composes itself
@@ -58,6 +50,9 @@ const HELP = `RightClick X ${VERSION} — a live capability graph that composes 
   rcx explain <capability-id> [--full]
   rcx run <capability-id> [k=v ...] [--verify '<json predicates>']
   rcx compose k=v ... --want <type> [--intent "..."] [--run]
+                                    run/compose: use --args '<JSON object>' or --args-file <path>
+                                    for arrays/objects; --args-file - reads stdin (UTF-8, max 16 MiB).
+                                    Choose one input form. k=v values stay strings; failures exit nonzero.
   rcx graph [stats|types|search|neighbors|paths|edges] [--query q] [--id id] [--from t] [--to t]
   rcx providers | runtime | status [runId] | watch
 
@@ -78,6 +73,9 @@ async function main() {
     const { runDemo } = await import("../demo/run.ts");
     return runDemo({ online: !!flag("online") });
   }
+
+  // Decode before state load/migration: malformed input must not initiate any runtime work.
+  const input = cmd === "run" || cmd === "compose" ? await commandInput(cmd, argv) : undefined;
 
   const auth = new Authority();
   auth.loadEnv(env.RCX_AUTH);
@@ -170,15 +168,13 @@ async function main() {
       break;
     }
     case "run": {
-      const verify = flag("verify");
-      out = await dispatch(rc, "context_run", { id: rest[0], args: kv(rest.slice(1)), verify: verify ? JSON.parse(verify) : undefined });
+      out = await dispatch(rc, "context_run", { id: input!.id, args: input!.inputs, verify: input!.verify });
+      if ((out as { status: string }).status !== "completed") proc.exitCode = 1;
       break;
     }
     case "compose": {
-      const want = flag("want") ?? "text";
-      const intent = flag("intent");
-      const run = !!flag("run");
-      out = await dispatch(rc, "context_compose", { have: kv(rest), want, intent, run });
+      out = await dispatch(rc, "context_compose", { have: input!.inputs, want: input!.want, intent: input!.intent, run: input!.run });
+      if (input!.run && (out as { executed?: { status: string } }).executed?.status !== "completed") proc.exitCode = 1;
       break;
     }
     case "graph": {
