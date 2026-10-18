@@ -10,6 +10,7 @@ import { outputCarries, type Satisfaction } from "./core/satisfaction.ts";
 import { assessPlan, contractFor, lostWords, type Assurance, type ContractAssessment, type OutcomeContract } from "./core/contract.ts";
 import { selectionWith } from "./reflectors/graphql.ts";
 import { hostSandbox, type Sandbox } from "./core/sandbox.ts";
+import { validateFileNames } from "./core/cli-files.ts";
 import { checkProgram, sameProgram } from "./core/programs.ts";
 import { isSensitiveName, scrub, sensitiveValues } from "./core/secrets.ts";
 import { investigateCli, replayExamples, validateOptions, type Investigation } from "./reflectors/cli.ts";
@@ -29,7 +30,7 @@ import { detectRuntime, platformReflection, type PlatformFn, type RuntimeInfo } 
 
 export const VERSION = "0.1.0";
 /** Bump whenever semantic inference changes: persisted reflections are then re-derived from their sources. */
-export const SEMANTICS = 20;
+export const SEMANTICS = 21;
 
 export interface Store {
   load(): Promise<PersistedState | null>;
@@ -2072,7 +2073,7 @@ export class RightClick {
           this.hashCache.set(inv.bin, cached);
         }
         if (cached.sha256 !== inv.sha256) throw new Error(`program changed since it was investigated: ${inv.bin} (sha256 ${cached.sha256.slice(0, 12)}, investigated ${inv.sha256.slice(0, 12)}); not run (HTTP 409 equivalent)`);
-        const files: Record<string, string> = {};
+        const files: Record<string, string> = Object.create(null);
         // Documented options chosen by the caller, checked against the declared list first.
         const chosen = inv.options ? validateOptions(args[inv.options.port], inv.options.allowed) : [];
         const argv = [...chosen, ...inv.args.map((a, i) => {
@@ -2090,15 +2091,20 @@ export class RightClick {
           files[name] = asContent(args[a.input]);
           return name;
         })].filter((x): x is string => x !== null);
-        // Named files the caller supplied (documented-options interface): written and passed as operands.
+        // Auxiliary files and positional operands are different roles. Do not guess a role from
+        // an option value: a pattern can equal a file name. The caller can name the exact operands.
         const named = inv.filesPort ? args[inv.filesPort] : undefined;
-        if (named && typeof named === "object" && !Array.isArray(named)) {
+        if (named !== undefined && (!named || typeof named !== "object" || Array.isArray(named))) throw new Error("files must be an object mapping exact names to content (HTTP 400 equivalent: nothing was run)");
+        const names = Object.keys(named ?? {});
+        validateFileNames([...Object.keys(files), ...names]);
+        if (named) {
           for (const [n, content] of Object.entries(named as Record<string, unknown>)) {
-            const safe = n.replace(/[^\w.-]/g, "_").replace(/^\.+/, "").slice(0, 80) || "input.txt";
-            files[safe] = asContent(content);
-            argv.push(safe);
+            files[n] = asContent(content);
           }
         }
+        const operands = inv.operandsPort ? args[inv.operandsPort] : undefined;
+        if (operands !== undefined && (!Array.isArray(operands) || !operands.every(n => typeof n === "string" && names.includes(n)))) throw new Error("operands must be a list of names present in files (HTTP 400 equivalent: nothing was run)");
+        argv.push(...(operands === undefined ? names : operands as string[]));
         const r = await sb.run(inv.bin, argv, { stdin: inv.stdin ? asContent(args[inv.stdin]) : "", files, purpose: "execution" });
         // A file swapped while it ran: its output belongs to a program nobody checked.
         if (!(await sameProgram(inv.bin, id))) throw new Error(`${inv.bin} was replaced while it ran; its output is discarded (HTTP 409 equivalent)`);

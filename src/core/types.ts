@@ -165,8 +165,10 @@ export interface CliInvoke {
    * their arguments) in the input named `port`; anything else is refused before running.
    */
   options?: { port: string; allowed: Array<{ flags: string[]; arg: boolean; optionalArg?: boolean }> };
-  /** Input holding named files ({name: content}) written into the sandbox and passed as operands, in order. */
+  /** Input holding named files ({name: content}) written exactly into the sandbox. */
   filesPort?: string;
+  /** Optional list of named files to append as operands, in order. Omitted means all files; [] means none. */
+  operandsPort?: string;
   /** Input whose value is written to stdin. */
   stdin?: string;
   /** Exit codes observed together with real output for valid input. */

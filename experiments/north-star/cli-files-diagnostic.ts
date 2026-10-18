@@ -32,6 +32,7 @@ for (const p of manifest.programs.filter((p: any) => targets.includes(p.name))) 
     // Interpret only exact declared option arities. Unknown flags are retained for refusal;
     // ambiguous bare arguments stop this diagnostic case rather than inventing an invocation.
     const options: string[] = [];
+    const operands: string[] = [];
     let mappingError: string | undefined;
     const declared = rc.investigations.get(p.path)?.options ?? [];
     for (let i = 0; i < task.reference.argv.length; i++) {
@@ -41,13 +42,15 @@ for (const p of manifest.programs.filter((p: any) => targets.includes(p.name))) 
         options.push(token);
         if (option.arg) options.push(task.reference.argv[++i]);
       } else if (token.startsWith("-")) options.push(token);
-      else if (!(token in (task.input.files ?? {}))) mappingError = `unmapped non-file operand: ${token}`;
+      else if (token in (task.input.files ?? {})) operands.push(token);
+      else mappingError = `unmapped non-file operand: ${token}`;
     }
     const args: Record<string, unknown> = {};
     if (cap?.invoke.kind === "cli") {
       if (cap.invoke.options) args[cap.invoke.options.port] = options;
       else if (options.length) mappingError = "no documented-options port";
       if (task.input.files && cap.invoke.filesPort) args[cap.invoke.filesPort] = task.input.files;
+      if (cap.invoke.operandsPort) args[cap.invoke.operandsPort] = operands;
       if (task.input.stdin !== undefined && cap.invoke.stdin) args[cap.invoke.stdin] = task.input.stdin;
     }
     const response = cap && !mappingError ? await rc.run(cap.id, args) : null;
@@ -66,7 +69,7 @@ for (const p of manifest.programs.filter((p: any) => targets.includes(p.name))) 
   programs.push({ name: p.name, path: p.path, binarySha256: createHash("sha256").update(readFileSync(p.path)).digest("hex"), learned, caps, investigations, observations });
   console.log(JSON.stringify({ name: p.name, capability: cap?.id, investigations, observations: observations.map(o => ({ id: o.task.id, exactDirectMatch: o.exactDirectMatch, referenceFragmentsPresent: o.referenceFragmentsPresent, responsePreservesStdout: o.responsePreservesStdout, mappingError: o.mappingError, error: o.response?.error, argv: o.wires.map(w => w.args) })) }));
 }
-const paths = [manifestPath, "src/runtime.ts", "src/core/types.ts", "src/core/sandbox.ts", "src/core/semantics.ts", "src/reflectors/cli.ts", "experiments/north-star/cli-files-diagnostic.ts"];
+const paths = [manifestPath, "src/runtime.ts", "src/core/types.ts", "src/core/sandbox.ts", "src/core/cli-files.ts", "src/core/semantics.ts", "src/reflectors/cli.ts", "experiments/north-star/cli-files-diagnostic.ts"];
 const sourceHashes = Object.fromEntries(paths.map(path => [path, createHash("sha256").update(readFileSync(path)).digest("hex")]));
 const report = { scope: "oracle-guided exposed development tasks, no model or competitive result", at: new Date().toISOString(), sourceCommit: execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim(), sourceDirty: !!execFileSync("git", ["status", "--porcelain"], { encoding: "utf8" }).trim(), sourceHashes, programs };
 writeFileSync(file, JSON.stringify(report, null, 2), { flag: "wx" });

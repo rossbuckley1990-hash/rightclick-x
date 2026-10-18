@@ -514,12 +514,13 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
         inputs: [
           { name: "input", type: "text", required: false, anyText: true, description: "Content given on standard input" },
           { name: "options", type: "list:text", required: false, description: `Documented options and their values, one item each: ${declared.slice(0, 40).map((o) => `${o.flags.join("/")}${o.arg ? ` <${o.arg}>` : o.optionalArg ? `[=${o.optionalArg}]` : ""}`).join(", ")}` },
-          { name: "files", type: "json", required: false, description: 'Named input files {"name.ext": "content"}: written into the sandbox and passed as operands in this order' },
+          { name: "files", type: "json", required: false, description: 'Named input files {"name.ext": "content"}: staged with exact flat names (no paths or leading dash). Options can refer to these names. All are operands unless "operands" selects otherwise.' },
+          { name: "operands", type: "list:text", required: false, description: 'Names from "files" to append as positional operands, in this order. Omit for all files; [] for none. Auxiliary files used by options need not also be operands.' },
         ],
         outputs: [{ name: "", type: "text", required: true }],
         risk: "read",
         tags: [name, "declared-interface", "declared-only", "direct-only", "unsupported"],
-        invoke: { kind: "cli", bin, args: [], stdin: "input", okExit: [0, 1], output: "text", sha256: inv.program.sha256, options: { port: "options", allowed: declared.map((o) => ({ flags: o.flags, arg: !!o.arg, ...(o.optionalArg ? { optionalArg: true } : {}) })) }, filesPort: "files" },
+        invoke: { kind: "cli", bin, args: [], stdin: "input", okExit: [0, 1], output: "text", sha256: inv.program.sha256, options: { port: "options", allowed: declared.map((o) => ({ flags: o.flags, arg: !!o.arg, ...(o.optionalArg ? { optionalArg: true } : {}) })) }, filesPort: "files", operandsPort: "operands" },
       };
       inv.summary += `; offered as a declared interface only (${declared.length} documented options)`;
       return { reflection: { provider: { id: providerId, title: `${name} (command-line program)`, source: "cli", origin: bin, learnedAt: new Date().toISOString(), capabilityIds: [id], meta: { investigation: inv, sha256: inv.program.sha256, version: inv.program.version } }, capabilities: [cap] }, investigation: inv };
@@ -700,13 +701,14 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
       inputs: [
         ...base.inputs.map((p0) => ({ ...p0, required: false })),
         { name: "options", type: "list:text", required: false, description: `Documented options and their values, one item each: ${offered.slice(0, 40).map((o) => `${o.flags.join("/")}${o.arg ? ` <${o.arg}>` : o.optionalArg ? `[=${o.optionalArg}]` : ""}`).join(", ")}` },
-        { name: "files", type: "json", required: false, description: 'Named input files {"name.txt": "content"}: written into the sandbox and passed as operands in this order (refer to them by name in options that take a file)' },
+        { name: "files", type: "json", required: false, description: 'Named input files {"name.txt": "content"}: staged with exact flat names (no paths or leading dash). Options can refer to these names. All are operands unless "operands" selects otherwise.' },
+        { name: "operands", type: "list:text", required: false, description: 'Names from "files" to append as positional operands, in this order. Omit for all files; [] for none. Auxiliary files used by options need not also be operands.' },
       ],
       outputs: base.outputs,
       risk: "read",
       // Evidence about the program's default behaviour holds for this interface too.
       tags: [name, "declared-interface", "direct-only", ...base.tags.filter((t) => /^(nondeterministic|unsupported|input-independent-in-samples)$/.test(t)), ...(inv.program.description ?? "").toLowerCase().match(/[a-z]{3,}/g) ?? []].slice(0, 32),
-      invoke: { ...inv0, behaviour: inv0.behaviour ? `${inv0.behaviour}+options` : undefined, options: { port: "options", allowed: offered.map((o) => ({ flags: o.flags, arg: !!o.arg, ...(o.optionalArg ? { optionalArg: true } : {}) })) }, filesPort: "files" },
+      invoke: { ...inv0, behaviour: inv0.behaviour ? `${inv0.behaviour}+options` : undefined, options: { port: "options", allowed: offered.map((o) => ({ flags: o.flags, arg: !!o.arg, ...(o.optionalArg ? { optionalArg: true } : {}) })) }, filesPort: "files", operandsPort: "operands" },
     });
     claim(id, `offers ${offered.length} documented options; refuses any other`, "declared", `${inv.options.length - offered.length} documented options not offered (help/version, or they write files, run commands or use the network)`);
   }

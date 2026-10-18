@@ -6,6 +6,8 @@
 // group is terminated when the program exits or exceeds a limit, so nothing it started outlives it.
 // Where the OS offers no such sandbox, execution is refused ("unavailable"), never run unconfined.
 
+import { validateFileNames } from "./cli-files.ts";
+
 export interface SandboxLimits {
   timeoutMs: number;
   maxOutputBytes: number;
@@ -118,12 +120,18 @@ function makeSandbox(kind: Sandbox["kind"], bwrap = ""): Sandbox {
       const os = await import("node:os");
       const path = await import("node:path");
       const limits = { ...DEFAULT_LIMITS, ...opts.limits };
+      validateFileNames(Object.keys(opts.files ?? {}));
       const work = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "rcx-sbx-")));
       const given = new Set<string>();
-      for (const [name, content] of Object.entries(opts.files ?? {})) {
-        const safe = path.basename(name);
-        fs.writeFileSync(path.join(work, safe), content);
-        given.add(safe);
+      try {
+        for (const [name, content] of Object.entries(opts.files ?? {})) {
+          // Exclusive creation also catches filesystem-specific aliases beyond our portable check.
+          fs.writeFileSync(path.join(work, name), content, { flag: "wx" });
+          given.add(name);
+        }
+      } catch (error) {
+        fs.rmSync(work, { recursive: true, force: true });
+        throw new Error(`cannot stage exact input files: ${String(error)} (HTTP 400 equivalent: nothing was run)`);
       }
       const wrapped = ["/bin/sh", "-c", LIMITS_SCRIPT, bin, ...args];
       let argv: string[];
