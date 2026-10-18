@@ -13,3 +13,5 @@ node experiments/north-star/cli-files-diagnostic.ts /tmp/rcx-cli-files-before.js
 ```
 
 Record the before result, add behavioral regression fixtures for demonstrated defects, freeze the corrected source and rerun the same diagnostic. Run relevant full regression/type/build/package checks after product changes. A separate checker must compare raw artifacts rather than trust the diagnostic's booleans. New holdouts, real model transfer, independent-author review and fair A/B/C/D economics remain required.
+
+The first diagnostic at `cd6a061` selected the first graph provider's option declarations instead of the investigated program's declarations. This omitted option values in two cases and is a harness failure, not product evidence for those cases. Its complete [artifact](evidence/cli-files/attempt1.json) and log are retained. The corrected diagnostic uses the investigation keyed by the exact executable path before establishing the product baseline.

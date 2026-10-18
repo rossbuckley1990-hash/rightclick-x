@@ -33,7 +33,7 @@ for (const p of manifest.programs.filter((p: any) => targets.includes(p.name))) 
     // ambiguous bare arguments stop this diagnostic case rather than inventing an invocation.
     const options: string[] = [];
     let mappingError: string | undefined;
-    const declared: any[] = [...rc.graph.providers.values()][0]?.meta?.investigation?.options as any[] ?? [];
+    const declared = rc.investigations.get(p.path)?.options ?? [];
     for (let i = 0; i < task.reference.argv.length; i++) {
       const token = task.reference.argv[i];
       const option = declared.find(o => o.flags.includes(token));
