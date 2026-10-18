@@ -2,13 +2,15 @@
 
 **Status: PARTIAL. Merge/release recommendation: NO-GO.** This applies the [exact user mission update](LIVING-CAPABILITY-MISSION.txt) to the existing Adaptive Capability Plane goal and Master Execution Specification. It neither restarts the programme nor substitutes dashboard acceptance for the original capability, authority, holdout or commercial requirements.
 
+Latest implementation: [runtime-backed lifecycle and five views](LIVING-LIFECYCLE.md), product `7d5de67`. Six separate dimensions, bounded persisted observations, paginated search and fixture-backed browser checks are implemented. Independent authority decisions, the public-provider challenge, complete traces, large-graph browser evaluation and economic advantage remain open.
+
 ## Baseline and ownership
 
 Work remains in `/Users/ross/src/rightclick-x-adaptive`, branch `programme/adaptive-capability-plane`. The audit began at `114d501` with planner product `f0bb7d3`; performance evidence was preserved at `4f7f511` before dashboard edits. The first dashboard metric stage is frozen at **`f20eac7`**. The worktree inventory is [retained](evidence/living-stage2/worktrees.txt); the main checkout and older North Star checkout have unrelated generated changes and were not edited. The collaboration inventory contained only this agent. No new branch, worktree or delegated agent was created.
 
 Before dashboard edits, typecheck passed and the complete native suite ran: **290/291, one failure, zero skips**. The unchanged memory-limit test printed `done`. Isolated runs pass on both old and candidate products, which does not diagnose or close the failure. See [the complete performance checkpoint](PUBLICATION-PERFORMANCE.md). The failed runs, setup errors and original thresholds remain preserved. Dashboard work does not modify sandbox enforcement.
 
-## Current implementation audit
+## Initial implementation audit (before lifecycle changes)
 
 | Area inspected | Verified implementation | Gap for the living demonstration |
 |---|---|---|
@@ -63,7 +65,7 @@ These gates do not supersede [the original acceptance matrix](ACCEPTANCE-MATRIX.
 | Gate | Status | Evidence / remaining work |
 |---|---|---|
 | G1 truthful statistics | PASS | Current header and learning/retention messages use explicit definitions; unknown values remain null. Scope is the corrected metric surface |
-| G2 sourced authority and verification states | PARTIAL | Metrics do not fabricate authority/verification; per-capability states and inspectable evidence views remain |
+| G2 sourced authority and verification states | PARTIAL | Six sourced dimensions and linked historical summaries now exist; live independent boundary evidence and complete outcome traces remain |
 | G3 unfamiliar provider contributes real operations | PARTIAL | Existing generic discovery; no new final Living Challenge provider/input set evaluated |
 | G4 useful multi-provider execution | PARTIAL | Existing runtime/proof fixtures; the public-provider headline workflow remains |
 | G5 independent required outcome check | PARTIAL | Existing witness/native checkers; separately controlled final evaluator and complete headline oracle remain |
@@ -71,31 +73,31 @@ These gates do not supersede [the original acceptance matrix](ACCEPTANCE-MATRIX.
 | G7 protected unauthorised refusal | PARTIAL | Audited bounded Actenon demonstrations; integrate actual decisions/effect readback into the live challenge |
 | G8 safe compatible adaptation | PARTIAL | Existing bounded lifecycle passes; live headline workflow and dashboard transition remain |
 | G9 incompatible/removed refusal | PARTIAL | Known changed-action safeguards and removal tests; live status/tombstone display remains |
-| G10 truthful lifecycle visualisation | PARTIAL | Existing event stream and corrected counts; full linked lifecycle view absent |
-| G11 complete regression suite | FAIL | Latest frozen run 295/295, but the preceding 290/291 memory-limit failure is not diagnosed/remediated; retain failed acceptance until the instability is resolved |
+| G10 truthful lifecycle visualisation | PARTIAL | Bounded persisted composition/execution/withdrawal observations and five views demonstrated; detailed attempt traces and full challenge remain |
+| G11 complete regression suite | FAIL | Final lifecycle revision 302/302 native and 24/24 focused Linux checks, but the preceding 290/291 memory-limit failure is not diagnosed/remediated; retain failed acceptance until the instability is resolved |
 | G12 reproducible headline demo | BLOCKED | Complete vertical slice/evaluator/command not yet implemented; do not relabel the toy demo |
 | G13 actual benchmark cost/correctness | PARTIAL | Preserved adverse agent results and bounded planner measurements; full new lifecycle comparison remains |
 | G14 thirteen-tool compatibility | PASS | Tool list unchanged; authenticated HTTP/interface regressions pass |
-| G15 no high-severity regression | PARTIAL | No execution-control changes in this UI stage; unresolved memory failure, UI security controls and independent review remain |
+| G15 no high-severity regression | PARTIAL | Hostile labels rendered inert in browser; history changes preserve controls. Unresolved memory failure, comprehensive UI/security evaluation and independent review remain |
 | G16 advantage or explicit absence | PASS | Reporting clause only: **advantage not established**. The original goal still requires a demonstrated advantage |
 
 ## Required deliverable tracking
 
 | Deliverable | Status | Current boundary |
 |---|---|---|
-| 1 Upgraded dashboard | PARTIAL | Metric correction only; five-view redesign remains |
-| 2 Accurate capability-state model | PARTIAL | Sourced metric model, six dimensions still to implement |
-| 3 Lifecycle events | PARTIAL | Existing real graph/run events; composition/evidence linkage and persistence remain |
-| 4 Searchable/inspectable graph | PARTIAL | Runtime search/explain exists; dashboard controls absent |
-| 5 Authority/consequence views | PARTIAL | Local audit and bounded Actenon evidence exist; live view absent |
-| 6 Evidence explorer | PARTIAL | Runtime run records and receipts exist; complete explorer absent |
+| 1 Upgraded dashboard | PARTIAL | First five-view dashboard implemented; headline live challenge and UX validation remain |
+| 2 Accurate capability-state model | PARTIAL | Six sourced dimensions implemented; exact-action authority remains explicitly unknown |
+| 3 Lifecycle events | PARTIAL | Bounded actual composition/execution observations, receipt links, persisted withdrawal IDs; complete attempt traces remain |
+| 4 Searchable/inspectable graph | PARTIAL | Provider clusters, paginated search and inspection work; representative browser-scale evaluation remains |
+| 5 Authority/consequence views | PARTIAL | Local policy view exists with unknown independent authority; optional live decision source remains |
+| 6 Evidence explorer | PARTIAL | Historical summary explorer and linked run/receipt references implemented; full outcome/authority evidence remains |
 | 7 Multi-provider demonstration | PARTIAL | Exposed fixtures only for the new mission |
 | 8 Actenon protected demonstration | PARTIAL | Bounded source-pinned demonstrations pass; live optional UI integration remains |
 | 9 Fresh-agent evidence | PARTIAL | Prior actual same-vendor evidence; new challenge remains |
 | 10 Adaptation/withdrawal evidence | PARTIAL | Prior bounded evidence; live challenge remains |
-| 11 Regression/adversarial tests | PARTIAL | New metric tests pass; unresolved full-suite security failure |
+| 11 Regression/adversarial tests | PARTIAL | Lifecycle/negative-control checks and frozen regressions pass; earlier intermittent security failure remains unresolved |
 | 12 Independent verification | BLOCKED | Same-author separate checkers exist; independent final evaluator/author review unmet |
-| 13 Performance benchmarks | PARTIAL | Existing measured results; large-graph UI and new lifecycle comparison remain |
+| 13 Performance benchmarks | PARTIAL | Synthetic API scale measured through 10,020 descriptors; browser scale and comparative lifecycle economics remain |
 | 14 One-command demo | BLOCKED | Not implemented; do not advertise a command |
 | 15 Proposed README | PARTIAL | Existing documentation; new supported-claim proposal pending demonstrated slice |
 | 16 Launch video brief | BLOCKED | Wait for actual recorded seven-act evidence |

@@ -2,7 +2,7 @@
 
 Assessment: **NO-GO for the North Star claim**. Continue the existing programme; a bounded development demonstration is not the required commercial, independently checked release. No merge, push, publication, purchase or outreach has been performed for this checkpoint.
 
-Latest additive dashboard checkpoint: [Living Capability Plane](LIVING-CAPABILITY-PLAN.md), product `f20eac7`. Truthful, sourced metrics are implemented; 295/295 native regressions, typecheck and 28/28 proof checks pass. The preceding memory-limit failure is preserved and unresolved because no sandbox remediation occurred. Five-view redesign, complete lifecycle/evidence model and the seven-act challenge remain incomplete. A later passing suite does not close that security issue or the original release gates.
+Latest additive dashboard checkpoint: [living lifecycle and five views](LIVING-LIFECYCLE.md), product `7d5de67`. Sourced dimensions, bounded persistent observations and the embedded dashboard are implemented; final freeze passes 302/302 native regressions, 24/24 focused Linux checks, typecheck, 28/28 proof checks, both bundles and 23/23 bounded Actenon lifecycle checks with native proof/refusal verification. Browser checks cover actual fixture composition, restart/withdrawal, inert labels, keyboard navigation and outage/recovery. The earlier memory-limit failure remains unresolved. Live independent authority, the seven-act challenge, full browser-scale testing and original commercial gates remain incomplete. A passing later suite does not close that security issue.
 
 | Required outcome | Evidence available | Release blocker |
 |---|---|---|
