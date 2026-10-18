@@ -180,7 +180,8 @@ export function reflectMcpTools(tools: any[], endpoint: string, serverName?: str
     const a = t.annotations ?? {};
     // MCP's defaults: a tool not marked read-only may be destructive unless it says otherwise.
     // Unknown side effects are treated as the most dangerous kind, not the most convenient.
-    const risk: Risk = a.readOnlyHint === true ? "read" : a.destructiveHint === false ? (a.openWorldHint === false ? "write" : "external") : "destructive";
+    // Preserve main's destructive-hint precedence, including malformed truthy annotations.
+    const risk: Risk = a.destructiveHint ? "destructive" : a.readOnlyHint === true ? "read" : a.destructiveHint === false ? (a.openWorldHint === false ? "write" : "external") : "destructive";
     return {
       id: `${providerId}:${slug(t.name)}`,
       title: t.title ?? a.title ?? t.name,
