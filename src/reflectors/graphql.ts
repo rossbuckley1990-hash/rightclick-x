@@ -113,7 +113,12 @@ export function reflectGraphQL(introspection: any, endpoint: string, title?: str
       // provider's contract. Expose up to 64 additional, specifically typed
       // identifier leaves for joins; execution must explicitly project them.
       const portNames = new Set(ports.map(p => p.name));
-      for (const f of declared.filter(f => f.type && /^(list:)?id\./.test(f.type) && !portNames.has(f.path)).slice(0, 64)) {
+      // A long sequence of earlier list relationships must not hide a scalar
+      // identifier. This matches the planner's preference for single values over
+      // fan-out; it is not proof that similarly typed identifiers mean the same thing.
+      const identifiers = declared.filter(f => f.type && /^(list:)?id\./.test(f.type) && !portNames.has(f.path));
+      identifiers.sort((a, b) => Number(a.type!.startsWith("list:")) - Number(b.type!.startsWith("list:")));
+      for (const f of identifiers.slice(0, 64)) {
         ports.push({ name: f.path, type: f.type!, required: false });
       }
       capabilities.push({
