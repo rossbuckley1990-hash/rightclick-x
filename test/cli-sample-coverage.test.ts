@@ -128,3 +128,25 @@ test("old CLI inference is re-derived on upgrade only under current program auth
     assert.equal(f.store.state?.semantics, SEMANTICS);
   }
 });
+
+test("inference migration cannot erase a direct caller's changed-meaning refusal", { skip }, async () => {
+  const f = await fixture("json");
+  await f.rc.flush();
+  f.store.state!.semantics = SEMANTICS - 1;
+  writeFileSync(f.program, `#!/bin/sh
+if [ "$1" = "--help" ]; then printf 'usage: structured [FILE]\\n'; exit 0; fi
+[ "$#" = 0 ] || exit 65
+input=$(cat)
+case "$input" in '{'*) printf '{"changed":true}\\n';; *) exit 65;; esac
+`, { mode: 0o755 });
+  const fresh = await f.create();
+  const before = f.wires.length;
+  const result = await fresh.run("cli:structured:default", { json: input.json });
+  assert.equal(result.status, "failed", JSON.stringify(result));
+  assert.match(result.error!, /changed meaning/);
+  assert.equal(f.wires.length, before, "the changed operation must not execute the caller's input");
+  await fresh.flush();
+  const restarted = await f.create();
+  assert.match((await restarted.run("cli:structured:default", { json: input.json })).error!, /changed meaning/);
+  assert.equal(f.wires.length, before);
+});

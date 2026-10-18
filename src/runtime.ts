@@ -30,7 +30,7 @@ import { detectRuntime, platformReflection, type PlatformFn, type RuntimeInfo } 
 
 export const VERSION = "0.1.0";
 /** Bump whenever semantic inference changes: persisted reflections are then re-derived from their sources. */
-export const SEMANTICS = 24;
+export const SEMANTICS = 25;
 
 export interface Store {
   load(): Promise<PersistedState | null>;
@@ -405,10 +405,13 @@ export class RightClick {
       if (stale) {
         const kinds: Record<string, SourceKind> = {};
         const programs: string[] = [];
+        const operations = new Map<string, Map<string, string | undefined>>();
         for (const p of rc.graph.providers.values()) {
           if (["openapi", "graphql", "mcp", "web", "peer"].includes(p.source)) kinds[(p.meta?.source as string | undefined) ?? p.origin] = p.source as SourceKind;
           if (p.source === "cli") {
-            programs.push(`cli:${p.origin}`);
+            const source = `cli:${p.origin}`;
+            programs.push(source);
+            operations.set(source, new Map(p.capabilityIds.map(id => [id, rc.graph.get(id) ? operationOf(rc.graph.get(id)!) : undefined] as const)));
             // Retire stale invocations before a possibly refused/failed migration.
             // Published anchors remain pinned; migration never silently rebinds them.
             rc.graph.forget(p.id);
@@ -416,6 +419,13 @@ export class RightClick {
         }
         if (Object.keys(kinds).length) await rc.learn({ sources: Object.keys(kinds), kinds });
         if (programs.length) await rc.learn({ sources: programs });
+        for (const [source, before] of operations) {
+          const present = [...before.keys()].filter(id => {
+            const cap = rc.graph.get(id);
+            return cap && rc.graph.providers.get(cap.provider)?.meta?.source === source;
+          });
+          rc.noteMeaningChanges(source, present, before);
+        }
         rc.persist();
       }
     }
