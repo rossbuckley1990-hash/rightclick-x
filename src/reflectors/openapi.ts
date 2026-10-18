@@ -2,7 +2,7 @@
 
 import { inferInContext, inferType, type SchemaLike } from "../core/semantics.ts";
 import type { Capability, Port, Reflection, Risk } from "../core/types.ts";
-import { readBody, request, slug, type Net } from "./net.ts";
+import { cancelBody, DISCOVERY_BODY_LIMIT, readBody, request, slug, type Net } from "./net.ts";
 
 type Obj = Record<string, any>;
 
@@ -177,7 +177,7 @@ export async function settleUnstatedBase(net: Net, spec: Obj, specUrl: string, r
       try {
         const res = await request(net, joinUrl(base, path), { headers: { accept: "application/json" } });
         const routed = res.status !== 404 && res.status < 500;
-        const body = routed ? await readBody(res) : (await res.body?.cancel(), null);
+        const body = routed ? await readBody(res, DISCOVERY_BODY_LIMIT) : (cancelBody(res), null);
         const isJson = !!body && typeof body === "object";
         tried.push(`GET ${joinUrl(base, path)} → ${res.status}${routed ? (isJson ? " json" : " not json") : ""}`);
         if (!routed || !isJson) continue;
