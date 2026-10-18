@@ -17,7 +17,7 @@ import { isSensitiveName, scrub, sensitiveValues } from "./core/secrets.ts";
 import { investigateCli, replayExamples, validateOptions, type Investigation } from "./reflectors/cli.ts";
 import { JsonRepresentationError, parseJsonValue } from "./core/json.ts";
 import { KNOWLEDGE_FORMAT, type ImportReport, type KnowledgeBundle } from "./core/knowledge.ts";
-import { assessExecution, consequentialRisks, ExecutionDenied, intersectOrigins, parseExecutionPolicy, type ExecutionPolicy } from "./core/execution-policy.ts";
+import { assessExecution, consequentialRisks, ExecutionDenied, intersectOrigins, parseExecutionPolicy, type ExecutionAssessment, type ExecutionPolicy } from "./core/execution-policy.ts";
 import { distance, inferType, inspectValue, type Inspection } from "./core/semantics.ts";
 import type { Capability, CapabilityAnchor, FetchLike, PlanStep, Reflection, SemType } from "./core/types.ts";
 import { check, pick, type Predicate, type PredicateResult, type OutcomeWitness, type WitnessResult } from "./core/verify.ts";
@@ -50,7 +50,7 @@ export interface PersistedState {
   semantics?: number;
   /** Identifier-scheme evidence learned from observed values (core/identities.ts). */
   identities?: IdentityState;
-  /** Capability ids that changed meaning on re-learning and are not yet acknowledged. */
+  /** Capability ids that no longer name their previously retained operation. */
   meaningChanges?: MeaningChange[];
 }
 
@@ -925,7 +925,7 @@ export class RightClick {
     opts: {
       verify?: Predicate[];
       confirm?: boolean;
-      /** Run an id that re-learning pointed at a different operation, having seen the change. */
+      /** @deprecated Caller acknowledgement cannot clear a changed-operation refusal. */
       acknowledgeChange?: boolean;
       activeGoals?: string[];
       net?: Net;
@@ -942,11 +942,8 @@ export class RightClick {
       if (!opts.confirm) throw new ConfirmationRequired(cap.id, cap.title);
     }
     // An id the caller chose for what it used to do must not quietly do something else.
-    const change = opts.planned ? undefined : this.meaningChanges.get(cap.id);
-    const refused = change && !opts.acknowledgeChange
-      ? `${cap.id} changed meaning when ${change.source} was re-learned (${change.at}): it called ${change.before}, it now calls ${change.after}. Not run.${change.successor ? ` The operation it used to call is now ${change.successor}.` : ""} Call again with acknowledgeChange: true to run the new operation.`
-      : undefined;
-    if (change && !refused) this.meaningChanges.delete(cap.id);
+    const change = this.meaningChanges.get(cap.id);
+    const refused = this.changedMeaningRefusal(cap.id);
     const runId = `run_${Date.now().toString(36)}_${(++this.runCounter).toString(36)}`;
     const startedAt = new Date().toISOString();
     const t0 = performance.now();
@@ -1031,7 +1028,6 @@ export class RightClick {
       ...(healing ? { healing } : {}),
       ...(change ? { changedMeaning: change } : {}),
     };
-    if (change && !refused) this.persist();
     this.runs.set(runId, rec);
     if (this.runs.size > RUN_BUFFER) this.runs.delete(this.runs.keys().next().value!);
     this.graph.emit("run.completed", { runId, capability: cap.id, title: cap.title, provider: cap.provider, ok, durationMs, verification: verification.status });
@@ -2037,8 +2033,30 @@ export class RightClick {
 
   // ================================================================ execution
 
+  private changedMeaningRefusal(id: string): string | undefined {
+    const change = this.meaningChanges.get(id);
+    if (!change) return undefined;
+    return `${id} changed meaning when ${change.source} was re-learned (${change.at}): it called ${change.before}, it now calls ${change.after}. Not run.${change.successor ? ` The operation it used to call is now ${change.successor}.` : ""} Caller acknowledgement cannot clear this refusal; this retained identifier no longer names the original operation.`;
+  }
+
   private executionAssessment(cap: Capability) {
-    return assessExecution(cap, this.graph, this.executionPolicy);
+    const assessment = assessExecution(cap, this.graph, this.executionPolicy);
+    // Reuse the policy assessment's bounded dependency tree. Reject an entire
+    // static composite before an earlier effect can precede a changed leaf.
+    // This is a semantic safeguard, not an independent authority boundary.
+    const restrict = (node: ExecutionAssessment): boolean => {
+      let changed = false;
+      for (const child of node.dependencies) if (restrict(child)) {
+        node.reasons.push(`dependency ${child.capability}: retained operation changed meaning`);
+        changed = true;
+      }
+      const refusal = this.changedMeaningRefusal(node.capability);
+      if (refusal) { node.reasons.push(refusal); changed = true; }
+      if (changed) node.allowed = false;
+      return changed;
+    };
+    restrict(assessment);
+    return assessment;
   }
 
   private assertExecution(cap: Capability) {
