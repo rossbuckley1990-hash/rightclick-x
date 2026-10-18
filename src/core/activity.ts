@@ -112,7 +112,7 @@ export class ActivityLog {
     if (!["provider.learned", "provider.forgotten", "provider.withdrawn", "provider.drifted", "capability.crystallized", "capability.retired", "goal.published"].includes(e.kind)) return;
     const d = e.data;
     const strings = (v: unknown) => Array.isArray(v) ? v.filter((s): s is string => typeof s === "string") : [];
-    const subjects = typeof d.id === "string" ? [d.id] : typeof d.slug === "string" ? [`goal:${d.slug}`] : [...strings(d.removed), ...strings(d.modified), ...strings(d.retired)];
+    const subjects = typeof d.id === "string" ? [d.id] : typeof d.slug === "string" ? [`goal:${d.slug}`] : [...strings(d.capabilities), ...strings(d.removed), ...strings(d.modified), ...strings(d.retired)];
     const providers = typeof d.provider === "string" ? [d.provider] : [...strings(d.providers), ...strings(d.providersBefore), ...strings(d.providersAfter)];
     this.append({ kind: e.kind, status: "observed", subjects, providers: [...new Set(providers)], contracts: subjects.flatMap(id => { const c = graph.get(id); return c ? [reference(c)] : []; }) });
   }

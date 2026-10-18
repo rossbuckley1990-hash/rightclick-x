@@ -78,6 +78,22 @@ test("refusals, unavailable plans and failed checks are real events without prov
   assert.doesNotMatch(JSON.stringify(rc.activity.snapshot()), /raw-password|a-sensitive-input/);
 });
 
+test("withdrawal records identifiers even for operations never executed", async () => {
+  const store = new MemoryStore(), { rc } = await world({}, { store });
+  await learnAll(rc);
+  const provider = rc.graph.providers.get("mcp:skycast")!;
+  const ids = [...provider.capabilityIds];
+  assert.equal(rc.runs.size, 0);
+  rc.graph.forget(provider.id);
+  const event = rc.activity.read({ limit: 100 }).entries.findLast(e => e.kind === "provider.forgotten")!;
+  assert.deepEqual(event.subjects, ids);
+  await rc.flush();
+  const restored = (await world({}, { store })).rc;
+  assert.deepEqual(restored.activity.read({ limit: 100 }).entries.find(e => e.id === event.id)?.subjects, ids);
+  assert.ok(ids.every(id => capabilityState(restored, id).states.discovery.state === "absent"));
+  await restored.flush();
+});
+
 test("bounded history reports overflow, restart, invalid cursor and truncated evidence", () => {
   const log = new ActivityLog();
   for (let i = 0; i < ACTIVITY_LIMIT + 10; i++) log.append({ kind: "execution.finished", status: "completed", subjects: [`cap-${i}`] });

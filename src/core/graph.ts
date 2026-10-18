@@ -112,10 +112,11 @@ export class CapabilityGraph {
 
   forget(providerId: string): boolean {
     if (!this.providers.has(providerId)) return false;
+    const capabilities = [...this.providers.get(providerId)!.capabilityIds];
     this.dropProvider(providerId);
     this.invalidate();
     this.retireBroken();
-    this.emit("provider.forgotten", { provider: providerId });
+    this.emit("provider.forgotten", { provider: providerId, capabilities });
     return true;
   }
 
