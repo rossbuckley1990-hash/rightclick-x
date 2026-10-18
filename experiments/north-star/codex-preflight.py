@@ -30,19 +30,25 @@ def main():
     version = subprocess.run(["codex", "--version"], env=env, capture_output=True, text=True, check=True)
     result["version"] = version.stdout.strip()
     with (output / "stderr.log").open("w") as stderr:
-        process = subprocess.Popen(command, env=env, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=stderr, text=True)
+        process = subprocess.Popen(command, env=env, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=stderr)
         selector = selectors.DefaultSelector()
         selector.register(process.stdout, selectors.EVENT_READ)
+        pending = b""
         def call(number, method, params):
-            process.stdin.write(json.dumps({"jsonrpc": "2.0", "id": number, "method": method, "params": params}) + "\n")
+            nonlocal pending
+            process.stdin.write((json.dumps({"jsonrpc": "2.0", "id": number, "method": method, "params": params}) + "\n").encode())
             process.stdin.flush()
             deadline = time.monotonic() + 25
             while time.monotonic() < deadline:
-                if not selector.select(max(0, deadline - time.monotonic())):
-                    break
-                line = process.stdout.readline()
-                if not line:
-                    raise RuntimeError("app-server exited")
+                if b"\n" not in pending:
+                    if not selector.select(max(0, deadline - time.monotonic())):
+                        break
+                    chunk = os.read(process.stdout.fileno(), 65536)
+                    if not chunk:
+                        raise RuntimeError("app-server exited")
+                    pending += chunk
+                    continue
+                line, pending = pending.split(b"\n", 1)
                 item = json.loads(line)
                 if item.get("id") == number:
                     if "error" in item:
@@ -51,7 +57,7 @@ def main():
             raise TimeoutError(method)
         try:
             call(1, "initialize", {"clientInfo": {"name": "rcx_preflight", "title": None, "version": "1"}, "capabilities": {"experimentalApi": True}})
-            process.stdin.write('{"jsonrpc":"2.0","method":"initialized"}\n')
+            process.stdin.write(b'{"jsonrpc":"2.0","method":"initialized"}\n')
             process.stdin.flush()
             account = call(2, "account/read", {"refreshToken": False})
             result["responses"]["account/read"] = {"type": (account.get("account") or {}).get("type"), "planType": (account.get("account") or {}).get("planType")}
