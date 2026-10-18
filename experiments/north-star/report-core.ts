@@ -30,6 +30,15 @@ export function reportBenchmark(bench: Row, opts: Options = {}) {
   const S: Row[] = bench.sessions.filter((s: Row) => !blocked.includes(s));
   const by = (arm: string, predicate: (s: Row) => boolean = () => true) => S.filter((s) => s.arm === arm && predicate(s));
   const problems: string[] = [];
+  if (bench.schema === 3) {
+    if (!Array.isArray(bench.previousAttempts)) problems.push("Measured benchmark lacks preserved attempt history.");
+    else if (bench.previousAttempts.length) problems.push("Retried attempts preserved but their lifecycle costs need reconciliation before acceptance.");
+    for (const s of S) {
+      if (!s.observation?.complete || s.keyProvenance?.commit !== bench.commit || s.keyProvenance?.holdoutSha256 !== bench.holdoutSha256) problems.push(`${s.arm}|${key(s)} lacks complete bound execution measurement`);
+      if (s.correct && (feasible(s) || s.phase === "compatible-change") && s.observation?.taskExecutionObserved !== true) problems.push(`${s.arm}|${key(s)} claims success without observed task execution`);
+      if (s.arm === "D" && s.investigationsStarted !== s.observation?.investigationsStarted) problems.push(`${s.arm}|${key(s)} investigation count disagrees with observation`);
+    }
+  }
   const expected = new Map<string, { phase: string; task: string }>();
   const programs: string[] = [];
   let unseenInputs = true;

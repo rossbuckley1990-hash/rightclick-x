@@ -6,13 +6,21 @@
 // Every call is appended to DS_LOG.
 import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createInterface } from "node:readline";
+import { recordSandbox } from "./observation.ts";
 import { hostSandbox } from "../../src/core/sandbox.ts";
 
 const PROGRAM = process.env.DS_PROGRAM;
 const SKILLS = process.env.DS_SKILLS;
 const ORIGIN = process.env.DS_ORIGIN;
 const LOG = process.env.DS_LOG;
-const sandbox = PROGRAM ? await hostSandbox() : null;
+const baseSandbox = PROGRAM ? await hostSandbox() : null;
+const observation = PROGRAM && process.env.DS_OBSERVATION_LOG && process.env.DS_SESSION_ID
+  ? recordSandbox(process.env.DS_OBSERVATION_LOG, process.env.DS_SESSION_ID, PROGRAM, baseSandbox, "baseline") : null;
+const sandbox = observation ? observation.sandbox : baseSandbox;
+if (observation) {
+  process.once("exit", observation.close);
+  process.once("SIGTERM", () => process.exit(0));
+}
 const obj = (properties: Record<string, unknown>, required: string[] = []) => ({ type: "object", properties, required });
 const tools: any[] = [];
 if (PROGRAM)
@@ -43,7 +51,7 @@ const safeName = (n: string) => String(n).replace(/[^\w.-]/g, "_").slice(0, 80);
 async function call(name: string, a: any): Promise<string> {
   if (name === "run_program" && PROGRAM) {
     if (!sandbox) return "unavailable: no sandbox";
-    const r = await sandbox.run(PROGRAM, (a.args ?? []).map(String), { stdin: a.stdin ?? "", files: a.files ?? {} });
+    const r = await sandbox.run(PROGRAM, (a.args ?? []).map(String), { stdin: a.stdin ?? "", files: a.files ?? {}, purpose: "agent-run" });
     log({ tool: name, args: a.args ?? [], stdinBytes: String(a.stdin ?? "").length, files: Object.keys(a.files ?? {}), exit: r.code });
     return JSON.stringify({ exit: r.code, stdout: r.stdout.slice(0, 60_000), stderr: r.stderr.slice(0, 4000), timedOut: r.timedOut });
   }

@@ -85,33 +85,52 @@ export interface Session {
   tokens?: number;
   exit: number | null;
   blocked?: string;
+  evidenceDir?: string;
+  timedOut?: boolean;
 }
 
-export function claudeSession(opts: { prompt: string; servers: Record<string, unknown>; allowed: string; model: string; maxTurns?: number; timeoutMs?: number }): Promise<Session> {
-  const dir = realpathSync(mkdtempSync(join(tmpdir(), "ns-session-")));
+/** Keep subscription login in the user's keychain; do not inherit API/provider credentials. */
+export function subscriptionEnvironment(source: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+  return Object.fromEntries(["PATH", "HOME", "USER", "LOGNAME", "SHELL", "TMPDIR", "LANG", "LC_ALL", "TERM"].flatMap(key => source[key] === undefined ? [] : [[key, source[key]!]]));
+}
+export function measuredTokens(usage: any): number | undefined {
+  if (!usage || !["input_tokens", "output_tokens"].every(key => Number.isFinite(usage[key]) && usage[key] >= 0)) return undefined;
+  const optional = [usage.cache_creation_input_tokens, usage.cache_read_input_tokens];
+  if (optional.some(v => v !== undefined && (!Number.isFinite(v) || v < 0))) return undefined;
+  return usage.input_tokens + usage.output_tokens + (optional[0] ?? 0) + (optional[1] ?? 0);
+}
+
+export function claudeSession(opts: { prompt: string; servers: Record<string, unknown>; allowed: string; model: string; maxTurns?: number; timeoutMs?: number; evidenceDir?: string }): Promise<Session> {
+  const dir = opts.evidenceDir ?? realpathSync(mkdtempSync(join(tmpdir(), "ns-session-")));
   writeFileSync(`${dir}/mcp.json`, JSON.stringify({ mcpServers: opts.servers }));
   const t0 = performance.now();
   return new Promise((done) => {
-    const p = spawn("claude", ["-p", opts.prompt, "--model", opts.model, "--mcp-config", `${dir}/mcp.json`, "--strict-mcp-config", "--allowedTools", opts.allowed, "--disallowedTools", "Bash,Read,Write,Edit,MultiEdit,WebFetch,WebSearch,Glob,Grep,Task,Agent,NotebookEdit,TodoWrite", "--output-format", "json", "--max-turns", String(opts.maxTurns ?? 30)], { cwd: dir, stdio: ["ignore", "pipe", "pipe"] });
+    const p = spawn("claude", ["-p", opts.prompt, "--model", opts.model, "--mcp-config", `${dir}/mcp.json`, "--strict-mcp-config", "--setting-sources", "", "--tools", "", "--allowedTools", opts.allowed, "--disallowedTools", "Bash,Read,Write,Edit,MultiEdit,WebFetch,WebSearch,Glob,Grep,Task,Agent,NotebookEdit,TodoWrite", "--output-format", "json", "--max-turns", String(opts.maxTurns ?? 30)], { cwd: dir, env: subscriptionEnvironment(process.env), detached: true, stdio: ["ignore", "pipe", "pipe"] });
     let out = "";
     let err = "";
     p.stdout.on("data", (d) => (out += d));
     p.stderr.on("data", (d) => (err += d));
-    const timer = setTimeout(() => p.kill("SIGKILL"), opts.timeoutMs ?? 600_000);
+    let timedOut = false;
+    const killGroup = () => { if (p.pid) { try { process.kill(-p.pid, "SIGKILL"); } catch { /* already exited */ } } };
+    const timer = setTimeout(() => { timedOut = true; killGroup(); }, opts.timeoutMs ?? 600_000);
+    p.on("error", error => { err += `\nspawn error: ${String(error)}`; });
     p.on("close", (code) => {
       clearTimeout(timer);
+      // Preserve exact outputs, including quota/failure replies; no credentials are logged.
+      writeFileSync(`${dir}/agent.stdout`, out);
+      writeFileSync(`${dir}/agent.stderr`, err);
+      writeFileSync(`${dir}/agent-exit.json`, JSON.stringify({ code, timedOut }));
       const seconds = Math.round((performance.now() - t0) / 100) / 10;
       try {
         const j = JSON.parse(out);
-        const u = j.usage ?? {};
-        const tokens = (u.input_tokens ?? 0) + (u.output_tokens ?? 0) + (u.cache_creation_input_tokens ?? 0) + (u.cache_read_input_tokens ?? 0);
+        const tokens = measuredTokens(j.usage);
         const reply = String(j.result ?? "");
         const blocked = quotaBlock(reply);
-        done({ reply, seconds, turns: j.num_turns, costUsd: j.total_cost_usd, tokens, exit: code, ...(blocked ? { blocked } : {}) });
+        done({ reply, seconds, evidenceDir: dir, timedOut, turns: j.num_turns, costUsd: j.total_cost_usd, tokens, exit: code, ...(blocked ? { blocked } : {}) });
       } catch {
         const text = (out + err).slice(-2000);
         const blocked = quotaBlock(text);
-        done({ reply: text, seconds, exit: code, ...(blocked ? { blocked } : {}) });
+        done({ reply: text, seconds, evidenceDir: dir, timedOut, exit: code, ...(blocked ? { blocked } : {}) });
       }
     });
   });

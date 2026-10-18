@@ -133,3 +133,30 @@ test("report CLI never overwrites input or existing report bytes", () => {
     assert.equal(readFileSync(output, "utf8"), "preserved");
   }
 });
+
+test("measured benchmark gates reject missing execution, altered counts, provenance and unaccounted retries", () => {
+  const measured = () => {
+    const f = fixture();
+    Object.assign(f.bench, { schema: 3, holdoutSha256: "manifest", previousAttempts: [] });
+    for (const s of f.bench.sessions) {
+      s.keyProvenance = { commit: "synthetic", holdoutSha256: "manifest" };
+      s.observation = { complete: true, taskExecutionObserved: true, investigationsStarted: 0 };
+    }
+    return f;
+  };
+  const positive = measured();
+  assert.equal(reportBenchmark(positive.bench, positive.opts).gates.stage4.status, "PASS");
+  for (const change of [
+    (b: any) => { b.sessions[0].observation.complete = false; },
+    (b: any) => { b.sessions[0].observation.taskExecutionObserved = false; },
+    (b: any) => { b.sessions[0].keyProvenance.commit = "different"; },
+    (b: any) => { b.sessions.find((s: any) => s.arm === "D").investigationsStarted = 1; },
+    (b: any) => { b.previousAttempts.push({ blocked: "quota", tokens: 100 }); },
+    (b: any) => { delete b.previousAttempts; },
+  ]) {
+    const { bench, opts } = measured(); change(bench);
+    const r = reportBenchmark(bench, opts);
+    assert.ok(r.problems.length > 0);
+    assert.notEqual(r.gates.stage4.status, "PASS");
+  }
+});

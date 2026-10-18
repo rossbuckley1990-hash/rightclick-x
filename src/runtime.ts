@@ -109,6 +109,8 @@ export interface RuntimeOptions {
   authority?: OperatorAuthority;
   /** Override the host sandbox (tests and negative controls); null = no sandbox available. */
   sandbox?: Sandbox | null;
+  /** Host measurement hook, fired only when a new CLI investigation starts (not cache reuse). */
+  onInvestigationStart?: (program: string) => void;
 }
 
 export interface OperatorAuthority {
@@ -333,6 +335,7 @@ export class RightClick {
   private shareEvidence = false;
   private publishPolicy: "any" | "checked" | "verified" = "any";
   private sandboxCache?: Promise<Sandbox | null>;
+  private onInvestigationStart?: (program: string) => void;
   private hashCache = new Map<string, { key: string; sha256: string }>();
 
   private constructor(opts: RuntimeOptions) {
@@ -348,6 +351,7 @@ export class RightClick {
     this.info = { ...detectRuntime(), region: opts.region };
     this.name = opts.name ?? "rightclick-x";
     this.store = opts.store;
+    this.onInvestigationStart = opts.onInvestigationStart;
   }
 
   static async create(opts: RuntimeOptions = {}): Promise<RightClick> {
@@ -969,6 +973,7 @@ export class RightClick {
         return { reflections: [{ provider: known, capabilities: caps }], probes: [{ url: `cli:${bin}`, kind: "cli", ok: true, detail: `already learned and unchanged (sha256 ${sha.slice(0, 12)}): ${caps.length} capabilit${caps.length === 1 ? "y" : "ies"}: ${caps.map((c) => c.id).join(", ")}; nothing re-run` }] };
       }
     }
+    this.onInvestigationStart?.(bin);
     const { reflection, investigation } = await investigateCli(bin, sb);
     if (!(await sameProgram(bin, check.identity))) throw new Error(`${bin} changed while it was being investigated; nothing learned`);
     this.investigations.set(bin, investigation);
@@ -2093,7 +2098,7 @@ export class RightClick {
             argv.push(safe);
           }
         }
-        const r = await sb.run(inv.bin, argv, { stdin: inv.stdin ? asContent(args[inv.stdin]) : "", files });
+        const r = await sb.run(inv.bin, argv, { stdin: inv.stdin ? asContent(args[inv.stdin]) : "", files, purpose: "execution" });
         // A file swapped while it ran: its output belongs to a program nobody checked.
         if (!(await sameProgram(inv.bin, id))) throw new Error(`${inv.bin} was replaced while it ran; its output is discarded (HTTP 409 equivalent)`);
         if (r.limit && r.limit !== "time" && r.limit !== "output") throw new Error(`${inv.bin} exceeded the sandbox's ${r.limit} limit`);

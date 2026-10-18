@@ -53,7 +53,8 @@ export interface Sandbox {
   kind: "macos-sandbox-exec" | "linux-bwrap";
   /** What this sandbox enforces, stated for evidence and capability cards. */
   enforces: string[];
-  run(bin: string, args: string[], opts?: { stdin?: string; files?: Record<string, string>; limits?: Partial<SandboxLimits> }): Promise<SandboxRun>;
+  /** purpose is host telemetry only; it grants no authority and changes no confinement. */
+  run(bin: string, args: string[], opts?: { stdin?: string; files?: Record<string, string>; limits?: Partial<SandboxLimits>; purpose?: "execution" | "investigation" | "revalidation" | "agent-run" }): Promise<SandboxRun>;
 }
 
 let probed: Promise<Sandbox | null> | undefined;

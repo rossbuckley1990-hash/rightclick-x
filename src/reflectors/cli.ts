@@ -231,7 +231,7 @@ export async function replayExamples(inv: CliInvoke, sandbox: Sandbox): Promise<
   let matched = 0;
   for (const [i, ex] of examples.entries()) {
     const argv = [...inv.args.filter((a): a is string => typeof a === "string"), ...(ex.literals ?? []), ...Object.keys(ex.files ?? {})];
-    const r = await sandbox.run(inv.bin, argv, { stdin: ex.stdin ?? "", files: ex.files });
+    const r = await sandbox.run(inv.bin, argv, { stdin: ex.stdin ?? "", files: ex.files, purpose: "revalidation" });
     const stripped = r.workDir ? r.stdout.split(r.workDir).join("<work>").split(r.workDir.replace(/^\/private/, "")).join("<work>") : r.stdout;
     const out = inv.volatile === "timestamps" ? withoutTimes(stripped) : stripped;
     if (crypto.createHash("sha256").update(out).digest("hex") === ex.outputSha256) matched++;
@@ -360,7 +360,7 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
   let budget = MAX_RUNS;
   const run = async (purpose: string, args: string[], o: { stdin?: string; files?: Record<string, string> } = {}): Promise<SandboxRun | null> => {
     if (budget-- <= 0) return null;
-    const raw = await sandbox.run(bin, args, o);
+    const raw = await sandbox.run(bin, args, { ...o, purpose: "investigation" });
     // Programs that print their own file names would differ run to run only by the sandbox's
     // private directory; that is not behaviour.
     const strip = (t: string) => (raw.workDir ? t.split(raw.workDir).join("<work>").split(raw.workDir.replace(/^\/private/, "")).join("<work>") : t);
@@ -380,7 +380,7 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
   let manual = "";
   // Versioned installs (xsubpp5.34, pg_dump-17, python3.12) file their manual under the base name.
   for (const page of [...new Set([name, name.replace(/[-_.]?\d+(?:\.\d+)*$/, "")])].filter(Boolean)) {
-    const m = await sandbox.run("/usr/bin/man", ["-P", "cat", page]).catch(() => null);
+    const m = await sandbox.run("/usr/bin/man", ["-P", "cat", page], { purpose: "investigation" }).catch(() => null);
     if (m && m.code === 0 && m.stdout.trim()) {
       manual = m.stdout.replace(/.\x08/g, "");
       break;
@@ -404,7 +404,7 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
   const delegate = /options? (?:are|is) (?:the )?same as (?:for |those of |those for )?[`'"]?([a-z][\w.-]*)[`'"]?(?:\s+or\s+[`'"]?([a-z][\w.-]*)[`'"]?)?/i.exec(docs);
   if (delegate) {
     for (const other of [delegate[2], delegate[1]].filter(Boolean) as string[]) {
-      const om = await sandbox.run("/usr/bin/man", ["-P", "cat", other]).catch(() => null);
+      const om = await sandbox.run("/usr/bin/man", ["-P", "cat", other], { purpose: "investigation" }).catch(() => null);
       if (!om || om.code !== 0 || !om.stdout.trim()) continue;
       const seenFlags = new Set(inv.options.flatMap((o) => o.flags));
       const extra = parseUsage(om.stdout.replace(/.\x08/g, "")).options.filter((o) => !o.flags.some((f) => seenFlags.has(f)));
