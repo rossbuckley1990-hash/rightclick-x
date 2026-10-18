@@ -14,7 +14,13 @@ function fixture(list=false,needsArgument=false){
   {kind:'OBJECT',name:'Reference',fields:[field('reference_id',scalar,needsArgument?[{name:'secret',type:{kind:'NON_NULL',name:null,ofType:scalar},defaultValue:null}]:[])]},
   {kind:'SCALAR',name:'String'}
  ]}}};
- const spec={openapi:'3.0.0',info:{title:'Publication facts'},servers:[{url:'https://facts.test'}],paths:{'/facts/{reference_id}':{get:{operationId:'lookup',parameters:[{name:'reference_id',in:'path',required:true,schema:{type:'string'}}],responses:{'200':{description:'ok',content:{'application/json':{schema:{type:'object',properties:{publisher:{type:'string'},reference_id:{type:'string'}}}}}}}}}};
+ const spec={
+  openapi:'3.0.0',info:{title:'Publication facts'},servers:[{url:'https://facts.test'}],
+  paths:{'/facts/{reference_id}':{get:{
+   operationId:'lookup',parameters:[{name:'reference_id',in:'path',required:true,schema:{type:'string'}}],
+   responses:{'200':{description:'ok',content:{'application/json':{schema:{type:'object',properties:{publisher:{type:'string'},reference_id:{type:'string'}}}}}}}
+  }}}
+ };
  const fetcher=(async(input:any,init?:RequestInit)=>{
   const u=new URL(typeof input==='string'?input:input.url);
   if(u.host==='records.test'){
