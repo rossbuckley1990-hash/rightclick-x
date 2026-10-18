@@ -6,6 +6,8 @@
 
 Follow-up: the [bounded integration experiment](ACTENON-INTEGRATION-EXPERIMENT.md) now supplies local execution, denial, containment-probe and independent-observer evidence. The full preregistered experiment below remains partial; the original source-audit conclusions and production NO-GO are preserved.
 
+Further evidence: [no-grant discovery and worker experiment](ACTENON-WORKERS-RESULT.md) passes 23 bounded checks and preserves its failed first attempt. It also establishes a deployment constraint: Permit's store-level effect claim verifies the HMAC grant, so a trusted claim process needs that secret; public proof-verification keys alone are insufficient. A resource-owned boundary and production custody design remain open.
+
 ## 1. Source and release maturity
 
 These are fresh read-only clones of the five requested public repositories, not assumptions from cached web pages. All five use Apache-2.0 licensing. Exact commits and initial clean state are in [source audit](actenon-source-audit.json). Public registry and GitHub release responses were saved on the audit date in [registry summary](actenon/registry-summary.json).

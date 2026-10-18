@@ -167,3 +167,9 @@ These were recorded on 2026-10-17, after the harness pilot on development progra
    - Agent-session and challenge harnesses also recognise "session limit" as blocked; challenge stage B on `ns-freeze-1` was cut off this way and is re-run.
    - No product code changed, so the freeze is unchanged.
 6. **Domain 2 invalid tasks.** On `ns-freeze-1`, all four REST Countries tasks were invalid: the evaluator's answer paths did not match the array the API returns. Domain 1's pre-registered procedure (one evaluator replacement round, before those tasks run) is applied to Domain 2 as well. The evaluator sees only which tasks failed and why. Recorded before any replacement task ran.
+
+## 11. Adaptive programme checkpoints (additive; gates unchanged)
+
+The [Adaptive acceptance matrix](../adaptive/ACCEPTANCE-MATRIX.md) carries the complete continuing objective and exact-action authority requirements. The [Actenon source feasibility assessment](evidence/ACTENON-INTEGRATION-FEASIBILITY.md) precedes integration work and preserves component maturity and bypass limits. Its bounded containment, retained lifecycle and [worker experiments](evidence/ACTENON-WORKERS-RESULT.md) are development evidence, not substitutes for this plan's unfamiliar holdouts, strong coding-agent baselines or commercial gates.
+
+The [subscription pilot](../adaptive/CLAUDE-DEVELOPMENT.md), frozen at `2a8eaa5`, reuses explicitly exposed `json_xs` tasks solely for development. The operator confirmed paid extra usage is disabled; the first session was refused by the weekly quota before inference. Resume the same frozen attempt history when available and reconcile blocked-attempt costs. No thresholds, original results, task selection rules or authority equivalence requirements are weakened.

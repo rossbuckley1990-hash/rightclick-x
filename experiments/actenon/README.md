@@ -94,3 +94,20 @@ effects through a separate observer. The fixture's operator bounds are fixed
 independently of discovery; only an explicit host transition approves the moved
 target and installs a new grant. This uses no live models or remote resources.
 See [results and limits](../../docs/north-star/evidence/ACTENON-LIFECYCLE-RESULT.md).
+
+## Reproduce no-grant discovery and concurrent worker checks
+
+```sh
+/absolute/audit-root/.venv/bin/python experiments/actenon/workers.py \
+  --output /absolute/new-worker-evidence-directory
+python3 experiments/actenon/check-workers.py /absolute/new-worker-evidence-directory
+/absolute/audit-root/.venv/bin/python experiments/actenon/observe.py \
+  /absolute/new-worker-evidence-directory
+```
+
+The same pinned environment is required. Two isolated Node processes test public
+discovery without grants and later retained execution. Six trusted Python edge
+processes race one proof using shared native stores; additional fresh workers test
+replay, ancestor revocation, real expiry and claim-time store faults. Their
+disposable grant-verification secret remains outside the agent containers.
+See [results, preserved failure and trust limits](../../docs/north-star/evidence/ACTENON-WORKERS-RESULT.md).
