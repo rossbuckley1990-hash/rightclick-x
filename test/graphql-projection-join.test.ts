@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { RightClick } from '../src/runtime.ts';
 import { inferType } from '../src/core/semantics.ts';
+import { reflectGraphQL } from '../src/reflectors/graphql.ts';
 const json=(value:unknown)=>new Response(JSON.stringify(value),{headers:{'content-type':'application/json'}});
 const scalar={kind:'SCALAR',name:'String',ofType:null};
 const object=(name:string)=>({kind:'OBJECT',name,ofType:null});
@@ -83,4 +84,16 @@ test('required output information survives both retained forms and prevents publ
  }
  const bad=await rc.compose({...goal,publish:'Must not publish'});
  assert.notEqual(bad.executed?.status,'completed');assert.equal(bad.published,undefined);
+});
+
+test('bounded identifier discovery keeps scalar joins ahead of earlier list fanouts',()=>{
+ const intro={data:{__schema:{queryType:{name:'Query'},mutationType:null,types:[
+  {kind:'OBJECT',name:'Query',fields:[field('record',object('Record'))]},
+  {kind:'OBJECT',name:'Record',fields:[...Array.from({length:100},(_,i)=>field(`related${i}`,{kind:'LIST',name:null,ofType:object('Reference')})),field('primary',object('Reference'))]},
+  {kind:'OBJECT',name:'Reference',fields:[field('reference_id')]},{kind:'SCALAR',name:'String'}
+ ]}}};
+ const c=reflectGraphQL(intro,'https://unfamiliar.test/graphql').capabilities[0];
+ assert.ok(c.outputs.some(o=>o.name==='primary.reference_id'&&o.type==='id.reference'));
+ assert.ok(c.outputs.length<=1+25+64,'additional planning ports remain bounded');
+ assert.equal(c.fields?.find(f=>f.path==='primary.reference_id')?.selected,false,'promoting a field must not claim it is already selected');
 });
