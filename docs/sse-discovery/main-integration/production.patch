@@ -1,0 +1,627 @@
+diff --git a/src/core/yaml.ts b/src/core/yaml.ts
+new file mode 100644
+index 0000000..c5760ac
+--- /dev/null
++++ b/src/core/yaml.ts
+@@ -0,0 +1,193 @@
++// A small YAML reader for machine-readable contracts (OpenAPI documents published as YAML).
++// Supports what such documents use: block mappings and sequences, flow [..] and {..},
++// plain / single- / double-quoted scalars, literal (|) and folded (>) block scalars, comments,
++// and a leading document marker. Anchors, aliases, tags and multi-document streams are not
++// supported: such input is rejected with an error rather than guessed at.
++
++export function parseYaml(text: string): unknown {
++  const lines = text.replace(/\r\n?/g, "\n").replace(/\t/g, "  ").split("\n");
++  let i = 0;
++  const blank = (l: string) => /^\s*(#.*)?$/.test(l);
++  const indentOf = (l: string) => l.length - l.trimStart().length;
++  const stripComment = (s: string) => {
++    let q: string | null = null;
++    for (let k = 0; k < s.length; k++) {
++      const c = s[k];
++      if (q) {
++        if (c === q && s[k - 1] !== "\\") q = null;
++      } else if (c === '"' || c === "'") q = c;
++      else if (c === "#" && (k === 0 || /\s/.test(s[k - 1]))) return s.slice(0, k).trimEnd();
++    }
++    return s.trimEnd();
++  };
++  while (i < lines.length && (blank(lines[i]) || /^(---|%YAML|%TAG)/.test(lines[i].trim()))) i++;
++  if (lines.slice(i).some((l) => /^---\s*$/.test(l) || /^\.\.\.\s*$/.test(l))) throw new Error("multi-document YAML is not supported");
++
++  const scalar = (raw: string): unknown => {
++    const s = raw.trim();
++    if (s === "" || s === "~" || s === "null" || s === "Null" || s === "NULL") return null;
++    if (/^[&*!]/.test(s)) throw new Error(`YAML anchors, aliases and tags are not supported: ${s.slice(0, 30)}`);
++    if (s.startsWith('"')) return JSON.parse(s.replace(/\\\//g, "/"));
++    if (s.startsWith("'")) return s.slice(1, -1).replace(/''/g, "'");
++    if (s.startsWith("[") || s.startsWith("{")) return flow(s);
++    if (/^(true|True|TRUE)$/.test(s)) return true;
++    if (/^(false|False|FALSE)$/.test(s)) return false;
++    if (/^[-+]?(\d+\.?\d*([eE][-+]?\d+)?|\.\d+)$/.test(s) && !/^0\d/.test(s)) return Number(s);
++    return s;
++  };
++  const flow = (s: string): unknown => {
++    let k = 0;
++    const ws = () => { while (k < s.length && /\s/.test(s[k])) k++; };
++    const value = (): unknown => {
++      ws();
++      if (s[k] === "[") {
++        k++;
++        const arr: unknown[] = [];
++        ws();
++        if (s[k] === "]") { k++; return arr; }
++        for (;;) { arr.push(value()); ws(); if (s[k] === ",") { k++; continue; } if (s[k] === "]") { k++; return arr; } throw new Error("bad flow sequence"); }
++      }
++      if (s[k] === "{") {
++        k++;
++        const obj: Record<string, unknown> = {};
++        ws();
++        if (s[k] === "}") { k++; return obj; }
++        for (;;) {
++          const key = String(atom(":"));
++          if (s[k] !== ":") throw new Error("bad flow mapping");
++          k++;
++          obj[key] = value();
++          ws();
++          if (s[k] === ",") { k++; continue; }
++          if (s[k] === "}") { k++; return obj; }
++          throw new Error("bad flow mapping");
++        }
++      }
++      return atom(",]}");
++    };
++    const atom = (stops: string): unknown => {
++      ws();
++      const start = k;
++      if (s[k] === '"' || s[k] === "'") {
++        const q = s[k++];
++        while (k < s.length && !(s[k] === q && s[k - 1] !== "\\")) k++;
++        k++;
++        return scalar(s.slice(start, k));
++      }
++      while (k < s.length && !stops.includes(s[k])) k++;
++      return scalar(s.slice(start, k));
++    };
++    const v = value();
++    return v;
++  };
++
++  const block = (indent: number): unknown => {
++    while (i < lines.length && blank(lines[i])) i++;
++    if (i >= lines.length) return null;
++    const first = lines[i];
++    const ind = indentOf(first);
++    if (ind < indent) return null;
++    if (first.trimStart().startsWith("- ") || first.trim() === "-") return sequence(ind);
++    return mapping(ind);
++  };
++  const blockScalar = (header: string, parentIndent: number): string => {
++    const folded = header.startsWith(">");
++    const keep = header.includes("+");
++    const strip = header.includes("-");
++    const body: string[] = [];
++    let ind = -1;
++    while (i < lines.length) {
++      const l = lines[i];
++      if (!l.trim()) { body.push(""); i++; continue; }
++      const li = indentOf(l);
++      if (li <= parentIndent) break;
++      if (ind < 0) ind = li;
++      if (li < ind) break;
++      body.push(l.slice(ind));
++      i++;
++    }
++    while (!keep && body.length && body[body.length - 1] === "") body.pop();
++    let out = folded ? body.reduce((acc, l, n) => (n === 0 ? l : l === "" ? `${acc}\n` : acc.endsWith("\n") || /^\s/.test(l) ? `${acc}${l}` : `${acc} ${l}`), "") : body.join("\n");
++    if (!strip) out += "\n";
++    return out;
++  };
++  const valueAfter = (rest: string, ind: number): unknown => {
++    let v = stripComment(rest).trim();
++    if (v === "") {
++      // A sequence may sit at the same indentation as its key ("tags:\n- name: x").
++      let j = i;
++      while (j < lines.length && blank(lines[j])) j++;
++      if (j < lines.length && indentOf(lines[j]) === ind && /^\s*-(\s|$)/.test(lines[j])) {
++        i = j;
++        return sequence(ind);
++      }
++      return block(ind + 1);
++    }
++    if (/^[|>][+-]?\d*$/.test(v)) return blockScalar(v, ind);
++    // Plain and quoted scalars may continue on more-indented lines (folded with single spaces).
++    const open = (x: string) => (x.startsWith('"') && !/[^\\]"$|^"$/.test(x.slice(1)) ) || (x.startsWith("'") && !/'$/.test(x.slice(1))) || (/^[\[{]/.test(x) && !balanced(x));
++    while (i < lines.length && !blank(lines[i]) && indentOf(lines[i]) > ind && (open(v) || !/^[\[{"']/.test(v)) && !/^\s*-\s/.test(lines[i]) && !(!open(v) && /^\s*[^\s:#][^:#]*:(\s|$)/.test(lines[i]))) {
++      v = `${v} ${stripComment(lines[i]).trim()}`;
++      i++;
++    }
++    return scalar(v);
++  };
++  const balanced = (x: string) => {
++    let d = 0;
++    let q: string | null = null;
++    for (const c of x) {
++      if (q) { if (c === q) q = null; continue; }
++      if (c === '"' || c === "'") q = c;
++      else if (c === "[" || c === "{") d++;
++      else if (c === "]" || c === "}") d--;
++    }
++    return d === 0;
++  };
++  const mapping = (ind: number): Record<string, unknown> => {
++    const obj: Record<string, unknown> = {};
++    while (i < lines.length) {
++      if (blank(lines[i])) { i++; continue; }
++      const l = lines[i];
++      const li = indentOf(l);
++      if (li < ind) break;
++      if (li > ind) throw new Error(`unexpected indentation at line ${i + 1}`);
++      const t = l.trim();
++      if (t.startsWith("- ")) break;
++      const m = /^("(?:[^"\\]|\\.)*"|'(?:[^']|'')*'|[^:#]+?|[^\s][^:]*?)\s*:(?:\s+(.*)|$)/.exec(t);
++      if (!m) throw new Error(`cannot read YAML at line ${i + 1}: ${t.slice(0, 40)}`);
++      const key = String(scalar(m[1]));
++      i++;
++      obj[key] = valueAfter(m[2] ?? "", ind);
++    }
++    return obj;
++  };
++  const sequence = (ind: number): unknown[] => {
++    const arr: unknown[] = [];
++    while (i < lines.length) {
++      if (blank(lines[i])) { i++; continue; }
++      const l = lines[i];
++      const li = indentOf(l);
++      if (li < ind || !l.trimStart().startsWith("-")) break;
++      if (li > ind) throw new Error(`unexpected indentation at line ${i + 1}`);
++      const rest = l.trimStart().slice(1);
++      if (!rest.trim()) {
++        i++;
++        arr.push(block(ind + 1));
++        continue;
++      }
++      // "- key: value" starts a mapping whose keys sit at the column after "- ".
++      const inner = ind + 1 + (rest.length - rest.trimStart().length);
++      const r = rest.trim();
++      const startsMapping = !/^[\[{]/.test(r) && /^("(?:[^"\\]|\\.)*"|'(?:[^']|'')*'|[^\s:#][^:#]*?)\s*:(\s|$)/.test(r);
++      if (startsMapping) {
++        lines[i] = " ".repeat(inner) + rest.trimStart();
++        arr.push(mapping(inner));
++      } else {
++        i++;
++        arr.push(valueAfter(rest, ind));
++      }
++    }
++    return arr;
++  };
++  return block(0);
++}
+diff --git a/src/reflectors/discover.ts b/src/reflectors/discover.ts
+index 631f277..6329ecf 100644
+--- a/src/reflectors/discover.ts
++++ b/src/reflectors/discover.ts
+@@ -4,10 +4,11 @@
+ // peer? a web page with forms?), plus well-known locations at the origin.
+ // Everything found is reflected; page hints are followed one level deep.
+ 
++import { parseYaml } from "../core/yaml.ts";
+ import type { Capability, Reflection } from "../core/types.ts";
+ import { INTROSPECTION_QUERIES, isIntrospection, reflectGraphQL } from "./graphql.ts";
+ import { McpClient, reflectMcpTools } from "./mcp.ts";
+-import { readBody, request, slug, type Net } from "./net.ts";
++import { cancelBody, DISCOVERY_BODY_LIMIT, isEventStream, readBody, request, slug, type Net } from "./net.ts";
+ import { isOpenAPI, reflectOpenAPI, settleUnstatedBase } from "./openapi.ts";
+ import { reflectWeb } from "./web.ts";
+ 
+@@ -44,6 +45,17 @@ function catalogLinks(body: unknown, base: string): string[] | null {
+ 
+ const CATALOG_LIMIT = 50;
+ 
++/** A contract published as YAML (OpenAPI / Swagger) is read as the same document. */
++function yamlContract(body: unknown): unknown {
++  if (typeof body !== "string" || !/^\s*(---\s*\n)?\s*(openapi|swagger)\s*:/.test(body)) return body;
++  try {
++    const doc = parseYaml(body);
++    return doc && typeof doc === "object" ? doc : body;
++  } catch {
++    return body;
++  }
++}
++
+ /**
+  * An API's root often answers with a small JSON index pointing at its contracts
+  * ({"versions":{"v2":{"openapi":"/v2/openapi.json"}}}). Collect those links, bounded.
+@@ -120,7 +132,7 @@ async function probeKind(net: Net, url: string, kind: SourceKind, probes: Discov
+     if (kind === "graphql") {
+       for (const query of INTROSPECTION_QUERIES) {
+         const res = await request(net, url, { method: "POST", headers: { "content-type": "application/json", accept: "application/json" }, body: JSON.stringify({ query }) });
+-        const body = await readBody(res);
++        const body = await readBody(res, DISCOVERY_BODY_LIMIT);
+         if (res.ok && isIntrospection(body)) {
+           const r = reflectGraphQL(body, url);
+           probes.push({ url, kind, ok: true, detail: `${r.capabilities.length} fields` });
+@@ -130,8 +142,8 @@ async function probeKind(net: Net, url: string, kind: SourceKind, probes: Discov
+       throw new Error("introspection failed");
+     }
+     const res = await request(net, url, { headers: { accept: "application/json, text/html;q=0.9" } });
+-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+-    const body = await readBody(res);
++    if (!res.ok) { cancelBody(res); throw new Error(`HTTP ${res.status}`); }
++    const body = yamlContract(await readBody(res, DISCOVERY_BODY_LIMIT));
+     if (kind === "openapi" && isOpenAPI(body)) {
+       const r = await settleUnstatedBase(net, body as any, url, reflectOpenAPI(body as any, url));
+       probes.push({ url, kind, ok: true, detail: `${r.capabilities.length} operations` });
+@@ -154,11 +166,23 @@ async function probeUrl(
+ ): Promise<{ reflections: Reflection[]; hints: string[]; definitive: boolean; catalog?: string[] }> {
+   const reflections: Reflection[] = [];
+   let hints: string[] = [];
++  let triedMcp = false;
+   // 1. GET: specs, peers and pages.
+   try {
+     const res = await request(net, url, { headers: { accept: "application/json, text/html;q=0.9, */*;q=0.5" } });
+     if (res.ok) {
+-      const body = await readBody(res);
++      // A discovery GET may open an SSE subscription, whose body never ends.
++      // Close only that probe and negotiate MCP normally; the media type alone
++      // does not establish a capability or authorise any tool execution.
++      const streaming = isEventStream(res);
++      if (streaming) {
++        cancelBody(res);
++        triedMcp = true;
++        const reflected = await probeKind(net, url, "mcp", probes, opts);
++        if (reflected.length) return { reflections: reflected, hints: [], definitive: true };
++      }
++      // Failed MCP negotiation leaves GraphQL eligible; never read the discarded GET.
++      const body = streaming ? null : yamlContract(await readBody(res, DISCOVERY_BODY_LIMIT));
+       const listed = catalogLinks(body, url);
+       if (listed) return { reflections: [], hints: [], definitive: false, catalog: listed };
+       const linked = body && typeof body === "object" && !(body as any).openapi && !(body as any).swagger ? contractLinks(body, url) : [];
+@@ -187,7 +211,7 @@ async function probeUrl(
+         }
+       }
+     } else {
+-      await res.body?.cancel();
++      cancelBody(res);
+     }
+   } catch (e) {
+     if (!opts.quiet) probes.push({ url, kind: "get", ok: false, detail: String((e as Error).message ?? e) });
+@@ -200,7 +224,7 @@ async function probeUrl(
+         headers: { "content-type": "application/json", accept: "application/json" },
+         body: JSON.stringify({ query }),
+       });
+-      const body = await readBody(res);
++      const body = await readBody(res, DISCOVERY_BODY_LIMIT);
+       if (res.ok && isIntrospection(body)) {
+         const r = reflectGraphQL(body, url);
+         probes.push({ url, kind: "graphql", ok: true, detail: `${r.capabilities.length} fields` });
+@@ -213,7 +237,7 @@ async function probeUrl(
+     }
+   }
+   // 3. MCP initialize + tools/list.
+-  try {
++  if (!triedMcp) try {
+     const client = opts.mcp?.(url) ?? new McpClient(url, net);
+     const tools = await client.listTools();
+     const r = reflectMcpTools(tools, url, client.serverInfo.name);
+@@ -228,8 +252,8 @@ async function probeUrl(
+ 
+ export async function reflectPeer(net: Net, origin: string): Promise<Reflection> {
+   const res = await request(net, `${origin}/api/graph`, { headers: { accept: "application/json" } });
+-  if (!res.ok) throw new Error(`peer ${origin} -> HTTP ${res.status}`);
+-  const g = (await res.json()) as { name?: string; region?: string; capabilities: Capability[] };
++  if (!res.ok) { cancelBody(res); throw new Error(`peer ${origin} -> HTTP ${res.status}`); }
++  const g = (await readBody(res, DISCOVERY_BODY_LIMIT)) as { name?: string; region?: string; capabilities: Capability[] };
+   const host = new URL(origin).host;
+   const providerId = `peer:${slug(host)}`;
+   const capabilities: Capability[] = g.capabilities
+diff --git a/src/reflectors/mcp.ts b/src/reflectors/mcp.ts
+index 318f16a..8d87558 100644
+--- a/src/reflectors/mcp.ts
++++ b/src/reflectors/mcp.ts
+@@ -4,7 +4,7 @@
+ 
+ import { inferType } from "../core/semantics.ts";
+ import type { Capability, Port, Reflection, Risk } from "../core/types.ts";
+-import { request, slug, type Net } from "./net.ts";
++import { bodyChunks, cancelBody, DISCOVERY_BODY_LIMIT, isEventStream, readText, request, slug, type Net } from "./net.ts";
+ 
+ const PROTOCOL = "2025-06-18";
+ 
+@@ -33,11 +33,16 @@ export class McpClient {
+     const sid = res.headers.get("mcp-session-id");
+     if (sid) this.session = sid;
+     if (notify) {
+-      await res.body?.cancel();
++      cancelBody(res);
+       return null;
+     }
+-    if (!res.ok) throw new Error(`MCP ${method} -> HTTP ${res.status}: ${(await res.text()).slice(0, 200)}`);
+-    const msg = await parseRpcResponse(res, (body as { id: number }).id);
++    if (!res.ok) {
++      let detail = "";
++      try { detail = (await readText(res, DISCOVERY_BODY_LIMIT)).slice(0, 200); }
++      catch { cancelBody(res); }
++      throw new Error(`MCP ${method} -> HTTP ${res.status}${detail ? `: ${detail}` : ""}`);
++    }
++    const msg = await parseRpcResponse(res, (body as { id: number }).id, method === "tools/call" ? Infinity : DISCOVERY_BODY_LIMIT);
+     if (msg.error) throw new Error(`MCP ${method} error ${msg.error.code}: ${msg.error.message}`);
+     return msg.result;
+   }
+@@ -65,7 +70,8 @@ export class McpClient {
+     let cursor: string | undefined;
+     do {
+       const r = await this.rpc("tools/list", cursor ? { cursor } : {});
+-      tools.push(...(r?.tools ?? []));
++      if (!Array.isArray(r?.tools)) throw new Error("MCP tools/list returned no tools array");
++      tools.push(...r.tools);
+       cursor = r?.nextCursor;
+     } while (cursor && tools.length < 2000);
+     return tools;
+@@ -94,20 +100,51 @@ export class McpClient {
+   }
+ }
+ 
+-async function parseRpcResponse(res: Response, id: number): Promise<any> {
+-  const ct = res.headers.get("content-type") ?? "";
+-  const text = await res.text();
+-  if (!ct.includes("event-stream")) return JSON.parse(text);
+-  for (const block of text.split(/\r?\n\r?\n/)) {
+-    const data = block
+-      .split(/\r?\n/)
+-      .filter((l) => l.startsWith("data:"))
+-      .map((l) => l.slice(5).trimStart())
+-      .join("\n");
+-    if (!data) continue;
+-    const msg = JSON.parse(data);
+-    if (msg.id === id) return msg;
++async function parseRpcResponse(res: Response, id: number, maxBytes: number): Promise<any> {
++  const isResponse = (msg: any) => msg?.jsonrpc === "2.0" && msg.id === id && ("result" in msg || "error" in msg);
++  if (!isEventStream(res)) {
++    const msg = JSON.parse(await readText(res, maxBytes));
++    if (!isResponse(msg)) throw new Error("MCP response did not match the request");
++    return msg;
++  }
++  const decoder = new TextDecoder();
++  let buffer = "";
++  let data: string[] = [];
++  let skipLF = false;
++  const parseLines = () => {
++    while (true) {
++      // CR is itself a separator. Suppress only its optional following LF,
++      // including when CRLF is split across transport chunks.
++      if (skipLF) {
++        if (!buffer) return;
++        if (buffer.startsWith("\n")) buffer = buffer.slice(1);
++        skipLF = false;
++      }
++      const end = buffer.search(/[\r\n]/);
++      if (end < 0) return;
++      const line = buffer.slice(0, end);
++      skipLF = buffer[end] === "\r";
++      buffer = buffer.slice(end + 1);
++      if (line === "") {
++        const text = data.join("\n");
++        data = [];
++        if (!text) continue;
++        const msg = JSON.parse(text);
++        if (isResponse(msg)) return msg;
++      } else if (line === "data") data.push("");
++      else if (line.startsWith("data:")) data.push(line.slice(5).replace(/^ /, ""));
++    }
++  };
++  for await (const chunk of bodyChunks(res, maxBytes)) {
++    buffer += decoder.decode(chunk, { stream: true });
++    const msg = parseLines();
++    // Returning closes the reader, without waiting for the provider to close its stream.
++    if (msg) return msg;
+   }
++  // Preserve finite-response handling when the final event has no trailing blank line.
++  buffer += decoder.decode() + "\n\n";
++  const msg = parseLines();
++  if (msg) return msg;
+   throw new Error("MCP stream ended without a response");
+ }
+ 
+@@ -141,7 +178,10 @@ export function reflectMcpTools(tools: any[], endpoint: string, serverName?: str
+       outputs.push({ name: "", type: "text", required: true });
+     }
+     const a = t.annotations ?? {};
+-    const risk: Risk = a.destructiveHint ? "destructive" : a.readOnlyHint ? "read" : a.openWorldHint === false ? "write" : "external";
++    // MCP's defaults: a tool not marked read-only may be destructive unless it says otherwise.
++    // Unknown side effects are treated as the most dangerous kind, not the most convenient.
++    // Preserve main's destructive-hint precedence, including malformed truthy annotations.
++    const risk: Risk = a.destructiveHint ? "destructive" : a.readOnlyHint === true ? "read" : a.destructiveHint === false ? (a.openWorldHint === false ? "write" : "external") : "destructive";
+     return {
+       id: `${providerId}:${slug(t.name)}`,
+       title: t.title ?? a.title ?? t.name,
+diff --git a/src/reflectors/net.ts b/src/reflectors/net.ts
+index dd3b99d..32f1559 100644
+--- a/src/reflectors/net.ts
++++ b/src/reflectors/net.ts
+@@ -66,6 +66,70 @@ export interface Net {
+   policy?: NetworkPolicy;
+ }
+ 
++/** Bound contract acquisition without limiting ordinary finite execution outputs. */
++export const DISCOVERY_BODY_LIMIT = 16 * 1024 * 1024;
++
++const responseDeadlines = new WeakMap<Response, { deadline: number; controller: AbortController; signal: AbortSignal; error: Error }>();
++
++export function isEventStream(res: Response): boolean {
++  return res.headers.get("content-type")?.split(";")[0].trim().toLowerCase() === "text/event-stream";
++}
++
++/** Start disposal immediately; a transport's cleanup promise must not hold up discovery. */
++export function cancelBody(res: Response): void {
++  void res.body?.cancel().catch(() => {});
++  responseDeadlines.get(res)?.controller.abort(new Error("response body discarded"));
++}
++
++/** Read within the original request deadline, including adapters whose reads ignore abort. */
++export async function* bodyChunks(res: Response, maxBytes = Infinity): AsyncGenerator<Uint8Array> {
++  if (!res.body) return;
++  const context = responseDeadlines.get(res);
++  const reader = res.body.getReader();
++  let timer: ReturnType<typeof setTimeout> | undefined;
++  let onAbort: (() => void) | undefined;
++  let rejectRead: ((reason: unknown) => void) | undefined;
++  let complete = false;
++  let size = 0;
++  if (context) {
++    onAbort = () => rejectRead?.(context.signal.reason);
++    context.signal.addEventListener("abort", onAbort, { once: true });
++    timer = setTimeout(() => context.controller.abort(context.error), Math.max(0, context.deadline - Date.now()));
++  }
++  try {
++    while (true) {
++      if (context?.signal.aborted) throw context.signal.reason;
++      if (context && Date.now() >= context.deadline) throw context.error;
++      // Keep only the current read's abort handler, not one pending race per chunk.
++      const { done, value } = await new Promise<ReadableStreamReadResult<Uint8Array>>((resolve, reject) => {
++        rejectRead = reject;
++        reader.read().then(resolve, reject);
++      });
++      rejectRead = undefined;
++      if (done) { complete = true; return; }
++      size += value.byteLength;
++      if (size > maxBytes) throw new Error(`response body exceeds ${maxBytes} bytes`);
++      yield value;
++    }
++  } finally {
++    clearTimeout(timer);
++    rejectRead = undefined;
++    if (onAbort) context!.signal.removeEventListener("abort", onAbort);
++    if (!complete) {
++      void reader.cancel().catch(() => {});
++      context?.controller.abort(new Error("response body no longer needed"));
++    }
++    reader.releaseLock();
++  }
++}
++
++export async function readText(res: Response, maxBytes = Infinity): Promise<string> {
++  const decoder = new TextDecoder();
++  let text = "";
++  for await (const chunk of bodyChunks(res, maxBytes)) text += decoder.decode(chunk, { stream: true });
++  return text + decoder.decode();
++}
++
+ const METADATA_HOSTS = new Set(["metadata.google.internal", "metadata", "169.254.169.254", "fd00:ec2::254"]);
+ 
+ export function isPrivateAddress(host: string): boolean {
+@@ -119,7 +183,7 @@ export async function request(net: Net, url: string, init: RequestInit = {}): Pr
+   const accept = new Headers(init.headers).get("accept") ?? "";
+   const first = accept.split(",")[0].split(";")[0].trim();
+   if ((method === "GET" || method === "HEAD") && accept.includes(",") && first && first !== "*/*" && (res.status === 406 || res.status >= 500)) {
+-    await res.body?.cancel();
++    cancelBody(res);
+     const headers = new Headers(init.headers);
+     headers.set("accept", first);
+     return requestOnce(net, url, { ...init, headers });
+@@ -127,47 +191,62 @@ export async function request(net: Net, url: string, init: RequestInit = {}): Pr
+   return res;
+ }
+ 
++/** Request headers that carry no credential and may follow a redirect to another origin. */
++const CROSS_ORIGIN_SAFE = new Set(["accept", "accept-language", "content-language", "user-agent"]);
++
+ async function requestOnce(net: Net, url: string, init: RequestInit = {}): Promise<Response> {
+   const headers = new Headers(init.headers);
+   for (const [k, v] of Object.entries(net.auth.headersFor(url))) if (!headers.has(k)) headers.set(k, v);
+   if (!headers.has("user-agent")) headers.set("user-agent", "rightclick-x/0.1 (+https://github.com/rossbuckley1990-hash/rightclick)");
+   await checkUrl(net.policy, url);
+   const ctrl = new AbortController();
+-  const timer = setTimeout(() => ctrl.abort(new Error(`timeout after ${net.timeoutMs}ms: ${url}`)), net.timeoutMs);
++  const error = new Error(`timeout after ${net.timeoutMs}ms: ${url}`);
++  const deadline = Date.now() + net.timeoutMs;
++  const signal = init.signal ? AbortSignal.any([ctrl.signal, init.signal]) : ctrl.signal;
++  const timer = setTimeout(() => ctrl.abort(error), net.timeoutMs);
++  const track = (res: Response) => {
++    responseDeadlines.set(res, { deadline, controller: ctrl, signal, error });
++    return res;
++  };
+   try {
+-    // Manual redirects. Every hop starts from headers with no credentials at all,
+-    // then gets only the credentials pinned to its own origin; caller-supplied
+-    // Authorization/Cookie never leave the original origin. (A → B → C must not
+-    // carry A's credentials to C.)
++    // Manual redirects. A caller's headers (credentials of any name: Authorization, Cookie,
++    // Proxy-Authorization, X-Api-Key, X-Session-Token, ...) never leave the original origin.
++    // Once a redirect has left it, the chain is tainted: every later hop, even one back to the
++    // original origin at a path a third party chose, gets only content-negotiation headers plus
++    // the operator's credentials pinned to that hop's own origin. A request body is never sent
++    // to another origin (307/308 across origins is not followed).
+     const origin0 = new URL(url).origin;
+-    const pinnedNames = new Set(net.auth.origins().flatMap((o) => Object.keys(net.auth.headersFor(o)).map((k) => k.toLowerCase())));
+-    const bare = new Headers(init.headers);
+-    for (const k of pinnedNames) bare.delete(k);
+-    let res = await net.fetch(url, { ...init, headers, signal: ctrl.signal, redirect: "manual" });
++    const caller = new Headers(init.headers);
++    const userAgent = headers.get("user-agent")!;
++    let tainted = false;
++    let res = await net.fetch(url, { ...init, headers, signal, redirect: "manual" });
+     let hops = 0;
+     while (res.status >= 300 && res.status < 400 && res.headers.get("location") && hops++ < 5) {
+       const next = new URL(res.headers.get("location")!, url).toString();
+-      await checkUrl(net.policy, next);
+-      const h = new Headers(bare);
+-      if (!h.has("user-agent")) h.set("user-agent", headers.get("user-agent")!);
+-      if (new URL(next).origin !== origin0) {
+-        h.delete("authorization");
+-        h.delete("cookie");
+-      }
++      try { await checkUrl(net.policy, next); }
++      catch (e) { cancelBody(res); throw e; }
++      const nextOrigin = new URL(next).origin;
++      const method = res.status === 303 ? "GET" : (init.method ?? "GET");
++      const carriesBody = method !== "GET" && method !== "HEAD" && init.body != null;
++      if (carriesBody && nextOrigin !== new URL(url).origin) return track(res);
++      if (nextOrigin !== origin0) tainted = true;
++      const h = new Headers();
++      for (const [k, v] of caller) if (!tainted || CROSS_ORIGIN_SAFE.has(k.toLowerCase()) || (carriesBody && k.toLowerCase() === "content-type")) h.set(k, v);
++      if (!h.has("user-agent")) h.set("user-agent", userAgent);
+       for (const [k, v] of Object.entries(net.auth.headersFor(next))) h.set(k, v);
+-      const method = res.status === 303 ? "GET" : init.method;
+-      res = await net.fetch(next, { ...init, method, body: method === "GET" ? undefined : init.body, headers: h, signal: ctrl.signal, redirect: "manual" });
++      cancelBody(res);
++      res = await net.fetch(next, { ...init, method, body: method === "GET" || method === "HEAD" ? undefined : init.body, headers: h, signal, redirect: "manual" });
+       url = next;
+     }
+-    return res;
++    return track(res);
+   } finally {
+     clearTimeout(timer);
+   }
+ }
+ 
+-export async function readBody(res: Response): Promise<unknown> {
++export async function readBody(res: Response, maxBytes = Infinity): Promise<unknown> {
+   const ct = res.headers.get("content-type") ?? "";
+-  const text = await res.text();
++  const text = await readText(res, maxBytes);
+   if (ct.includes("json") || /^\s*[{[]/.test(text)) {
+     try {
+       return JSON.parse(text);
+diff --git a/src/reflectors/openapi.ts b/src/reflectors/openapi.ts
+index 4d68762..12e2e46 100644
+--- a/src/reflectors/openapi.ts
++++ b/src/reflectors/openapi.ts
+@@ -2,7 +2,7 @@
+ 
+ import { inferInContext, inferType, type SchemaLike } from "../core/semantics.ts";
+ import type { Capability, Port, Reflection, Risk } from "../core/types.ts";
+-import { readBody, request, slug, type Net } from "./net.ts";
++import { cancelBody, DISCOVERY_BODY_LIMIT, readBody, request, slug, type Net } from "./net.ts";
+ 
+ type Obj = Record<string, any>;
+ 
+@@ -177,7 +177,7 @@ export async function settleUnstatedBase(net: Net, spec: Obj, specUrl: string, r
+       try {
+         const res = await request(net, joinUrl(base, path), { headers: { accept: "application/json" } });
+         const routed = res.status !== 404 && res.status < 500;
+-        const body = routed ? await readBody(res) : (await res.body?.cancel(), null);
++        const body = routed ? await readBody(res, DISCOVERY_BODY_LIMIT) : (cancelBody(res), null);
+         const isJson = !!body && typeof body === "object";
+         tried.push(`GET ${joinUrl(base, path)} → ${res.status}${routed ? (isJson ? " json" : " not json") : ""}`);
+         if (!routed || !isJson) continue;

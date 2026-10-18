@@ -1,0 +1,21 @@
+{
+  "checkout": "/private/tmp/rcx-main-discovery-candidate",
+  "command": [
+    "docker",
+    "run",
+    "--rm",
+    "--network",
+    "none",
+    "--mount",
+    "type=bind,src=/private/tmp/rcx-main-discovery-candidate,dst=/checkout,readonly",
+    "-w",
+    "/checkout",
+    "rightclick-x-linux-test",
+    "sh",
+    "-c",
+    "node --version && node --test test/*.test.ts"
+  ],
+  "exit_code": 1,
+  "started_unix": 1792324234.397196,
+  "seconds": 0.21864080429077148
+}

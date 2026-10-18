@@ -1,0 +1,24 @@
+{
+  "checkout": "/private/tmp/rcx-main-discovery-candidate",
+  "command": [
+    "docker",
+    "run",
+    "--rm",
+    "--network",
+    "none",
+    "--mount",
+    "type=bind,src=/private/tmp/rcx-main-discovery-candidate,dst=/checkout,readonly",
+    "--mount",
+    "type=bind,src=/private/tmp/rcx-main-discovery-candidate/docs/sse-discovery/main-integration,dst=/evidence",
+    "-w",
+    "/checkout",
+    "rightclick-x-linux-test",
+    "node",
+    "experiments/sse-discovery/acceptance.mjs",
+    "/checkout",
+    "/evidence/linux-acceptance.json"
+  ],
+  "exit_code": 0,
+  "started_unix": 1792324288.708351,
+  "seconds": 0.5595541000366211
+}
