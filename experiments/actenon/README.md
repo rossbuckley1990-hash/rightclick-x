@@ -111,3 +111,21 @@ processes race one proof using shared native stores; additional fresh workers te
 replay, ancestor revocation, real expiry and claim-time store faults. Their
 disposable grant-verification secret remains outside the agent containers.
 See [results, preserved failure and trust limits](../../docs/north-star/evidence/ACTENON-WORKERS-RESULT.md).
+
+## Reproduce the resource-owned boundary
+
+```sh
+/absolute/audit-root/.venv/bin/python experiments/actenon/resource-experiment.py \
+  --output /absolute/new-resource-evidence-directory
+/absolute/audit-root/.venv/bin/python experiments/actenon/check-resource.py \
+  /absolute/new-resource-evidence-directory
+```
+
+This fixture uses macOS `/usr/sbin/lsof` and Docker Desktop host networking, in
+addition to the pinned Python/Bun/cached-image environment above. Its resource
+service owns the only business write and verifies native proofs itself. A private
+Unix socket accesses native authority operations without supplying the issuer's
+private keys to the resource. Host processes are trusted and run as one user;
+this is not isolation against a compromised host service. Network-enabled probes
+test direct HTTP, shell and socket routes against the actual protected service.
+See [results and limitations](../../docs/north-star/evidence/ACTENON-RESOURCE-RESULT.md).
