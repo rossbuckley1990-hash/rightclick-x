@@ -8,6 +8,7 @@ from pathlib import Path
 import re
 import statistics
 import sys
+import subprocess
 
 
 def read(path):
@@ -42,6 +43,16 @@ def main():
     assert result["commit"] == manifest["commit"]
     assert result["holdoutSha256"] == hashlib.sha256((root / "manifest.json").read_bytes()).hexdigest()
     assert not result["previousAttempts"], "retry effort requires separate reconciliation"
+    account_ids = set()
+    for location in result["preflights"]:
+        preflight = read(root / "results.json.attempts" / Path(location).name / "preflight.json")
+        assert preflight["responses"]["account/read"]["type"] == "chatgpt"
+        allowance = preflight["responses"]["account/rateLimits/read"]
+        bucket = allowance["rateLimitsByLimitId"]["codex"]
+        assert allowance["ordinaryUsageAllowed"] is True and bucket["primary"]["usedPercent"] < 90
+        assert bucket["credits"] == {"hasCredits": False, "unlimited": False, "balance": "0"}
+        account_ids.add(allowance["accountIdSha256"])
+    assert len(account_ids) == 1 and None not in account_ids
     tasks = {t["id"]: t for p in manifest["programs"] for t in p["tasks"]}
     ids = set()
     summaries = []
@@ -61,9 +72,37 @@ def main():
         assert not audit["violations"] and audit["threadId"] not in ids
         ids.add(audit["threadId"])
         assert all(c["model"] == result["model"] and c["effort"] == "low" for c in audit["contexts"])
+        assert audit["contexts"], "model identity must be observed"
+        server = "rightclick-x" if row["arm"] == "D" else "surface"
+        tool_records = lines(directory / "agent-tools.jsonl")
+        assert len(tool_records) == audit["toolRecords"]
+        prefix = "mcp__" + server + "__"
+        def allowed(name):
+            return name.startswith(prefix) or name.startswith(prefix.replace("-", "_"))
+        syntax = {s["callId"]: s for s in json.loads(subprocess.check_output(["node", str(Path(__file__).with_name("codex-code-tokens.ts")), str(directory / "agent-tools.jsonl")], text=True))}
+        for event in tool_records:
+            call = event["payload"]
+            if call["type"] not in ("function_call", "custom_tool_call") or allowed(call["name"]):
+                continue
+            assert call["name"] in ("exec", "functions.exec"), "non-benchmark tool"
+            parsed = syntax[call["call_id"]]
+            assert parsed["parseErrors"] == 0
+            for fact in parsed["facts"]:
+                assert not fact.get("import") and fact.get("identifier") not in {"fetch", "require", "eval", "Function", "process", "globalThis", "Deno", "Bun"}
+                assert fact.get("propertyAccess") != "constructor" and fact.get("elementAccess") != "constructor"
+                if fact.get("identifier") == "tools":
+                    assert fact["propertyObject"] and allowed(fact["propertyName"]), "non-benchmark or dynamic tool access"
+        for event in agent:
+            item = event.get("item", {})
+            assert item.get("type") not in ("command_execution", "file_change", "web_search", "collab_tool_call")
+            if item.get("type") == "mcp_tool_call":
+                assert item["server"] == server
         invocation = read(directory / "agent-invocation.json")
         assert invocation["cwd"] != str(directory) and 'forced_login_method="chatgpt"' in invocation["args"]
         assert set(invocation["environmentKeys"]) <= {"PATH", "HOME", "USER", "LOGNAME", "SHELL", "TMPDIR", "LANG", "LC_ALL", "TERM"}
+        if row["phase"] in ("first", "reuse", "compatible-change"):
+            preflight = read(directory / "launch-preflight.json")
+            assert preflight["result"]["code"] == 0 and matches(task, preflight["result"]["stdout"])
         completed = [e for e in agent if e["type"] == "turn.completed"]
         assert completed
         tokens = sum(e["usage"]["input_tokens"] + e["usage"]["output_tokens"] for e in completed)

@@ -6,6 +6,7 @@ import { tmpdir, homedir } from "node:os";
 import { join } from "node:path";
 import { subscriptionEnvironment, type Session } from "./common.ts";
 import { quotaBlock } from "./quota.ts";
+import ts from "typescript";
 
 export function codexEvents(stdout: string) {
   return stdout.split("\n").filter(Boolean).map(line => JSON.parse(line));
@@ -19,6 +20,29 @@ export function codexSummary(events: any[]) {
   const messages = events.filter(e => e.type === "item.completed" && e.item?.type === "agent_message");
   return { reply: messages.at(-1)?.item.text ?? "", tokens, turns: completed.length || undefined,
     errors: events.filter(e => e.type === "error" || e.type === "turn.failed") };
+}
+
+export function inspectCodeMode(code: string, allowed: string): string[] {
+  const source = ts.createSourceFile("trace.js", code, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+  const violations = new Set<string>();
+  if ((source as any).parseDiagnostics.length) violations.add("unparseable Code Mode source");
+  const forbidden = new Set(["fetch", "require", "eval", "Function", "process", "globalThis", "Deno", "Bun"]);
+  const permitted = (name: string) => name.startsWith(`${allowed}__`) || name.startsWith(`${allowed.replaceAll("-", "_")}__`);
+  const visit = (node: ts.Node) => {
+    if (node.kind === ts.SyntaxKind.ImportKeyword || ts.isImportDeclaration(node)) violations.add("general execution primitive: manual review required");
+    if (ts.isIdentifier(node)) {
+      if (forbidden.has(node.text)) violations.add("general execution primitive: manual review required");
+      if (node.text === "tools") {
+        const parent = node.parent;
+        if (!ts.isPropertyAccessExpression(parent) || parent.expression !== node) violations.add("dynamic tool access: manual review required");
+        else if (!permitted(parent.name.text)) violations.add("non-benchmark tool in Code Mode");
+      }
+    }
+    if (ts.isPropertyAccessExpression(node) && node.name.text === "constructor" || ts.isElementAccessExpression(node) && ts.isStringLiteralLike(node.argumentExpression) && node.argumentExpression.text === "constructor") violations.add("general execution primitive: manual review required");
+    ts.forEachChild(node, visit);
+  };
+  visit(source);
+  return [...violations];
 }
 
 function auditRollout(events: any[], directory: string, allowed: string) {
@@ -39,10 +63,7 @@ function auditRollout(events: any[], directory: string, allowed: string) {
     if (!["exec", "functions.exec"].includes(c.name)) { violations.push(`unexpected tool ${c.name}`); continue; }
     const code = c.input ?? c.arguments;
     if (typeof code !== "string") { violations.push("missing Code Mode source"); continue; }
-    const names = [...code.matchAll(/\btools\.([A-Za-z0-9_]+)/g)].map(m => m[1]);
-    if (names.some(name => !toolAllowed(name))) violations.push("non-benchmark tool in Code Mode");
-    if (/\btools\b/.test(code.replace(/\btools\.[A-Za-z0-9_]+/g, ""))) violations.push("dynamic tool access: manual review required");
-    if (/\b(?:fetch|require|import|eval|Function|process|globalThis|Deno|Bun)\b|\.constructor\b/.test(code)) violations.push("general execution primitive: manual review required");
+    violations.push(...inspectCodeMode(code, allowed));
   }
   for (const e of events) {
     if (["command_execution", "file_change", "web_search", "collab_tool_call"].includes(e.item?.type)) violations.push(`unexpected ${e.item.type}`);
