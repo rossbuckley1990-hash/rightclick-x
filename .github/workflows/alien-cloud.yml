@@ -1,10 +1,6 @@
 # Disposable Linux cloud runtime for RightClick-X experiments.
-# Triggered manually. Runs RCX serve behind a cloudflared tunnel
-# with a random bearer token. The tunnel URL and token are printed
-# to the workflow log (accessible only to the repo owner).
-#
-# This is experimental infrastructure, not permanent hosting.
-# The runner shuts down after the timeout or when cancelled.
+# Triggered manually. Runs RCX serve behind a cloudflared tunnel.
+# Exposes authenticated Streamable HTTP MCP endpoint.
 
 name: alien-cloud
 
@@ -15,6 +11,10 @@ on:
         description: 'Minutes to keep the runtime alive'
         required: false
         default: '45'
+      rcx_token:
+        description: 'Auth token for RCX (leave empty to autogenerate)'
+        required: false
+        default: 'rcx-alien-cloud-auth-20261019'
 
 jobs:
   cloud-runtime:
@@ -35,22 +35,24 @@ jobs:
           curl -fsSL https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb -o /tmp/cloudflared.deb
           sudo dpkg -i /tmp/cloudflared.deb
 
-      - name: Generate ephemeral token
-        id: token
+      - name: Configure Token
+        id: auth
         run: |
-          TOKEN=$(openssl rand -hex 32)
-          echo "rcx_token=$TOKEN" >> "$GITHUB_OUTPUT"
-          echo "::add-mask::$TOKEN"
+          TOKEN="${{ github.event.inputs.rcx_token }}"
+          if [ -z "$TOKEN" ]; then
+            TOKEN="rcx-$(openssl rand -hex 16)"
+          fi
+          echo "token=$TOKEN" >> "$GITHUB_OUTPUT"
+          echo "RCX_TOKEN=$TOKEN" >> "$GITHUB_ENV"
 
       - name: Start RightClick-X
         run: |
-          export RCX_TOKEN="${{ steps.token.outputs.rcx_token }}"
           export RCX_NAME="rcx-alien-cloud"
           node bin/rcx.ts serve --host 127.0.0.1 --port 8787 &
           RCX_PID=$!
           echo "rcx_pid=$RCX_PID" >> "$GITHUB_ENV"
 
-          # Wait for the server to be ready
+          # Wait for server
           for i in $(seq 1 30); do
             if curl -sf http://127.0.0.1:8787/health > /dev/null 2>&1; then
               echo "RightClick-X is ready (PID $RCX_PID)"
@@ -59,130 +61,85 @@ jobs:
             sleep 1
           done
 
-      - name: Self-test — context_runtime
-        run: |
-          RUNTIME=$(curl -sf -X POST http://127.0.0.1:8787/api/runtime \
-            -H "Authorization: Bearer ${{ steps.token.outputs.rcx_token }}" \
-            -H "Content-Type: application/json" \
-            -d '{}')
-          echo "$RUNTIME" | jq .
-          echo ""
-          echo "=== SELF-TEST: runtime identity ==="
-          echo "$RUNTIME" | jq -r '"Product:  \(.product) \(.version)\nName:     \(.name)\nRuntime:  \(.runtime.name) \(.runtime.version // "n/a")\nFeatures: \(.runtime.features | join(", "))\nGraph:    \(.graph.capabilities) capabilities, \(.graph.providers) providers"'
-
-      - name: Self-test — discover and execute
-        run: |
-          # Learn Wikipedia's OpenAPI spec
-          LEARN=$(curl -sf -X POST http://127.0.0.1:8787/api/learn \
-            -H "Authorization: Bearer ${{ steps.token.outputs.rcx_token }}" \
-            -H "Content-Type: application/json" \
-            -d '{"sources": ["https://en.wikipedia.org/api/rest_v1/?spec"]}')
-          echo "=== Learned Wikipedia ==="
-          echo "$LEARN" | jq '{totalCapabilities: .totalCapabilities, providers: .providers}'
-          echo ""
-
-          # Get graph stats
-          GRAPH=$(curl -sf -X POST http://127.0.0.1:8787/api/graph \
-            -H "Authorization: Bearer ${{ steps.token.outputs.rcx_token }}" \
-            -H "Content-Type: application/json" \
-            -d '{"op": "stats"}')
-          echo "=== Graph stats after learning ==="
-          echo "$GRAPH" | jq .
-          echo ""
-
-          # Search for a page summary capability
-          SEARCH=$(curl -sf -X POST http://127.0.0.1:8787/api/graph \
-            -H "Authorization: Bearer ${{ steps.token.outputs.rcx_token }}" \
-            -H "Content-Type: application/json" \
-            -d '{"op": "search", "query": "page summary"}')
-          echo "=== Search results for 'page summary' ==="
-          SUMMARY_ID=$(echo "$SEARCH" | jq -r '.[0].id // empty')
-          echo "Best match: $SUMMARY_ID"
-          echo ""
-
-          if [ -n "$SUMMARY_ID" ]; then
-            # Execute a read-only operation
-            RESULT=$(curl -sf -X POST http://127.0.0.1:8787/api/run \
-              -H "Authorization: Bearer ${{ steps.token.outputs.rcx_token }}" \
-              -H "Content-Type: application/json" \
-              -d "{\"id\": \"$SUMMARY_ID\", \"args\": {\"title\": \"Linux\"}}")
-            echo "=== Execution result for 'Linux' ==="
-            echo "$RESULT" | jq '{status, receiptId: .receipt.id, outputKeys: (.output | keys)}'
-            echo ""
-            echo "=== Extract (first 300 chars) ==="
-            echo "$RESULT" | jq -r '.output.extract // .output.description // (.output | tostring)' | head -c 300
-            echo ""
-          fi
-
-          # Get providers list
-          PROVIDERS=$(curl -sf -X POST http://127.0.0.1:8787/api/providers \
-            -H "Authorization: Bearer ${{ steps.token.outputs.rcx_token }}" \
-            -H "Content-Type: application/json" \
-            -d '{}')
-          echo ""
-          echo "=== Final providers ==="
-          echo "$PROVIDERS" | jq '.[] | {id, title, capabilities}'
-
       - name: Start cloudflared tunnel
         run: |
           cloudflared tunnel --no-autoupdate --url http://127.0.0.1:8787 > /tmp/cloudflared.log 2>&1 &
           TUNNEL_PID=$!
           echo "tunnel_pid=$TUNNEL_PID" >> "$GITHUB_ENV"
 
-          # Wait for the tunnel URL to appear
+          # Wait for tunnel URL
           for i in $(seq 1 30); do
             TUNNEL_URL=$(grep -oP 'https://[a-z0-9-]+\.trycloudflare\.com' /tmp/cloudflared.log 2>/dev/null | head -1)
             if [ -n "$TUNNEL_URL" ]; then
-              echo "Tunnel ready: $TUNNEL_URL"
+              echo "Tunnel established: $TUNNEL_URL"
+              echo "TUNNEL_URL=$TUNNEL_URL" >> "$GITHUB_ENV"
+              echo "tunnel_url=$TUNNEL_URL" >> "$GITHUB_OUTPUT"
               break
             fi
             sleep 1
           done
 
           if [ -z "$TUNNEL_URL" ]; then
-            echo "ERROR: Tunnel failed to start"
+            echo "ERROR: Tunnel failed"
             cat /tmp/cloudflared.log
             exit 1
           fi
 
           echo ""
           echo "========================================"
-          echo "  REMOTE RIGHTCLICK-X ACCESS"
+          echo "  REMOTE RIGHTCLICK-X LINUX RUNTIME"
           echo "========================================"
-          echo ""
-          echo "  MCP Endpoint: ${TUNNEL_URL}/mcp"
-          echo "  API Endpoint: ${TUNNEL_URL}/api/"
-          echo "  Health:       ${TUNNEL_URL}/health"
-          echo "  Dashboard:    ${TUNNEL_URL}/"
-          echo ""
-          echo "  Authorization: Bearer ${{ steps.token.outputs.rcx_token }}"
-          echo ""
-          echo "  MCP Config (for mcp_config.json):"
-          echo "  {"
-          echo "    \"mcpServers\": {"
-          echo "      \"rcx-cloud\": {"
-          echo "        \"url\": \"${TUNNEL_URL}/mcp\","
-          echo "        \"headers\": {"
-          echo "          \"Authorization\": \"Bearer ${{ steps.token.outputs.rcx_token }}\""
-          echo "        }"
-          echo "      }"
-          echo "    }"
-          echo "  }"
-          echo ""
+          echo "URL: $TUNNEL_URL"
+          echo "TOKEN: ${{ steps.auth.outputs.token }}"
+          echo "MCP: ${TUNNEL_URL}/mcp"
+          echo "OS: $(uname -srm)"
+          echo "HOST: $(hostname)"
+          echo "NODE: $(node -v)"
           echo "========================================"
-          echo ""
-          echo "  Runtime: $(uname -srm)"
-          echo "  Node:    $(node -v)"
-          echo "  Host:    $(hostname)"
-          echo "  Uptime:  $(uptime)"
-          echo ""
-          echo "========================================"
+
+          # Also write to Step Summary
+          echo "## Remote RightClick-X Linux Cloud Runtime" >> $GITHUB_STEP_SUMMARY
+          echo "- **Tunnel URL:** \`$TUNNEL_URL\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **MCP Endpoint:** \`${TUNNEL_URL}/mcp\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **OS:** \`$(uname -srm)\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Node:** \`$(node -v)\`" >> $GITHUB_STEP_SUMMARY
+
+      - name: Verify local execution & learn Wikipedia
+        run: |
+          # 1. Verify runtime
+          curl -sf -X POST http://127.0.0.1:8787/api/runtime \
+            -H "Authorization: Bearer $RCX_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{}' > /tmp/runtime.json
+          cat /tmp/runtime.json | jq .
+
+          # 2. Learn Wikipedia API
+          curl -sf -X POST http://127.0.0.1:8787/api/learn \
+            -H "Authorization: Bearer $RCX_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"sources": ["https://en.wikipedia.org/api/rest_v1/?spec"]}' > /tmp/learn.json
+
+          # 3. Graph search for getPageSummary
+          WIKI_CAP=$(curl -sf -X POST http://127.0.0.1:8787/api/graph \
+            -H "Authorization: Bearer $RCX_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"op": "search", "query": "summary"}' | jq -r '.[] | select(.id | contains("summary")) | .id' | head -1)
+          echo "Target capability: $WIKI_CAP"
+
+          # 4. Execute operation
+          if [ -n "$WIKI_CAP" ]; then
+            curl -sf -X POST http://127.0.0.1:8787/api/run \
+              -H "Authorization: Bearer $RCX_TOKEN" \
+              -H "Content-Type: application/json" \
+              -d "{\"id\": \"$WIKI_CAP\", \"args\": {\"title\": \"Linux\"}}" > /tmp/run.json
+            echo "Execution result:"
+            cat /tmp/run.json | jq '{status, receiptId: .receipt.id, hasOutput: (.output != null)}'
+          fi
 
       - name: Keep alive
         run: |
           TIMEOUT=${{ github.event.inputs.timeout_minutes || '45' }}
           echo "Keeping runtime alive for ${TIMEOUT} minutes..."
-          echo "Cancel this workflow run to shut down early."
           SECONDS_LEFT=$((TIMEOUT * 60))
           while [ $SECONDS_LEFT -gt 0 ]; do
             HEALTH=$(curl -sf http://127.0.0.1:8787/health 2>/dev/null || echo '{"ok": false}')
