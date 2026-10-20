@@ -1,0 +1,75 @@
+{
+  "startingRevision": "b46abeb713190c5231a5e90817f1fa87cf71434c",
+  "initialEvaluationFreeze": "5177cb239a9736f316237be05376a1e3182640f6",
+  "correctedRunnerFreeze": "51a82e442c50a23b0e8e07d38d931b7bc1fc2fee",
+  "productRevision": "1026bdd8c92e791edfe44cdff6b921e3f79831b3",
+  "native": {
+    "tests": 432,
+    "passed": 432,
+    "skipped": 0,
+    "exitCode": 0,
+    "log": "native-remediation.log"
+  },
+  "linux": {
+    "tests": 127,
+    "passed": 127,
+    "skipped": 0,
+    "exitCode": 0,
+    "log": "linux-remediation.log",
+    "image": "sha256:5e95a1b7bdb5ddd279c4c18760a007a98f94c6fb24236433c19b61831bc4e4f5",
+    "network": "none",
+    "pull": "never"
+  },
+  "focused": {
+    "tests": 48,
+    "passed": 48,
+    "exitCode": 0,
+    "log": "missing-data-after1.log"
+  },
+  "typecheck": {
+    "exitCode": 0,
+    "log": "types-remediation.log"
+  },
+  "proof": {
+    "checks": 28,
+    "passed": 28,
+    "exitCode": 0,
+    "result": "proof-remediation.json"
+  },
+  "build": {
+    "exitCode": 0,
+    "log": "build-remediation.log"
+  },
+  "protectedWorkflow": {
+    "checks": 30,
+    "passed": 30,
+    "exitCode": 0,
+    "result": "protected-regression/result.json",
+    "checker": "protected-check.json"
+  },
+  "modelTrials": {
+    "attempt1": "invalid audit prefix; one completed model turn preserved",
+    "attempt2": "all four sessions completed; frozen result checker FAIL: contract rediscovery",
+    "attempt3": "all four sessions completed; unchanged checker PASS; six corrupted controls rejected"
+  },
+  "failedSetup": [
+    "sandboxed metadata preflight could not initialize SQLite runtime",
+    "sandboxed native tests lacked loopback/process permissions: 353 pass, 3 fail, 71 skip",
+    "first transport test expected a boundary error but Request rejected credential URL first",
+    "first GraphQL missing-data fixture omitted discovery source metadata; corrected baseline fails three tests"
+  ],
+  "review": {
+    "independentReviewer": "NOT RUN",
+    "toolError": "unsupported call: tool_searchtool_search_tool",
+    "checks": "same-author separate public readback, offline reconciliation and native proof verification"
+  },
+  "release": "NO-GO",
+  "limitations": [
+    "Exposed providers; no independently authored unfamiliar holdout",
+    "Two same-vendor models; no cross-vendor result",
+    "Local public-read permission control is distinct from separate Actenon protected fixture",
+    "No equal-baseline economics or full acquisition/oracle cost comparison",
+    "Native hard-memory containment remains FAIL",
+    "Complete headline/UI/installation/human/commercial gates remain open"
+  ]
+}
