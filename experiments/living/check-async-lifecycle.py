@@ -46,3 +46,29 @@ for index, (stage, worker, original) in enumerate(zip(["first", "second"], [cold
 print(json.dumps({"pass": True, "cold_and_reused_results": 2, "original_effects": 2,
     "replayed_effects": 0, "fresh_process_discovery_requests": 0, "bound_receipt_chains": 2,
     "scope": "controlled local HTTP fixtures; separate checker implementation, same author"}, indent=2))
+
+if "--negative-controls" in sys.argv[2:]:
+    import shutil
+    import subprocess
+    import tempfile
+    mutations = {
+        "wrong-result": ("reuse", lambda d: d["outcome"].update(output=-1)),
+        "wrong-intermediate": ("second-transport", lambda d: next(e for e in d["events"] if e["path"] == "/count")["body"].update(text="wrong")),
+        "duplicate-effect": ("second-transport", lambda d: d["events"].append(next(e for e in d["events"] if e["path"] == "/render"))),
+        "hidden-rediscovery": ("second-transport", lambda d: d["events"].append({"method": "GET", "path": "/render.json"})),
+        "same-process": ("reuse", lambda d: d.update(pid=cold["pid"])),
+        "altered-receipt": ("reuse", lambda d: d["receipts"][0].update(status="failed")),
+    }
+    controls = {}
+    for name, (file, mutate) in mutations.items():
+        with tempfile.TemporaryDirectory(prefix="rcx-async-control-") as tmp:
+            target = Path(tmp) / "evidence"
+            shutil.copytree(root, target)
+            path = target / f"{file}.json"
+            data = json.loads(path.read_text())
+            mutate(data)
+            path.write_text(json.dumps(data))
+            result = subprocess.run([sys.executable, __file__, str(target)], capture_output=True, text=True)
+            assert result.returncode != 0 and "AssertionError" in result.stderr, name
+            controls[name] = "rejected"
+    print(json.dumps({"negativeControls": controls}, indent=2))
