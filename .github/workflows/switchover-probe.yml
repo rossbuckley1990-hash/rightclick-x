@@ -36,10 +36,24 @@ jobs:
           - teedy
           - chatwoot
     steps:
-      - name: Checkout frozen baseline
+      - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: 06321fa5632d3fd009d136d7b2dfe90510d8057d
+          fetch-depth: 0
+
+      - name: Verify the runtime source is still the frozen baseline
+        run: |
+          # The experiment harness may live outside the freeze; the runtime under
+          # test may not. Fail loudly if src/, bin/ or test/ moved.
+          FREEZE=06321fa5632d3fd009d136d7b2dfe90510d8057d
+          git diff --stat "$FREEZE" HEAD -- src bin test
+          if git diff --quiet "$FREEZE" HEAD -- src bin test; then
+            echo "FROZEN BASELINE VERIFIED: src/, bin/ and test/ are byte-identical to $FREEZE (tag switchover-freeze-1)"
+            echo "src blob-list hash: $(git ls-tree -r "$FREEZE" src | git hash-object --stdin)"
+          else
+            echo "::error::runtime source diverged from the frozen baseline"
+            exit 1
+          fi
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
