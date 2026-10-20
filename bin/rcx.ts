@@ -2,6 +2,7 @@
 // rcx — the RightClick X command line. Runs on Node >= 22.18 (native
 // TypeScript), Bun, or as a single compiled binary (`npm run build:bin`).
 
+import { authorityFromEnv } from "../src/core/authority.ts";
 import { createHandler } from "../src/interface/http.ts";
 import { dispatch } from "../src/interface/tools.ts";
 import { FileStore, serve, serveStdio } from "../src/entry/node-host.ts";
@@ -49,7 +50,7 @@ const HELP = `RightClick X ${VERSION} — a live capability graph that composes 
   rcx graph [stats|types|search|neighbors|paths|edges] [--query q] [--id id] [--from t] [--to t]
   rcx providers | runtime | status [runId] | watch
 
-State: ${env.RCX_STATE_FILE ?? "~/.rightclick-x/state.json"} (RCX_STATE_FILE). Credentials: RCX_AUTH='{"https://api.x.com":"Bearer …"}'.`;
+State: ${env.RCX_STATE_FILE ?? "~/.rightclick-x/state.json"} (RCX_STATE_FILE). Authority: RCX_DESTRUCTIVE=operator|agent-confirm|allow, RCX_APPROVE=<ids>, RCX_RETRY=<ids or origins>. Credentials: RCX_AUTH='{"https://api.x.com":"Bearer …"}'.`;
 
 async function main() {
   const cmd = argv.shift() ?? "help";
@@ -74,6 +75,7 @@ async function main() {
     auth,
     workspace: env.RCX_WORKSPACE ?? proc.cwd(),
     store: demoMode ? undefined : new FileStore(stateFile),
+    authority: authorityFromEnv(env),
   });
 
   if (env.RCX_MCP_LOG) {

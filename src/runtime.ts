@@ -81,8 +81,41 @@ export interface RuntimeOptions {
   store?: Store;
   /** Outbound network policy. Default: allow everything (local use); servers exposed beyond loopback block private addresses. */
   network?: NetworkPolicy;
-  /** Destructive capabilities need `confirm: true` from the caller ("confirm", default) or run directly ("allow"). */
+  /**
+   * Legacy switch for destructive capabilities. "confirm" = the caller's `confirm: true` suffices
+   * (same as authority.destructive "agent-confirm"); "allow" = run directly.
+   */
   destructive?: "confirm" | "allow";
+  /** Operator authority, set outside any agent (configuration or environment), never by a tool call. */
+  authority?: OperatorAuthority;
+}
+
+export interface OperatorAuthority {
+  /**
+   * How destructive capabilities are authorised:
+   * - "operator" (default): only capabilities the operator approved (`approve`), and only when the
+   *   caller also confirms. An agent's `confirm: true` alone is not approval.
+   * - "agent-confirm": the caller's `confirm: true` suffices (an explicit operator choice).
+   * - "allow": run without confirmation.
+   */
+  destructive?: "operator" | "agent-confirm" | "allow";
+  /** Capability ids (or prefixes ending in "*") the operator approved for destructive use. */
+  approve?: string[];
+  /**
+   * Capabilities the operator declares free of side effects, so they may be sent again during
+   * repair (POST endpoints that only compute, for example): capability ids, prefixes ending in
+   * "*", or origins ("https://api.example.com"). Without this, a call that can change state is
+   * never re-sent once it may have taken effect.
+   */
+  retry?: string[];
+}
+
+/** Errors that prove the request was not applied: rejected before processing, or never sent. */
+export function provedNotApplied(error: string): boolean {
+  const statuses = [...error.matchAll(/HTTP (\d{3})\b/g)].map((m) => Number(m[1]));
+  const last = statuses[statuses.length - 1];
+  if (last !== undefined) return [400, 401, 403, 404, 405, 406, 410, 411, 413, 414, 415, 422, 429].includes(last);
+  return /blocked by (network|egress) policy|ECONNREFUSED|connection refused|ENOTFOUND|getaddrinfo|is destructive|missing required|unknown capability/i.test(error);
 }
 
 export interface RunRecord {
@@ -110,8 +143,10 @@ export interface RunRecord {
 
 export class ConfirmationRequired extends Error {
   capability: string;
-  constructor(capability: string, title: string) {
-    super(`"${title}" (${capability}) is destructive: call again with confirm: true to run it`);
+  constructor(capability: string, title: string, needsOperator = false) {
+    super(needsOperator
+      ? `"${title}" (${capability}) is destructive and has no operator approval. An operator must approve it in RightClick X's configuration (authority.approve / RCX_APPROVE); a tool argument cannot.`
+      : `"${title}" (${capability}) is destructive: call again with confirm: true to run it`);
     this.capability = capability;
   }
 }
@@ -227,7 +262,9 @@ export class RightClick {
   private store?: Store;
   private saveTimer: ReturnType<typeof setTimeout> | null = null;
   private runCounter = 0;
-  private destructivePolicy: "confirm" | "allow" = "confirm";
+  private destructivePolicy: "operator" | "agent-confirm" | "allow" = "operator";
+  private approvals: string[] = [];
+  private retrySafe: string[] = [];
 
   private constructor(opts: RuntimeOptions) {
     this.net = {
@@ -246,7 +283,10 @@ export class RightClick {
     const rc = new RightClick(opts);
     const b = builtinReflection();
     rc.builtins = b.fns;
-    rc.destructivePolicy = opts.destructive ?? "confirm";
+    // An explicit legacy "confirm" is an operator's choice to trust the agent's confirmation.
+    rc.destructivePolicy = opts.authority?.destructive ?? (opts.destructive === "allow" ? "allow" : opts.destructive === "confirm" ? "agent-confirm" : "operator");
+    rc.approvals = [...(opts.authority?.approve ?? [])];
+    rc.retrySafe = [...(opts.authority?.retry ?? [])];
     rc.graph.add(b.reflection);
     const p = await platformReflection(rc.info, { bindings: opts.bindings, workspace: opts.workspace });
     rc.platformFns = p.fns;
@@ -591,9 +631,11 @@ export class RightClick {
   ): Promise<RunRecord> {
     const cap = this.graph.get(id);
     if (!cap) throw new Error(`unknown capability: ${id}`);
-    // Destructive effects keep the user's authority: they need an explicit confirmation.
-    if (cap.risk === "destructive" && this.destructivePolicy === "confirm" && !opts.confirm) {
-      throw new ConfirmationRequired(cap.id, cap.title);
+    // Destructive effects keep the user's authority. The agent may ask (confirm), but under the
+    // default policy only an operator's approval, made in configuration, authorises the capability.
+    if (cap.risk === "destructive" && this.destructivePolicy !== "allow") {
+      if (this.destructivePolicy === "operator" && !this.approved(cap.id)) throw new ConfirmationRequired(cap.id, cap.title, true);
+      if (!opts.confirm) throw new ConfirmationRequired(cap.id, cap.title);
     }
     // An id the caller chose for what it used to do must not quietly do something else.
     const change = opts.planned ? undefined : this.meaningChanges.get(cap.id);
@@ -696,8 +738,60 @@ export class RightClick {
    * still names that operation, else the one capability that now does. A
    * changed id is never followed, and repair obeys the run's egress policy.
    */
+  private approved(id: string): boolean {
+    return this.approvals.some((a) => (a.endsWith("*") ? id.startsWith(a.slice(0, -1)) : a === id));
+  }
+
+  /** The operator declared this capability side-effect-free (safe to send again). */
+  private retryAuthorised(cap: Capability): boolean {
+    if (cap.risk === "read") return true;
+    const egress = egressOf(cap, this.graph);
+    return this.retrySafe.some((r) =>
+      /^https?:\/\//.test(r)
+        ? egress !== "anywhere" && egress.length > 0 && egress.every((o) => o === new URL(r).origin)
+        : r.endsWith("*") ? cap.id.startsWith(r.slice(0, -1)) : r === cap.id);
+  }
+
+  /**
+   * Which state-changing capabilities in a failed plan may already have taken effect, and are not
+   * declared side-effect-free: completed steps, and the failed step unless its error proves the
+   * request was not applied. Saved composites are looked into, step by step.
+   */
+  private mayHaveTakenEffect(steps: PlanStep[], failed: string, error: string): Capability[] {
+    const out: Capability[] = [];
+    const consider = (c: Capability | undefined, completed: boolean) => {
+      if (!c || c.risk === "read") return;
+      if (c.invoke.kind === "composite") {
+        // Inside a composite: its steps before the failing inner one completed.
+        const inner = c.invoke.steps.map((s) => this.graph.get(s.capability)).filter((x): x is Capability => !!x);
+        const failingAt = completed ? inner.length : inner.findIndex((x) => error.includes(`${x.id}:`));
+        inner.forEach((x, i) => (i < (failingAt < 0 ? inner.length : failingAt) ? consider(x, true) : i === failingAt ? consider(x, false) : undefined));
+        return;
+      }
+      if (!completed && provedNotApplied(error)) return;
+      if (!this.retryAuthorised(c)) out.push(c);
+    };
+    // The failure may be reported by a step inside a saved composite: find the step holding it.
+    const holds = (id: string, seen = new Set<string>()): boolean => {
+      if (id === failed) return true;
+      const c = this.graph.get(id);
+      if (!c || c.invoke.kind !== "composite" || seen.has(id)) return false;
+      seen.add(id);
+      return c.invoke.steps.some((st) => holds(st.capability, seen));
+    };
+    const failedAt = steps.findIndex((st) => holds(st.capability));
+    steps.forEach((st, i) => {
+      if (failedAt >= 0 && i > failedAt) return;
+      consider(this.graph.get(st.capability), i !== failedAt);
+    });
+    return out;
+  }
+
   private async healRun(cap: Capability, args: Record<string, unknown>, error: string, net: Net = this.net): Promise<{ healing: NonNullable<RunRecord["healing"]>; healed: boolean; output?: unknown }> {
     const provider = this.graph.providers.get(cap.provider);
+    // A call that can change state may have taken effect before it failed: send it again only if
+    // the failure proves it was not applied, or the operator declared it side-effect-free.
+    if (cap.risk !== "read" && !provedNotApplied(error) && !this.retryAuthorised(cap)) return { healing: { source: (provider?.meta?.source as string) ?? "", error, note: `not retried: ${cap.risk} operation may already have taken effect` }, healed: false };
     const source = provider?.meta?.source as string | undefined;
     const healing: NonNullable<RunRecord["healing"]> = { source: source ?? "", error, note: "" };
     const done = (note: string) => ({ healing: { ...healing, note }, healed: false });
@@ -1028,6 +1122,14 @@ export class RightClick {
         return result;
       } catch (e) {
         const failed = e instanceof StepError || e instanceof ConfirmationRequired ? e.capability : p.steps[0].capability;
+        // Steps that can change state and may have taken effect must not be repeated by re-planning,
+        // unless the operator declared them side-effect-free. Stop here instead.
+        const stateful = this.mayHaveTakenEffect(p.steps, failed, String((e as Error)?.message ?? e));
+        if (stateful.length) {
+          attempts.push({ summary: p.summary, failed, error: String((e as Error)?.message ?? e), healing: `not retried: ${stateful.map((c) => c.id).join(", ")} can change state and may already have taken effect (an operator can declare side-effect-free operations in authority.retry)` });
+          plans = [];
+          break;
+        }
         const attempt: { summary: string; failed: string; error: string; healing?: string } = { summary: p.summary, failed, error: String((e as Error)?.message ?? e) };
         attempts.push(attempt);
         // Self-maintenance: the provider may have changed its API. Re-reflect its
@@ -1194,12 +1296,17 @@ export class RightClick {
   openApi(baseUrl: string) {
     const paths: Record<string, unknown> = {};
     for (const g of this.published.values()) {
+      // A goal that can change state is a POST (GET is reserved for read-only goals).
+      const readOnly = (this.graph.get(`goal:${g.slug}`)?.risk ?? "read") === "read";
+      const params = goalParams(g);
       paths[`/x/${g.slug}`] = {
-        get: {
+        [readOnly ? "get" : "post"]: {
           operationId: camel(g.slug),
           summary: g.title,
           description: `Synthesized by RightClick X from a goal (${g.intent ?? g.want}), not from code. Current pipeline: ${(g.lastPipeline ?? []).join(" → ")}. Providers: ${(g.providers ?? []).join(", ")}. The contract is stable; the pipeline is re-derived from the live capability graph on every call.`,
-          parameters: goalParams(g).map(([name, t]) => ({ name, in: "query", required: true, schema: { ...jsonSchemaFor(t), "x-rightclick-type": t } })),
+          ...(readOnly
+            ? { parameters: params.map(([name, t]) => ({ name, in: "query", required: true, schema: { ...jsonSchemaFor(t), "x-rightclick-type": t } })) }
+            : { requestBody: { required: true, content: { "application/json": { schema: { type: "object", required: params.map(([n]) => n), properties: Object.fromEntries(params.map(([name, t]) => [name, { ...jsonSchemaFor(t), "x-rightclick-type": t }])) } } } } }),
           responses: {
             "200": {
               description: "Result of the goal",

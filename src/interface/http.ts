@@ -121,6 +121,9 @@ export function createHandler(rc: RightClick, opts: HttpOptions = {}): (req: Req
       if (req.method === "POST" && path === "/graphql") return json(await executeGraphQL(rc, (await req.json().catch(() => ({}))) as any));
       const x = /^\/x\/([a-z0-9-]+)$/.exec(path);
       if (x && (req.method === "GET" || req.method === "POST")) {
+        // GET is safe by HTTP's contract (links, prefetch, crawlers): only read-only goals answer it.
+        const risk = rc.graph.get(`goal:${x[1]}`)?.risk;
+        if (req.method === "GET" && risk && risk !== "read") return new Response(JSON.stringify({ error: `goal ${x[1]} can change state (${risk}); use POST` }), { status: 405, headers: { "content-type": "application/json", allow: "POST" } });
         const args = req.method === "GET" ? Object.fromEntries(url.searchParams) : ((await req.json().catch(() => ({}))) as Record<string, unknown>);
         const out = await rc.callPublished(x[1], args);
         return json(out, out.ok ? 200 : 502);
