@@ -35,6 +35,12 @@ def check(root):
     assert initial["status"] == "pending" and initial["pending"]["resumeId"] == "resume:" + initial["runId"]
     assert done["status"] == "completed" and done["verification"]["status"] == "checked" and done["resumes"] == initial["runId"]
     assert done["verification"]["results"] and all(r["ok"] for r in done["verification"]["results"])
+    assert reports["first-pause"]["results"]["compose"]["executed"]["pending"]["resumeId"] == initial["pending"]["resumeId"]
+    retained = reports["first-pause"]["state"]["workflowContinuations"][0]["composition"]
+    assert retained["plan"]["steps"] == reports["first-pause"]["results"]["plan"]["steps"]
+    assert retained["options"]["verify"] == [{"op": "matches", "pattern": "^[a-f0-9]{64}$"}]
+    assert not any(c["id"].startswith("execution:composition:") for r in reports["first-pause"]["state"]["reflections"] for c in r["capabilities"])
+    assert done["composition"]["published"]["slug"] == "delivered-document-digest"
     assert reports["workflow-resume-authorised"]["state"]["workflowContinuations"] == []
     assert reports["workflow-resume-authorised"]["state"]["httpContinuations"] == []
     assert reports["workflow-resume-changed"]["results"]["run"]["status"] == "pending"

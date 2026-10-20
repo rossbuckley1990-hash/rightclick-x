@@ -1,7 +1,28 @@
 // Local execution state, never an authorization grant or an effect-settlement
 // decision. A dispatch without a recorded result remains unresolved.
 import { isSensitiveName, redactText } from "./secrets.ts";
-import type { Predicate } from "./verify.ts";
+import type { OutcomeWitness, Predicate } from "./verify.ts";
+import type { Capability, CapabilityAnchor, SemType } from "./types.ts";
+import type { Plan } from "./planner.ts";
+
+/** A selected plan, not a new discoverable capability or retained authority. */
+export interface CompositionContinuation {
+  id: string;
+  risk: Capability["risk"];
+  plan: Plan;
+  types: Record<string, SemType>;
+  options: {
+    want: SemType; intent?: string; verify?: Predicate[]; crystallize?: boolean;
+    publish?: string; risks?: Capability["risk"][]; through?: string[]; maxSteps?: number;
+  };
+  anchors: CapabilityAnchor[];
+  fixed: Record<string, unknown>;
+  origins?: string[];
+  witnesses: OutcomeWitness[];
+  require: string[];
+  preservesInput: boolean;
+  goals: Array<{ slug: string; digest: string }>;
+}
 
 export interface WorkflowContinuation {
   version: 1;
@@ -18,6 +39,8 @@ export interface WorkflowContinuation {
   next: number;
   phase: "ready" | "dispatching" | "waiting" | "checking" | "stopped";
   childRunId?: string;
+  composition?: CompositionContinuation;
+  compositionDigest?: string;
 }
 
 /** Refuse loss or recognizable credentials; do not redact executable values. */
@@ -47,6 +70,12 @@ export function validWorkflow(c: WorkflowContinuation): boolean {
       (c.childRunId === undefined || id(c.childRunId, 128)) &&
       (c.phase !== "waiting" || !!c.childRunId) &&
       checkpointValue(c.inputs) && checkpointValue(c.outputs) && checkpointValue(c.verify) &&
+      (c.composition === undefined || (
+        hash(c.compositionDigest) && c.composition.id === c.capability &&
+        c.composition.plan.steps.length === c.stepDigests.length &&
+        c.composition.goals.length <= 8 && c.composition.goals.every(g => id(g.slug, 512) && hash(g.digest)) &&
+        checkpointValue(c.composition)
+      )) &&
       new TextEncoder().encode(JSON.stringify(c)).length <= 65_536;
   } catch { return false; }
 }

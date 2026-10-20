@@ -9,7 +9,7 @@ import { createHash } from "node:crypto";
 import { gzipSync, gunzipSync } from "node:zlib";
 import { fileURLToPath } from "node:url";
 
-for (const mode of ["leaf", "workflow"]) test(`a killed runtime recovers a real HTTP ${mode} from FileStore without discovery or a repeated effect`, { timeout: 15_000 }, async () => {
+for (const mode of ["leaf", "workflow", "composition"]) test(`a killed runtime recovers a real HTTP ${mode} from FileStore without discovery or a repeated effect`, { timeout: 15_000 }, async () => {
   const directory = await mkdtemp(join(tmpdir(), "rcx-http-resume-"));
   const stateFile = join(directory, "state.json");
   const calls: string[] = [];
@@ -70,7 +70,7 @@ for (const mode of ["leaf", "workflow"]) test(`a killed runtime recovers a real 
     await Promise.race([polled, first.done.then(result => { throw new Error("client exited before polling: " + result.stderr); })]);
     const stored = JSON.parse(await readFile(stateFile, "utf8"));
     const checkpoint = stored.httpContinuations[0];
-    const parent = mode === "workflow" ? stored.workflowContinuations[0] : undefined;
+    const parent = mode !== "leaf" ? stored.workflowContinuations[0] : undefined;
     if (parent) {
       assert.equal(parent.phase, "waiting");
       assert.equal(parent.next, 0);
@@ -93,11 +93,15 @@ for (const mode of ["leaf", "workflow"]) test(`a killed runtime recovers a real 
     assert.equal(report.run.status, "completed");
     assert.equal(report.run.verification.status, "checked");
     assert.equal(report.run.resumes, parent?.runId ?? checkpoint.runId);
-    assert.equal(mode === "workflow" ? report.run.output : report.run.output.sha256, createHash("sha256").update(artifact).digest("hex"));
+    assert.equal(mode !== "leaf" ? report.run.output : report.run.output.sha256, createHash("sha256").update(artifact).digest("hex"));
     assert.equal(gunzipSync(artifact).toString(), document);
     assert.equal(report.receipts.intact, true);
-    assert.deepEqual(calls.slice(before), ["GET /queue/q1", "GET /files/q1", ...(mode === "workflow" ? ["POST /publish"] : [])]);
-    assert.deepEqual(publications, mode === "workflow" ? [createHash("sha256").update(artifact).digest("hex")] : []);
+    assert.deepEqual(calls.slice(before), ["GET /queue/q1", "GET /files/q1", ...(mode !== "leaf" ? ["POST /publish"] : [])]);
+    assert.deepEqual(publications, mode !== "leaf" ? [createHash("sha256").update(artifact).digest("hex")] : []);
+    if (mode === "composition") {
+      assert.ok(parent.composition);
+      assert.equal(report.run.composition?.published?.slug, "compressed-document");
+    }
     assert.equal(calls.filter(c => c === "POST /enqueue").length, 1);
     const final = JSON.parse(await readFile(stateFile, "utf8"));
     assert.deepEqual(final.httpContinuations, []);

@@ -89,6 +89,8 @@ export interface Receipt {
   httpContinuation?: HttpContinuationEvidence;
   /** This receipt continues a retained execution without replaying completed actions. */
   resumes?: string;
+  /** Complete selected saved-goal execution; never a leaf-only continuation. */
+  workflowRunId?: string;
   inputDigest: string;
   outputDigest: string;
   prev: string;

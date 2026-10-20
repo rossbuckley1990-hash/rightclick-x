@@ -2,10 +2,10 @@
 // the whole context_* family. Every interface (MCP, HTTP API, CLI, dashboard,
 // federation) is a thin shell around this class.
 
-import { validWorkflow, type WorkflowContinuation } from "./core/workflow-continuation.ts";
+import { checkpointValue, validWorkflow, type WorkflowContinuation, type CompositionContinuation } from "./core/workflow-continuation.ts";
 import { ActivityLog, reference, type ActivityState, type ContractReference } from "./core/activity.ts";
 import { CapabilityGraph, signature, tokenize, type GraphEvent, type LearnDelta } from "./core/graph.ts";
-import { Ledger, ReceiptChain, sha256, type Receipt } from "./core/ledger.ts";
+import { Ledger, ReceiptChain, sha256, stableStringify, type Receipt } from "./core/ledger.ts";
 import { shapeOf, type IdentityState } from "./core/identities.ts";
 import { egressOf, plan, type Plan } from "./core/planner.ts";
 import { outputCarries, type Satisfaction } from "./core/satisfaction.ts";
@@ -225,6 +225,10 @@ export interface RunRecord {
   httpContinuation?: HttpContinuationEvidence;
   refusal?: TransportRefusal;
   resumes?: string;
+  /** Completion of a retained ordinary composition, including deferred publication. */
+  composition?: ComposeResult;
+  /** Only a complete retained saved-goal plan can settle this parent run. */
+  workflowRunId?: string;
   persistence?: { status: "failed"; detail: string };
   output?: unknown;
   error?: string;
@@ -1152,6 +1156,19 @@ export class RightClick {
     return `run_${Date.now().toString(36)}_${(++this.runCounter).toString(36)}_${crypto.randomUUID()}`;
   }
 
+  private goalDigest(g: PublishedGoal) {
+    const { calls, lastPipeline, providers, publishedAt, trust, ...definition } = g;
+    return sha256(stableStringify(definition));
+  }
+
+  private compositionCapability(c: CompositionContinuation): Capability {
+    return { id: c.id, provider: "execution:composition", source: "composite", title: c.plan.summary,
+      description: "Private retained execution; not available for new plans.", tags: [], risk: c.risk,
+      inputs: Object.entries(c.types).map(([name, type]) => ({ name, type, required: true })),
+      outputs: [{ name: "", type: c.plan.resultType, required: true }],
+      invoke: { kind: "composite", steps: c.plan.steps, result: c.plan.result } };
+  }
+
   private recoverableWorkflow(cap: Capability): boolean {
     return cap.invoke.kind === "composite" && cap.invoke.steps.length > 0 && cap.invoke.steps.length <= 16 &&
       !consequentialRisks(cap).includes("destructive") &&
@@ -1175,7 +1192,7 @@ export class RightClick {
     await this.flush();
   }
 
-  private async startWorkflow(runId: string, cap: Capability, inputs: Record<string, unknown>, verify: Predicate[]) {
+  private async startWorkflow(runId: string, cap: Capability, inputs: Record<string, unknown>, verify: Predicate[], composition?: CompositionContinuation) {
     if (cap.invoke.kind !== "composite") throw new Error("workflow requires a retained composite");
     // Unresolved effects are never evicted to make room for a different action.
     if (this.workflowContinuations.size >= 64) throw new Error("workflow continuation storage is full");
@@ -1183,7 +1200,8 @@ export class RightClick {
     const w: WorkflowContinuation = { version: 1, runId, capability: cap.id, contractDigest: await httpContractDigest(cap),
       stepDigests: await Promise.all(cap.invoke.steps.map(s => httpContractDigest(this.graph.get(s.capability)!))),
       inputs: structuredClone(inputs), verify: structuredClone(verify), createdAt, expiresAt: createdAt + 3_600_000,
-      outputs: [], runs: [], next: 0, phase: "ready" };
+      outputs: [], runs: [], next: 0, phase: "ready",
+      ...(composition ? { composition: structuredClone(composition), compositionDigest: await sha256(stableStringify(composition)) } : {}) };
     if (!validWorkflow(w)) throw new Error("workflow inputs cannot be retained safely");
     this.workflowContinuations.set(runId, w);
     try { await this.saveWorkflow(w); }
@@ -1199,7 +1217,15 @@ export class RightClick {
     if (w.phase !== "ready" && w.phase !== "waiting" && !(justReserved && w.phase === "dispatching")) {
       stop("The last dispatch has no retained final result. Recovery cannot establish non-execution.");
     }
-    const cap = this.graph.get(w.capability);
+    const cap = w.composition ? this.compositionCapability(w.composition) : this.graph.get(w.capability);
+    if (w.composition) {
+      if (await sha256(stableStringify(w.composition)) !== w.compositionDigest) stop("Retained composition obligations changed.");
+      for (const pin of w.composition.goals) {
+        const goal = this.published.get(pin.slug), capability = this.graph.get(`goal:${pin.slug}`);
+        if (!goal || !capability || await this.goalDigest(goal) !== pin.digest) stop("Saved goal definition changed or disappeared.");
+        try { this.assertExecution(capability!); } catch { stop("Current operator policy refuses the saved goal."); }
+      }
+    }
     if (!cap || cap.invoke.kind !== "composite" || !this.recoverableWorkflow(cap) ||
         await httpContractDigest(cap) !== w.contractDigest) stop("Retained workflow contract changed.");
     const current = cap as Capability & { invoke: Extract<Capability["invoke"], { kind: "composite" }> };
@@ -1240,7 +1266,7 @@ export class RightClick {
     return this.dispatchRun(id, args, opts);
   }
 
-  private async dispatchRun(id: string, args: Record<string, unknown>, opts: RunOptions, parent?: WorkflowContinuation): Promise<RunRecord> {
+  private async dispatchRun(id: string, args: Record<string, unknown>, opts: RunOptions, parent?: WorkflowContinuation, composition?: CompositionContinuation): Promise<RunRecord> {
     // Older runtimes reject this id instead of ignoring a new option and
     // accidentally submitting the ordinary action again.
     if ("resumeRunId" in opts) throw new Error("resume uses the explicit resume:<run-id> selector");
@@ -1253,11 +1279,12 @@ export class RightClick {
       this.activeContinuations.add(resumeRunId);
       id = pending.capability;
     }
-    const cap = this.graph.get(id);
+    const context = composition ?? (resumeRunId ? this.workflowContinuations.get(resumeRunId)?.composition : undefined);
+    const cap = context ? this.compositionCapability(context) : this.graph.get(id);
     const contracts = cap ? [reference(cap)] : [];
     const request = this.activity.append({ kind: "execution.requested", status: "requested", subjects: [id], contracts });
     try {
-      const rec = await this.runNow(id, args, opts, resumeRunId, parent);
+      const rec = await this.runNow(id, args, opts, resumeRunId, parent, composition);
       const dependencies = this.observedRuns([...(rec.steps ?? []), ...(rec.witnesses ?? []).map(w => w.runId)]);
       this.activity.append({ kind: "execution.finished", related: request.id, subjects: [id], providers: [rec.provider], runs: [rec.runId], contracts: [...contracts, ...dependencies.contracts], truncated: dependencies.truncated,
         status: rec.status === "pending" ? "pending" : rec.status === "completed" ? "completed" : rec.changedMeaning || rec.error?.includes("blocked by execution policy") ? "refused" : "failed",
@@ -1275,13 +1302,26 @@ export class RightClick {
     }
   }
 
-  private async runNow(id: string, args: Record<string, unknown>, opts: RunOptions, resumeRunId?: string, parent?: WorkflowContinuation): Promise<RunRecord> {
+  private async runNow(id: string, args: Record<string, unknown>, opts: RunOptions, resumeRunId?: string, parent?: WorkflowContinuation, initialComposition?: CompositionContinuation): Promise<RunRecord> {
     const resumedWorkflow = resumeRunId ? this.workflowContinuations.get(resumeRunId) : undefined;
     const resumed = resumeRunId && !resumedWorkflow ? structuredClone(this.httpContinuations.get(resumeRunId)!) : undefined;
     let workflow = resumedWorkflow;
+    const composition = resumedWorkflow?.composition ?? initialComposition;
+    const suppliedNet = opts.net;
+    if (composition) {
+      // Fresh host authority is used on every request. A resume cannot widen the
+      // caller's retained egress restriction through an SDK-supplied Net handle.
+      const origins = intersectOrigins(this.net.policy?.origins, composition.origins);
+      opts = { ...opts, net: origins ? { ...this.net, policy: { blockPrivate: false, ...this.net.policy, origins } } : this.net };
+    }
     if (resumedWorkflow) args = structuredClone(resumedWorkflow.inputs);
-    const cap = this.graph.get(id);
+    const cap = composition ? this.compositionCapability(composition) : this.graph.get(id);
     if (!cap) throw new Error(`unknown capability: ${id}`);
+    if (cap.invoke.kind === "composite" && cap.invoke.origins) {
+      const net = opts.net ?? this.net;
+      const origins = intersectOrigins(intersectOrigins(this.net.policy?.origins, net.policy?.origins), cap.invoke.origins);
+      opts = { ...opts, net: { ...net, policy: { blockPrivate: false, ...net.policy, origins } } };
+    }
     // Destructive effects keep the user's authority. The agent may ask (confirm), but under the
     // default policy only an operator's approval, made in configuration, authorises the capability.
     if (consequentialRisks(cap).includes("destructive") && this.destructivePolicy !== "allow") {
@@ -1304,6 +1344,8 @@ export class RightClick {
     let healing: RunRecord["healing"];
     let pending: PendingOutcome | undefined;
     let refusal: TransportRefusal | undefined;
+    let compositionResult: ComposeResult | undefined;
+    let workflowRunId: string | undefined;
     const continuationId = resumed?.runId ?? runId;
     const original = structuredClone(cap);
     const execution: HttpExecution = { signal: opts.signal };
@@ -1325,18 +1367,36 @@ export class RightClick {
         if (refused) throw new Error(refused);
       }
       const coerced = resumed ? {} : coerceArgs(cap, args);
-      if (cap.invoke.kind === "goal") {
-        const r = await this.executeGoal(cap.invoke.slug, coerced, opts.confirm, opts.activeGoals);
+      if (composition) {
+        workflow ??= await this.startWorkflow(runId, cap, coerced, [], composition);
+        const r = await this.runSteps(composition.plan.steps, composition.plan.result, coerced, undefined, undefined, opts.net, workflow);
+        workflow.phase = "checking"; await this.saveWorkflow(workflow);
+        compositionResult = await this.finishComposition(composition, coerced, r, opts.net!, {
+          goal: { have: composition.types, want: composition.options.want, intent: composition.options.intent },
+          plans: [{ ...composition.plan, titles: composition.plan.steps.map(s => this.graph.get(s.capability)!.title) }],
+        }, [], t0, ws => { witnesses = ws; });
+        output = compositionResult.executed!.output;
+        steps = r.runs;
+        verification = compositionResult.executed!.verification;
+        if (compositionResult.executed!.status !== "completed") throw new Error(compositionResult.executed!.error ?? "retained outcome contract violated");
+      } else if (cap.invoke.kind === "goal") {
+        const slug = cap.invoke.slug;
+        const r = await this.executeGoal(slug, coerced, opts.confirm, opts.activeGoals, opts.verify);
         output = r.executed?.output;
         steps = r.executed?.runs;
         witnesses = r.executed?.witnesses ?? [];
         attempts = r.executed?.attempts;
         verification = r.executed?.verification ?? { status: "refuted", results: [] };
-        if (r.executed?.pending) throw new PendingOutcomeError(r.executed.pending);
+        if (r.executed?.pending) {
+          const retainedId = r.executed.pending.resumeId?.slice(7);
+          const retained = retainedId ? this.workflowContinuations.get(retainedId) : undefined;
+          if (retained?.composition?.goals.some(g => g.slug === slug)) workflowRunId = retainedId;
+          throw new PendingOutcomeError(r.executed.pending);
+        }
         if (r.executed?.refusal) throw new TransportRefused(r.executed.refusal.reason, r.executed.refusal.capability, r.executed.refusal.runs);
         if (r.executed?.status !== "completed") throw new Error(attempts?.map((a) => a.error).join("; ") || "no pipeline found for saved goal");
       } else if (cap.invoke.kind === "composite") {
-        if (!workflow && this.workflowRecovery && !opts.net && this.recoverableWorkflow(cap)) {
+        if (!workflow && this.workflowRecovery && !suppliedNet && this.recoverableWorkflow(cap)) {
           workflow = await this.startWorkflow(runId, cap, coerced, opts.verify ?? []);
         }
         const r = await this.runSteps(cap.invoke.steps, cap.invoke.result, coerced, opts.confirm, opts.activeGoals, opts.net, workflow);
@@ -1347,6 +1407,8 @@ export class RightClick {
         if (verification.status === "refuted") throw new Error("stored verification refuted");
         const absent = outputCarries(output, cap.invoke.require ?? []).absent;
         if (absent.length) throw new Error(`stored required information missing: ${absent.join(", ")}`);
+        const lost = lostWords((cap.invoke.preserveInputs ?? []).map(name => coerced[name]), output);
+        if (lost.length) throw new Error(`stored preservation requirement refuted: lost ${lost.length} input words`);
         witnesses = await this.checkWitnesses(cap.invoke.witnesses ?? [], coerced, output, r.runs, opts.net,
           workflow ? cap.invoke.steps.map(s => this.graph.get(s.capability)!.provider) : []);
         const waiting = witnesses.find(w => w.status === "pending");
@@ -1394,12 +1456,13 @@ export class RightClick {
     const ok = !error && verification.status !== "refuted";
     // A refusal says nothing about how the operation behaves.
     // Recorded experience is persisted: errors that echo a credential are stored without it.
-    if (!resumed && !resumedWorkflow && !pending && !refusal && !refused && !error?.includes("blocked by execution policy")) this.ledger.record(cap.id, ok, durationMs, error ? scrub(error, sensitiveValues(args)) : error);
+    if (!composition && !resumed && !resumedWorkflow && !pending && !refusal && !refused && !error?.includes("blocked by execution policy")) this.ledger.record(cap.id, ok, durationMs, error ? scrub(error, sensitiveValues(args)) : error);
     // Identifier values a successful call accepted and returned link ports across providers.
     if (!resumed && !resumedWorkflow && ok && cap.invoke.kind !== "composite" && cap.invoke.kind !== "goal" && this.graph.identities.observe(cap, args, output)) this.graph.relink();
     const receipt = await this.chain.append(
       { runId, capability: cap.id, provider: cap.provider, startedAt, durationMs, status: pending ? "pending" : error ? "failed" : "completed", verification: verification.status,
         ...(resumeRunId ? { resumes: resumeRunId } : {}),
+        ...(workflowRunId ? { workflowRunId } : {}),
         ...(execution.continuation ? { httpContinuation: execution.continuation } : {}) },
       args,
       error ?? output,
@@ -1407,6 +1470,8 @@ export class RightClick {
     const rec: RunRecord = {
       runId,
       ...(resumeRunId ? { resumes: resumeRunId } : {}),
+      ...(workflowRunId ? { workflowRunId } : {}),
+      ...(compositionResult ? { composition: compositionResult } : {}),
       capability: cap.id,
       provider: cap.provider,
       title: cap.title,
@@ -1588,24 +1653,34 @@ export class RightClick {
 
   runStatus(opts: { runId?: string; limit?: number } = {}) {
     if (opts.runId) {
-      const r = this.runs.get(opts.runId);
-      const workflow = this.workflowContinuations.get(opts.runId);
-      if (workflow) return { ...r, runId: workflow.runId, capability: workflow.capability, status: "pending", verification: { status: "unverified", results: [] }, pending: this.workflowPending(workflow) };
-      const c = this.httpContinuations.get(opts.runId);
+      const requested = opts.runId, seen = new Set<string>();
+      let resolved = requested;
+      for (;;) {
+        if (seen.has(resolved) || seen.size >= 8) throw new Error("invalid retained run linkage");
+        seen.add(resolved);
+        const linked = this.runs.get(resolved)?.workflowRunId ?? this.chain.receipts.findLast(r => r.runId === resolved)?.workflowRunId;
+        if (!linked) break;
+        resolved = linked;
+      }
+      const identity = resolved === requested ? {} : { runId: requested, workflowRunId: resolved };
+      const r = this.runs.get(resolved);
+      const workflow = this.workflowContinuations.get(resolved);
+      if (workflow) return { ...r, runId: workflow.runId, capability: workflow.capability, status: "pending", verification: { status: "unverified", results: [] }, pending: this.workflowPending(workflow), ...identity };
+      const c = this.httpContinuations.get(resolved);
       if (c) return { ...r, runId: c.runId, capability: c.capability, status: "pending", verification: { status: "unverified", results: [] },
-        pending: { reason: "http-202", resumeId: `resume:${c.runId}`, expiresAt: c.expiresAt, requestsUsed: c.cursor.used } };
-      const continuation = this.chain.receipts.findLast(receipt => receipt.resumes === opts.runId);
+        pending: { reason: "http-202", resumeId: `resume:${c.runId}`, expiresAt: c.expiresAt, requestsUsed: c.cursor.used }, ...identity };
+      const continuation = this.chain.receipts.findLast(receipt => receipt.resumes === resolved);
       if (continuation) {
         const completed = this.runs.get(continuation.runId);
-        return { runId: opts.runId, capability: continuation.capability, status: continuation.status, resumedBy: continuation.runId,
+        return { runId: resolved, capability: continuation.capability, status: continuation.status, resumedBy: continuation.runId,
           verification: { status: continuation.verification, results: completed?.verification.results ?? [] },
-          output: completed?.output, outputUnavailable: !completed, receipt: continuation };
+          output: completed?.output, outputUnavailable: !completed, receipt: continuation, ...identity };
       }
-      if (r) return r;
-      const receipt = this.chain.receipts.findLast(r => r.runId === opts.runId);
+      if (r) return { ...r, ...identity };
+      const receipt = this.chain.receipts.findLast(r => r.runId === resolved);
       if (receipt) return { runId: receipt.runId, capability: receipt.capability, status: receipt.status,
-        verification: { status: receipt.verification, results: [] }, receipt, outputUnavailable: true };
-      throw new Error(`unknown run: ${opts.runId}`);
+        verification: { status: receipt.verification, results: [] }, receipt, outputUnavailable: true, ...identity };
+      throw new Error(`unknown run: ${resolved}`);
     }
     return { recent: [...this.runs.values()].slice(-(opts.limit ?? 20)).reverse().map(({ output, ...r }) => ({ ...r, output: preview(output) })),
       pendingWorkflows: [...this.workflowContinuations.values()].map(w => ({ runId: w.runId, capability: w.capability, phase: w.phase, next: w.next, pending: this.workflowPending(w) })),
@@ -1950,84 +2025,41 @@ export class RightClick {
           if (!fields.length) return st;
           return { ...st, bindings: [...st.bindings.filter((b) => b.port !== gi.selectPort), { port: gi.selectPort, from: "$const", value: selectionWith(gi.selection, fields) }] };
         });
-        const r = await this.runSteps(steps, p.result, values, opts.confirm, opts.activeGoals, net);
-        let verification: RunRecord["verification"] = check(r.output, opts.verify ?? []);
-        if (verification.status === "refuted") throw new StepError(p.steps[p.steps.length - 1].capability, `verification refuted: ${JSON.stringify(verification.results.filter((x) => !x.ok))}`);
-        lastWitnesses = await this.checkWitnesses(witnesses, values, r.output, r.runs, net);
-        const waiting = lastWitnesses.find(w => w.status === "pending");
-        if (waiting) throw new PendingOutcomeError({ capability: waiting.capability, reason: "witness-pending", runs: [...r.runs, waiting.runId] });
-        const denied = lastWitnesses.find(w => w.refusal);
-        if (denied) throw new TransportRefused(denied.refusal!.reason, denied.capability, [...r.runs, denied.runId]);
-        if (lastWitnesses.some((w) => w.status !== "completed")) throw new StepError(p.steps[p.steps.length - 1].capability, `verification refuted by independent outcome witness: ${lastWitnesses.filter((w) => w.status !== "completed").map((w) => w.error ?? w.capability).join("; ")}`);
-        if (lastWitnesses.length) verification = { ...verification, status: "verified" };
-        if (require.length) {
-          // The contract said the result carries it; check that this result actually does.
-          const seen = outputCarries(r.output, require);
-          result.outcome = seen.absent.length
-            ? { status: "incomplete", require, covered: Object.fromEntries(seen.present.map((t) => [t, p.satisfaction?.covered[t] ?? ""])), missing: seen.absent, joins: p.satisfaction?.joins ?? [], reason: `the executed result lacks: ${seen.absent.join(", ")}` }
-            : { status: "established", require, covered: p.satisfaction?.covered ?? {}, missing: [], joins: p.satisfaction?.joins ?? [], checkedAfterRun: true };
-          if (seen.absent.length) throw new StepError(p.steps[p.steps.length - 1].capability, `required output information missing: ${seen.absent.join(", ")}`);
-        }
-        const assurance: Assurance = verification.status === "verified" ? "independently-checked" : verification.status === "checked" ? "predicate-checked" : "unchecked";
-        // Preservation: a plan chosen on evidence that every step keeps its input's words must not
-        // lose the caller's words now. If it does, the behaviour is not what the evidence said.
-        const pa = assessOf(p);
-        const callerInputs = p.steps.flatMap((st) => st.bindings.filter((b) => b.from.startsWith("$in.")).map((b) => values[b.from.slice(4).split(".")[0]]));
-        const lost = pa.preservesInput ? lostWords(callerInputs, r.output) : [];
-        if (lost.length) {
-          const violation = `preservation: the plan's steps were each observed to keep every word of their input, but the result lost ${lost.length} of the caller's words (${lost.slice(0, 8).join(", ")})`;
-          result.outcome = { status: "violated", require, covered: {}, missing: [], joins: p.satisfaction?.joins ?? [], reason: violation };
-          result.executed = { summary: p.summary, titles: titles(p), output: null, rejectedOutput: r.output, status: "failed", error: `outcome contract violated: ${violation}`, verification: { ...verification, status: "refuted" }, runs: r.runs, attempts, durationMs: Math.round(performance.now() - t0), witnesses: lastWitnesses, contract: { status: "violated", violations: [violation], assurance } };
+        const selected = steps.map(s => this.graph.get(s.capability)!);
+        const composition: CompositionContinuation = {
+          id: `execution:composition:${crypto.randomUUID()}`, plan: { ...p, steps }, types,
+          risk: selected.some(c => c.risk === "destructive") ? "destructive" : selected.some(c => c.risk === "write") ? "write" : selected.some(c => c.risk === "external") ? "external" : "read",
+          options: { want: opts.want, intent: opts.intent, verify: opts.verify, crystallize: opts.crystallize,
+            publish: opts.publish, risks: opts.risks, through: opts.through, maxSteps: opts.maxSteps },
+          anchors, fixed, origins, witnesses, require, preservesInput: assessOf(p).preservesInput,
+          goals: await Promise.all((opts.activeGoals ?? []).map(async slug => {
+            const g = this.published.get(slug);
+            if (!g) throw new Error(`saved goal is unavailable: ${slug}`);
+            return { slug, digest: await this.goalDigest(g) };
+          })),
+        };
+        if (this.workflowRecovery && this.recoverableWorkflow(this.compositionCapability(composition))) {
+          if (!checkpointValue(opts.verify ?? []) || !checkpointValue(witnesses) || !checkpointValue(fixed) ||
+              steps.some(s => s.bindings.some(b => b.from === "$const" && !checkpointValue(b.value)))) {
+            result.executed = { summary: p.summary, titles: titles(p), status: "failed", output: null,
+              verification: { status: "refuted", results: [] }, runs: [], attempts: [], durationMs: 0,
+              error: "composition obligations cannot be retained without losing values or credential-like data" };
+            return result;
+          }
+          // Omit absent optional metadata, not caller values: startWorkflow validates
+          // the original input payload without lossy JSON serialization.
+          const retained = JSON.parse(JSON.stringify(composition)) as CompositionContinuation;
+          const rec = await this.dispatchRun(retained.id, values, {}, undefined, retained);
+          if (rec.composition) return { ...result, ...rec.composition, plans: result.plans };
+          result.executed = { summary: p.summary, titles: titles(p), output: rec.output ?? null, status: rec.status,
+            pending: rec.pending, refusal: rec.refusal, verification: rec.verification, runs: rec.steps ?? [],
+            attempts: [...attempts, ...(rec.error ? [{ summary: p.summary, failed: rec.failedCapability ?? p.steps[0].capability,
+              error: rec.error, healing: "retained execution: no alternative plan or replay" }] : [])],
+            durationMs: rec.durationMs, witnesses: rec.witnesses, error: rec.error };
           return result;
         }
-        result.executed = {
-          contract: { status: "satisfied", violations: [], assurance },
-          summary: p.summary,
-          titles: titles(p),
-          output: r.output,
-          status: "completed",
-          verification,
-          runs: r.runs,
-          attempts,
-          durationMs: Math.round(performance.now() - t0),
-          witnesses: lastWitnesses,
-          ...(r.fanOuts.length ? { fanOuts: r.fanOuts } : {}),
-        };
-        if (opts.crystallize !== false && p.steps.length > 1) result.crystallized = await this.crystallize({ ...p, steps }, types, opts.intent, opts.verify, witnesses, require);
-        const trust: "verified" | "checked" | "unverified" = verification.status === "verified" ? "verified" : verification.status === "checked" ? "checked" : "unverified";
-        if (opts.publish && trust !== "verified" && this.publishPolicy === "verified") {
-          result.publishRefused = `not published: the operator publishes only verified goals (an independent outcome witness must pass), and ${trust === "checked" ? "only stored predicates passed" : "no check passed"} on this run`;
-        } else if (opts.publish && trust === "unverified" && this.publishPolicy === "checked") {
-          result.publishRefused = `not published: the operator publishes only checked or verified goals, and no check passed on this run`;
-        } else if (opts.publish) {
-          const slug = slugify(opts.publish);
-          this.published.set(slug, {
-            trust,
-            slug,
-            title: opts.publish,
-            have: types,
-            want: opts.want,
-            intent: opts.intent,
-            verify: structuredClone(opts.verify),
-            require: structuredClone(require),
-            witnesses,
-            ...(Object.keys(fixed).length ? { fixed: structuredClone(fixed) } : {}),
-            ...(origins ? { origins } : {}),
-            risks: structuredClone(opts.risks ?? [...new Set(p.steps.map((s) => this.graph.get(s.capability)!.risk))]),
-            through: structuredClone(opts.through),
-            anchors: structuredClone(anchors),
-            maxSteps: opts.maxSteps,
-            publishedAt: new Date().toISOString(),
-            calls: 0,
-            lastPipeline: titles(p),
-            providers: [...new Set(p.steps.map((st) => this.graph.get(st.capability)!.provider))],
-          });
-          this.registerGoal(this.published.get(slug)!);
-          result.published = { id: `goal:${slug}`, slug, path: `/x/${slug}`, trust };
-          this.graph.emit("goal.published", { slug, title: opts.publish, pipeline: titles(p) });
-          this.persist();
-        }
-        return result;
+        const r = await this.runSteps(steps, p.result, values, opts.confirm, opts.activeGoals, net);
+        return await this.finishComposition(composition, values, r, net, result, attempts, t0, ws => { lastWitnesses = ws; });
       } catch (e) {
         const failed = e instanceof StepError || e instanceof ConfirmationRequired ? e.capability : p.steps[0].capability;
         if (e instanceof TransportRefused) {
@@ -2144,6 +2176,95 @@ export class RightClick {
     return result;
   }
 
+  private async finishComposition(c: CompositionContinuation, values: Record<string, unknown>,
+    r: { output: unknown; runs: string[]; fanOuts: FanOutReport[] }, net: Net,
+    result: ComposeResult, attempts: NonNullable<ComposeResult["executed"]>["attempts"], t0: number,
+    observeWitnesses: (w: WitnessResult[]) => void) {
+    const { plan: p, types, options: opts, anchors, fixed, origins, witnesses, require } = c;
+    const titles = (plan: Plan) => plan.steps.map(s => this.graph.get(s.capability)!.title + (s.bindings.some(b => b.each) ? " (each)" : ""));
+    let lastWitnesses: WitnessResult[] = [];
+    let verification: RunRecord["verification"] = check(r.output, opts.verify ?? []);
+    if (verification.status === "refuted") throw new StepError(p.steps[p.steps.length - 1].capability, `verification refuted: ${JSON.stringify(verification.results.filter((x) => !x.ok))}`);
+    lastWitnesses = await this.checkWitnesses(witnesses, values, r.output, r.runs, net,
+      c.plan.steps.map(s => this.graph.get(s.capability)!.provider));
+    observeWitnesses(lastWitnesses);
+    const waiting = lastWitnesses.find(w => w.status === "pending");
+    if (waiting) throw new PendingOutcomeError({ capability: waiting.capability, reason: "witness-pending", runs: [...r.runs, waiting.runId] });
+    const denied = lastWitnesses.find(w => w.refusal);
+    if (denied) throw new TransportRefused(denied.refusal!.reason, denied.capability, [...r.runs, denied.runId]);
+    if (lastWitnesses.some((w) => w.status !== "completed")) throw new StepError(p.steps[p.steps.length - 1].capability, `verification refuted by independent outcome witness: ${lastWitnesses.filter((w) => w.status !== "completed").map((w) => w.error ?? w.capability).join("; ")}`);
+    if (lastWitnesses.length) verification = { ...verification, status: "verified" };
+    if (require.length) {
+      // The contract said the result carries it; check that this result actually does.
+      const seen = outputCarries(r.output, require);
+      result.outcome = seen.absent.length
+        ? { status: "incomplete", require, covered: Object.fromEntries(seen.present.map((t) => [t, p.satisfaction?.covered[t] ?? ""])), missing: seen.absent, joins: p.satisfaction?.joins ?? [], reason: `the executed result lacks: ${seen.absent.join(", ")}` }
+        : { status: "established", require, covered: p.satisfaction?.covered ?? {}, missing: [], joins: p.satisfaction?.joins ?? [], checkedAfterRun: true };
+      if (seen.absent.length) throw new StepError(p.steps[p.steps.length - 1].capability, `required output information missing: ${seen.absent.join(", ")}`);
+    }
+    const assurance: Assurance = verification.status === "verified" ? "independently-checked" : verification.status === "checked" ? "predicate-checked" : "unchecked";
+    // Preservation: a plan chosen on evidence that every step keeps its input's words must not
+    // lose the caller's words now. If it does, the behaviour is not what the evidence said.
+    const pa = { preservesInput: c.preservesInput };
+    const callerInputs = p.steps.flatMap((st) => st.bindings.filter((b) => b.from.startsWith("$in.")).map((b) => values[b.from.slice(4).split(".")[0]]));
+    const lost = pa.preservesInput ? lostWords(callerInputs, r.output) : [];
+    if (lost.length) {
+      const violation = `preservation: the plan's steps were each observed to keep every word of their input, but the result lost ${lost.length} of the caller's words (${lost.slice(0, 8).join(", ")})`;
+      result.outcome = { status: "violated", require, covered: {}, missing: [], joins: p.satisfaction?.joins ?? [], reason: violation };
+      result.executed = { summary: p.summary, titles: titles(p), output: null, rejectedOutput: r.output, status: "failed", error: `outcome contract violated: ${violation}`, verification: { ...verification, status: "refuted" }, runs: r.runs, attempts, durationMs: Math.round(performance.now() - t0), witnesses: lastWitnesses, contract: { status: "violated", violations: [violation], assurance } };
+      return result;
+    }
+    result.executed = {
+      contract: { status: "satisfied", violations: [], assurance },
+      summary: p.summary,
+      titles: titles(p),
+      output: r.output,
+      status: "completed",
+      verification,
+      runs: r.runs,
+      attempts,
+      durationMs: Math.round(performance.now() - t0),
+      witnesses: lastWitnesses,
+      ...(r.fanOuts.length ? { fanOuts: r.fanOuts } : {}),
+    };
+    if (opts.crystallize !== false && p.steps.length > 1) result.crystallized = await this.crystallize(p, types, opts.intent, opts.verify, witnesses, require, origins,
+      c.preservesInput ? [...new Set(p.steps.flatMap(s => s.bindings.filter(b => b.from.startsWith("$in.")).map(b => b.from.slice(4).split(".")[0])))] : undefined);
+    const trust: "verified" | "checked" | "unverified" = verification.status === "verified" ? "verified" : verification.status === "checked" ? "checked" : "unverified";
+    if (opts.publish && trust !== "verified" && this.publishPolicy === "verified") {
+      result.publishRefused = `not published: the operator publishes only verified goals (an independent outcome witness must pass), and ${trust === "checked" ? "only stored predicates passed" : "no check passed"} on this run`;
+    } else if (opts.publish && trust === "unverified" && this.publishPolicy === "checked") {
+      result.publishRefused = `not published: the operator publishes only checked or verified goals, and no check passed on this run`;
+    } else if (opts.publish) {
+      const slug = slugify(opts.publish);
+      this.published.set(slug, {
+        trust,
+        slug,
+        title: opts.publish,
+        have: types,
+        want: opts.want,
+        intent: opts.intent,
+        verify: structuredClone(opts.verify),
+        require: structuredClone(require),
+        witnesses,
+        ...(Object.keys(fixed).length ? { fixed: structuredClone(fixed) } : {}),
+        ...(origins ? { origins } : {}),
+        risks: structuredClone(opts.risks ?? [...new Set(p.steps.map((s) => this.graph.get(s.capability)!.risk))]),
+        through: structuredClone(opts.through),
+        anchors: structuredClone(anchors),
+        maxSteps: opts.maxSteps,
+        publishedAt: new Date().toISOString(),
+        calls: 0,
+        lastPipeline: titles(p),
+        providers: [...new Set(p.steps.map((st) => this.graph.get(st.capability)!.provider))],
+      });
+      this.registerGoal(this.published.get(slug)!);
+      result.published = { id: `goal:${slug}`, slug, path: `/x/${slug}`, trust };
+      this.graph.emit("goal.published", { slug, title: opts.publish, pipeline: titles(p) });
+      this.persist();
+    }
+    return result;
+  }
+
   /** Distinct intent terms covered by the titles and tags of a plan's leaf capabilities (saved pipelines expanded). */
   private leafCoverage(p: Plan, intent?: string): number {
     const want = new Set(tokenize(intent ?? ""));
@@ -2173,7 +2294,7 @@ export class RightClick {
     }, { id: "goal:published", title: "Reusable environmental capabilities", source: "composite", origin: this.name, learnedAt: g.publishedAt });
   }
 
-  private async executeGoal(slug: string, args: Record<string, unknown>, confirm?: boolean, activeGoals: string[] = []): Promise<ComposeResult> {
+  private async executeGoal(slug: string, args: Record<string, unknown>, confirm?: boolean, activeGoals: string[] = [], verify: Predicate[] = []): Promise<ComposeResult> {
     const g = this.published.get(slug);
     if (!g) throw new Error(`no published goal: ${slug}`);
     const capability = this.graph.get(`goal:${slug}`);
@@ -2196,7 +2317,7 @@ export class RightClick {
       const value = (t === "number" || t.startsWith("geo.")) && typeof raw === "string" ? Number(raw) : raw;
       have[k] = { type: t, value };
     }
-    const r = await this.compose({ have, want: g.want, intent: g.intent, verify: g.verify, require: g.require, witnesses: g.witnesses, risks: g.risks, through: g.through, anchors: g.anchors, maxSteps: g.maxSteps, origins: g.origins, run: true, confirm, activeGoals: [...activeGoals, slug] });
+    const r = await this.compose({ have, want: g.want, intent: g.intent, verify: [...g.verify ?? [], ...verify], require: g.require, witnesses: g.witnesses, risks: g.risks, through: g.through, anchors: g.anchors, maxSteps: g.maxSteps, origins: g.origins, run: true, confirm, activeGoals: [...activeGoals, slug] });
     g.calls++;
     if (r.executed?.status === "completed") {
       g.lastPipeline = r.executed.titles;
@@ -2274,8 +2395,8 @@ export class RightClick {
   }
 
   /** Save a successful pipeline with the checks that justified keeping it. */
-  private async crystallize(p: Plan, types: Record<string, SemType>, intent?: string, verify?: Predicate[], witnesses?: OutcomeWitness[], require?: string[]) {
-    const id = `composite:${(await sha256(JSON.stringify({ steps: p.steps, result: p.result, types, verify, witnesses, require }))).slice(0, 12)}`;
+  private async crystallize(p: Plan, types: Record<string, SemType>, intent?: string, verify?: Predicate[], witnesses?: OutcomeWitness[], require?: string[], origins?: string[], preserveInputs?: string[]) {
+    const id = `composite:${(await sha256(JSON.stringify({ steps: p.steps, result: p.result, types, verify, witnesses, require, origins, preserveInputs }))).slice(0, 12)}`;
     if (this.graph.get(id)) return { id, title: this.graph.get(id)!.title, newPowers: 0 };
     const usedInputs = new Set(p.steps.flatMap((s) => s.bindings.map((b) => b.from)).filter((f) => f.startsWith("$in.")).map((f) => f.slice(4)));
     for (const w of witnesses ?? []) for (const b of Object.values(w.args)) if ("input" in b) usedInputs.add(b.input.split(".")[0]);
@@ -2291,7 +2412,8 @@ export class RightClick {
       outputs: [{ name: "", type: p.resultType, required: true }],
       risk: stepCaps.some((c) => c.risk === "destructive") ? "destructive" : stepCaps.some((c) => c.risk === "write") ? "write" : stepCaps.some((c) => c.risk === "external") ? "external" : "read",
       tags: [...new Set([...(intent ? intent.split(/\s+/) : []), "composite", "crystallized", ...stepCaps.flatMap((c) => c.tags)])].slice(0, 30),
-      invoke: { kind: "composite", steps: p.steps, result: p.result, signatures: stepCaps.map(signature), verify: structuredClone(verify), witnesses: structuredClone(witnesses), require: structuredClone(require) },
+      invoke: { kind: "composite", steps: p.steps, result: p.result, signatures: stepCaps.map(signature), verify: structuredClone(verify), witnesses: structuredClone(witnesses), require: structuredClone(require),
+        ...(origins ? { origins: structuredClone(origins) } : {}), ...(preserveInputs ? { preserveInputs } : {}) },
     };
     const delta = this.graph.addCapability(cap, {
       id: "composite:crystallized",

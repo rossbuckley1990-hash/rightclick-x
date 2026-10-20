@@ -145,6 +145,9 @@ export interface CompositeInvoke {
   verify?: Predicate[];
   require?: string[];
   witnesses?: OutcomeWitness[];
+  /** Caller restrictions and observed preservation obligations survive reuse. */
+  origins?: string[];
+  preserveInputs?: string[];
 }
 
 export interface GoalInvoke {

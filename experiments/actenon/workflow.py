@@ -100,6 +100,10 @@ def run(output, image):
             original = paused["results"]["run"]
             checks["ordinary_plan_retained_pending"] = original["status"] == "pending" and original["pending"]["resumeId"] == "resume:" + original["runId"]
             assert checks["ordinary_plan_retained_pending"]
+            checks["compact_compose_retains_without_manual_graph_capability"] = (
+                paused["results"]["compose"]["executed"]["pending"]["resumeId"] == original["pending"]["resumeId"]
+                and bool(paused["state"]["workflowContinuations"][0]["composition"])
+                and not any(c["id"].startswith("execution:composition:") for r in paused["state"]["reflections"] for c in r["capabilities"]))
             changed = task("workflow-resume-changed", paused["state"], "first")
             checks["changed_remaining_target_stops_before_fetch"] = changed["results"]["run"]["status"] == "pending" and not any(
                 json.loads(s).get("op") == "fetch" for s in (issued / "client-workflow-resume-changed.jsonl").read_text().splitlines())
@@ -112,6 +116,7 @@ def run(output, image):
             completed = done["results"]["run"]
             checks["new_authority_completes_exact_remaining_effect"] = completed["status"] == "completed" and completed["verification"]["status"] == "checked" and completed["resumes"] == original["runId"]
             checks["completed_parent_and_child_checkpoints_removed"] = done["state"]["workflowContinuations"] == done["state"]["httpContinuations"] == []
+            checks["deferred_goal_retained_after_checks"] = done["results"]["run"]["composition"]["published"]["slug"] == "delivered-document-digest"
 
             for label, name in [("generated", "publication-denied"), ("second", "revoked-between")]:
                 grant(name, False if label == "generated" else True)
@@ -186,7 +191,7 @@ def run(output, image):
             if process: process.terminate(); process.wait(timeout=10)
             if errors: errors.close()
             service.shutdown(); service.server_close(); boundary.store.close()
-        assert all(checks.values()) and len(checks) == 28
+            assert all(checks.values()) and len(checks) == 30
 
 
 if __name__ == "__main__":

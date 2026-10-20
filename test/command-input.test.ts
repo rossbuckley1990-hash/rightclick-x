@@ -14,10 +14,11 @@ function fixture() {
   const state = `${dir}/state.json`;
   let server: Server | undefined;
   const received: unknown[] = [];
-  const call = async (args: string[], stdin?: string, policy?: object) => {
+  const call = async (args: string[], stdin?: string, policy?: object, recovery?: string) => {
     const child = spawn(process.execPath, [cli, ...args], {
       cwd: dir, env: { PATH: process.env.PATH, HOME: dir, RCX_STATE_FILE: state, RCX_WORKSPACE: dir,
-        ...(policy ? { RCX_EXECUTION_POLICY: JSON.stringify(policy) } : {}) },
+        ...(policy ? { RCX_EXECUTION_POLICY: JSON.stringify(policy) } : {}),
+        ...(recovery !== undefined ? { RCX_WORKFLOW_RECOVERY: recovery } : {}) },
       timeout: 15000, stdio: ["pipe", "pipe", "pipe"],
     });
     let stdout = "", stderr = "";
@@ -53,6 +54,21 @@ function fixture() {
   };
   return { dir, state, call, received, learn, close };
 }
+
+test("CLI workflow recovery requires explicit host opt-in and rejects misspelled settings before state access", async () => {
+  const f = fixture();
+  try {
+    const invalid = await f.call(["runtime"], undefined, undefined, "yes");
+    assert.notEqual(invalid.status, 0);
+    assert.match(invalid.stderr, /RCX_WORKFLOW_RECOVERY must be 0 or 1/);
+    assert.equal(existsSync(f.state), false);
+    for (const value of [undefined, "0", "1"]) {
+      const result = await f.call(["runtime"], undefined, undefined, value);
+      assert.equal(result.status, 0, result.stderr);
+      assert.equal(JSON.parse(result.stdout).storage.workflowRecovery, value === "1");
+    }
+  } finally { await f.close(); }
+});
 
 test("CLI structured arguments preserve arrays, nested values, Unicode and literal strings", async () => {
   const f = fixture();

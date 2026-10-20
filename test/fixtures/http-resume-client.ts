@@ -5,7 +5,7 @@ import { dispatch } from "../../src/interface/tools.ts";
 
 const [origin, file, phase, mode] = process.argv.slice(2);
 const rc = await RightClick.create({ directories: [], sandbox: null, store: new FileStore(file),
-  workflowRecovery: mode === "workflow",
+  workflowRecovery: mode !== "leaf",
   network: { blockPrivate: false, origins: [origin] },
   ...(phase === "start" ? { environment: { catalogs: [origin + "/catalog"], origins: [origin] } } : {}),
 });
@@ -23,13 +23,17 @@ if (phase === "start") {
       ], result: "1.confirmed", verify: [{ op: "matches", pattern: "^[a-f0-9]{64}$" }] },
     }, { id: "composite:process", source: "composite", origin: "local", title: "Process fixture", learnedAt: new Date().toISOString() });
   }
-  const run = await dispatch(rc, "context_run", { id: mode === "workflow" ? "composite:process-recovery" : cap.id, args: { document: "A document retained across a process kill." },
+  const run = mode === "composition" ? await dispatch(rc, "context_compose", {
+    have: { document: { type: "text", value: "A document retained across a process kill." } }, want: "text",
+    through: [cap.id, rc.graph.list().find(c => c.invoke.kind === "http" && c.invoke.method === "POST" && c.invoke.url.endsWith("/publish"))!.id],
+    run: true, publish: "Compressed document", verify: [{ op: "matches", pattern: "^[a-f0-9]{64}$" }], origins: [origin],
+  }) : await dispatch(rc, "context_run", { id: mode === "workflow" ? "composite:process-recovery" : cap.id, args: { document: "A document retained across a process kill." },
     verify: mode === "workflow" ? [] : [{ op: "matches", path: "sha256", pattern: "^[a-f0-9]{64}$" }] });
   console.log(JSON.stringify({ pid: process.pid, run }));
 } else {
   const status: any = await dispatch(rc, "context_run_status", {});
-  const entry = mode === "workflow" ? status.pendingWorkflows[0] : status.pendingHttp[0];
-  const pending = mode === "workflow" ? { ...entry, resumeId: entry?.pending.resumeId } : entry;
+  const entry = mode !== "leaf" ? status.pendingWorkflows[0] : status.pendingHttp[0];
+  const pending = mode !== "leaf" ? { ...entry, resumeId: entry?.pending.resumeId } : entry;
   if (!pending) throw new Error("no retained HTTP continuation");
   const before = await dispatch(rc, "context_run_status", { runId: pending.runId });
   const run = await dispatch(rc, "context_run", { id: pending.resumeId });

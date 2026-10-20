@@ -59,6 +59,10 @@ const HELP = `RightClick X ${VERSION} — a live capability graph that composes 
   rcx graph [stats|types|search|neighbors|paths|edges] [--query q] [--id id] [--from t] [--to t]
   rcx providers | runtime | status [runId] | watch
 
+Recovery: RCX_WORKFLOW_RECOVERY=1 opts this host into retaining bounded workflow inputs and outputs
+in its local state file. Resume pending compositions with rcx run resume:<run-id>; no new inputs.
+Restrictions and checks are retained, and current execution authority is required. Default: off.
+
 State: ${env.RCX_STATE_FILE ?? "~/.rightclick-x/state.json"} (RCX_STATE_FILE). Authority: RCX_DESTRUCTIVE=operator|agent-confirm|allow, RCX_APPROVE=<ids>, RCX_RETRY=<ids or origins>, RCX_INVESTIGATE / RCX_EXECUTE=<program paths>, RCX_SHARE_EVIDENCE=1. Credentials: RCX_AUTH='{"https://api.x.com":"Bearer …"}'.`;
 
 async function main() {
@@ -79,6 +83,9 @@ async function main() {
 
   // Decode before state load/migration: malformed input must not initiate any runtime work.
   const input = cmd === "run" || cmd === "compose" ? await commandInput(cmd, argv) : undefined;
+  if (env.RCX_WORKFLOW_RECOVERY !== undefined && !["0", "1"].includes(env.RCX_WORKFLOW_RECOVERY)) {
+    throw new Error("RCX_WORKFLOW_RECOVERY must be 0 or 1");
+  }
 
   const auth = new Authority();
   auth.loadEnv(env.RCX_AUTH);
@@ -95,6 +102,7 @@ async function main() {
     auth,
     workspace: env.RCX_WORKSPACE ?? proc.cwd(),
     store: demoMode ? undefined : new FileStore(stateFile),
+    workflowRecovery: env.RCX_WORKFLOW_RECOVERY === "1",
     authority,
     environment: environmentOptions(env.RCX_ENVIRONMENT),
   });

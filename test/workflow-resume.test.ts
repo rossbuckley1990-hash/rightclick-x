@@ -4,6 +4,7 @@ import { RightClick, type RuntimeOptions, type PersistedState } from "../src/run
 import { reflectOpenAPI } from "../src/reflectors/openapi.ts";
 import { MemoryStore } from "./helpers.ts";
 import { signature } from "../src/core/graph.ts";
+import { dispatch } from "../src/interface/tools.ts";
 
 const response = (properties: object) => ({ "200": { content: { "application/json": { schema: { type: "object", properties } } } } });
 async function world(store: MemoryStore, options: RuntimeOptions = {}) {
@@ -43,6 +44,178 @@ async function world(store: MemoryStore, options: RuntimeOptions = {}) {
   }
   return { rc, calls };
 }
+
+const composition = {
+  have: { document: { type: "text", value: "prepared" } }, want: "text", run: true,
+  through: ["openapi:worker:pack", "openapi:source:finish"],
+  verify: [{ op: "equals", value: "stored:abc" }],
+  origins: ["https://worker.test", "https://source.test"],
+};
+
+test("context_compose retains its complete selected plan, checks and publication across restart", async () => {
+  const store = new MemoryStore(); const first = await world(store);
+  const initial: any = await dispatch(first.rc, "context_compose", { ...composition, publish: "Stored package" });
+  assert.equal(initial.executed?.status, "pending");
+  assert.equal(initial.executed.pending.reason, "workflow-pending");
+  assert.ok(initial.executed.pending.resumeId);
+  assert.equal(first.rc.graph.get("goal:stored-package"), undefined);
+  assert.equal(first.rc.graph.list().some(c => c.id.startsWith("execution:composition:")), false);
+  await first.rc.flush();
+  const fresh = await world(store);
+  const done: any = await dispatch(fresh.rc, "context_run", { id: initial.executed.pending.resumeId });
+  assert.equal(done.status, "completed", done.error);
+  assert.equal(done.output, "stored:abc");
+  assert.equal(done.verification.status, "checked");
+  assert.equal(done.composition?.published?.slug, "stored-package");
+  assert.ok(done.composition?.crystallized?.id);
+  const saved = fresh.rc.graph.get(done.composition.crystallized.id)!;
+  assert.equal(saved.invoke.kind, "composite");
+  if (saved.invoke.kind === "composite") assert.deepEqual(saved.invoke.origins, composition.origins);
+  assert.ok(fresh.rc.graph.get("goal:stored-package"));
+  assert.deepEqual(first.calls, ["POST /pack", "GET /tasks/t1"]);
+  assert.deepEqual(fresh.calls, ["GET /results/t1", "POST /finish"]);
+  await fresh.rc.flush();
+});
+
+test("composition recovery preserves input-word obligations and refuses lossy stored checks", async () => {
+  const store = new MemoryStore(); const first = await world(store);
+  for (const id of composition.through) first.rc.graph.get(id)!.tags.push("preserves-input-words");
+  const pending: any = await dispatch(first.rc, "context_compose", { ...composition, publish: "Lossy result" });
+  assert.equal(pending.executed.status, "pending"); await first.rc.flush();
+  const fresh = await world(store);
+  const result = await fresh.rc.run(pending.executed.pending.resumeId);
+  assert.equal(result.status, "failed");
+  assert.equal(result.verification.status, "refuted");
+  assert.equal(result.output, null);
+  assert.match(result.error ?? "", /preservation/);
+  assert.equal(fresh.rc.graph.get("goal:lossy-result"), undefined);
+  await fresh.rc.flush();
+  for (const verify of [[{ op: "equals", value: { absent: undefined } }], [{ op: "equals", value: { token: "not-for-storage" } }]]) {
+    const refused = await world(new MemoryStore());
+    const r: any = await dispatch(refused.rc, "context_compose", { ...composition, verify });
+    assert.equal(r.executed.status, "failed");
+    assert.deepEqual(refused.calls, []);
+    await refused.rc.flush();
+  }
+});
+
+test("repeated composition does not grow the graph or retain per-execution reliability entries", async () => {
+  const store = new MemoryStore(); const { rc } = await world(store, { httpContinuation: { maxRequests: 4 } });
+  const size = rc.graph.list().length;
+  for (let i = 0; i < 12; i++) {
+    const result = await rc.compose({ ...composition, verify: [{ op: "equals", value: "stored:abc" }], crystallize: false });
+    assert.equal(result.executed?.status, "completed");
+  }
+  await rc.flush();
+  assert.equal(rc.graph.list().length, size);
+  assert.deepEqual(store.state!.workflowContinuations, []);
+  assert.equal(Object.keys(store.state!.ledger).some(id => id.startsWith("execution:composition:")), false);
+  assert.equal((await rc.verifyReceipts()).intact, true);
+});
+
+test("crystallized reuse retains observed preservation checks for a different input", async () => {
+  const store = new MemoryStore();
+  const fetch: NonNullable<RuntimeOptions["fetch"]> = async (input) => {
+    const path = new URL(String(input)).pathname;
+    if (path === "/pack") return Response.json({ checksum: "prepared verified" });
+    assert.equal(path, "/finish");
+    return Response.json({ receipt: "prepared verified" });
+  };
+  const first = await world(store, { fetch });
+  for (const id of composition.through) first.rc.graph.get(id)!.tags.push("preserves-input-words");
+  const made = await first.rc.compose({ ...composition, verify: [{ op: "contains", value: "verified" }] });
+  assert.equal(made.executed?.status, "completed"); assert.ok(made.crystallized);
+  await first.rc.flush();
+  const fresh = await world(store, { fetch });
+  const refused = await fresh.rc.run(made.crystallized!.id, { document: "different words" });
+  assert.equal(refused.status, "failed");
+  assert.match(refused.error ?? "", /preservation/);
+  assert.equal(refused.verification.status, "refuted");
+  await fresh.rc.flush();
+});
+
+test("composition recovery retains failed predicates and current publication restrictions", async () => {
+  for (const mode of ["predicate", "publication", "tampered", "contract"] as const) {
+    const store = new MemoryStore(); const first = await world(store);
+    const initial: any = await dispatch(first.rc, "context_compose", {
+      ...composition, publish: "Stored package", ...(mode === "predicate" ? { verify: [{ op: "equals", value: "wrong" }] } : {}),
+    });
+    await first.rc.flush();
+    if (mode === "tampered") store.state!.workflowContinuations![0].composition!.options.verify = [];
+    const fresh = await world(store, mode === "publication" ? { authority: { publish: "verified" } } : {});
+    if (mode === "contract") (fresh.rc.graph.get("openapi:source:finish")!.invoke as any).url += "/changed";
+    const done = await fresh.rc.run(initial.executed.pending.resumeId);
+    assert.equal(done.status, mode === "publication" ? "completed" : mode === "predicate" ? "failed" : "pending");
+    assert.equal(done.verification.status, mode === "publication" ? "checked" : mode === "predicate" ? "refuted" : "unverified");
+    assert.equal(fresh.rc.graph.get("goal:stored-package"), undefined);
+    if (mode === "publication") assert.match(done.composition?.publishRefused ?? "", /only verified/);
+    if (mode === "tampered" || mode === "contract") assert.deepEqual(fresh.calls, []);
+    await fresh.rc.flush();
+  }
+});
+
+test("composition recovery preserves scoped egress and pinned independent witness checks", async () => {
+  for (const mode of ["success", "egress", "changed", "refuted", "denied"] as const) {
+    const store = new MemoryStore(); const first = await world(store);
+    first.rc.graph.add(reflectOpenAPI({ openapi: "3.1.0", info: { title: "Auditor" },
+      servers: [{ url: "https://auditor.test" }], paths: { "/inspect": {
+        get: { operationId: "inspect", responses: response({ receipt: { type: "string" } }) },
+      } } }, "https://auditor.test/spec"));
+    const initial: any = await dispatch(first.rc, "context_compose", {
+      ...composition, publish: "Checked package",
+      origins: mode === "egress" ? composition.origins : [...composition.origins, "https://auditor.test"],
+      witnesses: [{ capability: "openapi:auditor:inspect", args: {},
+        verify: [{ op: "equals", path: "receipt", value: "stored:abc" }] }],
+    });
+    assert.equal(initial.executed.status, "pending"); await first.rc.flush();
+    let audits = 0;
+    const fresh = await world(store, { fetch: async (input, init) => {
+      const u = new URL(String(input));
+      if (u.host === "auditor.test") {
+        audits++;
+        return mode === "denied" ? new Response(null, { status: 403 }) :
+          Response.json({ receipt: mode === "refuted" ? "wrong" : "stored:abc" });
+      }
+      if (u.pathname === "/results/t1") return Response.json({ checksum: "abc" });
+      assert.equal(u.pathname, "/finish");
+      assert.equal(JSON.parse(String(init?.body)).checksum, "abc");
+      return Response.json({ receipt: "stored:abc" });
+    } });
+    if (mode === "changed") (fresh.rc.graph.get("openapi:auditor:inspect")!.invoke as any).url += "/different";
+    const done = await fresh.rc.run(initial.executed.pending.resumeId);
+    assert.equal(done.status, mode === "success" ? "completed" : "failed", done.error);
+    assert.equal(done.verification.status, mode === "success" ? "verified" : mode === "denied" ? "unverified" : "refuted");
+    assert.equal(audits, mode === "egress" || mode === "changed" ? 0 : 1);
+    assert.equal(!!fresh.rc.graph.get("goal:checked-package"), mode === "success");
+    await fresh.rc.flush();
+  }
+});
+
+test("saved-goal recovery binds its full definition, current authority and caller checks", async () => {
+  for (const mode of ["success", "definition", "denied", "extra-check", "generated"] as const) {
+    const store = new MemoryStore(); const seed = await world(store, { httpContinuation: { maxRequests: 4 } });
+    const published = await seed.rc.compose({ ...composition, verify: [{ op: "equals", value: "stored:abc" }],
+      publish: "Stored package" });
+    assert.equal(published.executed?.status, "completed"); await seed.rc.flush();
+    const first = await world(store);
+    const initial: any = mode === "generated" ? await first.rc.callPublished("stored-package", { document: "prepared" }) :
+      await first.rc.run("goal:stored-package", { document: "prepared" }, mode === "extra-check" ? { verify: [{ op: "equals", value: "wrong" }] } : {});
+    assert.equal(initial.status, "pending", initial.error);
+    assert.equal(initial.pending.reason, "workflow-pending");
+    await first.rc.flush();
+    if (mode === "definition") store.state!.published![0].verify = [];
+    const fresh = await world(store, mode === "denied" ? { authority: { execution: { deniedCapabilities: ["goal:stored-package"] } } } : {});
+    const done = await fresh.rc.run(initial.pending.resumeId);
+    assert.equal(done.status, mode === "definition" || mode === "denied" ? "pending" : mode === "extra-check" ? "failed" : "completed", done.error);
+    if (mode === "definition" || mode === "denied") assert.deepEqual(fresh.calls, []);
+    else assert.deepEqual(fresh.calls, ["GET /results/t1", "POST /finish"]);
+    if (mode !== "generated") assert.equal((fresh.rc.runStatus({ runId: initial.runId }) as any).status, done.status);
+    await fresh.rc.flush();
+    const after = await world(store);
+    if (mode !== "generated") assert.equal((after.rc.runStatus({ runId: initial.runId }) as any).status, done.status);
+    await after.rc.flush();
+  }
+});
 
 test("a retained sequential workflow resumes the pending step and remaining effects without replay", async () => {
   const store = new MemoryStore(); const first = await world(store);

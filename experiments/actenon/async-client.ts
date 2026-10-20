@@ -3,6 +3,7 @@
 import { createInterface } from "node:readline";
 import { RightClick, type PersistedState } from "../../src/runtime.ts";
 import { createHandler } from "../../src/interface/http.ts";
+import { dispatch } from "../../src/interface/tools.ts";
 import { TransportRefused } from "../../src/reflectors/net.ts";
 
 const lines = createInterface({ input: process.stdin });
@@ -43,20 +44,15 @@ if (config.phase === "workflow-pause") {
   const publish = rc.graph.list().find(c => c.invoke.kind === "http" && c.invoke.method === "POST" &&
     c.inputs.some(p => p.name === "sha256"))!;
   if (!publish) throw new Error("no reflected digest publication");
-  const plan = await rc.compose({ have: { label: { type: "text", value: args.label }, document: { type: "text", value: args.document } },
-    want: "hash", through: [submit.id, publish.id], run: false });
+  const plan: any = await dispatch(rc, "context_compose", { have: { label: { type: "text", value: args.label }, document: { type: "text", value: args.document } },
+    want: "hash", through: [submit.id, publish.id], run: true, origins: [config.origin],
+    publish: "Delivered document digest", verify: [{ op: "matches", pattern: "^[a-f0-9]{64}$" }] });
   const selected = plan.plans.find(p => p.steps.length === 2 && p.steps[0].capability === submit.id && p.steps[1].capability === publish.id);
   if (!selected) throw new Error("no ordinary two-step plan");
   result.plan = selected;
-  // The development harness materializes the selected plan through the SDK.
-  // General context_compose recovery is deliberately not claimed here.
-  rc.graph.addCapability({ id: "composite:protected-recovery", provider: "composite:experiment", source: "composite",
-    title: "Protected retained execution", description: "Controlled recovery evaluation", inputs: submit.inputs,
-    outputs: [{ name: "", type: "hash", required: true }], risk: "write", tags: [],
-    invoke: { kind: "composite", steps: selected.steps, result: selected.result,
-      verify: [{ op: "matches", pattern: "^[a-f0-9]{64}$" }] },
-  }, { id: "composite:experiment", source: "composite", title: "Controlled retained plan", origin: "local", learnedAt: new Date().toISOString() });
-  result.run = await rc.run("composite:protected-recovery", args);
+  result.compose = plan;
+  if (!plan.executed?.pending?.resumeId) throw new Error("no retained composition");
+  result.run = await dispatch(rc, "context_run_status", { runId: plan.executed.pending.resumeId.slice(7) });
 } else if (config.phase.startsWith("workflow-resume")) {
   if (config.phase === "workflow-resume-changed") {
     const publish = rc.graph.list().find(c => c.invoke.kind === "http" && c.invoke.method === "POST" &&
