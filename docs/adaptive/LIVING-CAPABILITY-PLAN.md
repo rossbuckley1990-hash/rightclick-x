@@ -1,8 +1,10 @@
 # Living Capability Plane: additive execution plan and audit
 
+Current checkpoint: [native authority evidence](AUTHORITY-FEED.md), engineering freeze `596c5ccf`, completes the narrow historical decision-feed step in the existing persistent session. Actual grant revocation blocks the identical saved action, while receipts remain historical and unlinked to runtime calls. The optional native verifier remains outside the container, with pinned public trust and no core dependency. A real installed-package failure is fixed through compiled exports. Final 452 native, 63 Linux, 28 proof, 30 protected workflow and 12 native adapter controls pass. Next are same-session model/change acts, independent unfamiliar evaluation and matched economics; no original completion gate is promoted.
+
 **Status: PARTIAL. Merge/release recommendation: NO-GO.** This applies the [exact user mission update](LIVING-CAPABILITY-MISSION.txt) to the existing Adaptive Capability Plane goal and Master Execution Specification. It neither restarts the programme nor substitutes dashboard acceptance for the original capability, authority, holdout or commercial requirements.
 
-Current [integrated session checkpoint](LIVING-SESSION.md), engineering freeze `0a9eb38c`, puts actual public composition and a newly advertised independently protected local capability in one persistent isolated runtime, with its normal dashboard/MCP handler. A discovered learning-versus-contract-drift bug is corrected generically; failure evidence is retained. Fresh-process reuse of the combined snapshot uses two public requests and zero discovery, with separate readbacks. Final validation: 448 native, 82 focused Linux, 28 proof and 30 protected controls. Next: trusted authority observations, same-session model replacement/change, independent holdouts and matched economics. G6/G12/G16 are not promoted on deterministic process reuse or this partial assembly; the native memory/security and human/commercial gates remain open.
+Earlier [integrated session checkpoint](LIVING-SESSION.md), engineering freeze `0a9eb38c`, puts actual public composition and a newly advertised independently protected local capability in one persistent isolated runtime, with its normal dashboard/MCP handler. A discovered learning-versus-contract-drift bug is corrected generically; failure evidence is retained. Fresh-process reuse of the combined snapshot uses two public requests and zero discovery, with separate readbacks. Final validation: 448 native, 82 focused Linux, 28 proof and 30 protected controls. Next: trusted authority observations, same-session model replacement/change, independent holdouts and matched economics. G6/G12/G16 are not promoted on deterministic process reuse or this partial assembly; the native memory/security and human/commercial gates remain open.
 
 Completed local increment, starting `e1970734` and frozen `26df63b4`: [lost local permission is distinguishable from absent capability](PLANNING-REFUSAL.md). A bounded diagnostic search describes a structurally established candidate excluded by local policy without executing it, acquiring replacements, weakening semantic checks, claiming independent authority or recording policy refusal as failed provider behavior. Explicit empty risk/origin lists now mean no permitted risks/origins. The exposed retained public graph and an unrelated shipment/tracking fixture are development regressions, not holdouts. Five baseline failures, the slower initial candidate, harness syntax failure and adverse latency measurements are preserved. Final checks: 441 native, 136 Linux, 28 proof, 30 protected workflow and separate comparison/corruption verification. The complete discovery-to-protected-outcome demonstration and commercial gates remain open.
 
@@ -79,16 +81,16 @@ These gates do not supersede [the original acceptance matrix](ACCEPTANCE-MATRIX.
 | Gate | Status | Evidence / remaining work |
 |---|---|---|
 | G1 truthful statistics | PASS | Current header and learning/retention messages use explicit definitions; unknown values remain null. Scope is the corrected metric surface |
-| G2 sourced authority and verification states | PARTIAL | Six sourced dimensions and linked historical summaries now exist; live independent boundary evidence and complete outcome traces remain |
+| G2 sourced authority and verification states | PARTIAL | Six dimensions and optional native-verified historical boundary artifacts exist; current permission, trustworthy runtime-call correlation and complete outcome traces remain |
 | G3 unfamiliar provider contributes real operations | PARTIAL | Existing generic discovery; no new final Living Challenge provider/input set evaluated |
-| G4 useful multi-provider execution | PARTIAL | Existing runtime/proof fixtures; the public-provider headline workflow remains |
+| G4 useful multi-provider execution | PARTIAL | Real RCSB/Crossref composition and protected local execution share one runtime; independently unfamiliar final workflow remains |
 | G5 independent required outcome check | PARTIAL | Existing witness/native checkers; separately controlled final evaluator and complete headline oracle remain |
 | G6 fresh-agent reuse | PASS within exposed development scope | Two fresh same-vendor models invoke the identical retained multi-provider goal on new inputs with zero rediscovery; exact separate public readbacks pass. The complete headline challenge, independent unfamiliar selection and cross-vendor coverage remain open |
-| G7 protected unauthorised refusal | PARTIAL | Audited bounded Actenon demonstrations; integrate actual decisions/effect readback into the live challenge |
+| G7 protected unauthorised refusal | PARTIAL | Live native historical artifacts, actual effect readback and revoked identical-action refusal demonstrated; full deployment and final challenge coverage remain |
 | G8 safe compatible adaptation | PARTIAL | Existing bounded lifecycle passes; live headline workflow and dashboard transition remain |
 | G9 incompatible/removed refusal | PARTIAL | Known changed-action safeguards and removal tests; live status/tombstone display remains |
 | G10 truthful lifecycle visualisation | PARTIAL | Bounded persisted composition/execution/withdrawal observations and five views demonstrated; detailed attempt traces and full challenge remain |
-| G11 complete regression suite | FAIL | Latest observer correction: 308/308 native and 34/34 focused Linux; earlier C2 failure preserved. Short-allocation escape reproduced after the fix; hard resource gate remains failed despite passing regression runs |
+| G11 complete regression suite | FAIL | Latest checkpoint: 452/452 native and 63/63 focused Linux; earlier C2 failure preserved. Short-allocation escape remains a hard-resource failure despite passing regression runs |
 | G12 reproducible headline demo | BLOCKED | Complete vertical slice/evaluator/command not yet implemented; do not relabel the toy demo |
 | G13 actual benchmark cost/correctness | PARTIAL | Preserved adverse agent results and bounded planner measurements; full new lifecycle comparison remains |
 | G14 thirteen-tool compatibility | PASS | Tool list unchanged; authenticated HTTP/interface regressions pass |
@@ -103,13 +105,13 @@ These gates do not supersede [the original acceptance matrix](ACCEPTANCE-MATRIX.
 | 2 Accurate capability-state model | PARTIAL | Six sourced dimensions implemented; exact-action authority remains explicitly unknown |
 | 3 Lifecycle events | PARTIAL | Bounded actual composition/execution observations, receipt links, persisted withdrawal IDs; complete attempt traces remain |
 | 4 Searchable/inspectable graph | PARTIAL | Provider clusters, paginated search and inspection work; representative browser-scale evaluation remains |
-| 5 Authority/consequence views | PARTIAL | Local policy view exists with unknown independent authority; optional live decision source remains |
+| 5 Authority/consequence views | PARTIAL | Local policy plus optional native-verified historical receipts/refusals; current authority stays unknown and runtime-call linkage is unestablished |
 | 6 Evidence explorer | PARTIAL | Historical summary explorer and linked run/receipt references implemented; full outcome/authority evidence remains |
-| 7 Multi-provider demonstration | PARTIAL | Exposed fixtures only for the new mission |
-| 8 Actenon protected demonstration | PARTIAL | Bounded source-pinned demonstrations pass; live optional UI integration remains |
+| 7 Multi-provider demonstration | PARTIAL | Real public composition and a newly catalog-advertised protected local provider; exposed development scope, not an independent holdout |
+| 8 Actenon protected demonstration | PARTIAL | Bounded source-pinned demonstrations and live optional evidence UI pass; production integration and complete challenge remain |
 | 9 Fresh-agent evidence | PARTIAL | Prior actual same-vendor evidence; new challenge remains |
 | 10 Adaptation/withdrawal evidence | PARTIAL | Prior bounded evidence; live challenge remains |
-| 11 Regression/adversarial tests | PARTIAL | Lifecycle/negative-control checks and frozen regressions pass; earlier intermittent security failure remains unresolved |
+| 11 Regression/adversarial tests | PARTIAL | 452 native and 63 focused Linux regressions pass with native controls; historical memory containment failure remains unresolved |
 | 12 Independent verification | BLOCKED | Same-author separate checkers exist; independent final evaluator/author review unmet |
 | 13 Performance benchmarks | PARTIAL | Synthetic API scale measured through 10,020 descriptors; browser scale and comparative lifecycle economics remain |
 | 14 One-command demo | BLOCKED | Not implemented; do not advertise a command |

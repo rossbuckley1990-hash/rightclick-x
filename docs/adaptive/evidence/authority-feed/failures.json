@@ -1,0 +1,61 @@
+[
+  {
+    "case": "refused receipt misclassified",
+    "evidence": [
+      "native-controls-2.log",
+      "attempt1/authority-initial.png"
+    ],
+    "result": "FAIL before correction; native-controls-final.json passes after mapping native refused receipts to refused and exposing artifact type"
+  },
+  {
+    "case": "fixed poll count in old checker",
+    "evidence": [
+      "session-check-1.log"
+    ],
+    "result": "FAIL on an extra permitted 202 monitor read; original four-read budget retained, explicit corruption controls added"
+  },
+  {
+    "case": "identical monitor wire values in checker",
+    "evidence": [
+      "session-check-2.log"
+    ],
+    "result": "FAIL on repeated legitimate GET; now one distinct exact proof per protected request, complete multiset accounting, one submitted write"
+  },
+  {
+    "case": "Node installed TypeScript exports",
+    "evidence": [
+      "installed-check.log",
+      "package.json",
+      "install.log"
+    ],
+    "result": "FAIL ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING; compiled exports tested in installed-fixed-check.json and installed-linux.json"
+  },
+  {
+    "case": "upstream development HMAC guard",
+    "evidence": [
+      "upstream-attestations.log",
+      "upstream-attestations-test.log"
+    ],
+    "result": "Initial 5 errors; source fixture invocation alone used ACTENON_ENV=test and passed 5 tests. Product Ed25519 verification did not use this override"
+  },
+  {
+    "case": "restricted full regression launch",
+    "evidence": [
+      "native-sandbox-failure.log",
+      "native-final.log"
+    ],
+    "result": "376 passes, 3 failures, 71 skips in restricted launch; authorized loopback rerun 452 passes, zero failures/cancellations/skips"
+  },
+  {
+    "case": "output directory creation race",
+    "evidence": [],
+    "result": "Initial redirected typecheck did not execute because its output directory was not yet created. Subsequent typecheck logs pass. No nonexistent failed-run output is invented"
+  },
+  {
+    "case": "stale browser click target",
+    "evidence": [
+      "attempt2/authority-final.png"
+    ],
+    "result": "Auto-refresh replaced a detail-row target before click; a fresh state read confirmed correct labels and screenshot capture succeeded. Detail click itself is not claimed verified"
+  }
+]
