@@ -1,0 +1,34 @@
+# Genuine open-source document management: Teedy (GPL-2.0, Java/Play).
+# Same business domain as Paperless-ngx: store a document, tag it, retrieve it.
+# Teedy publishes no OpenAPI contract, so it is the harder half of the pairing -
+# whatever RightClick X can see here it must get from the live HTTP surface.
+
+services:
+  db:
+    image: docker.io/library/postgres:15
+    environment:
+      POSTGRES_DB: teedy
+      POSTGRES_USER: teedy
+      POSTGRES_PASSWORD: ${PROBE_DB_PASSWORD:-probe-db-pw}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U teedy"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  teedy:
+    image: docker.io/sismics/docs:latest
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8007:8080"
+    environment:
+      DOCS_DB: postgres
+      DOCS_DB_HOST: db
+      DOCS_DB_PORT: "5432"
+      DOCS_DB_NAME: teedy
+      DOCS_DB_USERNAME: teedy
+      DOCS_DB_PASSWORD: ${PROBE_DB_PASSWORD:-probe-db-pw}
+      DOCS_ADMIN_PASSWORD_INIT: ${PROBE_ADMIN_PASSWORD:-probe-admin-pw}
+      DOCS_BASE_URL: http://127.0.0.1:8007

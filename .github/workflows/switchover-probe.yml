@@ -1,0 +1,194 @@
+# CONTROLLER-SIDE PROBE. Boots one genuine open-source application per matrix job
+# on a disposable Linux runner, then asks the FROZEN RightClick-X baseline's own
+# discovery code what it can see. Selects the experiment's applications empirically
+# instead of by assumption.
+#
+# fail-fast is off: an application that will not boot is a result, not an error.
+
+name: switchover-probe
+
+on:
+  workflow_dispatch:
+    inputs:
+      recipes:
+        description: 'JSON array of recipe names to probe'
+        required: true
+        default: '["paperless","teedy","docspell","mayan","papermerge","gitea","onedev","vikunja","netbox","grafana","twenty","nocodb","kanboard"]'
+      budget_seconds:
+        description: 'Seconds to wait for each application to answer'
+        required: false
+        default: '420'
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    strategy:
+      fail-fast: false
+      matrix:
+        recipe: ${{ fromJSON(github.event.inputs.recipes) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify the runtime source is still the frozen baseline
+        run: |
+          # The experiment harness may live outside the freeze; the runtime under
+          # test may not. Fail loudly if src/, bin/ or test/ moved.
+          FREEZE=06321fa5632d3fd009d136d7b2dfe90510d8057d
+          git diff --stat "$FREEZE" HEAD -- src bin test
+          if git diff --quiet "$FREEZE" HEAD -- src bin test; then
+            echo "FROZEN BASELINE VERIFIED: src/, bin/ and test/ are byte-identical to $FREEZE (tag switchover-freeze-1)"
+            echo "src blob-list hash: $(git ls-tree -r "$FREEZE" src | git hash-object --stdin)"
+          else
+            echo "::error::runtime source diverged from the frozen baseline"
+            exit 1
+          fi
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Record runner facts
+        run: |
+          echo "host=$(hostname) kernel=$(uname -srm)"
+          echo "node=$(node -v) docker=$(docker --version) compose=$(docker compose version --short)"
+          df -h / | tail -1
+          free -m | head -2
+          nproc
+
+      - name: Generate throwaway credentials for this job
+        run: |
+          # Every application in this pool boots on a disposable runner with no
+          # inbound exposure. Credentials are generated per job, passed to the
+          # containers through the environment, and never echoed. auth.json is
+          # written into the recipe directory, which is not uploaded.
+          {
+            echo "PROBE_ADMIN_PASSWORD=$(openssl rand -hex 16)"
+            echo "PROBE_DB_PASSWORD=$(openssl rand -hex 16)"
+            echo "PROBE_SECRET_KEY=$(openssl rand -hex 32)"
+            echo "PROBE_AR_PRIMARY=$(openssl rand -hex 16)"
+            echo "PROBE_AR_DETERMINISTIC=$(openssl rand -hex 16)"
+            echo "PROBE_AR_SALT=$(openssl rand -hex 16)"
+          } >> "$GITHUB_ENV"
+          echo "generated 6 throwaway job credentials"
+
+      - name: Boot the application
+        env:
+          RECIPE: ${{ matrix.recipe }}
+        run: |
+          set -x
+          R="experiments/switchover/probe/recipes/$RECIPE"
+          mkdir -p out
+          if [ -f "$R/compose.url" ]; then
+            URL=$(cat "$R/compose.url")
+            echo "$URL" > out/compose-source.txt
+            curl -fsSL "$URL" -o out/compose.yaml
+            COMPOSE=out/compose.yaml
+          else
+            COMPOSE="$R/compose.yaml"
+          fi
+          # Boot failures are recorded, not fatal: the probe must report them.
+          docker compose -f "$COMPOSE" up -d 2>&1 | tee out/boot.log || true
+          docker compose -f "$COMPOSE" ps 2>&1 | tee out/ps.log || true
+
+      - name: Record exact image identities
+        env:
+          RECIPE: ${{ matrix.recipe }}
+        run: |
+          # "latest" is a moving tag: without the digest, a probe result cannot be
+          # attributed to the build that produced it, and a later re-run could
+          # silently measure different software. Capture every image by digest.
+          if [ -f out/compose.yaml ]; then C=out/compose.yaml; else C="experiments/switchover/probe/recipes/$RECIPE/compose.yaml"; fi
+          {
+            echo "# recipe=$RECIPE captured=$(date -u +%FT%TZ)"
+            docker compose -f "$C" ps --format json 2>/dev/null \
+              | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{for(const l of s.split(/\n/).filter(Boolean)){try{const j=JSON.parse(l);console.log(`${j.Service}\t${j.Image}\t${j.State}`)}catch{}}})' \
+              || docker compose -f "$C" ps
+            echo "--- digests"
+            docker compose -f "$C" images --digests 2>/dev/null || true
+            echo "--- resolved compose config"
+            docker compose -f "$C" config 2>/dev/null | sed -E 's/(PASSWORD|SECRET|TOKEN|KEY)([^:]*): .*/\1\2: <redacted>/I' || true
+          } 2>&1 | tee out/images.log
+
+      - name: Wait for the application to answer
+        env:
+          RECIPE: ${{ matrix.recipe }}
+          BUDGET: ${{ github.event.inputs.budget_seconds || '420' }}
+        run: |
+          R="experiments/switchover/probe/recipes/$RECIPE"
+          node experiments/switchover/probe/wait.ts "$R/targets.json" "$BUDGET" 2>&1 | tee out/wait.log || true
+          if [ -f out/compose.yaml ]; then C=out/compose.yaml; else C="$R/compose.yaml"; fi
+          docker compose -f "$C" ps 2>&1 | tee out/ps-after-wait.log || true
+          docker compose -f "$C" logs --tail=120 2>&1 | tee out/app.log || true
+
+      - name: Application-specific credential provisioning
+        env:
+          RECIPE: ${{ matrix.recipe }}
+        run: |
+          R="experiments/switchover/probe/recipes/$RECIPE"
+          if [ -f "$R/setup.sh" ]; then bash "$R/setup.sh" "$R" 2>&1 | tee out/setup.log || true; fi
+          # Report only which origins hold credentials, never the values.
+          if [ -f "$R/auth.json" ]; then
+            echo "auth.json produced for origins: $(jq -r 'keys | join(",")' "$R/auth.json")"
+          else
+            echo "no auth.json (probe runs unauthenticated)"
+          fi
+
+      - name: Probe with the frozen baseline's own discovery code
+        env:
+          RECIPE: ${{ matrix.recipe }}
+        run: |
+          R="experiments/switchover/probe/recipes/$RECIPE"
+          AUTH="$R/auth.json"; [ -f "$AUTH" ] || AUTH=""
+          node experiments/switchover/probe/probe.ts "$R/targets.json" "$AUTH" "out/probe-$RECIPE.json" 2>&1 | tee out/probe.log || true
+          df -h / | tail -1
+
+      - name: Triage - separate boot failure from reflection failure
+        if: always()
+        env:
+          RECIPE: ${{ matrix.recipe }}
+        run: |
+          # The whole point of this step: "0 capabilities" is ambiguous. It can mean
+          # the application never started (a harness defect, and no evidence about
+          # RightClick X at all), or that it started, answered HTTP, and the frozen
+          # baseline still could not reflect it (a genuine result). Classify it.
+          node -e '
+          const fs=require("fs");
+          const recipe=process.env.RECIPE;
+          const rd=(f)=>{try{return fs.readFileSync("out/"+f,"utf8")}catch{return ""}};
+          const j=(()=>{try{return JSON.parse(fs.readFileSync(`out/probe-${recipe}.json`,"utf8"))}catch{return null}})();
+          const results=j?.results??[];
+          const answered=results.filter(r=>r.httpStatus>0).length;
+          const providers=results.flatMap(r=>r.providers??[]);
+          const caps=results.flatMap(r=>r.capabilities??[]);
+          const ps=rd("ps-after-wait.log");
+          const running=(ps.match(/Up /g)||[]).length;
+          const boot=rd("boot.log");
+          const bootFailed=/pull access denied|does not exist or may require|Error response from daemon/i.test(boot);
+          let verdict;
+          if (bootFailed) verdict="HARNESS DEFECT: image unavailable";
+          else if (running===0) verdict="HARNESS DEFECT: no containers running";
+          else if (answered===0) verdict="HARNESS DEFECT: containers ran but nothing answered HTTP";
+          else if (caps.length>0) verdict="REFLECTED: baseline produced capabilities";
+          else verdict="GENUINE NEGATIVE: answered HTTP, baseline reflected no capability";
+          const line=`${recipe}: ${verdict} (containers up=${running}, targets answered=${answered}/${results.length}, providers=${providers.length}, capabilities=${caps.length})`;
+          console.log(line);
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `- **${recipe}** — ${verdict}\n  - containers up: ${running}; targets answered: ${answered}/${results.length}; providers: ${providers.length}; capabilities: ${caps.length}\n`);
+          fs.writeFileSync("out/verdict.txt", line+"\n");
+          ' || echo "triage step failed"
+
+      - name: Upload probe evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: probe-${{ matrix.recipe }}
+          path: out/
+          if-no-files-found: warn
+          retention-days: 30

@@ -1,0 +1,40 @@
+# Genuine open-source no-code database: NocoDB (AGPL-3.0, Node.js).
+# Exposes BOTH a REST API with a Swagger contract and a GraphQL endpoint, so it
+# tests which of two interfaces on one product the baseline reflects.
+#
+# Corrected after batch 1: NocoDB crashed with "Meta database configuration
+# missing SQLite file name" because NC_DB used a sqlite3:// scheme pointing at a
+# path that was not its data directory. It now uses an explicit Postgres meta
+# database, which removes the filesystem path from the failure mode entirely.
+
+services:
+  db:
+    image: docker.io/library/postgres:16-alpine
+    environment:
+      POSTGRES_DB: nocodb
+      POSTGRES_USER: nocodb
+      POSTGRES_PASSWORD: ${PROBE_DB_PASSWORD:-probe-db-pw}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nocodb"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  nocodb:
+    image: docker.io/nocodb/nocodb:latest
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8004:8080"
+    environment:
+      NC_DB: pg://db:5432?u=nocodb&p=${PROBE_DB_PASSWORD:-probe-db-pw}&d=nocodb
+      NC_ADMIN_EMAIL: admin@example.test
+      NC_ADMIN_PASSWORD: ${PROBE_ADMIN_PASSWORD:-probe-admin-pw}
+      NC_PUBLIC: "false"
+      NC_DISABLE_TELE: "true"
+    volumes:
+      - nc_data:/usr/app/data
+
+volumes:
+  nc_data:

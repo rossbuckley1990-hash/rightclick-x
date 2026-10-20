@@ -1,0 +1,24 @@
+# Genuine open-source observability platform: Grafana (AGPL-3.0, Go).
+# Single container with an embedded database, so it boots fast and reliably.
+# Native HTTP Basic auth means the runtime's origin-pinned store can carry the
+# credential with no application-specific code.
+
+services:
+  grafana:
+    image: docker.io/grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${PROBE_ADMIN_PASSWORD:-probe-admin-pw}
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_NEWS_NEWS_FEED_ENABLED: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_SERVER_ROOT_URL: http://127.0.0.1:3000
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: ""
+    volumes:
+      - grafana_data:/var/lib/grafana
+
+volumes:
+  grafana_data:

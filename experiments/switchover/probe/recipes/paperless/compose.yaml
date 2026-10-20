@@ -1,0 +1,46 @@
+# Genuine open-source document management: Paperless-ngx (GPL-3.0, Django/DRF).
+# Deployed with the upstream project's own documented container configuration.
+# Serves an OpenAPI 3 contract through drf-spectacular.
+
+services:
+  broker:
+    image: docker.io/library/redis:7
+    restart: unless-stopped
+
+  db:
+    image: docker.io/library/postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: paperless
+      POSTGRES_USER: paperless
+      POSTGRES_PASSWORD: ${PROBE_DB_PASSWORD:-probe-db-pw}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U paperless"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  webserver:
+    image: ghcr.io/paperless-ngx/paperless-ngx:latest
+    depends_on:
+      db:
+        condition: service_healthy
+      broker:
+        condition: service_started
+    ports:
+      - "8001:8000"
+    environment:
+      PAPERLESS_REDIS: redis://broker:6379
+      PAPERLESS_DBHOST: db
+      PAPERLESS_DBNAME: paperless
+      PAPERLESS_DBUSER: paperless
+      PAPERLESS_DBPASS: ${PROBE_DB_PASSWORD:-probe-db-pw}
+      PAPERLESS_ADMIN_USER: admin
+      PAPERLESS_ADMIN_PASSWORD: ${PROBE_ADMIN_PASSWORD:-probe-admin-pw}
+      PAPERLESS_ADMIN_MAIL: admin@example.test
+      PAPERLESS_URL: http://127.0.0.1:8001
+      PAPERLESS_SECRET_KEY: ${PROBE_SECRET_KEY:-probe-only-not-a-production-secret}
+      # HTTP Basic lets the runtime's origin-pinned credential store authenticate
+      # without any application-specific code path.
+      PAPERLESS_ENABLE_HTTP_BASIC_AUTH: "true"
+      PAPERLESS_TIME_ZONE: UTC

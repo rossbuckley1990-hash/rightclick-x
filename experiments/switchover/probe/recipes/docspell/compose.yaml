@@ -1,0 +1,33 @@
+# Genuine open-source document management: Docspell (AGPL-3.0, Scala).
+# A third product in the document domain, so the pool has more than one
+# candidate replacement for Paperless-ngx.
+
+services:
+  db:
+    image: docker.io/library/postgres:15
+    environment:
+      POSTGRES_DB: docspell
+      POSTGRES_USER: docspell
+      POSTGRES_PASSWORD: ${PROBE_DB_PASSWORD:-probe-db-pw}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U docspell"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  restserver:
+    image: docker.io/docspell/restserver:latest
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "7880:7880"
+    environment:
+      DOCSPELL_RESTSERVER_BIND_ADDRESS: 0.0.0.0
+      DOCSPELL_RESTSERVER_PORT: "7880"
+      DOCSPELL_RESTSERVER_BACKEND_JDBC_URL: jdbc:postgresql://db:5432/docspell
+      DOCSPELL_RESTSERVER_BACKEND_JDBC_USER: docspell
+      DOCSPELL_RESTSERVER_BACKEND_JDBC_PASSWORD: ${PROBE_DB_PASSWORD:-probe-db-pw}
+      DOCSPELL_RESTSERVER_BACKEND_SIGNUP_MODE: open
+      DOCSPELL_RESTSERVER_BACKEND_ADMIN_ENDPOINT_ENABLE: "true"
+      DOCSPELL_RESTSERVER_BACKEND_AUTH_SERVER_KEY: ${PROBE_SECRET_KEY:-probe-only-not-a-production-secret}

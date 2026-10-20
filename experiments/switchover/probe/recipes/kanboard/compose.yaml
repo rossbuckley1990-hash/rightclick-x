@@ -1,0 +1,23 @@
+# NEGATIVE CONTROL. Genuine open-source project management: Kanboard (MIT, PHP).
+# Kanboard's machine interface is JSON-RPC 2.0 over a single endpoint, and the
+# frozen baseline has no JSON-RPC reflector. This recipe exists so the pool
+# contains a real product that RightClick X is expected NOT to be able to use:
+# a pool in which every application succeeds would prove nothing.
+
+services:
+  kanboard:
+    image: docker.io/kanboard/kanboard:latest
+    ports:
+      - "8014:80"
+    environment:
+      DATABASE_URL: "sqlite:////var/www/app/data/db.sqlite"
+      DEBUG: "false"
+      ENABLE_URL_REWRITE: "true"
+      API_AUTHENTICATION_HEADER: ""
+    volumes:
+      - kanboard_data:/var/www/app/data
+      - kanboard_plugins:/var/www/app/plugins
+
+volumes:
+  kanboard_data:
+  kanboard_plugins:

@@ -1,0 +1,32 @@
+# Genuine open-source wiki / knowledge base: Wiki.js (AGPL-3.0, Node.js).
+# GraphQL-only interface - the furthest from REST/OpenAPI in this pool.
+
+services:
+  db:
+    image: docker.io/library/postgres:15
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: wiki
+      POSTGRES_USER: wiki
+      POSTGRES_PASSWORD: ${PROBE_DB_PASSWORD:-probe-db-pw}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wiki"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  wiki:
+    image: docker.io/requarks/wiki:2
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8008:3000"
+    environment:
+      DB_TYPE: postgres
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_USER: wiki
+      DB_PASS: ${PROBE_DB_PASSWORD:-probe-db-pw}
+      DB_NAME: wiki
+      APP_URL: http://127.0.0.1:8008
