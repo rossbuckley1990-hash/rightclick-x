@@ -72,8 +72,12 @@ function delay(res: Response): number {
   const value = res.headers.get("retry-after");
   if (!value) return 100;
   if (/^\d+$/.test(value)) return Number(value) * 1000;
+  // Date.parse also accepts non-HTTP strings such as "0.5". Do not turn an
+  // invalid retry instruction into immediate polling. Obsolete date forms
+  // are conservatively unsupported by this bounded profile.
+  if (!/^(Mon|Tue|Wed|Thu|Fri|Sat|Sun), \d{2} (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) \d{4} \d{2}:\d{2}:\d{2} GMT$/.test(value)) return Infinity;
   const date = Date.parse(value);
-  return Number.isFinite(date) ? Math.max(0, date - Date.now()) : Infinity;
+  return Number.isFinite(date) && new Date(date).toUTCString() === value ? Math.max(0, date - Date.now()) : Infinity;
 }
 async function wait(ms: number, signal?: AbortSignal) {
   signal?.throwIfAborted();
