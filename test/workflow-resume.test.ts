@@ -67,6 +67,7 @@ test("context_compose retains its complete selected plan, checks and publication
   assert.equal(done.output, "stored:abc");
   assert.equal(done.verification.status, "checked");
   assert.equal(done.composition?.published?.slug, "stored-package");
+  assert.equal("executed" in done.composition, false, "completion metadata must not duplicate unbounded output behind the tool's output view");
   assert.ok(done.composition?.crystallized?.id);
   const saved = fresh.rc.graph.get(done.composition.crystallized.id)!;
   assert.equal(saved.invoke.kind, "composite");

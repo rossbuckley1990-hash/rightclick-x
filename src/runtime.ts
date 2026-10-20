@@ -226,7 +226,7 @@ export interface RunRecord {
   refusal?: TransportRefusal;
   resumes?: string;
   /** Completion of a retained ordinary composition, including deferred publication. */
-  composition?: ComposeResult;
+  composition?: Pick<ComposeResult, "crystallized" | "published" | "publishRefused" | "outcome">;
   /** Only a complete retained saved-goal plan can settle this parent run. */
   workflowRunId?: string;
   persistence?: { status: "failed"; detail: string };
@@ -1471,7 +1471,10 @@ export class RightClick {
       runId,
       ...(resumeRunId ? { resumes: resumeRunId } : {}),
       ...(workflowRunId ? { workflowRunId } : {}),
-      ...(compositionResult ? { composition: compositionResult } : {}),
+      ...(compositionResult ? { composition: {
+        crystallized: compositionResult.crystallized, published: compositionResult.published,
+        publishRefused: compositionResult.publishRefused, outcome: compositionResult.outcome,
+      } } : {}),
       capability: cap.id,
       provider: cap.provider,
       title: cap.title,
@@ -2050,13 +2053,17 @@ export class RightClick {
           // the original input payload without lossy JSON serialization.
           const retained = JSON.parse(JSON.stringify(composition)) as CompositionContinuation;
           const rec = await this.dispatchRun(retained.id, values, {}, undefined, retained);
-          if (rec.composition) return { ...result, ...rec.composition, plans: result.plans };
           result.executed = { summary: p.summary, titles: titles(p), output: rec.output ?? null, status: rec.status,
             pending: rec.pending, refusal: rec.refusal, verification: rec.verification, runs: rec.steps ?? [],
             attempts: [...attempts, ...(rec.error ? [{ summary: p.summary, failed: rec.failedCapability ?? p.steps[0].capability,
               error: rec.error, healing: "retained execution: no alternative plan or replay" }] : [])],
-            durationMs: rec.durationMs, witnesses: rec.witnesses, error: rec.error };
-          return result;
+            durationMs: rec.durationMs, witnesses: rec.witnesses, error: rec.error,
+            ...(rec.status === "completed" || rec.composition?.outcome?.status === "violated" ? { contract: {
+              status: rec.status === "completed" ? "satisfied" : "violated",
+              violations: rec.status === "completed" ? [] : [rec.composition?.outcome?.reason ?? rec.error ?? "outcome violated"],
+              assurance: rec.verification.status === "verified" ? "independently-checked" : rec.verification.status === "checked" ? "predicate-checked" : "unchecked",
+            } as const } : {}) };
+          return { ...result, ...rec.composition };
         }
         const r = await this.runSteps(steps, p.result, values, opts.confirm, opts.activeGoals, net);
         return await this.finishComposition(composition, values, r, net, result, attempts, t0, ws => { lastWitnesses = ws; });
