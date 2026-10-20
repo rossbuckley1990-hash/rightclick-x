@@ -219,6 +219,8 @@ async function requestOnce(net: Net, url: string, init: RequestInit = {}): Promi
     const caller = new Headers(init.headers);
     const userAgent = headers.get("user-agent")!;
     let tainted = false;
+    let method = (init.method ?? "GET").toUpperCase();
+    let body = init.body;
     let res = await net.fetch(url, { ...init, headers, signal, redirect: "manual" });
     let hops = 0;
     while (res.status >= 300 && res.status < 400 && res.headers.get("location") && hops++ < 5) {
@@ -226,16 +228,22 @@ async function requestOnce(net: Net, url: string, init: RequestInit = {}): Promi
       try { await checkUrl(net.policy, next); }
       catch (e) { cancelBody(res); throw e; }
       const nextOrigin = new URL(next).origin;
-      const method = res.status === 303 ? "GET" : (init.method ?? "GET");
-      const carriesBody = method !== "GET" && method !== "HEAD" && init.body != null;
+      // Carry the current request forward. Once 303 discards a body, later hops
+      // must never restore the original POST/body, including on another origin.
+      if (res.status === 303 && method !== "HEAD") method = "GET";
+      if (method === "GET" || method === "HEAD") body = undefined;
+      const carriesBody = body != null;
       if (carriesBody && nextOrigin !== new URL(url).origin) return track(res);
       if (nextOrigin !== origin0) tainted = true;
       const h = new Headers();
-      for (const [k, v] of caller) if (!tainted || CROSS_ORIGIN_SAFE.has(k.toLowerCase()) || (carriesBody && k.toLowerCase() === "content-type")) h.set(k, v);
+      for (const [k, v] of caller) {
+        if (body == null && init.body != null && ["content-type", "content-length", "transfer-encoding"].includes(k.toLowerCase())) continue;
+        if (!tainted || CROSS_ORIGIN_SAFE.has(k.toLowerCase()) || (carriesBody && k.toLowerCase() === "content-type")) h.set(k, v);
+      }
       if (!h.has("user-agent")) h.set("user-agent", userAgent);
       for (const [k, v] of Object.entries(net.auth.headersFor(next))) h.set(k, v);
       cancelBody(res);
-      res = await net.fetch(next, { ...init, method, body: method === "GET" || method === "HEAD" ? undefined : init.body, headers: h, signal, redirect: "manual" });
+      res = await net.fetch(next, { ...init, method, body, headers: h, signal, redirect: "manual" });
       url = next;
     }
     return track(res);

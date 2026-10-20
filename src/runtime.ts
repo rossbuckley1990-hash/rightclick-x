@@ -110,14 +110,6 @@ export interface OperatorAuthority {
   retry?: string[];
 }
 
-/** Errors that prove the request was not applied: rejected before processing, or never sent. */
-export function provedNotApplied(error: string): boolean {
-  const statuses = [...error.matchAll(/HTTP (\d{3})\b/g)].map((m) => Number(m[1]));
-  const last = statuses[statuses.length - 1];
-  if (last !== undefined) return [400, 401, 403, 404, 405, 406, 410, 411, 413, 414, 415, 422, 429].includes(last);
-  return /blocked by (network|egress) policy|ECONNREFUSED|connection refused|ENOTFOUND|getaddrinfo|is destructive|missing required|unknown capability/i.test(error);
-}
-
 export interface RunRecord {
   runId: string;
   capability: string;
@@ -633,10 +625,7 @@ export class RightClick {
     if (!cap) throw new Error(`unknown capability: ${id}`);
     // Destructive effects keep the user's authority. The agent may ask (confirm), but under the
     // default policy only an operator's approval, made in configuration, authorises the capability.
-    if (cap.risk === "destructive" && this.destructivePolicy !== "allow") {
-      if (this.destructivePolicy === "operator" && !this.approved(cap.id)) throw new ConfirmationRequired(cap.id, cap.title, true);
-      if (!opts.confirm) throw new ConfirmationRequired(cap.id, cap.title);
-    }
+    this.checkExecutionAuthority(cap, opts.confirm);
     // An id the caller chose for what it used to do must not quietly do something else.
     const change = opts.planned ? undefined : this.meaningChanges.get(cap.id);
     const refused = change && !opts.acknowledgeChange
@@ -679,7 +668,7 @@ export class RightClick {
           output = await this.execute(cap, coerced, opts.net);
         } catch (e) {
           if (opts.planned || !HEALABLE.has(cap.invoke.kind)) throw e;
-          const h = await this.healRun(cap, args, String((e as Error)?.message ?? e), opts.net);
+          const h = await this.healRun(cap, args, String((e as Error)?.message ?? e), opts.net, opts.confirm);
           healing = h.healing;
           if (!h.healed) throw new Error(`${healing.error}; ${healing.note}`);
           output = h.output;
@@ -742,6 +731,13 @@ export class RightClick {
     return this.approvals.some((a) => (a.endsWith("*") ? id.startsWith(a.slice(0, -1)) : a === id));
   }
 
+  private checkExecutionAuthority(cap: Capability, confirm?: boolean): void {
+    if (cap.risk === "destructive" && this.destructivePolicy !== "allow") {
+      if (this.destructivePolicy === "operator" && !this.approved(cap.id)) throw new ConfirmationRequired(cap.id, cap.title, true);
+      if (!confirm) throw new ConfirmationRequired(cap.id, cap.title);
+    }
+  }
+
   /** The operator declared this capability side-effect-free (safe to send again). */
   private retryAuthorised(cap: Capability): boolean {
     if (cap.risk === "read") return true;
@@ -754,32 +750,36 @@ export class RightClick {
 
   /**
    * Which state-changing capabilities in a failed plan may already have taken effect, and are not
-   * declared side-effect-free: completed steps, and the failed step unless its error proves the
-   * request was not applied. Saved composites are looked into, step by step.
+   * declared side-effect-free. Use the runtime's failed-capability identity to locate progress,
+   * never provider error text. Ambiguous repeated identities conservatively include all effects.
    */
-  private mayHaveTakenEffect(steps: PlanStep[], failed: string, error: string): Capability[] {
+  private mayHaveTakenEffect(steps: PlanStep[], failed: string): Capability[] {
     const out: Capability[] = [];
-    const consider = (c: Capability | undefined, completed: boolean) => {
-      if (!c || c.risk === "read") return;
-      if (c.invoke.kind === "composite") {
-        // Inside a composite: its steps before the failing inner one completed.
-        const inner = c.invoke.steps.map((s) => this.graph.get(s.capability)).filter((x): x is Capability => !!x);
-        const failingAt = completed ? inner.length : inner.findIndex((x) => error.includes(`${x.id}:`));
-        inner.forEach((x, i) => (i < (failingAt < 0 ? inner.length : failingAt) ? consider(x, true) : i === failingAt ? consider(x, false) : undefined));
-        return;
-      }
-      if (!completed && provedNotApplied(error)) return;
-      if (!this.retryAuthorised(c)) out.push(c);
-    };
-    // The failure may be reported by a step inside a saved composite: find the step holding it.
-    const holds = (id: string, seen = new Set<string>()): boolean => {
+    const seen = new Set<string>();
+    const holds = (id: string, visited = new Set<string>()): boolean => {
       if (id === failed) return true;
       const c = this.graph.get(id);
-      if (!c || c.invoke.kind !== "composite" || seen.has(id)) return false;
-      seen.add(id);
-      return c.invoke.steps.some((st) => holds(st.capability, seen));
+      if (!c || c.invoke.kind !== "composite" || visited.has(id)) return false;
+      visited.add(id);
+      return c.invoke.steps.some(st => holds(st.capability, visited));
     };
-    const failedAt = steps.findIndex((st) => holds(st.capability));
+    const failedIndex = (sequence: PlanStep[]) => {
+      const matches = sequence.map((st, i) => holds(st.capability) ? i : -1).filter(i => i >= 0);
+      return matches.length === 1 ? matches[0] : -1;
+    };
+    const consider = (c: Capability | undefined, completed: boolean) => {
+      if (!c || seen.has(c.id)) return;
+      seen.add(c.id);
+      if (c.invoke.kind === "composite") {
+        const at = completed ? -1 : failedIndex(c.invoke.steps);
+        c.invoke.steps.forEach((s, i) => {
+          if (at < 0 || i <= at) consider(this.graph.get(s.capability), i !== at);
+        });
+        return;
+      }
+      if (!this.retryAuthorised(c)) out.push(c);
+    };
+    const failedAt = failedIndex(steps);
     steps.forEach((st, i) => {
       if (failedAt >= 0 && i > failedAt) return;
       consider(this.graph.get(st.capability), i !== failedAt);
@@ -787,11 +787,11 @@ export class RightClick {
     return out;
   }
 
-  private async healRun(cap: Capability, args: Record<string, unknown>, error: string, net: Net = this.net): Promise<{ healing: NonNullable<RunRecord["healing"]>; healed: boolean; output?: unknown }> {
+  private async healRun(cap: Capability, args: Record<string, unknown>, error: string, net: Net = this.net, confirm?: boolean): Promise<{ healing: NonNullable<RunRecord["healing"]>; healed: boolean; output?: unknown }> {
     const provider = this.graph.providers.get(cap.provider);
-    // A call that can change state may have taken effect before it failed: send it again only if
-    // the failure proves it was not applied, or the operator declared it side-effect-free.
-    if (cap.risk !== "read" && !provedNotApplied(error) && !this.retryAuthorised(cap)) return { healing: { source: (provider?.meta?.source as string) ?? "", error, note: `not retried: ${cap.risk} operation may already have taken effect` }, healed: false };
+    // No independent non-commit witness is available here. Only reads or operations the operator
+    // declared side-effect-free can be resent after an execution attempt.
+    if (!this.retryAuthorised(cap)) return { healing: { source: (provider?.meta?.source as string) ?? "", error, note: `not retried: ${cap.risk} operation may already have taken effect` }, healed: false };
     const source = provider?.meta?.source as string | undefined;
     const healing: NonNullable<RunRecord["healing"]> = { source: source ?? "", error, note: "" };
     const done = (note: string) => ({ healing: { ...healing, note }, healed: false });
@@ -817,9 +817,11 @@ export class RightClick {
       : this.graph.list().filter((c) => this.graph.providers.get(c.provider)?.meta?.source === source && operationOf(c) === meant);
     if (equivalent.length !== 1) return done(`${note}; ${equivalent.length ? "ambiguous" : "no"} equivalent of ${meant}`);
     const next = equivalent[0];
-    healing.retried = next.id;
-    note += `; retried ${next.id === cap.id ? "the same operation" : `its operation, now ${next.id}`}`;
     try {
+      this.checkExecutionAuthority(next, confirm);
+      if (!this.retryAuthorised(next)) return done(`${note}; replacement has no retry authorisation`);
+      healing.retried = next.id;
+      note += `; retried ${next.id === cap.id ? "the same operation" : `its operation, now ${next.id}`}`;
       const output = await this.execute(next, coerceArgs(next, args), net);
       return { healing: { ...healing, note }, healed: true, output };
     } catch (e) {
@@ -1124,7 +1126,7 @@ export class RightClick {
         const failed = e instanceof StepError || e instanceof ConfirmationRequired ? e.capability : p.steps[0].capability;
         // Steps that can change state and may have taken effect must not be repeated by re-planning,
         // unless the operator declared them side-effect-free. Stop here instead.
-        const stateful = this.mayHaveTakenEffect(p.steps, failed, String((e as Error)?.message ?? e));
+        const stateful = this.mayHaveTakenEffect(p.steps, failed);
         if (stateful.length) {
           attempts.push({ summary: p.summary, failed, error: String((e as Error)?.message ?? e), healing: `not retried: ${stateful.map((c) => c.id).join(", ")} can change state and may already have taken effect (an operator can declare side-effect-free operations in authority.retry)` });
           plans = [];
@@ -1525,7 +1527,7 @@ export class RightClick {
         return j.data[inv.field];
       }
       case "mcp":
-        return this.mcp(inv.endpoint, net).call(inv.tool, args, cap.outputs.some((o) => o.name !== ""));
+        return this.mcp(inv.endpoint, net).call(inv.tool, args, cap.outputs.some((o) => o.name !== ""), this.retryAuthorised(cap));
       case "peer": {
         const res = await request(net, `${inv.endpoint}/api/run`, {
           method: "POST",

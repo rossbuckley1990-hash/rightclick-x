@@ -8,6 +8,14 @@ import { bodyChunks, cancelBody, DISCOVERY_BODY_LIMIT, isEventStream, readText, 
 
 const PROTOCOL = "2025-06-18";
 
+class McpHttpError extends Error {
+  readonly status: number;
+  constructor(method: string, status: number, detail: string) {
+    super(`MCP ${method} -> HTTP ${status}${detail ? `: ${detail}` : ""}`);
+    this.status = status;
+  }
+}
+
 export class McpClient {
   private session: string | null = null;
   private ready: Promise<any> | null = null;
@@ -40,7 +48,7 @@ export class McpClient {
       let detail = "";
       try { detail = (await readText(res, DISCOVERY_BODY_LIMIT)).slice(0, 200); }
       catch { cancelBody(res); }
-      throw new Error(`MCP ${method} -> HTTP ${res.status}${detail ? `: ${detail}` : ""}`);
+      throw new McpHttpError(method, res.status, detail);
     }
     const msg = await parseRpcResponse(res, (body as { id: number }).id, method === "tools/call" ? Infinity : DISCOVERY_BODY_LIMIT);
     if (msg.error) throw new Error(`MCP ${method} error ${msg.error.code}: ${msg.error.message}`);
@@ -77,15 +85,15 @@ export class McpClient {
     return tools;
   }
 
-  /** Returns structured content when the caller wants it (tool has an output schema), else the text. */
-  async call(name: string, args: Record<string, unknown>, structured = true): Promise<unknown> {
+  /** Session recovery resends the call, so the caller must explicitly establish retry safety. */
+  async call(name: string, args: Record<string, unknown>, structured = true, retrySafe = false): Promise<unknown> {
     await this.init();
     let r: any;
     try {
       r = await this.rpc("tools/call", { name, arguments: args });
     } catch (e) {
-      // Sessions expire; reconnect once.
-      if (!/HTTP (400|404)/.test(String(e))) throw e;
+      // A status or provider-controlled error message does not prove a write never committed.
+      if (!retrySafe || !(e instanceof McpHttpError) || ![400, 404].includes(e.status)) throw e;
       this.session = null;
       this.ready = null;
       await this.init();
