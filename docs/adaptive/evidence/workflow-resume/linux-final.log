@@ -1,0 +1,124 @@
+✔ operator read-only policy applies to direct, MCP and HTTP calls despite caller confirmation (21.576709ms)
+✔ denied ids survive persistence and agent calls cannot relax operator policy (2.484208ms)
+✔ a stale read label on a POST cannot bypass read-only policy (0.778666ms)
+✔ composite preflight refuses all steps before an allowed effect preceding a denied step (1.394625ms)
+✔ caller origin constraints cannot widen operator network restrictions (52.116834ms)
+✔ invalid execution policy is rejected instead of silently permitting operations (0.343542ms)
+✔ a denied saved goal cannot bypass authority through generated REST or GraphQL (7.64725ms)
+✔ repair checks a newly discovered successor against the operator denylist (2.259125ms)
+✔ allowlists intersect, deny takes precedence, and audit is read-only (3.545667ms)
+✔ operator environment policy is parsed and invalid settings fail closed (0.273583ms)
+✔ deep composite dependencies exceed the analysis bound without executing a leaf (2.985541ms)
+✔ opaque platform bindings cannot masquerade as local-only under an origin policy (0.650708ms)
+✔ fan-out: entry -> [accessions] -> one registry lookup per accession, explicit in the plan (76.583083ms)
+✔ fan-out: a list longer than the cap is refused before any item call, without re-reading contracts (3.58625ms)
+✔ fan-out: a failing item fails the step; nothing is filled in (4.311209ms)
+✔ fan-out rules: specific types only, read-only steps only, one list per step, and never silently (0.761833ms)
+✔ fan-out rules: a list seen to carry a port's identifiers beats a single value that only shares its declared type (0.197416ms)
+✔ known GET resources carry a bounded 202 -> 202 -> 303 -> result execution (20.282625ms)
+✔ a 200 status document is unresolved, even when a weak object predicate passes (2.021167ms)
+✔ a retained asynchronous goal uses new inputs after restart without rediscovery (74.465167ms)
+✔ denial of a monitor or result is enforced at that exact follow-up (3.154583ms)
+✔ unknown, credential-bearing, cross-origin, ambiguous and unsafe targets are not contacted (9.501334ms)
+✔ contract change during polling refuses the successor without rediscovery or write replay (1.264958ms)
+✔ request budget, Retry-After and unsupported statuses stop without replay or negotiation retry (82.410583ms)
+✔ cancellation after acceptance and a hanging terminal body remain unresolved (101.431083ms)
+✔ host can disable continuation and invalid budgets fail before any dispatch (1.101333ms)
+✔ risk escalation during polling and revoked network policy cannot bypass follow-up checks (2.252459ms)
+✔ follow-ups use origin-pinned credentials and never the original action's headers (1.562291ms)
+✔ an oversized result cannot exhaust the continuation body budget or produce checked output (14.507541ms)
+✔ unrelated rendering routes and URI-encoded identifiers use the same protocol mechanism (1.649958ms)
+✔ HTTP 202 is pending, never checked output, and is not replayed or healed (16.957083ms)
+✔ an empty 202 read is pending and never an empty completed answer (1.210959ms)
+✔ composition cannot publish, crystallize, or replan around an accepted pending effect (8.646042ms)
+✔ federated pending outcomes cannot be promoted to completed local results (1.886042ms)
+✔ a pending fan-out item stops the remaining effects and the retained composite (1.733458ms)
+✔ saved goal and generated REST preserve pending state without publication or repair (58.936667ms)
+✔ a pending independent witness neither verifies nor refutes the business outcome (11.237875ms)
+✔ a moved read that repairs to HTTP 202 stays pending (2.609417ms)
+✔ GraphQL HTTP 202 cancels a streaming response without accepting its data (1.260875ms)
+✔ a killed runtime recovers a real HTTP leaf from FileStore without discovery or a repeated effect (521.329584ms)
+✔ a killed runtime recovers a real HTTP workflow from FileStore without discovery or a repeated effect (487.195ms)
+✔ pending HTTP result resumes after restart through the same compact tool without resubmitting (81.141958ms)
+✔ resume cannot change inputs, checks or identity, and still applies the original predicate (4.464125ms)
+✔ retained state excludes original bodies and authority headers (2.008292ms)
+✔ Retry-After survives restart and cannot be reset by requesting resume (2.8355ms)
+✔ a failed checkpoint prevents the first poll after acceptance (1.308333ms)
+✔ persistent storage failure remains visible and cannot trigger background execution (81.668875ms)
+✔ lifetime budget, expiry, incompatible profile and withdrawn source cannot dispatch (8.668125ms)
+✔ overlapping resume requests cannot run the same retained read concurrently (3.241ms)
+✔ persistence yielding cannot bypass a changed follow-up contract (2.666167ms)
+✔ live checkpoint capacity fails closed while expired entries retire without requests (5.791ms)
+✔ restart does not renew authority or permit changed result contracts (4.159917ms)
+✔ MCP composition saves independent witness input/output bindings and repeats them for a second input (30.573375ms)
+✔ saved witness checks survive restart and reject a plausible result on another input (11.125417ms)
+✔ fresh caller predicates cannot override failed stored result predicates (2.593708ms)
+✔ published checks are snapshots rather than mutable aliases of the caller's request (4.197416ms)
+✔ a changed checker contract fails closed for saved composites and published goals (3.731875ms)
+✔ a producing provider cannot witness its own result, including through a saved composite (34.971083ms)
+✔ unresolved witness output paths refute the outcome rather than silently skipping the check (1.866292ms)
+✔ direct run records predicate refutation as failure in both the run and receipt (0.669875ms)
+✔ a saved goal excludes itself even through a nested saved composite (4.165917ms)
+✔ saved goals preserve decimal quantity text until the explicit conversion consumes it (1.934792ms)
+✔ required anchors survive restart and rebind renamed nested REST contracts within the first call (10.622666ms)
+✔ an unknown exact anchor is an error and cannot silently publish an unanchored goal (0.485041ms)
+✔ saved anchors fail closed on disappearance, ambiguity, another source, or changed type/risk (9.878542ms)
+✔ a plain run of a moved operation re-learns its contract, reports the drift and retries the same operation (82.072542ms)
+✔ a failed plain run with no contract change fails with the re-reflection note (1.712375ms)
+✔ an operation id reassigned to a different operation stays refused despite acknowledgement, and names its successor (3.880875ms)
+✔ re-learning an id back to the operation callers last saw clears its refusal (1.85625ms)
+✔ when a failed id now names a different operation, repair retries the operation it used to name, never the new one (3.116208ms)
+✔ a new plan cannot bypass the refusal on a changed retained id (5.189958ms)
+✔ repeated failures re-read the contract once, not on every call (1.696416ms)
+✔ a saved goal anchored on an id follows the operation it was built on when the id is reassigned (10.559041ms)
+✔ overlapping saves preserve call order, own their temporary file and finish without rename races (77.557458ms)
+✔ save snapshots mutable input at call time, and a rejected save does not poison the queue (1.821666ms)
+✔ explicit external transport denial is not provider drift or negative behavioral evidence (20.172458ms)
+✔ a saved goal stops on external denial without repair or alternative execution (11.013333ms)
+✔ generated REST and GraphQL cannot replan around an external denial (7.490458ms)
+✔ a denied fan-out item stops the retained composite before later items (1.652208ms)
+✔ denied witness leaves an already executed effect unverified and never replays it (4.92725ms)
+✔ a peer refusal stops execution but never acts as a local authority proof (1.183042ms)
+✔ boundary denial after HTTP acceptance remains pending without replay (2.827416ms)
+✔ HTTP 401 is an execution refusal across protocol families (51.80975ms)
+✔ HTTP 403 is an execution refusal across protocol families (1.856584ms)
+✔ a retained sequential workflow resumes the pending step and remaining effects without replay (32.554542ms)
+✔ a persisted workflow refuses changed remaining contracts before resuming any read (4.947709ms)
+✔ workflow recovery retains host opt-in, policy, expiry, inputs and child ownership boundaries (51.328167ms)
+✔ a workflow dispatch with no retained outcome stays unresolved after restore (4.104291ms)
+✔ failure to persist a completed step prevents every subsequent effect (3.884917ms)
+✔ oversized or credential-named workflow state is refused before dispatch, not silently redacted (2.770042ms)
+✔ a contract changed during checkpoint persistence refuses before the reserved dispatch (1.462ms)
+✔ successive pending steps advance the same retained workflow without replaying either write (12.018375ms)
+✔ stored predicates cannot be dropped on workflow resume (6.997166ms)
+✖ witness independence includes pre-restart producers after their receipt buffer is gone (4.877375ms)
+✔ two simultaneous resumes cannot dispatch the remaining workflow twice (6.926375ms)
+ℹ tests 95
+ℹ suites 0
+ℹ pass 94
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4454.658252
+
+✖ failing tests:
+
+test at test/workflow-resume.test.ts:226:1
+✖ witness independence includes pre-restart producers after their receipt buffer is gone (4.877375ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'pending'
+  - 'failed'
+  
+      at TestContext.<anonymous> (file:///input/test/workflow-resume.test.ts:242:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'pending',
+    expected: 'failed',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
