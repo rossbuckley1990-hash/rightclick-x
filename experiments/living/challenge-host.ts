@@ -13,6 +13,17 @@ let sequence = 0, state: PersistedState | null = null, runtime: RightClick | und
 let handler: ReturnType<typeof createHandler> | undefined;
 let configured = false;
 const lines = createInterface({ input: process.stdin });
+const authorityRead = (signal: AbortSignal) => new Promise<any>((resolve, reject) => {
+  const id = ++sequence;
+  const abort = () => { pending.delete(id); clearTimeout(timer); reject(new Error("authority evidence unavailable")); };
+  const timer = setTimeout(abort, 5000);
+  pending.set(id, { resolve: reply => {
+    signal.removeEventListener("abort", abort);
+    if (reply.value) resolve(reply.value); else reject(new Error("authority evidence unavailable"));
+  }, reject, timer });
+  signal.addEventListener("abort", abort, { once: true });
+  send({ op: "authority-read", id });
+});
 const bridge: typeof fetch = async (input, init) => {
   const request = new Request(input, init), id = ++sequence;
   const body = Buffer.from(await request.arrayBuffer());
@@ -36,7 +47,7 @@ lines.on("line", line => {
   if (Buffer.byteLength(line) > 20 * 1024 * 1024) { process.exitCode = 1; lines.close(); return; }
   let message: any;
   try { message = JSON.parse(line); } catch { process.exitCode = 1; lines.close(); return; }
-  if (message.op === "fetch-result") {
+  if (message.op === "fetch-result" || message.op === "authority-result") {
     const item = pending.get(message.id);
     if (item) { clearTimeout(item.timer); pending.delete(message.id); item.resolve(message); }
     return;
@@ -56,7 +67,8 @@ lines.on("line", line => {
           authority: { investigate: [], execute: [], execution: { allowedOrigins: config.origins, allowedRisks: ["read", "write"] }, publish: "checked" },
           environment: config.environment, workflowRecovery: true,
           store: { load: async () => state, save: async next => { state = next; } } });
-        handler = createHandler(runtime, { open: true });
+        handler = createHandler(runtime, { open: true,
+          ...(config.authorityEvidence ? { authorityEvidence: { ...config.authorityEvidence, read: authorityRead } } : {}) });
         runtime.toolCallSink = row => send({ op: "tool-observation", row });
         send({ op: "reply", id: message.id, value: { ready: true, summary: runtime.startupSummary(), node: process.version } });
       } else if (message.op === "http") {

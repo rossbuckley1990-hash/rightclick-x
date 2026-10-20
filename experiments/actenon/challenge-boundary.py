@@ -11,6 +11,8 @@ from pathlib import Path
 import signal
 import sys
 import tempfile
+import urllib.request
+import urllib.error
 
 sys.dont_write_bytecode = True
 from workflow import WorkflowBoundary, fixture
@@ -93,6 +95,19 @@ def main(output):
                             if (output / "provider.jsonl").exists() else [],
                             "artifacts": {p.name: hashlib.sha256(p.read_bytes()).hexdigest()
                                 for p in (output / "artifacts").glob("*.gz")}}
+                    elif op == "probe":
+                        # Trusted controller's disposable negative control.
+                        # This channel is never relayed from the runtime.
+                        request = urllib.request.Request(boundary.origin + "/jobs", method="POST",
+                            data=b'{"label":"first","document":"Unauthorized control"}',
+                            headers={"content-type": "application/json"})
+                        try:
+                            with urllib.request.urlopen(request, timeout=5) as response:
+                                value = {"status": response.status}
+                        except urllib.error.HTTPError as error:
+                            value = {"status": error.code}
+                        if value["status"] != 403:
+                            raise AssertionError("unprotected resource control was not refused")
                     elif op == "close":
                         print(json.dumps({"op": "reply", "id": identity, "value": {"closed": True}}), flush=True)
                         break

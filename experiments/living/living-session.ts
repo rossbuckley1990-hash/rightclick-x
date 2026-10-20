@@ -8,6 +8,7 @@ import { createHash } from "node:crypto";
 import { RpcPeer, startContainedSession, presentSession, holdPresentation, type Wire } from "./challenge-session.ts";
 import { publicReadTransport, type PublicSource } from "./public-read-transport.ts";
 import { TransportRefused } from "../../src/reflectors/net.ts";
+import { actenonAuthorityEvidence } from "../../integrations/actenon/authority-evidence.ts";
 
 const [configFile, directory, image, python, hold] = process.argv.slice(2);
 if (!configFile || !directory || !image?.startsWith("sha256:") || !python)
@@ -38,7 +39,11 @@ try {
   const ready = await boundary.ready;
   const protectedOrigin = ready.origin as string;
   save("boundary-ready", ready);
+  const authorityEvidence = actenonAuthorityEvidence({ python, attestations: join(output, "boundary/attestations.jsonl"),
+    publicKey: join(output, "boundary/public.json"), origin: protectedOrigin,
+    issuer: "resource-edge", boundary: "Disposable compression resource" });
   session = await startContainedSession({ output, image,
+    authorityEvidence,
     config: { origins: [...publicOrigins, protectedOrigin, new URL(operatorCatalog).origin],
       environment: { catalogs: [operatorCatalog], origins: [...publicOrigins, protectedOrigin] } },
     onTool: row => { toolCalls.push(row); save("tool-calls", toolCalls); },
@@ -93,6 +98,9 @@ try {
   const before = await boundary.call("snapshot");
   const denied = await tool("context_run", { id: submit.id, args });
   save("unauthorized", denied);
+  // An operator-owned direct negative control obtains a signed refusal from the
+  // resource itself. It is not mislabelled as the agent's broker refusal.
+  save("direct-refusal", await boundary.call("probe"));
   const afterDenied = await boundary.call("snapshot");
   if (denied.status !== "failed" || !denied.refusal || JSON.stringify(before.effects) !== JSON.stringify(afterDenied.effects))
     throw new Error("unauthorized effect was not refused without a side effect");
@@ -110,10 +118,18 @@ try {
   const final = await session.peer.call("snapshot");
   save("final", final);
   save("effects", await boundary.call("snapshot"));
+  save("authority-evidence", await (await session.peer.http("/api/authority-evidence")).json());
+  save("revocation", await boundary.call("revoke"));
+  const revoked = await tool("context_run", { id: effect.published.id, args });
+  save("revoked-run", revoked);
+  if (revoked.status !== "failed" || !revoked.refusal) throw new Error("historical evidence appeared to authorize a revoked action");
+  save("effects-after-revoke", await boundary.call("snapshot"));
+  save("revoked-evidence", await (await session.peer.http("/api/authority-evidence")).json());
+  save("after-revocation", await session.peer.call("snapshot"));
   save("summary", { status: "PARTIAL", publicOutcome: "completed", protectedOutcome: "completed",
     publicGoal: result.published, protectedGoal: effect.published, totalRequests, toolCalls: toolCalls.length,
     protectedOutput: effect.executed.output, stateSha256: createHash("sha256").update(JSON.stringify(final.state)).digest("hex"),
-    remaining: ["separate outcome checking", "fresh-model inheritance", "compatible/incompatible change", "live independent authority evidence", "independent-author holdout", "matched economics"] });
+    remaining: ["separate outcome checking", "fresh-model inheritance", "compatible/incompatible change", "authority-to-runtime call linkage", "independent-author holdout", "matched economics"] });
   if (hold === "hold") {
     process.stdout.write(JSON.stringify({ op: "holding", url: view.url,
       instruction: "Closes on stdin line, EOF, signal or after five minutes. Use a terminal for live inspection." }) + "\n");

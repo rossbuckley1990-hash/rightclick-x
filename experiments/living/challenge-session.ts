@@ -8,6 +8,7 @@ import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { createServer } from "node:http";
 import type { Readable } from "node:stream";
+import type { AuthorityEvidenceSource } from "../../src/interface/authority-evidence.ts";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
 /** Presentation is bounded and closes on pipe EOF or an operator signal. */
@@ -37,7 +38,7 @@ export class RpcPeer {
   readonly exited: Promise<number | null>;
   readonly process: ChildProcessWithoutNullStreams;
   constructor(process: ChildProcessWithoutNullStreams, log: string,
-    onFetch?: (request: Wire) => Promise<any>, onTool?: (row: unknown) => void) {
+    onFetch?: (request: Wire) => Promise<any>, onTool?: (row: unknown) => void, onEvidence?: () => Promise<unknown>) {
     this.process = process;
     writeFileSync(log, "", { flag: "wx" });
     let ready!: (v: any) => void, failed!: (e: Error) => void;
@@ -45,6 +46,7 @@ export class RpcPeer {
     // Hosts without a ready message may exit cleanly after configure.
     void this.ready.catch(() => {});
     const lines = createInterface({ input: process.stdout });
+    let evidenceRead: Promise<unknown> | undefined, evidenceReads = 0;
     lines.on("line", line => {
       if (Buffer.byteLength(line) > 20 * 1024 * 1024) { process.kill("SIGTERM"); return; }
       let message: any;
@@ -52,6 +54,22 @@ export class RpcPeer {
       appendFileSync(log, line + "\n");
       if (message.op === "ready") { ready(message); return; }
       if (message.op === "tool-observation") { onTool?.(message.row); return; }
+      if (message.op === "authority-read") {
+        void (async () => {
+          let value: unknown;
+          try {
+            if (!evidenceRead) {
+              if (++evidenceReads > 128) throw new Error("evidence read budget exhausted");
+              const task = Promise.resolve().then(() => onEvidence?.());
+              evidenceRead = task;
+              void task.finally(() => { if (evidenceRead === task) evidenceRead = undefined; }).catch(() => {});
+            }
+            value = await evidenceRead;
+          } catch {}
+          if (!process.stdin.destroyed) process.stdin.write(JSON.stringify({ op: "authority-result", id: message.id, value }) + "\n");
+        })();
+        return;
+      }
       if (message.op === "fetch") {
         void (async () => {
           let reply: any;
@@ -114,7 +132,7 @@ export class RpcPeer {
 }
 
 export async function startContainedSession(options: { output: string; image: string; config: object;
-  fetch: (request: Wire) => Promise<any>; onTool?: (row: unknown) => void }) {
+  fetch: (request: Wire) => Promise<any>; onTool?: (row: unknown) => void; authorityEvidence?: AuthorityEvidenceSource }) {
   const output = resolve(options.output), stage = mkdtempSync(join(tmpdir(), "rcx-living-session-"));
   chmodSync(stage, 0o755);
   const name = "rcx-living-" + crypto.randomUUID().slice(0, 12);
@@ -138,8 +156,12 @@ export async function startContainedSession(options: { output: string; image: st
     writeFileSync(join(output, "container.json"), JSON.stringify({ name, image: info.Image, host, mounts: info.Mounts, user: info.Config.User }, null, 2));
     const child = spawn("docker", ["start", "-a", "-i", name], { stdio: ["pipe", "pipe", "pipe"] });
     child.stderr.on("data", data => appendFileSync(join(output, "host.stderr.log"), data));
-    peer = new RpcPeer(child, join(output, "session.jsonl"), options.fetch, options.onTool);
-    await peer.call("configure", { config: options.config });
+    peer = new RpcPeer(child, join(output, "session.jsonl"), options.fetch, options.onTool,
+      options.authorityEvidence ? () => options.authorityEvidence!.read(AbortSignal.timeout(2500)) : undefined);
+    const source = options.authorityEvidence;
+    await peer.call("configure", { config: { ...options.config, ...(source ? { authorityEvidence: {
+      name: source.name, boundary: source.boundary, trustAnchor: source.trustAnchor, timeoutMs: source.timeoutMs,
+    } } : {}) } });
     return { peer, close: async () => {
       try { await peer!.call("close"); peer!.process.stdin.end(); await peer!.exited; }
       finally { docker(["rm", "-f", name]); rmSync(stage, { recursive: true }); }
