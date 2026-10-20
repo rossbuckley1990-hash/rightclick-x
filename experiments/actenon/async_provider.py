@@ -17,6 +17,7 @@ class AsyncCompression:
         self.private, self.output = private, output
         self.jobs = {}
         (output / "artifacts").mkdir(exist_ok=True)
+        (output / "publications").mkdir(exist_ok=True)
 
     def spec(self, origin):
         parameter = [{"in": "path", "name": "label", "required": True, "schema": {"type": "string"}}]
@@ -35,9 +36,25 @@ class AsyncCompression:
                     "responses": {"202": {"description": "Worker running"}, "303": {"description": "See artifact"}}}},
                 "/artifacts/{label}": {"get": {"operationId": "artifact", "parameters": parameter, "responses": final}},
                 "/artifacts-moved/{label}": {"get": {"operationId": "movedArtifact", "parameters": parameter, "responses": final}},
+                "/publications/{label}": {"post": {"operationId": "publish", "summary": "Publish a verified artifact digest",
+                    "parameters": parameter, "requestBody": {"required": True, "content": {"application/json": {"schema": {
+                        "type": "object", "required": ["sha256"], "properties": {
+                            "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}}}}}}, "responses": final}},
             }}
 
     def dispatch(self, method, path, body, proof_id):
+        if method == "POST" and re.fullmatch(r"/publications/[a-z0-9-]{1,40}", path):
+            label = path.split("/")[-1]
+            value = json.loads(body)
+            data = (self.output / "artifacts" / f"{label}.gz").read_bytes()
+            if set(value) != {"sha256"} or value["sha256"] != hashlib.sha256(data).hexdigest():
+                raise ValueError("publication does not match actual artifact")
+            row = {"kind": "publication", "label": label, "sha256": value["sha256"], "proof": proof_id}
+            with (self.output / "publications" / f"{label}.json").open("x") as publication:
+                publication.write(json.dumps(row) + "\n"); publication.flush(); os.fsync(publication.fileno())
+            with (self.output / "provider.jsonl").open("a") as journal:
+                journal.write(json.dumps(row) + "\n"); journal.flush(); os.fsync(journal.fileno())
+            return 200, {}, {"label": label, "sha256": value["sha256"], "size": len(data)}
         if method == "POST" and path == "/jobs":
             value = json.loads(body)
             if set(value) != {"label", "document"} or not re.fullmatch(r"[a-z0-9-]{1,40}", value["label"]):
