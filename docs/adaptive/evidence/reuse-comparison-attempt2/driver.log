@@ -1,0 +1,11 @@
+{"id":"cold-c","seconds":33.5,"tokens":104712,"requests":6,"tools":6,"blocked":null}
+{"id":"cold-d","seconds":62.4,"tokens":352763,"requests":13,"tools":12,"blocked":"Codex evaluation transport or trace failure: Error: session not valid: {\"audit\":[\"general execution primitive: manual review required\"],\"errors\":[],\"exit\":0,\"timedOut\":false}"}
+file:///Users/ross/src/rightclick-x-adaptive/experiments/living/reuse-comparison.ts:91
+  if (record.blocked || record.timedOut || record.exit !== 0) throw new Error("invalid model session; preserved without automatic retry");
+                                                                    ^
+
+Error: invalid model session; preserved without automatic retry
+    at file:///Users/ross/src/rightclick-x-adaptive/experiments/living/reuse-comparison.ts:91:69
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+
+Node.js v26.12.0
