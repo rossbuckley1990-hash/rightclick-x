@@ -121,6 +121,27 @@ test("a failed checkpoint prevents the first poll after acceptance", async () =>
   await first.rc.flush();
 });
 
+test("persistent storage failure remains visible and cannot trigger background execution", async () => {
+  class BrokenStore extends MemoryStore {
+    broken = true;
+    override async save(state: PersistedState) {
+      if (this.broken) throw new Error("persistent storage failure");
+      await super.save(state);
+    }
+  }
+  const store = new BrokenStore(); const first = await world(store);
+  const run = await first.rc.run("openapi:packager:pack");
+  assert.equal(run.status, "pending");
+  assert.equal(run.httpContinuation?.stopped, "checkpoint-unavailable");
+  await new Promise(resolve => setTimeout(resolve, 80));
+  assert.deepEqual(first.calls, ["POST /pack"]);
+  assert.equal((first.rc.runtime() as any).storage.status, "failed");
+  await assert.rejects(first.rc.flush(), /persistent storage failure/);
+  store.broken = false;
+  await first.rc.flush();
+  assert.equal((first.rc.runtime() as any).storage.status, "saved");
+});
+
 test("lifetime budget, expiry, incompatible profile and withdrawn source cannot dispatch", async () => {
   for (const mode of ["budget", "expiry", "profile", "withdrawn"] as const) {
     const store = new MemoryStore(); const first = await world(store);

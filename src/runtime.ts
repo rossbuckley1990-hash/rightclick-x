@@ -445,6 +445,7 @@ export class RightClick {
   private mcpClients = new Map<string, McpClient>();
   private store?: Store;
   private saveTimer: ReturnType<typeof setTimeout> | null = null;
+  private saveState: "not-observed" | "saved" | "failed" = "not-observed";
   private runCounter = 0;
   private destructivePolicy: "operator" | "agent-confirm" | "allow" = "operator";
   private approvals: string[] = [];
@@ -590,6 +591,7 @@ export class RightClick {
       graph: { providers: this.graph.providers.size, ...powers },
       runs: this.runs.size,
       receipts: { count: this.chain.receipts.length, head: this.chain.headHash },
+      storage: { status: this.store ? this.saveState : "not-configured" },
       eventCursor: this.graph.cursor,
       memoryMB: typeof (globalThis as any).process?.memoryUsage === "function" ? Math.round((globalThis as any).process.memoryUsage().rss / 1e6) : undefined,
     };
@@ -2702,7 +2704,9 @@ export class RightClick {
     if (!this.store || this.saveTimer) return;
     this.saveTimer = setTimeout(() => {
       this.saveTimer = null;
-      void this.flush();
+      // flush records failure for context_runtime. The explicit API still
+      // rejects; a timer must not produce an unhandled rejection after an effect.
+      void this.flush().catch(() => {});
     }, 50);
   }
 
@@ -2715,7 +2719,13 @@ export class RightClick {
     const reflections: Reflection[] = [...this.graph.providers.values()]
       .filter((p) => p.source !== "builtin" && p.source !== "platform")
       .map((p) => ({ provider: p, capabilities: p.capabilityIds.map((id) => this.graph.get(id)!).filter(Boolean) }));
-    await this.store.save({ version: 1, reflections, ledger: this.ledger.toJSON(), receipts: this.chain.receipts.slice(-300), published: [...this.published.values()], meaningChanges: [...this.meaningChanges.values()], activity: this.activity.snapshot(), environment: this.environmentReport, httpContinuations: [...this.httpContinuations.values()], authFingerprints: await this.net.auth.fingerprints(), semantics: SEMANTICS, identities: this.graph.identities.toJSON() });
+    try {
+      await this.store.save({ version: 1, reflections, ledger: this.ledger.toJSON(), receipts: this.chain.receipts.slice(-300), published: [...this.published.values()], meaningChanges: [...this.meaningChanges.values()], activity: this.activity.snapshot(), environment: this.environmentReport, httpContinuations: [...this.httpContinuations.values()], authFingerprints: await this.net.auth.fingerprints(), semantics: SEMANTICS, identities: this.graph.identities.toJSON() });
+      this.saveState = "saved";
+    } catch (error) {
+      this.saveState = "failed";
+      throw error;
+    }
   }
 }
 
