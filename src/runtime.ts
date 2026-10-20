@@ -28,6 +28,7 @@ import { discover, type Discovery, type SourceKind } from "./reflectors/discover
 import { environmentNet, environmentOptions, observeCatalog, type EnvironmentOptions, type EnvironmentReport } from "./reflectors/environment.ts";
 import { buildDocument, checkSelection } from "./reflectors/graphql.ts";
 import { McpClient } from "./reflectors/mcp.ts";
+import { continuationPolicy, continuationTargets, followHttp202, type HttpContinuationOptions, type HttpContinuationEvidence, type ContinuationPolicy } from "./reflectors/http-continuation.ts";
 import { Authority, cancelBody, readBody, request, type Net, type NetworkPolicy } from "./reflectors/net.ts";
 import { detectRuntime, platformReflection, type PlatformFn, type RuntimeInfo } from "./reflectors/platform.ts";
 
@@ -104,6 +105,8 @@ export interface RuntimeOptions {
   directories?: Directory[];
   /** Operator-approved environment catalogs, refreshed by context_research. */
   environment?: EnvironmentOptions;
+  /** Bounded 202 -> known GET monitor -> 303 -> known GET result profile. No write replay. */
+  httpContinuation?: HttpContinuationOptions | false;
   bindings?: Record<string, unknown>;
   workspace?: string;
   store?: Store;
@@ -169,6 +172,8 @@ export function provedNotApplied(error: string): boolean {
 }
 
 export interface RunOptions {
+  /** Host API cancellation; cancellation after acceptance leaves an unresolved outcome. */
+  signal?: AbortSignal;
   verify?: Predicate[];
   confirm?: boolean;
   /** @deprecated Caller acknowledgement cannot clear a changed-operation refusal. */
@@ -187,6 +192,7 @@ export interface RunRecord {
   status: "completed" | "failed" | "pending";
   /** Accepted work is not a completed outcome, nor evidence that an effect failed. */
   pending?: PendingOutcome;
+  httpContinuation?: HttpContinuationEvidence;
   output?: unknown;
   error?: string;
   startedAt: string;
@@ -227,6 +233,7 @@ export interface PendingOutcome {
   capability: string;
   reason: "http-202" | "peer-pending" | "witness-pending";
   runs: string[];
+  continuation?: HttpContinuationEvidence;
 }
 
 class PendingOutcomeError extends StepError {
@@ -398,6 +405,7 @@ export class RightClick {
   private environment?: EnvironmentOptions;
   private environmentReport: EnvironmentReport = { catalogs: [], sources: [] };
   private environmentRefresh?: Promise<EnvironmentReport>;
+  private httpContinuation: ContinuationPolicy;
   private builtins = new Map<string, BuiltinFn>();
   private platformFns = new Map<string, PlatformFn>();
   private mcpClients = new Map<string, McpClient>();
@@ -429,6 +437,7 @@ export class RightClick {
     };
     this.directories = opts.directories ?? DEFAULT_DIRECTORIES;
     this.environment = environmentOptions(opts.environment);
+    this.httpContinuation = continuationPolicy(opts.httpContinuation);
     this.info = { ...detectRuntime(), region: opts.region };
     this.name = opts.name ?? "rightclick-x";
     this.store = opts.store;
@@ -1132,6 +1141,7 @@ export class RightClick {
     let attempts: RunRecord["attempts"];
     let healing: RunRecord["healing"];
     let pending: PendingOutcome | undefined;
+    const execution: { signal?: AbortSignal; continuation?: HttpContinuationEvidence } = { signal: opts.signal };
     try {
       this.assertExecution(cap);
       if (refused) throw new Error(refused);
@@ -1160,12 +1170,12 @@ export class RightClick {
         if (witnesses.length) verification = { ...verification, status: "verified" };
       } else {
         try {
-          output = await this.execute(cap, coerced, opts.net);
+          output = await this.execute(cap, coerced, opts.net, execution);
         } catch (e) {
           // A caller's own mistake (an undocumented option, a literal that looks like an option)
           // says nothing about the provider: no repair, no re-investigation.
           if (e instanceof PendingOutcomeError || e instanceof ExecutionDenied || e instanceof JsonRepresentationError || opts.planned || !HEALABLE.has(cap.invoke.kind) || /HTTP 400 equivalent|is not one this program documents|needs a value/.test(String((e as Error)?.message ?? e))) throw e;
-          const h = await this.healRun(cap, args, String((e as Error)?.message ?? e), opts.net);
+          const h = await this.healRun(cap, args, String((e as Error)?.message ?? e), opts.net, execution);
           healing = h.healing;
           if (!h.healed) throw new Error(`${healing.error}; ${healing.note}`);
           output = h.output;
@@ -1192,7 +1202,8 @@ export class RightClick {
     // Identifier values a successful call accepted and returned link ports across providers.
     if (ok && cap.invoke.kind !== "composite" && cap.invoke.kind !== "goal" && this.graph.identities.observe(cap, args, output)) this.graph.relink();
     const receipt = await this.chain.append(
-      { runId, capability: cap.id, provider: cap.provider, startedAt, durationMs, status: pending ? "pending" : error ? "failed" : "completed", verification: verification.status },
+      { runId, capability: cap.id, provider: cap.provider, startedAt, durationMs, status: pending ? "pending" : error ? "failed" : "completed", verification: verification.status,
+        ...(execution.continuation ? { httpContinuation: execution.continuation } : {}) },
       args,
       error ?? output,
     );
@@ -1203,6 +1214,7 @@ export class RightClick {
       title: cap.title,
       status: pending ? "pending" : error ? "failed" : "completed",
       ...(pending ? { pending } : {}),
+      ...(execution.continuation ? { httpContinuation: execution.continuation } : {}),
       output,
       error,
       startedAt,
@@ -1218,6 +1230,9 @@ export class RightClick {
     };
     this.runs.set(runId, rec);
     if (this.runs.size > RUN_BUFFER) this.runs.delete(this.runs.keys().next().value!);
+    if (execution.continuation) this.activity.append({ kind: "execution.continuation",
+      status: execution.continuation.stopped, reason: execution.continuation.profile,
+      subjects: execution.continuation.requests.map(r => r.capability), runs: [runId], receipt: receipt.hash });
     this.graph.emit(pending ? "run.pending" : "run.completed", { runId, capability: cap.id, title: cap.title, provider: cap.provider, ok, durationMs, verification: verification.status });
     this.persist();
     return rec;
@@ -1313,7 +1328,7 @@ export class RightClick {
     return out;
   }
 
-  private async healRun(cap: Capability, args: Record<string, unknown>, error: string, net: Net = this.net): Promise<{ healing: NonNullable<RunRecord["healing"]>; healed: boolean; output?: unknown }> {
+  private async healRun(cap: Capability, args: Record<string, unknown>, error: string, net: Net = this.net, execution: { signal?: AbortSignal; continuation?: HttpContinuationEvidence } = {}): Promise<{ healing: NonNullable<RunRecord["healing"]>; healed: boolean; output?: unknown }> {
     const provider = this.graph.providers.get(cap.provider);
     // A call that can change state may have taken effect before it failed: send it again only if
     // the failure proves it was not applied, or the operator declared it side-effect-free.
@@ -1350,7 +1365,7 @@ export class RightClick {
     healing.retried = next.id;
     note += `; retried ${next.id === cap.id ? "the same operation" : `its operation, now ${next.id}`}`;
     try {
-      const output = await this.execute(next, coerceArgs(next, args), net);
+      const output = await this.execute(next, coerceArgs(next, args), net, execution);
       return { healing: { ...healing, note }, healed: true, output };
     } catch (e) {
       if (e instanceof PendingOutcomeError) throw e;
@@ -2309,7 +2324,7 @@ export class RightClick {
     return c;
   }
 
-  private async execute(cap: Capability, args: Record<string, unknown>, net: Net = this.net): Promise<unknown> {
+  private async execute(cap: Capability, args: Record<string, unknown>, net: Net = this.net, execution: { signal?: AbortSignal; continuation?: HttpContinuationEvidence } = {}): Promise<unknown> {
     // Also guards internal repair, which calls execute directly after re-reflection.
     this.assertExecution(cap);
     const origins = intersectOrigins(this.net.policy?.origins, net.policy?.origins);
@@ -2357,13 +2372,24 @@ export class RightClick {
           for (const k of inv.bodyParams) if (args[k] != null) f.set(k, String(args[k]));
           body = f.toString();
         }
-        const res = await request(net, u.toString(), { method: inv.method, headers, body });
+        const targets = continuationTargets(cap, this.graph.list());
+        const res = await request(net, u.toString(), { method: inv.method, headers, body, signal: execution.signal });
+        let out: unknown;
         if (res.status === 202) {
-          cancelBody(res);
-          throw new PendingOutcomeError({ capability: cap.id, reason: "http-202", runs: [] });
+          const followed = await followHttp202({ response: res, url: u.toString(), targets, net, policy: this.httpContinuation,
+            current: id => this.graph.get(id), signal: execution.signal, authorize: (target, values) => {
+              this.assertExecution(target);
+              const refusal = this.changedMeaningRefusal(target.id);
+              if (refusal) throw new Error(refusal);
+              coerceArgs(target, values);
+            } });
+          execution.continuation = followed.evidence;
+          if (followed.evidence.stopped !== "result") throw new PendingOutcomeError({ capability: cap.id, reason: "http-202", runs: [], continuation: followed.evidence });
+          out = followed.output;
+        } else {
+          out = await readBody(res);
+          if (!res.ok) throw new Error(`HTTP ${res.status}: ${String(JSON.stringify(preview(out))).slice(0, 300)}`);
         }
-        const out = await readBody(res);
-        if (!res.ok) throw new Error(`HTTP ${res.status}: ${String(JSON.stringify(preview(out))).slice(0, 300)}`);
         if (inv.entry) {
           // A keyed map holds many answers; the caller asked for one. A missing key is an error, never a guess.
           const key = String(args[inv.entry.keyInput] ?? "");

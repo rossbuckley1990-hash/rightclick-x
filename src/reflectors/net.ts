@@ -220,6 +220,7 @@ async function requestOnce(net: Net, url: string, init: RequestInit = {}): Promi
     const userAgent = headers.get("user-agent")!;
     let tainted = false;
     let res = await net.fetch(url, { ...init, headers, signal, redirect: "manual" });
+    if (init.redirect === "manual") return track(res);
     let hops = 0;
     while (res.status >= 300 && res.status < 400 && res.headers.get("location") && hops++ < 5) {
       const next = new URL(res.headers.get("location")!, url).toString();

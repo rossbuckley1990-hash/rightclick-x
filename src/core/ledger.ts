@@ -5,6 +5,8 @@
 // Receipts are a SHA-256 hash chain, so a run log exported from one region
 // can be checked anywhere without trusting the instance that produced it.
 
+import type { HttpContinuationEvidence } from "../reflectors/http-continuation.ts";
+
 export interface Experience {
   runs: number;
   ok: number;
@@ -83,6 +85,8 @@ export interface Receipt {
   durationMs: number;
   status: "completed" | "failed" | "pending";
   verification: "verified" | "checked" | "refuted" | "unverified";
+  /** Local continuation observations, hash-bound to this receipt; not independent authority proof. */
+  httpContinuation?: HttpContinuationEvidence;
   inputDigest: string;
   outputDigest: string;
   prev: string;
