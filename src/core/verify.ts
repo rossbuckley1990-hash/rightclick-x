@@ -1,4 +1,4 @@
-import type { TransportRefusal } from "./types.ts";
+import type { GraphQLFailureEvidence, TransportRefusal } from "./types.ts";
 // Outcome verification: "the provider answered" is not "the job got done".
 // Callers attach predicates to a run; the result is verified, refuted, or
 // honestly unverified when no predicate was given.
@@ -37,6 +37,7 @@ export interface WitnessResult {
   output?: unknown;
   error?: string;
   refusal?: TransportRefusal;
+  graphqlFailure?: GraphQLFailureEvidence;
 }
 
 export function pick(value: unknown, path?: string): unknown {

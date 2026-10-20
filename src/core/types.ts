@@ -79,6 +79,14 @@ export interface HttpInvoke {
   entry?: { map: string; keyInput: string };
 }
 
+/** Local protocol evidence, not an authority grant or proof of absent effects. */
+export interface GraphQLFailureEvidence {
+  kind: "invalid-document" | "execution-errors";
+  reason: string;
+  capability?: string;
+  runs: string[];
+}
+
 export interface GraphQLInvoke {
   kind: "graphql";
   endpoint: string;

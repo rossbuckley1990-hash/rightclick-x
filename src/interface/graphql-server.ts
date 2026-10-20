@@ -62,6 +62,7 @@ export function introspection(rc: RightClick) {
         field("pending", "Unresolved accepted work; not a completed outcome", named("SCALAR", "JSON")),
         field("refusal", "Execution boundary refusal; no repair or substitute execution", named("SCALAR", "JSON")),
         field("planningRefusal", "Local planning restrictions; independent authority is not assessed", named("SCALAR", "JSON")),
+        field("graphqlFailure", "Invalid GraphQL request or execution errors; no automatic replay", named("SCALAR", "JSON")),
         field("verification", "", named("SCALAR", "String")),
         field("witnesses", "Independent outcome-check evidence", named("SCALAR", "JSON")),
         field("pipeline", "", list(named("SCALAR", "String"))),
@@ -103,7 +104,7 @@ export async function executeGraphQL(rc: RightClick, body: { query?: string; var
     const goal = [...rc.published.values()].find((g) => camel(g.slug) === field);
     if (!goal) return { data: null, errors: [{ message: `Cannot query field "${field}" on type "Query".` }] };
     const out = await rc.callPublished(goal.slug, args);
-    const full: Record<string, unknown> = { result: out.result, ok: out.ok, status: out.status, pending: out.pending, refusal: out.refusal, planningRefusal: out.planningRefusal, verification: out.verification, witnesses: out.witnesses, pipeline: out.pipeline, receipt: out.receipt };
+    const full: Record<string, unknown> = { result: out.result, ok: out.ok, status: out.status, pending: out.pending, refusal: out.refusal, planningRefusal: out.planningRefusal, graphqlFailure: out.graphqlFailure, verification: out.verification, witnesses: out.witnesses, pipeline: out.pipeline, receipt: out.receipt };
     const picked = Object.fromEntries(selection.map((k) => [k, full[k] ?? null]));
     return out.ok ? { data: { [field]: picked } } : { data: { [field]: picked }, errors: [{ message: out.error ?? "goal failed" }] };
   } catch (e) {

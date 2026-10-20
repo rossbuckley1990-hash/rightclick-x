@@ -1,0 +1,41 @@
+✔ known invalid selections stop locally without rediscovery, execution or provider penalty (34.31575ms)
+✔ aliases, recursive relationships, abstract typename and defaulted arguments stay usable (7.339291ms)
+✔ contract validation survives restart and changes only after fresh learned evidence (3.496125ms)
+✔ missing legacy selection evidence does not invent a local rejection (0.647583ms)
+✔ partial GraphQL errors cannot become predicate-checked success or trigger repair (1.22875ms)
+✔ composed partial errors stop without discovery, replanning or publication (3.886166ms)
+✔ composed invalid selections stop locally, including the existing syntax boundary (1.877292ms)
+✔ legacy, truncated, over-budget and differently scoped evidence never proves an unknown field absent (1.215834ms)
+✔ conflicting aliases are rejected but valid aliases target the declared field (0.977791ms)
+✔ an effectful mutation with partial errors is not retried (0.968042ms)
+✔ fresh saved-goal, generated REST and GraphQL calls retain the terminal execution error (4.875083ms)
+✔ null execution-error data fails once; a request error can still expose genuine schema drift (2.302ms)
+✔ a locally invalid verification query stops after the producer without retry or publication (1.137667ms)
+✖ fields whose required-looking arguments have defaults are discoverable result information (3.844833ms)
+ℹ tests 14
+ℹ suites 0
+ℹ pass 13
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 246.278916
+
+✖ failing tests:
+
+test at test/graphql-contract.test.ts:220:1
+✖ fields whose required-looking arguments have defaults are discoverable result information (3.844833ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(rc.graph.get(id)?.fields?.some(field => field.path === "defaulted"))
+  
+      at TestContext.<anonymous> (file:///Users/ross/src/rightclick-x-adaptive/test/graphql-contract.test.ts:222:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

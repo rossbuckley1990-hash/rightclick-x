@@ -22,13 +22,13 @@ import { JsonRepresentationError, parseJsonValue } from "./core/json.ts";
 import { KNOWLEDGE_FORMAT, type ImportReport, type KnowledgeBundle } from "./core/knowledge.ts";
 import { assessExecution, consequentialRisks, ExecutionDenied, intersectOrigins, parseExecutionPolicy, type ExecutionAssessment, type ExecutionPolicy } from "./core/execution-policy.ts";
 import { distance, inferType, inspectValue, type Inspection } from "./core/semantics.ts";
-import type { Capability, CapabilityAnchor, FetchLike, PlanStep, Reflection, SemType, TransportRefusal } from "./core/types.ts";
+import type { Capability, CapabilityAnchor, FetchLike, GraphQLFailureEvidence, PlanStep, Reflection, SemType, TransportRefusal } from "./core/types.ts";
 import { check, pick, type Predicate, type PredicateResult, type OutcomeWitness, type WitnessResult } from "./core/verify.ts";
 import { builtinReflection, type BuiltinFn } from "./reflectors/builtins.ts";
 import { DEFAULT_DIRECTORIES, type Candidate, type Directory } from "./reflectors/directories.ts";
 import { discover, type Discovery, type SourceKind } from "./reflectors/discover.ts";
 import { environmentNet, environmentOptions, observeCatalog, type EnvironmentOptions, type EnvironmentReport } from "./reflectors/environment.ts";
-import { buildDocument, checkSelection, GraphQLDocumentError } from "./reflectors/graphql.ts";
+import { buildDocument, checkSelection, validateSelection, GraphQLFailure } from "./reflectors/graphql.ts";
 import { McpClient } from "./reflectors/mcp.ts";
 import { continuationPolicy, continuationTargets, followHttp202, httpContractDigest, validHttpCursor, type HttpContinuationCursor, type HttpContinuationOptions, type HttpContinuationEvidence, type ContinuationPolicy } from "./reflectors/http-continuation.ts";
 import { Authority, cancelBody, readBody, refuseDeniedResponse, request, TransportRefused, type Net, type NetworkPolicy } from "./reflectors/net.ts";
@@ -230,6 +230,7 @@ export interface RunRecord {
   refusal?: TransportRefusal;
   /** An upstream value needed by this execution was absent; not evidence of API drift. */
   dataUnavailable?: MissingDataEvidence;
+  graphqlFailure?: GraphQLFailureEvidence;
   planningRefusal?: PlanningRefusal;
   resumes?: string;
   /** Completion of a retained ordinary composition, including deferred publication. */
@@ -371,6 +372,7 @@ export interface ComposeResult {
     pending?: PendingOutcome;
     refusal?: TransportRefusal;
     dataUnavailable?: MissingDataEvidence;
+    graphqlFailure?: GraphQLFailureEvidence;
     planningRefusal?: PlanningRefusal;
     verification: RunRecord["verification"];
     runs: string[];
@@ -1405,6 +1407,7 @@ export class RightClick {
     let pending: PendingOutcome | undefined;
     let refusal: TransportRefusal | undefined;
     let dataUnavailable: MissingDataEvidence | undefined;
+    let graphqlFailure: GraphQLFailureEvidence | undefined;
     let planningRefusal: PlanningRefusal | undefined;
     let compositionResult: ComposeResult | undefined;
     let workflowRunId: string | undefined;
@@ -1459,6 +1462,7 @@ export class RightClick {
         }
         if (r.executed?.refusal) throw new TransportRefused(r.executed.refusal.reason, r.executed.refusal.capability, r.executed.refusal.runs);
         if (r.executed?.dataUnavailable) throw new MissingData(r.executed.dataUnavailable);
+        if (r.executed?.graphqlFailure) throw new GraphQLFailure(r.executed.graphqlFailure);
         if (r.planningRefusal ?? r.executed?.planningRefusal) throw new PlanningRefused((r.planningRefusal ?? r.executed?.planningRefusal)!);
         if (r.executed?.status !== "completed") throw new Error(attempts?.map((a) => a.error).join("; ") || "no pipeline found for saved goal");
       } else if (cap.invoke.kind === "composite") {
@@ -1481,6 +1485,8 @@ export class RightClick {
         if (waiting) throw new PendingOutcomeError({ capability: waiting.capability, reason: "witness-pending", runs: [...r.runs, waiting.runId] });
         const denied = witnesses.find(w => w.refusal);
         if (denied) throw new TransportRefused(denied.refusal!.reason, denied.capability, [...r.runs, denied.runId]);
+        const badGraphQL = witnesses.find(w => w.graphqlFailure);
+        if (badGraphQL) throw new GraphQLFailure({ ...badGraphQL.graphqlFailure!, runs: [...r.runs, badGraphQL.runId] });
         if (witnesses.some((w) => w.status !== "completed")) throw new Error("independent outcome witness refuted: " + witnesses.filter((w) => w.status !== "completed").map((w) => w.error ?? w.capability).join("; "));
         if (witnesses.length) verification = { ...verification, status: "verified" };
       } else {
@@ -1490,7 +1496,7 @@ export class RightClick {
         } catch (e) {
           // A caller's own mistake (an undocumented option, a literal that looks like an option)
           // says nothing about the provider: no repair, no re-investigation.
-          if (e instanceof PendingOutcomeError || e instanceof TransportRefused || e instanceof ExecutionDenied || e instanceof JsonRepresentationError || e instanceof GraphQLDocumentError || opts.planned || !HEALABLE.has(cap.invoke.kind) || /HTTP 400 equivalent|is not one this program documents|needs a value/.test(String((e as Error)?.message ?? e))) throw e;
+          if (e instanceof PendingOutcomeError || e instanceof TransportRefused || e instanceof ExecutionDenied || e instanceof JsonRepresentationError || e instanceof GraphQLFailure || opts.planned || !HEALABLE.has(cap.invoke.kind) || /HTTP 400 equivalent|is not one this program documents|needs a value/.test(String((e as Error)?.message ?? e))) throw e;
           const h = await this.healRun(cap, args, String((e as Error)?.message ?? e), opts.net, execution);
           healing = h.healing;
           if (!h.healed) throw new Error(`${healing.error}; ${healing.note}`);
@@ -1501,8 +1507,15 @@ export class RightClick {
       verification = { status: extra.status === "refuted" ? "refuted" : verification.status === "verified" ? "verified" : verification.status === "checked" || extra.status === "checked" ? "checked" : "unverified", results: [...verification.results, ...extra.results] };
       if (verification.status === "refuted") throw new Error("verification refuted: " + JSON.stringify(extra.results.filter((p) => !p.ok)));
     } catch (e) {
-      invalidDocument = e instanceof GraphQLDocumentError;
+      invalidDocument = e instanceof GraphQLFailure && e.evidence.kind === "invalid-document";
       error = String((e as Error)?.message ?? e);
+      if (e instanceof GraphQLFailure) {
+        graphqlFailure = { ...e.evidence, capability: e.evidence.capability ?? cap.id,
+          runs: [...new Set([...e.evidence.runs, runId])] };
+        output = undefined;
+        steps = e.evidence.runs;
+        failedCapability = graphqlFailure.capability;
+      }
       if (e instanceof StepError) failedCapability = e.capability;
       if (e instanceof PendingOutcomeError) {
         pending = { ...e.pending, runs: [...new Set([...e.pending.runs, runId])].slice(-128) };
@@ -1559,6 +1572,7 @@ export class RightClick {
       ...(pending ? { pending } : {}),
       ...(refusal ? { refusal } : {}),
       ...(dataUnavailable ? { dataUnavailable } : {}),
+      ...(graphqlFailure ? { graphqlFailure } : {}),
       ...(planningRefusal ? { planningRefusal } : {}),
       ...(execution.continuation ? { httpContinuation: execution.continuation } : {}),
       output,
@@ -1728,7 +1742,7 @@ export class RightClick {
       const output = await this.execute(next, coerceArgs(next, args), net, execution);
       return { healing: { ...healing, note }, healed: true, output };
     } catch (e) {
-      if (e instanceof PendingOutcomeError || e instanceof TransportRefused) throw e;
+      if (e instanceof PendingOutcomeError || e instanceof TransportRefused || e instanceof GraphQLFailure) throw e;
       return done(`${note}: ${String((e as Error)?.message ?? e)}`);
     }
   }
@@ -1860,8 +1874,8 @@ export class RightClick {
           args[key] = value;
         }
         const r = await this.run(w.capability, args, { verify: w.verify, net, planned: true });
-        evidence.push({ capability: w.capability, runId: r.runId, status: r.status, verification: r.verification, output: r.output, ...(r.error ? { error: r.error } : {}), ...(r.refusal ? { refusal: r.refusal } : {}) });
-        if (r.refusal) break;
+        evidence.push({ capability: w.capability, runId: r.runId, status: r.status, verification: r.verification, output: r.output, ...(r.error ? { error: r.error } : {}), ...(r.refusal ? { refusal: r.refusal } : {}), ...(r.graphqlFailure ? { graphqlFailure: r.graphqlFailure } : {}) });
+        if (r.refusal || r.graphqlFailure) break;
       } catch (e) {
         evidence.push({ capability: original.capability, runId: "", status: "failed", verification: { status: "refuted", results: [] }, error: String((e as Error)?.message ?? e) });
       }
@@ -2170,7 +2184,7 @@ export class RightClick {
           const retained = JSON.parse(JSON.stringify(composition)) as CompositionContinuation;
           const rec = await this.dispatchRun(retained.id, values, {}, undefined, retained);
           result.executed = { summary: p.summary, titles: titles(p), output: rec.output ?? null, status: rec.status,
-            pending: rec.pending, refusal: rec.refusal, dataUnavailable: rec.dataUnavailable, planningRefusal: rec.planningRefusal, verification: rec.verification, runs: rec.steps ?? [],
+            pending: rec.pending, refusal: rec.refusal, dataUnavailable: rec.dataUnavailable, graphqlFailure: rec.graphqlFailure, planningRefusal: rec.planningRefusal, verification: rec.verification, runs: rec.steps ?? [],
             attempts: [...attempts, ...(rec.error ? [{ summary: p.summary, failed: rec.failedCapability ?? p.steps[0].capability,
               error: rec.error, healing: "retained execution: no alternative plan or replay" }] : [])],
             durationMs: rec.durationMs, witnesses: rec.witnesses, error: rec.error,
@@ -2184,6 +2198,15 @@ export class RightClick {
         const r = await this.runSteps(steps, p.result, values, opts.confirm, opts.activeGoals, net);
         return await this.finishComposition(composition, values, r, net, result, attempts, t0, ws => { lastWitnesses = ws; });
       } catch (e) {
+        if (e instanceof GraphQLFailure) {
+          const failed = e.evidence.capability ?? p.steps[0].capability;
+          attempts.push({ summary: p.summary, failed, error: e.message,
+            healing: "GraphQL request or execution errors: no repair, alternative plan or replay" });
+          result.executed = { summary: p.summary, titles: titles(p), output: null, status: "failed",
+            graphqlFailure: e.evidence, verification: { status: "refuted", results: [] }, runs: e.evidence.runs,
+            attempts, witnesses: lastWitnesses, durationMs: performance.now() - t0, error: e.message };
+          return result;
+        }
         const failed = e instanceof StepError || e instanceof ConfirmationRequired ? e.capability : p.steps[0].capability;
         if (e instanceof PlanningRefused) {
           result.planningRefusal = e.evidence;
@@ -2331,6 +2354,8 @@ export class RightClick {
     if (waiting) throw new PendingOutcomeError({ capability: waiting.capability, reason: "witness-pending", runs: [...r.runs, waiting.runId] });
     const denied = lastWitnesses.find(w => w.refusal);
     if (denied) throw new TransportRefused(denied.refusal!.reason, denied.capability, [...r.runs, denied.runId]);
+    const badGraphQL = lastWitnesses.find(w => w.graphqlFailure);
+    if (badGraphQL) throw new GraphQLFailure({ ...badGraphQL.graphqlFailure!, runs: [...r.runs, badGraphQL.runId] });
     if (lastWitnesses.some((w) => w.status !== "completed")) throw new StepError(p.steps[p.steps.length - 1].capability, `verification refuted by independent outcome witness: ${lastWitnesses.filter((w) => w.status !== "completed").map((w) => w.error ?? w.capability).join("; ")}`);
     if (lastWitnesses.length) verification = { ...verification, status: "verified" };
     if (require.length) {
@@ -2475,6 +2500,7 @@ export class RightClick {
       ...(r.executed?.pending ? { pending: r.executed.pending } : {}),
       ...(r.executed?.refusal ? { refusal: r.executed.refusal } : {}),
       ...(r.executed?.dataUnavailable ? { dataUnavailable: r.executed.dataUnavailable } : {}),
+      ...(r.executed?.graphqlFailure ? { graphqlFailure: r.executed.graphqlFailure } : {}),
       ...((r.planningRefusal ?? r.executed?.planningRefusal) ? { planningRefusal: r.planningRefusal ?? r.executed?.planningRefusal } : {}),
       result: r.executed?.output ?? null,
       pipeline: r.executed?.titles ?? [],
@@ -2624,6 +2650,7 @@ export class RightClick {
         if (r.pending) throw new PendingOutcomeError({ ...r.pending, runs: [...new Set([...runs, ...r.pending.runs])] });
         if (r.refusal) throw new TransportRefused(r.refusal.reason, r.refusal.capability ?? step.capability, [...new Set([...runs, ...r.refusal.runs])]);
         if (r.dataUnavailable) throw new MissingData({ ...r.dataUnavailable, runs: [...runs, ...r.dataUnavailable.runs] });
+        if (r.graphqlFailure) throw new GraphQLFailure({ ...r.graphqlFailure, runs: [...new Set([...runs, ...r.graphqlFailure.runs])] });
         if (r.planningRefusal) throw new PlanningRefused({ ...r.planningRefusal, runs: [...runs, ...r.planningRefusal.runs] });
         if (r.status === "failed") throw new StepError(r.failedCapability ?? step.capability, `${step.capability}: ${r.error}`);
         if (workflow) {
@@ -2647,6 +2674,7 @@ export class RightClick {
         if (r.pending) throw new PendingOutcomeError({ ...r.pending, runs: [...new Set([...runs, ...r.pending.runs])] });
         if (r.refusal) throw new TransportRefused(r.refusal.reason, r.refusal.capability ?? step.capability, [...new Set([...runs, ...r.refusal.runs])]);
         if (r.dataUnavailable) throw new MissingData({ ...r.dataUnavailable, runs: [...runs, ...r.dataUnavailable.runs] });
+        if (r.graphqlFailure) throw new GraphQLFailure({ ...r.graphqlFailure, runs: [...new Set([...runs, ...r.graphqlFailure.runs])] });
         if (r.planningRefusal) throw new PlanningRefused({ ...r.planningRefusal, runs: [...runs, ...r.planningRefusal.runs] });
         if (r.status === "failed") throw new StepError(r.failedCapability ?? step.capability, `${step.capability} (item ${JSON.stringify(item)}, ${report.ran} of ${items.length}): ${r.error}`);
         each.push(r.output);
@@ -2980,6 +3008,7 @@ export class RightClick {
       case "graphql": {
         const sel = inv.selectPort ? args[inv.selectPort] : undefined;
         const doc = sel !== undefined && sel !== null && sel !== "" ? { ...inv, selection: checkSelection(sel) } : inv;
+        validateSelection(doc, this.graph.providers.get(cap.provider)?.meta?.graphqlSelection);
         const provided = Object.keys(args).filter((k) => args[k] !== undefined && k !== inv.selectPort);
         const variables: Record<string, unknown> = {};
         for (const k of provided) {
@@ -2997,6 +3026,10 @@ export class RightClick {
           throw new PendingOutcomeError({ capability: cap.id, reason: "http-202", runs: [] });
         }
         const j: any = await readBody(res);
+        if (Array.isArray(j?.errors) && j.errors.length && Object.hasOwn(j, "data")) {
+          throw new GraphQLFailure({ kind: "execution-errors",
+            reason: `GraphQL execution errors; partial or null data is not a completed outcome: ${JSON.stringify(j.errors).slice(0, 300)}`, runs: [] });
+        }
         if (!res.ok || (j?.errors?.length && !j?.data?.[inv.field])) throw new Error(`GraphQL: ${JSON.stringify(j?.errors ?? j).slice(0, 300)}`);
         return j.data[inv.field];
       }
