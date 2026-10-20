@@ -87,7 +87,7 @@ export interface Receipt {
   verification: "verified" | "checked" | "refuted" | "unverified";
   /** Local continuation observations, hash-bound to this receipt; not independent authority proof. */
   httpContinuation?: HttpContinuationEvidence;
-  /** This receipt observes a retained HTTP leaf, without submitting its action again. */
+  /** This receipt continues a retained execution without replaying completed actions. */
   resumes?: string;
   inputDigest: string;
   outputDigest: string;

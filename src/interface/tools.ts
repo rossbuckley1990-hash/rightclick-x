@@ -73,7 +73,7 @@ export const TOOLS = [
   {
     name: "context_run",
     description: "Run one capability now. Saved goal:<slug> capabilities re-plan against the current environment, heal API changes and repeat their stored result checks and independent witnesses. Returns output, timing, receipt, verification and witness evidence. Optional predicates add checks; they never remove stored checks. A failed call to a learned API re-reads its contract once and retries the same operation if the API moved; an id that re-learning pointed at a different operation remains refused; caller acknowledgement cannot authorise the change. Large outputs: pass view to get a count, field projection or slice instead of the whole payload.",
-    inputSchema: obj({ id: str("Capability id, or the explicit resume:<run-id> selector from context_run_status for a retained HTTP leaf. Resume reads only; never resubmits its action or resumes its parent workflow. Omit args, verify and confirm when resuming; stored checks and current authority apply."), args: { type: "object", description: "Input arguments by port name." }, verify: predicates, confirm: bool("Required for capabilities labelled destructive."), view }, ["id"]),
+    inputSchema: obj({ id: str("Capability id, or the explicit resume:<run-id> selector from context_run_status. HTTP recovery reads the retained result; host-enabled workflow recovery continues its exact remaining steps. Completed actions are never replayed. Omit args, verify and confirm when resuming; stored checks and current authority apply."), args: { type: "object", description: "Input arguments by port name." }, verify: predicates, confirm: bool("Required for capabilities labelled destructive."), view }, ["id"]),
   },
   {
     name: "context_run_status",

@@ -3,20 +3,33 @@ import { RightClick } from "../../src/runtime.ts";
 import { FileStore } from "../../src/entry/node-host.ts";
 import { dispatch } from "../../src/interface/tools.ts";
 
-const [origin, file, phase] = process.argv.slice(2);
+const [origin, file, phase, mode] = process.argv.slice(2);
 const rc = await RightClick.create({ directories: [], sandbox: null, store: new FileStore(file),
+  workflowRecovery: mode === "workflow",
   network: { blockPrivate: false, origins: [origin] },
   ...(phase === "start" ? { environment: { catalogs: [origin + "/catalog"], origins: [origin] } } : {}),
 });
 if (phase === "start") {
   await dispatch(rc, "context_research", {});
-  const cap = rc.graph.list().find(c => c.invoke.kind === "http" && c.invoke.method === "POST")!;
-  const run = await dispatch(rc, "context_run", { id: cap.id, args: { document: "A document retained across a process kill." },
-    verify: [{ op: "matches", path: "sha256", pattern: "^[a-f0-9]{64}$" }] });
+  const cap = rc.graph.list().find(c => c.invoke.kind === "http" && c.invoke.method === "POST" && c.invoke.url.endsWith("/enqueue"))!;
+  if (mode === "workflow") {
+    const publish = rc.graph.list().find(c => c.invoke.kind === "http" && c.invoke.method === "POST" && c.invoke.url.endsWith("/publish"))!;
+    rc.graph.addCapability({ id: "composite:process-recovery", provider: "composite:process", source: "composite",
+      title: "Process recovery", description: "Controlled retained plan", inputs: cap.inputs,
+      outputs: [{ name: "", type: "text", required: true }], risk: "write", tags: [],
+      invoke: { kind: "composite", steps: [
+        { capability: cap.id, bindings: [{ port: "document", from: "$in.document" }] },
+        { capability: publish.id, bindings: [{ port: "sha256", from: "0.sha256" }] },
+      ], result: "1.confirmed", verify: [{ op: "matches", pattern: "^[a-f0-9]{64}$" }] },
+    }, { id: "composite:process", source: "composite", origin: "local", title: "Process fixture", learnedAt: new Date().toISOString() });
+  }
+  const run = await dispatch(rc, "context_run", { id: mode === "workflow" ? "composite:process-recovery" : cap.id, args: { document: "A document retained across a process kill." },
+    verify: mode === "workflow" ? [] : [{ op: "matches", path: "sha256", pattern: "^[a-f0-9]{64}$" }] });
   console.log(JSON.stringify({ pid: process.pid, run }));
 } else {
   const status: any = await dispatch(rc, "context_run_status", {});
-  const pending = status.pendingHttp[0];
+  const entry = mode === "workflow" ? status.pendingWorkflows[0] : status.pendingHttp[0];
+  const pending = mode === "workflow" ? { ...entry, resumeId: entry?.pending.resumeId } : entry;
   if (!pending) throw new Error("no retained HTTP continuation");
   const before = await dispatch(rc, "context_run_status", { runId: pending.runId });
   const run = await dispatch(rc, "context_run", { id: pending.resumeId });

@@ -2,6 +2,7 @@
 // the whole context_* family. Every interface (MCP, HTTP API, CLI, dashboard,
 // federation) is a thin shell around this class.
 
+import { validWorkflow, type WorkflowContinuation } from "./core/workflow-continuation.ts";
 import { ActivityLog, reference, type ActivityState, type ContractReference } from "./core/activity.ts";
 import { CapabilityGraph, signature, tokenize, type GraphEvent, type LearnDelta } from "./core/graph.ts";
 import { Ledger, ReceiptChain, sha256, type Receipt } from "./core/ledger.ts";
@@ -61,6 +62,7 @@ export interface PersistedState {
   environment?: EnvironmentReport;
   /** Explicit resumable HTTP reads; never original bodies, credentials or grants. */
   httpContinuations?: HttpRunContinuation[];
+  workflowContinuations?: WorkflowContinuation[];
 }
 
 export interface HttpRunContinuation {
@@ -133,6 +135,8 @@ export interface RuntimeOptions {
   environment?: EnvironmentOptions;
   /** Bounded 202 -> known GET monitor -> 303 -> known GET result profile. No write replay. */
   httpContinuation?: HttpContinuationOptions | false;
+  /** Opt in to retaining bounded inputs/outputs for flat composite recovery. Requires Store. */
+  workflowRecovery?: boolean;
   bindings?: Record<string, unknown>;
   workspace?: string;
   store?: Store;
@@ -260,10 +264,11 @@ class StepError extends Error {
 
 export interface PendingOutcome {
   capability: string;
-  reason: "http-202" | "peer-pending" | "witness-pending";
+  reason: "http-202" | "peer-pending" | "witness-pending" | "workflow-pending";
   runs: string[];
   continuation?: HttpContinuationEvidence;
-  /** Resumes this HTTP leaf only, not its parent workflow or original write. */
+  /** Explicit selector for the retained execution; never resubmits its original action. */
+  detail?: string;
   resumeId?: string;
 }
 
@@ -421,6 +426,8 @@ export class RightClick {
   readonly chain = new ReceiptChain();
   readonly runs = new Map<string, RunRecord>();
   private httpContinuations = new Map<string, HttpRunContinuation>();
+  private workflowContinuations = new Map<string, WorkflowContinuation>();
+  private workflowRecovery = false;
   private activeContinuations = new Set<string>();
   readonly activity = new ActivityLog();
   private observing = false;
@@ -473,6 +480,8 @@ export class RightClick {
     this.directories = opts.directories ?? DEFAULT_DIRECTORIES;
     this.environment = environmentOptions(opts.environment);
     this.httpContinuation = continuationPolicy(opts.httpContinuation);
+    this.workflowRecovery = opts.workflowRecovery === true;
+    if (this.workflowRecovery && !opts.store) throw new Error("workflow recovery requires a Store");
     this.info = { ...detectRuntime(), region: opts.region };
     this.name = opts.name ?? "rightclick-x";
     this.store = opts.store;
@@ -500,11 +509,14 @@ export class RightClick {
     if (saved?.version === 1) {
       const stale = saved.semantics !== SEMANTICS;
       rc.graph.identities.load(saved.identities);
-      for (const r of saved.reflections) rc.graph.add(r);
+      rc.graph.restore(saved.reflections);
       rc.ledger.load(saved.ledger);
       rc.chain.restore(saved.receipts ?? []);
       if (!stale && Array.isArray(saved.httpContinuations)) for (const c of saved.httpContinuations.slice(-64)) {
         if (validHttpRun(c)) rc.httpContinuations.set(c.runId, structuredClone(c));
+      }
+      if (!stale && Array.isArray(saved.workflowContinuations)) for (const c of saved.workflowContinuations.slice(-64)) {
+        if (validWorkflow(c)) rc.workflowContinuations.set(c.runId, structuredClone(c));
       }
       for (const g of saved.published ?? []) {
         rc.published.set(g.slug, g);
@@ -591,7 +603,7 @@ export class RightClick {
       graph: { providers: this.graph.providers.size, ...powers },
       runs: this.runs.size,
       receipts: { count: this.chain.receipts.length, head: this.chain.headHash },
-      storage: { status: this.store ? this.saveState : "not-configured" },
+      storage: { status: this.store ? this.saveState : "not-configured", workflowRecovery: this.workflowRecovery },
       eventCursor: this.graph.cursor,
       memoryMB: typeof (globalThis as any).process?.memoryUsage === "function" ? Math.round((globalThis as any).process.memoryUsage().rss / 1e6) : undefined,
     };
@@ -1136,13 +1148,105 @@ export class RightClick {
 
   // ================================================================ context_run
 
+  private newRunId() {
+    return `run_${Date.now().toString(36)}_${(++this.runCounter).toString(36)}_${crypto.randomUUID()}`;
+  }
+
+  private recoverableWorkflow(cap: Capability): boolean {
+    return cap.invoke.kind === "composite" && cap.invoke.steps.length > 0 && cap.invoke.steps.length <= 16 &&
+      !consequentialRisks(cap).includes("destructive") &&
+      cap.invoke.steps.every(s => {
+        const c = this.graph.get(s.capability);
+        return c && !s.bindings.some(b => b.each) && c.invoke.kind !== "composite" && c.invoke.kind !== "goal" &&
+          !consequentialRisks(c).includes("destructive");
+      });
+  }
+
+  private workflowPending(w: WorkflowContinuation, detail?: string): PendingOutcome {
+    return { capability: w.capability, reason: "workflow-pending", runs: [...w.runs],
+      ...(w.phase === "ready" || w.phase === "waiting" ? { resumeId: `resume:${w.runId}` } : {}),
+      detail: detail ?? (["dispatching", "checking", "stopped"].includes(w.phase)
+        ? "Unresolved execution; no automatic replay or effect reconciliation."
+        : "Continue the retained plan under current authority.") };
+  }
+
+  private async saveWorkflow(w: WorkflowContinuation) {
+    if (!validWorkflow(w)) throw new Error("workflow checkpoint is unsupported, oversized or contains credential-like data");
+    await this.flush();
+  }
+
+  private async startWorkflow(runId: string, cap: Capability, inputs: Record<string, unknown>, verify: Predicate[]) {
+    if (cap.invoke.kind !== "composite") throw new Error("workflow requires a retained composite");
+    // Unresolved effects are never evicted to make room for a different action.
+    if (this.workflowContinuations.size >= 64) throw new Error("workflow continuation storage is full");
+    const createdAt = Date.now();
+    const w: WorkflowContinuation = { version: 1, runId, capability: cap.id, contractDigest: await httpContractDigest(cap),
+      stepDigests: await Promise.all(cap.invoke.steps.map(s => httpContractDigest(this.graph.get(s.capability)!))),
+      inputs: structuredClone(inputs), verify: structuredClone(verify), createdAt, expiresAt: createdAt + 3_600_000,
+      outputs: [], runs: [], next: 0, phase: "ready" };
+    if (!validWorkflow(w)) throw new Error("workflow inputs cannot be retained safely");
+    this.workflowContinuations.set(runId, w);
+    try { await this.saveWorkflow(w); }
+    catch (e) { this.workflowContinuations.delete(runId); throw e; }
+    this.activeContinuations.add(runId);
+    return w;
+  }
+
+  private async assertWorkflow(w: WorkflowContinuation, justReserved = false) {
+    const stop = (detail: string): never => { throw new PendingOutcomeError(this.workflowPending(w, detail)); };
+    if (!this.workflowRecovery) stop("Workflow recovery is not enabled by this host.");
+    if (!validWorkflow(w) || Date.now() >= w.expiresAt) stop("Workflow checkpoint expired or invalid.");
+    if (w.phase !== "ready" && w.phase !== "waiting" && !(justReserved && w.phase === "dispatching")) {
+      stop("The last dispatch has no retained final result. Recovery cannot establish non-execution.");
+    }
+    const cap = this.graph.get(w.capability);
+    if (!cap || cap.invoke.kind !== "composite" || !this.recoverableWorkflow(cap) ||
+        await httpContractDigest(cap) !== w.contractDigest) stop("Retained workflow contract changed.");
+    const current = cap as Capability & { invoke: Extract<Capability["invoke"], { kind: "composite" }> };
+    for (const [i, step] of current.invoke.steps.entries()) {
+      const child = this.graph.get(step.capability);
+      if (!child || await httpContractDigest(child) !== w.stepDigests[i] || this.changedMeaningRefusal(step.capability)) {
+        stop("Retained step contract changed or disappeared.");
+      }
+      try { this.assertExecution(child!); } catch { stop("Current operator policy refuses a retained step."); }
+    }
+    try { this.assertExecution(current); } catch { stop("Current operator policy refuses the workflow."); }
+    if (w.phase === "waiting" && !this.httpContinuations.has(w.childRunId!)) {
+      stop("Pending step has no retained HTTP continuation; its outcome remains unresolved.");
+    }
+  }
+
+  private async finishWorkflowStep(w: WorkflowContinuation, rec: RunRecord) {
+    if (rec.status === "completed") {
+      const next = { ...w, outputs: [...w.outputs, rec.output], runs: [...w.runs, rec.runId],
+        next: w.next + 1, phase: "ready" as const, childRunId: undefined };
+      if (validWorkflow(next)) {
+        // Keep array identities used by the active runSteps frame.
+        w.outputs.push(structuredClone(rec.output)); w.runs.push(rec.runId);
+        w.next++; w.phase = "ready"; delete w.childRunId;
+      } else w.phase = "stopped";
+    } else if (rec.pending && this.httpContinuations.has(w.childRunId!)) {
+      w.phase = "waiting";
+      if (!w.runs.includes(rec.runId)) w.runs.push(rec.runId);
+    } else w.phase = "stopped";
+    try { await this.saveWorkflow(w); }
+    catch { w.phase = "stopped"; rec.persistence = { status: "failed", detail: "Step outcome could not be checkpointed; remaining workflow steps were not dispatched." }; }
+  }
+
   async run(id: string, args: Record<string, unknown> = {}, opts: RunOptions = {}): Promise<RunRecord> {
+    if (id.startsWith("resume:") && [...this.workflowContinuations.values()].some(w => w.childRunId === id.slice(7))) {
+      throw new Error("resume the owning workflow; its child cannot be consumed separately");
+    }
+    return this.dispatchRun(id, args, opts);
+  }
+
+  private async dispatchRun(id: string, args: Record<string, unknown>, opts: RunOptions, parent?: WorkflowContinuation): Promise<RunRecord> {
     // Older runtimes reject this id instead of ignoring a new option and
     // accidentally submitting the ordinary action again.
     if ("resumeRunId" in opts) throw new Error("resume uses the explicit resume:<run-id> selector");
     const resumeRunId = typeof id === "string" && id.startsWith("resume:") ? id.slice(7) : undefined;
     if (resumeRunId !== undefined) {
-      const pending = this.httpContinuations.get(resumeRunId);
+      const pending = this.workflowContinuations.get(resumeRunId) ?? this.httpContinuations.get(resumeRunId);
       if (!pending) throw new Error(`no resumable HTTP operation: ${resumeRunId}`);
       if (Object.keys(args).length || opts.verify !== undefined || opts.confirm !== undefined) throw new Error("resume cannot change inputs or stored checks");
       if (this.activeContinuations.has(resumeRunId)) throw new Error("HTTP continuation is already active");
@@ -1153,7 +1257,7 @@ export class RightClick {
     const contracts = cap ? [reference(cap)] : [];
     const request = this.activity.append({ kind: "execution.requested", status: "requested", subjects: [id], contracts });
     try {
-      const rec = await this.runNow(id, args, opts, resumeRunId);
+      const rec = await this.runNow(id, args, opts, resumeRunId, parent);
       const dependencies = this.observedRuns([...(rec.steps ?? []), ...(rec.witnesses ?? []).map(w => w.runId)]);
       this.activity.append({ kind: "execution.finished", related: request.id, subjects: [id], providers: [rec.provider], runs: [rec.runId], contracts: [...contracts, ...dependencies.contracts], truncated: dependencies.truncated,
         status: rec.status === "pending" ? "pending" : rec.status === "completed" ? "completed" : rec.changedMeaning || rec.error?.includes("blocked by execution policy") ? "refused" : "failed",
@@ -1171,8 +1275,11 @@ export class RightClick {
     }
   }
 
-  private async runNow(id: string, args: Record<string, unknown>, opts: RunOptions, resumeRunId?: string): Promise<RunRecord> {
-    const resumed = resumeRunId ? structuredClone(this.httpContinuations.get(resumeRunId)!) : undefined;
+  private async runNow(id: string, args: Record<string, unknown>, opts: RunOptions, resumeRunId?: string, parent?: WorkflowContinuation): Promise<RunRecord> {
+    const resumedWorkflow = resumeRunId ? this.workflowContinuations.get(resumeRunId) : undefined;
+    const resumed = resumeRunId && !resumedWorkflow ? structuredClone(this.httpContinuations.get(resumeRunId)!) : undefined;
+    let workflow = resumedWorkflow;
+    if (resumedWorkflow) args = structuredClone(resumedWorkflow.inputs);
     const cap = this.graph.get(id);
     if (!cap) throw new Error(`unknown capability: ${id}`);
     // Destructive effects keep the user's authority. The agent may ask (confirm), but under the
@@ -1184,7 +1291,7 @@ export class RightClick {
     // An id the caller chose for what it used to do must not quietly do something else.
     const change = this.meaningChanges.get(cap.id);
     const refused = this.changedMeaningRefusal(cap.id);
-    const runId = `run_${Date.now().toString(36)}_${(++this.runCounter).toString(36)}`;
+    const runId = parent && !resumeRunId ? parent.childRunId! : this.newRunId();
     const startedAt = new Date().toISOString();
     const t0 = performance.now();
     let output: unknown;
@@ -1201,9 +1308,11 @@ export class RightClick {
     const original = structuredClone(cap);
     const execution: HttpExecution = { signal: opts.signal };
     if (this.store && cap.invoke.kind === "http" && !cap.invoke.entry) execution.checkpoint = cursor =>
-      this.checkpointHttp(continuationId, original, resumed?.verify ?? opts.verify ?? [], cursor);
+      this.checkpointHttp(continuationId, original, resumed?.verify ?? opts.verify ?? [], cursor, parent);
     try {
-      if (resumed) {
+      if (resumedWorkflow) {
+        await this.assertWorkflow(resumedWorkflow);
+      } else if (resumed) {
         const stop = (reason: HttpContinuationEvidence["stopped"]): never => {
           execution.continuation = { profile: "http-202-303", stopped: reason, requests: [] };
           throw new PendingOutcomeError({ capability: id, reason: "http-202", runs: [continuationId], continuation: execution.continuation, resumeId: `resume:${continuationId}` });
@@ -1227,14 +1336,19 @@ export class RightClick {
         if (r.executed?.refusal) throw new TransportRefused(r.executed.refusal.reason, r.executed.refusal.capability, r.executed.refusal.runs);
         if (r.executed?.status !== "completed") throw new Error(attempts?.map((a) => a.error).join("; ") || "no pipeline found for saved goal");
       } else if (cap.invoke.kind === "composite") {
-        const r = await this.runSteps(cap.invoke.steps, cap.invoke.result, coerced, opts.confirm, opts.activeGoals, opts.net);
+        if (!workflow && this.workflowRecovery && !opts.net && this.recoverableWorkflow(cap)) {
+          workflow = await this.startWorkflow(runId, cap, coerced, opts.verify ?? []);
+        }
+        const r = await this.runSteps(cap.invoke.steps, cap.invoke.result, coerced, opts.confirm, opts.activeGoals, opts.net, workflow);
+        if (workflow) { workflow.phase = "checking"; await this.saveWorkflow(workflow); }
         output = r.output;
         steps = r.runs;
         verification = check(output, cap.invoke.verify ?? []);
         if (verification.status === "refuted") throw new Error("stored verification refuted");
         const absent = outputCarries(output, cap.invoke.require ?? []).absent;
         if (absent.length) throw new Error(`stored required information missing: ${absent.join(", ")}`);
-        witnesses = await this.checkWitnesses(cap.invoke.witnesses ?? [], coerced, output, r.runs, opts.net);
+        witnesses = await this.checkWitnesses(cap.invoke.witnesses ?? [], coerced, output, r.runs, opts.net,
+          workflow ? cap.invoke.steps.map(s => this.graph.get(s.capability)!.provider) : []);
         const waiting = witnesses.find(w => w.status === "pending");
         if (waiting) throw new PendingOutcomeError({ capability: waiting.capability, reason: "witness-pending", runs: [...r.runs, waiting.runId] });
         const denied = witnesses.find(w => w.refusal);
@@ -1255,7 +1369,7 @@ export class RightClick {
           output = h.output;
         } finally { if (!resumed) this.activeContinuations.delete(continuationId); }
       }
-      const extra = check(output, resumed?.verify ?? opts.verify ?? []);
+      const extra = check(output, resumed?.verify ?? resumedWorkflow?.verify ?? opts.verify ?? []);
       verification = { status: extra.status === "refuted" ? "refuted" : verification.status === "verified" ? "verified" : verification.status === "checked" || extra.status === "checked" ? "checked" : "unverified", results: [...verification.results, ...extra.results] };
       if (verification.status === "refuted") throw new Error("verification refuted: " + JSON.stringify(extra.results.filter((p) => !p.ok)));
     } catch (e) {
@@ -1263,7 +1377,8 @@ export class RightClick {
       if (e instanceof StepError) failedCapability = e.capability;
       if (e instanceof PendingOutcomeError) {
         pending = { ...e.pending, runs: [...new Set([...e.pending.runs, runId])].slice(-128) };
-        if (this.httpContinuations.has(continuationId)) pending.resumeId = `resume:${continuationId}`;
+        if (workflow) pending = this.workflowPending(workflow, e.pending.detail);
+        else if (this.httpContinuations.has(continuationId)) pending.resumeId = `resume:${continuationId}`;
         output = undefined;
         steps = e.pending.runs;
         verification = { status: "unverified", results: [] };
@@ -1279,19 +1394,19 @@ export class RightClick {
     const ok = !error && verification.status !== "refuted";
     // A refusal says nothing about how the operation behaves.
     // Recorded experience is persisted: errors that echo a credential are stored without it.
-    if (!resumed && !pending && !refusal && !refused && !error?.includes("blocked by execution policy")) this.ledger.record(cap.id, ok, durationMs, error ? scrub(error, sensitiveValues(args)) : error);
+    if (!resumed && !resumedWorkflow && !pending && !refusal && !refused && !error?.includes("blocked by execution policy")) this.ledger.record(cap.id, ok, durationMs, error ? scrub(error, sensitiveValues(args)) : error);
     // Identifier values a successful call accepted and returned link ports across providers.
-    if (!resumed && ok && cap.invoke.kind !== "composite" && cap.invoke.kind !== "goal" && this.graph.identities.observe(cap, args, output)) this.graph.relink();
+    if (!resumed && !resumedWorkflow && ok && cap.invoke.kind !== "composite" && cap.invoke.kind !== "goal" && this.graph.identities.observe(cap, args, output)) this.graph.relink();
     const receipt = await this.chain.append(
       { runId, capability: cap.id, provider: cap.provider, startedAt, durationMs, status: pending ? "pending" : error ? "failed" : "completed", verification: verification.status,
-        ...(resumed ? { resumes: resumed.runId } : {}),
+        ...(resumeRunId ? { resumes: resumeRunId } : {}),
         ...(execution.continuation ? { httpContinuation: execution.continuation } : {}) },
       args,
       error ?? output,
     );
     const rec: RunRecord = {
       runId,
-      ...(resumed ? { resumes: resumed.runId } : {}),
+      ...(resumeRunId ? { resumes: resumeRunId } : {}),
       capability: cap.id,
       provider: cap.provider,
       title: cap.title,
@@ -1313,6 +1428,12 @@ export class RightClick {
       ...(change ? { changedMeaning: change } : {}),
     };
     this.runs.set(runId, rec);
+    if (parent) await this.finishWorkflowStep(parent, rec);
+    if (workflow && !pending) {
+      if (ok || workflow.phase === "checking") this.workflowContinuations.delete(workflow.runId);
+      else workflow.phase = "stopped";
+      try { await this.flush(); } catch { rec.persistence = { status: "failed", detail: "Workflow completion was not persisted." }; }
+    }
     if (execution.continuation?.stopped === "result" && this.httpContinuations.has(continuationId)) {
       this.httpContinuations.delete(continuationId);
       try { await this.flush(); }
@@ -1325,6 +1446,7 @@ export class RightClick {
       status: execution.continuation.stopped, reason: execution.continuation.profile,
       subjects: execution.continuation.requests.map(r => r.capability), runs: [runId], receipt: receipt.hash });
     this.graph.emit(pending ? "run.pending" : "run.completed", { runId, capability: cap.id, title: cap.title, provider: cap.provider, ok, durationMs, verification: verification.status });
+    if (workflow && !resumedWorkflow) this.activeContinuations.delete(workflow.runId);
     this.persist();
     return rec;
   }
@@ -1467,6 +1589,8 @@ export class RightClick {
   runStatus(opts: { runId?: string; limit?: number } = {}) {
     if (opts.runId) {
       const r = this.runs.get(opts.runId);
+      const workflow = this.workflowContinuations.get(opts.runId);
+      if (workflow) return { ...r, runId: workflow.runId, capability: workflow.capability, status: "pending", verification: { status: "unverified", results: [] }, pending: this.workflowPending(workflow) };
       const c = this.httpContinuations.get(opts.runId);
       if (c) return { ...r, runId: c.runId, capability: c.capability, status: "pending", verification: { status: "unverified", results: [] },
         pending: { reason: "http-202", resumeId: `resume:${c.runId}`, expiresAt: c.expiresAt, requestsUsed: c.cursor.used } };
@@ -1484,10 +1608,13 @@ export class RightClick {
       throw new Error(`unknown run: ${opts.runId}`);
     }
     return { recent: [...this.runs.values()].slice(-(opts.limit ?? 20)).reverse().map(({ output, ...r }) => ({ ...r, output: preview(output) })),
+      pendingWorkflows: [...this.workflowContinuations.values()].map(w => ({ runId: w.runId, capability: w.capability, phase: w.phase, next: w.next, pending: this.workflowPending(w) })),
       pendingHttp: [...this.httpContinuations.values()].map(c => ({ runId: c.runId, resumeId: `resume:${c.runId}`, capability: c.capability, expiresAt: c.expiresAt, requestsUsed: c.cursor.used })) };
   }
 
-  private async checkpointHttp(runId: string, cap: Capability, verify: Predicate[], cursor: HttpContinuationCursor | null) {
+  private async checkpointHttp(runId: string, cap: Capability, verify: Predicate[], cursor: HttpContinuationCursor | null, parent?: WorkflowContinuation) {
+    const parentPhase = parent?.phase;
+    if (parent) parent.phase = cursor ? "waiting" : "dispatching";
     const previous = this.httpContinuations.get(runId);
     if (cursor) {
       if (!previous) for (const [id, expired] of this.httpContinuations) {
@@ -1505,6 +1632,7 @@ export class RightClick {
     } else this.httpContinuations.delete(runId);
     try { await this.flush(); }
     catch (e) {
+      if (parent) parent.phase = parentPhase!;
       if (previous) this.httpContinuations.set(runId, previous); else this.httpContinuations.delete(runId);
       throw e;
     }
@@ -1548,11 +1676,15 @@ export class RightClick {
     });
   }
 
-  private async checkWitnesses(witnesses: OutcomeWitness[], inputs: Record<string, unknown>, output: unknown, runIds: string[], net?: Net): Promise<WitnessResult[]> {
-    const providers = new Set<string>();
+  private async checkWitnesses(witnesses: OutcomeWitness[], inputs: Record<string, unknown>, output: unknown, runIds: string[], net?: Net, retainedProviders: string[] = []): Promise<WitnessResult[]> {
+    const providers = new Set<string>(retainedProviders);
     const visit = (id: string) => {
       const r = this.runs.get(id);
-      if (!r) return;
+      if (!r) {
+        const receipt = this.chain.receipts.findLast(r => r.runId === id);
+        if (receipt) providers.add(receipt.provider);
+        return;
+      }
       providers.add(r.provider);
       for (const child of r.steps ?? []) visit(child);
     };
@@ -2175,7 +2307,7 @@ export class RightClick {
     return { id, title, newPowers: delta.newPowers };
   }
 
-  private async runSteps(steps: PlanStep[], resultRef: string, inputs: Record<string, unknown>, confirm?: boolean, activeGoals?: string[], net?: Net) {
+  private async runSteps(steps: PlanStep[], resultRef: string, inputs: Record<string, unknown>, confirm?: boolean, activeGoals?: string[], net?: Net, workflow?: WorkflowContinuation) {
     // Check every known dependency before the first effect, including nested composites.
     for (const step of steps) {
       const cap = this.graph.get(step.capability);
@@ -2183,8 +2315,8 @@ export class RightClick {
       try { this.assertExecution(cap); }
       catch (e) { throw new StepError(cap.id, String((e as Error).message)); }
     }
-    const outputs: unknown[] = [];
-    const runs: string[] = [];
+    const outputs: unknown[] = workflow?.outputs ?? [];
+    const runs: string[] = workflow?.runs ?? [];
     const fanOuts: FanOutReport[] = [];
     // Steps that fanned out hold one output per item; a path reads into each of them.
     const fanned = new Set<number>();
@@ -2195,6 +2327,8 @@ export class RightClick {
       return fanned.has(i) ? (outputs[i] as unknown[]).map((o) => pick(o, m[2] || undefined)) : pick(outputs[i], m[2] || undefined);
     };
     for (const [index, step] of steps.entries()) {
+      if (workflow && index < workflow.next) continue;
+      if (workflow) await this.assertWorkflow(workflow);
       const args: Record<string, unknown> = {};
       for (const b of step.bindings) if (!b.each) args[b.port] = b.value !== undefined ? b.value : resolve(b.from);
       // A required input bound to an earlier step's output that produced nothing there: the
@@ -2211,12 +2345,25 @@ export class RightClick {
       }
       const fan = step.bindings.find((b) => b.each);
       if (!fan) {
-        const r = await this.run(step.capability, args, { confirm, activeGoals, net, planned: true });
-        runs.push(r.runId);
+        let target = step.capability;
+        if (workflow) {
+          if (workflow.phase === "waiting") target = `resume:${workflow.childRunId}`;
+          else {
+            workflow.phase = "dispatching"; workflow.childRunId = this.newRunId();
+            await this.saveWorkflow(workflow);
+            await this.assertWorkflow(workflow, true);
+          }
+        }
+        const r = workflow
+          ? await this.dispatchRun(target, target.startsWith("resume:") ? {} : args, { activeGoals, net, planned: true }, workflow)
+          : await this.run(target, args, { confirm, activeGoals, net, planned: true });
+        if (!workflow) runs.push(r.runId);
         if (r.pending) throw new PendingOutcomeError({ ...r.pending, runs: [...new Set([...runs, ...r.pending.runs])] });
         if (r.refusal) throw new TransportRefused(r.refusal.reason, r.refusal.capability ?? step.capability, [...new Set([...runs, ...r.refusal.runs])]);
         if (r.status === "failed") throw new StepError(r.failedCapability ?? step.capability, `${step.capability}: ${r.error}`);
-        outputs.push(r.output);
+        if (workflow) {
+          if (workflow.phase !== "ready") throw new PendingOutcomeError(this.workflowPending(workflow, "step result could not be retained"));
+        } else outputs.push(r.output);
         continue;
       }
       const { max, shapes } = fan.each!;
@@ -2720,7 +2867,7 @@ export class RightClick {
       .filter((p) => p.source !== "builtin" && p.source !== "platform")
       .map((p) => ({ provider: p, capabilities: p.capabilityIds.map((id) => this.graph.get(id)!).filter(Boolean) }));
     try {
-      await this.store.save({ version: 1, reflections, ledger: this.ledger.toJSON(), receipts: this.chain.receipts.slice(-300), published: [...this.published.values()], meaningChanges: [...this.meaningChanges.values()], activity: this.activity.snapshot(), environment: this.environmentReport, httpContinuations: [...this.httpContinuations.values()], authFingerprints: await this.net.auth.fingerprints(), semantics: SEMANTICS, identities: this.graph.identities.toJSON() });
+      await this.store.save({ version: 1, reflections, ledger: this.ledger.toJSON(), receipts: this.chain.receipts.slice(-300), published: [...this.published.values()], meaningChanges: [...this.meaningChanges.values()], activity: this.activity.snapshot(), environment: this.environmentReport, httpContinuations: [...this.httpContinuations.values()], workflowContinuations: [...this.workflowContinuations.values()], authFingerprints: await this.net.auth.fingerprints(), semantics: SEMANTICS, identities: this.graph.identities.toJSON() });
       this.saveState = "saved";
     } catch (error) {
       this.saveState = "failed";

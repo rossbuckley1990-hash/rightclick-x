@@ -9,10 +9,11 @@ import { createHash } from "node:crypto";
 import { gzipSync, gunzipSync } from "node:zlib";
 import { fileURLToPath } from "node:url";
 
-test("a killed runtime recovers a real HTTP job from FileStore without discovery or a second write", { timeout: 15_000 }, async () => {
+for (const mode of ["leaf", "workflow"]) test(`a killed runtime recovers a real HTTP ${mode} from FileStore without discovery or a repeated effect`, { timeout: 15_000 }, async () => {
   const directory = await mkdtemp(join(tmpdir(), "rcx-http-resume-"));
   const stateFile = join(directory, "state.json");
   const calls: string[] = [];
+  const publications: string[] = [];
   let origin = "", document = "", artifact = Buffer.alloc(0), complete = false, waiting: ServerResponse | undefined;
   let observed!: () => void;
   const polled = new Promise<void>(resolve => { observed = resolve; });
@@ -28,6 +29,9 @@ test("a killed runtime recovers a real HTTP job from FileStore without discovery
         "/enqueue": { post: { operationId: "enqueue", requestBody: { content: { "application/json": { schema: {
           type: "object", properties: { document: { type: "string" } }, required: ["document"],
         } } } }, responses: { ...responseSchema, "202": { description: "Pending" } } } },
+        "/publish": { post: { operationId: "publish", requestBody: { content: { "application/json": { schema: {
+          type: "object", properties: { sha256: { type: "string" } }, required: ["sha256"],
+        } } } }, responses: { "200": { content: { "application/json": { schema: { type: "object", properties: { confirmed: { type: "string" } } } } } } } } },
         "/queue/{ticket}": { get: { operationId: "queue", parameters: [{ name: "ticket", in: "path", required: true, schema: { type: "string" } }], responses: { "303": { description: "Complete" } } } },
         "/files/{ticket}": { get: { operationId: "file", parameters: [{ name: "ticket", in: "path", required: true, schema: { type: "string" } }], responses: responseSchema } },
       } };
@@ -36,6 +40,9 @@ test("a killed runtime recovers a real HTTP job from FileStore without discovery
       document = JSON.parse(body).document;
       artifact = gzipSync(document);
       response.writeHead(202, { location: "/queue/q1", "retry-after": "0" }); response.end(); return;
+    } else if (path === "/publish" && request.method === "POST") {
+      let body = ""; for await (const chunk of request) body += chunk;
+      const sha256 = JSON.parse(body).sha256; publications.push(sha256); value = { confirmed: sha256 };
     } else if (path === "/queue/q1") {
       if (!complete) { waiting = response; observed(); return; }
       response.writeHead(303, { location: "/files/q1", "retry-after": "0" }); response.end(); return;
@@ -46,7 +53,7 @@ test("a killed runtime recovers a real HTTP job from FileStore without discovery
   });
   const children: ReturnType<typeof spawn>[] = [];
   const child = (phase: string) => {
-    const process = spawn(globalThis.process.execPath, [fileURLToPath(new URL("./fixtures/http-resume-client.ts", import.meta.url)), origin, stateFile, phase],
+    const process = spawn(globalThis.process.execPath, [fileURLToPath(new URL("./fixtures/http-resume-client.ts", import.meta.url)), origin, stateFile, phase, mode],
       { env: { PATH: globalThis.process.env.PATH }, stdio: ["ignore", "pipe", "pipe"] });
     children.push(process);
     let stdout = "", stderr = "";
@@ -61,7 +68,14 @@ test("a killed runtime recovers a real HTTP job from FileStore without discovery
     origin = `http://127.0.0.1:${(server.address() as any).port}`;
     const first = child("start");
     await Promise.race([polled, first.done.then(result => { throw new Error("client exited before polling: " + result.stderr); })]);
-    const checkpoint = JSON.parse(await readFile(stateFile, "utf8")).httpContinuations[0];
+    const stored = JSON.parse(await readFile(stateFile, "utf8"));
+    const checkpoint = stored.httpContinuations[0];
+    const parent = mode === "workflow" ? stored.workflowContinuations[0] : undefined;
+    if (parent) {
+      assert.equal(parent.phase, "waiting");
+      assert.equal(parent.next, 0);
+      assert.equal(parent.childRunId, checkpoint.runId);
+    }
     assert.equal(checkpoint.cursor.used, 1);
     assert.equal(checkpoint.cursor.url, origin + "/queue/q1");
     assert.equal(JSON.stringify(checkpoint).includes(document), false);
@@ -78,13 +92,16 @@ test("a killed runtime recovers a real HTTP job from FileStore without discovery
     assert.equal(report.before.status, "pending");
     assert.equal(report.run.status, "completed");
     assert.equal(report.run.verification.status, "checked");
-    assert.equal(report.run.resumes, checkpoint.runId);
-    assert.equal(report.run.output.sha256, createHash("sha256").update(artifact).digest("hex"));
+    assert.equal(report.run.resumes, parent?.runId ?? checkpoint.runId);
+    assert.equal(mode === "workflow" ? report.run.output : report.run.output.sha256, createHash("sha256").update(artifact).digest("hex"));
     assert.equal(gunzipSync(artifact).toString(), document);
     assert.equal(report.receipts.intact, true);
-    assert.deepEqual(calls.slice(before), ["GET /queue/q1", "GET /files/q1"]);
+    assert.deepEqual(calls.slice(before), ["GET /queue/q1", "GET /files/q1", ...(mode === "workflow" ? ["POST /publish"] : [])]);
+    assert.deepEqual(publications, mode === "workflow" ? [createHash("sha256").update(artifact).digest("hex")] : []);
     assert.equal(calls.filter(c => c === "POST /enqueue").length, 1);
-    assert.deepEqual(JSON.parse(await readFile(stateFile, "utf8")).httpContinuations, []);
+    const final = JSON.parse(await readFile(stateFile, "utf8"));
+    assert.deepEqual(final.httpContinuations, []);
+    assert.deepEqual(final.workflowContinuations, []);
   } finally {
     for (const p of children) if (p.exitCode === null && p.signalCode === null) p.kill("SIGKILL");
     waiting?.destroy();

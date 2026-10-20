@@ -66,6 +66,19 @@ export class CapabilityGraph {
   /** Identifier schemes learned from observed values; applied to every capability the graph holds. */
   readonly identities = new IdentityEvidence();
 
+  /** Restore one complete snapshot before checking dependencies. Provider order
+   * is not a lifecycle event: a later entry has not disappeared from the world. */
+  restore(reflections: Reflection[]): void {
+    for (const { provider, capabilities } of reflections) {
+      this.dropProvider(provider.id);
+      for (const cap of capabilities) this.capabilities.set(cap.id, cap);
+      this.providers.set(provider.id, { ...provider, capabilityIds: capabilities.map(c => c.id) });
+    }
+    this.relink();
+    // Removing a broken inner composite can invalidate an earlier outer one.
+    while (this.retireBroken().length) { /* finite: each pass removes nodes */ }
+  }
+
   add(reflection: Reflection): LearnDelta {
     const before = this.measure ? this.powers().total : 0;
     const { provider, capabilities } = reflection;
