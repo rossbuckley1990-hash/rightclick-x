@@ -33,6 +33,11 @@ LIMIT = 65536
 lock = threading.Lock()
 journal = output / "provider.jsonl"
 journal.touch(exist_ok=True)
+if config.get("asyncCompression"):
+    from async_provider import AsyncCompression
+    business = AsyncCompression(private, output)
+else:
+    business = None
 
 
 def append(name, row):
@@ -94,17 +99,23 @@ gate = ActenonGate(verifier=Ed25519PublicKeyVerifier([issuer_public]),
     revocation_checker=lambda proof, _context: authority("revocation", proof=proof.to_dict()),
     effect_protector=EffectProtector(NAMESPACE,
         lambda _reference, request: authority("claim", proof=request.pccb.to_dict(), intent=request.intent.to_dict()), descriptor))
+read_gate = ActenonGate(verifier=Ed25519PublicKeyVerifier([issuer_public]),
+    audience="service:actenon-permit-gateway", issuer="service:actenon-permit", capabilities=("http.get",),
+    replay_protector=ReplayProtector(SqliteReplayStore(private / "replay.db")),
+    revocation_checker=lambda proof, _context: authority("revocation", proof=proof.to_dict())) if business else None
 
 
 class Handler(BaseHTTPRequestHandler):
     def log_message(self, *_args):
         pass
 
-    def reply(self, status, value):
+    def reply(self, status, value, headers=None):
         raw = json.dumps(value, separators=(",", ":")).encode()
         self.send_response(status)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(raw)))
+        for key, value in (headers or {}).items():
+            self.send_header(key, value)
         self.end_headers()
         self.wfile.write(raw)
 
@@ -126,7 +137,14 @@ class Handler(BaseHTTPRequestHandler):
                     "headers": {name: self.headers[name] for name in header_names if name in semantic},
                     "body": base64.b64encode(body).decode()}
             append("resource-requests.jsonl", {"wire": wire, "hasProof": "x-actenon-proof" in self.headers})
+            if business and self.command == "GET" and self.path == "/catalog" and not body:
+                self.reply(200, {"linkset": [{"anchor": origin, "service-desc": [
+                    {"href": origin + "/openapi.json", "type": "application/vnd.oai.openapi+json"}]}]})
+                return
             if self.command == "GET" and self.path == "/openapi.json" and not body:
+                if business:
+                    self.reply(200, business.spec(origin))
+                    return
                 self.reply(200, {"openapi": "3.0.0", "info": {"title": "Protected disposable journal", "version": "1"},
                     "servers": [{"url": origin}], "paths": {"/entries": {"post": {
                         "operationId": "appendEntry", "summary": "Append an entry label",
@@ -153,6 +171,17 @@ class Handler(BaseHTTPRequestHandler):
         executed = {}
 
         def effect():
+            if business:
+                with lock:
+                    status, headers, value = business.dispatch(self.command, self.path, body, proof["pccb_id"])
+                    executed["response"] = (status, headers, value)
+                    digest = hashlib.sha256(journal.read_bytes()).hexdigest()
+                if self.command == "POST":
+                    # COMMITTED means the enqueue effect occurred. It says
+                    # nothing about the worker's eventual artifact.
+                    return {"effect_evidence": {**proof["extensions"]["effect"], "outcome": "COMMITTED",
+                        "execution_occurred": True, "evidence_hash": digest}}
+                return {"transport_status": status}
             # Sole business-effect sink in this process. No other listener,
             # route or public operation can reach the journal writer.
             if self.command != "POST" or self.path != "/entries":
@@ -170,7 +199,7 @@ class Handler(BaseHTTPRequestHandler):
             return {"effect_evidence": {**proof["extensions"]["effect"], "outcome": "COMMITTED",
                     "execution_occurred": True, "evidence_hash": digest}}
 
-        outcome = gate.protect(actual, proof, effect)
+        outcome = (read_gate if business and self.command == "GET" else gate).protect(actual, proof, effect)
         append("edge.jsonl", {"intent": actual.to_dict(), "proof": proof, "outcome": outcome.to_dict()})
         for kind in ("receipt", "refusal"):
             artifact = getattr(outcome, kind)
@@ -189,7 +218,11 @@ class Handler(BaseHTTPRequestHandler):
             self.connection.shutdown(socket.SHUT_RDWR)
             self.connection.close()
             return
-        self.reply(200 if outcome.ok else 403, executed if outcome.ok else {"reason": outcome.reason_code})
+        if outcome.ok and "response" in executed:
+            status, headers, value = executed["response"]
+            self.reply(status, value, headers)
+        else:
+            self.reply(200 if outcome.ok else 403, executed if outcome.ok else {"reason": outcome.reason_code})
 
     do_GET = do_POST = do_PUT = do_DELETE = do_PATCH = do_HEAD = do_OPTIONS = handle_request
 
@@ -204,3 +237,5 @@ try:
     server.serve_forever()
 finally:
     server.server_close()
+    if business:
+        business.close()
