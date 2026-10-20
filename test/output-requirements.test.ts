@@ -102,3 +102,11 @@ test("output metadata does not establish an unrelated input's semantic compatibi
   assert.equal(result.executed, undefined);
   assert.deepEqual(calls, []);
 });
+
+test("a scalar output's literal bracketed name retains the existing leaf satisfaction rule", async () => {
+  const { rc, calls } = await fixture("parcel[]mass");
+  const result = await rc.compose({ ...request, want: "number", run: false, through: [id], require: ["parcel"] });
+  assert.equal(result.outcome?.status, "established");
+  assert.ok(result.plans.some(p => p.result.endsWith(".parcel[]mass")));
+  assert.deepEqual(calls, []);
+});

@@ -63,13 +63,16 @@ export function carries(path: string, term: string): boolean {
 /** Terms no current result could carry. This is only a necessary condition for
  * satisfaction, not evidence of a usable plan. Include unselected and blocked
  * capabilities: projection or policy diagnosis still needs the normal search.
- * Result paths only remove prefixes from these fields/ports, so cannot supply
- * a term absent here. Recompute after discovery; absence is snapshot-local. */
+ * Result paths only remove prefixes from declared fields; leaf results can
+ * also use a literal port name. Recompute after discovery: absence is local
+ * to the snapshot, not a claim about undiscovered providers. */
 export function undeclaredRequirements(graph: CapabilityGraph, require: string[]): string[] {
   if (!require.length) return [];
   let missing = [...require];
   for (const cap of graph.capabilities.values()) {
-    const fields = resultFields(cap, "");
+    // Keep raw names too: resultFields normalises [] in declarations, but its
+    // leaf fallback retains literal brackets (e.g. a key named parcel[]mass).
+    const fields = [...resultFields(cap, ""), ...cap.outputs.map(p => ({ path: p.name }))];
     missing = missing.filter(term => !fields.some(f => carries(f.path, term)));
     if (!missing.length) break;
   }
