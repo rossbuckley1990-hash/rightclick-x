@@ -1,0 +1,53 @@
+✖ pending HTTP result resumes after restart through the same compact tool without resubmitting (17.999ms)
+✖ restart does not renew authority or permit changed result contracts (3.351208ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 0
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 175.298
+
+✖ failing tests:
+
+test at test/http-resume.test.ts:31:1
+✖ pending HTTP result resumes after restart through the same compact tool without resubmitting (17.999ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + undefined
+  - 'run_mvgos2rs_1'
+  
+      at TestContext.<anonymous> (file:///Users/ross/src/rightclick-x-adaptive/test/http-resume.test.ts:35:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: 'run_mvgos2rs_1',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/http-resume.test.ts:53:1
+✖ restart does not renew authority or permit changed result contracts (3.351208ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + [
+  +   'POST /pack',
+  +   'GET /tasks/t1'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///Users/ross/src/rightclick-x-adaptive/test/http-resume.test.ts:65:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ 'POST /pack', 'GET /tasks/t1' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

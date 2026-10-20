@@ -164,3 +164,21 @@ exact proofs on writes and follow-up reads. The checker reads compressed files,
 request logs and native signed artifacts without importing RightClick or the
 harness. It is a separate implementation by the same author, not an independent
 holdout. See [results, failures, measurements and limits](../../docs/adaptive/PROTECTED-ASYNC.md).
+
+
+## Reproduce protected HTTP restart recovery
+
+```sh
+/absolute/audit-root/.venv/bin/python experiments/actenon/resume.py \
+  --image sha256:5e95a1b7bdb5ddd279c4c18760a007a98f94c6fb24236433c19b61831bc4e4f5 \
+  --output /absolute/new-http-resume-evidence
+/absolute/audit-root/.venv/bin/python experiments/actenon/check-resume.py \
+  /absolute/new-http-resume-evidence
+```
+
+This uses the same pinned local environment and protected resource. Fresh Node
+containers restore a pending HTTP leaf, refuse under revoked authority and
+complete only after new operator authority. It is distinct from native ambiguous
+effect reconciliation and from continuing a whole workflow. The real SIGKILL
+and FileStore test is `node --test test/http-resume-process.test.ts`.
+See [results, preserved failures and exact scope](../../docs/adaptive/HTTP-RESUME.md).
