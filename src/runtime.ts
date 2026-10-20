@@ -28,7 +28,7 @@ import { discover, type Discovery, type SourceKind } from "./reflectors/discover
 import { environmentNet, environmentOptions, observeCatalog, type EnvironmentOptions, type EnvironmentReport } from "./reflectors/environment.ts";
 import { buildDocument, checkSelection } from "./reflectors/graphql.ts";
 import { McpClient } from "./reflectors/mcp.ts";
-import { continuationPolicy, continuationTargets, followHttp202, type HttpContinuationOptions, type HttpContinuationEvidence, type ContinuationPolicy } from "./reflectors/http-continuation.ts";
+import { continuationPolicy, continuationTargets, followHttp202, httpContractDigest, validHttpCursor, type HttpContinuationCursor, type HttpContinuationOptions, type HttpContinuationEvidence, type ContinuationPolicy } from "./reflectors/http-continuation.ts";
 import { Authority, cancelBody, readBody, refuseDeniedResponse, request, TransportRefused, type Net, type NetworkPolicy } from "./reflectors/net.ts";
 import { detectRuntime, platformReflection, type PlatformFn, type RuntimeInfo } from "./reflectors/platform.ts";
 
@@ -59,6 +59,32 @@ export interface PersistedState {
   activity?: ActivityState;
   /** Observations only; host discovery configuration and execution authority are never restored from this. */
   environment?: EnvironmentReport;
+  /** Explicit resumable HTTP reads; never original bodies, credentials or grants. */
+  httpContinuations?: HttpRunContinuation[];
+}
+
+export interface HttpRunContinuation {
+  runId: string;
+  capability: string;
+  contractDigest: string;
+  createdAt: number;
+  expiresAt: number;
+  cursor: HttpContinuationCursor;
+  verify: Predicate[];
+}
+interface HttpExecution {
+  signal?: AbortSignal;
+  continuation?: HttpContinuationEvidence;
+  checkpoint?: (cursor: HttpContinuationCursor | null) => Promise<void>;
+}
+function validHttpRun(c: HttpRunContinuation): boolean {
+  try {
+    return typeof c.runId === "string" && c.runId.length <= 128 && typeof c.capability === "string" &&
+      c.capability.length <= 512 && /^[a-f0-9]{64}$/.test(c.contractDigest) &&
+      Number.isFinite(c.createdAt) && Number.isFinite(c.expiresAt) && c.expiresAt >= c.createdAt &&
+      c.expiresAt - c.createdAt <= 3_600_000 && validHttpCursor(c.cursor) &&
+      Array.isArray(c.verify) && c.verify.length <= 32 && JSON.stringify(c).length <= 65_536;
+  } catch { return false; }
 }
 
 /**
@@ -194,6 +220,8 @@ export interface RunRecord {
   pending?: PendingOutcome;
   httpContinuation?: HttpContinuationEvidence;
   refusal?: TransportRefusal;
+  resumes?: string;
+  persistence?: { status: "failed"; detail: string };
   output?: unknown;
   error?: string;
   startedAt: string;
@@ -235,6 +263,8 @@ export interface PendingOutcome {
   reason: "http-202" | "peer-pending" | "witness-pending";
   runs: string[];
   continuation?: HttpContinuationEvidence;
+  /** Resumes this HTTP leaf only, not its parent workflow or original write. */
+  resumeId?: string;
 }
 
 class PendingOutcomeError extends StepError {
@@ -390,6 +420,8 @@ export class RightClick {
   readonly ledger = new Ledger();
   readonly chain = new ReceiptChain();
   readonly runs = new Map<string, RunRecord>();
+  private httpContinuations = new Map<string, HttpRunContinuation>();
+  private activeContinuations = new Set<string>();
   readonly activity = new ActivityLog();
   private observing = false;
   readonly net: Net;
@@ -470,6 +502,9 @@ export class RightClick {
       for (const r of saved.reflections) rc.graph.add(r);
       rc.ledger.load(saved.ledger);
       rc.chain.restore(saved.receipts ?? []);
+      if (!stale && Array.isArray(saved.httpContinuations)) for (const c of saved.httpContinuations.slice(-64)) {
+        if (validHttpRun(c)) rc.httpContinuations.set(c.runId, structuredClone(c));
+      }
       for (const g of saved.published ?? []) {
         rc.published.set(g.slug, g);
         rc.registerGoal(g);
@@ -1100,11 +1135,23 @@ export class RightClick {
   // ================================================================ context_run
 
   async run(id: string, args: Record<string, unknown> = {}, opts: RunOptions = {}): Promise<RunRecord> {
+    // Older runtimes reject this id instead of ignoring a new option and
+    // accidentally submitting the ordinary action again.
+    if ("resumeRunId" in opts) throw new Error("resume uses the explicit resume:<run-id> selector");
+    const resumeRunId = typeof id === "string" && id.startsWith("resume:") ? id.slice(7) : undefined;
+    if (resumeRunId !== undefined) {
+      const pending = this.httpContinuations.get(resumeRunId);
+      if (!pending) throw new Error(`no resumable HTTP operation: ${resumeRunId}`);
+      if (Object.keys(args).length || opts.verify !== undefined || opts.confirm !== undefined) throw new Error("resume cannot change inputs or stored checks");
+      if (this.activeContinuations.has(resumeRunId)) throw new Error("HTTP continuation is already active");
+      this.activeContinuations.add(resumeRunId);
+      id = pending.capability;
+    }
     const cap = this.graph.get(id);
     const contracts = cap ? [reference(cap)] : [];
     const request = this.activity.append({ kind: "execution.requested", status: "requested", subjects: [id], contracts });
     try {
-      const rec = await this.runNow(id, args, opts);
+      const rec = await this.runNow(id, args, opts, resumeRunId);
       const dependencies = this.observedRuns([...(rec.steps ?? []), ...(rec.witnesses ?? []).map(w => w.runId)]);
       this.activity.append({ kind: "execution.finished", related: request.id, subjects: [id], providers: [rec.provider], runs: [rec.runId], contracts: [...contracts, ...dependencies.contracts], truncated: dependencies.truncated,
         status: rec.status === "pending" ? "pending" : rec.status === "completed" ? "completed" : rec.changedMeaning || rec.error?.includes("blocked by execution policy") ? "refused" : "failed",
@@ -1116,10 +1163,14 @@ export class RightClick {
       this.activity.append({ kind: "execution.finished", related: request.id, subjects: [id], contracts,
         status: e instanceof ConfirmationRequired || !cap ? "refused" : "failed", reason: e instanceof ConfirmationRequired ? "destructive-approval-required" : !cap ? "unknown-capability" : "execution-error" });
       throw e;
-    } finally { this.persist(); }
+    } finally {
+      if (resumeRunId) this.activeContinuations.delete(resumeRunId);
+      this.persist();
+    }
   }
 
-  private async runNow(id: string, args: Record<string, unknown>, opts: RunOptions): Promise<RunRecord> {
+  private async runNow(id: string, args: Record<string, unknown>, opts: RunOptions, resumeRunId?: string): Promise<RunRecord> {
+    const resumed = resumeRunId ? structuredClone(this.httpContinuations.get(resumeRunId)!) : undefined;
     const cap = this.graph.get(id);
     if (!cap) throw new Error(`unknown capability: ${id}`);
     // Destructive effects keep the user's authority. The agent may ask (confirm), but under the
@@ -1144,11 +1195,25 @@ export class RightClick {
     let healing: RunRecord["healing"];
     let pending: PendingOutcome | undefined;
     let refusal: TransportRefusal | undefined;
-    const execution: { signal?: AbortSignal; continuation?: HttpContinuationEvidence } = { signal: opts.signal };
+    const continuationId = resumed?.runId ?? runId;
+    const original = structuredClone(cap);
+    const execution: HttpExecution = { signal: opts.signal };
+    if (this.store && cap.invoke.kind === "http" && !cap.invoke.entry) execution.checkpoint = cursor =>
+      this.checkpointHttp(continuationId, original, resumed?.verify ?? opts.verify ?? [], cursor);
     try {
-      this.assertExecution(cap);
-      if (refused) throw new Error(refused);
-      const coerced = coerceArgs(cap, args);
+      if (resumed) {
+        const stop = (reason: HttpContinuationEvidence["stopped"]): never => {
+          execution.continuation = { profile: "http-202-303", stopped: reason, requests: [] };
+          throw new PendingOutcomeError({ capability: id, reason: "http-202", runs: [continuationId], continuation: execution.continuation, resumeId: `resume:${continuationId}` });
+        };
+        if (Date.now() >= resumed.expiresAt || resumed.cursor.used >= 32) stop("budget");
+        if (refused || await httpContractDigest(cap) !== resumed.contractDigest) stop("changed-contract");
+        try { this.assertExecution(cap); } catch { stop("denied"); }
+      } else {
+        this.assertExecution(cap);
+        if (refused) throw new Error(refused);
+      }
+      const coerced = resumed ? {} : coerceArgs(cap, args);
       if (cap.invoke.kind === "goal") {
         const r = await this.executeGoal(cap.invoke.slug, coerced, opts.confirm, opts.activeGoals);
         output = r.executed?.output;
@@ -1175,8 +1240,9 @@ export class RightClick {
         if (witnesses.some((w) => w.status !== "completed")) throw new Error("independent outcome witness refuted: " + witnesses.filter((w) => w.status !== "completed").map((w) => w.error ?? w.capability).join("; "));
         if (witnesses.length) verification = { ...verification, status: "verified" };
       } else {
+        this.activeContinuations.add(continuationId);
         try {
-          output = await this.execute(cap, coerced, opts.net, execution);
+          output = resumed ? await this.resumeHttp(resumed, cap, opts.net, execution) : await this.execute(cap, coerced, opts.net, execution);
         } catch (e) {
           // A caller's own mistake (an undocumented option, a literal that looks like an option)
           // says nothing about the provider: no repair, no re-investigation.
@@ -1185,9 +1251,9 @@ export class RightClick {
           healing = h.healing;
           if (!h.healed) throw new Error(`${healing.error}; ${healing.note}`);
           output = h.output;
-        }
+        } finally { if (!resumed) this.activeContinuations.delete(continuationId); }
       }
-      const extra = check(output, opts.verify ?? []);
+      const extra = check(output, resumed?.verify ?? opts.verify ?? []);
       verification = { status: extra.status === "refuted" ? "refuted" : verification.status === "verified" ? "verified" : verification.status === "checked" || extra.status === "checked" ? "checked" : "unverified", results: [...verification.results, ...extra.results] };
       if (verification.status === "refuted") throw new Error("verification refuted: " + JSON.stringify(extra.results.filter((p) => !p.ok)));
     } catch (e) {
@@ -1195,6 +1261,7 @@ export class RightClick {
       if (e instanceof StepError) failedCapability = e.capability;
       if (e instanceof PendingOutcomeError) {
         pending = { ...e.pending, runs: [...new Set([...e.pending.runs, runId])].slice(-128) };
+        if (this.httpContinuations.has(continuationId)) pending.resumeId = `resume:${continuationId}`;
         output = undefined;
         steps = e.pending.runs;
         verification = { status: "unverified", results: [] };
@@ -1210,17 +1277,19 @@ export class RightClick {
     const ok = !error && verification.status !== "refuted";
     // A refusal says nothing about how the operation behaves.
     // Recorded experience is persisted: errors that echo a credential are stored without it.
-    if (!pending && !refusal && !refused && !error?.includes("blocked by execution policy")) this.ledger.record(cap.id, ok, durationMs, error ? scrub(error, sensitiveValues(args)) : error);
+    if (!resumed && !pending && !refusal && !refused && !error?.includes("blocked by execution policy")) this.ledger.record(cap.id, ok, durationMs, error ? scrub(error, sensitiveValues(args)) : error);
     // Identifier values a successful call accepted and returned link ports across providers.
-    if (ok && cap.invoke.kind !== "composite" && cap.invoke.kind !== "goal" && this.graph.identities.observe(cap, args, output)) this.graph.relink();
+    if (!resumed && ok && cap.invoke.kind !== "composite" && cap.invoke.kind !== "goal" && this.graph.identities.observe(cap, args, output)) this.graph.relink();
     const receipt = await this.chain.append(
       { runId, capability: cap.id, provider: cap.provider, startedAt, durationMs, status: pending ? "pending" : error ? "failed" : "completed", verification: verification.status,
+        ...(resumed ? { resumes: resumed.runId } : {}),
         ...(execution.continuation ? { httpContinuation: execution.continuation } : {}) },
       args,
       error ?? output,
     );
     const rec: RunRecord = {
       runId,
+      ...(resumed ? { resumes: resumed.runId } : {}),
       capability: cap.id,
       provider: cap.provider,
       title: cap.title,
@@ -1242,6 +1311,13 @@ export class RightClick {
       ...(change ? { changedMeaning: change } : {}),
     };
     this.runs.set(runId, rec);
+    if (execution.continuation?.stopped === "result" && this.httpContinuations.has(continuationId)) {
+      this.httpContinuations.delete(continuationId);
+      try { await this.flush(); }
+      catch {
+        rec.persistence = { status: "failed", detail: "Completion was observed but not persisted; the retained read may be repeated after restart." };
+      }
+    }
     if (this.runs.size > RUN_BUFFER) this.runs.delete(this.runs.keys().next().value!);
     if (execution.continuation) this.activity.append({ kind: "execution.continuation",
       status: execution.continuation.stopped, reason: execution.continuation.profile,
@@ -1341,7 +1417,7 @@ export class RightClick {
     return out;
   }
 
-  private async healRun(cap: Capability, args: Record<string, unknown>, error: string, net: Net = this.net, execution: { signal?: AbortSignal; continuation?: HttpContinuationEvidence } = {}): Promise<{ healing: NonNullable<RunRecord["healing"]>; healed: boolean; output?: unknown }> {
+  private async healRun(cap: Capability, args: Record<string, unknown>, error: string, net: Net = this.net, execution: HttpExecution = {}): Promise<{ healing: NonNullable<RunRecord["healing"]>; healed: boolean; output?: unknown }> {
     const provider = this.graph.providers.get(cap.provider);
     // A call that can change state may have taken effect before it failed: send it again only if
     // the failure proves it was not applied, or the operator declared it side-effect-free.
@@ -1389,10 +1465,57 @@ export class RightClick {
   runStatus(opts: { runId?: string; limit?: number } = {}) {
     if (opts.runId) {
       const r = this.runs.get(opts.runId);
-      if (!r) throw new Error(`unknown run: ${opts.runId}`);
-      return r;
+      const c = this.httpContinuations.get(opts.runId);
+      if (c) return { ...r, runId: c.runId, capability: c.capability, status: "pending", verification: { status: "unverified", results: [] },
+        pending: { reason: "http-202", resumeId: `resume:${c.runId}`, expiresAt: c.expiresAt, requestsUsed: c.cursor.used } };
+      const continuation = this.chain.receipts.findLast(receipt => receipt.resumes === opts.runId);
+      if (continuation) {
+        const completed = this.runs.get(continuation.runId);
+        return { runId: opts.runId, capability: continuation.capability, status: continuation.status, resumedBy: continuation.runId,
+          verification: { status: continuation.verification, results: completed?.verification.results ?? [] },
+          output: completed?.output, outputUnavailable: !completed, receipt: continuation };
+      }
+      if (r) return r;
+      const receipt = this.chain.receipts.findLast(r => r.runId === opts.runId);
+      if (receipt) return { runId: receipt.runId, capability: receipt.capability, status: receipt.status,
+        verification: { status: receipt.verification, results: [] }, receipt, outputUnavailable: true };
+      throw new Error(`unknown run: ${opts.runId}`);
     }
-    return { recent: [...this.runs.values()].slice(-(opts.limit ?? 20)).reverse().map(({ output, ...r }) => ({ ...r, output: preview(output) })) };
+    return { recent: [...this.runs.values()].slice(-(opts.limit ?? 20)).reverse().map(({ output, ...r }) => ({ ...r, output: preview(output) })),
+      pendingHttp: [...this.httpContinuations.values()].map(c => ({ runId: c.runId, resumeId: `resume:${c.runId}`, capability: c.capability, expiresAt: c.expiresAt, requestsUsed: c.cursor.used })) };
+  }
+
+  private async checkpointHttp(runId: string, cap: Capability, verify: Predicate[], cursor: HttpContinuationCursor | null) {
+    const previous = this.httpContinuations.get(runId);
+    if (cursor) {
+      if (!previous && this.httpContinuations.size >= 64) throw new Error("HTTP continuation storage is full");
+      const createdAt = previous?.createdAt ?? Date.now();
+      const next: HttpRunContinuation = { runId, capability: cap.id, contractDigest: await httpContractDigest(cap),
+        createdAt, expiresAt: previous?.expiresAt ?? createdAt + 3_600_000, cursor: structuredClone(cursor), verify: structuredClone(verify) };
+      if (!validHttpRun(next)) throw new Error("unsupported HTTP continuation checkpoint");
+      this.httpContinuations.set(runId, next);
+    } else this.httpContinuations.delete(runId);
+    try { await this.flush(); }
+    catch (e) {
+      if (previous) this.httpContinuations.set(runId, previous); else this.httpContinuations.delete(runId);
+      throw e;
+    }
+  }
+
+  private async resumeHttp(state: HttpRunContinuation, cap: Capability, net: Net = this.net, execution: HttpExecution) {
+    const followed = await followHttp202({ response: new Response(null, { status: state.cursor.result ? 303 : 202,
+      headers: { location: state.cursor.url } }), url: state.cursor.origin + "/", resume: state.cursor,
+      targets: continuationTargets(cap, this.graph.list()), net, policy: this.httpContinuation, signal: execution.signal,
+      checkpoint: execution.checkpoint, current: id => this.graph.get(id), authorize: (target, values) => {
+        this.assertExecution(target);
+        const refusal = this.changedMeaningRefusal(target.id);
+        if (refusal) throw new Error(refusal);
+        coerceArgs(target, values);
+      } });
+    execution.continuation = followed.evidence;
+    if (followed.evidence.stopped !== "result") throw new PendingOutcomeError({ capability: cap.id, reason: "http-202", runs: [state.runId],
+      continuation: followed.evidence, ...(this.httpContinuations.has(state.runId) ? { resumeId: `resume:${state.runId}` } : {}) });
+    return followed.output;
   }
 
   async verifyReceipts() {
@@ -2351,7 +2474,7 @@ export class RightClick {
     return c;
   }
 
-  private async execute(cap: Capability, args: Record<string, unknown>, net: Net = this.net, execution: { signal?: AbortSignal; continuation?: HttpContinuationEvidence } = {}): Promise<unknown> {
+  private async execute(cap: Capability, args: Record<string, unknown>, net: Net = this.net, execution: HttpExecution = {}): Promise<unknown> {
     // Also guards internal repair, which calls execute directly after re-reflection.
     this.assertExecution(cap);
     const origins = intersectOrigins(this.net.policy?.origins, net.policy?.origins);
@@ -2405,6 +2528,7 @@ export class RightClick {
         let out: unknown;
         if (res.status === 202) {
           const followed = await followHttp202({ response: res, url: u.toString(), targets, net, policy: this.httpContinuation,
+            checkpoint: execution.checkpoint,
             current: id => this.graph.get(id), signal: execution.signal, authorize: (target, values) => {
               this.assertExecution(target);
               const refusal = this.changedMeaningRefusal(target.id);
@@ -2585,7 +2709,7 @@ export class RightClick {
     const reflections: Reflection[] = [...this.graph.providers.values()]
       .filter((p) => p.source !== "builtin" && p.source !== "platform")
       .map((p) => ({ provider: p, capabilities: p.capabilityIds.map((id) => this.graph.get(id)!).filter(Boolean) }));
-    await this.store.save({ version: 1, reflections, ledger: this.ledger.toJSON(), receipts: this.chain.receipts.slice(-300), published: [...this.published.values()], meaningChanges: [...this.meaningChanges.values()], activity: this.activity.snapshot(), environment: this.environmentReport, authFingerprints: await this.net.auth.fingerprints(), semantics: SEMANTICS, identities: this.graph.identities.toJSON() });
+    await this.store.save({ version: 1, reflections, ledger: this.ledger.toJSON(), receipts: this.chain.receipts.slice(-300), published: [...this.published.values()], meaningChanges: [...this.meaningChanges.values()], activity: this.activity.snapshot(), environment: this.environmentReport, httpContinuations: [...this.httpContinuations.values()], authFingerprints: await this.net.auth.fingerprints(), semantics: SEMANTICS, identities: this.graph.identities.toJSON() });
   }
 }
 

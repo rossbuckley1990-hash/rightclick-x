@@ -9,7 +9,7 @@ import { cancelBody, readBody, request, TransportRefused, type Net } from "./net
 export interface HttpContinuationOptions { maxRequests?: number; timeoutMs?: number }
 export interface HttpContinuationEvidence {
   profile: "http-202-303";
-  stopped: "result" | "disabled" | "no-location" | "unknown-target" | "changed-contract" | "denied" | "rate-limited" | "budget" | "cancelled" | "unavailable" | "monitor-response" | "unsupported-status";
+  stopped: "result" | "disabled" | "no-location" | "unknown-target" | "changed-contract" | "denied" | "rate-limited" | "budget" | "cancelled" | "unavailable" | "monitor-response" | "unsupported-status" | "checkpoint-unavailable";
   requests: Array<{ capability: string; contractDigest: string; actionDigest: string; status?: number }>;
 }
 export type ContinuationPolicy = { maxRequests: number; timeoutMs: number };
@@ -32,6 +32,28 @@ export function continuationTargets(cap: Capability, graph: Capability[]) {
   return candidates.map(c => ({ cap: structuredClone(c), signature: contractIdentity(c) }));
 }
 type Target = ReturnType<typeof continuationTargets>[number];
+/** Stored routing evidence, never credentials, a grant, or the original write. */
+export interface HttpContinuationCursor {
+  version: 1;
+  origin: string;
+  url: string;
+  result: boolean;
+  notBefore: number;
+  used: number;
+  targets: Array<{ id: string; digest: string }>;
+}
+export function validHttpCursor(c: HttpContinuationCursor): boolean {
+  try {
+    const url = new URL(c.url), origin = new URL(c.origin);
+    return c.version === 1 && ["http:", "https:"].includes(url.protocol) && origin.origin === c.origin &&
+      url.origin === c.origin && !url.username && !url.password && !url.hash && c.url.length <= 4096 &&
+      typeof c.result === "boolean" && Number.isFinite(c.notBefore) && c.notBefore >= 0 &&
+      Number.isInteger(c.used) && c.used >= 0 && c.used <= 32 && Array.isArray(c.targets) &&
+      c.targets.length > 0 && c.targets.length <= 128 && new Set(c.targets.map(t => t.id)).size === c.targets.length &&
+      c.targets.every(t => typeof t.id === "string" && t.id.length <= 512 && /^[a-f0-9]{64}$/.test(t.digest));
+  } catch { return false; }
+}
+export async function httpContractDigest(c: Capability): Promise<string> { return sha256(contractIdentity(c)); }
 // Exact local comparison, including risk/provider. This is not an authority
 // signature or proof. Use the existing receipt digest only for recorded evidence.
 function contractIdentity(c: Capability) {
@@ -94,37 +116,63 @@ export async function followHttp202(opts: {
   current: (id: string) => Capability | undefined;
   authorize: (cap: Capability, args: Record<string, string>) => void;
   signal?: AbortSignal;
+  resume?: HttpContinuationCursor;
+  checkpoint?: (cursor: HttpContinuationCursor | null) => Promise<void>;
 }): Promise<{ evidence: HttpContinuationEvidence; output?: unknown }> {
   const evidence: HttpContinuationEvidence = { profile: "http-202-303", stopped: "disabled", requests: [] };
-  const stop = (reason: HttpContinuationEvidence["stopped"], res?: Response) => {
+  const save = async (cursor: HttpContinuationCursor | null) => {
+    try { await opts.checkpoint?.(cursor); return true; }
+    catch { return false; }
+  };
+  const stop = async (reason: HttpContinuationEvidence["stopped"], res?: Response) => {
     if (res) cancelBody(res);
+    // An unsupported response is not evidence for replaying the prior GET later.
+    if (["no-location", "unknown-target", "monitor-response", "unsupported-status"].includes(reason) && !await save(null)) reason = "checkpoint-unavailable";
     evidence.stopped = reason;
     return { evidence };
   };
   let res = opts.response, url = opts.url, result = false;
   const origin = new URL(url).origin, deadline = Date.now() + opts.policy.timeoutMs;
   if (!opts.policy.maxRequests) return stop("disabled", res);
+  let targets = opts.targets;
+  if (opts.resume) {
+    if (!validHttpCursor(opts.resume) || opts.resume.origin !== origin) return stop("unknown-target", res);
+    targets = targets.filter(t => opts.resume!.targets.some(old => old.id === t.cap.id));
+    if (targets.length !== opts.resume.targets.length) return stop("changed-contract", res);
+    for (const t of targets) if (await sha256(t.signature) !== opts.resume.targets.find(old => old.id === t.cap.id)!.digest) return stop("changed-contract", res);
+  }
+  const recorded = await Promise.all(targets.map(async t => ({ id: t.cap.id, digest: await sha256(t.signature) })));
+  const used = opts.resume?.used ?? 0;
   // The initial transport may already have followed a redirect. This profile
   // does not guess a continuation context for that different resource.
   if (res.url && res.url !== url) return stop("unknown-target", res);
-  for (let i = 0; i < opts.policy.maxRequests; i++) {
-    if (opts.signal?.aborted) return stop("cancelled", res);
+  for (let i = 0; i <= opts.policy.maxRequests; i++) {
     const location = res.headers.get("location");
     if (!location && (i === 0 || res.status === 303)) return stop("no-location", res);
     let next: URL, match: Array<{ target: Target; args: Record<string, string> }>;
     try {
       next = new URL(location ?? url, url);
       if (next.origin !== origin || next.username || next.password || next.hash || next.href.length > 4096) return stop("unknown-target", res);
-      match = opts.targets.flatMap(target => {
+      match = targets.flatMap(target => {
         const args = routeArgs(target.cap, next);
         return args ? [{ target, args }] : [];
       });
     } catch { return stop("unknown-target", res); }
     if (match.length !== 1) return stop("unknown-target", res);
     const { target, args } = match[0];
-    const pause = delay(res);
-    if (!Number.isFinite(pause) || Date.now() + pause >= deadline) return stop("budget", res);
+    const pause = i === 0 && opts.resume ? Math.max(0, opts.resume.notBefore - Date.now()) : delay(res);
+    if (!Number.isFinite(pause)) {
+      if (!await save(null)) return stop("checkpoint-unavailable", res);
+      return stop("budget", res);
+    }
     result = res.status === 303;
+    const cursor: HttpContinuationCursor = { version: 1, origin, url: next.href, result,
+      notBefore: Date.now() + pause, used: used + i, targets: recorded };
+    // Persist acceptance/progress before waiting, and reserve the read attempt
+    // before dispatch. A crash may repeat only this read under fresh authority.
+    if (!await save(cursor)) return stop("checkpoint-unavailable", res);
+    if (opts.signal?.aborted) return stop("cancelled", res);
+    if (i === opts.policy.maxRequests || cursor.used >= 32 || cursor.notBefore >= deadline) return stop("budget", res);
     cancelBody(res);
     try { await wait(pause, opts.signal); }
     catch { return stop("cancelled"); }
@@ -140,6 +188,14 @@ export async function followHttp202(opts: {
     catch { return stop("denied"); }
     if (opts.signal?.aborted) return stop("cancelled");
     if (Date.now() >= deadline) return stop("budget");
+    if (!await save({ ...cursor, used: cursor.used + 1 })) return stop("checkpoint-unavailable");
+    // Persistence yields too: no authority/contract check may be stale at dispatch.
+    const latest = opts.current(target.cap.id);
+    if (!latest || contractIdentity(latest) !== target.signature) return stop("changed-contract");
+    try { opts.authorize(latest, args); }
+    catch { return stop("denied"); }
+    if (opts.signal?.aborted) return stop("cancelled");
+    if (Date.now() >= deadline) return stop("budget");
     evidence.requests.push(observation);
     try {
       // No caller headers, content-negotiation retry, automatic redirects or
@@ -152,11 +208,16 @@ export async function followHttp202(opts: {
         if (!result) return stop("monitor-response", res);
         const output = await readBody(res, 16 * 1024 * 1024);
         if (output === "" || output === undefined) return stop("unsupported-status");
-        evidence.stopped = "result";
+        const stopped = await stop("result");
+        if (stopped.evidence.stopped !== "result") return stopped;
         return { evidence, output };
       }
       if (res.status === 401 || res.status === 403) return stop("denied", res);
-      if (res.status === 429) return stop("rate-limited", res);
+      if (res.status === 429) {
+        const backoff = delay(res);
+        if (!await save(Number.isFinite(backoff) ? { ...cursor, used: cursor.used + 1, notBefore: Date.now() + backoff } : null)) return stop("checkpoint-unavailable", res);
+        return stop("rate-limited", res);
+      }
       if (res.status >= 500 || res.status === 404 || res.status === 410) return stop("unavailable", res);
       if (res.status !== 202 && res.status !== 303) return stop("unsupported-status", res);
     } catch (error) {
