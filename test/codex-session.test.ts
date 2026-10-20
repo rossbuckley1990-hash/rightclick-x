@@ -2,6 +2,16 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { benchmarkServer, codexEvents, codexSummary, inspectCodeMode, toml } from "../experiments/north-star/codex-session.ts";
 
+test("Code Mode distinguishes an explicit data key from an execution reference", () => {
+  const allowed = "mcp__rightclick-x";
+  assert.deepEqual(inspectCodeMode('const r=await tools.mcp__rightclick_x__context_compose({have:{entry_id:"X"},require:["publisher"],run:true}); text(r);', allowed), []);
+  for (const code of [
+    'require("node:fs")', 'const a={require}', 'const a={[require]:1}',
+    'const a={require:process}', 'const a={require:()=>require("fs")}',
+    'const a={require:1}; globalThis.require("fs")',
+  ]) assert.ok(inspectCodeMode(code, allowed).length, code);
+});
+
 test("Codex accounting includes cached input once and never substitutes missing usage", () => {
   const events = [
     { type: "item.completed", item: { type: "agent_message", text: "ANSWER: value" } },

@@ -42,7 +42,10 @@ export function inspectCodeMode(code: string, allowed: string): string[] {
   const visit = (node: ts.Node) => {
     if (node.kind === ts.SyntaxKind.ImportKeyword || ts.isImportDeclaration(node)) violations.add("general execution primitive: manual review required");
     if (ts.isIdentifier(node)) {
-      if (forbidden.has(node.text)) violations.add("general execution primitive: manual review required");
+      // A literal argument key (context_compose's require, for example) does
+      // not evaluate that identifier. Shorthand/computed keys and values do.
+      const dataKey = ts.isPropertyAssignment(node.parent) && node.parent.name === node;
+      if (forbidden.has(node.text) && !dataKey) violations.add("general execution primitive: manual review required");
       if (node.text === "tools") {
         const parent = node.parent;
         if (!ts.isPropertyAccessExpression(parent) || parent.expression !== node) violations.add("dynamic tool access: manual review required");
