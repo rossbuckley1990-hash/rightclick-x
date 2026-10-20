@@ -1,0 +1,281 @@
+
+> rightclick-x@0.1.0 test
+> node --test test/*.test.ts
+
+✔ a server that fails content negotiation on a multi-type Accept is retried with the first type, for safe methods only (36.365583ms)
+✔ OpenAPI 3 without servers: the base is settled by probing, origin first, then the contract's own directory (4.721916ms)
+✔ GraphQL: the default selection is bounded but never silent; a caller-supplied selection reaches fields beyond it (6.687625ms)
+✖ SSE GET: http MCP probe cannot suppress GraphQL or execute a tool (54.716542ms)
+✖ SSE GET: rpc-error MCP probe cannot suppress GraphQL or execute a tool (6.280542ms)
+✖ SSE GET: wrong-id MCP probe cannot suppress GraphQL or execute a tool (2.416042ms)
+✖ SSE GET: missing-tools MCP probe cannot suppress GraphQL or execute a tool (1.00675ms)
+✖ SSE GET: stalled MCP probe cannot suppress GraphQL or execute a tool (1.137125ms)
+✔ stalled GraphQL body cannot suppress a valid MCP capability (86.348083ms)
+✖ web form capabilities survive failed protocol probes (167.782791ms)
+✔ OpenAPI remains definitive and sends no unrelated POST probes (3.623458ms)
+✔ MCP streams: fragmented UTF-8, multiline data, "\n" framing, no EOF (7.540292ms)
+✔ MCP streams: fragmented UTF-8, multiline data, "\r\n" framing, no EOF (11.369917ms)
+✔ MCP streams: fragmented UTF-8, multiline data, "\r" framing, no EOF (6.661ms)
+✔ body deadline is absolute across chunks, aborts transport and releases the reader (40.576459ms)
+✔ caller abort remains active during a body read (0.898708ms)
+✔ typed discovery rejects oversized contracts and disposes the body (2.947958ms)
+✔ ordinary finite HTTP output is not subject to the discovery byte limit (25.302208ms)
+✔ typed openapi error response is disposed without waiting for cancellation (0.8265ms)
+✔ typed web error response is disposed without waiting for cancellation (0.305458ms)
+✔ typed peer error response is disposed without waiting for cancellation (0.149375ms)
+✔ redirect and negotiation retry dispose unused bodies without aborting the next request (0.841625ms)
+✔ blocked redirect disposes its body and never reaches the disallowed origin (0.272125ms)
+✔ stream discovery does not grant execution permission to unannotated tools (1.73525ms)
+✔ A1 redirect: a caller-supplied credential header (OpenAPI header parameter) never reaches another origin (130.743333ms)
+✔ A2 redirect: Proxy-Authorization, Cookie and custom headers stay on the original origin, including A -> B -> A (1.521667ms)
+✔ A3 redirect: a request body is never re-sent to another origin (307/308) (0.492667ms)
+✔ A4 redirect: same-origin redirects keep the caller's headers; pinned credentials still apply per origin (0.699542ms)
+✔ MCP contradictory annotations cannot weaken main's destructive gate (boolean) (3.397083ms)
+✔ MCP contradictory annotations cannot weaken main's destructive gate (string) (1.243708ms)
+✔ context_learn cancels a discovery SSE subscription and performs authenticated MCP initialization (146.995708ms)
+✔ an SSE content type is not proof of an MCP capability (1.700542ms)
+✔ SSE discovery does not bypass provider authentication (3.052375ms)
+✔ self-maintaining integration survives four breaking API releases, including two protocol migrations (463.035875ms)
+✔ a contract change under the same operation id still retires the crystallized pipeline (13.944167ms)
+✔ a provider that disappears is withdrawn: capabilities removed, pipelines retired, alternative used (464.323584ms)
+✔ healing preserves the meaning of the goal: no weaker substitute when the real capability is gone (66.485125ms)
+✔ fixed inputs: a published goal pins a value instead of exposing it as an API parameter (OW7 attempt 1) (146.516084ms)
+✔ powers count capabilities, typed links and 3-step chains (2.36825ms)
+✔ one new provider can add more powers than capabilities (network effect) (2.516042ms)
+✔ planner chains through types and ranks by intent (2.614666ms)
+✔ planner routes around excluded capabilities and learns from the ledger (0.540625ms)
+✔ fan-in: anchored steps may start parallel branches that a later step joins (0.591375ms)
+✔ search ranks by relevance across titles, tags and ports (0.485709ms)
+✔ events: learn and forget are observable (0.362333ms)
+✔ identifier schemes: three providers' differently typed accession ports are unlinked until values link them (294.133292ms)
+✔ identifier schemes: a value flowing out of one provider and successfully into another links the output port (281.6425ms)
+✔ identifier schemes: no evidence from failures, missing echoes, free-text ports, words or numbers (26.321417ms)
+✔ identifier schemes: paths seen only in a reshaped response never become ports (7.43175ms)
+✔ identifier schemes: evidence persists, and adds neither drift nor retirements (23.951375ms)
+✔ identifier schemes: a mixed cross-reference list feeds two schemes without merging them; cardinality is kept (1.338917ms)
+✔ MCP: thirteen context_* tools, stable no matter how the graph grows (311.090417ms)
+✔ MCP tool calls can be audited by the host (0.730375ms)
+✔ HTTP: public manifest, token lock, API and MCP routes (2.18125ms)
+✔ HTTP: /events streams graph changes as server-sent events (2.091708ms)
+✔ edge entry: default export fetch handler with env bindings and token (1.712ms)
+✔ stdio MCP: the CLI speaks newline-delimited JSON-RPC (721.402333ms)
+✔ MCP composition saves independent witness input/output bindings and repeats them for a second input (143.691459ms)
+✔ saved witness checks survive restart and reject a plausible result on another input (183.381375ms)
+✔ fresh caller predicates cannot override failed stored result predicates (16.482333ms)
+✔ published checks are snapshots rather than mutable aliases of the caller's request (39.384334ms)
+✔ a changed checker contract fails closed for saved composites and published goals (13.070709ms)
+✔ a producing provider cannot witness its own result, including through a saved composite (12.697333ms)
+✔ unresolved witness output paths refute the outcome rather than silently skipping the check (11.676625ms)
+✔ direct run records predicate refutation as failure in both the run and receipt (2.087666ms)
+✔ a saved goal excludes itself even through a nested saved composite (111.837458ms)
+✔ saved goals preserve decimal quantity text until the explicit conversion consumes it (33.961542ms)
+✔ required anchors survive restart and rebind renamed nested REST contracts within the first call (51.284958ms)
+✔ an unknown exact anchor is an error and cannot silently publish an unanchored goal (2.301917ms)
+✔ saved anchors fail closed on disappearance, ambiguity, another source, or changed type/risk (38.922666ms)
+✔ an oversized output is withheld whole and summarised by size, count and shape; the record keeps all of it (315.213792ms)
+✔ count, projection and slice come back from the server; context_run_status views a recorded run without calling upstream again (129.738084ms)
+✔ full:true returns the whole output on request, with the same digest as the summarised run (198.630959ms)
+✔ small outputs are returned as before; a missing select path is reported, not mistaken for an empty answer (15.924083ms)
+✔ a malformed view is rejected before the capability runs (2.273333ms)
+✔ path-less checks on a large output report its size instead of echoing it once per predicate (80.565875ms)
+✔ context_compose applies the same guard and views to its executed output (138.282208ms)
+✔ shape outlines types without values (0.519917ms)
+✔ identifiers of different entities never mix (5.418666ms)
+✔ resource names described as 'name of the X' are identifiers (0.333917ms)
+✔ a bare repository name and an owner/repo full name are different types (1.1735ms)
+✔ enum ports are filled only by the caller, never by another step's output (1.532417ms)
+✔ optional ports are only filled by caller inputs of the same name (0.422708ms)
+✔ read-only constraint: plans never include write or destructive capabilities (0.844417ms)
+✔ markup is not the text a caller asked for (0.509542ms)
+✔ a caller's identity value beats one derived through a detour (0.419583ms)
+✔ json goals prefer the complete result over a fragment (0.243375ms)
+✔ parallel branches in a different order are the same plan (0.53375ms)
+✔ monetary inference preserves currency and units without guessing or reading negation as evidence (3.214791ms)
+✔ numeric goals can receive monetary results but numeric inputs cannot silently erase units (0.414291ms)
+✔ money conversions round decimal half away from zero and reject unsafe or non-finite amounts (0.901458ms)
+✔ unanchored composition inserts a currency-preserving conversion before calculating tax (261.147125ms)
+✔ composition cannot invent a currency exchange or guess a currency for unqualified cents (4.224083ms)
+✔ discovery detects OpenAPI, GraphQL, MCP and web forms from bare URLs (229.564375ms)
+✔ OpenAPI: $ref bodies, typed ports, server resolution (9.3245ms)
+✔ Swagger 2.0 specs reflect too (0.455667ms)
+✔ GraphQL: introspected fields become capabilities with generated documents (17.29225ms)
+✔ MCP: tools with output schemas become typed capabilities and run (4.168125ms)
+✔ web: forms become capabilities, hidden fields become constants (13.761833ms)
+✔ federation: a peer's graph is absorbed and runs remotely (34.014541ms)
+✔ credentials are origin-pinned (1.630833ms)
+✔ provider identity: two sources with the same API name do not overwrite each other (4.063375ms)
+✔ RFC 9727 api-catalog: given only an environment's front door, every listed service is discovered (169.600542ms)
+✔ MCP 400 cannot replay an ambiguous write beneath runtime retry policy (192.615875ms)
+✔ MCP 404 cannot replay an ambiguous write beneath runtime retry policy (3.158417ms)
+✔ MCP 504 cannot replay an ambiguous write beneath runtime retry policy (17.972917ms)
+✔ read-only MCP session recovery remains available (3.845875ms)
+✔ provider text cannot masquerade as an MCP session-expiry status (7.301625ms)
+✔ operator-declared side-effect-free MCP operations retain session recovery (5.96325ms)
+✔ HTTP 400 and provider error text do not prove a write was never applied (3.513167ms)
+✔ HTTP 504 and provider error text do not prove a write was never applied (3.069958ms)
+✔ repair rechecks destructive operator approval for a replacement id (3.564167ms)
+✔ repair rechecks destructive operator approval for the approved id (2.526041ms)
+✔ 303 discards the original method and body throughout redirects via https://other.test/landing (0.844583ms)
+✔ 303 discards the original method and body throughout redirects via https://source.test/landing (0.202875ms)
+✔ a plain run of a moved operation re-learns its contract, reports the drift and retries the same operation (82.476334ms)
+✔ a failed plain run with no contract change fails with the re-reflection note (6.022542ms)
+✔ an operation id reassigned to a different operation is refused until acknowledged, and names its successor (6.711875ms)
+✔ re-learning an id back to the operation callers last saw clears its refusal (3.930958ms)
+✔ when a failed id now names a different operation, repair retries the operation it used to name, never the new one (68.856083ms)
+✔ plan steps are chosen by their current contract: compose is not refused by a changed id (18.426542ms)
+✔ repeated failures re-read the contract once, not on every call (2.978291ms)
+✔ a saved goal anchored on an id follows the operation it was built on when the id is reassigned (17.17325ms)
+✔ compose finds a 3-protocol pipeline nobody wrote, runs it, verifies it (343.583ms)
+✔ optional ports are never filled from unrelated steps (81.004917ms)
+✔ crystallization: a proven pipeline becomes one capability and is preferred next time (225.039875ms)
+✔ self-healing: a dead provider is routed around by re-planning (202.708666ms)
+✔ receipts form a verifiable hash chain; tampering is detected (2.081167ms)
+✔ new credentials for an origin forgive its past auth and rate-limit failures (3.786083ms)
+✔ persisted reflections typed by older inference rules are re-derived on boot (4.469542ms)
+✔ receipt chain stays linear under 200 concurrent runs (45.802041ms)
+✔ verification: refuted predicates fail the run honestly (6.728125ms)
+✔ consent: writes run directly; destructive capabilities need confirm: true (6.795917ms)
+✔ research: environment survey, gaps, directory search and auto-learn (2.456709ms)
+✔ acquisition on demand: an empty graph finds, learns and uses a capability it lacked (12.030875ms)
+✔ actions: direct capabilities plus everything reachable through pipelines (15.469459ms)
+✔ watch: long-poll wakes on graph changes (22.227917ms)
+✔ persistence: learned graph, ledger and receipts survive a restart without re-fetching (42.133375ms)
+✔ platform reflector finds workspace files and edge-style bindings (4.575542ms)
+✔ workspace: a symlink inside the workspace cannot read or write outside it (41.706417ms)
+✔ no automatic retry of a non-idempotent step: a failed POST is not sent again by healing (67.993042ms)
+✔ published goals: GET never executes a goal that can write; POST is required (19.537875ms)
+✔ ambiguous side effects: an MCP tool without annotations is not executable as if it were safe (3.126208ms)
+✔ authority: an agent's confirm: true is not operator approval for a destructive operation (17.186334ms)
+✔ private, loopback and metadata addresses are recognized (1.211042ms)
+✔ network policy blocks SSRF targets, including via redirects, and honors the allowlist (57.662667ms)
+✔ HTTP: rate limiting and body size limits (7.515625ms)
+✔ credentials stay pinned across multi-hop redirects (A -> B -> C) (1.517209ms)
+✔ inferType reads meaning from names, formats and descriptions (53.627333ms)
+✔ cryptic names: identity and meaning come from descriptions (0.818291ms)
+✔ type lattice: exact, widening, and incompatible (0.223542ms)
+✔ inspectValue classifies values (2.471ms)
+✔ identifiers with runs of capitals split into words (3.808875ms)
+✔ stemming joins word families (1.22875ms)
+✔ published example values type a value when its name and description do not (OW7 attempt 1) (0.730209ms)
+✔ a bare direction (to/from/source/target) is settled by the contract, not assumed to be a language (0.355584ms)
+✔ API synthesis: a published goal becomes an OpenAPI endpoint that another instance learns, chains and republishes (361.947042ms)
+✔ universal interface: an MCP-only tool answers GraphQL queries, and a peer learns that GraphQL with exact types (67.906834ms)
+✔ keyed maps: v1's rates map answers one currency, and two ports never share one value when another fits (97.9715ms)
+✔ genuine-change shape: v1 retired -> the published goal keeps working via v2 from the same origin, no intervention (47.371292ms)
+✔ egress policy: a repair never routes the customer's data to an origin they did not approve; it fails closed (18.39775ms)
+✔ egress policy covers repair traffic too: a contract mirrored elsewhere is not re-read; the successor is found at the API's own origin (OW8b attempt 1) (13.367542ms)
+✔ egress policy holds across redirects: an approved origin cannot hand the call to an unapproved one (OW8b attempt 2) (11.011667ms)
+✔ YAML: the constructs OpenAPI documents use (2.823792ms)
+✔ a contract published only as YAML is learned like JSON (149.277375ms)
+ℹ tests 165
+ℹ suites 0
+ℹ pass 159
+ℹ fail 6
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2618.510083
+
+✖ failing tests:
+
+test at test/discovery-recovery.test.ts:26:3
+✖ SSE GET: http MCP probe cannot suppress GraphQL or execute a tool (54.716542ms)
+  AssertionError [ERR_ASSERTION]: do not repeat a failed MCP probe
+  
+  0 !== 1
+  
+      at TestContext.<anonymous> (file:///Users/ross/src/rightclick-x-reconcile/test/discovery-recovery.test.ts:44:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/discovery-recovery.test.ts:26:3
+✖ SSE GET: rpc-error MCP probe cannot suppress GraphQL or execute a tool (6.280542ms)
+  AssertionError [ERR_ASSERTION]: do not repeat a failed MCP probe
+  
+  0 !== 1
+  
+      at TestContext.<anonymous> (file:///Users/ross/src/rightclick-x-reconcile/test/discovery-recovery.test.ts:44:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/discovery-recovery.test.ts:26:3
+✖ SSE GET: wrong-id MCP probe cannot suppress GraphQL or execute a tool (2.416042ms)
+  AssertionError [ERR_ASSERTION]: do not repeat a failed MCP probe
+  
+  0 !== 1
+  
+      at TestContext.<anonymous> (file:///Users/ross/src/rightclick-x-reconcile/test/discovery-recovery.test.ts:44:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/discovery-recovery.test.ts:26:3
+✖ SSE GET: missing-tools MCP probe cannot suppress GraphQL or execute a tool (1.00675ms)
+  AssertionError [ERR_ASSERTION]: do not repeat a failed MCP probe
+  
+  0 !== 1
+  
+      at TestContext.<anonymous> (file:///Users/ross/src/rightclick-x-reconcile/test/discovery-recovery.test.ts:44:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/discovery-recovery.test.ts:26:3
+✖ SSE GET: stalled MCP probe cannot suppress GraphQL or execute a tool (1.137125ms)
+  AssertionError [ERR_ASSERTION]: do not repeat a failed MCP probe
+  
+  0 !== 1
+  
+      at TestContext.<anonymous> (file:///Users/ross/src/rightclick-x-reconcile/test/discovery-recovery.test.ts:44:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/discovery-recovery.test.ts:66:1
+✖ web form capabilities survive failed protocol probes (167.782791ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(cap)
+  
+      at TestContext.<anonymous> (file:///Users/ross/src/rightclick-x-reconcile/test/discovery-recovery.test.ts:75:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

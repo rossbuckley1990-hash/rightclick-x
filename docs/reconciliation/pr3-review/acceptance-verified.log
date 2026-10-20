@@ -1,0 +1,25 @@
+PASS long-lived SSE GET: discover exact MCP tool and cancel
+PASS finite JSON: MCP initialize/list remain compatible
+PASS OpenAPI JSON: exact REST operation
+PASS finite JSON mislabeled as text/plain: still reflects OpenAPI
+PASS YAML compatibility resolution preserves OpenAPI support
+PASS GraphQL introspection still discovers geocode
+PASS finite valid MCP SSE responses, notifications, unrelated IDs, fragmented CRLF
+PASS MCP SSE response without EOF: match response and stop reading
+PASS mixed-case MCP SSE media type remains valid
+PASS SSE is not proof of MCP capability
+PASS finite SSE GET with GraphQL POST: retain protocol fallback
+PASS provider unavailable then recovers using same MCP client
+PASS 401 refuses discovery without executing tools
+PASS incorrect JSON content type on infinite body: deadline must bound read
+PASS pending body cancellation must not hang discovery
+PASS rejected body cancellation can still negotiate MCP
+PASS headers stall: existing request timeout aborts fetch
+PASS MCP finite SSE tool call executes exactly once
+PASS security: egress allowlist blocks all discovery requests
+PASS security: deny host blocks all discovery requests
+PASS security: private address blocks all discovery requests
+PASS security: non-HTTP scheme blocks all discovery requests
+PASS security: redirect cannot bypass egress policy
+PASS security: SSE redirect receives only destination-pinned credentials
+24/24 passed
