@@ -28,7 +28,7 @@ import { discover, type Discovery, type SourceKind } from "./reflectors/discover
 import { environmentNet, environmentOptions, observeCatalog, type EnvironmentOptions, type EnvironmentReport } from "./reflectors/environment.ts";
 import { buildDocument, checkSelection } from "./reflectors/graphql.ts";
 import { McpClient } from "./reflectors/mcp.ts";
-import { Authority, readBody, request, type Net, type NetworkPolicy } from "./reflectors/net.ts";
+import { Authority, cancelBody, readBody, request, type Net, type NetworkPolicy } from "./reflectors/net.ts";
 import { detectRuntime, platformReflection, type PlatformFn, type RuntimeInfo } from "./reflectors/platform.ts";
 
 export const VERSION = "0.1.0";
@@ -184,7 +184,9 @@ export interface RunRecord {
   capability: string;
   provider: string;
   title: string;
-  status: "completed" | "failed";
+  status: "completed" | "failed" | "pending";
+  /** Accepted work is not a completed outcome, nor evidence that an effect failed. */
+  pending?: PendingOutcome;
   output?: unknown;
   error?: string;
   startedAt: string;
@@ -218,6 +220,20 @@ class StepError extends Error {
   constructor(capability: string, message: string) {
     super(message);
     this.capability = capability;
+  }
+}
+
+export interface PendingOutcome {
+  capability: string;
+  reason: "http-202" | "peer-pending" | "witness-pending";
+  runs: string[];
+}
+
+class PendingOutcomeError extends StepError {
+  readonly pending: PendingOutcome;
+  constructor(pending: PendingOutcome) {
+    super(pending.capability, "outcome pending; completion is not established; the original action was not replayed");
+    this.pending = pending;
   }
 }
 
@@ -260,7 +276,8 @@ export interface ComposeResult {
     summary: string;
     titles: string[];
     output: unknown;
-    status: "completed" | "failed";
+    status: "completed" | "failed" | "pending";
+    pending?: PendingOutcome;
     verification: RunRecord["verification"];
     runs: string[];
     /** Failed attempts the runtime routed around before succeeding. */
@@ -1079,7 +1096,7 @@ export class RightClick {
       const rec = await this.runNow(id, args, opts);
       const dependencies = this.observedRuns([...(rec.steps ?? []), ...(rec.witnesses ?? []).map(w => w.runId)]);
       this.activity.append({ kind: "execution.finished", related: request.id, subjects: [id], providers: [rec.provider], runs: [rec.runId], contracts: [...contracts, ...dependencies.contracts], truncated: dependencies.truncated,
-        status: rec.status === "completed" ? "completed" : rec.changedMeaning || rec.error?.includes("blocked by execution policy") ? "refused" : "failed",
+        status: rec.status === "pending" ? "pending" : rec.status === "completed" ? "completed" : rec.changedMeaning || rec.error?.includes("blocked by execution policy") ? "refused" : "failed",
         verification: rec.verification.status, durationMs: rec.durationMs, predicates: rec.verification.results.length, predicatesPassed: rec.verification.results.filter(p => p.ok).length,
         witnessRuns: (rec.witnesses ?? []).map(w => w.runId), witnessesPassed: (rec.witnesses ?? []).filter(w => w.status === "completed").length,
         attempts: rec.attempts?.length ?? 0, receipt: rec.receipt.hash });
@@ -1114,6 +1131,7 @@ export class RightClick {
     let witnesses: WitnessResult[] = [];
     let attempts: RunRecord["attempts"];
     let healing: RunRecord["healing"];
+    let pending: PendingOutcome | undefined;
     try {
       this.assertExecution(cap);
       if (refused) throw new Error(refused);
@@ -1125,6 +1143,7 @@ export class RightClick {
         witnesses = r.executed?.witnesses ?? [];
         attempts = r.executed?.attempts;
         verification = r.executed?.verification ?? { status: "refuted", results: [] };
+        if (r.executed?.pending) throw new PendingOutcomeError(r.executed.pending);
         if (r.executed?.status !== "completed") throw new Error(attempts?.map((a) => a.error).join("; ") || "no pipeline found for saved goal");
       } else if (cap.invoke.kind === "composite") {
         const r = await this.runSteps(cap.invoke.steps, cap.invoke.result, coerced, opts.confirm, opts.activeGoals, opts.net);
@@ -1135,6 +1154,8 @@ export class RightClick {
         const absent = outputCarries(output, cap.invoke.require ?? []).absent;
         if (absent.length) throw new Error(`stored required information missing: ${absent.join(", ")}`);
         witnesses = await this.checkWitnesses(cap.invoke.witnesses ?? [], coerced, output, r.runs, opts.net);
+        const waiting = witnesses.find(w => w.status === "pending");
+        if (waiting) throw new PendingOutcomeError({ capability: waiting.capability, reason: "witness-pending", runs: [...r.runs, waiting.runId] });
         if (witnesses.some((w) => w.status !== "completed")) throw new Error("independent outcome witness refuted: " + witnesses.filter((w) => w.status !== "completed").map((w) => w.error ?? w.capability).join("; "));
         if (witnesses.length) verification = { ...verification, status: "verified" };
       } else {
@@ -1143,7 +1164,7 @@ export class RightClick {
         } catch (e) {
           // A caller's own mistake (an undocumented option, a literal that looks like an option)
           // says nothing about the provider: no repair, no re-investigation.
-          if (e instanceof ExecutionDenied || e instanceof JsonRepresentationError || opts.planned || !HEALABLE.has(cap.invoke.kind) || /HTTP 400 equivalent|is not one this program documents|needs a value/.test(String((e as Error)?.message ?? e))) throw e;
+          if (e instanceof PendingOutcomeError || e instanceof ExecutionDenied || e instanceof JsonRepresentationError || opts.planned || !HEALABLE.has(cap.invoke.kind) || /HTTP 400 equivalent|is not one this program documents|needs a value/.test(String((e as Error)?.message ?? e))) throw e;
           const h = await this.healRun(cap, args, String((e as Error)?.message ?? e), opts.net);
           healing = h.healing;
           if (!h.healed) throw new Error(`${healing.error}; ${healing.note}`);
@@ -1156,17 +1177,22 @@ export class RightClick {
     } catch (e) {
       error = String((e as Error)?.message ?? e);
       if (e instanceof StepError) failedCapability = e.capability;
-      verification = { ...verification, status: "refuted" };
+      if (e instanceof PendingOutcomeError) {
+        pending = { ...e.pending, runs: [...new Set([...e.pending.runs, runId])].slice(-128) };
+        output = undefined;
+        steps = e.pending.runs;
+        verification = { status: "unverified", results: [] };
+      } else verification = { ...verification, status: "refuted" };
     }
     const durationMs = Math.round((performance.now() - t0) * 10) / 10;
     const ok = !error && verification.status !== "refuted";
     // A refusal says nothing about how the operation behaves.
     // Recorded experience is persisted: errors that echo a credential are stored without it.
-    if (!refused && !error?.includes("blocked by execution policy")) this.ledger.record(cap.id, ok, durationMs, error ? scrub(error, sensitiveValues(args)) : error);
+    if (!pending && !refused && !error?.includes("blocked by execution policy")) this.ledger.record(cap.id, ok, durationMs, error ? scrub(error, sensitiveValues(args)) : error);
     // Identifier values a successful call accepted and returned link ports across providers.
     if (ok && cap.invoke.kind !== "composite" && cap.invoke.kind !== "goal" && this.graph.identities.observe(cap, args, output)) this.graph.relink();
     const receipt = await this.chain.append(
-      { runId, capability: cap.id, provider: cap.provider, startedAt, durationMs, status: error ? "failed" : "completed", verification: verification.status },
+      { runId, capability: cap.id, provider: cap.provider, startedAt, durationMs, status: pending ? "pending" : error ? "failed" : "completed", verification: verification.status },
       args,
       error ?? output,
     );
@@ -1175,7 +1201,8 @@ export class RightClick {
       capability: cap.id,
       provider: cap.provider,
       title: cap.title,
-      status: error ? "failed" : "completed",
+      status: pending ? "pending" : error ? "failed" : "completed",
+      ...(pending ? { pending } : {}),
       output,
       error,
       startedAt,
@@ -1191,7 +1218,7 @@ export class RightClick {
     };
     this.runs.set(runId, rec);
     if (this.runs.size > RUN_BUFFER) this.runs.delete(this.runs.keys().next().value!);
-    this.graph.emit("run.completed", { runId, capability: cap.id, title: cap.title, provider: cap.provider, ok, durationMs, verification: verification.status });
+    this.graph.emit(pending ? "run.pending" : "run.completed", { runId, capability: cap.id, title: cap.title, provider: cap.provider, ok, durationMs, verification: verification.status });
     this.persist();
     return rec;
   }
@@ -1326,6 +1353,7 @@ export class RightClick {
       const output = await this.execute(next, coerceArgs(next, args), net);
       return { healing: { ...healing, note }, healed: true, output };
     } catch (e) {
+      if (e instanceof PendingOutcomeError) throw e;
       return done(`${note}: ${String((e as Error)?.message ?? e)}`);
     }
   }
@@ -1634,6 +1662,8 @@ export class RightClick {
         let verification: RunRecord["verification"] = check(r.output, opts.verify ?? []);
         if (verification.status === "refuted") throw new StepError(p.steps[p.steps.length - 1].capability, `verification refuted: ${JSON.stringify(verification.results.filter((x) => !x.ok))}`);
         lastWitnesses = await this.checkWitnesses(witnesses, values, r.output, r.runs, net);
+        const waiting = lastWitnesses.find(w => w.status === "pending");
+        if (waiting) throw new PendingOutcomeError({ capability: waiting.capability, reason: "witness-pending", runs: [...r.runs, waiting.runId] });
         if (lastWitnesses.some((w) => w.status !== "completed")) throw new StepError(p.steps[p.steps.length - 1].capability, `verification refuted by independent outcome witness: ${lastWitnesses.filter((w) => w.status !== "completed").map((w) => w.error ?? w.capability).join("; ")}`);
         if (lastWitnesses.length) verification = { ...verification, status: "verified" };
         if (require.length) {
@@ -1706,6 +1736,13 @@ export class RightClick {
         return result;
       } catch (e) {
         const failed = e instanceof StepError || e instanceof ConfirmationRequired ? e.capability : p.steps[0].capability;
+        if (e instanceof PendingOutcomeError) {
+          attempts.push({ summary: p.summary, failed, error: e.message, healing: "pending outcome: no replay, repair, alternative plan or publication" });
+          result.executed = { summary: p.summary, titles: titles(p), output: null, status: "pending",
+            pending: e.pending, verification: { status: "unverified", results: [] }, runs: e.pending.runs,
+            attempts, durationMs: Math.round(performance.now() - t0), witnesses: lastWitnesses, error: e.message };
+          return result;
+        }
         // Steps that can change state and may have taken effect must not be repeated by re-planning,
         // unless the operator declared them side-effect-free. Stop here instead.
         const stateful = this.mayHaveTakenEffect(p.steps, failed, String((e as Error)?.message ?? e));
@@ -1872,6 +1909,8 @@ export class RightClick {
     const r = await this.executeGoal(slug, args);
     return {
       ok: r.executed?.status === "completed",
+      status: r.executed?.status ?? "failed",
+      ...(r.executed?.pending ? { pending: r.executed.pending } : {}),
       result: r.executed?.output ?? null,
       pipeline: r.executed?.titles ?? [],
       verification: r.executed?.verification.status ?? "refuted",
@@ -2003,6 +2042,7 @@ export class RightClick {
       if (!fan) {
         const r = await this.run(step.capability, args, { confirm, activeGoals, net, planned: true });
         runs.push(r.runId);
+        if (r.pending) throw new PendingOutcomeError({ ...r.pending, runs: [...new Set([...runs, ...r.pending.runs])] });
         if (r.status === "failed") throw new StepError(r.failedCapability ?? step.capability, `${step.capability}: ${r.error}`);
         outputs.push(r.output);
         continue;
@@ -2020,6 +2060,7 @@ export class RightClick {
         const r = await this.run(step.capability, { ...args, [fan.port]: item }, { confirm, activeGoals, net, planned: true });
         runs.push(r.runId);
         report.ran++;
+        if (r.pending) throw new PendingOutcomeError({ ...r.pending, runs: [...new Set([...runs, ...r.pending.runs])] });
         if (r.status === "failed") throw new StepError(r.failedCapability ?? step.capability, `${step.capability} (item ${JSON.stringify(item)}, ${report.ran} of ${items.length}): ${r.error}`);
         each.push(r.output);
       }
@@ -2317,6 +2358,10 @@ export class RightClick {
           body = f.toString();
         }
         const res = await request(net, u.toString(), { method: inv.method, headers, body });
+        if (res.status === 202) {
+          cancelBody(res);
+          throw new PendingOutcomeError({ capability: cap.id, reason: "http-202", runs: [] });
+        }
         const out = await readBody(res);
         if (!res.ok) throw new Error(`HTTP ${res.status}: ${String(JSON.stringify(preview(out))).slice(0, 300)}`);
         if (inv.entry) {
@@ -2342,6 +2387,10 @@ export class RightClick {
           headers: { "content-type": "application/json", accept: "application/json" },
           body: JSON.stringify({ query: buildDocument(doc, provided), variables }),
         });
+        if (res.status === 202) {
+          cancelBody(res);
+          throw new PendingOutcomeError({ capability: cap.id, reason: "http-202", runs: [] });
+        }
         const j: any = await readBody(res);
         if (!res.ok || (j?.errors?.length && !j?.data?.[inv.field])) throw new Error(`GraphQL: ${JSON.stringify(j?.errors ?? j).slice(0, 300)}`);
         return j.data[inv.field];
@@ -2354,8 +2403,13 @@ export class RightClick {
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ id: inv.id, args }),
         });
+        if (res.status === 202) {
+          cancelBody(res);
+          throw new PendingOutcomeError({ capability: cap.id, reason: "peer-pending", runs: [] });
+        }
         const j: any = await readBody(res);
-        if (!res.ok || j?.status === "failed") throw new Error(`peer: ${j?.error ?? res.status}`);
+        if (j?.status === "pending") throw new PendingOutcomeError({ capability: cap.id, reason: "peer-pending", runs: [] });
+        if (!res.ok || j?.status !== "completed") throw new Error(`peer: ${j?.error ?? "no completed outcome"}`);
         return j.output;
       }
       case "cli": {

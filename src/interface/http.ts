@@ -127,7 +127,7 @@ export function createHandler(rc: RightClick, opts: HttpOptions = {}): (req: Req
         if (req.method === "GET" && risk && risk !== "read") return new Response(JSON.stringify({ error: `goal ${x[1]} can change state (${risk}); use POST` }), { status: 405, headers: { "content-type": "application/json", allow: "POST" } });
         const args = req.method === "GET" ? Object.fromEntries(url.searchParams) : ((await req.json().catch(() => ({}))) as Record<string, unknown>);
         const out = await rc.callPublished(x[1], args);
-        return json(out, out.ok ? 200 : 502);
+        return json(out, out.status === "pending" ? 202 : out.ok ? 200 : 502);
       }
       if (req.method === "GET" && path === "/api/viz") return json(viz(rc));
       if (req.method === "GET" && path === "/api/overview") return json({

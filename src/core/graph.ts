@@ -23,6 +23,7 @@ export type GraphEventKind =
   | "provider.drifted"
   | "provider.withdrawn"
   | "run.completed"
+  | "run.pending"
   | "research";
 
 export interface GraphEvent {

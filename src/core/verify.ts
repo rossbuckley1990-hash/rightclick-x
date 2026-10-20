@@ -31,7 +31,7 @@ export interface OutcomeWitness {
 export interface WitnessResult {
   capability: string;
   runId: string;
-  status: "completed" | "failed";
+  status: "completed" | "failed" | "pending";
   verification: { status: "verified" | "checked" | "refuted" | "unverified"; results: PredicateResult[] };
   output?: unknown;
   error?: string;

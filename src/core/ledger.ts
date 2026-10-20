@@ -81,7 +81,7 @@ export interface Receipt {
   provider: string;
   startedAt: string;
   durationMs: number;
-  status: "completed" | "failed";
+  status: "completed" | "failed" | "pending";
   verification: "verified" | "checked" | "refuted" | "unverified";
   inputDigest: string;
   outputDigest: string;
