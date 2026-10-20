@@ -23,3 +23,9 @@ Test generic file bounds, executable persistence, input variation, mediated requ
 ## Prior unresolved memory audit
 
 The native sampling watchdog cannot enforce short allocation peaks. Pinned Actenon Airlock offers a Linux container launcher, not a Darwin hard-memory supervisor. Substituting a Linux program for an authorised native executable would change identity and meaning; it is not an acceptable transparent fix. No new memory-containment pass is claimed. The historical short-allocation failure remains release-blocking.
+
+## Amendment after first complete trial
+
+The `9036b68` trial completed all eight sessions and all answers were supported by separate readbacks. The original checker falsely rejected baseline GraphQL GET requests; that failed score is preserved, and GET-positive/wrong-input controls now cover the correction. The first prompt explicitly instructed C to save a reusable solution but only described D's ability to retain one. D published no goal. These timings are observations, not a fair retention comparison.
+
+Before a second trial, both prompts receive the identical imperative to save a parameterised solution after success. The original tasks, order, limits, oracle and scoring requirements are unchanged. The generic GraphQL document validator and GET public-read guard are also corrected, so changes between trials cannot be attributed solely to prompting. Run all eight sessions once under the same preflight/stop policy. Preserve both complete trials and report combined resource use; do not select the better trial or claim independent unfamiliar generality. Each trial's frozen source manifest identifies the exact implementation used.

@@ -3,6 +3,7 @@ import importlib.util
 import json
 from pathlib import Path
 import unittest
+from urllib.parse import urlencode
 
 spec = importlib.util.spec_from_file_location("checker", Path(__file__).with_name("check-reuse-comparison.py"))
 c = importlib.util.module_from_spec(spec); spec.loader.exec_module(c)
@@ -16,6 +17,11 @@ class Checks(unittest.TestCase):
         rows = [{"url": "https://data.rcsb.org/graphql", "method": "POST", "status": 200, "body": '{"variables":{"id":"ABCD"}}'}, {"url": "https://api.crossref.org/works/10.123/x", "method": "GET", "status": 200}]
         data = [{"data": {"entry": {"rcsb_primary_citation": {"pdbx_database_id_DOI": truth["doi"]}}}}, {"message": {"DOI": truth["doi"], "title": truth["title"], "publisher": truth["publisher"]}}]
         self.assertTrue(c.assess(task, reply, rows, data, truth)["correct"])
+        get_rows = copy.deepcopy(rows)
+        get_rows[0].update(method="GET", body="", url="https://data.rcsb.org/graphql?" + urlencode({"query": '{entry(entry_id:"ABCD"){rcsb_primary_citation{pdbx_database_id_DOI}}}'}))
+        self.assertTrue(c.assess(task, reply, get_rows, data, truth)["correct"])
+        get_rows[0]["url"] = get_rows[0]["url"].replace("ABCD", "WXYZ")
+        self.assertFalse(c.assess(task, reply, get_rows, data, truth)["correct"])
         for mode in ["memory", "wrong-input", "dataset-doi", "wrong-title", "failed-transport", "wrong-answer"]:
             altered, payloads, text = copy.deepcopy(rows), copy.deepcopy(data), reply
             if mode == "memory":

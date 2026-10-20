@@ -14,8 +14,19 @@ test("public evaluation transport refuses out-of-scope actions before dispatch",
     ["https://example.test/query", { method: "POST", body: '{"query":"mutation { change }"}' }],
     ["https://example.test/query", { method: "POST", body: '{"query":"query { x } mutation { change }"}' }],
     ["https://example.test/query", { method: "POST", body: "invalid JSON" }],
+    ["https://example.test/query?query=mutation%20%7B%20change%20%7D", {}],
+    ["https://example.test/query?query=%7Bok%7D&query=mutation%7Bchange%7D", {}],
+    ["https://example.test/query?query=subscription%7Bwatch%7D", { method: "HEAD" }],
   ] as [string, RequestInit][]) await assert.rejects(net(url, init), /evaluation/);
   assert.equal(calls, 0);
+});
+test("public transport observes GET GraphQL reads without inventing a request body", async () => {
+  const rows: Observation[] = [];
+  const net = publicReadTransport(sources, row => rows.push(row), { spacingMs: 0, fetch: async () => Response.json({ data: {} }) });
+  await net("https://example.test/query?query=%7B%20value%20%7D");
+  await net("https://example.test/query?query=%7B%20__schema%20%7B%20types%20%7B%20name%20%7D%20%7D%20%7D");
+  assert.deepEqual(rows.map(r => r.discovery), [false, true]);
+  assert.ok(rows.every(r => r.method === "GET" && r.body === undefined));
 });
 test("public evaluation transport records actual reads and leaves redirects to runtime policy", async () => {
   const rows: Observation[] = [];

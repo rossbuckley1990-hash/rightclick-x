@@ -52,7 +52,8 @@ def assess(task, reply, network, payloads, truth):
         parsed = urllib.parse.urlparse(row["url"])
         if parsed.hostname != "data.rcsb.org" or row.get("discovery"):
             continue
-        if parsed.path == "/rest/v1/core/entry/" + entry or (row["method"] == "POST" and re.search(r'"' + re.escape(entry) + r'"', row.get("body", "").replace('\\"', '"'))):
+        query = row.get("body", "") if row["method"] == "POST" else " ".join(urllib.parse.parse_qs(parsed.query).get("query", []))
+        if parsed.path == "/rest/v1/core/entry/" + entry or (parsed.path == "/graphql" and re.search(r'"' + re.escape(entry) + r'"', query.replace('\\"', '"'))):
             producing.append((row, payload))
     value = answer(reply)
     if task["expected"] == "unavailable":
@@ -174,6 +175,7 @@ def verify(root, oracle_dir, destination):
         warm = [r for r in rows if r["task"]["phase"] == "warm"]
         aggregate[arm] = {"correct": sum(r["correct"] for r in rows), "sessions": len(rows), "tokens": sum(r["tokens"] for r in rows), "modelSeconds": sum(r["seconds"] for r in rows), "warmMedianSeconds": statistics.median(r["seconds"] for r in warm), "warmMedianTokens": statistics.median(r["tokens"] for r in warm), "providerRequests": sum(r["requests"] for r in rows)}
     result = {"status": "PASS" if all(r["correct"] for r in scores) else "FAIL", "integrity": "PASS", "scores": scores, "aggregate": aggregate,
+              "checkerSha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
               "scope": "same-author, exposed, two-arm development diagnostic; no independent holdout or statistical superiority claim"}
     destination.write_text(json.dumps(result, indent=2) + "\n")
     print(json.dumps({"status": result["status"], "aggregate": aggregate}, indent=2))

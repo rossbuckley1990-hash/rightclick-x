@@ -65,12 +65,13 @@ for (const task of config.tasks) {
   let record: any;
   try {
     const instructions = task.arm === "C"
-      ? "Use only the coding tools. You can execute JavaScript, fetch authorised public interfaces, and retain real code plus documentation with write_file. Check your saved files first. Save a reusable, parameterised solution after obtaining a correct result. Fresh sessions inherit these files."
+      ? "Use only the coding tools. You can execute JavaScript, fetch authorised public interfaces, and retain real code plus documentation with write_file. Check your saved files first. Fresh sessions inherit these files."
       : "Use only RightClick X context_* tools. You can learn the advertised contracts, connect and execute operations, and retain a reusable checked capability with context_compose publish. Check retained capabilities first. Fresh sessions inherit the runtime state.";
     const prompt = `${instructions}
 Authorised source advertisements (same in both arms): ${JSON.stringify(config.sources)}.
 The operator permits credential-free public reads on these origins, including GraphQL queries. No other origin, mutation, credentials or execution route is authorised.
 Task: obtain the PRIMARY RESEARCH PUBLICATION for structure ${task.entryId}: its DOI, exact publication title as a JSON array, and publisher. Use actual execution, never memory. Establish that it is the primary research paper, not the structure dataset. Check the result. You may inspect or repair your solution as necessary; all costs count.
+After obtaining a correct result, save a parameterised reusable solution for subsequent fresh agents, using your arm's persistence mechanism. Do not save the current answer as the solution.
 Return exactly entry_id, doi, title and publisher in a JSON object between lines BEGIN and END. If the identifier is absent or a correct result cannot be established, return UNABLE: followed by the reason. Do not invent a result or change policy.`;
     writeFileSync(join(directory, "prompt.txt"), prompt);
     const name = task.arm === "C" ? "coding" : "rightclick-x";

@@ -28,7 +28,7 @@ import { builtinReflection, type BuiltinFn } from "./reflectors/builtins.ts";
 import { DEFAULT_DIRECTORIES, type Candidate, type Directory } from "./reflectors/directories.ts";
 import { discover, type Discovery, type SourceKind } from "./reflectors/discover.ts";
 import { environmentNet, environmentOptions, observeCatalog, type EnvironmentOptions, type EnvironmentReport } from "./reflectors/environment.ts";
-import { buildDocument, checkSelection } from "./reflectors/graphql.ts";
+import { buildDocument, checkSelection, GraphQLDocumentError } from "./reflectors/graphql.ts";
 import { McpClient } from "./reflectors/mcp.ts";
 import { continuationPolicy, continuationTargets, followHttp202, httpContractDigest, validHttpCursor, type HttpContinuationCursor, type HttpContinuationOptions, type HttpContinuationEvidence, type ContinuationPolicy } from "./reflectors/http-continuation.ts";
 import { Authority, cancelBody, readBody, refuseDeniedResponse, request, TransportRefused, type Net, type NetworkPolicy } from "./reflectors/net.ts";
@@ -1408,6 +1408,7 @@ export class RightClick {
     let planningRefusal: PlanningRefusal | undefined;
     let compositionResult: ComposeResult | undefined;
     let workflowRunId: string | undefined;
+    let invalidDocument = false;
     const continuationId = resumed?.runId ?? runId;
     const original = structuredClone(cap);
     const execution: HttpExecution = { signal: opts.signal,
@@ -1489,7 +1490,7 @@ export class RightClick {
         } catch (e) {
           // A caller's own mistake (an undocumented option, a literal that looks like an option)
           // says nothing about the provider: no repair, no re-investigation.
-          if (e instanceof PendingOutcomeError || e instanceof TransportRefused || e instanceof ExecutionDenied || e instanceof JsonRepresentationError || opts.planned || !HEALABLE.has(cap.invoke.kind) || /HTTP 400 equivalent|is not one this program documents|needs a value/.test(String((e as Error)?.message ?? e))) throw e;
+          if (e instanceof PendingOutcomeError || e instanceof TransportRefused || e instanceof ExecutionDenied || e instanceof JsonRepresentationError || e instanceof GraphQLDocumentError || opts.planned || !HEALABLE.has(cap.invoke.kind) || /HTTP 400 equivalent|is not one this program documents|needs a value/.test(String((e as Error)?.message ?? e))) throw e;
           const h = await this.healRun(cap, args, String((e as Error)?.message ?? e), opts.net, execution);
           healing = h.healing;
           if (!h.healed) throw new Error(`${healing.error}; ${healing.note}`);
@@ -1500,6 +1501,7 @@ export class RightClick {
       verification = { status: extra.status === "refuted" ? "refuted" : verification.status === "verified" ? "verified" : verification.status === "checked" || extra.status === "checked" ? "checked" : "unverified", results: [...verification.results, ...extra.results] };
       if (verification.status === "refuted") throw new Error("verification refuted: " + JSON.stringify(extra.results.filter((p) => !p.ok)));
     } catch (e) {
+      invalidDocument = e instanceof GraphQLDocumentError;
       error = String((e as Error)?.message ?? e);
       if (e instanceof StepError) failedCapability = e.capability;
       if (e instanceof PendingOutcomeError) {
@@ -1531,7 +1533,7 @@ export class RightClick {
     const ok = !error && verification.status !== "refuted";
     // A refusal says nothing about how the operation behaves.
     // Recorded experience is persisted: errors that echo a credential are stored without it.
-    if (!composition && !resumed && !resumedWorkflow && !pending && !refusal && !refused && !planningRefusal && !error?.includes("blocked by execution policy")) this.ledger.record(cap.id, ok, durationMs, error ? scrub(error, sensitiveValues(args)) : error);
+    if (!composition && !resumed && !resumedWorkflow && !pending && !refusal && !refused && !planningRefusal && !invalidDocument && !error?.includes("blocked by execution policy")) this.ledger.record(cap.id, ok, durationMs, error ? scrub(error, sensitiveValues(args)) : error);
     // Identifier values a successful call accepted and returned link ports across providers.
     if (!resumed && !resumedWorkflow && ok && cap.invoke.kind !== "composite" && cap.invoke.kind !== "goal" && this.graph.identities.observe(cap, args, output)) this.graph.relink();
     const receipt = await this.chain.append(

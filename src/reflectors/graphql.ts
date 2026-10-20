@@ -272,23 +272,56 @@ function humanize(s: string): string {
   return t.charAt(0).toUpperCase() + t.slice(1);
 }
 
-/** A caller-supplied selection set: one braced block, balanced, no operation keywords or arguments of its own. */
+/** Local document mistakes are not evidence of provider drift. */
+export class GraphQLDocumentError extends Error {}
+
+/** One bounded selection subtree. Aliases are allowed; arguments, directives,
+ * fragments and additional root fields outside this subtree are not. */
 export function checkSelection(sel: unknown): string {
-  const s = String(sel ?? "").trim();
-  let depth = 0;
-  for (const ch of s) {
-    if (ch === "{") depth++;
-    else if (ch === "}" && --depth < 0) break;
-  }
-  if (!/^\{[\s\S]*\}$/.test(s) || depth !== 0 || /[()$@#"]/.test(s) || /\b(mutation|subscription|fragment)\b/.test(s)) {
-    throw new Error(`selection must be a GraphQL selection set such as "{ id name nested { field } }" (no arguments, variables or operations)`);
-  }
+  const fail = (): never => { throw new GraphQLDocumentError(`selection must be a GraphQL selection set such as "{ id name nested { field } }" (one nonempty subtree; no arguments, variables, fragments or operations; at most 64 levels, 4096 fields and 65536 characters)`); };
+  if (typeof sel !== "string" || sel.length > 65536) return fail();
+  const s = sel.trim(), tokens = s.match(/[_A-Za-z][_0-9A-Za-z]*|[{}:]|[^\s,]/g) ?? [];
+  const name = /^[_A-Za-z][_0-9A-Za-z]*$/;
+  let at = 0, fields = 0;
+  const block = (depth: number) => {
+    if (depth > 64 || tokens[at++] !== "{") fail();
+    let count = 0;
+    while (at < tokens.length && tokens[at] !== "}") {
+      if (++fields > 4096 || !name.test(tokens[at++] ?? "")) fail();
+      if (tokens[at] === ":") { at++; if (!name.test(tokens[at++] ?? "")) fail(); }
+      if (tokens[at] === "{") block(depth + 1);
+      count++;
+    }
+    if (!count || tokens[at++] !== "}") fail();
+  };
+  block(1);
+  if (at !== tokens.length) fail();
   return s;
 }
 
 export function buildDocument(inv: { operation: string; field: string; args: Record<string, string>; selection: string }, provided: string[]): string {
+  const name = /^[_A-Za-z][_0-9A-Za-z]*$/;
+  const type = (value: string): boolean => {
+    if (typeof value !== "string" || value.length > 256) return false;
+    // Printed introspection types have no whitespace and at most one NON_NULL
+    // suffix per named/list type. Validate the nesting, not just its alphabet.
+    const tokens = value.match(/[_A-Za-z][_0-9A-Za-z]*|./g) ?? [];
+    let at = 0;
+    const parse = (depth: number): boolean => {
+      if (depth > 32) return false;
+      if (tokens[at] === "[") { at++; if (!parse(depth + 1) || tokens[at++] !== "]") return false; }
+      else if (!name.test(tokens[at++] ?? "")) return false;
+      if (tokens[at] === "!") at++;
+      return true;
+    };
+    return parse(0) && at === tokens.length;
+  };
+  if (!["query", "mutation"].includes(inv.operation) || !name.test(inv.field) ||
+      Object.entries(inv.args).some(([n, t]) => !name.test(n) || !type(t)))
+    throw new GraphQLDocumentError("invalid GraphQL operation, field, argument name or type");
+  const selection = inv.selection ? checkSelection(inv.selection) : "";
   const used = Object.entries(inv.args).filter(([n, t]) => provided.includes(n) || t.endsWith("!"));
   const vars = used.map(([n, t]) => `$${n}: ${t}`).join(", ");
   const call = used.map(([n]) => `${n}: $${n}`).join(", ");
-  return `${inv.operation} RightClick${vars ? `(${vars})` : ""} { ${inv.field}${call ? `(${call})` : ""} ${inv.selection} }`;
+  return `${inv.operation} RightClick${vars ? `(${vars})` : ""} { ${inv.field}${call ? `(${call})` : ""} ${selection} }`;
 }

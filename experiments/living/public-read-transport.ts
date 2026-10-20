@@ -22,21 +22,28 @@ export function publicReadTransport(sources: PublicSource[], record: (row: Obser
     if (req.headers.has("authorization") || req.headers.has("cookie"))
       throw new TransportRefused("evaluation does not accept credentials");
     let body: string | undefined;
+    let graphqlQuery: unknown;
+    const graphql = sources.some(s => s.kind === "graphql" && new URL(s.url).origin === url.origin && new URL(s.url).pathname === url.pathname);
+    if (["GET", "HEAD"].includes(req.method) && graphql && url.searchParams.has("query")) {
+      if (url.searchParams.getAll("query").length !== 1) throw new TransportRefused("evaluation query is ambiguous");
+      graphqlQuery = url.searchParams.get("query");
+    }
     if (!["GET", "HEAD"].includes(req.method)) {
       if (req.method !== "POST" || !sources.some(s => s.kind === "graphql" && s.url === req.url))
         throw new TransportRefused("evaluation permits public reads only");
       body = await req.clone().text();
       if (body.length > 64 * 1024) throw new TransportRefused("evaluation query too large");
-      let query: unknown;
-      try { query = JSON.parse(body).query; } catch { /* refused below */ }
+      try { graphqlQuery = JSON.parse(body).query; } catch { /* refused below */ }
+    }
+    if (graphqlQuery !== undefined || req.method === "POST") {
       // Conservative: refusing mutation text even inside a literal can reject a
       // valid query; it cannot permit a second mutation operation in this profile.
-      if (typeof query !== "string" || !/^\s*(query\b|\{)/.test(query) || /\b(mutation|subscription)\b/.test(query))
+      if (typeof graphqlQuery !== "string" || graphqlQuery.length > 64 * 1024 || !/^\s*(query\b|\{)/.test(graphqlQuery) || /\b(mutation|subscription)\b/.test(graphqlQuery))
         throw new TransportRefused("evaluation permits explicit GraphQL queries only");
     }
     if (++requests > maximum) throw new TransportRefused("evaluation request budget exhausted");
     const row: Observation = { id: requests, url: req.url, method: req.method, body,
-      discovery: sources.some(s => s.kind === "openapi" && s.url === req.url) || /\b__(schema|type)\b/.test(body ?? "") };
+      discovery: sources.some(s => s.kind === "openapi" && s.url === req.url) || /\b__(schema|type)\b/.test(String(graphqlQuery ?? "")) };
     const previous = tail;
     let release!: () => void;
     tail = new Promise<void>(resolve => { release = resolve; });
