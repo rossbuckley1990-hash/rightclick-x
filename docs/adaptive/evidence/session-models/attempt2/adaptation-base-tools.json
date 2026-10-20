@@ -1,0 +1,159 @@
+[
+  {
+    "at": "2026-10-20T18:41:23.796Z",
+    "tool": "context_research",
+    "args": {},
+    "ok": true,
+    "ms": 556.7
+  },
+  {
+    "at": "2026-10-20T18:41:26.154Z",
+    "tool": "context_learn",
+    "args": {
+      "sources": [
+        "https://data.rcsb.org/graphql"
+      ],
+      "kinds": {
+        "https://data.rcsb.org/graphql": "graphql"
+      }
+    },
+    "ok": true,
+    "ms": 2355.9
+  },
+  {
+    "at": "2026-10-20T18:41:35.958Z",
+    "tool": "context_compose",
+    "args": {
+      "have": {
+        "entry_id": "1CRN"
+      },
+      "want": "json",
+      "intent": "primary citation DOI publication title publisher",
+      "require": [
+        "publisher"
+      ],
+      "maxSteps": 3,
+      "limit": 5,
+      "run": true,
+      "verify": [
+        {
+          "op": "exists",
+          "path": "message.DOI"
+        },
+        {
+          "op": "exists",
+          "path": "message.publisher"
+        },
+        {
+          "op": "exists",
+          "path": "message.title"
+        }
+      ],
+      "publish": "Structure primary publication metadata",
+      "risks": [
+        "read"
+      ]
+    },
+    "ok": true,
+    "ms": 9694.6,
+    "outcome": {
+      "status": "completed",
+      "verification": "checked",
+      "outcome": "established",
+      "contract": "satisfied"
+    }
+  },
+  {
+    "at": "2026-10-20T18:41:36.876Z",
+    "tool": "context_research",
+    "args": {},
+    "ok": true,
+    "ms": 913.4
+  },
+  {
+    "at": "2026-10-20T18:41:37.037Z",
+    "tool": "context_run",
+    "args": {
+      "id": "openapi:protected-compression:compress",
+      "args": {
+        "label": "first",
+        "document": "A document written only by the explicitly authorized living session."
+      }
+    },
+    "ok": true,
+    "ms": 7,
+    "outcome": {
+      "status": "failed",
+      "verification": "unverified"
+    }
+  },
+  {
+    "at": "2026-10-20T18:41:37.061Z",
+    "tool": "context_run",
+    "args": {
+      "id": "openapi:protected-compression:compress",
+      "args": {
+        "label": "first",
+        "document": "A document written only by the explicitly authorized living session. Changed."
+      }
+    },
+    "ok": true,
+    "ms": 2,
+    "outcome": {
+      "status": "failed",
+      "verification": "unverified"
+    }
+  },
+  {
+    "at": "2026-10-20T18:41:38.073Z",
+    "tool": "context_compose",
+    "args": {
+      "have": {
+        "label": {
+          "type": "text",
+          "value": "first"
+        },
+        "document": {
+          "type": "text",
+          "value": "A document written only by the explicitly authorized living session."
+        }
+      },
+      "want": "hash",
+      "through": [
+        "openapi:protected-compression:compress"
+      ],
+      "run": true,
+      "publish": "Compressed document digest",
+      "verify": [
+        {
+          "op": "matches",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      ]
+    },
+    "ok": true,
+    "ms": 1010.6,
+    "outcome": {
+      "status": "completed",
+      "verification": "checked",
+      "contract": "satisfied"
+    }
+  },
+  {
+    "at": "2026-10-20T18:41:38.634Z",
+    "tool": "context_run",
+    "args": {
+      "id": "goal:compressed-document-digest",
+      "args": {
+        "label": "first",
+        "document": "A document written only by the explicitly authorized living session."
+      }
+    },
+    "ok": true,
+    "ms": 14.3,
+    "outcome": {
+      "status": "failed",
+      "verification": "unverified"
+    }
+  }
+]
