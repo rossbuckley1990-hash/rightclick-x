@@ -29,6 +29,7 @@ async function bridge(input: string | URL | Request, init?: RequestInit): Promis
 const config = await ready;
 let state: PersistedState | null = config.state;
 const rc = await RightClick.create({ directories: [], fetch: bridge, sandbox: null,
+  ...(config.phase === "pause" ? { httpContinuation: { maxRequests: 1 } } : {}),
   environment: config.phase === "discover" ? { catalogs: [config.origin + "/catalog"] } : undefined,
   network: { blockPrivate: false, origins: [config.origin] }, authority: { publish: "checked" },
   store: { load: async () => state, save: async value => { state = value; } } });
@@ -46,6 +47,10 @@ if (config.phase === "publish") {
   const response = await handler(new Request("https://retained.test/x/compressed-document-digest", {
     method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(args) }));
   result.generated = { status: response.status, body: await response.json() };
+} else if (config.phase.startsWith("resume")) {
+  const retained = rc.runStatus().pendingHttp?.[0];
+  if (!retained) throw new Error("no persisted HTTP operation");
+  result.run = await rc.run(retained.resumeId);
 } else if (config.phase === "warm") {
   result.run = await rc.run("goal:compressed-document-digest", args);
 } else {
