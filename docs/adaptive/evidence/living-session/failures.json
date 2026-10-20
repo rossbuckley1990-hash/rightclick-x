@@ -1,0 +1,44 @@
+{
+  "scope": "Development evidence; preserved failures, not independent holdout results",
+  "failures": [
+    {
+      "artifact": "host-tests-1.log",
+      "cause": "TypeScript parameter property was unsupported by Node strip-only execution.",
+      "remediation": "Explicit property declaration and assignment; host-tests-2.log passes both tests."
+    },
+    {
+      "artifact": "harness-typecheck-1.log",
+      "cause": "Standalone compiler invocation omitted strict mode and produced unrelated discriminated-union errors.",
+      "remediation": "Use the repository's strict checking mode; harness-typecheck-2.log and -3.log pass."
+    },
+    {
+      "artifact": "attempt1/goal-0.json",
+      "cause": "After successful public GraphQL execution, newly learned identifier schemes changed the retained step digest. The workflow remained pending before its consumer.",
+      "limitations": "The first driver did not save a post-failure state snapshot. Pre-execution state, raw public responses and transport/tool transcripts remain. No protected effect was reached."
+    },
+    {
+      "artifact": "workflow-learning-before.log",
+      "cause": "Two unrelated controlled GraphQL/OpenAPI flows reproduce the same false contract-change refusal. One negative-control test passes.",
+      "remediation": "Exclude only learned schemes from declared port digests; preserve all other fields and invocation."
+    },
+    {
+      "artifact": "regression.log",
+      "cause": "First candidate incremented inference version 27 to 28; unchanged stored public capabilities attempted rediscovery and failed the existing no-network planning-refusal test. 445/446 tests passed.",
+      "remediation": "Keep inference semantics 27. Declare a dedicated continuation-contract requirement; reject pending old-format work without discarding it."
+    },
+    {
+      "artifact": "proof-failure.json",
+      "cause": "Sandbox denied loopback bind (EPERM).",
+      "remediation": "Authorized local rerun passes all 28 unchanged proof checks."
+    },
+    {
+      "artifact": "attempt2/cleanup.json",
+      "cause": "Noninteractive command session had closed stdin; holding presentation could not be closed through write_stdin.",
+      "remediation": "Verified disposable processes, container and staging directory were cleaned explicitly. Final driver handles EOF/signals/expiry and nested cleanup; tests pass."
+    }
+  ],
+  "observedWithoutRawArtifact": [
+    "Initial npm run typecheck reported TS1294 for the parameter property; raw output was not saved.",
+    "The browser attempted to open attempt1's loopback presentation after its failure cleanup. Connection was refused; no successful UI observation is claimed for that attempt."
+  ]
+}

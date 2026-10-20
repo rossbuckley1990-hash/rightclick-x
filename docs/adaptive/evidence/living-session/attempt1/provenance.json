@@ -1,0 +1,49 @@
+{
+  "revision": "b08faaa29b27e2ada82762a46c41f5c17ab8c16f",
+  "workingChanges": "?? experiments/actenon/challenge-boundary.py\n?? experiments/living/challenge-host.ts\n?? experiments/living/challenge-session.ts\n?? experiments/living/living-session.ts\n?? test/living-session.test.ts\n",
+  "config": {
+    "sources": [
+      {
+        "url": "https://data.rcsb.org/graphql",
+        "kind": "graphql"
+      },
+      {
+        "url": "https://api.crossref.org/swagger-docs",
+        "kind": "openapi"
+      }
+    ],
+    "goals": [
+      {
+        "have": {
+          "entry_id": "1CRN"
+        },
+        "want": "json",
+        "intent": "primary citation DOI publication title publisher",
+        "require": [
+          "publisher"
+        ],
+        "maxSteps": 3,
+        "limit": 5,
+        "run": true,
+        "verify": [
+          {
+            "op": "exists",
+            "path": "message.DOI"
+          },
+          {
+            "op": "exists",
+            "path": "message.publisher"
+          },
+          {
+            "op": "exists",
+            "path": "message.title"
+          }
+        ],
+        "publish": "Structure primary publication metadata"
+      }
+    ]
+  },
+  "node": "v26.12.0",
+  "image": "sha256:5e95a1b7bdb5ddd279c4c18760a007a98f94c6fb24236433c19b61831bc4e4f5",
+  "scope": "same-author integrated development session; not final holdout, fresh model or complete challenge"
+}

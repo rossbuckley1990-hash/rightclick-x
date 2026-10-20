@@ -1,0 +1,590 @@
+{
+  "goal": {
+    "have": {
+      "entry_id": "id.entry"
+    },
+    "want": "json",
+    "intent": "primary citation DOI publication title publisher",
+    "through": []
+  },
+  "plans": [
+    {
+      "steps": [
+        {
+          "capability": "graphql:data-rcsb-org-graphql:query:entry",
+          "bindings": [
+            {
+              "port": "entry_id",
+              "from": "$in.entry_id"
+            }
+          ]
+        },
+        {
+          "capability": "openapi:crossref-rest-api:get-works-doi",
+          "bindings": [
+            {
+              "port": "doi",
+              "from": "0.pubmed.rcsb_pubmed_doi"
+            }
+          ]
+        }
+      ],
+      "result": "1.",
+      "resultType": "json",
+      "cost": 2.7666666666666666,
+      "intentScore": 1,
+      "fit": 1.25,
+      "resultScore": 5,
+      "providers": [
+        "graphql:data-rcsb-org-graphql",
+        "openapi:crossref-rest-api"
+      ],
+      "summary": "Entry → GET /works/{doi}",
+      "satisfaction": {
+        "status": "established",
+        "covered": {
+          "publisher": "message.publisher-location"
+        },
+        "missing": [],
+        "joins": [
+          {
+            "step": 0,
+            "port": "entry_id",
+            "from": "$in.entry_id",
+            "kind": "caller"
+          },
+          {
+            "step": 1,
+            "port": "doi",
+            "from": "0.pubmed.rcsb_pubmed_doi",
+            "kind": "declared"
+          }
+        ],
+        "projection": [
+          {
+            "step": 0,
+            "fields": [
+              "pubmed.rcsb_pubmed_doi"
+            ]
+          }
+        ]
+      },
+      "titles": [
+        "Entry",
+        "GET /works/{doi}"
+      ],
+      "contract": {
+        "status": "satisfied",
+        "steps": [
+          {
+            "step": 0,
+            "capability": "graphql:data-rcsb-org-graphql:query:entry",
+            "title": "Entry",
+            "reason": "required-information"
+          },
+          {
+            "step": 1,
+            "capability": "openapi:crossref-rest-api:get-works-doi",
+            "title": "GET /works/{doi}",
+            "reason": "requested"
+          }
+        ],
+        "violations": [],
+        "preservesInput": false
+      }
+    },
+    {
+      "steps": [
+        {
+          "capability": "graphql:data-rcsb-org-graphql:query:entry",
+          "bindings": [
+            {
+              "port": "entry_id",
+              "from": "$in.entry_id"
+            }
+          ]
+        }
+      ],
+      "result": "0.",
+      "resultType": "json",
+      "cost": 1.3833333333333333,
+      "intentScore": 0,
+      "fit": 1.25,
+      "resultScore": 3,
+      "providers": [
+        "graphql:data-rcsb-org-graphql"
+      ],
+      "summary": "Entry",
+      "satisfaction": {
+        "status": "established",
+        "covered": {
+          "publisher": "citation.book_publisher"
+        },
+        "missing": [],
+        "joins": [
+          {
+            "step": 0,
+            "port": "entry_id",
+            "from": "$in.entry_id",
+            "kind": "caller"
+          }
+        ],
+        "projection": [
+          {
+            "step": 0,
+            "fields": [
+              "rcsb_primary_citation.book_publisher",
+              "rcsb_primary_citation.book_publisher_city"
+            ]
+          }
+        ]
+      },
+      "titles": [
+        "Entry"
+      ],
+      "contract": {
+        "status": "satisfied",
+        "steps": [
+          {
+            "step": 0,
+            "capability": "graphql:data-rcsb-org-graphql:query:entry",
+            "title": "Entry",
+            "reason": "required-information"
+          }
+        ],
+        "violations": [],
+        "preservesInput": false
+      }
+    },
+    {
+      "steps": [
+        {
+          "capability": "graphql:data-rcsb-org-graphql:query:entry",
+          "bindings": [
+            {
+              "port": "entry_id",
+              "from": "$in.entry_id"
+            }
+          ]
+        },
+        {
+          "capability": "graphql:data-rcsb-org-graphql:query:nonpolymer_entities",
+          "bindings": [
+            {
+              "port": "entity_ids",
+              "from": "0.citation.book_publisher"
+            }
+          ]
+        },
+        {
+          "capability": "openapi:crossref-rest-api:get-works-doi",
+          "bindings": [
+            {
+              "port": "doi",
+              "from": "1.entry.pubmed.rcsb_pubmed_doi",
+              "each": {
+                "max": 20
+              }
+            }
+          ]
+        }
+      ],
+      "result": "2.",
+      "resultType": "list:json",
+      "cost": 5.65,
+      "intentScore": 3,
+      "fit": 1.25,
+      "resultScore": 5,
+      "providers": [
+        "graphql:data-rcsb-org-graphql",
+        "openapi:crossref-rest-api"
+      ],
+      "summary": "Entry → Nonpolymer entities → GET /works/{doi} (each)",
+      "satisfaction": {
+        "status": "unverified",
+        "covered": {
+          "publisher": "message.publisher-location"
+        },
+        "missing": [],
+        "joins": [
+          {
+            "step": 0,
+            "port": "entry_id",
+            "from": "$in.entry_id",
+            "kind": "caller"
+          },
+          {
+            "step": 1,
+            "port": "entity_ids",
+            "from": "0.citation.book_publisher",
+            "kind": "generic"
+          },
+          {
+            "step": 2,
+            "port": "doi",
+            "from": "1.entry.pubmed.rcsb_pubmed_doi",
+            "kind": "declared"
+          }
+        ],
+        "projection": [
+          {
+            "step": 1,
+            "fields": [
+              "entry.pubmed.rcsb_pubmed_doi"
+            ]
+          }
+        ]
+      },
+      "titles": [
+        "Entry",
+        "Nonpolymer entities",
+        "GET /works/{doi} (each)"
+      ],
+      "contract": {
+        "status": "satisfied",
+        "steps": [
+          {
+            "step": 0,
+            "capability": "graphql:data-rcsb-org-graphql:query:entry",
+            "title": "Entry",
+            "reason": "required-information"
+          },
+          {
+            "step": 1,
+            "capability": "graphql:data-rcsb-org-graphql:query:nonpolymer_entities",
+            "title": "Nonpolymer entities",
+            "reason": "required-information"
+          },
+          {
+            "step": 2,
+            "capability": "openapi:crossref-rest-api:get-works-doi",
+            "title": "GET /works/{doi}",
+            "reason": "requested"
+          }
+        ],
+        "violations": [],
+        "preservesInput": false
+      }
+    },
+    {
+      "steps": [
+        {
+          "capability": "graphql:data-rcsb-org-graphql:query:entry",
+          "bindings": [
+            {
+              "port": "entry_id",
+              "from": "$in.entry_id"
+            }
+          ]
+        },
+        {
+          "capability": "graphql:data-rcsb-org-graphql:query:assemblies",
+          "bindings": [
+            {
+              "port": "assembly_ids",
+              "from": "0.citation.book_publisher"
+            }
+          ]
+        },
+        {
+          "capability": "openapi:crossref-rest-api:get-works-doi",
+          "bindings": [
+            {
+              "port": "doi",
+              "from": "1.entry.pubmed.rcsb_pubmed_doi",
+              "each": {
+                "max": 20
+              }
+            }
+          ]
+        }
+      ],
+      "result": "2.",
+      "resultType": "list:json",
+      "cost": 5.65,
+      "intentScore": 3,
+      "fit": 1.25,
+      "resultScore": 5,
+      "providers": [
+        "graphql:data-rcsb-org-graphql",
+        "openapi:crossref-rest-api"
+      ],
+      "summary": "Entry → Assemblies → GET /works/{doi} (each)",
+      "satisfaction": {
+        "status": "unverified",
+        "covered": {
+          "publisher": "message.publisher-location"
+        },
+        "missing": [],
+        "joins": [
+          {
+            "step": 0,
+            "port": "entry_id",
+            "from": "$in.entry_id",
+            "kind": "caller"
+          },
+          {
+            "step": 1,
+            "port": "assembly_ids",
+            "from": "0.citation.book_publisher",
+            "kind": "generic"
+          },
+          {
+            "step": 2,
+            "port": "doi",
+            "from": "1.entry.pubmed.rcsb_pubmed_doi",
+            "kind": "declared"
+          }
+        ],
+        "projection": [
+          {
+            "step": 1,
+            "fields": [
+              "entry.pubmed.rcsb_pubmed_doi"
+            ]
+          }
+        ]
+      },
+      "titles": [
+        "Entry",
+        "Assemblies",
+        "GET /works/{doi} (each)"
+      ],
+      "contract": {
+        "status": "satisfied",
+        "steps": [
+          {
+            "step": 0,
+            "capability": "graphql:data-rcsb-org-graphql:query:entry",
+            "title": "Entry",
+            "reason": "required-information"
+          },
+          {
+            "step": 1,
+            "capability": "graphql:data-rcsb-org-graphql:query:assemblies",
+            "title": "Assemblies",
+            "reason": "required-information"
+          },
+          {
+            "step": 2,
+            "capability": "openapi:crossref-rest-api:get-works-doi",
+            "title": "GET /works/{doi}",
+            "reason": "requested"
+          }
+        ],
+        "violations": [],
+        "preservesInput": false
+      }
+    },
+    {
+      "steps": [
+        {
+          "capability": "graphql:data-rcsb-org-graphql:query:entry",
+          "bindings": [
+            {
+              "port": "entry_id",
+              "from": "$in.entry_id"
+            }
+          ]
+        },
+        {
+          "capability": "graphql:data-rcsb-org-graphql:query:entries",
+          "bindings": [
+            {
+              "port": "entry_ids",
+              "from": "0.citation.book_publisher"
+            }
+          ]
+        },
+        {
+          "capability": "openapi:crossref-rest-api:get-works-doi",
+          "bindings": [
+            {
+              "port": "doi",
+              "from": "1.database_2.pdbx_DOI",
+              "each": {
+                "max": 20
+              }
+            }
+          ]
+        }
+      ],
+      "result": "2.",
+      "resultType": "list:json",
+      "cost": 5.65,
+      "intentScore": 3,
+      "fit": 1.25,
+      "resultScore": 5,
+      "providers": [
+        "graphql:data-rcsb-org-graphql",
+        "openapi:crossref-rest-api"
+      ],
+      "summary": "Entry → Entries → GET /works/{doi} (each)",
+      "satisfaction": {
+        "status": "unverified",
+        "covered": {
+          "publisher": "message.publisher-location"
+        },
+        "missing": [],
+        "joins": [
+          {
+            "step": 0,
+            "port": "entry_id",
+            "from": "$in.entry_id",
+            "kind": "caller"
+          },
+          {
+            "step": 1,
+            "port": "entry_ids",
+            "from": "0.citation.book_publisher",
+            "kind": "generic"
+          },
+          {
+            "step": 2,
+            "port": "doi",
+            "from": "1.database_2.pdbx_DOI",
+            "kind": "declared"
+          }
+        ],
+        "projection": []
+      },
+      "titles": [
+        "Entry",
+        "Entries",
+        "GET /works/{doi} (each)"
+      ],
+      "contract": {
+        "status": "satisfied",
+        "steps": [
+          {
+            "step": 0,
+            "capability": "graphql:data-rcsb-org-graphql:query:entry",
+            "title": "Entry",
+            "reason": "required-information"
+          },
+          {
+            "step": 1,
+            "capability": "graphql:data-rcsb-org-graphql:query:entries",
+            "title": "Entries",
+            "reason": "required-information"
+          },
+          {
+            "step": 2,
+            "capability": "openapi:crossref-rest-api:get-works-doi",
+            "title": "GET /works/{doi}",
+            "reason": "requested"
+          }
+        ],
+        "violations": [],
+        "preservesInput": false
+      }
+    }
+  ],
+  "contract": {
+    "input": [
+      {
+        "name": "entry_id",
+        "type": "id.entry"
+      }
+    ],
+    "output": {
+      "type": "json",
+      "requires": [
+        "publisher"
+      ]
+    },
+    "transformations": [
+      "primary",
+      "citat",
+      "doi",
+      "public",
+      "titl",
+      "publish"
+    ],
+    "invariants": [
+      "lineage: every step is requested, provides required information, converts a type a later step needs, or was named by the caller",
+      "distinct inputs: no step receives the same value on two required ports",
+      "preservation: where every step has evidence of keeping its input's words, the result must keep the caller's words"
+    ],
+    "completeness": "the result carries: publisher",
+    "provenance": "every bound value comes from the caller or an earlier step of this plan",
+    "verification": {
+      "predicates": 3,
+      "witnesses": 0,
+      "strongest": "predicate-checked"
+    },
+    "authority": {
+      "risks": [
+        "read"
+      ],
+      "destructiveNeedsOperatorApproval": true
+    },
+    "allowedUncertainty": "none: a result whose contract cannot be established is reported as not established, not as success",
+    "failureConditions": [
+      "a step not justified by the request (lineage)",
+      "a required piece of information missing from the result",
+      "a join supported only by a generic type when information is required",
+      "a check (predicate or witness) refuted",
+      "content lost where every step was expected to preserve it"
+    ]
+  },
+  "outcome": {
+    "status": "established",
+    "require": [
+      "publisher"
+    ],
+    "covered": {
+      "publisher": "message.publisher-location"
+    },
+    "missing": [],
+    "joins": [
+      {
+        "step": 0,
+        "port": "entry_id",
+        "from": "$in.entry_id",
+        "kind": "caller"
+      },
+      {
+        "step": 1,
+        "port": "doi",
+        "from": "0.pubmed.rcsb_pubmed_doi",
+        "kind": "declared"
+      }
+    ]
+  },
+  "executed": {
+    "summary": "Entry → GET /works/{doi}",
+    "titles": [
+      "Entry",
+      "GET /works/{doi}"
+    ],
+    "output": null,
+    "status": "pending",
+    "pending": {
+      "capability": "execution:composition:bca23263-4d36-4e8e-bd2a-96297cfa70ab",
+      "reason": "workflow-pending",
+      "runs": [
+        "run_mvgwiik4_2_86341073-4f9c-490c-989f-a40c49ea4265"
+      ],
+      "resumeId": "resume:run_mvgwiik0_1_260c94df-b7d7-46f6-a72d-95af3d38a195",
+      "detail": "Retained step contract changed or disappeared."
+    },
+    "verification": {
+      "status": "unverified",
+      "results": []
+    },
+    "runs": [
+      "run_mvgwiik4_2_86341073-4f9c-490c-989f-a40c49ea4265"
+    ],
+    "attempts": [
+      {
+        "summary": "Entry → GET /works/{doi}",
+        "failed": "execution:composition:bca23263-4d36-4e8e-bd2a-96297cfa70ab",
+        "error": "outcome pending; completion is not established; the original action was not replayed",
+        "healing": "retained execution: no alternative plan or replay"
+      }
+    ],
+    "durationMs": 550,
+    "error": "outcome pending; completion is not established; the original action was not replayed"
+  }
+}
