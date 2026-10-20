@@ -22,6 +22,10 @@ class Checks(unittest.TestCase):
         self.assertTrue(c.assess(task, reply, get_rows, data, truth)["correct"])
         get_rows[0]["url"] = get_rows[0]["url"].replace("ABCD", "WXYZ")
         self.assertFalse(c.assess(task, reply, get_rows, data, truth)["correct"])
+        get_rows[0]["url"] = "https://data.rcsb.org/graphql?" + urlencode({"query": 'query($id:String!){entry(entry_id:$id){rcsb_primary_citation{pdbx_database_id_DOI}}}', "variables": json.dumps({"id": "ABCD"})})
+        self.assertTrue(c.assess(task, reply, get_rows, data, truth)["correct"])
+        get_rows[0]["url"] = get_rows[0]["url"].replace("ABCD", "WXYZ")
+        self.assertFalse(c.assess(task, reply, get_rows, data, truth)["correct"])
         for mode in ["memory", "wrong-input", "dataset-doi", "wrong-title", "failed-transport", "wrong-answer"]:
             altered, payloads, text = copy.deepcopy(rows), copy.deepcopy(data), reply
             if mode == "memory":

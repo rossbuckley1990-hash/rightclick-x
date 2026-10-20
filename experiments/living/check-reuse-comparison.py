@@ -52,7 +52,8 @@ def assess(task, reply, network, payloads, truth):
         parsed = urllib.parse.urlparse(row["url"])
         if parsed.hostname != "data.rcsb.org" or row.get("discovery"):
             continue
-        query = row.get("body", "") if row["method"] == "POST" else " ".join(urllib.parse.parse_qs(parsed.query).get("query", []))
+        params = urllib.parse.parse_qs(parsed.query)
+        query = row.get("body", "") if row["method"] == "POST" else " ".join(params.get("query", []) + params.get("variables", []))
         if parsed.path == "/rest/v1/core/entry/" + entry or (parsed.path == "/graphql" and re.search(r'"' + re.escape(entry) + r'"', query.replace('\\"', '"'))):
             producing.append((row, payload))
     value = answer(reply)
