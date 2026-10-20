@@ -1,7 +1,7 @@
 // A deliberately narrow HTTP profile: 202 status resource(s), then 303 to a
 // result representation. A 200 monitor is not a completion signal. No inferred
 // body-state vocabulary, arbitrary URL probing, write replay or repair.
-import type { Capability } from "../core/types.ts";
+import type { Capability, Port } from "../core/types.ts";
 import { sha256, stableStringify } from "../core/ledger.ts";
 import { isSensitiveName } from "../core/secrets.ts";
 import { cancelBody, readBody, request, TransportRefused, type Net } from "./net.ts";
@@ -57,8 +57,12 @@ export async function httpContractDigest(c: Capability): Promise<string> { retur
 // Exact local comparison, including risk/provider. This is not an authority
 // signature or proof. Use the existing receipt digest only for recorded evidence.
 function contractIdentity(c: Capability) {
-  return stableStringify({ id: c.id, provider: c.provider, risk: c.risk, inputs: c.inputs,
-    outputs: c.outputs.filter(p => !p.observed), invoke: c.invoke });
+  // Schemes are learned annotations, not declarations or changes to an action.
+  // A successful step may add them to any port while its retained plan runs.
+  // Preserve every other port field and the complete invocation in the pin.
+  const declared = ({ schemes, ...port }: Port) => port;
+  return stableStringify({ id: c.id, provider: c.provider, risk: c.risk, inputs: c.inputs.map(declared),
+    outputs: c.outputs.filter(p => !p.observed).map(declared), invoke: c.invoke });
 }
 
 /** Match the transport route without reinterpreting a string as another resource identity. */

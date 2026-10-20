@@ -566,6 +566,9 @@ export class RightClick {
             entries.some(c => !(valid as (c: any) => boolean)(c)))) {
           throw new Error(`unsupported retained ${name} checkpoint; state was not discarded`);
         }
+        if (entries?.length && !saved.requirements?.includes("declared-continuation-contracts@1")) {
+          throw new Error(`unsupported retained ${name} contract digest; use its compatible runtime`);
+        }
         if (stale && entries?.length) throw new Error(`cannot migrate inference with retained ${name} continuations; use their compatible runtime`);
       }
       rc.graph.identities.load(saved.identities);

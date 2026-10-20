@@ -8,6 +8,7 @@ export const STATE_REQUIREMENTS = [
   "scoped-composites@1",
   "http-workflow-continuations@1",
   "composition-goal-obligations@1",
+  "declared-continuation-contracts@1",
 ] as const;
 const supported = new Set<string>(STATE_REQUIREMENTS);
 const invocations = new Set(["http", "graphql", "mcp", "peer", "builtin", "platform", "cli", "goal", "composite"]);

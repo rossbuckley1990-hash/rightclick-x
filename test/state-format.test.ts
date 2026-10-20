@@ -80,6 +80,13 @@ test("a valid pending HTTP operation blocks inference migration without discardi
   const pending = await rc.run("openapi:pending:begin");
   assert.equal(pending.status, "pending"); await rc.flush();
   assert.equal(store.state!.httpContinuations!.length, 1);
+  const requirements = store.state!.requirements!;
+  store.state!.requirements = requirements.filter(r => r !== "declared-continuation-contracts@1");
+  const olderDigest = structuredClone(store.state), oldCount = calls;
+  await assert.rejects(RightClick.create(options), /unsupported retained HTTP contract digest/);
+  assert.equal(calls, oldCount);
+  assert.deepEqual(store.state, olderDigest);
+  store.state!.requirements = requirements;
   store.state!.semantics = SEMANTICS - 1;
   const before = structuredClone(store.state); const count = calls;
   await assert.rejects(RightClick.create(options), /cannot migrate inference with retained HTTP/);
