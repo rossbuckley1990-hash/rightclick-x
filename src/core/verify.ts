@@ -1,3 +1,4 @@
+import type { TransportRefusal } from "./types.ts";
 // Outcome verification: "the provider answered" is not "the job got done".
 // Callers attach predicates to a run; the result is verified, refuted, or
 // honestly unverified when no predicate was given.
@@ -35,6 +36,7 @@ export interface WitnessResult {
   verification: { status: "verified" | "checked" | "refuted" | "unverified"; results: PredicateResult[] };
   output?: unknown;
   error?: string;
+  refusal?: TransportRefusal;
 }
 
 export function pick(value: unknown, path?: string): unknown {

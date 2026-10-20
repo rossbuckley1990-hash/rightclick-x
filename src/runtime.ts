@@ -20,7 +20,7 @@ import { JsonRepresentationError, parseJsonValue } from "./core/json.ts";
 import { KNOWLEDGE_FORMAT, type ImportReport, type KnowledgeBundle } from "./core/knowledge.ts";
 import { assessExecution, consequentialRisks, ExecutionDenied, intersectOrigins, parseExecutionPolicy, type ExecutionAssessment, type ExecutionPolicy } from "./core/execution-policy.ts";
 import { distance, inferType, inspectValue, type Inspection } from "./core/semantics.ts";
-import type { Capability, CapabilityAnchor, FetchLike, PlanStep, Reflection, SemType } from "./core/types.ts";
+import type { Capability, CapabilityAnchor, FetchLike, PlanStep, Reflection, SemType, TransportRefusal } from "./core/types.ts";
 import { check, pick, type Predicate, type PredicateResult, type OutcomeWitness, type WitnessResult } from "./core/verify.ts";
 import { builtinReflection, type BuiltinFn } from "./reflectors/builtins.ts";
 import { DEFAULT_DIRECTORIES, type Candidate, type Directory } from "./reflectors/directories.ts";
@@ -29,7 +29,7 @@ import { environmentNet, environmentOptions, observeCatalog, type EnvironmentOpt
 import { buildDocument, checkSelection } from "./reflectors/graphql.ts";
 import { McpClient } from "./reflectors/mcp.ts";
 import { continuationPolicy, continuationTargets, followHttp202, type HttpContinuationOptions, type HttpContinuationEvidence, type ContinuationPolicy } from "./reflectors/http-continuation.ts";
-import { Authority, cancelBody, readBody, request, type Net, type NetworkPolicy } from "./reflectors/net.ts";
+import { Authority, cancelBody, readBody, request, TransportRefused, type Net, type NetworkPolicy } from "./reflectors/net.ts";
 import { detectRuntime, platformReflection, type PlatformFn, type RuntimeInfo } from "./reflectors/platform.ts";
 
 export const VERSION = "0.1.0";
@@ -193,6 +193,7 @@ export interface RunRecord {
   /** Accepted work is not a completed outcome, nor evidence that an effect failed. */
   pending?: PendingOutcome;
   httpContinuation?: HttpContinuationEvidence;
+  refusal?: TransportRefusal;
   output?: unknown;
   error?: string;
   startedAt: string;
@@ -285,6 +286,7 @@ export interface ComposeResult {
     output: unknown;
     status: "completed" | "failed" | "pending";
     pending?: PendingOutcome;
+    refusal?: TransportRefusal;
     verification: RunRecord["verification"];
     runs: string[];
     /** Failed attempts the runtime routed around before succeeding. */
@@ -1141,6 +1143,7 @@ export class RightClick {
     let attempts: RunRecord["attempts"];
     let healing: RunRecord["healing"];
     let pending: PendingOutcome | undefined;
+    let refusal: TransportRefusal | undefined;
     const execution: { signal?: AbortSignal; continuation?: HttpContinuationEvidence } = { signal: opts.signal };
     try {
       this.assertExecution(cap);
@@ -1154,6 +1157,7 @@ export class RightClick {
         attempts = r.executed?.attempts;
         verification = r.executed?.verification ?? { status: "refuted", results: [] };
         if (r.executed?.pending) throw new PendingOutcomeError(r.executed.pending);
+        if (r.executed?.refusal) throw new TransportRefused(r.executed.refusal.reason, r.executed.refusal.capability, r.executed.refusal.runs);
         if (r.executed?.status !== "completed") throw new Error(attempts?.map((a) => a.error).join("; ") || "no pipeline found for saved goal");
       } else if (cap.invoke.kind === "composite") {
         const r = await this.runSteps(cap.invoke.steps, cap.invoke.result, coerced, opts.confirm, opts.activeGoals, opts.net);
@@ -1166,6 +1170,8 @@ export class RightClick {
         witnesses = await this.checkWitnesses(cap.invoke.witnesses ?? [], coerced, output, r.runs, opts.net);
         const waiting = witnesses.find(w => w.status === "pending");
         if (waiting) throw new PendingOutcomeError({ capability: waiting.capability, reason: "witness-pending", runs: [...r.runs, waiting.runId] });
+        const denied = witnesses.find(w => w.refusal);
+        if (denied) throw new TransportRefused(denied.refusal!.reason, denied.capability, [...r.runs, denied.runId]);
         if (witnesses.some((w) => w.status !== "completed")) throw new Error("independent outcome witness refuted: " + witnesses.filter((w) => w.status !== "completed").map((w) => w.error ?? w.capability).join("; "));
         if (witnesses.length) verification = { ...verification, status: "verified" };
       } else {
@@ -1174,7 +1180,7 @@ export class RightClick {
         } catch (e) {
           // A caller's own mistake (an undocumented option, a literal that looks like an option)
           // says nothing about the provider: no repair, no re-investigation.
-          if (e instanceof PendingOutcomeError || e instanceof ExecutionDenied || e instanceof JsonRepresentationError || opts.planned || !HEALABLE.has(cap.invoke.kind) || /HTTP 400 equivalent|is not one this program documents|needs a value/.test(String((e as Error)?.message ?? e))) throw e;
+          if (e instanceof PendingOutcomeError || e instanceof TransportRefused || e instanceof ExecutionDenied || e instanceof JsonRepresentationError || opts.planned || !HEALABLE.has(cap.invoke.kind) || /HTTP 400 equivalent|is not one this program documents|needs a value/.test(String((e as Error)?.message ?? e))) throw e;
           const h = await this.healRun(cap, args, String((e as Error)?.message ?? e), opts.net, execution);
           healing = h.healing;
           if (!h.healed) throw new Error(`${healing.error}; ${healing.note}`);
@@ -1192,13 +1198,19 @@ export class RightClick {
         output = undefined;
         steps = e.pending.runs;
         verification = { status: "unverified", results: [] };
+      } else if (e instanceof TransportRefused) {
+        refusal = { ...e.refusal, capability: e.refusal.capability ?? cap.id };
+        failedCapability = refusal.capability;
+        output = undefined;
+        steps = refusal.runs;
+        verification = { status: "unverified", results: [] };
       } else verification = { ...verification, status: "refuted" };
     }
     const durationMs = Math.round((performance.now() - t0) * 10) / 10;
     const ok = !error && verification.status !== "refuted";
     // A refusal says nothing about how the operation behaves.
     // Recorded experience is persisted: errors that echo a credential are stored without it.
-    if (!pending && !refused && !error?.includes("blocked by execution policy")) this.ledger.record(cap.id, ok, durationMs, error ? scrub(error, sensitiveValues(args)) : error);
+    if (!pending && !refusal && !refused && !error?.includes("blocked by execution policy")) this.ledger.record(cap.id, ok, durationMs, error ? scrub(error, sensitiveValues(args)) : error);
     // Identifier values a successful call accepted and returned link ports across providers.
     if (ok && cap.invoke.kind !== "composite" && cap.invoke.kind !== "goal" && this.graph.identities.observe(cap, args, output)) this.graph.relink();
     const receipt = await this.chain.append(
@@ -1214,6 +1226,7 @@ export class RightClick {
       title: cap.title,
       status: pending ? "pending" : error ? "failed" : "completed",
       ...(pending ? { pending } : {}),
+      ...(refusal ? { refusal } : {}),
       ...(execution.continuation ? { httpContinuation: execution.continuation } : {}),
       output,
       error,
@@ -1368,7 +1381,7 @@ export class RightClick {
       const output = await this.execute(next, coerceArgs(next, args), net, execution);
       return { healing: { ...healing, note }, healed: true, output };
     } catch (e) {
-      if (e instanceof PendingOutcomeError) throw e;
+      if (e instanceof PendingOutcomeError || e instanceof TransportRefused) throw e;
       return done(`${note}: ${String((e as Error)?.message ?? e)}`);
     }
   }
@@ -1426,7 +1439,8 @@ export class RightClick {
           args[key] = value;
         }
         const r = await this.run(w.capability, args, { verify: w.verify, net, planned: true });
-        evidence.push({ capability: w.capability, runId: r.runId, status: r.status, verification: r.verification, output: r.output, ...(r.error ? { error: r.error } : {}) });
+        evidence.push({ capability: w.capability, runId: r.runId, status: r.status, verification: r.verification, output: r.output, ...(r.error ? { error: r.error } : {}), ...(r.refusal ? { refusal: r.refusal } : {}) });
+        if (r.refusal) break;
       } catch (e) {
         evidence.push({ capability: original.capability, runId: "", status: "failed", verification: { status: "refuted", results: [] }, error: String((e as Error)?.message ?? e) });
       }
@@ -1679,6 +1693,8 @@ export class RightClick {
         lastWitnesses = await this.checkWitnesses(witnesses, values, r.output, r.runs, net);
         const waiting = lastWitnesses.find(w => w.status === "pending");
         if (waiting) throw new PendingOutcomeError({ capability: waiting.capability, reason: "witness-pending", runs: [...r.runs, waiting.runId] });
+        const denied = lastWitnesses.find(w => w.refusal);
+        if (denied) throw new TransportRefused(denied.refusal!.reason, denied.capability, [...r.runs, denied.runId]);
         if (lastWitnesses.some((w) => w.status !== "completed")) throw new StepError(p.steps[p.steps.length - 1].capability, `verification refuted by independent outcome witness: ${lastWitnesses.filter((w) => w.status !== "completed").map((w) => w.error ?? w.capability).join("; ")}`);
         if (lastWitnesses.length) verification = { ...verification, status: "verified" };
         if (require.length) {
@@ -1751,6 +1767,14 @@ export class RightClick {
         return result;
       } catch (e) {
         const failed = e instanceof StepError || e instanceof ConfirmationRequired ? e.capability : p.steps[0].capability;
+        if (e instanceof TransportRefused) {
+          attempts.push({ summary: p.summary, failed: e.refusal.capability ?? failed, error: e.message,
+            healing: "execution boundary refused: no repair, alternative plan or publication" });
+          result.executed = { summary: p.summary, titles: titles(p), output: null, status: "failed",
+            refusal: e.refusal, verification: { status: "unverified", results: [] }, runs: e.refusal.runs,
+            attempts, durationMs: Math.round(performance.now() - t0), witnesses: lastWitnesses, error: e.message };
+          return result;
+        }
         if (e instanceof PendingOutcomeError) {
           attempts.push({ summary: p.summary, failed, error: e.message, healing: "pending outcome: no replay, repair, alternative plan or publication" });
           result.executed = { summary: p.summary, titles: titles(p), output: null, status: "pending",
@@ -1926,6 +1950,7 @@ export class RightClick {
       ok: r.executed?.status === "completed",
       status: r.executed?.status ?? "failed",
       ...(r.executed?.pending ? { pending: r.executed.pending } : {}),
+      ...(r.executed?.refusal ? { refusal: r.executed.refusal } : {}),
       result: r.executed?.output ?? null,
       pipeline: r.executed?.titles ?? [],
       verification: r.executed?.verification.status ?? "refuted",
@@ -2058,6 +2083,7 @@ export class RightClick {
         const r = await this.run(step.capability, args, { confirm, activeGoals, net, planned: true });
         runs.push(r.runId);
         if (r.pending) throw new PendingOutcomeError({ ...r.pending, runs: [...new Set([...runs, ...r.pending.runs])] });
+        if (r.refusal) throw new TransportRefused(r.refusal.reason, r.refusal.capability ?? step.capability, [...new Set([...runs, ...r.refusal.runs])]);
         if (r.status === "failed") throw new StepError(r.failedCapability ?? step.capability, `${step.capability}: ${r.error}`);
         outputs.push(r.output);
         continue;
@@ -2076,6 +2102,7 @@ export class RightClick {
         runs.push(r.runId);
         report.ran++;
         if (r.pending) throw new PendingOutcomeError({ ...r.pending, runs: [...new Set([...runs, ...r.pending.runs])] });
+        if (r.refusal) throw new TransportRefused(r.refusal.reason, r.refusal.capability ?? step.capability, [...new Set([...runs, ...r.refusal.runs])]);
         if (r.status === "failed") throw new StepError(r.failedCapability ?? step.capability, `${step.capability} (item ${JSON.stringify(item)}, ${report.ran} of ${items.length}): ${r.error}`);
         each.push(r.output);
       }
@@ -2435,6 +2462,8 @@ export class RightClick {
         }
         const j: any = await readBody(res);
         if (j?.status === "pending") throw new PendingOutcomeError({ capability: cap.id, reason: "peer-pending", runs: [] });
+        // A remote denial is sufficient to stop, never sufficient to authorize.
+        if (j?.refusal) throw new TransportRefused("peer reports an execution-boundary refusal", cap.id);
         if (!res.ok || j?.status !== "completed") throw new Error(`peer: ${j?.error ?? "no completed outcome"}`);
         return j.output;
       }

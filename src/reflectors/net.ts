@@ -4,7 +4,18 @@
 // attached only to requests whose origin is exactly that, so a reflected
 // capability (or a redirect) can never carry a key to some other host.
 
-import type { FetchLike } from "../core/types.ts";
+import type { FetchLike, TransportRefusal } from "../core/types.ts";
+
+/** Trusted host adapters can distinguish a boundary denial from transport failure.
+ * This marker only stops work; it cannot authorize anything or attest a grant. */
+export class TransportRefused extends Error {
+  readonly refusal: TransportRefusal;
+  constructor(reason: string, capability?: string, runs: string[] = []) {
+    super(`blocked by execution boundary: ${reason}`);
+    this.name = "TransportRefused";
+    this.refusal = { reason, capability, runs };
+  }
+}
 
 export class Authority {
   private byOrigin = new Map<string, Record<string, string>>();

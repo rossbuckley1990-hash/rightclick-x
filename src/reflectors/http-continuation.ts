@@ -4,7 +4,7 @@
 import type { Capability } from "../core/types.ts";
 import { sha256, stableStringify } from "../core/ledger.ts";
 import { isSensitiveName } from "../core/secrets.ts";
-import { cancelBody, readBody, request, type Net } from "./net.ts";
+import { cancelBody, readBody, request, TransportRefused, type Net } from "./net.ts";
 
 export interface HttpContinuationOptions { maxRequests?: number; timeoutMs?: number }
 export interface HttpContinuationEvidence {
@@ -160,7 +160,7 @@ export async function followHttp202(opts: {
       if (res.status >= 500 || res.status === 404 || res.status === 410) return stop("unavailable", res);
       if (res.status !== 202 && res.status !== 303) return stop("unsupported-status", res);
     } catch (error) {
-      const denied = /^blocked by (network|egress) policy/.test(String((error as Error)?.message));
+      const denied = error instanceof TransportRefused || /^blocked by (network|egress) policy/.test(String((error as Error)?.message));
       return stop(opts.signal?.aborted ? "cancelled" : denied ? "denied" : "unavailable");
     }
   }

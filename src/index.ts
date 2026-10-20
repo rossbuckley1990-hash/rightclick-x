@@ -5,7 +5,7 @@ export { inferType, inspectValue, distance, strongly } from "./core/semantics.ts
 export { ReceiptChain, Ledger } from "./core/ledger.ts";
 export { check, type Predicate, type OutcomeWitness, type WitnessResult } from "./core/verify.ts";
 export { moneyType, convertMoney, isQuantityType, isResolvedQuantity } from "./core/quantities.ts";
-export { Authority } from "./reflectors/net.ts";
+export { Authority, TransportRefused } from "./reflectors/net.ts";
 export { reflectOpenAPI } from "./reflectors/openapi.ts";
 export { reflectGraphQL } from "./reflectors/graphql.ts";
 export { reflectMcpTools, McpClient } from "./reflectors/mcp.ts";

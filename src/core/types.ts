@@ -249,3 +249,10 @@ export interface Reflection {
 }
 
 export type FetchLike = (input: string | URL | Request, init?: RequestInit) => Promise<Response>;
+
+/** A host transport reports refusal, not a provider failure or an authority grant. */
+export interface TransportRefusal {
+  reason: string;
+  capability?: string;
+  runs: string[];
+}
