@@ -18,6 +18,10 @@ on:
 
 jobs:
   cloud-runtime:
+    # Quarantined during reconciliation: this historical experiment exposes an
+    # authentication token and interpolates dispatch input into shell code.
+    # Preserve the recipe, but require a separate security review before enabling.
+    if: ${{ false }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
 

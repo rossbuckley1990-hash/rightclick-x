@@ -1,0 +1,710 @@
+{
+  "checkout": "/Users/ross/src/rightclick-x-reconcile",
+  "node": "v26.12.0",
+  "passed": 24,
+  "failed": 0,
+  "checks": [
+    {
+      "name": "long-lived SSE GET: discover exact MCP tool and cancel",
+      "ok": true,
+      "ms": 34.10095900000002,
+      "trace": [
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "GET",
+          "authorized": true,
+          "session": null
+        },
+        {
+          "event": "cancel"
+        },
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "POST",
+          "rpc": "initialize",
+          "authorized": true,
+          "session": null
+        },
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "POST",
+          "rpc": "notifications/initialized",
+          "authorized": true,
+          "session": "fixture-session"
+        },
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "POST",
+          "rpc": "tools/list",
+          "authorized": true,
+          "session": "fixture-session"
+        }
+      ]
+    },
+    {
+      "name": "finite JSON: MCP initialize/list remain compatible",
+      "ok": true,
+      "ms": 1.5049579999999878,
+      "trace": [
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "GET",
+          "authorized": true,
+          "session": null
+        },
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "POST",
+          "authorized": true,
+          "session": null
+        },
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "POST",
+          "rpc": "initialize",
+          "authorized": true,
+          "session": null
+        },
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "POST",
+          "rpc": "notifications/initialized",
+          "authorized": true,
+          "session": "fixture-session"
+        },
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "POST",
+          "rpc": "tools/list",
+          "authorized": true,
+          "session": "fixture-session"
+        }
+      ]
+    },
+    {
+      "name": "OpenAPI JSON: exact REST operation",
+      "ok": true,
+      "ms": 8.204707999999982,
+      "trace": []
+    },
+    {
+      "name": "finite JSON mislabeled as text/plain: still reflects OpenAPI",
+      "ok": true,
+      "ms": 2.60616600000003,
+      "trace": []
+    },
+    {
+      "name": "YAML compatibility resolution preserves OpenAPI support",
+      "ok": true,
+      "ms": 1.7867919999999913,
+      "trace": []
+    },
+    {
+      "name": "GraphQL introspection still discovers geocode",
+      "ok": true,
+      "ms": 2.0125419999999963,
+      "trace": []
+    },
+    {
+      "name": "finite valid MCP SSE responses, notifications, unrelated IDs, fragmented CRLF",
+      "ok": true,
+      "ms": 6.051458000000025,
+      "trace": [
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "GET",
+          "authorized": true,
+          "session": null
+        },
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "POST",
+          "authorized": true,
+          "session": null
+        },
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "POST",
+          "rpc": "initialize",
+          "authorized": true,
+          "session": null
+        },
+        {
+          "event": "cancel"
+        },
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "POST",
+          "rpc": "notifications/initialized",
+          "authorized": true,
+          "session": "fixture-session"
+        },
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "POST",
+          "rpc": "tools/list",
+          "authorized": true,
+          "session": "fixture-session"
+        },
+        {
+          "event": "cancel"
+        }
+      ]
+    },
+    {
+      "name": "MCP SSE response without EOF: match response and stop reading",
+      "ok": true,
+      "ms": 5.134999999999991,
+      "trace": [
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "GET",
+          "authorized": true,
+          "session": null
+        },
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "POST",
+          "authorized": true,
+          "session": null
+        },
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "POST",
+          "rpc": "initialize",
+          "authorized": true,
+          "session": null
+        },
+        {
+          "event": "cancel"
+        },
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "POST",
+          "rpc": "notifications/initialized",
+          "authorized": true,
+          "session": "fixture-session"
+        },
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "POST",
+          "rpc": "tools/list",
+          "authorized": true,
+          "session": "fixture-session"
+        },
+        {
+          "event": "cancel"
+        }
+      ]
+    },
+    {
+      "name": "mixed-case MCP SSE media type remains valid",
+      "ok": true,
+      "ms": 1.8315000000000055,
+      "trace": [
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "GET",
+          "authorized": true,
+          "session": null
+        },
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "POST",
+          "authorized": true,
+          "session": null
+        },
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "POST",
+          "rpc": "initialize",
+          "authorized": true,
+          "session": null
+        },
+        {
+          "event": "cancel"
+        },
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "POST",
+          "rpc": "notifications/initialized",
+          "authorized": true,
+          "session": "fixture-session"
+        },
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "POST",
+          "rpc": "tools/list",
+          "authorized": true,
+          "session": "fixture-session"
+        },
+        {
+          "event": "cancel"
+        }
+      ]
+    },
+    {
+      "name": "SSE is not proof of MCP capability",
+      "ok": true,
+      "ms": 0.3850840000000062,
+      "trace": [
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "GET",
+          "authorized": true,
+          "session": null
+        },
+        {
+          "event": "cancel"
+        },
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "POST",
+          "rpc": "initialize",
+          "authorized": true,
+          "session": null
+        },
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "POST",
+          "authorized": true,
+          "session": null
+        }
+      ]
+    },
+    {
+      "name": "finite SSE GET with GraphQL POST: retain protocol fallback",
+      "ok": true,
+      "ms": 0.7261669999999754,
+      "trace": [
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "GET",
+          "authorized": true,
+          "session": null
+        },
+        {
+          "event": "cancel"
+        },
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "POST",
+          "rpc": "initialize",
+          "authorized": true,
+          "session": null
+        },
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "POST",
+          "authorized": true,
+          "session": null
+        }
+      ]
+    },
+    {
+      "name": "provider unavailable then recovers using same MCP client",
+      "ok": true,
+      "ms": 1.390958000000012,
+      "trace": [
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "GET",
+          "authorized": true,
+          "session": null
+        },
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "POST",
+          "authorized": true,
+          "session": null
+        },
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "POST",
+          "rpc": "initialize",
+          "authorized": true,
+          "session": null
+        },
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "GET",
+          "authorized": true,
+          "session": null
+        },
+        {
+          "event": "cancel"
+        },
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "POST",
+          "rpc": "initialize",
+          "authorized": true,
+          "session": null
+        },
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "POST",
+          "rpc": "notifications/initialized",
+          "authorized": true,
+          "session": "fixture-session"
+        },
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "POST",
+          "rpc": "tools/list",
+          "authorized": true,
+          "session": "fixture-session"
+        }
+      ]
+    },
+    {
+      "name": "401 refuses discovery without executing tools",
+      "ok": true,
+      "ms": 0.41508299999998144,
+      "trace": [
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "GET",
+          "authorized": true,
+          "session": null
+        },
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "POST",
+          "authorized": true,
+          "session": null
+        },
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "POST",
+          "rpc": "initialize",
+          "authorized": true,
+          "session": null
+        }
+      ]
+    },
+    {
+      "name": "incorrect JSON content type on infinite body: deadline must bound read",
+      "ok": true,
+      "ms": 29.96279099999998,
+      "trace": [
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "GET",
+          "authorized": true,
+          "session": null
+        },
+        {
+          "event": "cancel"
+        },
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "POST",
+          "authorized": true,
+          "session": null
+        },
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "POST",
+          "rpc": "initialize",
+          "authorized": true,
+          "session": null
+        },
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "POST",
+          "rpc": "notifications/initialized",
+          "authorized": true,
+          "session": "fixture-session"
+        },
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "POST",
+          "rpc": "tools/list",
+          "authorized": true,
+          "session": "fixture-session"
+        }
+      ]
+    },
+    {
+      "name": "pending body cancellation must not hang discovery",
+      "ok": true,
+      "ms": 5.8814160000000015,
+      "trace": [
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "GET",
+          "authorized": true,
+          "session": null
+        },
+        {
+          "event": "cancel"
+        },
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "POST",
+          "rpc": "initialize",
+          "authorized": true,
+          "session": null
+        },
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "POST",
+          "rpc": "notifications/initialized",
+          "authorized": true,
+          "session": "fixture-session"
+        },
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "POST",
+          "rpc": "tools/list",
+          "authorized": true,
+          "session": "fixture-session"
+        }
+      ]
+    },
+    {
+      "name": "rejected body cancellation can still negotiate MCP",
+      "ok": true,
+      "ms": 0.44974999999999454,
+      "trace": [
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "GET",
+          "authorized": true,
+          "session": null
+        },
+        {
+          "event": "cancel"
+        },
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "POST",
+          "rpc": "initialize",
+          "authorized": true,
+          "session": null
+        },
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "POST",
+          "rpc": "notifications/initialized",
+          "authorized": true,
+          "session": "fixture-session"
+        },
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "POST",
+          "rpc": "tools/list",
+          "authorized": true,
+          "session": "fixture-session"
+        }
+      ]
+    },
+    {
+      "name": "headers stall: existing request timeout aborts fetch",
+      "ok": true,
+      "ms": 30.01316700000001,
+      "trace": [
+        {
+          "event": "aborted"
+        }
+      ]
+    },
+    {
+      "name": "MCP finite SSE tool call executes exactly once",
+      "ok": true,
+      "ms": 2.545415999999989,
+      "trace": [
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "GET",
+          "authorized": true,
+          "session": null
+        },
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "POST",
+          "authorized": true,
+          "session": null
+        },
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "POST",
+          "rpc": "initialize",
+          "authorized": true,
+          "session": null
+        },
+        {
+          "event": "cancel"
+        },
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "POST",
+          "rpc": "notifications/initialized",
+          "authorized": true,
+          "session": "fixture-session"
+        },
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "POST",
+          "rpc": "tools/list",
+          "authorized": true,
+          "session": "fixture-session"
+        },
+        {
+          "event": "cancel"
+        },
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "POST",
+          "rpc": "tools/call",
+          "authorized": true,
+          "session": "fixture-session"
+        },
+        {
+          "event": "cancel"
+        }
+      ]
+    },
+    {
+      "name": "security: egress allowlist blocks all discovery requests",
+      "ok": true,
+      "ms": 0.196708000000001,
+      "trace": []
+    },
+    {
+      "name": "security: deny host blocks all discovery requests",
+      "ok": true,
+      "ms": 0.1628329999999778,
+      "trace": []
+    },
+    {
+      "name": "security: private address blocks all discovery requests",
+      "ok": true,
+      "ms": 0.41687500000000455,
+      "trace": []
+    },
+    {
+      "name": "security: non-HTTP scheme blocks all discovery requests",
+      "ok": true,
+      "ms": 0.10437500000000455,
+      "trace": []
+    },
+    {
+      "name": "security: redirect cannot bypass egress policy",
+      "ok": true,
+      "ms": 0.3524169999999458,
+      "trace": [
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities"
+        },
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities"
+        },
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities"
+        }
+      ]
+    },
+    {
+      "name": "security: SSE redirect receives only destination-pinned credentials",
+      "ok": true,
+      "ms": 0.8248330000000124,
+      "trace": [
+        {
+          "event": "redirect-header",
+          "authorization": "Bearer destination-only"
+        },
+        {
+          "event": "cancel"
+        },
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "POST",
+          "rpc": "initialize",
+          "authorized": true,
+          "session": null
+        },
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "POST",
+          "rpc": "notifications/initialized",
+          "authorized": true,
+          "session": "fixture-session"
+        },
+        {
+          "event": "request",
+          "address": "https://stream.test/capabilities",
+          "method": "POST",
+          "rpc": "tools/list",
+          "authorized": true,
+          "session": "fixture-session"
+        }
+      ]
+    }
+  ]
+}

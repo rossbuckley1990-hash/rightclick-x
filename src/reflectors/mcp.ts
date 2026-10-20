@@ -4,9 +4,17 @@
 
 import { inferType } from "../core/semantics.ts";
 import type { Capability, Port, Reflection, Risk } from "../core/types.ts";
-import { request, slug, type Net } from "./net.ts";
+import { bodyChunks, cancelBody, DISCOVERY_BODY_LIMIT, isEventStream, readText, request, slug, type Net } from "./net.ts";
 
 const PROTOCOL = "2025-06-18";
+
+class McpHttpError extends Error {
+  readonly status: number;
+  constructor(method: string, status: number, detail: string) {
+    super(`MCP ${method} -> HTTP ${status}${detail ? `: ${detail}` : ""}`);
+    this.status = status;
+  }
+}
 
 export class McpClient {
   private session: string | null = null;
@@ -33,11 +41,16 @@ export class McpClient {
     const sid = res.headers.get("mcp-session-id");
     if (sid) this.session = sid;
     if (notify) {
-      await res.body?.cancel();
+      cancelBody(res);
       return null;
     }
-    if (!res.ok) throw new Error(`MCP ${method} -> HTTP ${res.status}: ${(await res.text()).slice(0, 200)}`);
-    const msg = await parseRpcResponse(res, (body as { id: number }).id);
+    if (!res.ok) {
+      let detail = "";
+      try { detail = (await readText(res, DISCOVERY_BODY_LIMIT)).slice(0, 200); }
+      catch { cancelBody(res); }
+      throw new McpHttpError(method, res.status, detail);
+    }
+    const msg = await parseRpcResponse(res, (body as { id: number }).id, method === "tools/call" ? Infinity : DISCOVERY_BODY_LIMIT);
     if (msg.error) throw new Error(`MCP ${method} error ${msg.error.code}: ${msg.error.message}`);
     return msg.result;
   }
@@ -65,21 +78,22 @@ export class McpClient {
     let cursor: string | undefined;
     do {
       const r = await this.rpc("tools/list", cursor ? { cursor } : {});
-      tools.push(...(r?.tools ?? []));
+      if (!Array.isArray(r?.tools)) throw new Error("MCP tools/list returned no tools array");
+      tools.push(...r.tools);
       cursor = r?.nextCursor;
     } while (cursor && tools.length < 2000);
     return tools;
   }
 
-  /** Returns structured content when the caller wants it (tool has an output schema), else the text. */
-  async call(name: string, args: Record<string, unknown>, structured = true): Promise<unknown> {
+  /** Session recovery resends the call, so the caller must explicitly establish retry safety. */
+  async call(name: string, args: Record<string, unknown>, structured = true, retrySafe = false): Promise<unknown> {
     await this.init();
     let r: any;
     try {
       r = await this.rpc("tools/call", { name, arguments: args });
     } catch (e) {
-      // Sessions expire; reconnect once.
-      if (!/HTTP (400|404)/.test(String(e))) throw e;
+      // A status or provider-controlled error message does not prove a write never committed.
+      if (!retrySafe || !(e instanceof McpHttpError) || ![400, 404].includes(e.status)) throw e;
       this.session = null;
       this.ready = null;
       await this.init();
@@ -94,20 +108,51 @@ export class McpClient {
   }
 }
 
-async function parseRpcResponse(res: Response, id: number): Promise<any> {
-  const ct = res.headers.get("content-type") ?? "";
-  const text = await res.text();
-  if (!ct.includes("event-stream")) return JSON.parse(text);
-  for (const block of text.split(/\r?\n\r?\n/)) {
-    const data = block
-      .split(/\r?\n/)
-      .filter((l) => l.startsWith("data:"))
-      .map((l) => l.slice(5).trimStart())
-      .join("\n");
-    if (!data) continue;
-    const msg = JSON.parse(data);
-    if (msg.id === id) return msg;
+async function parseRpcResponse(res: Response, id: number, maxBytes: number): Promise<any> {
+  const isResponse = (msg: any) => msg?.jsonrpc === "2.0" && msg.id === id && ("result" in msg || "error" in msg);
+  if (!isEventStream(res)) {
+    const msg = JSON.parse(await readText(res, maxBytes));
+    if (!isResponse(msg)) throw new Error("MCP response did not match the request");
+    return msg;
   }
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let data: string[] = [];
+  let skipLF = false;
+  const parseLines = () => {
+    while (true) {
+      // CR is itself a separator. Suppress only its optional following LF,
+      // including when CRLF is split across transport chunks.
+      if (skipLF) {
+        if (!buffer) return;
+        if (buffer.startsWith("\n")) buffer = buffer.slice(1);
+        skipLF = false;
+      }
+      const end = buffer.search(/[\r\n]/);
+      if (end < 0) return;
+      const line = buffer.slice(0, end);
+      skipLF = buffer[end] === "\r";
+      buffer = buffer.slice(end + 1);
+      if (line === "") {
+        const text = data.join("\n");
+        data = [];
+        if (!text) continue;
+        const msg = JSON.parse(text);
+        if (isResponse(msg)) return msg;
+      } else if (line === "data") data.push("");
+      else if (line.startsWith("data:")) data.push(line.slice(5).replace(/^ /, ""));
+    }
+  };
+  for await (const chunk of bodyChunks(res, maxBytes)) {
+    buffer += decoder.decode(chunk, { stream: true });
+    const msg = parseLines();
+    // Returning closes the reader, without waiting for the provider to close its stream.
+    if (msg) return msg;
+  }
+  // Preserve finite-response handling when the final event has no trailing blank line.
+  buffer += decoder.decode() + "\n\n";
+  const msg = parseLines();
+  if (msg) return msg;
   throw new Error("MCP stream ended without a response");
 }
 
@@ -141,7 +186,10 @@ export function reflectMcpTools(tools: any[], endpoint: string, serverName?: str
       outputs.push({ name: "", type: "text", required: true });
     }
     const a = t.annotations ?? {};
-    const risk: Risk = a.destructiveHint ? "destructive" : a.readOnlyHint ? "read" : a.openWorldHint === false ? "write" : "external";
+    // MCP's defaults: a tool not marked read-only may be destructive unless it says otherwise.
+    // Unknown side effects are treated as the most dangerous kind, not the most convenient.
+    // Preserve main's destructive-hint precedence, including malformed truthy annotations.
+    const risk: Risk = a.destructiveHint ? "destructive" : a.readOnlyHint === true ? "read" : a.destructiveHint === false ? (a.openWorldHint === false ? "write" : "external") : "destructive";
     return {
       id: `${providerId}:${slug(t.name)}`,
       title: t.title ?? a.title ?? t.name,

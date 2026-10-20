@@ -1,0 +1,53 @@
+✔ MCP 400 cannot replay an ambiguous write beneath runtime retry policy (44.127875ms)
+✔ MCP 404 cannot replay an ambiguous write beneath runtime retry policy (4.813625ms)
+✔ MCP 504 cannot replay an ambiguous write beneath runtime retry policy (1.919042ms)
+✔ read-only MCP session recovery remains available (2.643792ms)
+✔ provider text cannot masquerade as an MCP session-expiry status (3.860875ms)
+✔ operator-declared side-effect-free MCP operations retain session recovery (5.534167ms)
+✔ HTTP 400 and provider error text do not prove a write was never applied (3.260209ms)
+✔ HTTP 504 and provider error text do not prove a write was never applied (1.229459ms)
+✔ repair rechecks destructive operator approval for a replacement id (2.09425ms)
+✔ repair rechecks destructive operator approval for the approved id (2.351208ms)
+✖ 303 discards the original method and body throughout redirects via https://other.test/landing (1.279791ms)
+✖ 303 discards the original method and body throughout redirects via https://source.test/landing (0.582334ms)
+ℹ tests 12
+ℹ suites 0
+ℹ pass 10
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 293.274166
+
+✖ failing tests:
+
+test at test/review-boundaries.test.ts:117:3
+✖ 303 discards the original method and body throughout redirects via https://other.test/landing (1.279791ms)
+  AssertionError [ERR_ASSERTION]: a later redirect must not resurrect an original request body
+      at TestContext.<anonymous> (file:///Users/ross/src/rightclick-x-reconcile/test/review-boundaries.test.ts:129:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at test/review-boundaries.test.ts:117:3
+✖ 303 discards the original method and body throughout redirects via https://source.test/landing (0.582334ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  302 !== 200
+  
+      at TestContext.<anonymous> (file:///Users/ross/src/rightclick-x-reconcile/test/review-boundaries.test.ts:127:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 302,
+    expected: 200,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

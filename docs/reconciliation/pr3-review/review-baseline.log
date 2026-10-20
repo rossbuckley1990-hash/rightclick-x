@@ -1,0 +1,120 @@
+✖ MCP 400 cannot replay an ambiguous write beneath runtime retry policy (21.712042ms)
+✖ MCP 404 cannot replay an ambiguous write beneath runtime retry policy (1.6185ms)
+✖ MCP 504 cannot replay an ambiguous write beneath runtime retry policy (1.063625ms)
+✔ read-only MCP session recovery remains available (0.83575ms)
+✖ HTTP 400 and provider error text do not prove a write was never applied (2.713625ms)
+✖ HTTP 504 and provider error text do not prove a write was never applied (0.961458ms)
+✖ repair rechecks destructive operator approval for a replacement id (2.134959ms)
+✔ repair rechecks destructive operator approval for the approved id (0.844166ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 2
+ℹ fail 6
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 131.909667
+
+✖ failing tests:
+
+test at test/review-boundaries.test.ts:26:3
+✖ MCP 400 cannot replay an ambiguous write beneath runtime retry policy (21.712042ms)
+  AssertionError [ERR_ASSERTION]: one attempted write must not become two effects
+  
+  2 !== 1
+  
+      at TestContext.<anonymous> (file:///Users/ross/src/rightclick-x-reconcile/test/review-boundaries.test.ts:33:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/review-boundaries.test.ts:26:3
+✖ MCP 404 cannot replay an ambiguous write beneath runtime retry policy (1.6185ms)
+  AssertionError [ERR_ASSERTION]: one attempted write must not become two effects
+  
+  2 !== 1
+  
+      at TestContext.<anonymous> (file:///Users/ross/src/rightclick-x-reconcile/test/review-boundaries.test.ts:33:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/review-boundaries.test.ts:26:3
+✖ MCP 504 cannot replay an ambiguous write beneath runtime retry policy (1.063625ms)
+  AssertionError [ERR_ASSERTION]: one attempted write must not become two effects
+  
+  2 !== 1
+  
+      at TestContext.<anonymous> (file:///Users/ross/src/rightclick-x-reconcile/test/review-boundaries.test.ts:33:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/review-boundaries.test.ts:57:3
+✖ HTTP 400 and provider error text do not prove a write was never applied (2.713625ms)
+  AssertionError [ERR_ASSERTION]: HTTP status and body text are not a non-commit witness
+  
+  2 !== 1
+  
+      at TestContext.<anonymous> (file:///Users/ross/src/rightclick-x-reconcile/test/review-boundaries.test.ts:72:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/review-boundaries.test.ts:57:3
+✖ HTTP 504 and provider error text do not prove a write was never applied (0.961458ms)
+  AssertionError [ERR_ASSERTION]: HTTP status and body text are not a non-commit witness
+  
+  2 !== 1
+  
+      at TestContext.<anonymous> (file:///Users/ross/src/rightclick-x-reconcile/test/review-boundaries.test.ts:72:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/review-boundaries.test.ts:78:3
+✖ repair rechecks destructive operator approval for a replacement id (2.134959ms)
+  AssertionError [ERR_ASSERTION]: retry permission must not grant destructive execution approval
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (file:///Users/ross/src/rightclick-x-reconcile/test/review-boundaries.test.ts:92:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

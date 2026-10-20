@@ -1,0 +1,175 @@
+Frozen product: 492da01d2891995685cb7b363c9cdcf3e571193c
+✖ MCP 400 cannot replay an ambiguous write beneath runtime retry policy (89.316875ms)
+✖ MCP 404 cannot replay an ambiguous write beneath runtime retry policy (7.528542ms)
+✖ MCP 504 cannot replay an ambiguous write beneath runtime retry policy (5.611041ms)
+✔ read-only MCP session recovery remains available (7.086375ms)
+✖ provider text cannot masquerade as an MCP session-expiry status (17.098917ms)
+✔ operator-declared side-effect-free MCP operations retain session recovery (3.039375ms)
+✖ HTTP 400 and provider error text do not prove a write was never applied (5.545458ms)
+✖ HTTP 504 and provider error text do not prove a write was never applied (2.471458ms)
+✖ repair rechecks destructive operator approval for a replacement id (4.754208ms)
+✔ repair rechecks destructive operator approval for the approved id (1.429ms)
+✖ 303 discards the original method and body throughout redirects via https://other.test/landing (0.662709ms)
+✖ 303 discards the original method and body throughout redirects via https://source.test/landing (0.175ms)
+ℹ tests 12
+ℹ suites 0
+ℹ pass 3
+ℹ fail 9
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 608.312459
+
+✖ failing tests:
+
+test at test/review-boundaries.test.ts:27:3
+✖ MCP 400 cannot replay an ambiguous write beneath runtime retry policy (89.316875ms)
+  AssertionError [ERR_ASSERTION]: one attempted write must not become two effects
+  
+  2 !== 1
+  
+      at TestContext.<anonymous> (file:///private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/rcx-pr3-review-0fjni44r/test/review-boundaries.test.ts:34:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/review-boundaries.test.ts:27:3
+✖ MCP 404 cannot replay an ambiguous write beneath runtime retry policy (7.528542ms)
+  AssertionError [ERR_ASSERTION]: one attempted write must not become two effects
+  
+  2 !== 1
+  
+      at TestContext.<anonymous> (file:///private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/rcx-pr3-review-0fjni44r/test/review-boundaries.test.ts:34:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/review-boundaries.test.ts:27:3
+✖ MCP 504 cannot replay an ambiguous write beneath runtime retry policy (5.611041ms)
+  AssertionError [ERR_ASSERTION]: one attempted write must not become two effects
+  
+  2 !== 1
+  
+      at TestContext.<anonymous> (file:///private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/rcx-pr3-review-0fjni44r/test/review-boundaries.test.ts:34:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/review-boundaries.test.ts:50:1
+✖ provider text cannot masquerade as an MCP session-expiry status (17.098917ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'completed'
+  - 'failed'
+  
+      at TestContext.<anonymous> (file:///private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/rcx-pr3-review-0fjni44r/test/review-boundaries.test.ts:55:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'completed',
+    expected: 'failed',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/review-boundaries.test.ts:76:3
+✖ HTTP 400 and provider error text do not prove a write was never applied (5.545458ms)
+  AssertionError [ERR_ASSERTION]: HTTP status and body text are not a non-commit witness
+  
+  2 !== 1
+  
+      at TestContext.<anonymous> (file:///private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/rcx-pr3-review-0fjni44r/test/review-boundaries.test.ts:91:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/review-boundaries.test.ts:76:3
+✖ HTTP 504 and provider error text do not prove a write was never applied (2.471458ms)
+  AssertionError [ERR_ASSERTION]: HTTP status and body text are not a non-commit witness
+  
+  2 !== 1
+  
+      at TestContext.<anonymous> (file:///private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/rcx-pr3-review-0fjni44r/test/review-boundaries.test.ts:91:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/review-boundaries.test.ts:97:3
+✖ repair rechecks destructive operator approval for a replacement id (4.754208ms)
+  AssertionError [ERR_ASSERTION]: retry permission must not grant destructive execution approval
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (file:///private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/rcx-pr3-review-0fjni44r/test/review-boundaries.test.ts:111:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/review-boundaries.test.ts:117:3
+✖ 303 discards the original method and body throughout redirects via https://other.test/landing (0.662709ms)
+  AssertionError [ERR_ASSERTION]: a later redirect must not resurrect an original request body
+      at TestContext.<anonymous> (file:///private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/rcx-pr3-review-0fjni44r/test/review-boundaries.test.ts:129:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at test/review-boundaries.test.ts:117:3
+✖ 303 discards the original method and body throughout redirects via https://source.test/landing (0.175ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  302 !== 200
+  
+      at TestContext.<anonymous> (file:///private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/rcx-pr3-review-0fjni44r/test/review-boundaries.test.ts:127:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 302,
+    expected: 200,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

@@ -1,8 +1,8 @@
 {
-  "seed": 113206303,
+  "seed": 912576545,
   "domain": "invoicing",
   "gateway": true,
-  "startedAt": "2026-10-16T07:33:42.122Z",
+  "startedAt": "2026-10-17T08:44:13.905Z",
   "steps": [
     {
       "n": 1,
@@ -17,7 +17,7 @@
       "title": "Connect an MCP client to RightClick X (stdio)",
       "ok": true,
       "tools": 13,
-      "startupMs": 106.7
+      "startupMs": 115.4
     },
     {
       "n": 3,
@@ -47,7 +47,7 @@
         "openapi"
       ],
       "newCapabilities": 3,
-      "ms": 33.6
+      "ms": 36.5
     },
     {
       "n": 5,
@@ -56,78 +56,78 @@
       "candidatePlans": 3,
       "best": [
         "Invoice Lookup",
-        "Customer Profile",
-        "Lookup tax rate for a country"
+        "Fetch Customer Record",
+        "Get tax rate"
       ],
-      "planningMs": 2.2
+      "planningMs": 3
     },
     {
       "n": 6,
       "title": "Compose a multi-provider workflow",
       "ok": true,
       "steps": [
-        "Invoice Lookup ← invoice_id=$in.invoice_id",
-        "Customer Profile ← customerId=0.customerId",
-        "Lookup tax rate for a country ← country=1.countryCode"
+        "Invoice Lookup ← invoice_number=$in.invoice_id",
+        "Fetch Customer Record ← customer_number=0.customerId",
+        "Get tax rate ← country=1.countryCode"
       ]
     },
     {
       "n": 7,
       "title": "Execute the workflow",
       "ok": true,
-      "input": "INV-1006",
+      "input": "INV-1005",
       "pipeline": [
         "Invoice Lookup",
-        "Customer Profile",
-        "Lookup tax rate for a country"
+        "Fetch Customer Record",
+        "Get tax rate"
       ],
-      "ms": 4.1
+      "ms": 5.1
     },
     {
       "n": 8,
       "title": "Verify against independently held test data",
       "ok": true,
-      "expected": 14.2,
-      "got": 14.2
+      "expected": 24.1,
+      "got": 24.1
     },
     {
       "n": 9,
       "title": "Save the successful composition and reuse it",
       "ok": true,
-      "saved": "Tax rate invoice customer country: Invoice Lookup → Customer Profile → Lookup tax rate for a country",
+      "saved": "Tax rate invoice customer country: Invoice Lookup → Fetch Customer Record → Get tax rate",
       "reusedAs": [
-        "Tax rate invoice customer country: Invoice Lookup → Customer Profile → Lookup tax rate for a country"
+        "Tax rate invoice customer country: Invoice Lookup → Fetch Customer Record → Get tax rate"
       ],
-      "expected": 11.9,
-      "got": 11.9,
-      "ms": 2.3
+      "expected": 5.8,
+      "got": 5.8,
+      "ms": 2.6
     },
     {
       "n": 10,
-      "title": "Change the interface of the last provider in the chain (Quillbase)",
+      "title": "Change the interface of the last provider in the chain (Brightmark)",
       "ok": true,
-      "before": "openapi \"Lookup tax rate for a country\" country → country, standard_rate",
-      "after": "graphql \"Get tax rate\" countryCode → result.{countryCode, tax_rate}"
+      "before": "openapi \"Get tax rate\" country → country, vat_rate",
+      "after": "graphql \"Country tax rate\" country_code → result.{country_code, standard_rate}"
     },
     {
       "n": 11,
       "title": "Recover without changing integration code",
       "ok": true,
       "healing": [
-        "API drift at http://127.0.0.1:53059/: graphql:127-0-0-1-53056-graphql,graphql:127-0-0-1-53057-graphql,openapi:quillbase → graphql:127-0-0-1-53056-graphql,graphql:127-0-0-1-53057-graphql,graphql:127-0-0-1-53058-graphql; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:64296/: graphql:127-0-0-1-64293-graphql,graphql:127-0-0-1-64294-graphql,openapi:brightmark → graphql:127-0-0-1-64293-graphql,graphql:127-0-0-1-64294-graphql,graphql:127-0-0-1-64295-graphql; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "via": [
-        "graphql:127-0-0-1-53056-graphql",
-        "graphql:127-0-0-1-53057-graphql",
-        "graphql:127-0-0-1-53058-graphql"
+        "graphql:127-0-0-1-64293-graphql",
+        "graphql:127-0-0-1-64294-graphql",
+        "graphql:127-0-0-1-64295-graphql"
       ],
-      "expected": 11.9,
-      "got": 11.9,
-      "ms": 16
+      "expected": 9.7,
+      "got": 9.7,
+      "ms": 17.1
     },
     {
       "n": 12,
-      "title": "Remove that provider (Quillbase)",
+      "title": "Remove that provider (Brightmark)",
       "ok": true
     },
     {
@@ -136,17 +136,17 @@
       "ok": true,
       "status": "failed",
       "healing": [
-        "API drift at http://127.0.0.1:53059/: graphql:127-0-0-1-53056-graphql,graphql:127-0-0-1-53057-graphql,graphql:127-0-0-1-53058-graphql → graphql:127-0-0-1-53056-graphql,graphql:127-0-0-1-53057-graphql; +0 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:64296/: graphql:127-0-0-1-64293-graphql,graphql:127-0-0-1-64294-graphql,graphql:127-0-0-1-64295-graphql → graphql:127-0-0-1-64293-graphql,graphql:127-0-0-1-64294-graphql; +0 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "withdrawn": [
-        "GraphQL 127.0.0.1:53058"
+        "GraphQL 127.0.0.1:64295"
       ],
-      "capabilities": "21 → 19",
+      "capabilities": "27 → 25",
       "savedPipelines": "1 → 0"
     },
     {
       "n": 14,
-      "title": "Introduce a different provider (Duneworks, mcp): the objective works again",
+      "title": "Introduce a different provider (Quillbase, mcp): the objective works again",
       "ok": true,
       "learned": [
         "api-catalog: 3 services listed",
@@ -155,92 +155,92 @@
         "mcp: 1 tools"
       ],
       "via": [
-        "graphql:127-0-0-1-53056-graphql",
-        "graphql:127-0-0-1-53057-graphql",
-        "mcp:duneworks"
+        "graphql:127-0-0-1-64293-graphql",
+        "graphql:127-0-0-1-64294-graphql",
+        "mcp:quillbase"
       ],
-      "expected": 12.3,
-      "got": 12.3,
+      "expected": 9.7,
+      "got": 9.7,
       "ms": 2.1
     }
   ],
   "benchmarks": {
-    "startupMs": 106.7,
+    "startupMs": 115.4,
     "mcpLatencyMs": {
       "p50": 0.04,
-      "p95": 0.11
+      "p95": 0.12
     },
-    "discoveryMs": 33.6,
+    "discoveryMs": 36.5,
     "graph": {
       "providers": 5,
-      "capabilities": 20,
-      "edges": 37,
-      "chains2": 37,
-      "chains3": 57,
-      "total": 114
+      "capabilities": 26,
+      "edges": 43,
+      "chains2": 43,
+      "chains3": 63,
+      "total": 132
     },
-    "graphStatsMs": 0.6,
-    "planningMs": 2.2,
-    "executionMs": 4.1,
-    "recoveryAfterChangeMs": 16,
+    "graphStatsMs": 0.1,
+    "planningMs": 3,
+    "executionMs": 5.1,
+    "recoveryAfterChangeMs": 17.1,
     "recoveryAfterNewProviderMs": 2.1,
-    "memoryMB": 143
+    "memoryMB": 147
   },
   "freeze": {
-    "commit": "66b871c4e891036920a88fb2089c9d437fc1331e",
-    "tag": "lab-freeze-4",
-    "productCodeChangedSinceTag": "",
-    "uncommittedProductChanges": "",
-    "frozen": true
+    "commit": "c27289e2570cc0a18512787082095ac32ba0eb80",
+    "tag": "lab-freeze-9",
+    "productCodeChangedSinceTag": "src/core/graph.ts\nsrc/core/identities.ts\nsrc/core/planner.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/interface/http.ts\nsrc/interface/tools.ts\nsrc/reflectors/net.ts\nsrc/runtime.ts",
+    "uncommittedProductChanges": "M  bin/rcx.ts\nA  src/core/authority.ts\nM  src/entry/durable.ts\nM  src/entry/edge.ts\nM  src/interface/http.ts\nM  src/reflectors/mcp.ts\nM  src/reflectors/platform.ts\nM  src/runtime.ts",
+    "frozen": false
   },
   "environment": [
     {
       "service": "invoices",
-      "brand": "Paperhaus",
+      "brand": "Lumen Cargo",
       "protocol": "graphql",
       "operation": "Invoice lookup",
-      "input": "invoice_id",
+      "input": "invoice_number",
       "outputs": [
-        "invoice_id",
+        "invoice_number",
         "customerId",
-        "net_amount",
+        "total",
         "currency_code"
       ]
     },
     {
       "service": "customers",
-      "brand": "Fjordsoft",
+      "brand": "Kestrel Freight",
       "protocol": "graphql",
-      "operation": "Customer profile",
-      "input": "customerId",
+      "operation": "Fetch customer record",
+      "input": "customer_number",
       "outputs": [
-        "customerId",
+        "customer_number",
         "legal_name",
         "countryCode"
       ]
     },
     {
       "service": "tax",
-      "brand": "Quillbase",
+      "brand": "Brightmark",
       "protocol": "openapi",
-      "operation": "Lookup tax rate for a country",
+      "operation": "Get tax rate",
       "input": "country",
       "outputs": [
         "country",
-        "standard_rate"
+        "vat_rate"
       ]
     }
   ],
   "firstRunProviders": [
-    "graphql:127-0-0-1-53056-graphql",
-    "graphql:127-0-0-1-53057-graphql",
-    "openapi:quillbase"
+    "graphql:127-0-0-1-64293-graphql",
+    "graphql:127-0-0-1-64294-graphql",
+    "openapi:brightmark"
   ],
   "receipts": {
     "count": 21,
     "intact": true,
     "brokenAt": null,
-    "head": "5942d5d963ae3c287554050d4bd5cf43a578b0dd75f6609c1d716d72ded8b454"
+    "head": "a08a74c286ea12f7292ff5aeccc97b90525e5c494886267aefcdade2bd77d02b"
   },
   "passed": 14,
   "total": 14

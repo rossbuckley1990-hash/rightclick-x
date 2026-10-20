@@ -1,0 +1,1412 @@
+diff --git a/experiments/sse-discovery/acceptance.mjs b/experiments/sse-discovery/acceptance.mjs
+new file mode 100644
+index 0000000..f983b9d
+--- /dev/null
++++ b/experiments/sse-discovery/acceptance.mjs
+@@ -0,0 +1,155 @@
++// Acceptance checks are deliberately outside npm test: failures record promotion blockers.
++// Run against an exact source snapshot: node acceptance.mjs <checkout> <output.json>
++import assert from 'node:assert/strict';
++import { resolve } from 'node:path';
++import { writeFile } from 'node:fs/promises';
++const [checkout, output] = process.argv.slice(2);
++const { discover } = await import(resolve(checkout, 'src/reflectors/discover.ts'));
++const { Authority, request } = await import(resolve(checkout, 'src/reflectors/net.ts'));
++const { McpClient } = await import(resolve(checkout, 'src/reflectors/mcp.ts'));
++const { SERVICES } = await import(resolve(checkout, 'demo/services.ts'));
++const url = 'https://stream.test/capabilities';
++const rows = [];
++let trace;
++const mark = (event, data = {}) => trace.push({ event, ...data });
++async function check(name, fn) {
++  trace = [];
++  const t = performance.now();
++  try { await fn(); rows.push({ name, ok: true, ms: performance.now() - t, trace }); }
++  catch (e) { rows.push({ name, ok: false, ms: performance.now() - t, error: e.message, trace }); }
++}
++async function bounded(p, ms = 180) {
++  let timer;
++  try { return await Promise.race([p, new Promise((_, reject) => { timer = setTimeout(() => reject(new Error(`external watchdog after ${ms}ms`)), ms); })]); }
++  finally { clearTimeout(timer); }
++}
++function stream(text = '', options = {}) {
++  const data = new TextEncoder().encode(text);
++  return new ReadableStream({
++    start(c) {
++      if (data.length) {
++        if (options.fragment) for (let i = 0; i < data.length; i++) c.enqueue(data.slice(i, i + 1));
++        else c.enqueue(data);
++      }
++      if (options.finite) c.close();
++    },
++    cancel() { mark('cancel'); options.onCancel?.(); if (options.cancelReject) return Promise.reject(new Error('cancel failed')); if (options.cancelPending) return new Promise(() => {}); },
++  });
++}
++const tools = [{ name: 'read_record', inputSchema: { type: 'object', properties: { id: { type: 'string' } }, required: ['id'] }, annotations: { readOnlyHint: true } }];
++function fixture(options = {}) {
++  const auth = new Authority(); auth.set(url, { authorization: 'Bearer fixture-only' });
++  const net = { auth, timeoutMs: 25, fetch: async (input, init = {}) => {
++    const address = String(input); const headers = new Headers(init.headers);
++    const msg = init.body ? JSON.parse(String(init.body)) : {};
++    mark('request', { address, method: init.method ?? 'GET', rpc: msg.method, authorized: headers.get('authorization') === 'Bearer fixture-only', session: headers.get('mcp-session-id') });
++    if (options.unavailable?.()) throw new Error('provider unavailable');
++    if (options.unauthorized) return new Response('Unauthorized', { status: 401 });
++    if (!init.method || init.method === 'GET') {
++      if (options.get405) return new Response('Method not allowed', { status: 405 });
++      return new Response(stream(options.getText, options), { headers: { 'content-type': options.getType ?? 'Text/Event-Stream; charset=utf-8' } });
++    }
++    if (msg.query && options.graphql) return SERVICES.atlas(new Request('https://atlas.test/graphql', init));
++    if (!msg.method || options.notMcp) return new Response('Method not allowed', { status: 405 });
++    const response = result => {
++      const json = JSON.stringify({ jsonrpc: '2.0', id: msg.id, result });
++      if (!options.postSSE) return Response.json(JSON.parse(json), { headers: { 'mcp-session-id': 'fixture-session' } });
++      const text = `: keepalive\r\n\r\ndata: {"jsonrpc":"2.0","method":"notifications/progress"}\r\n\r\ndata: {"jsonrpc":"2.0","id":999,"result":{}}\r\n\r\nevent: message\r\ndata: ${json}\r\n\r\n`;
++      return new Response(stream(text, { finite: options.postFinite, fragment: true }), { headers: { 'content-type': options.postType ?? 'text/event-stream', 'mcp-session-id': 'fixture-session' } });
++    };
++    if (msg.method === 'initialize') return response({ protocolVersion: '2025-06-18', capabilities: { tools: {} }, serverInfo: { name: 'generic-test', version: '1' } });
++    assert.equal(headers.get('mcp-session-id'), 'fixture-session');
++    if (msg.method === 'notifications/initialized') return new Response(null, { status: 202 });
++    if (msg.method === 'tools/list') return response({ tools });
++    if (msg.method === 'tools/call') return response({ content: [{ type: 'text', text: 'record-17' }] });
++    return new Response('unsupported', { status: 400 });
++  } };
++  return net;
++}
++function has(d, source) { return d.reflections.flatMap(r => r.capabilities).filter(c => c.source === source); }
++async function mcp(net, opts) {
++  const d = await bounded(discover(net, url, opts));
++  assert.deepEqual(has(d, 'mcp').map(c => c.title), ['read_record']);
++  assert.equal(trace.filter(t => t.rpc === 'tools/call').length, 0, 'discovery executes no tool');
++  return d;
++}
++await check('long-lived SSE GET: discover exact MCP tool and cancel', async () => { await mcp(fixture()); assert.equal(trace.filter(t => t.event === 'cancel').length, 1); });
++await check('finite JSON: MCP initialize/list remain compatible', async () => { await mcp(fixture({ get405: true })); });
++await check('OpenAPI JSON: exact REST operation', async () => {
++  const net = fixture(); net.fetch = (input, init) => SERVICES.polyglot(new Request(String(input), init));
++  const d = await discover(net, 'https://polyglot.test/openapi.json');
++  assert.ok(has(d, 'openapi').some(c => c.id.endsWith(':translatetext')));
++});
++await check('finite JSON mislabeled as text/plain: still reflects OpenAPI', async () => {
++  const spec = await (await SERVICES.polyglot(new Request('https://polyglot.test/openapi.json'))).text();
++  const net = fixture(); net.fetch = async () => new Response(spec, { headers: { 'content-type': 'text/plain' } });
++  assert.ok(has(await discover(net, url), 'openapi').some(c => c.id.endsWith(':translatetext')));
++});
++await check('YAML compatibility resolution preserves OpenAPI support', async () => {
++  const net = fixture(); net.fetch = async () => new Response('openapi: 3.0.0\ninfo:\n  title: YAML\n  version: "1"\nservers:\n  - url: https://stream.test\npaths:\n  /items:\n    get:\n      operationId: listItems\n      responses:\n        "200":\n          description: ok\n', { headers: { 'content-type': 'application/yaml' } });
++  assert.ok(has(await discover(net, url), 'openapi').some(c => c.id.endsWith(':listitems')));
++});
++await check('GraphQL introspection still discovers geocode', async () => {
++  const net = fixture(); net.fetch = (input, init) => SERVICES.atlas(new Request(String(input), init));
++  assert.ok(has(await discover(net, 'https://atlas.test/graphql'), 'graphql').some(c => c.id.endsWith('query:geocode')));
++});
++await check('finite valid MCP SSE responses, notifications, unrelated IDs, fragmented CRLF', async () => { await mcp(fixture({ get405: true, postSSE: true, postFinite: true })); });
++await check('MCP SSE response without EOF: match response and stop reading', async () => { await mcp(fixture({ get405: true, postSSE: true })); });
++await check('mixed-case MCP SSE media type remains valid', async () => { await mcp(fixture({ get405: true, postSSE: true, postFinite: true, postType: 'Text/Event-Stream; charset=utf-8' })); });
++await check('SSE is not proof of MCP capability', async () => { assert.equal(has(await bounded(discover(fixture({ notMcp: true }), url)), 'mcp').length, 0); });
++await check('finite SSE GET with GraphQL POST: retain protocol fallback', async () => {
++  const d = await bounded(discover(fixture({ finite: true, getText: ': subscription ended\n\n', graphql: true, notMcp: true }), url));
++  assert.ok(has(d, 'graphql').some(c => c.id.endsWith('query:geocode')), 'GraphQL capability must remain discoverable');
++});
++await check('provider unavailable then recovers using same MCP client', async () => {
++  let offline = true; const net = fixture({ unavailable: () => offline }); const client = new McpClient(url, net);
++  const opts = { mcp: () => client };
++  assert.equal((await bounded(discover(net, url, opts))).reflections.length, 0);
++  offline = false; await mcp(net, opts);
++});
++await check('401 refuses discovery without executing tools', async () => {
++  assert.equal((await bounded(discover(fixture({ unauthorized: true }), url))).reflections.length, 0);
++  assert.equal(trace.filter(t => t.rpc === 'tools/call').length, 0);
++});
++await check('incorrect JSON content type on infinite body: deadline must bound read', async () => { await mcp(fixture({ getType: 'application/json', getText: ': heartbeat\n\n' })); });
++await check('pending body cancellation must not hang discovery', async () => { await mcp(fixture({ cancelPending: true })); });
++await check('rejected body cancellation can still negotiate MCP', async () => { await mcp(fixture({ cancelReject: true })); });
++await check('headers stall: existing request timeout aborts fetch', async () => {
++  const net = fixture(); net.fetch = async (_url, init) => new Promise((_, reject) => init.signal.addEventListener('abort', () => { mark('aborted'); reject(init.signal.reason); }, { once: true }));
++  await assert.rejects(bounded(request(net, url)), /timeout after 25ms/); assert.equal(trace.filter(t => t.event === 'aborted').length, 1);
++});
++await check('MCP finite SSE tool call executes exactly once', async () => {
++  const net = fixture({ get405: true, postSSE: true, postFinite: true }); const client = new McpClient(url, net);
++  await mcp(net, { mcp: () => client }); assert.equal(await client.call('read_record', { id: '17' }), 'record-17');
++  assert.equal(trace.filter(t => t.rpc === 'tools/call').length, 1);
++});
++for (const [name, target, policy] of [
++  ['egress allowlist', url, { blockPrivate: false, origins: ['https://allowed.test'] }],
++  ['deny host', url, { blockPrivate: false, deny: ['stream.test'] }],
++  ['private address', 'http://127.0.0.1/capabilities', { blockPrivate: true }],
++  ['non-HTTP scheme', 'file:///capabilities', { blockPrivate: false }],
++]) await check(`security: ${name} blocks all discovery requests`, async () => {
++  const net = fixture(); net.policy = policy;
++  assert.equal((await bounded(discover(net, target))).reflections.length, 0);
++  assert.equal(trace.filter(t => t.event === 'request').length, 0);
++});
++await check('security: redirect cannot bypass egress policy', async () => {
++  const net = fixture(); net.policy = { blockPrivate: false, origins: ['https://stream.test'] };
++  net.fetch = async (input) => { mark('request', { address: String(input) }); return new Response(null, { status: 302, headers: { location: 'https://other.test/x' } }); };
++  assert.equal((await bounded(discover(net, url))).reflections.length, 0);
++  assert.ok(trace.every(t => t.address === url));
++});
++await check('security: SSE redirect receives only destination-pinned credentials', async () => {
++  const net = fixture(); const inner = net.fetch; net.auth.set('https://other.test', { authorization: 'Bearer destination-only' });
++  net.fetch = async (input, init) => {
++    if (String(input) === url && !init.method) return new Response(null, { status: 302, headers: { location: 'https://other.test/x' } });
++    if (String(input).startsWith('https://other.test')) { mark('redirect-header', { authorization: new Headers(init.headers).get('authorization') }); return new Response(stream(), { headers: { 'content-type': 'text/event-stream' } }); }
++    return inner(input, init);
++  };
++  await mcp(net); assert.deepEqual(trace.filter(t => t.event === 'redirect-header').map(t => t.authorization), ['Bearer destination-only']);
++  assert.ok(trace.filter(t => t.rpc).every(t => t.address === url && t.authorized));
++});
++const report = { checkout: resolve(checkout), node: process.version, passed: rows.filter(r => r.ok).length, failed: rows.filter(r => !r.ok).length, checks: rows };
++await writeFile(output, JSON.stringify(report, null, 2) + '\n');
++for (const r of rows) console.log(`${r.ok ? 'PASS' : 'FAIL'} ${r.name}${r.ok ? '' : ': ' + r.error}`);
++console.log(`${report.passed}/${rows.length} passed`); process.exitCode = report.failed ? 1 : 0;
+diff --git a/experiments/sse-discovery/compare.mjs b/experiments/sse-discovery/compare.mjs
+new file mode 100644
+index 0000000..889ffae
+--- /dev/null
++++ b/experiments/sse-discovery/compare.mjs
+@@ -0,0 +1,68 @@
++// Real HTTP fixture; watchdog lives outside the runtime under test.
++// Usage: node compare.mjs <checkout> <label> <output.json>
++import http from 'node:http';
++import { spawn } from 'node:child_process';
++import { writeFile } from 'node:fs/promises';
++import { resolve } from 'node:path';
++const [checkout, label, output] = process.argv.slice(2);
++const rows = [];
++for (const mode of ['get-subscription', 'post-stream', 'mislabeled-get', 'finite-json']) {
++  const trace = [];
++  const start = performance.now();
++  const log = (event, data = {}) => trace.push({ ms: +(performance.now() - start).toFixed(2), event, ...data });
++  const server = http.createServer(async (req, res) => {
++    const chunks = []; for await (const c of req) chunks.push(c);
++    const raw = Buffer.concat(chunks).toString();
++    const msg = raw ? JSON.parse(raw) : undefined;
++    log('request', { method: req.method, rpc: msg?.method, hasAuth: req.headers.authorization === 'Bearer fixture-only', session: req.headers['mcp-session-id'] ?? null });
++    if (req.headers.authorization !== 'Bearer fixture-only') { res.writeHead(401).end(); return; }
++    let timer;
++    res.on('close', () => { clearInterval(timer); log('response-closed', { method: req.method, rpc: msg?.method }); });
++    if (req.method === 'GET') {
++      if (mode === 'finite-json' || mode === 'post-stream') { res.writeHead(405).end(); return; }
++      res.writeHead(200, { 'content-type': mode === 'mislabeled-get' ? 'application/json' : 'Text/Event-Stream; charset=utf-8' });
++      res.write(': heartbeat\n\n');
++      timer = setInterval(() => res.write(': heartbeat\n\n'), 25);
++      return;
++    }
++    if (!msg?.method) { res.writeHead(405).end(); return; }
++    if (msg.method === 'notifications/initialized') { res.writeHead(202).end(); return; }
++    const result = msg.method === 'initialize'
++      ? { protocolVersion: '2025-06-18', capabilities: { tools: {} }, serverInfo: { name: 'wire-fixture', version: '1' } }
++      : msg.method === 'tools/list'
++        ? { tools: [{ name: 'read_record', inputSchema: { type: 'object', properties: { id: { type: 'string' } }, required: ['id'] }, annotations: { readOnlyHint: true } }] }
++        : { content: [{ type: 'text', text: `record-${msg.params.arguments.id}` }] };
++    const response = JSON.stringify({ jsonrpc: '2.0', id: msg.id, result });
++    res.writeHead(200, { 'content-type': mode === 'post-stream' ? 'text/event-stream' : 'application/json', 'mcp-session-id': 'wire-session' });
++    if (mode === 'post-stream') {
++      res.write(`: heartbeat\n\ndata: ${JSON.stringify({ jsonrpc: '2.0', method: 'notifications/progress', params: { progress: 1 } })}\n\ndata: ${response}\n\n`);
++      timer = setInterval(() => res.write(': heartbeat\n\n'), 25);
++    } else res.end(response);
++  });
++  await new Promise(r => server.listen(0, '127.0.0.1', r));
++  const url = `http://127.0.0.1:${server.address().port}/capabilities`;
++  const code = `
++    import { RightClick } from ${JSON.stringify(resolve(checkout, 'src/runtime.ts'))};
++    import { handle } from ${JSON.stringify(resolve(checkout, 'src/interface/mcp-server.ts'))};
++    const rc = await RightClick.create({ timeoutMs: 100, directories: [], network: { blockPrivate: true, allow: [new URL(${JSON.stringify(url)}).origin], origins: [new URL(${JSON.stringify(url)}).origin] } });
++    rc.net.auth.set(${JSON.stringify(url)}, { Authorization: 'Bearer fixture-only' });
++    const t = performance.now();
++    const learned = await handle(rc, { jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: 'context_learn', arguments: { source: ${JSON.stringify(url)} } } });
++    const caps = rc.graph.list().filter(c => c.source === 'mcp');
++    const discoveryMs = performance.now() - t;
++    const run = caps.length ? await rc.run(caps[0].id, { id: '17' }) : null;
++    console.log(JSON.stringify({ discoveryMs, capabilities: caps.map(c => c.id), run: run && { status: run.status, output: run.output }, learned }));
++  `;
++  let stdout = '', stderr = '', timedOut = false;
++  const child = spawn(process.execPath, ['--input-type=module', '-e', code], { cwd: checkout });
++  child.stdout.on('data', b => stdout += b); child.stderr.on('data', b => stderr += b);
++  const guard = setTimeout(() => { timedOut = true; log('external-watchdog', { timeoutMs: 1500 }); child.kill('SIGKILL'); }, 1500);
++  const exit = await new Promise(r => child.on('exit', (code, signal) => r({ code, signal })));
++  clearTimeout(guard);
++  await new Promise(r => setTimeout(r, 30));
++  server.closeAllConnections(); await new Promise(r => server.close(r));
++  const result = stdout.trim() ? JSON.parse(stdout.trim()) : null;
++  rows.push({ label, checkout: resolve(checkout), node: process.version, mode, timeoutMs: 100, watchdogMs: 1500, timedOut, exit, result, stderr, trace });
++}
++await writeFile(output, JSON.stringify(rows, null, 2) + '\n');
++for (const r of rows) console.log(JSON.stringify({ label, mode: r.mode, timedOut: r.timedOut, discoveryMs: r.result?.discoveryMs, capabilities: r.result?.capabilities, run: r.result?.run }));
+diff --git a/experiments/sse-discovery/graphql-fallback.mjs b/experiments/sse-discovery/graphql-fallback.mjs
+new file mode 100644
+index 0000000..1993f1b
+--- /dev/null
++++ b/experiments/sse-discovery/graphql-fallback.mjs
+@@ -0,0 +1,43 @@
++// Live HTTP control for the fallback regression; response bodies are finite.
++import http from 'node:http';
++import { spawn } from 'node:child_process';
++import { resolve } from 'node:path';
++import { writeFile } from 'node:fs/promises';
++import { SERVICES } from '../../demo/services.ts';
++const [baseline, imported, output] = process.argv.slice(2);
++const rows = [];
++for (const [label, checkout] of [['baseline', baseline], ['imported', imported]]) {
++  const trace = [];
++  const server = http.createServer(async (req, res) => {
++    const chunks = []; for await (const c of req) chunks.push(c);
++    const body = Buffer.concat(chunks).toString();
++    const msg = body ? JSON.parse(body) : {};
++    trace.push({ method: req.method, rpc: msg.method, graphql: !!msg.query });
++    if (req.method === 'GET') { res.writeHead(200, { 'content-type': 'text/event-stream' }).end(': finite subscription\n\n'); return; }
++    if (!msg.query) { res.writeHead(405).end(); return; }
++    const response = await SERVICES.atlas(new Request('https://atlas.test/graphql', { method: 'POST', body, headers: { 'content-type': 'application/json' } }));
++    res.writeHead(response.status, Object.fromEntries(response.headers)).end(await response.text());
++  });
++  await new Promise(r => server.listen(0, '127.0.0.1', r));
++  const url = `http://127.0.0.1:${server.address().port}/capabilities`;
++  const code = `
++    import { RightClick } from ${JSON.stringify(resolve(checkout, 'src/runtime.ts'))};
++    const rc = await RightClick.create({ timeoutMs: 100, directories: [] });
++    const t = performance.now(); await rc.learn({ source: ${JSON.stringify(url)} });
++    const caps = rc.graph.list().filter(c => c.source === 'graphql');
++    const geo = caps.find(c => c.id.endsWith('query:geocode'));
++    const run = geo ? await rc.run(geo.id, { place: 'Tokyo' }) : null;
++    console.log(JSON.stringify({ ms: performance.now() - t, capabilities: caps.map(c => c.id), run: run && { status: run.status, output: run.output } }));
++  `;
++  let stdout = '', stderr = '';
++  const child = spawn(process.execPath, ['--input-type=module', '-e', code], { cwd: checkout });
++  child.stdout.on('data', b => stdout += b); child.stderr.on('data', b => stderr += b);
++  const guard = setTimeout(() => child.kill('SIGKILL'), 2000);
++  const exit = await new Promise(r => child.on('exit', (code, signal) => r({ code, signal })));
++  clearTimeout(guard); server.closeAllConnections(); await new Promise(r => server.close(r));
++  rows.push({ label, checkout, node: process.version, exit, trace, stderr, result: stdout.trim() ? JSON.parse(stdout.trim()) : null });
++}
++await writeFile(output, JSON.stringify(rows, null, 2) + '\n');
++for (const row of rows) console.log(JSON.stringify(row));
++if (!rows[0].result?.capabilities.some(c => c.endsWith('query:geocode')) || rows[0].result?.run?.output?.countryCode !== 'JP') throw new Error('baseline control failed');
++if (!rows[1].result?.capabilities.some(c => c.endsWith('query:geocode'))) { console.error('PROMOTION FAILURE: imported source lost GraphQL capability'); process.exitCode = 1; }
+diff --git a/src/core/yaml.ts b/src/core/yaml.ts
+new file mode 100644
+index 0000000..c5760ac
+--- /dev/null
++++ b/src/core/yaml.ts
+@@ -0,0 +1,193 @@
++// A small YAML reader for machine-readable contracts (OpenAPI documents published as YAML).
++// Supports what such documents use: block mappings and sequences, flow [..] and {..},
++// plain / single- / double-quoted scalars, literal (|) and folded (>) block scalars, comments,
++// and a leading document marker. Anchors, aliases, tags and multi-document streams are not
++// supported: such input is rejected with an error rather than guessed at.
++
++export function parseYaml(text: string): unknown {
++  const lines = text.replace(/\r\n?/g, "\n").replace(/\t/g, "  ").split("\n");
++  let i = 0;
++  const blank = (l: string) => /^\s*(#.*)?$/.test(l);
++  const indentOf = (l: string) => l.length - l.trimStart().length;
++  const stripComment = (s: string) => {
++    let q: string | null = null;
++    for (let k = 0; k < s.length; k++) {
++      const c = s[k];
++      if (q) {
++        if (c === q && s[k - 1] !== "\\") q = null;
++      } else if (c === '"' || c === "'") q = c;
++      else if (c === "#" && (k === 0 || /\s/.test(s[k - 1]))) return s.slice(0, k).trimEnd();
++    }
++    return s.trimEnd();
++  };
++  while (i < lines.length && (blank(lines[i]) || /^(---|%YAML|%TAG)/.test(lines[i].trim()))) i++;
++  if (lines.slice(i).some((l) => /^---\s*$/.test(l) || /^\.\.\.\s*$/.test(l))) throw new Error("multi-document YAML is not supported");
++
++  const scalar = (raw: string): unknown => {
++    const s = raw.trim();
++    if (s === "" || s === "~" || s === "null" || s === "Null" || s === "NULL") return null;
++    if (/^[&*!]/.test(s)) throw new Error(`YAML anchors, aliases and tags are not supported: ${s.slice(0, 30)}`);
++    if (s.startsWith('"')) return JSON.parse(s.replace(/\\\//g, "/"));
++    if (s.startsWith("'")) return s.slice(1, -1).replace(/''/g, "'");
++    if (s.startsWith("[") || s.startsWith("{")) return flow(s);
++    if (/^(true|True|TRUE)$/.test(s)) return true;
++    if (/^(false|False|FALSE)$/.test(s)) return false;
++    if (/^[-+]?(\d+\.?\d*([eE][-+]?\d+)?|\.\d+)$/.test(s) && !/^0\d/.test(s)) return Number(s);
++    return s;
++  };
++  const flow = (s: string): unknown => {
++    let k = 0;
++    const ws = () => { while (k < s.length && /\s/.test(s[k])) k++; };
++    const value = (): unknown => {
++      ws();
++      if (s[k] === "[") {
++        k++;
++        const arr: unknown[] = [];
++        ws();
++        if (s[k] === "]") { k++; return arr; }
++        for (;;) { arr.push(value()); ws(); if (s[k] === ",") { k++; continue; } if (s[k] === "]") { k++; return arr; } throw new Error("bad flow sequence"); }
++      }
++      if (s[k] === "{") {
++        k++;
++        const obj: Record<string, unknown> = {};
++        ws();
++        if (s[k] === "}") { k++; return obj; }
++        for (;;) {
++          const key = String(atom(":"));
++          if (s[k] !== ":") throw new Error("bad flow mapping");
++          k++;
++          obj[key] = value();
++          ws();
++          if (s[k] === ",") { k++; continue; }
++          if (s[k] === "}") { k++; return obj; }
++          throw new Error("bad flow mapping");
++        }
++      }
++      return atom(",]}");
++    };
++    const atom = (stops: string): unknown => {
++      ws();
++      const start = k;
++      if (s[k] === '"' || s[k] === "'") {
++        const q = s[k++];
++        while (k < s.length && !(s[k] === q && s[k - 1] !== "\\")) k++;
++        k++;
++        return scalar(s.slice(start, k));
++      }
++      while (k < s.length && !stops.includes(s[k])) k++;
++      return scalar(s.slice(start, k));
++    };
++    const v = value();
++    return v;
++  };
++
++  const block = (indent: number): unknown => {
++    while (i < lines.length && blank(lines[i])) i++;
++    if (i >= lines.length) return null;
++    const first = lines[i];
++    const ind = indentOf(first);
++    if (ind < indent) return null;
++    if (first.trimStart().startsWith("- ") || first.trim() === "-") return sequence(ind);
++    return mapping(ind);
++  };
++  const blockScalar = (header: string, parentIndent: number): string => {
++    const folded = header.startsWith(">");
++    const keep = header.includes("+");
++    const strip = header.includes("-");
++    const body: string[] = [];
++    let ind = -1;
++    while (i < lines.length) {
++      const l = lines[i];
++      if (!l.trim()) { body.push(""); i++; continue; }
++      const li = indentOf(l);
++      if (li <= parentIndent) break;
++      if (ind < 0) ind = li;
++      if (li < ind) break;
++      body.push(l.slice(ind));
++      i++;
++    }
++    while (!keep && body.length && body[body.length - 1] === "") body.pop();
++    let out = folded ? body.reduce((acc, l, n) => (n === 0 ? l : l === "" ? `${acc}\n` : acc.endsWith("\n") || /^\s/.test(l) ? `${acc}${l}` : `${acc} ${l}`), "") : body.join("\n");
++    if (!strip) out += "\n";
++    return out;
++  };
++  const valueAfter = (rest: string, ind: number): unknown => {
++    let v = stripComment(rest).trim();
++    if (v === "") {
++      // A sequence may sit at the same indentation as its key ("tags:\n- name: x").
++      let j = i;
++      while (j < lines.length && blank(lines[j])) j++;
++      if (j < lines.length && indentOf(lines[j]) === ind && /^\s*-(\s|$)/.test(lines[j])) {
++        i = j;
++        return sequence(ind);
++      }
++      return block(ind + 1);
++    }
++    if (/^[|>][+-]?\d*$/.test(v)) return blockScalar(v, ind);
++    // Plain and quoted scalars may continue on more-indented lines (folded with single spaces).
++    const open = (x: string) => (x.startsWith('"') && !/[^\\]"$|^"$/.test(x.slice(1)) ) || (x.startsWith("'") && !/'$/.test(x.slice(1))) || (/^[\[{]/.test(x) && !balanced(x));
++    while (i < lines.length && !blank(lines[i]) && indentOf(lines[i]) > ind && (open(v) || !/^[\[{"']/.test(v)) && !/^\s*-\s/.test(lines[i]) && !(!open(v) && /^\s*[^\s:#][^:#]*:(\s|$)/.test(lines[i]))) {
++      v = `${v} ${stripComment(lines[i]).trim()}`;
++      i++;
++    }
++    return scalar(v);
++  };
++  const balanced = (x: string) => {
++    let d = 0;
++    let q: string | null = null;
++    for (const c of x) {
++      if (q) { if (c === q) q = null; continue; }
++      if (c === '"' || c === "'") q = c;
++      else if (c === "[" || c === "{") d++;
++      else if (c === "]" || c === "}") d--;
++    }
++    return d === 0;
++  };
++  const mapping = (ind: number): Record<string, unknown> => {
++    const obj: Record<string, unknown> = {};
++    while (i < lines.length) {
++      if (blank(lines[i])) { i++; continue; }
++      const l = lines[i];
++      const li = indentOf(l);
++      if (li < ind) break;
++      if (li > ind) throw new Error(`unexpected indentation at line ${i + 1}`);
++      const t = l.trim();
++      if (t.startsWith("- ")) break;
++      const m = /^("(?:[^"\\]|\\.)*"|'(?:[^']|'')*'|[^:#]+?|[^\s][^:]*?)\s*:(?:\s+(.*)|$)/.exec(t);
++      if (!m) throw new Error(`cannot read YAML at line ${i + 1}: ${t.slice(0, 40)}`);
++      const key = String(scalar(m[1]));
++      i++;
++      obj[key] = valueAfter(m[2] ?? "", ind);
++    }
++    return obj;
++  };
++  const sequence = (ind: number): unknown[] => {
++    const arr: unknown[] = [];
++    while (i < lines.length) {
++      if (blank(lines[i])) { i++; continue; }
++      const l = lines[i];
++      const li = indentOf(l);
++      if (li < ind || !l.trimStart().startsWith("-")) break;
++      if (li > ind) throw new Error(`unexpected indentation at line ${i + 1}`);
++      const rest = l.trimStart().slice(1);
++      if (!rest.trim()) {
++        i++;
++        arr.push(block(ind + 1));
++        continue;
++      }
++      // "- key: value" starts a mapping whose keys sit at the column after "- ".
++      const inner = ind + 1 + (rest.length - rest.trimStart().length);
++      const r = rest.trim();
++      const startsMapping = !/^[\[{]/.test(r) && /^("(?:[^"\\]|\\.)*"|'(?:[^']|'')*'|[^\s:#][^:#]*?)\s*:(\s|$)/.test(r);
++      if (startsMapping) {
++        lines[i] = " ".repeat(inner) + rest.trimStart();
++        arr.push(mapping(inner));
++      } else {
++        i++;
++        arr.push(valueAfter(rest, ind));
++      }
++    }
++    return arr;
++  };
++  return block(0);
++}
+diff --git a/src/reflectors/discover.ts b/src/reflectors/discover.ts
+index 631f277..6329ecf 100644
+--- a/src/reflectors/discover.ts
++++ b/src/reflectors/discover.ts
+@@ -4,10 +4,11 @@
+ // peer? a web page with forms?), plus well-known locations at the origin.
+ // Everything found is reflected; page hints are followed one level deep.
+ 
++import { parseYaml } from "../core/yaml.ts";
+ import type { Capability, Reflection } from "../core/types.ts";
+ import { INTROSPECTION_QUERIES, isIntrospection, reflectGraphQL } from "./graphql.ts";
+ import { McpClient, reflectMcpTools } from "./mcp.ts";
+-import { readBody, request, slug, type Net } from "./net.ts";
++import { cancelBody, DISCOVERY_BODY_LIMIT, isEventStream, readBody, request, slug, type Net } from "./net.ts";
+ import { isOpenAPI, reflectOpenAPI, settleUnstatedBase } from "./openapi.ts";
+ import { reflectWeb } from "./web.ts";
+ 
+@@ -44,6 +45,17 @@ function catalogLinks(body: unknown, base: string): string[] | null {
+ 
+ const CATALOG_LIMIT = 50;
+ 
++/** A contract published as YAML (OpenAPI / Swagger) is read as the same document. */
++function yamlContract(body: unknown): unknown {
++  if (typeof body !== "string" || !/^\s*(---\s*\n)?\s*(openapi|swagger)\s*:/.test(body)) return body;
++  try {
++    const doc = parseYaml(body);
++    return doc && typeof doc === "object" ? doc : body;
++  } catch {
++    return body;
++  }
++}
++
+ /**
+  * An API's root often answers with a small JSON index pointing at its contracts
+  * ({"versions":{"v2":{"openapi":"/v2/openapi.json"}}}). Collect those links, bounded.
+@@ -120,7 +132,7 @@ async function probeKind(net: Net, url: string, kind: SourceKind, probes: Discov
+     if (kind === "graphql") {
+       for (const query of INTROSPECTION_QUERIES) {
+         const res = await request(net, url, { method: "POST", headers: { "content-type": "application/json", accept: "application/json" }, body: JSON.stringify({ query }) });
+-        const body = await readBody(res);
++        const body = await readBody(res, DISCOVERY_BODY_LIMIT);
+         if (res.ok && isIntrospection(body)) {
+           const r = reflectGraphQL(body, url);
+           probes.push({ url, kind, ok: true, detail: `${r.capabilities.length} fields` });
+@@ -130,8 +142,8 @@ async function probeKind(net: Net, url: string, kind: SourceKind, probes: Discov
+       throw new Error("introspection failed");
+     }
+     const res = await request(net, url, { headers: { accept: "application/json, text/html;q=0.9" } });
+-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+-    const body = await readBody(res);
++    if (!res.ok) { cancelBody(res); throw new Error(`HTTP ${res.status}`); }
++    const body = yamlContract(await readBody(res, DISCOVERY_BODY_LIMIT));
+     if (kind === "openapi" && isOpenAPI(body)) {
+       const r = await settleUnstatedBase(net, body as any, url, reflectOpenAPI(body as any, url));
+       probes.push({ url, kind, ok: true, detail: `${r.capabilities.length} operations` });
+@@ -154,11 +166,23 @@ async function probeUrl(
+ ): Promise<{ reflections: Reflection[]; hints: string[]; definitive: boolean; catalog?: string[] }> {
+   const reflections: Reflection[] = [];
+   let hints: string[] = [];
++  let triedMcp = false;
+   // 1. GET: specs, peers and pages.
+   try {
+     const res = await request(net, url, { headers: { accept: "application/json, text/html;q=0.9, */*;q=0.5" } });
+     if (res.ok) {
+-      const body = await readBody(res);
++      // A discovery GET may open an SSE subscription, whose body never ends.
++      // Close only that probe and negotiate MCP normally; the media type alone
++      // does not establish a capability or authorise any tool execution.
++      const streaming = isEventStream(res);
++      if (streaming) {
++        cancelBody(res);
++        triedMcp = true;
++        const reflected = await probeKind(net, url, "mcp", probes, opts);
++        if (reflected.length) return { reflections: reflected, hints: [], definitive: true };
++      }
++      // Failed MCP negotiation leaves GraphQL eligible; never read the discarded GET.
++      const body = streaming ? null : yamlContract(await readBody(res, DISCOVERY_BODY_LIMIT));
+       const listed = catalogLinks(body, url);
+       if (listed) return { reflections: [], hints: [], definitive: false, catalog: listed };
+       const linked = body && typeof body === "object" && !(body as any).openapi && !(body as any).swagger ? contractLinks(body, url) : [];
+@@ -187,7 +211,7 @@ async function probeUrl(
+         }
+       }
+     } else {
+-      await res.body?.cancel();
++      cancelBody(res);
+     }
+   } catch (e) {
+     if (!opts.quiet) probes.push({ url, kind: "get", ok: false, detail: String((e as Error).message ?? e) });
+@@ -200,7 +224,7 @@ async function probeUrl(
+         headers: { "content-type": "application/json", accept: "application/json" },
+         body: JSON.stringify({ query }),
+       });
+-      const body = await readBody(res);
++      const body = await readBody(res, DISCOVERY_BODY_LIMIT);
+       if (res.ok && isIntrospection(body)) {
+         const r = reflectGraphQL(body, url);
+         probes.push({ url, kind: "graphql", ok: true, detail: `${r.capabilities.length} fields` });
+@@ -213,7 +237,7 @@ async function probeUrl(
+     }
+   }
+   // 3. MCP initialize + tools/list.
+-  try {
++  if (!triedMcp) try {
+     const client = opts.mcp?.(url) ?? new McpClient(url, net);
+     const tools = await client.listTools();
+     const r = reflectMcpTools(tools, url, client.serverInfo.name);
+@@ -228,8 +252,8 @@ async function probeUrl(
+ 
+ export async function reflectPeer(net: Net, origin: string): Promise<Reflection> {
+   const res = await request(net, `${origin}/api/graph`, { headers: { accept: "application/json" } });
+-  if (!res.ok) throw new Error(`peer ${origin} -> HTTP ${res.status}`);
+-  const g = (await res.json()) as { name?: string; region?: string; capabilities: Capability[] };
++  if (!res.ok) { cancelBody(res); throw new Error(`peer ${origin} -> HTTP ${res.status}`); }
++  const g = (await readBody(res, DISCOVERY_BODY_LIMIT)) as { name?: string; region?: string; capabilities: Capability[] };
+   const host = new URL(origin).host;
+   const providerId = `peer:${slug(host)}`;
+   const capabilities: Capability[] = g.capabilities
+diff --git a/src/reflectors/mcp.ts b/src/reflectors/mcp.ts
+index 318f16a..8d87558 100644
+--- a/src/reflectors/mcp.ts
++++ b/src/reflectors/mcp.ts
+@@ -4,7 +4,7 @@
+ 
+ import { inferType } from "../core/semantics.ts";
+ import type { Capability, Port, Reflection, Risk } from "../core/types.ts";
+-import { request, slug, type Net } from "./net.ts";
++import { bodyChunks, cancelBody, DISCOVERY_BODY_LIMIT, isEventStream, readText, request, slug, type Net } from "./net.ts";
+ 
+ const PROTOCOL = "2025-06-18";
+ 
+@@ -33,11 +33,16 @@ export class McpClient {
+     const sid = res.headers.get("mcp-session-id");
+     if (sid) this.session = sid;
+     if (notify) {
+-      await res.body?.cancel();
++      cancelBody(res);
+       return null;
+     }
+-    if (!res.ok) throw new Error(`MCP ${method} -> HTTP ${res.status}: ${(await res.text()).slice(0, 200)}`);
+-    const msg = await parseRpcResponse(res, (body as { id: number }).id);
++    if (!res.ok) {
++      let detail = "";
++      try { detail = (await readText(res, DISCOVERY_BODY_LIMIT)).slice(0, 200); }
++      catch { cancelBody(res); }
++      throw new Error(`MCP ${method} -> HTTP ${res.status}${detail ? `: ${detail}` : ""}`);
++    }
++    const msg = await parseRpcResponse(res, (body as { id: number }).id, method === "tools/call" ? Infinity : DISCOVERY_BODY_LIMIT);
+     if (msg.error) throw new Error(`MCP ${method} error ${msg.error.code}: ${msg.error.message}`);
+     return msg.result;
+   }
+@@ -65,7 +70,8 @@ export class McpClient {
+     let cursor: string | undefined;
+     do {
+       const r = await this.rpc("tools/list", cursor ? { cursor } : {});
+-      tools.push(...(r?.tools ?? []));
++      if (!Array.isArray(r?.tools)) throw new Error("MCP tools/list returned no tools array");
++      tools.push(...r.tools);
+       cursor = r?.nextCursor;
+     } while (cursor && tools.length < 2000);
+     return tools;
+@@ -94,20 +100,51 @@ export class McpClient {
+   }
+ }
+ 
+-async function parseRpcResponse(res: Response, id: number): Promise<any> {
+-  const ct = res.headers.get("content-type") ?? "";
+-  const text = await res.text();
+-  if (!ct.includes("event-stream")) return JSON.parse(text);
+-  for (const block of text.split(/\r?\n\r?\n/)) {
+-    const data = block
+-      .split(/\r?\n/)
+-      .filter((l) => l.startsWith("data:"))
+-      .map((l) => l.slice(5).trimStart())
+-      .join("\n");
+-    if (!data) continue;
+-    const msg = JSON.parse(data);
+-    if (msg.id === id) return msg;
++async function parseRpcResponse(res: Response, id: number, maxBytes: number): Promise<any> {
++  const isResponse = (msg: any) => msg?.jsonrpc === "2.0" && msg.id === id && ("result" in msg || "error" in msg);
++  if (!isEventStream(res)) {
++    const msg = JSON.parse(await readText(res, maxBytes));
++    if (!isResponse(msg)) throw new Error("MCP response did not match the request");
++    return msg;
++  }
++  const decoder = new TextDecoder();
++  let buffer = "";
++  let data: string[] = [];
++  let skipLF = false;
++  const parseLines = () => {
++    while (true) {
++      // CR is itself a separator. Suppress only its optional following LF,
++      // including when CRLF is split across transport chunks.
++      if (skipLF) {
++        if (!buffer) return;
++        if (buffer.startsWith("\n")) buffer = buffer.slice(1);
++        skipLF = false;
++      }
++      const end = buffer.search(/[\r\n]/);
++      if (end < 0) return;
++      const line = buffer.slice(0, end);
++      skipLF = buffer[end] === "\r";
++      buffer = buffer.slice(end + 1);
++      if (line === "") {
++        const text = data.join("\n");
++        data = [];
++        if (!text) continue;
++        const msg = JSON.parse(text);
++        if (isResponse(msg)) return msg;
++      } else if (line === "data") data.push("");
++      else if (line.startsWith("data:")) data.push(line.slice(5).replace(/^ /, ""));
++    }
++  };
++  for await (const chunk of bodyChunks(res, maxBytes)) {
++    buffer += decoder.decode(chunk, { stream: true });
++    const msg = parseLines();
++    // Returning closes the reader, without waiting for the provider to close its stream.
++    if (msg) return msg;
+   }
++  // Preserve finite-response handling when the final event has no trailing blank line.
++  buffer += decoder.decode() + "\n\n";
++  const msg = parseLines();
++  if (msg) return msg;
+   throw new Error("MCP stream ended without a response");
+ }
+ 
+@@ -141,7 +178,10 @@ export function reflectMcpTools(tools: any[], endpoint: string, serverName?: str
+       outputs.push({ name: "", type: "text", required: true });
+     }
+     const a = t.annotations ?? {};
+-    const risk: Risk = a.destructiveHint ? "destructive" : a.readOnlyHint ? "read" : a.openWorldHint === false ? "write" : "external";
++    // MCP's defaults: a tool not marked read-only may be destructive unless it says otherwise.
++    // Unknown side effects are treated as the most dangerous kind, not the most convenient.
++    // Preserve main's destructive-hint precedence, including malformed truthy annotations.
++    const risk: Risk = a.destructiveHint ? "destructive" : a.readOnlyHint === true ? "read" : a.destructiveHint === false ? (a.openWorldHint === false ? "write" : "external") : "destructive";
+     return {
+       id: `${providerId}:${slug(t.name)}`,
+       title: t.title ?? a.title ?? t.name,
+diff --git a/src/reflectors/net.ts b/src/reflectors/net.ts
+index dd3b99d..32f1559 100644
+--- a/src/reflectors/net.ts
++++ b/src/reflectors/net.ts
+@@ -66,6 +66,70 @@ export interface Net {
+   policy?: NetworkPolicy;
+ }
+ 
++/** Bound contract acquisition without limiting ordinary finite execution outputs. */
++export const DISCOVERY_BODY_LIMIT = 16 * 1024 * 1024;
++
++const responseDeadlines = new WeakMap<Response, { deadline: number; controller: AbortController; signal: AbortSignal; error: Error }>();
++
++export function isEventStream(res: Response): boolean {
++  return res.headers.get("content-type")?.split(";")[0].trim().toLowerCase() === "text/event-stream";
++}
++
++/** Start disposal immediately; a transport's cleanup promise must not hold up discovery. */
++export function cancelBody(res: Response): void {
++  void res.body?.cancel().catch(() => {});
++  responseDeadlines.get(res)?.controller.abort(new Error("response body discarded"));
++}
++
++/** Read within the original request deadline, including adapters whose reads ignore abort. */
++export async function* bodyChunks(res: Response, maxBytes = Infinity): AsyncGenerator<Uint8Array> {
++  if (!res.body) return;
++  const context = responseDeadlines.get(res);
++  const reader = res.body.getReader();
++  let timer: ReturnType<typeof setTimeout> | undefined;
++  let onAbort: (() => void) | undefined;
++  let rejectRead: ((reason: unknown) => void) | undefined;
++  let complete = false;
++  let size = 0;
++  if (context) {
++    onAbort = () => rejectRead?.(context.signal.reason);
++    context.signal.addEventListener("abort", onAbort, { once: true });
++    timer = setTimeout(() => context.controller.abort(context.error), Math.max(0, context.deadline - Date.now()));
++  }
++  try {
++    while (true) {
++      if (context?.signal.aborted) throw context.signal.reason;
++      if (context && Date.now() >= context.deadline) throw context.error;
++      // Keep only the current read's abort handler, not one pending race per chunk.
++      const { done, value } = await new Promise<ReadableStreamReadResult<Uint8Array>>((resolve, reject) => {
++        rejectRead = reject;
++        reader.read().then(resolve, reject);
++      });
++      rejectRead = undefined;
++      if (done) { complete = true; return; }
++      size += value.byteLength;
++      if (size > maxBytes) throw new Error(`response body exceeds ${maxBytes} bytes`);
++      yield value;
++    }
++  } finally {
++    clearTimeout(timer);
++    rejectRead = undefined;
++    if (onAbort) context!.signal.removeEventListener("abort", onAbort);
++    if (!complete) {
++      void reader.cancel().catch(() => {});
++      context?.controller.abort(new Error("response body no longer needed"));
++    }
++    reader.releaseLock();
++  }
++}
++
++export async function readText(res: Response, maxBytes = Infinity): Promise<string> {
++  const decoder = new TextDecoder();
++  let text = "";
++  for await (const chunk of bodyChunks(res, maxBytes)) text += decoder.decode(chunk, { stream: true });
++  return text + decoder.decode();
++}
++
+ const METADATA_HOSTS = new Set(["metadata.google.internal", "metadata", "169.254.169.254", "fd00:ec2::254"]);
+ 
+ export function isPrivateAddress(host: string): boolean {
+@@ -119,7 +183,7 @@ export async function request(net: Net, url: string, init: RequestInit = {}): Pr
+   const accept = new Headers(init.headers).get("accept") ?? "";
+   const first = accept.split(",")[0].split(";")[0].trim();
+   if ((method === "GET" || method === "HEAD") && accept.includes(",") && first && first !== "*/*" && (res.status === 406 || res.status >= 500)) {
+-    await res.body?.cancel();
++    cancelBody(res);
+     const headers = new Headers(init.headers);
+     headers.set("accept", first);
+     return requestOnce(net, url, { ...init, headers });
+@@ -127,47 +191,62 @@ export async function request(net: Net, url: string, init: RequestInit = {}): Pr
+   return res;
+ }
+ 
++/** Request headers that carry no credential and may follow a redirect to another origin. */
++const CROSS_ORIGIN_SAFE = new Set(["accept", "accept-language", "content-language", "user-agent"]);
++
+ async function requestOnce(net: Net, url: string, init: RequestInit = {}): Promise<Response> {
+   const headers = new Headers(init.headers);
+   for (const [k, v] of Object.entries(net.auth.headersFor(url))) if (!headers.has(k)) headers.set(k, v);
+   if (!headers.has("user-agent")) headers.set("user-agent", "rightclick-x/0.1 (+https://github.com/rossbuckley1990-hash/rightclick)");
+   await checkUrl(net.policy, url);
+   const ctrl = new AbortController();
+-  const timer = setTimeout(() => ctrl.abort(new Error(`timeout after ${net.timeoutMs}ms: ${url}`)), net.timeoutMs);
++  const error = new Error(`timeout after ${net.timeoutMs}ms: ${url}`);
++  const deadline = Date.now() + net.timeoutMs;
++  const signal = init.signal ? AbortSignal.any([ctrl.signal, init.signal]) : ctrl.signal;
++  const timer = setTimeout(() => ctrl.abort(error), net.timeoutMs);
++  const track = (res: Response) => {
++    responseDeadlines.set(res, { deadline, controller: ctrl, signal, error });
++    return res;
++  };
+   try {
+-    // Manual redirects. Every hop starts from headers with no credentials at all,
+-    // then gets only the credentials pinned to its own origin; caller-supplied
+-    // Authorization/Cookie never leave the original origin. (A → B → C must not
+-    // carry A's credentials to C.)
++    // Manual redirects. A caller's headers (credentials of any name: Authorization, Cookie,
++    // Proxy-Authorization, X-Api-Key, X-Session-Token, ...) never leave the original origin.
++    // Once a redirect has left it, the chain is tainted: every later hop, even one back to the
++    // original origin at a path a third party chose, gets only content-negotiation headers plus
++    // the operator's credentials pinned to that hop's own origin. A request body is never sent
++    // to another origin (307/308 across origins is not followed).
+     const origin0 = new URL(url).origin;
+-    const pinnedNames = new Set(net.auth.origins().flatMap((o) => Object.keys(net.auth.headersFor(o)).map((k) => k.toLowerCase())));
+-    const bare = new Headers(init.headers);
+-    for (const k of pinnedNames) bare.delete(k);
+-    let res = await net.fetch(url, { ...init, headers, signal: ctrl.signal, redirect: "manual" });
++    const caller = new Headers(init.headers);
++    const userAgent = headers.get("user-agent")!;
++    let tainted = false;
++    let res = await net.fetch(url, { ...init, headers, signal, redirect: "manual" });
+     let hops = 0;
+     while (res.status >= 300 && res.status < 400 && res.headers.get("location") && hops++ < 5) {
+       const next = new URL(res.headers.get("location")!, url).toString();
+-      await checkUrl(net.policy, next);
+-      const h = new Headers(bare);
+-      if (!h.has("user-agent")) h.set("user-agent", headers.get("user-agent")!);
+-      if (new URL(next).origin !== origin0) {
+-        h.delete("authorization");
+-        h.delete("cookie");
+-      }
++      try { await checkUrl(net.policy, next); }
++      catch (e) { cancelBody(res); throw e; }
++      const nextOrigin = new URL(next).origin;
++      const method = res.status === 303 ? "GET" : (init.method ?? "GET");
++      const carriesBody = method !== "GET" && method !== "HEAD" && init.body != null;
++      if (carriesBody && nextOrigin !== new URL(url).origin) return track(res);
++      if (nextOrigin !== origin0) tainted = true;
++      const h = new Headers();
++      for (const [k, v] of caller) if (!tainted || CROSS_ORIGIN_SAFE.has(k.toLowerCase()) || (carriesBody && k.toLowerCase() === "content-type")) h.set(k, v);
++      if (!h.has("user-agent")) h.set("user-agent", userAgent);
+       for (const [k, v] of Object.entries(net.auth.headersFor(next))) h.set(k, v);
+-      const method = res.status === 303 ? "GET" : init.method;
+-      res = await net.fetch(next, { ...init, method, body: method === "GET" ? undefined : init.body, headers: h, signal: ctrl.signal, redirect: "manual" });
++      cancelBody(res);
++      res = await net.fetch(next, { ...init, method, body: method === "GET" || method === "HEAD" ? undefined : init.body, headers: h, signal, redirect: "manual" });
+       url = next;
+     }
+-    return res;
++    return track(res);
+   } finally {
+     clearTimeout(timer);
+   }
+ }
+ 
+-export async function readBody(res: Response): Promise<unknown> {
++export async function readBody(res: Response, maxBytes = Infinity): Promise<unknown> {
+   const ct = res.headers.get("content-type") ?? "";
+-  const text = await res.text();
++  const text = await readText(res, maxBytes);
+   if (ct.includes("json") || /^\s*[{[]/.test(text)) {
+     try {
+       return JSON.parse(text);
+diff --git a/src/reflectors/openapi.ts b/src/reflectors/openapi.ts
+index 4d68762..12e2e46 100644
+--- a/src/reflectors/openapi.ts
++++ b/src/reflectors/openapi.ts
+@@ -2,7 +2,7 @@
+ 
+ import { inferInContext, inferType, type SchemaLike } from "../core/semantics.ts";
+ import type { Capability, Port, Reflection, Risk } from "../core/types.ts";
+-import { readBody, request, slug, type Net } from "./net.ts";
++import { cancelBody, DISCOVERY_BODY_LIMIT, readBody, request, slug, type Net } from "./net.ts";
+ 
+ type Obj = Record<string, any>;
+ 
+@@ -177,7 +177,7 @@ export async function settleUnstatedBase(net: Net, spec: Obj, specUrl: string, r
+       try {
+         const res = await request(net, joinUrl(base, path), { headers: { accept: "application/json" } });
+         const routed = res.status !== 404 && res.status < 500;
+-        const body = routed ? await readBody(res) : (await res.body?.cancel(), null);
++        const body = routed ? await readBody(res, DISCOVERY_BODY_LIMIT) : (cancelBody(res), null);
+         const isJson = !!body && typeof body === "object";
+         tried.push(`GET ${joinUrl(base, path)} → ${res.status}${routed ? (isJson ? " json" : " not json") : ""}`);
+         if (!routed || !isJson) continue;
+diff --git a/test/discovery-recovery.test.ts b/test/discovery-recovery.test.ts
+new file mode 100644
+index 0000000..bfebfb5
+--- /dev/null
++++ b/test/discovery-recovery.test.ts
+@@ -0,0 +1,224 @@
++import { test } from "node:test";
++import assert from "node:assert/strict";
++import { RightClick } from "../src/runtime.ts";
++import { discover } from "../src/reflectors/discover.ts";
++import { Authority, DISCOVERY_BODY_LIMIT, readBody, request, type Net } from "../src/reflectors/net.ts";
++import { McpClient } from "../src/reflectors/mcp.ts";
++import { SERVICES } from "../demo/services.ts";
++
++const URL = "https://protocol.test/capabilities";
++const encoder = new TextEncoder();
++const tool = { name: "read_record", inputSchema: { type: "object", properties: { id: { type: "string" } } }, annotations: { readOnlyHint: true } };
++const netFor = (fetch: Net["fetch"], timeoutMs = 80): Net => ({ fetch, timeoutMs, auth: new Authority() });
++const rpc = (body: any, result: unknown) => Response.json({ jsonrpc: "2.0", id: body.id, result });
++function pending(cancel = () => {}) {
++  return new Response(new ReadableStream({ cancel }), { headers: { "content-type": "text/event-stream" } });
++}
++function mcp(body: any) {
++  if (body.method === "initialize") return rpc(body, { serverInfo: { name: "protocol-test" }, capabilities: { tools: {} }, protocolVersion: "2025-06-18" });
++  if (body.method === "notifications/initialized") return new Response(null, { status: 202 });
++  if (body.method === "tools/list") return rpc(body, { tools: [tool] });
++  if (body.method === "tools/call") return rpc(body, { content: [{ type: "text", text: "record-17" }] });
++  return new Response(null, { status: 405 });
++}
++
++for (const failure of ["http", "rpc-error", "wrong-id", "missing-tools", "stalled"] as const) {
++  test(`SSE GET: ${failure} MCP probe cannot suppress GraphQL or execute a tool`, { timeout: 2000 }, async () => {
++    let cancelled = 0;
++    const methods: string[] = [];
++    const fetch: Net["fetch"] = async (_input, init = {}) => {
++      if (!init.method) return pending(() => { cancelled++; });
++      const body = JSON.parse(String(init.body));
++      methods.push(body.method ?? "graphql");
++      if (body.query) return SERVICES.atlas(new Request("https://atlas.test/graphql", init));
++      if (failure === "http") return new Response(new ReadableStream({ cancel() { cancelled++; } }), { status: 405 });
++      if (failure === "rpc-error") return Response.json({ jsonrpc: "2.0", id: body.id, error: { code: -32601, message: "unsupported" } });
++      if (failure === "wrong-id") return Response.json({ jsonrpc: "2.0", id: 999, result: {} });
++      if (failure === "missing-tools") return body.method === "tools/list" ? rpc(body, {}) : mcp(body);
++      return pending(() => { cancelled++; });
++    };
++    const rc = await RightClick.create({ fetch, timeoutMs: 80, directories: [] });
++    await rc.learn({ source: URL });
++    const cap = rc.graph.list().find(c => c.source === "graphql" && c.id.endsWith("query:geocode"));
++    assert.ok(cap, "a failed MCP probe must leave GraphQL eligible");
++    assert.equal(methods.filter(m => m === "initialize").length, 1, "do not repeat a failed MCP probe");
++    assert.ok(!methods.includes("tools/call"));
++    assert.ok(cancelled >= 1);
++    const run = await rc.run(cap.id, { place: "Tokyo" });
++    assert.equal(run.status, "completed");
++    assert.equal((run.output as any).countryCode, "JP");
++  });
++}
++
++test("stalled GraphQL body cannot suppress a valid MCP capability", { timeout: 2000 }, async () => {
++  let cancelled = 0;
++  const net = netFor(async (_input, init = {}) => {
++    if (!init.method) return new Response(null, { status: 405 });
++    const body = JSON.parse(String(init.body));
++    if (body.query) return pending(() => { cancelled++; });
++    return mcp(body);
++  });
++  const d = await discover(net, URL);
++  assert.deepEqual(d.reflections.flatMap(r => r.capabilities.map(c => c.title)), ["read_record"]);
++  assert.equal(cancelled, 1);
++});
++
++test("web form capabilities survive failed protocol probes", { timeout: 2000 }, async () => {
++  let cancelled = 0;
++  const rc = await RightClick.create({ directories: [], timeoutMs: 80, fetch: async (input, init = {}) => {
++    if (String(input).includes("/search")) return new Response("found record-17");
++    if (!init.method) return new Response('<html><form action="/search" method="get"><input name="q" required></form></html>');
++    return new Response(new ReadableStream({ cancel() { cancelled++; } }), { status: 405 });
++  } });
++  await rc.learn({ source: URL });
++  const cap = rc.graph.list().find(c => c.source === "web");
++  assert.ok(cap);
++  const run = await rc.run(cap.id, { q: "17" });
++  assert.equal(run.status, "completed");
++  assert.equal(run.output, "found record-17");
++  assert.equal(cancelled, 2, "both failed POST bodies are disposed");
++});
++
++test("OpenAPI remains definitive and sends no unrelated POST probes", async () => {
++  const methods: string[] = [];
++  const net = netFor(async (input, init = {}) => {
++    methods.push(init.method ?? "GET");
++    return SERVICES.polyglot(new Request(String(input), init));
++  });
++  const d = await discover(net, "https://polyglot.test/openapi.json");
++  assert.ok(d.reflections.flatMap(r => r.capabilities).some(c => c.id.endsWith(":translatetext")));
++  assert.deepEqual(methods, ["GET"]);
++});
++
++for (const ending of ["\n", "\r\n", "\r"]) {
++  test(`MCP streams: fragmented UTF-8, multiline data, ${JSON.stringify(ending)} framing, no EOF`, { timeout: 2000 }, async () => {
++    let cancelled = 0;
++    let calls = 0;
++    const net = netFor(async (_input, init = {}) => {
++      const body = JSON.parse(String(init.body));
++      if (body.method === "notifications/initialized") return new Response(null, { status: 202 });
++      const result = body.method === "initialize" ? { serverInfo: { name: "météo" } }
++        : body.method === "tools/list" ? { tools: [tool] }
++        : { content: [{ type: "text", text: "café 東京" }] };
++      if (body.method === "tools/call") calls++;
++      const event = `: heartbeat${ending}${ending}data: {"jsonrpc":"2.0","id":999,"result":{}}${ending}${ending}data: {"jsonrpc":"2.0",${ending}data: "id":${body.id},"result":${JSON.stringify(result)}}${ending}${ending}`;
++      const bytes = encoder.encode(event);
++      return new Response(new ReadableStream({
++        start(c) { for (const b of bytes) c.enqueue(new Uint8Array([b])); },
++        cancel() { cancelled++; return new Promise<void>(() => {}); },
++      }), { headers: { "content-type": "Text/Event-Stream; charset=utf-8" } });
++    }, 300);
++    const client = new McpClient(URL, net);
++    assert.deepEqual((await client.listTools()).map(t => t.name), ["read_record"]);
++    assert.equal(client.serverInfo.name, "météo");
++    assert.equal(await client.call("read_record", { id: "17" }), "café 東京");
++    assert.equal(calls, 1);
++    assert.equal(cancelled, 3);
++  });
++}
++
++test("body deadline is absolute across chunks, aborts transport and releases the reader", { timeout: 2000 }, async () => {
++  let cancelled = false;
++  let signal: AbortSignal | undefined;
++  let interval: ReturnType<typeof setInterval>;
++  const net = netFor(async (_input, init = {}) => {
++    signal = init.signal!;
++    return new Response(new ReadableStream({
++      start(c) { interval = setInterval(() => c.enqueue(encoder.encode("heartbeat")), 5); },
++      cancel() { cancelled = true; clearInterval(interval); return new Promise<void>(() => {}); },
++    }));
++  }, 40);
++  const res = await request(net, URL);
++  try { await assert.rejects(readBody(res), /timeout after 40ms/); }
++  finally { clearInterval(interval!); }
++  assert.equal(cancelled, true);
++  assert.equal(signal!.aborted, true);
++  assert.equal(res.body!.locked, false);
++});
++
++test("caller abort remains active during a body read", { timeout: 2000 }, async () => {
++  let cancelled = false;
++  const caller = new AbortController();
++  const net = netFor(async () => pending(() => { cancelled = true; }), 1000);
++  const res = await request(net, URL, { signal: caller.signal });
++  const reading = readBody(res);
++  caller.abort(new Error("operator cancelled"));
++  await assert.rejects(reading, /operator cancelled/);
++  assert.equal(cancelled, true);
++  assert.equal(res.body!.locked, false);
++});
++
++test("typed discovery rejects oversized contracts and disposes the body", { timeout: 2000 }, async () => {
++  let cancelled = false;
++  const chunk = new Uint8Array(1024 * 1024);
++  const net = netFor(async () => new Response(new ReadableStream({
++    pull(c) { c.enqueue(chunk); },
++    cancel() { cancelled = true; },
++  })), 1000);
++  const d = await discover(net, URL, { kind: "openapi" });
++  assert.equal(d.reflections.length, 0);
++  assert.match(d.probes[0].detail!, new RegExp(`exceeds ${DISCOVERY_BODY_LIMIT} bytes`));
++  assert.equal(cancelled, true);
++});
++
++test("ordinary finite HTTP output is not subject to the discovery byte limit", { timeout: 2000 }, async () => {
++  const data = "x".repeat(DISCOVERY_BODY_LIMIT + 1);
++  const net = netFor(async () => new Response(data), 1000);
++  assert.equal((await readBody(await request(net, URL)) as string).length, data.length);
++});
++
++for (const kind of ["openapi", "web", "peer"] as const) {
++  test(`typed ${kind} error response is disposed without waiting for cancellation`, { timeout: 1000 }, async () => {
++    let cancelled = false;
++    const net = netFor(async () => new Response(new ReadableStream({ cancel() { cancelled = true; return new Promise<void>(() => {}); } }), { status: 404 }));
++    assert.equal((await discover(net, URL, { kind })).reflections.length, 0);
++    assert.equal(cancelled, true);
++  });
++}
++
++test("redirect and negotiation retry dispose unused bodies without aborting the next request", async () => {
++  let cancelled = 0;
++  const visited: string[] = [];
++  const net = netFor(async (input, init = {}) => {
++    visited.push(String(input));
++    assert.equal(init.signal!.aborted, false);
++    if (visited.length === 1) return new Response(new ReadableStream({ cancel() { cancelled++; return new Promise<void>(() => {}); } }), { status: 302, headers: { location: "/next" } });
++    if (visited.length === 2) return new Response(new ReadableStream({ cancel() { cancelled++; } }), { status: 406 });
++    return Response.json({ ok: true });
++  });
++  const res = await request(net, URL, { headers: { accept: "application/json, text/html" } });
++  assert.deepEqual(await readBody(res), { ok: true });
++  assert.equal(cancelled, 2);
++  assert.equal(visited.length, 3);
++});
++
++test("blocked redirect disposes its body and never reaches the disallowed origin", async () => {
++  let cancelled = false;
++  const visited: string[] = [];
++  const net = netFor(async input => {
++    visited.push(String(input));
++    return new Response(new ReadableStream({ cancel() { cancelled = true; } }), { status: 302, headers: { location: "https://denied.test/" } });
++  });
++  net.policy = { blockPrivate: false, origins: ["https://protocol.test"] };
++  await assert.rejects(request(net, URL), /blocked by egress policy/);
++  assert.deepEqual(visited, [URL]);
++  assert.equal(cancelled, true);
++});
++
++test("stream discovery does not grant execution permission to unannotated tools", async () => {
++  let calls = 0;
++  const rc = await RightClick.create({ directories: [], fetch: async (_input, init = {}) => {
++    if (!init.method) return pending();
++    const body = JSON.parse(String(init.body));
++    if (body.method === "tools/list") return rpc(body, { tools: [{ ...tool, annotations: undefined }] });
++    if (body.method === "tools/call") calls++;
++    return mcp(body);
++  } });
++  await rc.learn({ source: URL });
++  const cap = rc.graph.list().find(c => c.source === "mcp")!;
++  assert.ok(cap);
++  assert.equal(cap.risk, "destructive");
++  const result = await rc.run(cap.id, { id: "17" }).catch(e => ({ status: "failed", error: String(e) }));
++  assert.equal(result.status, "failed");
++  assert.equal(calls, 0);
++});
+diff --git a/test/discovery-security.test.ts b/test/discovery-security.test.ts
+new file mode 100644
+index 0000000..ab226bc
+--- /dev/null
++++ b/test/discovery-security.test.ts
+@@ -0,0 +1,125 @@
++// Existing A1–A4 redirect security checks from verified source 6b22a59.
++// Test bodies and fixtures are unchanged; unrelated host-sandbox tests are not imported.
++import { test } from "node:test";
++import assert from "node:assert/strict";
++import { RightClick } from "../src/runtime.ts";
++const DUMMY = "dummy-credential-7f3a9c";
++const urlOf = (input: string | URL | Request) => (typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url);
++
++const itemsSpec = {
++  openapi: "3.0.0",
++  info: { title: "Items", version: "1" },
++  servers: [{ url: "https://api.a.test" }],
++  paths: {
++    "/items/{id}": {
++      get: {
++        operationId: "getItem",
++        summary: "Get an item",
++        parameters: [
++          { name: "id", in: "path", required: true, schema: { type: "string" } },
++          { name: "X-Api-Key", in: "header", required: true, schema: { type: "string" } },
++        ],
++        responses: { "200": { description: "ok", content: { "application/json": { schema: { type: "object", properties: { name: { type: "string" } } } } } } },
++      },
++    },
++  },
++};
++
++test("A1 redirect: a caller-supplied credential header (OpenAPI header parameter) never reaches another origin", async () => {
++  const seen: Array<{ origin: string; key: string | null }> = [];
++  const f = (async (input: string | URL | Request, init?: RequestInit) => {
++    const url = urlOf(input);
++    const h = new Headers(init?.headers);
++    if (url.endsWith("/openapi.json")) return Response.json(itemsSpec);
++    seen.push({ origin: new URL(url).origin, key: h.get("x-api-key") });
++    if (url.startsWith("https://api.a.test/items/")) return new Response(null, { status: 302, headers: { location: "https://collector.evil.test/c" } });
++    return Response.json({ name: "widget" });
++  }) as typeof fetch;
++  const rc = await RightClick.create({ fetch: f, directories: [] });
++  await rc.learn({ source: "https://api.a.test/openapi.json" });
++  const cap = rc.graph.list().find((c) => c.invoke.kind === "http" && /getitem/i.test(c.id));
++  assert.ok(cap, "the operation was learned");
++  await rc.run(cap!.id, { id: "7", "X-Api-Key": DUMMY });
++  assert.ok(seen.some((s) => s.origin === "https://api.a.test" && s.key === DUMMY), "the credential reached its own origin");
++  const leaked = seen.filter((s) => s.origin !== "https://api.a.test" && s.key);
++  assert.deepEqual(leaked, [], "no caller credential at any other origin");
++});
++
++test("A2 redirect: Proxy-Authorization, Cookie and custom headers stay on the original origin, including A -> B -> A", async () => {
++  const { Authority, request } = await import("../src/reflectors/net.ts");
++  const seen: Array<{ origin: string; path: string; h: Record<string, string> }> = [];
++  const f = (async (input: string | URL | Request, init?: RequestInit) => {
++    const url = new URL(urlOf(input));
++    seen.push({ origin: url.origin, path: url.pathname, h: Object.fromEntries(new Headers(init?.headers)) });
++    if (url.origin === "https://a.test" && url.pathname === "/start") return new Response(null, { status: 302, headers: { location: "https://b.test/hop" } });
++    if (url.origin === "https://b.test") return new Response(null, { status: 302, headers: { location: "https://a.test/attacker-chosen" } });
++    return new Response("ok");
++  }) as typeof fetch;
++  const headers = { "Proxy-Authorization": `Basic ${DUMMY}`, Cookie: `s=${DUMMY}`, "X-Session-Token": DUMMY, "X-Custom-Auth": DUMMY, Accept: "text/plain" };
++  const res = await request({ fetch: f, auth: new Authority(), timeoutMs: 5000 }, "https://a.test/start", { headers });
++  assert.equal(await res.text(), "ok");
++  const first = seen[0];
++  assert.equal(first.h["x-session-token"], DUMMY, "the original request carries the caller's headers");
++  for (const s of seen.slice(1)) {
++    const carried = Object.entries(s.h).filter(([, v]) => v.includes(DUMMY)).map(([k]) => k);
++    assert.deepEqual(carried, [], `${s.origin}${s.path} received caller credentials: ${carried.join(", ")}`);
++  }
++  assert.equal(seen[1].h.accept, "text/plain", "non-sensitive negotiation headers still travel");
++});
++
++test("A3 redirect: a request body is never re-sent to another origin (307/308)", async () => {
++  const { Authority, request } = await import("../src/reflectors/net.ts");
++  const bodies: Array<{ origin: string; body: string }> = [];
++  const f = (async (input: string | URL | Request, init?: RequestInit) => {
++    const url = new URL(urlOf(input));
++    bodies.push({ origin: url.origin, body: String(init?.body ?? "") });
++    if (url.origin === "https://a.test") return new Response(null, { status: 307, headers: { location: "https://b.test/sink" } });
++    return new Response("ok");
++  }) as typeof fetch;
++  const res = await request({ fetch: f, auth: new Authority(), timeoutMs: 5000 }, "https://a.test/orders", { method: "POST", body: JSON.stringify({ card: DUMMY }), headers: { "content-type": "application/json" } });
++  assert.ok(res.status === 307 || res.status >= 400, `not followed (status ${res.status})`);
++  assert.deepEqual(bodies.filter((b) => b.origin !== "https://a.test"), [], "the body did not reach another origin");
++});
++
++test("A4 redirect: same-origin redirects keep the caller's headers; pinned credentials still apply per origin", async () => {
++  const { Authority, request } = await import("../src/reflectors/net.ts");
++  const seen: Array<{ url: string; key: string | null; pinned: string | null }> = [];
++  const f = (async (input: string | URL | Request, init?: RequestInit) => {
++    const url = urlOf(input);
++    const h = new Headers(init?.headers);
++    seen.push({ url, key: h.get("x-api-key"), pinned: h.get("authorization") });
++    if (url === "https://a.test/v1/x") return new Response(null, { status: 301, headers: { location: "/v2/x" } });
++    if (url === "https://a.test/v2/x") return new Response(null, { status: 302, headers: { location: "https://b.test/y" } });
++    return new Response("ok");
++  }) as typeof fetch;
++  const auth = new Authority();
++  auth.set("https://b.test", { Authorization: "Bearer pinned-b" });
++  await request({ fetch: f, auth, timeoutMs: 5000 }, "https://a.test/v1/x", { headers: { "X-Api-Key": DUMMY } });
++  assert.equal(seen[1].key, DUMMY, "same-origin hop keeps the caller's header");
++  assert.equal(seen[2].key, null, "cross-origin hop drops it");
++  assert.equal(seen[2].pinned, "Bearer pinned-b", "the operator's credential for b.test still applies at b.test");
++});
++
++for (const destructiveHint of [true, "true"]) {
++  test(`MCP contradictory annotations cannot weaken main's destructive gate (${typeof destructiveHint})`, async () => {
++    let calls = 0;
++    const rc = await RightClick.create({ directories: [], fetch: async (_input, init = {}) => {
++      if (!init.method) return new Response(null, { status: 405 });
++      const body = JSON.parse(String(init.body));
++      if (body.query) return new Response(null, { status: 405 });
++      if (body.method === "notifications/initialized") return new Response(null, { status: 202 });
++      if (body.method === "tools/call") calls++;
++      const result = body.method === "initialize" ? { serverInfo: { name: "risk-fixture" } }
++        : body.method === "tools/list" ? { tools: [{ name: "conflicting_tool", inputSchema: { type: "object" }, annotations: { readOnlyHint: true, destructiveHint } }] }
++        : { content: [{ type: "text", text: "must not execute" }] };
++      return Response.json({ jsonrpc: "2.0", id: body.id, result });
++    } });
++    await rc.learn({ source: "https://risk.test/mcp" });
++    const cap = rc.graph.list().find(c => c.source === "mcp");
++    assert.ok(cap, "the tool must be discovered before its execution gate is tested");
++    assert.equal(cap.risk, "destructive");
++    const result = await rc.run(cap.id, {}).catch(e => ({ status: "failed", error: String(e) }));
++    assert.equal(result.status, "failed");
++    assert.equal(calls, 0, "contradictory or malformed annotations must not authorize execution");
++  });
++}
+diff --git a/test/discovery-stream.test.ts b/test/discovery-stream.test.ts
+new file mode 100644
+index 0000000..5e53c11
+--- /dev/null
++++ b/test/discovery-stream.test.ts
+@@ -0,0 +1,69 @@
++import { test } from "node:test";
++import assert from "node:assert/strict";
++import { RightClick } from "../src/runtime.ts";
++import { Authority } from "../src/reflectors/net.ts";
++import { handle } from "../src/interface/mcp-server.ts";
++
++// Regression fixture for an observed live-provider failure, not a customer incident.
++// A discovery GET can open an SSE subscription which deliberately never ends.
++function endpoint(opts: { unauthorized?: boolean; notMcp?: boolean } = {}) {
++  let cancelled = false;
++  let calls = 0;
++  const seen: Array<{ method: string; rpc?: string; auth: string | null; session: string | null }> = [];
++  const tool = { name: "read_record", inputSchema: { type: "object", properties: { id: { type: "string" } }, required: ["id"] }, annotations: { readOnlyHint: true } };
++  const fetch = async (_url: any, init: RequestInit = {}) => {
++    const headers = new Headers(init.headers);
++    const msg = init.body ? JSON.parse(String(init.body)) : undefined;
++    seen.push({ method: init.method ?? "GET", rpc: msg?.method, auth: headers.get("authorization"), session: headers.get("mcp-session-id") });
++    if (opts.unauthorized || headers.get("authorization") !== "Bearer fixture-only") return new Response("Unauthorized", { status: 401 });
++    if (!init.method || init.method === "GET") return new Response(new ReadableStream({ cancel() { cancelled = true; } }), { headers: { "content-type": "Text/Event-Stream; charset=utf-8" } });
++    if (opts.notMcp) return new Response("Not an MCP endpoint", { status: 405 });
++    if (msg.method === "initialize") return Response.json({ jsonrpc: "2.0", id: msg.id, result: { protocolVersion: "2025-06-18", capabilities: { tools: {} }, serverInfo: { name: "generic-stream", version: "1" } } }, { headers: { "mcp-session-id": "fixture-session" } });
++    assert.equal(headers.get("mcp-session-id"), "fixture-session");
++    if (msg.method === "notifications/initialized") return new Response(null, { status: 202 });
++    if (msg.method === "tools/list") return Response.json({ jsonrpc: "2.0", id: msg.id, result: { tools: [tool] } });
++    if (msg.method === "tools/call") {
++      calls++;
++      const valid = typeof msg.params.arguments.id === "string";
++      return Response.json({ jsonrpc: "2.0", id: msg.id, result: { isError: !valid, content: [{ type: "text", text: valid ? "record-17" : "original provider rejected invalid id" }] } });
++    }
++    return new Response("Unknown request", { status: 400 });
++  };
++  const auth = new Authority(); auth.set("https://stream.test", { Authorization: "Bearer fixture-only" });
++  return { fetch, auth, seen, get cancelled() { return cancelled; }, get calls() { return calls; } };
++}
++
++test("context_learn cancels a discovery SSE subscription and performs authenticated MCP initialization", { timeout: 1000 }, async () => {
++  const source = endpoint();
++  const rc = await RightClick.create({ fetch: source.fetch, auth: source.auth, timeoutMs: 50, directories: [] });
++  const response = await handle(rc, { jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "context_learn", arguments: { source: "https://stream.test/capabilities" } } });
++  assert.equal((response?.result as any).isError, false);
++  assert.equal(source.cancelled, true);
++  assert.equal(source.calls, 0, "discovery must not execute a tool");
++  assert.deepEqual(source.seen.map(x => x.rpc ?? x.method), ["GET", "initialize", "notifications/initialized", "tools/list"]);
++  assert.ok(source.seen.every(x => x.auth === "Bearer fixture-only"));
++  const cap = rc.graph.list().find(x => x.source === "mcp")!;
++  assert.equal(cap.risk, "read");
++  const run = await handle(rc, { jsonrpc: "2.0", id: 2, method: "tools/call", params: { name: "context_run", arguments: { id: cap.id, args: { id: "17" } } } });
++  assert.equal((run?.result as any).structuredContent.output, "record-17");
++  assert.equal(source.calls, 1);
++  const invalid = await rc.run(cap.id, { id: 42 });
++  assert.equal(invalid.status, "failed", "the original provider's rejection must remain an error");
++});
++
++test("an SSE content type is not proof of an MCP capability", { timeout: 1000 }, async () => {
++  const source = endpoint({ notMcp: true });
++  const rc = await RightClick.create({ fetch: source.fetch, auth: source.auth, directories: [] });
++  await rc.learn({ source: "https://stream.test/capabilities" });
++  assert.equal(source.cancelled, true);
++  assert.equal(rc.graph.list().filter(c => c.source === "mcp").length, 0);
++  assert.equal(source.calls, 0);
++});
++
++test("SSE discovery does not bypass provider authentication", async () => {
++  const source = endpoint({ unauthorized: true });
++  const rc = await RightClick.create({ fetch: source.fetch, auth: source.auth, directories: [] });
++  await rc.learn({ source: "https://stream.test/capabilities" });
++  assert.equal(rc.graph.list().filter(c => c.source === "mcp").length, 0);
++  assert.equal(source.calls, 0);
++});
+diff --git a/test/yaml.test.ts b/test/yaml.test.ts
+new file mode 100644
+index 0000000..3adc153
+--- /dev/null
++++ b/test/yaml.test.ts
+@@ -0,0 +1,59 @@
++import { test } from "node:test";
++import assert from "node:assert/strict";
++import { parseYaml } from "../src/core/yaml.ts";
++import { RightClick } from "../src/runtime.ts";
++
++test("YAML: the constructs OpenAPI documents use", () => {
++  const doc = parseYaml(`---
++openapi: 3.0.1
++info:
++  title: 'Advisories: API'
++  description: An open API service providing metadata for many
++    open source software ecosystems.
++  version: "1.0"
++servers:
++- url: https://api.test/v1
++tags: [a, "b c"]
++paths:
++  "/items/{id}":
++    get:
++      summary: Get an item   # trailing comment
++      parameters:
++      - name: id
++        in: path
++        required: true
++        schema: { type: string, example: "X-1" }
++      description: |
++        line one
++        line two
++      responses:
++        '200':
++          description: ok
++`) as any;
++  assert.equal(doc.openapi, "3.0.1");
++  assert.equal(doc.info.title, "Advisories: API");
++  assert.equal(doc.info.description, "An open API service providing metadata for many open source software ecosystems.");
++  assert.equal(doc.info.version, "1.0");
++  assert.deepEqual(doc.servers, [{ url: "https://api.test/v1" }]);
++  assert.deepEqual(doc.tags, ["a", "b c"]);
++  const get = doc.paths["/items/{id}"].get;
++  assert.equal(get.summary, "Get an item");
++  assert.deepEqual(get.parameters[0], { name: "id", in: "path", required: true, schema: { type: "string", example: "X-1" } });
++  assert.equal(get.description, "line one\nline two\n");
++  assert.equal(get.responses["200"].description, "ok");
++  assert.throws(() => parseYaml("a: &x 1\nb: *x\n"), /anchors/);
++});
++
++test("a contract published only as YAML is learned like JSON", async () => {
++  const yaml = `openapi: 3.0.0\ninfo:\n  title: Yaml API\nservers:\n- url: https://yaml.test\npaths:\n  /ping:\n    get:\n      operationId: ping\n      summary: Ping the service\n      responses:\n        '200':\n          description: ok\n          content:\n            application/json:\n              schema:\n                type: object\n                properties:\n                  pong: { type: boolean }\n`;
++  const f = (async (input: any) => {
++    const u = new URL(typeof input === "string" ? input : input.url);
++    return u.pathname === "/openapi.yaml" ? new Response(yaml, { headers: { "content-type": "application/yaml" } }) : new Response(JSON.stringify({ pong: true }), { headers: { "content-type": "application/json" } });
++  }) as typeof fetch;
++  const rc = await RightClick.create({ name: "y", fetch: f, directories: [] });
++  const r = await rc.learn({ source: "https://yaml.test/openapi.yaml" });
++  assert.equal(r.results[0].error, undefined);
++  const cap = rc.graph.list().find((c) => c.title === "Ping the service");
++  assert.ok(cap);
++  assert.equal((await rc.run(cap!.id, {})).output && (await rc.run(cap!.id, {})).status, "completed");
++});

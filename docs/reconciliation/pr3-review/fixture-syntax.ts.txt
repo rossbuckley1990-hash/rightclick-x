@@ -1,0 +1,93 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { RightClick } from "../src/runtime.ts";
+import { reflectOpenAPI } from "../src/reflectors/openapi.ts";
+
+const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
+
+function mcpFailure(status: number, message: string, read = false) {
+  let calls = 0;
+  const fetch = (async (_input: any, init?: RequestInit) => {
+    const body = JSON.parse(String(init?.body ?? "{}"));
+    const reply = (result: unknown) => json({ jsonrpc: "2.0", id: body.id, result });
+    if (body.method === "initialize") return reply({ serverInfo: { name: "queue" }, capabilities: { tools: {} } });
+    if (body.method === "notifications/initialized") return new Response(null, { status: 202 });
+    if (body.method === "tools/list") return reply({ tools: [{ name: "process", annotations: { readOnlyHint: read, destructiveHint: false, openWorldHint: false }, inputSchema: { type: "object" } }] });
+    if (body.method === "tools/call") {
+      calls++;
+      return calls === 1 ? json({ error: message }, status) : reply({ content: [{ type: "text", text: "done" }] });
+    }
+    return json({}, 404);
+  }) as typeof globalThis.fetch;
+  return { fetch, calls: () => calls };
+}
+
+for (const [status, message] of [[400, "bad request after commit"], [404, "missing response after commit"], [504, "upstream reported HTTP 404"]] as const) {
+  test(`MCP ${status} cannot replay an ambiguous write beneath runtime retry policy`, async () => {
+    const fixture = mcpFailure(status, message);
+    const rc = await RightClick.create({ directories: [], fetch: fixture.fetch });
+    await rc.learn({ source: "https://queue.test/mcp" });
+    const cap = rc.graph.list().find(c => c.invoke.kind === "mcp")!;
+    assert.equal(cap.risk, "write");
+    const result = await rc.run(cap.id);
+    assert.equal(fixture.calls(), 1, "one attempted write must not become two effects");
+    assert.equal(result.status, "failed", "an ambiguous outcome cannot become a successful replay");
+  });
+}
+
+test("read-only MCP session recovery remains available", async () => {
+  const fixture = mcpFailure(404, "expired session", true);
+  const rc = await RightClick.create({ directories: [], fetch: fixture.fetch });
+  await rc.learn({ source: "https://queue.test/mcp" });
+  const cap = rc.graph.list().find(c => c.invoke.kind === "mcp")!;
+  const result = await rc.run(cap.id);
+  assert.equal(result.status, "completed", result.error);
+  assert.equal(result.output, "done");
+  assert.equal(fixture.calls(), 2);
+});
+
+function contract(version: number, method = "post", renamed = false) {
+  return { openapi: "3.0.0", info: { title: "Records", version: String(version) }, servers: [{ url: `https://records.test/v${version}` }],
+    paths: { "/record": { [method]: { operationId: renamed ? "replacement" : "original", responses: { "200": { description: "ok", content: { "application/json": { schema: { type: "object", properties: { ok: { type: "boolean" } } } } } } } } } };
+}
+
+for (const [status, message] of [[400, "validation failed after committing"], [504, "downstream HTTP 404: missing required record"]] as const) {
+  test(`HTTP ${status} and provider error text do not prove a write was never applied`, async () => {
+    let version = 1, effects = 0;
+    const fetch = (async (input: any, init?: RequestInit) => {
+      const url = String(input);
+      if (url.endsWith("/openapi.json")) return json(contract(version));
+      if (init?.method === "POST" && /\/v[12]\/record$/.test(url)) {
+        effects++; version = 2;
+        return effects === 1 ? json({ error: message }, status) : json({ ok: true });
+      }
+      return json({}, 404);
+    }) as typeof globalThis.fetch;
+    const rc = await RightClick.create({ directories: [], fetch });
+    await rc.learn({ source: "https://records.test/openapi.json" });
+    const cap = rc.graph.list().find(c => c.invoke.kind === "http")!;
+    const result = await rc.run(cap.id);
+    assert.equal(effects, 1, "HTTP status and body text are not a non-commit witness");
+    assert.equal(result.status, "failed");
+  });
+}
+
+for (const renamed of [true, false]) {
+  test(`repair rechecks destructive operator approval for ${renamed ? "a replacement id" : "the approved id"}`, async () => {
+    const source = "https://records.test/openapi.json";
+    const oldId = reflectOpenAPI(contract(1, "delete"), source).capabilities[0].id;
+    let version = 1, effects = 0;
+    const fetch = (async (input: any, init?: RequestInit) => {
+      const url = String(input);
+      if (url === source) return json(contract(version, "delete", version === 2 && renamed));
+      if (init?.method === "DELETE" && url.endsWith("/v2/record")) { effects++; return json({ ok: true }); }
+      return json({}, 404);
+    }) as typeof globalThis.fetch;
+    const rc = await RightClick.create({ directories: [], fetch, authority: { approve: [oldId], retry: ["https://records.test"] } });
+    await rc.learn({ source });
+    version = 2;
+    const result = await rc.run(oldId, {}, { confirm: true });
+    assert.equal(effects, renamed ? 0 : 1, "retry permission must not grant destructive execution approval");
+    assert.equal(result.status, renamed ? "failed" : "completed", result.error);
+  });
+}

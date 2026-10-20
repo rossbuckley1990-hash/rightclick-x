@@ -1,0 +1,50 @@
+✖ MCP contradictory annotations cannot weaken main's destructive gate (boolean) (17.318667ms)
+✖ MCP contradictory annotations cannot weaken main's destructive gate (string) (0.817834ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 0
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 130.119625
+
+✖ failing tests:
+
+test at test/discovery-security.test.ts:104:3
+✖ MCP contradictory annotations cannot weaken main's destructive gate (boolean) (17.318667ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'read'
+  - 'destructive'
+  
+      at TestContext.<anonymous> (file:///private/tmp/rcx-main-discovery-candidate/test/discovery-security.test.ts:120:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'read',
+    expected: 'destructive',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/discovery-security.test.ts:104:3
+✖ MCP contradictory annotations cannot weaken main's destructive gate (string) (0.817834ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'read'
+  - 'destructive'
+  
+      at TestContext.<anonymous> (file:///private/tmp/rcx-main-discovery-candidate/test/discovery-security.test.ts:120:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'read',
+    expected: 'destructive',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

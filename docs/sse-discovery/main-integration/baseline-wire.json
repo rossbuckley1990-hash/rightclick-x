@@ -1,0 +1,271 @@
+[
+  {
+    "label": "current-main",
+    "checkout": "/private/tmp/rcx-main-discovery-baseline",
+    "node": "v26.12.0",
+    "mode": "get-subscription",
+    "timeoutMs": 100,
+    "watchdogMs": 1500,
+    "timedOut": true,
+    "exit": {
+      "code": null,
+      "signal": "SIGKILL"
+    },
+    "result": null,
+    "stderr": "",
+    "trace": [
+      {
+        "ms": 244.6,
+        "event": "request",
+        "method": "GET",
+        "hasAuth": true,
+        "session": null
+      },
+      {
+        "ms": 1510.01,
+        "event": "external-watchdog",
+        "timeoutMs": 1500
+      },
+      {
+        "ms": 1523.57,
+        "event": "response-closed",
+        "method": "GET"
+      }
+    ]
+  },
+  {
+    "label": "current-main",
+    "checkout": "/private/tmp/rcx-main-discovery-baseline",
+    "node": "v26.12.0",
+    "mode": "post-stream",
+    "timeoutMs": 100,
+    "watchdogMs": 1500,
+    "timedOut": true,
+    "exit": {
+      "code": null,
+      "signal": "SIGKILL"
+    },
+    "result": null,
+    "stderr": "",
+    "trace": [
+      {
+        "ms": 979.29,
+        "event": "request",
+        "method": "GET",
+        "hasAuth": true,
+        "session": null
+      },
+      {
+        "ms": 980.18,
+        "event": "response-closed",
+        "method": "GET"
+      },
+      {
+        "ms": 1078.54,
+        "event": "request",
+        "method": "POST",
+        "hasAuth": true,
+        "session": null
+      },
+      {
+        "ms": 1078.66,
+        "event": "response-closed",
+        "method": "POST"
+      },
+      {
+        "ms": 1094.35,
+        "event": "request",
+        "method": "POST",
+        "rpc": "initialize",
+        "hasAuth": true,
+        "session": null
+      },
+      {
+        "ms": 1504.58,
+        "event": "external-watchdog",
+        "timeoutMs": 1500
+      },
+      {
+        "ms": 1531.94,
+        "event": "response-closed",
+        "method": "POST",
+        "rpc": "initialize"
+      }
+    ]
+  },
+  {
+    "label": "current-main",
+    "checkout": "/private/tmp/rcx-main-discovery-baseline",
+    "node": "v26.12.0",
+    "mode": "mislabeled-get",
+    "timeoutMs": 100,
+    "watchdogMs": 1500,
+    "timedOut": true,
+    "exit": {
+      "code": null,
+      "signal": "SIGKILL"
+    },
+    "result": null,
+    "stderr": "",
+    "trace": [
+      {
+        "ms": 1508.08,
+        "event": "external-watchdog",
+        "timeoutMs": 1500
+      }
+    ]
+  },
+  {
+    "label": "current-main",
+    "checkout": "/private/tmp/rcx-main-discovery-baseline",
+    "node": "v26.12.0",
+    "mode": "finite-json",
+    "timeoutMs": 100,
+    "watchdogMs": 1500,
+    "timedOut": false,
+    "exit": {
+      "code": 0,
+      "signal": null
+    },
+    "result": {
+      "discoveryMs": 88.270084,
+      "capabilities": [
+        "mcp:wire-fixture:read-record"
+      ],
+      "run": {
+        "status": "completed",
+        "output": "record-17"
+      },
+      "learned": {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"results\": [\n    {\n      \"source\": \"http://127.0.0.1:57837/capabilities\",\n      \"probes\": [\n        {\n          \"url\": \"http://127.0.0.1:57837/capabilities\",\n          \"kind\": \"mcp\",\n          \"ok\": true,\n          \"detail\": \"1 tools\"\n        }\n      ],\n      \"learned\": [\n        {\n          \"provider\": \"mcp:wire-fixture\",\n          \"capabilitiesAdded\": 1,\n          \"powersBefore\": 79,\n          \"powersAfter\": 89,\n          \"newPowers\": 10\n        }\n      ]\n    }\n  ],\n  \"totalNewCapabilities\": 1,\n  \"totalNewPowers\": 10,\n  \"graph\": {\n    \"providers\": 2,\n    \"capabilities\": 21,\n    \"edges\": 31,\n    \"chains2\": 31,\n    \"chains3\": 37,\n    \"total\": 89\n  }\n}"
+            }
+          ],
+          "structuredContent": {
+            "results": [
+              {
+                "source": "http://127.0.0.1:57837/capabilities",
+                "probes": [
+                  {
+                    "url": "http://127.0.0.1:57837/capabilities",
+                    "kind": "mcp",
+                    "ok": true,
+                    "detail": "1 tools"
+                  }
+                ],
+                "learned": [
+                  {
+                    "provider": "mcp:wire-fixture",
+                    "capabilitiesAdded": 1,
+                    "powersBefore": 79,
+                    "powersAfter": 89,
+                    "newPowers": 10
+                  }
+                ]
+              }
+            ],
+            "totalNewCapabilities": 1,
+            "totalNewPowers": 10,
+            "graph": {
+              "providers": 2,
+              "capabilities": 21,
+              "edges": 31,
+              "chains2": 31,
+              "chains3": 37,
+              "total": 89
+            }
+          },
+          "isError": false
+        }
+      }
+    },
+    "stderr": "",
+    "trace": [
+      {
+        "ms": 509.58,
+        "event": "request",
+        "method": "GET",
+        "hasAuth": true,
+        "session": null
+      },
+      {
+        "ms": 509.84,
+        "event": "response-closed",
+        "method": "GET"
+      },
+      {
+        "ms": 526.98,
+        "event": "request",
+        "method": "POST",
+        "hasAuth": true,
+        "session": null
+      },
+      {
+        "ms": 527.2,
+        "event": "response-closed",
+        "method": "POST"
+      },
+      {
+        "ms": 533.12,
+        "event": "request",
+        "method": "POST",
+        "rpc": "initialize",
+        "hasAuth": true,
+        "session": null
+      },
+      {
+        "ms": 533.57,
+        "event": "response-closed",
+        "method": "POST",
+        "rpc": "initialize"
+      },
+      {
+        "ms": 547.13,
+        "event": "request",
+        "method": "POST",
+        "rpc": "notifications/initialized",
+        "hasAuth": true,
+        "session": "wire-session"
+      },
+      {
+        "ms": 547.49,
+        "event": "response-closed",
+        "method": "POST",
+        "rpc": "notifications/initialized"
+      },
+      {
+        "ms": 553.6,
+        "event": "request",
+        "method": "POST",
+        "rpc": "tools/list",
+        "hasAuth": true,
+        "session": "wire-session"
+      },
+      {
+        "ms": 553.91,
+        "event": "response-closed",
+        "method": "POST",
+        "rpc": "tools/list"
+      },
+      {
+        "ms": 580.18,
+        "event": "request",
+        "method": "POST",
+        "rpc": "tools/call",
+        "hasAuth": true,
+        "session": "wire-session"
+      },
+      {
+        "ms": 580.59,
+        "event": "response-closed",
+        "method": "POST",
+        "rpc": "tools/call"
+      }
+    ]
+  }
+]

@@ -81,8 +81,33 @@ export interface RuntimeOptions {
   store?: Store;
   /** Outbound network policy. Default: allow everything (local use); servers exposed beyond loopback block private addresses. */
   network?: NetworkPolicy;
-  /** Destructive capabilities need `confirm: true` from the caller ("confirm", default) or run directly ("allow"). */
+  /**
+   * Legacy switch for destructive capabilities. "confirm" = the caller's `confirm: true` suffices
+   * (same as authority.destructive "agent-confirm"); "allow" = run directly.
+   */
   destructive?: "confirm" | "allow";
+  /** Operator authority, set outside any agent (configuration or environment), never by a tool call. */
+  authority?: OperatorAuthority;
+}
+
+export interface OperatorAuthority {
+  /**
+   * How destructive capabilities are authorised:
+   * - "operator" (default): only capabilities the operator approved (`approve`), and only when the
+   *   caller also confirms. An agent's `confirm: true` alone is not approval.
+   * - "agent-confirm": the caller's `confirm: true` suffices (an explicit operator choice).
+   * - "allow": run without confirmation.
+   */
+  destructive?: "operator" | "agent-confirm" | "allow";
+  /** Capability ids (or prefixes ending in "*") the operator approved for destructive use. */
+  approve?: string[];
+  /**
+   * Capabilities the operator declares free of side effects, so they may be sent again during
+   * repair (POST endpoints that only compute, for example): capability ids, prefixes ending in
+   * "*", or origins ("https://api.example.com"). Without this, a call that can change state is
+   * never re-sent once it may have taken effect.
+   */
+  retry?: string[];
 }
 
 export interface RunRecord {
@@ -110,8 +135,10 @@ export interface RunRecord {
 
 export class ConfirmationRequired extends Error {
   capability: string;
-  constructor(capability: string, title: string) {
-    super(`"${title}" (${capability}) is destructive: call again with confirm: true to run it`);
+  constructor(capability: string, title: string, needsOperator = false) {
+    super(needsOperator
+      ? `"${title}" (${capability}) is destructive and has no operator approval. An operator must approve it in RightClick X's configuration (authority.approve / RCX_APPROVE); a tool argument cannot.`
+      : `"${title}" (${capability}) is destructive: call again with confirm: true to run it`);
     this.capability = capability;
   }
 }
@@ -227,7 +254,9 @@ export class RightClick {
   private store?: Store;
   private saveTimer: ReturnType<typeof setTimeout> | null = null;
   private runCounter = 0;
-  private destructivePolicy: "confirm" | "allow" = "confirm";
+  private destructivePolicy: "operator" | "agent-confirm" | "allow" = "operator";
+  private approvals: string[] = [];
+  private retrySafe: string[] = [];
 
   private constructor(opts: RuntimeOptions) {
     this.net = {
@@ -246,7 +275,10 @@ export class RightClick {
     const rc = new RightClick(opts);
     const b = builtinReflection();
     rc.builtins = b.fns;
-    rc.destructivePolicy = opts.destructive ?? "confirm";
+    // An explicit legacy "confirm" is an operator's choice to trust the agent's confirmation.
+    rc.destructivePolicy = opts.authority?.destructive ?? (opts.destructive === "allow" ? "allow" : opts.destructive === "confirm" ? "agent-confirm" : "operator");
+    rc.approvals = [...(opts.authority?.approve ?? [])];
+    rc.retrySafe = [...(opts.authority?.retry ?? [])];
     rc.graph.add(b.reflection);
     const p = await platformReflection(rc.info, { bindings: opts.bindings, workspace: opts.workspace });
     rc.platformFns = p.fns;
@@ -591,10 +623,9 @@ export class RightClick {
   ): Promise<RunRecord> {
     const cap = this.graph.get(id);
     if (!cap) throw new Error(`unknown capability: ${id}`);
-    // Destructive effects keep the user's authority: they need an explicit confirmation.
-    if (cap.risk === "destructive" && this.destructivePolicy === "confirm" && !opts.confirm) {
-      throw new ConfirmationRequired(cap.id, cap.title);
-    }
+    // Destructive effects keep the user's authority. The agent may ask (confirm), but under the
+    // default policy only an operator's approval, made in configuration, authorises the capability.
+    this.checkExecutionAuthority(cap, opts.confirm);
     // An id the caller chose for what it used to do must not quietly do something else.
     const change = opts.planned ? undefined : this.meaningChanges.get(cap.id);
     const refused = change && !opts.acknowledgeChange
@@ -637,7 +668,7 @@ export class RightClick {
           output = await this.execute(cap, coerced, opts.net);
         } catch (e) {
           if (opts.planned || !HEALABLE.has(cap.invoke.kind)) throw e;
-          const h = await this.healRun(cap, args, String((e as Error)?.message ?? e), opts.net);
+          const h = await this.healRun(cap, args, String((e as Error)?.message ?? e), opts.net, opts.confirm);
           healing = h.healing;
           if (!h.healed) throw new Error(`${healing.error}; ${healing.note}`);
           output = h.output;
@@ -696,8 +727,71 @@ export class RightClick {
    * still names that operation, else the one capability that now does. A
    * changed id is never followed, and repair obeys the run's egress policy.
    */
-  private async healRun(cap: Capability, args: Record<string, unknown>, error: string, net: Net = this.net): Promise<{ healing: NonNullable<RunRecord["healing"]>; healed: boolean; output?: unknown }> {
+  private approved(id: string): boolean {
+    return this.approvals.some((a) => (a.endsWith("*") ? id.startsWith(a.slice(0, -1)) : a === id));
+  }
+
+  private checkExecutionAuthority(cap: Capability, confirm?: boolean): void {
+    if (cap.risk === "destructive" && this.destructivePolicy !== "allow") {
+      if (this.destructivePolicy === "operator" && !this.approved(cap.id)) throw new ConfirmationRequired(cap.id, cap.title, true);
+      if (!confirm) throw new ConfirmationRequired(cap.id, cap.title);
+    }
+  }
+
+  /** The operator declared this capability side-effect-free (safe to send again). */
+  private retryAuthorised(cap: Capability): boolean {
+    if (cap.risk === "read") return true;
+    const egress = egressOf(cap, this.graph);
+    return this.retrySafe.some((r) =>
+      /^https?:\/\//.test(r)
+        ? egress !== "anywhere" && egress.length > 0 && egress.every((o) => o === new URL(r).origin)
+        : r.endsWith("*") ? cap.id.startsWith(r.slice(0, -1)) : r === cap.id);
+  }
+
+  /**
+   * Which state-changing capabilities in a failed plan may already have taken effect, and are not
+   * declared side-effect-free. Use the runtime's failed-capability identity to locate progress,
+   * never provider error text. Ambiguous repeated identities conservatively include all effects.
+   */
+  private mayHaveTakenEffect(steps: PlanStep[], failed: string): Capability[] {
+    const out: Capability[] = [];
+    const seen = new Set<string>();
+    const holds = (id: string, visited = new Set<string>()): boolean => {
+      if (id === failed) return true;
+      const c = this.graph.get(id);
+      if (!c || c.invoke.kind !== "composite" || visited.has(id)) return false;
+      visited.add(id);
+      return c.invoke.steps.some(st => holds(st.capability, visited));
+    };
+    const failedIndex = (sequence: PlanStep[]) => {
+      const matches = sequence.map((st, i) => holds(st.capability) ? i : -1).filter(i => i >= 0);
+      return matches.length === 1 ? matches[0] : -1;
+    };
+    const consider = (c: Capability | undefined, completed: boolean) => {
+      if (!c || seen.has(c.id)) return;
+      seen.add(c.id);
+      if (c.invoke.kind === "composite") {
+        const at = completed ? -1 : failedIndex(c.invoke.steps);
+        c.invoke.steps.forEach((s, i) => {
+          if (at < 0 || i <= at) consider(this.graph.get(s.capability), i !== at);
+        });
+        return;
+      }
+      if (!this.retryAuthorised(c)) out.push(c);
+    };
+    const failedAt = failedIndex(steps);
+    steps.forEach((st, i) => {
+      if (failedAt >= 0 && i > failedAt) return;
+      consider(this.graph.get(st.capability), i !== failedAt);
+    });
+    return out;
+  }
+
+  private async healRun(cap: Capability, args: Record<string, unknown>, error: string, net: Net = this.net, confirm?: boolean): Promise<{ healing: NonNullable<RunRecord["healing"]>; healed: boolean; output?: unknown }> {
     const provider = this.graph.providers.get(cap.provider);
+    // No independent non-commit witness is available here. Only reads or operations the operator
+    // declared side-effect-free can be resent after an execution attempt.
+    if (!this.retryAuthorised(cap)) return { healing: { source: (provider?.meta?.source as string) ?? "", error, note: `not retried: ${cap.risk} operation may already have taken effect` }, healed: false };
     const source = provider?.meta?.source as string | undefined;
     const healing: NonNullable<RunRecord["healing"]> = { source: source ?? "", error, note: "" };
     const done = (note: string) => ({ healing: { ...healing, note }, healed: false });
@@ -723,9 +817,11 @@ export class RightClick {
       : this.graph.list().filter((c) => this.graph.providers.get(c.provider)?.meta?.source === source && operationOf(c) === meant);
     if (equivalent.length !== 1) return done(`${note}; ${equivalent.length ? "ambiguous" : "no"} equivalent of ${meant}`);
     const next = equivalent[0];
-    healing.retried = next.id;
-    note += `; retried ${next.id === cap.id ? "the same operation" : `its operation, now ${next.id}`}`;
     try {
+      this.checkExecutionAuthority(next, confirm);
+      if (!this.retryAuthorised(next)) return done(`${note}; replacement has no retry authorisation`);
+      healing.retried = next.id;
+      note += `; retried ${next.id === cap.id ? "the same operation" : `its operation, now ${next.id}`}`;
       const output = await this.execute(next, coerceArgs(next, args), net);
       return { healing: { ...healing, note }, healed: true, output };
     } catch (e) {
@@ -1028,6 +1124,14 @@ export class RightClick {
         return result;
       } catch (e) {
         const failed = e instanceof StepError || e instanceof ConfirmationRequired ? e.capability : p.steps[0].capability;
+        // Steps that can change state and may have taken effect must not be repeated by re-planning,
+        // unless the operator declared them side-effect-free. Stop here instead.
+        const stateful = this.mayHaveTakenEffect(p.steps, failed);
+        if (stateful.length) {
+          attempts.push({ summary: p.summary, failed, error: String((e as Error)?.message ?? e), healing: `not retried: ${stateful.map((c) => c.id).join(", ")} can change state and may already have taken effect (an operator can declare side-effect-free operations in authority.retry)` });
+          plans = [];
+          break;
+        }
         const attempt: { summary: string; failed: string; error: string; healing?: string } = { summary: p.summary, failed, error: String((e as Error)?.message ?? e) };
         attempts.push(attempt);
         // Self-maintenance: the provider may have changed its API. Re-reflect its
@@ -1194,12 +1298,17 @@ export class RightClick {
   openApi(baseUrl: string) {
     const paths: Record<string, unknown> = {};
     for (const g of this.published.values()) {
+      // A goal that can change state is a POST (GET is reserved for read-only goals).
+      const readOnly = (this.graph.get(`goal:${g.slug}`)?.risk ?? "read") === "read";
+      const params = goalParams(g);
       paths[`/x/${g.slug}`] = {
-        get: {
+        [readOnly ? "get" : "post"]: {
           operationId: camel(g.slug),
           summary: g.title,
           description: `Synthesized by RightClick X from a goal (${g.intent ?? g.want}), not from code. Current pipeline: ${(g.lastPipeline ?? []).join(" → ")}. Providers: ${(g.providers ?? []).join(", ")}. The contract is stable; the pipeline is re-derived from the live capability graph on every call.`,
-          parameters: goalParams(g).map(([name, t]) => ({ name, in: "query", required: true, schema: { ...jsonSchemaFor(t), "x-rightclick-type": t } })),
+          ...(readOnly
+            ? { parameters: params.map(([name, t]) => ({ name, in: "query", required: true, schema: { ...jsonSchemaFor(t), "x-rightclick-type": t } })) }
+            : { requestBody: { required: true, content: { "application/json": { schema: { type: "object", required: params.map(([n]) => n), properties: Object.fromEntries(params.map(([name, t]) => [name, { ...jsonSchemaFor(t), "x-rightclick-type": t }])) } } } } }),
           responses: {
             "200": {
               description: "Result of the goal",
@@ -1418,7 +1527,7 @@ export class RightClick {
         return j.data[inv.field];
       }
       case "mcp":
-        return this.mcp(inv.endpoint, net).call(inv.tool, args, cap.outputs.some((o) => o.name !== ""));
+        return this.mcp(inv.endpoint, net).call(inv.tool, args, cap.outputs.some((o) => o.name !== ""), this.retryAuthorised(cap));
       case "peer": {
         const res = await request(net, `${inv.endpoint}/api/run`, {
           method: "POST",

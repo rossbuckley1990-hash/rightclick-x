@@ -1,0 +1,87 @@
+[
+  {
+    "label": "baseline",
+    "checkout": "/private/tmp/rcx-main-discovery-baseline",
+    "node": "v26.12.0",
+    "exit": {
+      "code": 0,
+      "signal": null
+    },
+    "trace": [
+      {
+        "method": "GET",
+        "graphql": false
+      },
+      {
+        "method": "POST",
+        "graphql": true
+      },
+      {
+        "method": "POST",
+        "graphql": true
+      }
+    ],
+    "stderr": "",
+    "result": {
+      "ms": 20.165417000000005,
+      "capabilities": [
+        "graphql:127-0-0-1-58649-capabilities:query:geocode",
+        "graphql:127-0-0-1-58649-capabilities:query:country"
+      ],
+      "run": {
+        "status": "completed",
+        "output": {
+          "name": "Tokyo",
+          "latitude": 35.6762,
+          "longitude": 139.6503,
+          "countryCode": "JP"
+        }
+      }
+    }
+  },
+  {
+    "label": "imported",
+    "checkout": "/private/tmp/rcx-main-discovery-candidate",
+    "node": "v26.12.0",
+    "exit": {
+      "code": 0,
+      "signal": null
+    },
+    "trace": [
+      {
+        "method": "GET",
+        "graphql": false
+      },
+      {
+        "method": "POST",
+        "rpc": "initialize",
+        "graphql": false
+      },
+      {
+        "method": "POST",
+        "graphql": true
+      },
+      {
+        "method": "POST",
+        "graphql": true
+      }
+    ],
+    "stderr": "",
+    "result": {
+      "ms": 19.100874999999995,
+      "capabilities": [
+        "graphql:127-0-0-1-58652-capabilities:query:geocode",
+        "graphql:127-0-0-1-58652-capabilities:query:country"
+      ],
+      "run": {
+        "status": "completed",
+        "output": {
+          "name": "Tokyo",
+          "latitude": 35.6762,
+          "longitude": 139.6503,
+          "countryCode": "JP"
+        }
+      }
+    }
+  }
+]

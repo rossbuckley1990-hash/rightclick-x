@@ -1,0 +1,12 @@
+{
+  "checkout": ".",
+  "command": [
+    "ruby",
+    "-ryaml",
+    "-e",
+    "product = YAML.load_file(\".github/workflows/product-ci.yml\"); cloud = YAML.load_file(\".github/workflows/alien-cloud.yml\"); abort \"cloud experiment is not disabled\" unless cloud.fetch(\"jobs\").fetch(\"cloud-runtime\").fetch(\"if\") == \"${{ false }}\"; abort \"unexpected CI OS coverage\" unless product.fetch(\"jobs\").fetch(\"verify\").fetch(\"strategy\").fetch(\"matrix\").fetch(\"os\").sort == [\"macos-15\", \"ubuntu-24.04\"]; puts \"Both workflows parse; cloud job disabled; product CI covers macOS and Linux.\""
+  ],
+  "exit_code": 0,
+  "started_unix": 1792534596.728322,
+  "seconds": 0.17122411727905273
+}
