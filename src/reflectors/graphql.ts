@@ -87,6 +87,56 @@ export function isIntrospection(doc: unknown): boolean {
   return !!(doc as any)?.data?.__schema?.types;
 }
 
+function completeRef(ref: TypeRef | null | undefined): boolean {
+  let depth = 0;
+  while (ref && ["NON_NULL", "LIST"].includes(ref.kind) && depth++ < 32) ref = ref.ofType;
+  return !!ref && ["OBJECT", "INTERFACE", "UNION", "SCALAR", "ENUM", "INPUT_OBJECT"].includes(ref.kind) &&
+    typeof ref.name === "string" && /^[_A-Za-z][_0-9A-Za-z]*$/.test(ref.name);
+}
+
+/** Fill truncated references using shallower, targeted introspection. At most
+ * two additional requests, 16 observed types each; never guess a named type. */
+export async function completeTypeReferences(doc: any, read: (query: string) => Promise<any>,
+  observe: (ok: boolean, detail: string) => void): Promise<void> {
+  const schema = doc.data.__schema;
+  const roots = new Set([schema.queryType?.name, schema.mutationType?.name]);
+  const types = [...schema.types as FullType[]].sort((a, b) => Number(roots.has(b.name)) - Number(roots.has(a.name)));
+  const compatible = (old: TypeRef, next: TypeRef | undefined): boolean => {
+    let a: TypeRef | null | undefined = old, b = next, depth = 0;
+    while (a && depth++ < 32) {
+      if (!b || a.kind !== b.kind || (a.name && a.name !== b.name)) return false;
+      a = a.ofType; b = b.ofType ?? undefined;
+    }
+    return !a && completeRef(next);
+  };
+  for (const mode of ["outputs", "arguments"] as const) {
+    const selected = types.filter(t => /^[_A-Za-z][_0-9A-Za-z]*$/.test(t.name) && t.fields?.some(f =>
+      mode === "outputs" ? !completeRef(f.type) : f.args.some(a => !completeRef(a.type)))).slice(0, 16);
+    if (!selected.length) continue;
+    const ref = "kind name ofType { kind name ofType { kind name ofType { kind name ofType { kind name } } } }";
+    const fields = mode === "outputs" ? `name type { ${ref} }` : `name args { name type { ${ref} } }`;
+    const query = `query RightClickTypeReferences { ${selected.map((t, i) => `t${i}: __type(name: ${JSON.stringify(t.name)}) { name fields(includeDeprecated: false) { ${fields} } }`).join(" ")} }`;
+    const response = await read(query);
+    if (response?.errors?.length || !response?.data) { observe(false, `${mode}: no complete reference response`); continue; }
+    let filled = 0;
+    selected.forEach((type, index) => {
+      const fresh = response.data[`t${index}`];
+      if (fresh?.name !== type.name || !Array.isArray(fresh.fields)) return;
+      for (const old of type.fields ?? []) {
+        const matches = fresh.fields.filter((f: any) => f.name === old.name);
+        if (matches.length !== 1) continue;
+        if (mode === "outputs") {
+          if (!completeRef(old.type) && compatible(old.type, matches[0].type)) { old.type = matches[0].type; filled++; }
+        } else for (const arg of old.args) {
+          const args = (matches[0].args ?? []).filter((a: any) => a.name === arg.name);
+          if (args.length === 1 && !completeRef(arg.type) && compatible(arg.type, args[0].type)) { arg.type = args[0].type; filled++; }
+        }
+      }
+    });
+    observe(filled > 0, `${mode}: completed ${filled} references across ${selected.length} observed types`);
+  }
+}
+
 function printType(t: TypeRef): string {
   if (t.kind === "NON_NULL") return `${printType(t.ofType!)}!`;
   if (t.kind === "LIST") return `[${printType(t.ofType!)}]`;
@@ -121,6 +171,7 @@ export function reflectGraphQL(introspection: any, endpoint: string, title?: str
   const providerTitle = title ?? `GraphQL ${host}`;
   const providerId = `graphql:${slug(host + new URL(endpoint).pathname)}`;
   const capabilities: Capability[] = [];
+  const incomplete: string[] = [];
 
   const roots: Array<["query" | "mutation", string | undefined]> = [
     ["query", schema.queryType?.name],
@@ -130,6 +181,10 @@ export function reflectGraphQL(introspection: any, endpoint: string, title?: str
     const root = rootName ? types.get(rootName) : undefined;
     for (const field of root?.fields ?? []) {
       if (field.name.startsWith("__")) continue;
+      if (!completeRef(field.type) || field.args.some(a => !completeRef(a.type))) {
+        incomplete.push(`${operation}.${field.name}: incomplete type reference`);
+        continue;
+      }
       const inputs: Port[] = field.args.map((a) => ({
         name: a.name,
         type: semantic(a.name, a.type, a.description ?? "", field.name),
@@ -189,7 +244,7 @@ export function reflectGraphQL(introspection: any, endpoint: string, title?: str
       origin: endpoint,
       learnedAt: new Date().toISOString(),
       capabilityIds: capabilities.map((c) => c.id),
-      meta: { graphqlSelection: selectionSchema(schema, endpoint) },
+      meta: { graphqlSelection: selectionSchema(schema, endpoint), ...(incomplete.length ? { graphqlIncomplete: incomplete } : {}) },
     },
     capabilities,
   };
