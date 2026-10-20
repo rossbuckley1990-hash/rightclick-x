@@ -17,6 +17,15 @@ export class TransportRefused extends Error {
   }
 }
 
+/** A standard authentication/authorization denial stops execution, without
+ * treating the response as a signed proof or interpreting arbitrary body text. */
+export function refuseDeniedResponse(res: Response): void {
+  if (res.status === 401 || res.status === 403) {
+    cancelBody(res);
+    throw new TransportRefused(`HTTP ${res.status}: authentication or authorization refused`);
+  }
+}
+
 export class Authority {
   private byOrigin = new Map<string, Record<string, string>>();
 

@@ -29,7 +29,7 @@ import { environmentNet, environmentOptions, observeCatalog, type EnvironmentOpt
 import { buildDocument, checkSelection } from "./reflectors/graphql.ts";
 import { McpClient } from "./reflectors/mcp.ts";
 import { continuationPolicy, continuationTargets, followHttp202, type HttpContinuationOptions, type HttpContinuationEvidence, type ContinuationPolicy } from "./reflectors/http-continuation.ts";
-import { Authority, cancelBody, readBody, request, TransportRefused, type Net, type NetworkPolicy } from "./reflectors/net.ts";
+import { Authority, cancelBody, readBody, refuseDeniedResponse, request, TransportRefused, type Net, type NetworkPolicy } from "./reflectors/net.ts";
 import { detectRuntime, platformReflection, type PlatformFn, type RuntimeInfo } from "./reflectors/platform.ts";
 
 export const VERSION = "0.1.0";
@@ -2401,6 +2401,7 @@ export class RightClick {
         }
         const targets = continuationTargets(cap, this.graph.list());
         const res = await request(net, u.toString(), { method: inv.method, headers, body, signal: execution.signal });
+        refuseDeniedResponse(res);
         let out: unknown;
         if (res.status === 202) {
           const followed = await followHttp202({ response: res, url: u.toString(), targets, net, policy: this.httpContinuation,
@@ -2440,6 +2441,7 @@ export class RightClick {
           headers: { "content-type": "application/json", accept: "application/json" },
           body: JSON.stringify({ query: buildDocument(doc, provided), variables }),
         });
+        refuseDeniedResponse(res);
         if (res.status === 202) {
           cancelBody(res);
           throw new PendingOutcomeError({ capability: cap.id, reason: "http-202", runs: [] });
@@ -2456,6 +2458,7 @@ export class RightClick {
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ id: inv.id, args }),
         });
+        refuseDeniedResponse(res);
         if (res.status === 202) {
           cancelBody(res);
           throw new PendingOutcomeError({ capability: cap.id, reason: "peer-pending", runs: [] });

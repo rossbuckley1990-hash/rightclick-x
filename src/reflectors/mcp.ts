@@ -4,7 +4,7 @@
 
 import { inferType } from "../core/semantics.ts";
 import type { Capability, Port, Reflection, Risk } from "../core/types.ts";
-import { bodyChunks, cancelBody, DISCOVERY_BODY_LIMIT, isEventStream, readText, request, slug, type Net } from "./net.ts";
+import { bodyChunks, cancelBody, DISCOVERY_BODY_LIMIT, isEventStream, readText, refuseDeniedResponse, request, slug, type Net } from "./net.ts";
 
 const PROTOCOL = "2025-06-18";
 
@@ -30,6 +30,7 @@ export class McpClient {
     };
     if (this.session) headers["mcp-session-id"] = this.session;
     const res = await request(this.net, this.endpoint, { method: "POST", headers, body: JSON.stringify(body) });
+    refuseDeniedResponse(res);
     const sid = res.headers.get("mcp-session-id");
     if (sid) this.session = sid;
     if (notify) {

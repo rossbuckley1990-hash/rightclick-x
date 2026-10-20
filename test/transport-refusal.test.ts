@@ -159,3 +159,33 @@ test("boundary denial after HTTP acceptance remains pending without replay", asy
   assert.equal(run.httpContinuation?.stopped, "denied");
   assert.deepEqual(calls, ["POST https://async.test/submit", "GET https://async.test/jobs/one"]);
 });
+
+for (const status of [401, 403]) test(`HTTP ${status} is an execution refusal across protocol families`, async () => {
+  const calls: string[] = [];
+  const rc = await RightClick.create({ sandbox: null, directories: [], fetch: async input => {
+    calls.push(String(input)); return new Response("access refused", { status });
+  } });
+  rc.graph.add(reflectOpenAPI({ openapi: "3.1.0", info: { title: "HTTP denial" },
+    servers: [{ url: "https://deny.test" }], paths: {
+      "/read": { get: { operationId: "read", responses: { "200": { content: { "text/plain": { schema: { type: "string" } } } } } } },
+    } }, "https://deny.test/spec"));
+  for (const kind of ["graphql", "peer", "mcp"] as const) {
+    rc.graph.add({ provider: { id: kind + ":deny", source: kind, origin: "https://deny.test/" + kind,
+      title: kind, capabilityIds: [kind + ":deny:read"], learnedAt: new Date().toISOString() },
+      capabilities: [{ id: kind + ":deny:read", provider: kind + ":deny", source: kind, title: "Read",
+        description: "", inputs: [], outputs: [{ name: "", type: "text", required: true }], risk: "read", tags: [],
+        invoke: kind === "graphql" ? { kind, endpoint: "https://deny.test/graphql", operation: "query", field: "read", args: {}, selection: "" }
+          : kind === "peer" ? { kind, endpoint: "https://deny.test/peer", id: "read" }
+          : { kind, endpoint: "https://deny.test/mcp", tool: "read" } }] });
+  }
+  for (const id of ["openapi:http-denial:read", "graphql:deny:read", "peer:deny:read", "mcp:deny:read"]) {
+    calls.length = 0;
+    const run = await rc.run(id);
+    assert.equal(run.status, "failed");
+    assert.equal(run.verification.status, "unverified", id);
+    assert.match(run.refusal?.reason ?? "", new RegExp(`HTTP ${status}`));
+    assert.equal(run.healing, undefined);
+    assert.equal(calls.length, 1, id);
+    assert.equal(rc.ledger.get(id)?.failed ?? 0, 0);
+  }
+});
