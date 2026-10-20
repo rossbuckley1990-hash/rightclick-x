@@ -51,3 +51,42 @@ unlinked to runtime calls unless a separate trustworthy correlation exists.
 Current-authority metrics remain unknown. This optional adapter is included in
 the local package; it is not an independent security certification or a complete
 Actenon production installation.
+
+The optional `transportLinks` absolute path enables **operator correlation**.
+The operator's transport receives an optional third `FetchLike` argument:
+`{ runtimeId, runId, capabilityId, requestId }`. It is local observation context,
+not an HTTP header, credential or permission. Each actual fetch gets a new
+request ID; redirects and asynchronous monitors retain their owning leaf run.
+Contract discovery has no owning execution. Existing two-argument transports
+continue to work.
+
+The tested HTTP resource responds with `x-actenon-artifacts`, a JSON array of
+`{ artifactDigest, nativeRequestId }` references from its native attestations.
+This response header alone is untrusted. A trusted operator transport journals
+one JSONL record per response:
+
+```json
+{
+  "version": 1,
+  "context": { "runtimeId": "UUID", "runId": "run_…", "capabilityId": "…", "requestId": "UUID" },
+  "wire": { "method": "POST", "url": "https://resource.example/path", "headers": {}, "body": "BASE64" },
+  "artifacts": [{ "artifactDigest": "64_LOWERCASE_HEX_DIGITS", "nativeRequestId": "req_gate_…" }]
+}
+```
+
+This is a bounded HTTP development profile: native action `http.<method>`,
+target type `tool`, and exact method/semantic headers/base64 body in the signed
+action. The adapter imports Actenon's verifier and checks those fields and the
+native gate request ID. It rejects duplicates and ambiguous mappings. Up to
+1,000 transport records and 4 MiB are accepted; operators must manage a coherent
+bounded log. Missing/partial/oversized configured logs fail closed.
+
+The association between context and response relies on the operator-owned log
+and uncompromised runtime/transport. Native signatures authenticate the action,
+not RightClick's identity. Proof IDs, timestamps and identical bodies cannot
+substitute for a native response attempt reference. Lost responses remain
+unlinked. The dashboard projects a link only while a matching current-epoch
+execution observation is retained; restart or eviction removes the link.
+Raw requests, proofs and credentials remain excluded from that feed and from
+capability knowledge. Protect the transport log from agent writes and treat its
+raw request data according to the resource's confidentiality requirements.
