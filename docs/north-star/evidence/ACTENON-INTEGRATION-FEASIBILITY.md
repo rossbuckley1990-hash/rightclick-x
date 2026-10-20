@@ -135,3 +135,10 @@ The [HTTP recovery increment](../../adaptive/HTTP-RESUME.md) rereads the pinned 
 
 
 The [retained sequential workflow increment](../../adaptive/WORKFLOW-RESUME.md) keeps local progress separate from native effect reconciliation. The existing nine-check Actenon HTTP leaf restart experiment and native proof/artifact checker pass on `07a10f09`. Independent enforcement of the new workflow profile's remaining steps is not yet demonstrated; it is the next integration experiment, not an inferred extension of leaf-path coverage.
+
+
+## Remaining-effect enforcement (2026-10-20)
+
+The [protected workflow experiment](../../adaptive/PROTECTED-WORKFLOW.md), `8ea708ea`, now exercises the remaining publication step after retained recovery. Existing native issuer/gate/replay/revocation/effect/receipt APIs are reused without product dependencies or copied cryptography. Twenty-eight controls pass: fresh authority permits the exact publication; withheld publication authority and revocation between steps refuse; method/target/query/body/header mutation, forged/replayed proofs, direct API, shell and socket attempts refuse. A separate same-author verifier checks the three real gzip files, publication records, 14 accepted exact proofs and 50 signed resource artifacts, rejecting five corruptions. One additional publication belongs to the separately authorized proof control, not to workflow success.
+
+This closes the bounded development coverage gap identified above. Private operator custody, the controlled single resource, SDK materialization and cached container remain prototype assumptions. General compose/federation coverage, combined crash-and-boundary tests, supported releases, independent holdouts and measured commercial advantage remain open. The original conditional prototype recommendation and production NO-GO stand.

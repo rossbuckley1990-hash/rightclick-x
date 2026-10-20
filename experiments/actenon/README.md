@@ -182,3 +182,21 @@ complete only after new operator authority. It is distinct from native ambiguous
 effect reconciliation and from continuing a whole workflow. The real SIGKILL
 and FileStore test is `node --test test/http-resume-process.test.ts`.
 See [results, preserved failures and exact scope](../../docs/adaptive/HTTP-RESUME.md).
+
+
+## Reproduce protected remaining workflow effects
+
+```sh
+/absolute/audit-root/.venv/bin/python experiments/actenon/workflow.py \
+  --image sha256:5e95a1b7bdb5ddd279c4c18760a007a98f94c6fb24236433c19b61831bc4e4f5 \
+  --output /absolute/new-protected-workflow-evidence
+/absolute/audit-root/.venv/bin/python experiments/actenon/check-workflow.py \
+  /absolute/new-protected-workflow-evidence
+```
+
+The ordinary planner selects a compression/publication route; the test client
+materializes it as a retained composite through the SDK. Fresh isolated clients
+exercise current authority on the remaining publication, including revocation
+between steps. A separate native proof control creates one additional publication;
+it is not counted as recovered workflow success. See the [source-bound report,
+bypass coverage and limitations](../../docs/adaptive/PROTECTED-WORKFLOW.md).

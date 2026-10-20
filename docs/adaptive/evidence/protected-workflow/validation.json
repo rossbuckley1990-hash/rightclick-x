@@ -1,0 +1,28 @@
+{
+  "revision": "8ea708eaecc94995aa8a0dd561ff16a04b2bba2e",
+  "typecheck": {
+    "command": "npm run typecheck",
+    "exit": 0,
+    "log": "types.log"
+  },
+  "native": {
+    "command": "npm test",
+    "exit": 0,
+    "log": "native.log"
+  },
+  "workflow": {
+    "runner": "experiments/actenon/workflow.py",
+    "output": "final",
+    "exit": 0,
+    "checks": 28
+  },
+  "async": {
+    "runner": "experiments/actenon/protected-async.py",
+    "output": "async-regression",
+    "exit": 0,
+    "checks": 29
+  },
+  "image": "sha256:5e95a1b7bdb5ddd279c4c18760a007a98f94c6fb24236433c19b61831bc4e4f5",
+  "network": "local disposable resources only; no image pull",
+  "sourceProductUnchangedFrom": "07a10f09a052b6b1b6e30ae5a2af23a21709ad7b"
+}

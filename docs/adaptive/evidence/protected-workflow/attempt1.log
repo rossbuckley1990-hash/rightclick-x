@@ -1,0 +1,18 @@
+Traceback (most recent call last):
+  File "/Users/ross/src/rightclick-x-adaptive/experiments/actenon/workflow.py", line 190, in <module>
+    run(output, args.image)
+  File "/Users/ross/src/rightclick-x-adaptive/experiments/actenon/workflow.py", line 50, in run
+    docker, image_id = prepare(output, image)
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/ross/src/rightclick-x-adaptive/experiments/actenon/containment.py", line 312, in prepare
+    image_id = docker.image(image)["Id"]  # pin exact already-present bytes; never pull
+               ^^^^^^^^^^^^^^^^^^^
+  File "/Users/ross/src/actenon-audit/actenon-airlock/src/actenon_airlock/protected.py", line 90, in image
+    image = self.json(["image", "inspect", name])[0]
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/ross/src/actenon-audit/actenon-airlock/src/actenon_airlock/protected.py", line 68, in json
+    return json.loads(self.call(args, timeout=timeout))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/ross/src/actenon-audit/actenon-airlock/src/actenon_airlock/protected.py", line 64, in call
+    raise AirlockError("Protected Mode Docker operation failed: " + args[0])
+actenon_airlock.common.AirlockError: Protected Mode Docker operation failed: image
