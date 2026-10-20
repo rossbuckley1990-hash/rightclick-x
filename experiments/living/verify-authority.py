@@ -21,7 +21,7 @@ for name, expected in manifest["artifacts"].items():
     file = (root / name).resolve()
     assert file.is_relative_to(root)
     assert digest(file.read_bytes()) == expected, ("artifact", name)
-for name, count in [("native-final.log", 452), ("linux-final.log", 56)]:
+for name, count in [("native-final.log", 452), ("linux-final.log", 56), ("linux-state.log", 7)]:
     log = (evidence / name).read_text()
     assert all(s in log for s in [f"tests {count}", f"pass {count}", "fail 0", "cancelled 0", "skipped 0"])
 assert "PASS: 28/28 checks" in (evidence / "proof-final.log").read_text()
@@ -53,6 +53,6 @@ assert "ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING" in (evidence / "installed-c
 assert "AssertionError" in (evidence / "native-controls-2.log").read_text()
 assert "EPERM" in (evidence / "native-sandbox-failure.log").read_text()
 print(json.dumps({"status": "PASS", "sources": len(manifest["sources"]), "artifacts": len(manifest["artifacts"]),
-    "nativeTests": 452, "linuxTests": 56, "proofChecks": 28, "protectedControls": 30,
+    "nativeTests": 452, "linuxTests": 63, "proofChecks": 28, "protectedControls": 30,
     "nativeAdapterControls": 12, "sessionCorruptionsRejected": 9,
     "scope": "same-author offline reconciliation plus native proof verification; package runs are preserved observations, no new network/model calls or independent-author review"}, indent=2))
