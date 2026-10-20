@@ -47,7 +47,7 @@ export function describeResult(graph: CapabilityGraph, steps: PlanStep[], result
 }
 
 export function resultDescription(graph: CapabilityGraph, saved: ResultDescription | undefined) {
-  const note = "Declarations from the last successful plan, not observed values or a future output guarantee. Matching declarations do not establish authority, semantic equivalence or current execution success.";
+  const note = "Declarations from the last successful plan, not observed values or a future output guarantee. Comparison does not cover omitted fields. Matching declarations do not establish authority, semantic equivalence or current execution success.";
   if (!saved) return { status: "not-recorded", note };
   // Persisted advisory metadata may come from a different/older writer. Unknown
   // shapes remain unassessed; they must not break execution or become authority.
@@ -62,5 +62,5 @@ export function resultDescription(graph: CapabilityGraph, saved: ResultDescripti
   const current = describeResult(graph, [{ capability: saved.root.capability, bindings: [] }],
     `0${saved.root.path ? `.${saved.root.path}` : ""}`, saved.type);
   return { ...saved, status: !current ? "unavailable-result-declaration" : JSON.stringify(current) === JSON.stringify(saved)
-    ? "matches-current-result-declaration" : "changed-result-declaration", note };
+    ? (saved.truncated ? "matches-retained-result-subset" : "matches-current-result-declaration") : "changed-result-declaration", note };
 }

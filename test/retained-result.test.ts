@@ -115,6 +115,9 @@ test("wide declarations are explicitly bounded and malformed advisory metadata s
   assert.equal(result.fields.length, 64);
   assert.equal(result.truncated, true);
   assert.ok(JSON.stringify(result).length < 8192);
+  rc.graph.get(id)!.fields![399] = { path: "changed_outside_retained_subset" };
+  assert.equal(resultDescription(rc.graph, result).status, "matches-retained-result-subset");
+  assert.match(resultDescription(rc.graph, result).note, /omitted fields/);
   assert.equal(resultDescription(rc.graph, { ...result, fields: null } as any).status, "not-recorded");
   assert.equal(resultDescription(rc.graph, { ...result, unexpected: "caller-value" } as any).status, "not-recorded");
 });
