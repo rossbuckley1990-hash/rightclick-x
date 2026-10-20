@@ -41,7 +41,7 @@ export const TOOLS = [
   {
     name: "context_research",
     description:
-      "Research the environment: what runtime and platform bindings exist, which semantic types the graph produces and consumes, which inputs have no producer yet (gaps), and — given a topic — which public sources worldwide (APIs.guru OpenAPI directory, the official MCP Registry) could add powers. Pass learn:N to pull the top N candidates straight into the graph.",
+      "Refresh operator-configured environment catalogs: observe advertised sources, learn supported contracts within the approved discovery scope, and withdraw catalog-owned sources removed by a valid catalog. Discovery never grants execution authority. Also report runtime/platform bindings and semantic gaps; with a topic, search public API directories. Pass learn:N to learn the top N public-directory candidates.",
     inputSchema: obj({ topic: str("What to look for, e.g. 'weather', 'translation', 'geocoding'."), limit: num("Candidates per directory (default 5)."), learn: num("Learn the top N candidates immediately.") }),
   },
   {

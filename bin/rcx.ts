@@ -7,6 +7,7 @@ import { createHandler } from "../src/interface/http.ts";
 import { dispatch } from "../src/interface/tools.ts";
 import { FileStore, serve, serveStdio } from "../src/entry/node-host.ts";
 import { Authority } from "../src/reflectors/net.ts";
+import { environmentOptions } from "../src/reflectors/environment.ts";
 import { RightClick, VERSION } from "../src/runtime.ts";
 import { commandInput } from "./command-input.ts";
 
@@ -42,7 +43,9 @@ const HELP = `RightClick X ${VERSION} — a live capability graph that composes 
   rcx knowledge import <file>       import knowledge; every capability is revalidated here first
   rcx uninstall                     how to remove RightClick X and everything it stored
 
-  rcx research [topic] [--learn N]  survey the environment and public directories
+  rcx research [topic] [--learn N]  refresh approved environment catalogs and survey public directories
+                                    RCX_ENVIRONMENT: JSON {"catalogs":["https://host/.well-known/api-catalog"],
+                                    "origins":["https://api-host"]}; discovery never grants execution authority
   rcx learn <url...> [--deep]       reflect any spec / endpoint / MCP server / page / peer
   rcx forget <provider>
   rcx inspect <value>               semantic type of a value
@@ -93,6 +96,7 @@ async function main() {
     workspace: env.RCX_WORKSPACE ?? proc.cwd(),
     store: demoMode ? undefined : new FileStore(stateFile),
     authority,
+    environment: environmentOptions(env.RCX_ENVIRONMENT),
   });
 
   if (env.RCX_MCP_LOG) {

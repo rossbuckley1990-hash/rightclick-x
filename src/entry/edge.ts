@@ -13,6 +13,7 @@
 import { authorityFromEnv } from "../core/authority.ts";
 import { createHandler } from "../interface/http.ts";
 import { Authority } from "../reflectors/net.ts";
+import { environmentOptions } from "../reflectors/environment.ts";
 import { RightClick, type PersistedState, type Store } from "../runtime.ts";
 
 type Env = Record<string, any>;
@@ -43,6 +44,7 @@ async function boot(env: Env) {
     bindings,
     store: env.RCX_STATE ? new KvStore(env.RCX_STATE) : undefined,
     authority: authorityFromEnv(env as Record<string, unknown>),
+    environment: environmentOptions(env.RCX_ENVIRONMENT),
   });
   const sources = String(env.RCX_SOURCES ?? "")
     .split(",")

@@ -25,6 +25,7 @@ import { check, pick, type Predicate, type PredicateResult, type OutcomeWitness,
 import { builtinReflection, type BuiltinFn } from "./reflectors/builtins.ts";
 import { DEFAULT_DIRECTORIES, type Candidate, type Directory } from "./reflectors/directories.ts";
 import { discover, type Discovery, type SourceKind } from "./reflectors/discover.ts";
+import { environmentNet, environmentOptions, observeCatalog, type EnvironmentOptions, type EnvironmentReport } from "./reflectors/environment.ts";
 import { buildDocument, checkSelection } from "./reflectors/graphql.ts";
 import { McpClient } from "./reflectors/mcp.ts";
 import { Authority, readBody, request, type Net, type NetworkPolicy } from "./reflectors/net.ts";
@@ -55,6 +56,8 @@ export interface PersistedState {
   meaningChanges?: MeaningChange[];
   /** Bounded local observations; never used to grant authority or select an execution. */
   activity?: ActivityState;
+  /** Observations only; host discovery configuration and execution authority are never restored from this. */
+  environment?: EnvironmentReport;
 }
 
 /**
@@ -99,6 +102,8 @@ export interface RuntimeOptions {
   auth?: Authority;
   timeoutMs?: number;
   directories?: Directory[];
+  /** Operator-approved environment catalogs, refreshed by context_research. */
+  environment?: EnvironmentOptions;
   bindings?: Record<string, unknown>;
   workspace?: string;
   store?: Store;
@@ -373,6 +378,9 @@ export class RightClick {
   /** Optional sink for an audit log of MCP tool calls (set by hosts, e.g. RCX_MCP_LOG). */
   toolCallSink?: (entry: { at: string; tool: string; args: unknown; ok: boolean; ms: number; error?: string; outcome?: Record<string, unknown> }) => void;
   private directories: Directory[];
+  private environment?: EnvironmentOptions;
+  private environmentReport: EnvironmentReport = { catalogs: [], sources: [] };
+  private environmentRefresh?: Promise<EnvironmentReport>;
   private builtins = new Map<string, BuiltinFn>();
   private platformFns = new Map<string, PlatformFn>();
   private mcpClients = new Map<string, McpClient>();
@@ -403,6 +411,7 @@ export class RightClick {
       policy: origins === undefined ? opts.network : { blockPrivate: false, ...opts.network, origins },
     };
     this.directories = opts.directories ?? DEFAULT_DIRECTORIES;
+    this.environment = environmentOptions(opts.environment);
     this.info = { ...detectRuntime(), region: opts.region };
     this.name = opts.name ?? "rightclick-x";
     this.store = opts.store;
@@ -439,6 +448,8 @@ export class RightClick {
       }
       for (const m of saved.meaningChanges ?? []) if (rc.graph.get(m.id)) rc.meaningChanges.set(m.id, m);
       rc.activity.restore(saved.activity);
+      // A persisted observation is historical until this host explicitly refreshes it.
+      if (saved.environment?.sources && saved.environment?.catalogs) rc.environmentReport = structuredClone(saved.environment);
       rc.observeActivity();
       // Credentials changed for an origin: its past auth and rate-limit failures no longer apply.
       const now = await rc.net.auth.fingerprints();
@@ -524,6 +535,7 @@ export class RightClick {
   // ================================================================ context_research
 
   async research(opts: { topic?: string; limit?: number; learn?: number } = {}) {
+    const discovery = this.environment ? await this.refreshEnvironment() : undefined;
     const census = this.graph.census();
     const produced = new Set(census.filter((c) => c.producers).map((c) => c.type));
     const unfed = census.filter((c) => c.consumers && !produced.has(c.type) && ![...produced].some((p) => distance(c.type, p) === 1));
@@ -553,6 +565,7 @@ export class RightClick {
         runtime: this.info,
         credentialedOrigins: this.net.auth.origins(),
         platformProviders: [...this.graph.providers.values()].filter((p) => p.source === "platform").map((p) => ({ id: p.id, capabilities: p.capabilityIds.length, meta: p.meta })),
+        discovery,
       },
       graph: { providers: this.graph.providers.size, ...this.graph.powers() },
       types: census.slice(0, 30),
@@ -567,6 +580,66 @@ export class RightClick {
     };
     this.graph.emit("research", { topic: opts.topic, candidates: directories.reduce((n, d) => n + d.candidates.length, 0) });
     return report;
+  }
+
+  /** Only configured catalogs supply candidates. The existing learner, graph,
+   * planner and executor remain the single capability path. No grant is made. */
+  private refreshEnvironment(): Promise<EnvironmentReport> {
+    if (this.environmentRefresh) return this.environmentRefresh;
+    const work = async (): Promise<EnvironmentReport> => {
+      const net = environmentNet(this.net, this.environment!);
+      const report: EnvironmentReport = { catalogs: [], sources: [] };
+      const seen = new Map<string, string[]>();
+      const withdrawals = new Set<string>();
+      for (const catalog of this.environment!.catalogs) {
+        const observed = await observeCatalog(net, catalog);
+        report.catalogs.push(observed.observation);
+        const previous = this.environmentReport.sources.filter(s => s.catalog === catalog && s.status !== "removed");
+        if (observed.observation.status !== "observed") {
+          report.sources.push(...previous.map(s => ({ ...s, status: "stale" as const, reachable: "unknown" as const })));
+          continue;
+        }
+        for (const source of observed.sources) {
+          const priorProviders = [...this.graph.providers.values()].filter(p => p.meta?.source === source.source);
+          const managed = !priorProviders.length || priorProviders.every(p => p.meta?.environmentCatalog !== undefined);
+          if (source.status === "advertised") {
+            if (!seen.has(source.source)) {
+              const learned = await this.learn({ source: source.source, kinds: { [source.source]: "openapi" }, net });
+              seen.set(source.source, learned.results.flatMap(r => r.learned.map(l => l.provider)));
+            }
+            source.providers = seen.get(source.source)!;
+            source.status = source.providers.length ? "learned" : "unavailable";
+            source.reachable = source.providers.length ? true : "unknown";
+            for (const id of source.providers) {
+              const provider = this.graph.providers.get(id)!;
+              if (managed) provider.meta = { ...provider.meta, environmentCatalog: catalog };
+            }
+          } else if (managed) withdrawals.add(source.source);
+          report.sources.push(source);
+          this.activity.append({ kind: "environment.source", status: source.status, subjects: [source.source], providers: source.providers });
+        }
+        for (const old of previous) {
+          if (observed.sources.some(s => s.source === old.source)) continue;
+          // A valid catalog no longer advertises this source. Explicitly learned
+          // providers have no ownership marker and are never removed here.
+          withdrawals.add(old.source);
+          report.sources.push({ ...old, status: "removed", reachable: "unknown", providers: [] });
+          this.activity.append({ kind: "environment.source", status: "removed", subjects: [old.source] });
+        }
+      }
+      // A source can have several advertisements. Removal from one catalog
+      // cannot invalidate another current (or temporarily unobservable) one.
+      for (const source of withdrawals) {
+        if (report.sources.some(s => s.source === source && ["learned", "stale"].includes(s.status))) continue;
+        for (const provider of [...this.graph.providers.values()])
+          if (provider.meta?.source === source && provider.meta?.environmentCatalog !== undefined) this.graph.forget(provider.id);
+      }
+      this.environmentReport = report;
+      this.persist();
+      return structuredClone(report);
+    };
+    this.environmentRefresh = work().finally(() => { this.environmentRefresh = undefined; });
+    return this.environmentRefresh;
   }
 
   // ================================================================ context_learn
@@ -2400,7 +2473,7 @@ export class RightClick {
     const reflections: Reflection[] = [...this.graph.providers.values()]
       .filter((p) => p.source !== "builtin" && p.source !== "platform")
       .map((p) => ({ provider: p, capabilities: p.capabilityIds.map((id) => this.graph.get(id)!).filter(Boolean) }));
-    await this.store.save({ version: 1, reflections, ledger: this.ledger.toJSON(), receipts: this.chain.receipts.slice(-300), published: [...this.published.values()], meaningChanges: [...this.meaningChanges.values()], activity: this.activity.snapshot(), authFingerprints: await this.net.auth.fingerprints(), semantics: SEMANTICS, identities: this.graph.identities.toJSON() });
+    await this.store.save({ version: 1, reflections, ledger: this.ledger.toJSON(), receipts: this.chain.receipts.slice(-300), published: [...this.published.values()], meaningChanges: [...this.meaningChanges.values()], activity: this.activity.snapshot(), environment: this.environmentReport, authFingerprints: await this.net.auth.fingerprints(), semantics: SEMANTICS, identities: this.graph.identities.toJSON() });
   }
 }
 
