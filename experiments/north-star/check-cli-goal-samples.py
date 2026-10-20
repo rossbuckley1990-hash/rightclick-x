@@ -2,6 +2,7 @@
 import copy
 import hashlib
 import json
+import re
 from pathlib import Path
 import subprocess
 import sys
@@ -29,8 +30,12 @@ def load(directory):
             'states': {name: (p / f'{name}.state.json').read_bytes() for name in names}}
 
 
-def check(data, after):
+def check(data, after, expected_semantics=25):
     m, rows = data['manifest'], data['rows']
+    if after:
+        source = subprocess.check_output(['git', 'show', f"{m['commit']}:src/runtime.ts"], cwd=REPO, text=True)
+        assert re.search(rf'\bconst SEMANTICS = {expected_semantics};', source), 'expected version not in frozen source'
+        assert json.loads(data['states']['upgrade'])['semantics'] == expected_semantics
     for revision, hashes in [(m['commit'], m['sourceHashes']), (m['harnessCommit'], m['harnessHashes'])]:
         for path, digest in hashes.items():
             raw = subprocess.check_output(['git', 'show', f'{revision}:{path}'], cwd=REPO)
@@ -136,8 +141,9 @@ def check(data, after):
 
 
 if __name__ == '__main__':
-    assert len(sys.argv) == 3, 'provide BEFORE_DIR AFTER_DIR'
-    before, after = [load(p) for p in sys.argv[1:]]
+    assert len(sys.argv) in [3, 4], 'provide BEFORE_DIR AFTER_DIR [EXPECTED_SEMANTICS=25]'
+    expected_semantics = int(sys.argv[3]) if len(sys.argv) == 4 else 25
+    before, after = [load(p) for p in sys.argv[1:3]]
     assert before['manifest']['harnessHashes'] == after['manifest']['harnessHashes']
     assert before['manifest']['original'] == after['manifest']['original']
     assert after['manifest']['migration']['commit'] == before['manifest']['commit']
@@ -146,15 +152,15 @@ if __name__ == '__main__':
     assert after['rows']['upgrade']['cfg']['inputStateSha256'] == sha(before['states']['seed'])
     assert after['rows']['upgraded-reuse']['cfg']['inputStateSha256'] == sha(after['states']['upgrade'])
     assert json.loads(before['states']['seed'])['semantics'] == 22
-    assert json.loads(after['states']['upgrade'])['semantics'] == 25
+    assert json.loads(after['states']['upgrade'])['semantics'] == expected_semantics
     manuals = [w['before']['sha256'] for data in [before, after] for r in data['rows'].values()
                for w in r['wires'] if w['program'] == '/usr/bin/man']
     assert manuals and len(set(manuals)) == 1, 'manual helper identity changed'
     assert before['rows']['seed']['cfg']['input'] == after['rows']['seed']['cfg']['input']
     result = {'scope': 'exposed saved-goal development; previously blocked seed; no agent economics, holdout or independent-author claim',
-              'before': check(before, False), 'after': check(after, True)}
+              'expectedSemantics': expected_semantics, 'before': check(before, False), 'after': check(after, True, expected_semantics)}
     controls = {}
-    for kind in ['wrong-output', 'dispatch-on-refusal', 'hidden-network', 'missing-authority', 'substituted-input', 'repinned-goal']:
+    for kind in ['wrong-output', 'dispatch-on-refusal', 'hidden-network', 'missing-authority', 'substituted-input', 'repinned-goal', 'wrong-inference-version']:
         forged = copy.deepcopy(after)
         if kind == 'wrong-output':
             r = forged['rows']['compatible-direct']
@@ -175,18 +181,22 @@ if __name__ == '__main__':
             wire = next(w for w in r['wires'] if w['opts']['purpose'] == 'execution')
             wire['opts']['stdin'] = r['cfg']['input']
             wire['result']['stdout'] = r['response']['output'] = '[\n   "substituted",\n   3,\n   false\n]\n'
-        else:
+        elif kind == 'repinned-goal':
             state = json.loads(forged['states']['compatible-goal'])
             state['published'][0]['anchors'][0]['operation'] = 'silently-repinned-operation'
             forged['states']['compatible-goal'] = json.dumps(state).encode()
             forged['rows']['compatible-goal']['stateSha256'] = sha(forged['states']['compatible-goal'])
+        else:
+            state = json.loads(forged['states']['upgrade'])
+            state['semantics'] = expected_semantics + 1
+            forged['states']['upgrade'] = json.dumps(state).encode()
         try:
-            check(forged, True)
+            check(forged, True, expected_semantics)
         except AssertionError:
             controls[kind] = 'rejected'
         else:
             raise AssertionError(f'accepted {kind}')
     result['negativeControls'] = controls
     result['artifactHashes'] = {str(Path(directory) / path.name): sha(path.read_bytes())
-                               for directory in sys.argv[1:] for path in sorted(Path(directory).iterdir()) if path.is_file()}
+                               for directory in sys.argv[1:3] for path in sorted(Path(directory).iterdir()) if path.is_file()}
     print(json.dumps(result, indent=2))

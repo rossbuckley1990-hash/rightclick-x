@@ -1,0 +1,52 @@
+✖ unselected GraphQL identifier joins a second provider (scalar) and remains reusable (30.423708ms)
+✖ unselected GraphQL identifier joins a second provider (list) and remains reusable (6.020625ms)
+✔ GraphQL fields requiring unsupplied arguments are not projected as join outputs (0.786417ms)
+✔ DOI field names identify the same scheme without matching incidental substrings (0.378958ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 2
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 194.732042
+
+✖ failing tests:
+
+test at test/graphql-projection-join.test.ts:38:32
+✖ unselected GraphQL identifier joins a second provider (scalar) and remains reusable (30.423708ms)
+  AssertionError [ERR_ASSERTION]: {"runId":"run_mvdpe3g6_1","capability":"goal:lookup-publication-facts","provider":"goal:published","title":"Lookup publication facts","status":"failed","output":null,"error":"composite:8985cd8201fa: graphql:records-test-graphql:query:record: its result has no value at references.reference_id, which openapi:publication-facts:lookup.reference_id needs","startedAt":"2026-10-18T10:49:30.870Z","durationMs":3.7,"verification":{"status":"refuted","results":[]},"receipt":{"runId":"run_mvdpe3g6_1","capability":"goal:lookup-publication-facts","provider":"goal:published","startedAt":"2026-10-18T10:49:30.870Z","durationMs":3.7,"status":"failed","verification":"refuted","seq":5,"inputDigest":"743bdc19ddce56d621014005396a1ee55fb0d1549886d45e460024b3be41bb6f","outputDigest":"5df89d0f33a81634e9803ac37b649bd8bc3a5a36005b4d47c0c22d5426480cc8","prev":"472cfade9515880bfb4b127ed01b001356edcc1806bf9afe06626e4ff75c6e9e","hash":"dc0aadda1c85e90d1707227acf22cb0b942c6d480be79567c67e7e332f493f94"},"steps":[],"attempts":[{"summary":"Record → Lookup","failed":"graphql:records-test-graphql:query:record","error":"composite:8985cd8201fa: graphql:records-test-graphql:query:record: its result has no value at references.reference_id, which openapi:publication-facts:lookup.reference_id needs","healing":"re-reflected https://records.test/graphql: no contract change"}]}
+  + actual - expected
+  
+  + 'failed'
+  - 'completed'
+  
+      at TestContext.<anonymous> (file:///Users/ross/src/rightclick-x-adaptive/test/graphql-projection-join.test.ts:52:9)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'failed',
+    expected: 'completed',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/graphql-projection-join.test.ts:38:32
+✖ unselected GraphQL identifier joins a second provider (list) and remains reusable (6.020625ms)
+  AssertionError [ERR_ASSERTION]: {"runId":"run_mvdpe3gg_1","capability":"goal:lookup-publication-facts","provider":"goal:published","title":"Lookup publication facts","status":"failed","output":null,"error":"verification refuted: [{\"predicate\":{\"op\":\"contains\",\"value\":\"Fixture publisher\"},\"ok\":false,\"actual\":{\"f0\":\"metadata\"}}]","startedAt":"2026-10-18T10:49:30.880Z","durationMs":0.9,"verification":{"status":"refuted","results":[]},"receipt":{"runId":"run_mvdpe3gg_1","capability":"goal:lookup-publication-facts","provider":"goal:published","startedAt":"2026-10-18T10:49:30.880Z","durationMs":0.9,"status":"failed","verification":"refuted","seq":5,"inputDigest":"743bdc19ddce56d621014005396a1ee55fb0d1549886d45e460024b3be41bb6f","outputDigest":"2d0904b1cd9ef366c92a85ce2bf0d7d4967ab133c74029f42f9e06e292d25a3a","prev":"5928837307388c3e58c9a0a982a5cb320d5c86265fe073eeb80f6543557d4326","hash":"89ac7ef013000f43abdfb0316649189521bfd4b35c0f04280ef3be500a53d3eb"},"steps":[],"attempts":[{"summary":"Record","failed":"graphql:records-test-graphql:query:record","error":"verification refuted: [{\"predicate\":{\"op\":\"contains\",\"value\":\"Fixture publisher\"},\"ok\":false,\"actual\":{\"f0\":\"metadata\"}}]"}]}
+  + actual - expected
+  
+  + 'failed'
+  - 'completed'
+  
+      at TestContext.<anonymous> (file:///Users/ross/src/rightclick-x-adaptive/test/graphql-projection-join.test.ts:52:9)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'failed',
+    expected: 'completed',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

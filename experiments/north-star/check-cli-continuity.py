@@ -2,6 +2,8 @@
 import copy
 import hashlib
 import json
+import re
+import subprocess
 from pathlib import Path
 import sys
 
@@ -14,10 +16,10 @@ def observation(example):
     return {k: v for k, v in example.items() if k != 'outputPreview'}
 
 
-def check(before, after, raw):
+def check(before, after, raw, expected_semantics=25):
     old, new = capability(before), capability(after)
     oi, ni = old['invoke'], new['invoke']
-    assert before['semantics'] == 22 and after['semantics'] == 25
+    assert before['semantics'] == 22 and after['semantics'] == expected_semantics
     assert old['id'] == new['id'] and old['source'] == new['source'] == 'cli'
     assert old['risk'] == new['risk'] == 'read'
     assert oi['sha256'] == ni['sha256'] and oi['behaviour'] != ni['behaviour']
@@ -48,14 +50,18 @@ def check(before, after, raw):
 
 
 if __name__ == '__main__':
-    assert len(sys.argv) == 3, 'provide BEFORE_DIR AFTER_DIR'
-    bp, ap = map(Path, sys.argv[1:])
+    assert len(sys.argv) in [3, 4], 'provide BEFORE_DIR AFTER_DIR [EXPECTED_SEMANTICS=25]'
+    expected_semantics = int(sys.argv[3]) if len(sys.argv) == 4 else 25
+    bp, ap = map(Path, sys.argv[1:3])
+    manifest = json.loads((ap / 'manifest.json').read_text())
+    source = subprocess.check_output(['git', 'show', f"{manifest['commit']}:src/runtime.ts"], cwd=Path(__file__).resolve().parents[2], text=True)
+    assert re.search(rf'\bconst SEMANTICS = {expected_semantics};', source), 'expected version not in frozen source'
     before = json.loads((bp / 'seed.state.json').read_text())
     after = json.loads((ap / 'upgrade.state.json').read_text())
     raw = json.loads((ap / 'upgrade.result.json').read_text())
-    result = check(before, after, raw)
+    result = check(before, after, raw, expected_semantics)
     controls = {}
-    for mode in ['wrong-alias', 'expanded-options', 'changed-port', 'invented-probe']:
+    for mode in ['wrong-alias', 'expanded-options', 'changed-port', 'invented-probe', 'wrong-inference-version']:
         altered, wires = copy.deepcopy(after), copy.deepcopy(raw)
         cap = capability(altered)
         if mode == 'wrong-alias':
@@ -64,13 +70,15 @@ if __name__ == '__main__':
             cap['invoke']['options']['allowed'].append({'flags': ['--unproven'], 'arg': False})
         elif mode == 'changed-port':
             cap['inputs'][0]['type'] = 'unproven:input'
-        else:
+        elif mode == 'invented-probe':
             wires['wires'] = [w for w in wires['wires'] if w['opts'].get('purpose') != 'investigation']
+        else:
+            altered['semantics'] = expected_semantics + 1
         try:
-            check(before, altered, wires)
+            check(before, altered, wires, expected_semantics)
         except (AssertionError, StopIteration):
             controls[mode] = 'rejected'
         else:
             raise AssertionError(f'accepted {mode}')
     print(json.dumps({'verdict': 'PASS', 'scope': 'bounded same-binary exposed inference migration; no universal semantics or independent-author claim',
-                      'continuity': result, 'negativeControls': controls}, indent=2))
+                      'expectedSemantics': expected_semantics, 'continuity': result, 'negativeControls': controls}, indent=2))
