@@ -7,8 +7,25 @@ import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { createServer } from "node:http";
+import type { Readable } from "node:stream";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
+/** Presentation is bounded and closes on pipe EOF or an operator signal. */
+export async function holdPresentation(input: Readable = process.stdin, maximumMs = 300_000) {
+  if (input.readableEnded || input.destroyed) return;
+  await new Promise<void>(resolve => {
+    const done = () => {
+      clearTimeout(timer);
+      input.off("data", done); input.off("end", done); input.off("close", done);
+      process.off("SIGINT", done); process.off("SIGTERM", done);
+      input.pause(); resolve();
+    };
+    const timer = setTimeout(done, maximumMs);
+    input.once("data", done); input.once("end", done); input.once("close", done);
+    process.once("SIGINT", done); process.once("SIGTERM", done);
+    input.resume();
+  });
+}
 export type Wire = { method: string; url: string; headers: Record<string, string>; body: string };
 type Chunk = { body?: string; end?: boolean };
 export class RpcPeer {
@@ -57,13 +74,18 @@ export class RpcPeer {
       if (message.error) entry.reject(new Error(message.error));
       else entry.resolve(message.value);
     });
-    this.exited = new Promise(resolve => process.once("exit", code => {
-      this.failure = new Error(`session process exited (${code})`);
-      failed(this.failure);
-      for (const entry of this.pending.values()) { clearTimeout(entry.timer); entry.reject(this.failure); }
-      for (const callback of this.streams.values()) callback({ end: true });
-      this.pending.clear(); this.streams.clear(); resolve(code);
-    }));
+    this.exited = new Promise(resolve => {
+      const stop = (error: Error, code: number | null) => {
+        if (this.failure) return;
+        this.failure = error;
+        failed(this.failure);
+        for (const entry of this.pending.values()) { clearTimeout(entry.timer); entry.reject(this.failure); }
+        for (const callback of this.streams.values()) callback({ end: true });
+        this.pending.clear(); this.streams.clear(); resolve(code);
+      };
+      process.once("exit", code => stop(new Error(`session process exited (${code})`), code));
+      process.once("error", error => stop(error, null));
+    });
   }
   call(op: string, args: object = {}, onChunk?: (chunk: Chunk) => void, signal?: AbortSignal): Promise<any> {
     if (this.failure) return Promise.reject(this.failure);

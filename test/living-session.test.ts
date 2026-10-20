@@ -4,7 +4,8 @@ import { spawn } from "node:child_process";
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { RpcPeer, type Wire } from "../experiments/living/challenge-session.ts";
+import { PassThrough } from "node:stream";
+import { RpcPeer, holdPresentation, type Wire } from "../experiments/living/challenge-session.ts";
 
 const origin = "https://document.test";
 const contract = { openapi: "3.1.0", info: { title: "Documents" }, servers: [{ url: origin }], paths: {
@@ -87,4 +88,25 @@ test("live graph events remain responsive while ordinary tool requests execute",
   assert.match(chunks.join(""), /provider|capability/);
   cancel.abort();
   assert.ok((await peer.call("snapshot")).state);
+});
+
+test("presentation finishes on closed pipes and bounded expiry without leaking signal handlers", async () => {
+  const before = process.listenerCount("SIGTERM");
+  const input = new PassThrough();
+  const hold = holdPresentation(input, 500);
+  input.end();
+  await hold;
+  assert.equal(process.listenerCount("SIGTERM"), before);
+  await holdPresentation(input);
+  await holdPresentation(new PassThrough(), 5);
+  assert.equal(process.listenerCount("SIGTERM"), before);
+});
+
+test("a missing session executable rejects readiness and calls instead of hanging", async () => {
+  const output = mkdtempSync(join(tmpdir(), "rcx-session-missing-"));
+  const child = spawn(join(output, "absent"), [], { stdio: ["pipe", "pipe", "pipe"] });
+  const peer = new RpcPeer(child, join(output, "session.jsonl"));
+  await assert.rejects(peer.ready, /ENOENT/);
+  assert.equal(await peer.exited, null);
+  await assert.rejects(peer.call("configure"), /ENOENT/);
 });

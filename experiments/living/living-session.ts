@@ -5,7 +5,7 @@ import { mkdirSync, readFileSync, writeFileSync, appendFileSync } from "node:fs"
 import { resolve, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
-import { RpcPeer, startContainedSession, presentSession, type Wire } from "./challenge-session.ts";
+import { RpcPeer, startContainedSession, presentSession, holdPresentation, type Wire } from "./challenge-session.ts";
 import { publicReadTransport, type PublicSource } from "./public-read-transport.ts";
 import { TransportRefused } from "../../src/reflectors/net.ts";
 
@@ -115,9 +115,9 @@ try {
     protectedOutput: effect.executed.output, stateSha256: createHash("sha256").update(JSON.stringify(final.state)).digest("hex"),
     remaining: ["separate outcome checking", "fresh-model inheritance", "compatible/incompatible change", "live independent authority evidence", "independent-author holdout", "matched economics"] });
   if (hold === "hold") {
-    process.stdout.write(JSON.stringify({ op: "holding", url: view.url, instruction: "Send one stdin line to close after inspecting the live session." }) + "\n");
-    await new Promise(resolve => { process.stdin.resume(); process.stdin.once("data", resolve); });
-    process.stdin.pause();
+    process.stdout.write(JSON.stringify({ op: "holding", url: view.url,
+      instruction: "Closes on stdin line, EOF, signal or after five minutes. Use a terminal for live inspection." }) + "\n");
+    await holdPresentation();
   }
 } catch (error) {
   save("failure", { error: String(error), totalRequests, toolCalls: toolCalls.length });
@@ -129,8 +129,12 @@ try {
   catch (snapshotError) { save("failure-effects-error", { error: String(snapshotError) }); }
   throw error;
 } finally {
-  await view?.close();
-  await session?.close();
-  try { await boundary.call("close"); child.stdin.end(); await boundary.exited; }
-  finally { child.kill("SIGTERM"); }
+  try { await view?.close(); }
+  finally {
+    try { await session?.close(); }
+    finally {
+      try { await boundary.call("close"); child.stdin.end(); await boundary.exited; }
+      finally { child.kill("SIGTERM"); }
+    }
+  }
 }
