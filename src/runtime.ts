@@ -1488,6 +1488,12 @@ export class RightClick {
   private async checkpointHttp(runId: string, cap: Capability, verify: Predicate[], cursor: HttpContinuationCursor | null) {
     const previous = this.httpContinuations.get(runId);
     if (cursor) {
+      if (!previous) for (const [id, expired] of this.httpContinuations) {
+        if (expired.expiresAt > Date.now()) continue;
+        this.httpContinuations.delete(id);
+        this.activity.append({ kind: "execution.continuation", status: "retired", reason: "resume-window-expired",
+          subjects: [expired.capability], runs: [id] });
+      }
       if (!previous && this.httpContinuations.size >= 64) throw new Error("HTTP continuation storage is full");
       const createdAt = previous?.createdAt ?? Date.now();
       const next: HttpRunContinuation = { runId, capability: cap.id, contractDigest: await httpContractDigest(cap),

@@ -176,6 +176,26 @@ test("persistence yielding cannot bypass a changed follow-up contract", async ()
   await fresh.rc.flush();
 });
 
+test("live checkpoint capacity fails closed while expired entries retire without requests", async () => {
+  const store = new MemoryStore(); const first = await world(store);
+  await first.rc.run("openapi:packager:pack"); await first.rc.flush();
+  const sample = store.state!.httpContinuations![0];
+  store.state!.httpContinuations = Array.from({ length: 64 }, (_, i) => ({ ...structuredClone(sample), runId: `run_slot_${i}` }));
+  const full = await world(store);
+  const blocked = await full.rc.run("openapi:packager:pack");
+  assert.equal(blocked.httpContinuation?.stopped, "checkpoint-unavailable");
+  assert.deepEqual(full.calls, ["POST /pack"]);
+  await full.rc.flush();
+  for (const c of store.state!.httpContinuations!) { c.createdAt = Date.now() - 3_600_000; c.expiresAt = Date.now() - 1; }
+  const fresh = await world(store);
+  assert.deepEqual(fresh.calls, []);
+  const accepted = await fresh.rc.run("openapi:packager:pack");
+  assert.equal(accepted.status, "pending");
+  assert.equal(accepted.pending?.resumeId, `resume:${accepted.runId}`);
+  await fresh.rc.flush();
+  assert.equal(store.state!.httpContinuations!.length, 1);
+});
+
 test("restart does not renew authority or permit changed result contracts", async () => {
   for (const mode of ["denied", "changed"] as const) {
     const store = new MemoryStore(); const first = await world(store);
