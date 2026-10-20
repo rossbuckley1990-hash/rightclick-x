@@ -227,6 +227,8 @@ export interface RunRecord {
   pending?: PendingOutcome;
   httpContinuation?: HttpContinuationEvidence;
   refusal?: TransportRefusal;
+  /** An upstream value needed by this execution was absent; not evidence of API drift. */
+  dataUnavailable?: MissingDataEvidence;
   resumes?: string;
   /** Completion of a retained ordinary composition, including deferred publication. */
   composition?: Pick<ComposeResult, "crystallized" | "published" | "publishRefused" | "outcome">;
@@ -266,6 +268,22 @@ class StepError extends Error {
   constructor(capability: string, message: string) {
     super(message);
     this.capability = capability;
+  }
+}
+
+export interface MissingDataEvidence {
+  producer: string;
+  path: string;
+  consumer: string;
+  port: string;
+  runs: string[];
+}
+
+class MissingData extends StepError {
+  readonly evidence: MissingDataEvidence;
+  constructor(evidence: MissingDataEvidence) {
+    super(evidence.producer, `${evidence.producer}: its result has no value at ${evidence.path || "(result)"}, which ${evidence.consumer}.${evidence.port} needs`);
+    this.evidence = { ...evidence, runs: [...new Set(evidence.runs)].slice(-128) };
   }
 }
 
@@ -329,6 +347,7 @@ export interface ComposeResult {
     status: "completed" | "failed" | "pending";
     pending?: PendingOutcome;
     refusal?: TransportRefusal;
+    dataUnavailable?: MissingDataEvidence;
     verification: RunRecord["verification"];
     runs: string[];
     /** Failed attempts the runtime routed around before succeeding. */
@@ -1358,6 +1377,7 @@ export class RightClick {
     let healing: RunRecord["healing"];
     let pending: PendingOutcome | undefined;
     let refusal: TransportRefusal | undefined;
+    let dataUnavailable: MissingDataEvidence | undefined;
     let compositionResult: ComposeResult | undefined;
     let workflowRunId: string | undefined;
     const continuationId = resumed?.runId ?? runId;
@@ -1408,6 +1428,7 @@ export class RightClick {
           throw new PendingOutcomeError(r.executed.pending);
         }
         if (r.executed?.refusal) throw new TransportRefused(r.executed.refusal.reason, r.executed.refusal.capability, r.executed.refusal.runs);
+        if (r.executed?.dataUnavailable) throw new MissingData(r.executed.dataUnavailable);
         if (r.executed?.status !== "completed") throw new Error(attempts?.map((a) => a.error).join("; ") || "no pipeline found for saved goal");
       } else if (cap.invoke.kind === "composite") {
         if (!workflow && this.workflowRecovery && !suppliedNet && this.recoverableWorkflow(cap)) {
@@ -1464,6 +1485,11 @@ export class RightClick {
         output = undefined;
         steps = refusal.runs;
         verification = { status: "unverified", results: [] };
+      } else if (e instanceof MissingData) {
+        dataUnavailable = e.evidence;
+        output = undefined;
+        steps = dataUnavailable.runs;
+        verification = { status: "refuted", results: [] };
       } else verification = { ...verification, status: "refuted" };
     }
     const durationMs = Math.round((performance.now() - t0) * 10) / 10;
@@ -1495,6 +1521,7 @@ export class RightClick {
       status: pending ? "pending" : error ? "failed" : "completed",
       ...(pending ? { pending } : {}),
       ...(refusal ? { refusal } : {}),
+      ...(dataUnavailable ? { dataUnavailable } : {}),
       ...(execution.continuation ? { httpContinuation: execution.continuation } : {}),
       output,
       error,
@@ -2068,7 +2095,7 @@ export class RightClick {
           const retained = JSON.parse(JSON.stringify(composition)) as CompositionContinuation;
           const rec = await this.dispatchRun(retained.id, values, {}, undefined, retained);
           result.executed = { summary: p.summary, titles: titles(p), output: rec.output ?? null, status: rec.status,
-            pending: rec.pending, refusal: rec.refusal, verification: rec.verification, runs: rec.steps ?? [],
+            pending: rec.pending, refusal: rec.refusal, dataUnavailable: rec.dataUnavailable, verification: rec.verification, runs: rec.steps ?? [],
             attempts: [...attempts, ...(rec.error ? [{ summary: p.summary, failed: rec.failedCapability ?? p.steps[0].capability,
               error: rec.error, healing: "retained execution: no alternative plan or replay" }] : [])],
             durationMs: rec.durationMs, witnesses: rec.witnesses, error: rec.error,
@@ -2095,6 +2122,14 @@ export class RightClick {
           attempts.push({ summary: p.summary, failed, error: e.message, healing: "pending outcome: no replay, repair, alternative plan or publication" });
           result.executed = { summary: p.summary, titles: titles(p), output: null, status: "pending",
             pending: e.pending, verification: { status: "unverified", results: [] }, runs: e.pending.runs,
+            attempts, durationMs: Math.round(performance.now() - t0), witnesses: lastWitnesses, error: e.message };
+          return result;
+        }
+        if (e instanceof MissingData) {
+          attempts.push({ summary: p.summary, failed, error: e.message,
+            healing: "required upstream value absent: no contract repair, alternative plan or publication" });
+          result.executed = { summary: p.summary, titles: titles(p), output: null, status: "failed",
+            dataUnavailable: e.evidence, verification: { status: "refuted", results: [] }, runs: e.evidence.runs,
             attempts, durationMs: Math.round(performance.now() - t0), witnesses: lastWitnesses, error: e.message };
           return result;
         }
@@ -2356,6 +2391,7 @@ export class RightClick {
       status: r.executed?.status ?? "failed",
       ...(r.executed?.pending ? { pending: r.executed.pending } : {}),
       ...(r.executed?.refusal ? { refusal: r.executed.refusal } : {}),
+      ...(r.executed?.dataUnavailable ? { dataUnavailable: r.executed.dataUnavailable } : {}),
       result: r.executed?.output ?? null,
       pipeline: r.executed?.titles ?? [],
       verification: r.executed?.verification.status ?? "refuted",
@@ -2474,8 +2510,8 @@ export class RightClick {
       if (workflow) await this.assertWorkflow(workflow);
       const args: Record<string, unknown> = {};
       for (const b of step.bindings) if (!b.each) args[b.port] = b.value !== undefined ? b.value : resolve(b.from);
-      // A required input bound to an earlier step's output that produced nothing there: the
-      // producer is at fault (its result lacks what the plan assumed), not this step.
+      // Missing data is not evidence that an interface changed. Preserve the
+      // producing runs and stop; do not rediscover or select another identity.
       const cap = this.graph.get(step.capability);
       for (const b of step.bindings) {
         if (b.each || b.value !== undefined || b.from.startsWith("$in.")) continue;
@@ -2483,7 +2519,7 @@ export class RightClick {
         const empty = v === undefined || v === null || v === "" || (Array.isArray(v) && v.every((x) => x === undefined || x === null || x === ""));
         if (empty && cap?.inputs.find((p) => p.name === b.port)?.required) {
           const producer = steps[Number(b.from.split(".")[0])]?.capability ?? step.capability;
-          throw new StepError(producer, `${producer}: its result has no value at ${b.from.replace(/^\d+\./, "") || "(result)"}, which ${step.capability}.${b.port} needs`);
+          throw new MissingData({ producer, path: b.from.replace(/^\d+\.?/, ""), consumer: step.capability, port: b.port, runs });
         }
       }
       const fan = step.bindings.find((b) => b.each);
@@ -2503,6 +2539,7 @@ export class RightClick {
         if (!workflow) runs.push(r.runId);
         if (r.pending) throw new PendingOutcomeError({ ...r.pending, runs: [...new Set([...runs, ...r.pending.runs])] });
         if (r.refusal) throw new TransportRefused(r.refusal.reason, r.refusal.capability ?? step.capability, [...new Set([...runs, ...r.refusal.runs])]);
+        if (r.dataUnavailable) throw new MissingData({ ...r.dataUnavailable, runs: [...runs, ...r.dataUnavailable.runs] });
         if (r.status === "failed") throw new StepError(r.failedCapability ?? step.capability, `${step.capability}: ${r.error}`);
         if (workflow) {
           if (workflow.phase !== "ready") throw new PendingOutcomeError(this.workflowPending(workflow, "step result could not be retained"));
@@ -2524,6 +2561,7 @@ export class RightClick {
         report.ran++;
         if (r.pending) throw new PendingOutcomeError({ ...r.pending, runs: [...new Set([...runs, ...r.pending.runs])] });
         if (r.refusal) throw new TransportRefused(r.refusal.reason, r.refusal.capability ?? step.capability, [...new Set([...runs, ...r.refusal.runs])]);
+        if (r.dataUnavailable) throw new MissingData({ ...r.dataUnavailable, runs: [...runs, ...r.dataUnavailable.runs] });
         if (r.status === "failed") throw new StepError(r.failedCapability ?? step.capability, `${step.capability} (item ${JSON.stringify(item)}, ${report.ran} of ${items.length}): ${r.error}`);
         each.push(r.output);
       }
