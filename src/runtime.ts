@@ -229,6 +229,7 @@ export interface RunRecord {
   refusal?: TransportRefusal;
   /** An upstream value needed by this execution was absent; not evidence of API drift. */
   dataUnavailable?: MissingDataEvidence;
+  planningRefusal?: PlanningRefusal;
   resumes?: string;
   /** Completion of a retained ordinary composition, including deferred publication. */
   composition?: Pick<ComposeResult, "crystallized" | "published" | "publishRefused" | "outcome">;
@@ -287,6 +288,26 @@ class MissingData extends StepError {
   }
 }
 
+/** A structurally established candidate is excluded by current local restrictions.
+ * Not an exact-action grant, a provider probe or proof that removing restrictions
+ * would produce a working outcome. Other routes may remain outside the search. */
+export interface PlanningRefusal {
+  scope: "local-runtime-policy";
+  independentAuthority: "not-assessed";
+  coverage: "bounded-candidate-search";
+  reason: string;
+  blocked: Array<{ capability: string; reasons: string[] }>;
+  runs: string[];
+}
+
+class PlanningRefused extends StepError {
+  readonly evidence: PlanningRefusal;
+  constructor(evidence: PlanningRefusal) {
+    super(evidence.blocked[0].capability, evidence.reason);
+    this.evidence = { ...evidence, runs: [...new Set(evidence.runs)].slice(-128) };
+  }
+}
+
 export interface PendingOutcome {
   capability: string;
   reason: "http-202" | "peer-pending" | "witness-pending" | "workflow-pending";
@@ -340,6 +361,7 @@ export interface ComposeOptions {
 export interface ComposeResult {
   goal: { have: Record<string, SemType>; want: SemType; intent?: string; through?: string[] };
   plans: Array<Plan & { titles: string[]; contract?: ContractAssessment }>;
+  planningRefusal?: PlanningRefusal;
   executed?: {
     summary: string;
     titles: string[];
@@ -348,6 +370,7 @@ export interface ComposeResult {
     pending?: PendingOutcome;
     refusal?: TransportRefusal;
     dataUnavailable?: MissingDataEvidence;
+    planningRefusal?: PlanningRefusal;
     verification: RunRecord["verification"];
     runs: string[];
     /** Failed attempts the runtime routed around before succeeding. */
@@ -1378,6 +1401,7 @@ export class RightClick {
     let pending: PendingOutcome | undefined;
     let refusal: TransportRefusal | undefined;
     let dataUnavailable: MissingDataEvidence | undefined;
+    let planningRefusal: PlanningRefusal | undefined;
     let compositionResult: ComposeResult | undefined;
     let workflowRunId: string | undefined;
     const continuationId = resumed?.runId ?? runId;
@@ -1429,6 +1453,7 @@ export class RightClick {
         }
         if (r.executed?.refusal) throw new TransportRefused(r.executed.refusal.reason, r.executed.refusal.capability, r.executed.refusal.runs);
         if (r.executed?.dataUnavailable) throw new MissingData(r.executed.dataUnavailable);
+        if (r.planningRefusal ?? r.executed?.planningRefusal) throw new PlanningRefused((r.planningRefusal ?? r.executed?.planningRefusal)!);
         if (r.executed?.status !== "completed") throw new Error(attempts?.map((a) => a.error).join("; ") || "no pipeline found for saved goal");
       } else if (cap.invoke.kind === "composite") {
         if (!workflow && this.workflowRecovery && !suppliedNet && this.recoverableWorkflow(cap)) {
@@ -1490,13 +1515,18 @@ export class RightClick {
         output = undefined;
         steps = dataUnavailable.runs;
         verification = { status: "refuted", results: [] };
+      } else if (e instanceof PlanningRefused) {
+        planningRefusal = e.evidence;
+        output = undefined;
+        steps = planningRefusal.runs;
+        verification = { status: "unverified", results: [] };
       } else verification = { ...verification, status: "refuted" };
     }
     const durationMs = Math.round((performance.now() - t0) * 10) / 10;
     const ok = !error && verification.status !== "refuted";
     // A refusal says nothing about how the operation behaves.
     // Recorded experience is persisted: errors that echo a credential are stored without it.
-    if (!composition && !resumed && !resumedWorkflow && !pending && !refusal && !refused && !error?.includes("blocked by execution policy")) this.ledger.record(cap.id, ok, durationMs, error ? scrub(error, sensitiveValues(args)) : error);
+    if (!composition && !resumed && !resumedWorkflow && !pending && !refusal && !refused && !planningRefusal && !error?.includes("blocked by execution policy")) this.ledger.record(cap.id, ok, durationMs, error ? scrub(error, sensitiveValues(args)) : error);
     // Identifier values a successful call accepted and returned link ports across providers.
     if (!resumed && !resumedWorkflow && ok && cap.invoke.kind !== "composite" && cap.invoke.kind !== "goal" && this.graph.identities.observe(cap, args, output)) this.graph.relink();
     const receipt = await this.chain.append(
@@ -1522,6 +1552,7 @@ export class RightClick {
       ...(pending ? { pending } : {}),
       ...(refusal ? { refusal } : {}),
       ...(dataUnavailable ? { dataUnavailable } : {}),
+      ...(planningRefusal ? { planningRefusal } : {}),
       ...(execution.continuation ? { httpContinuation: execution.continuation } : {}),
       output,
       error,
@@ -1908,7 +1939,7 @@ export class RightClick {
       const observed = this.observedRuns([...(ex?.runs ?? []), ...(ex?.witnesses ?? []).map(w => w.runId)]);
       this.activity.append({ kind: "composition.finished", related: request.id, subjects,
         status: result.outcome?.status === "incomplete" ? "incomplete" : ex?.status ?? (result.plans.some(p => p.contract?.status === "satisfied") ? "planned" : "unavailable"),
-        reason: result.publishRefused ? "publication-policy-refused" : undefined,
+        reason: result.planningRefusal ? "planning-policy-refused" : result.publishRefused ? "publication-policy-refused" : undefined,
         plans: result.plans.length, runs: ex?.runs ?? [], contracts: [...subjects.flatMap(id => { const c = this.graph.get(id); return c ? [reference(c)] : []; }), ...observed.contracts], truncated: observed.truncated,
         providers: [...new Set(observed.contracts.map(c => c.provider))], verification: ex?.verification.status,
         durationMs: ex?.durationMs, predicates: ex?.verification.results.length, predicatesPassed: ex?.verification.results.filter(p => p.ok).length,
@@ -1969,6 +2000,44 @@ export class RightClick {
       goal: { have: types, want: opts.want, intent: opts.intent, through },
       plans: plans.map((p) => ({ ...p, titles: titles(p) })),
     };
+    const typeWords = new Set(tokenize(opts.want.replace(/^list:/, "").replace(/[.:]/g, " ")));
+    const intentSet = new Set(tokenize(opts.intent ?? "").filter((t) => !typeWords.has(t)));
+    const contractCtx = { intent: intentSet, require, have: types, want: opts.want, anchors: new Set(through) };
+    result.contract = contractFor({ have: types, want: opts.want, intent: intentSet, require, predicates: opts.verify?.length ?? 0, witnesses: witnesses.length, risks: opts.risks });
+    const assessed = new Map<string, ContractAssessment>();
+    const assessOf = (p: Plan) => {
+      const key = `${p.result}|${p.steps.map((st) => `${st.capability}(${st.bindings.map((b) => b.from).join(",")})`).join(">")}`;
+      let a = assessed.get(key);
+      if (!a) assessed.set(key, (a = assessPlan(this.graph, p.steps, p.result, contractCtx)));
+      return a;
+    };
+    // Diagnose only when the permitted search found nothing. This bounded, pure
+    // search cannot return runnable plans, acquire providers or change authority.
+    // Keep semantic refusals, recursion, unsupported modes and contract checks.
+    if (!plans.length && (blocked.size || origins !== undefined || opts.risks !== undefined)) {
+      const structural = new Set(this.graph.list().filter(c => containsActive(c) || !this.executionAssessment(c, {}).allowed).map(c => c.id));
+      const candidates = plan(this.graph, this.ledger, { ...goal, exclude: structural, origins: undefined, risks: undefined, limit: 5 }, 512);
+      for (const candidate of candidates) {
+        // Diagnostic assessments must not seed the executable-plan cache: later
+        // acquisition may change the graph if this diagnosis is inconclusive.
+        if ((require.length && candidate.satisfaction?.status !== "established") ||
+            assessPlan(this.graph, candidate.steps, candidate.result, contractCtx).status !== "satisfied") continue;
+        const denied = candidate.steps.flatMap(step => {
+          const c = this.graph.get(step.capability)!;
+          const a = this.executionAssessment(c);
+          const reasons = [...a.reasons];
+          if (opts.risks !== undefined && !opts.risks.includes(c.risk)) reasons.push("declared risk outside requested risks");
+          if (origins !== undefined && (a.origins === "anywhere" || a.origins.some(o => !origins.includes(o))))
+            reasons.push("egress outside effective origin scope or not statically bounded");
+          return reasons.length ? [{ capability: c.id, reasons: reasons.slice(0, 8).map(s => s.slice(0, 512)) }] : [];
+        });
+        if (!denied.length) continue;
+        result.planningRefusal = { scope: "local-runtime-policy", independentAuthority: "not-assessed",
+          coverage: "bounded-candidate-search", blocked: denied, runs: [],
+          reason: `A structurally established candidate is blocked by local restrictions: ${denied.map(d => `${d.capability}: ${d.reasons.join("; ")}`).join(" | ")}` };
+        return result;
+      }
+    }
 
     // Acquisition on demand: nothing in the graph can do this yet, so go and
     // find something in the world that can, learn it, and plan again.
@@ -2024,17 +2093,6 @@ export class RightClick {
     }
     // Outcome contract: the request made explicit, and which plans honour it (lineage: every step
     // justified by the request; distinct inputs). Plans that do not are listed but never run.
-    const typeWords = new Set(tokenize(opts.want.replace(/^list:/, "").replace(/[.:]/g, " ")));
-    const intentSet = new Set(tokenize(opts.intent ?? "").filter((t) => !typeWords.has(t)));
-    const contractCtx = { intent: intentSet, require, have: types, want: opts.want, anchors: new Set(through) };
-    result.contract = contractFor({ have: types, want: opts.want, intent: intentSet, require, predicates: opts.verify?.length ?? 0, witnesses: witnesses.length, risks: opts.risks });
-    const assessed = new Map<string, ContractAssessment>();
-    const assessOf = (p: Plan) => {
-      const key = `${p.result}|${p.steps.map((st) => `${st.capability}(${st.bindings.map((b) => b.from).join(",")})`).join(">")}`;
-      let a = assessed.get(key);
-      if (!a) assessed.set(key, (a = assessPlan(this.graph, p.steps, p.result, contractCtx)));
-      return a;
-    };
     const honouring = (ps: Plan[]) => ps.filter((p) => assessOf(p).status === "satisfied");
     result.plans = result.plans.map((rp) => ({ ...rp, contract: assessOf(rp) }));
     if (plans.length && !honouring(plans).length) {
@@ -2095,7 +2153,7 @@ export class RightClick {
           const retained = JSON.parse(JSON.stringify(composition)) as CompositionContinuation;
           const rec = await this.dispatchRun(retained.id, values, {}, undefined, retained);
           result.executed = { summary: p.summary, titles: titles(p), output: rec.output ?? null, status: rec.status,
-            pending: rec.pending, refusal: rec.refusal, dataUnavailable: rec.dataUnavailable, verification: rec.verification, runs: rec.steps ?? [],
+            pending: rec.pending, refusal: rec.refusal, dataUnavailable: rec.dataUnavailable, planningRefusal: rec.planningRefusal, verification: rec.verification, runs: rec.steps ?? [],
             attempts: [...attempts, ...(rec.error ? [{ summary: p.summary, failed: rec.failedCapability ?? p.steps[0].capability,
               error: rec.error, healing: "retained execution: no alternative plan or replay" }] : [])],
             durationMs: rec.durationMs, witnesses: rec.witnesses, error: rec.error,
@@ -2110,6 +2168,14 @@ export class RightClick {
         return await this.finishComposition(composition, values, r, net, result, attempts, t0, ws => { lastWitnesses = ws; });
       } catch (e) {
         const failed = e instanceof StepError || e instanceof ConfirmationRequired ? e.capability : p.steps[0].capability;
+        if (e instanceof PlanningRefused) {
+          result.planningRefusal = e.evidence;
+          attempts.push({ summary: p.summary, failed, error: e.message, healing: "local planning refusal: no repair, alternative plan or publication" });
+          result.executed = { summary: p.summary, titles: titles(p), output: null, status: "failed",
+            planningRefusal: e.evidence, verification: { status: "unverified", results: [] }, runs: e.evidence.runs,
+            attempts, durationMs: Math.round(performance.now() - t0), witnesses: lastWitnesses, error: e.message };
+          return result;
+        }
         if (e instanceof TransportRefused) {
           attempts.push({ summary: p.summary, failed: e.refusal.capability ?? failed, error: e.message,
             healing: "execution boundary refused: no repair, alternative plan or publication" });
@@ -2392,6 +2458,7 @@ export class RightClick {
       ...(r.executed?.pending ? { pending: r.executed.pending } : {}),
       ...(r.executed?.refusal ? { refusal: r.executed.refusal } : {}),
       ...(r.executed?.dataUnavailable ? { dataUnavailable: r.executed.dataUnavailable } : {}),
+      ...((r.planningRefusal ?? r.executed?.planningRefusal) ? { planningRefusal: r.planningRefusal ?? r.executed?.planningRefusal } : {}),
       result: r.executed?.output ?? null,
       pipeline: r.executed?.titles ?? [],
       verification: r.executed?.verification.status ?? "refuted",
@@ -2399,7 +2466,7 @@ export class RightClick {
       witnesses: r.executed?.witnesses ?? [],
       healed: r.executed?.attempts.length ?? 0,
       receipt: this.chain.headHash,
-      error: r.executed?.status === "completed" ? undefined : (r.executed?.attempts.map((a) => a.error).join("; ") || "no pipeline found"),
+      error: r.executed?.status === "completed" ? undefined : (r.planningRefusal?.reason || r.executed?.attempts.map((a) => a.error).join("; ") || "no pipeline found"),
     };
   }
 
@@ -2540,6 +2607,7 @@ export class RightClick {
         if (r.pending) throw new PendingOutcomeError({ ...r.pending, runs: [...new Set([...runs, ...r.pending.runs])] });
         if (r.refusal) throw new TransportRefused(r.refusal.reason, r.refusal.capability ?? step.capability, [...new Set([...runs, ...r.refusal.runs])]);
         if (r.dataUnavailable) throw new MissingData({ ...r.dataUnavailable, runs: [...runs, ...r.dataUnavailable.runs] });
+        if (r.planningRefusal) throw new PlanningRefused({ ...r.planningRefusal, runs: [...runs, ...r.planningRefusal.runs] });
         if (r.status === "failed") throw new StepError(r.failedCapability ?? step.capability, `${step.capability}: ${r.error}`);
         if (workflow) {
           if (workflow.phase !== "ready") throw new PendingOutcomeError(this.workflowPending(workflow, "step result could not be retained"));
@@ -2562,6 +2630,7 @@ export class RightClick {
         if (r.pending) throw new PendingOutcomeError({ ...r.pending, runs: [...new Set([...runs, ...r.pending.runs])] });
         if (r.refusal) throw new TransportRefused(r.refusal.reason, r.refusal.capability ?? step.capability, [...new Set([...runs, ...r.refusal.runs])]);
         if (r.dataUnavailable) throw new MissingData({ ...r.dataUnavailable, runs: [...runs, ...r.dataUnavailable.runs] });
+        if (r.planningRefusal) throw new PlanningRefused({ ...r.planningRefusal, runs: [...runs, ...r.planningRefusal.runs] });
         if (r.status === "failed") throw new StepError(r.failedCapability ?? step.capability, `${step.capability} (item ${JSON.stringify(item)}, ${report.ran} of ${items.length}): ${r.error}`);
         each.push(r.output);
       }
@@ -2752,8 +2821,8 @@ export class RightClick {
     return `${id} changed meaning when ${change.source} was re-learned (${change.at}): it called ${change.before}, it now calls ${change.after}. Not run.${change.successor ? ` The operation it used to call is now ${change.successor}.` : ""}${change.current ? ` The new operation is separately discoverable as ${change.current}; its authority must be established independently.` : ""} Caller acknowledgement cannot clear this refusal; this retained identifier no longer names the original operation.`;
   }
 
-  private executionAssessment(cap: Capability) {
-    const assessment = assessExecution(cap, this.graph, this.executionPolicy);
+  private executionAssessment(cap: Capability, policy = this.executionPolicy) {
+    const assessment = assessExecution(cap, this.graph, policy);
     // Reuse the policy assessment's bounded dependency tree. Reject an entire
     // static composite before an earlier effect can precede a changed leaf.
     // This is a semantic safeguard, not an independent authority boundary.
@@ -2927,6 +2996,7 @@ export class RightClick {
         if (j?.status === "pending") throw new PendingOutcomeError({ capability: cap.id, reason: "peer-pending", runs: [] });
         // A remote denial is sufficient to stop, never sufficient to authorize.
         if (j?.refusal) throw new TransportRefused("peer reports an execution-boundary refusal", cap.id);
+        if (j?.planningRefusal) throw new TransportRefused("peer reports a local planning refusal; independent authority is not assessed", cap.id);
         if (!res.ok || j?.status !== "completed") throw new Error(`peer: ${j?.error ?? "no completed outcome"}`);
         return j.output;
       }

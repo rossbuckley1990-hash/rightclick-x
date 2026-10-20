@@ -128,7 +128,9 @@ const FANOUT_COST = 1;
 /** A list of these says nothing about what each item is, so it never fans out by type alone. */
 const UNSPECIFIC = /^(text|json|number|boolean|id)$/;
 
-export function plan(graph: CapabilityGraph, ledger: Ledger, goal: Goal): Plan[] {
+export function plan(graph: CapabilityGraph, ledger: Ledger, goal: Goal, expansionBudget = DEPTH_BUDGET): Plan[] {
+  // Read-only diagnostics may do less work; never widen the normal search budget.
+  const depthBudget = Number.isFinite(expansionBudget) ? Math.max(1, Math.min(DEPTH_BUDGET, Math.floor(expansionBudget))) : DEPTH_BUDGET;
   const maxSteps = Math.min(goal.maxSteps ?? 4, 6);
   const limit = goal.limit ?? 5;
   // Words that only name the requested type ("text" for want: text) are constraints already
@@ -137,8 +139,8 @@ export function plan(graph: CapabilityGraph, ledger: Ledger, goal: Goal): Plan[]
   const intent = new Set(tokenize(goal.intent ?? "").filter((t) => !typeWords.has(t)));
   const excluded = goal.exclude ?? new Set<string>();
   const anchors = new Set(goal.through ?? []);
-  const risks = goal.risks?.length ? new Set(goal.risks) : null;
-  const origins = goal.origins?.length ? new Set(goal.origins.map((o) => new URL(o).origin)) : null;
+  const risks = goal.risks === undefined ? null : new Set(goal.risks);
+  const origins = goal.origins === undefined ? null : new Set(goal.origins.map((o) => new URL(o).origin));
   const withinPolicy = (c: Capability) => {
     if (!origins) return true;
     const e = egressOf(c, graph);
@@ -190,14 +192,14 @@ export function plan(graph: CapabilityGraph, ledger: Ledger, goal: Goal): Plan[]
     const next: Node[] = [];
     let expansions = 0;
     for (const node of frontier) {
-      if (expansions > DEPTH_BUDGET) break;
+      if (expansions > depthBudget) break;
       const consumed = consumedSteps(node);
       const covered = new Set(node.steps.flatMap((st) => [...tokensOf(graph.get(st.capability)!)]).filter((t) => intent.has(t)));
       for (const cap of caps) {
         if (node.used.has(cap.id)) continue;
         const bindings = bind(cap, node.values, describeValue, consumed, shapes);
         if (!bindings) continue;
-        if (++expansions > DEPTH_BUDGET) break;
+        if (++expansions > depthBudget) break;
         // A step must consume something produced or supplied, not only constants,
         // and every step after the first must build on an earlier step's output,
         // unless the caller anchored it: anchored steps may start parallel branches
