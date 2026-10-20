@@ -132,7 +132,7 @@ export class RpcPeer {
   }
 }
 
-export async function startContainedSession(options: { output: string; image: string; config: object;
+export async function startContainedSession(options: { output: string; image: string; config: object; host?: "coding";
   fetch: (request: Wire, context?: TransportContext) => Promise<any>; onTool?: (row: unknown) => void; authorityEvidence?: AuthorityEvidenceSource }) {
   const output = resolve(options.output), stage = mkdtempSync(join(tmpdir(), "rcx-living-session-"));
   chmodSync(stage, 0o755);
@@ -140,7 +140,7 @@ export async function startContainedSession(options: { output: string; image: st
   const docker = (args: string[]) => execFileSync("docker", args, { encoding: "utf8", maxBuffer: 8 * 1024 * 1024 });
   let peer: RpcPeer | undefined;
   try {
-    const built = execFileSync("bun", ["build", "experiments/living/challenge-host.ts", "--target", "node",
+    const built = execFileSync("bun", ["build", options.host === "coding" ? "experiments/living/coding-host.ts" : "experiments/living/challenge-host.ts", "--target", "node",
       "--outfile", join(stage, "host.mjs")], { cwd: root, encoding: "utf8" });
     writeFileSync(join(output, "host-build.log"), built);
     copyFileSync(join(stage, "host.mjs"), join(output, "host.mjs"));

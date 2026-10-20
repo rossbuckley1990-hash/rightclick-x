@@ -25,7 +25,8 @@ export function codexSummary(events: any[]) {
 export function benchmarkServer(name: string, server: unknown) {
   const names = name === "rightclick-x"
     ? ["context_runtime", "context_research", "context_learn", "context_forget", "context_inspect", "context_actions", "context_explain", "context_run", "context_run_status", "context_compose", "context_graph", "context_providers", "context_watch"]
-    : name === "surface" ? ["run_program", "list_skills", "read_skill", "save_skill"] : undefined;
+    : name === "surface" ? ["run_program", "list_skills", "read_skill", "save_skill"]
+    : name === "coding" ? ["run_code", "list_files", "read_file", "write_file"] : undefined;
   if (!names || !server || typeof server !== "object" || Array.isArray(server)) throw new Error("unexpected benchmark server");
   // Operator-authorised fixture tools only. Other tools remain unavailable and
   // all program execution still passes through the same host sandbox.
