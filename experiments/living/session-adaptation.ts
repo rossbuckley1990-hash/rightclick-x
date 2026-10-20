@@ -36,12 +36,15 @@ export async function exerciseAdaptation(options: {
     return result;
   }
   async function view(name: string) {
-    const value = {
+    const value: any = {
       goal: await (await peer.http("/api/capability?id=" + encodeURIComponent(goal.id))).json(),
       original: await (await peer.http("/api/capability?id=" + encodeURIComponent(submit.id))).json(),
       activity: await (await peer.http("/api/activity?limit=100")).json(),
     };
     save("adaptation-view-" + name, value);
+    const expected = ["compatible-after", "returned-after"].includes(name) ? "descriptor-matches-observation" : "dependencies-changed";
+    assert.equal(value.goal.states.validity.state, expected, "failed calls must not erase dependency drift");
+    assert.equal(value.goal.states.authority.state, "unknown");
   }
   const run = (args: object) => tool("context_run", { id: goal.id, args });
   const authorize = (args: object) => {
@@ -106,6 +109,19 @@ export async function exerciseAdaptation(options: {
   assert.equal(complete.status, "completed", complete.error);
   await view("returned-after");
   await record("returned-effects", () => boundary.call("snapshot"));
+  const retained = await peer.call("snapshot");
+  // The runtime conservatively retains stopped workflows after a refusal: HTTP
+  // denial alone does not universally establish non-execution. Never replay them.
+  assert.equal(retained.state.httpContinuations.length, 0);
+  assert.equal(retained.state.workflowContinuations.length, 3);
+  for (const [index, checkpoint] of retained.state.workflowContinuations.entries()) {
+    assert.equal(checkpoint.phase, "stopped");
+    const unresolved = await record("stopped-resume-" + index, () =>
+      tool("context_run", { id: "resume:" + checkpoint.runId }));
+    assert.equal(unresolved.status, "pending");
+    assert.equal(unresolved.pending.resumeId, undefined);
+    assert.equal(phases.at(-1).requests, 0);
+  }
   save("adaptation-final", await peer.call("snapshot"));
   save("adaptation-authority", await (await peer.http("/api/authority-evidence")).json());
   save("adaptation-summary", { status: "PARTIAL", ...options.counts(), phases: phases.length,
