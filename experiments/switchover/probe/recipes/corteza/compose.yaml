@@ -1,0 +1,32 @@
+# Genuine open-source low-code platform with CRM and Case Management modules:
+# Corteza (Apache-2.0, Go). A single binary plus Postgres; REST API with a
+# generated OpenAPI contract.
+
+services:
+  db:
+    image: docker.io/library/postgres:15
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: corteza
+      POSTGRES_PASSWORD: ${PROBE_DB_PASSWORD:-probe-db-pw}
+      POSTGRES_DB: corteza
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U corteza"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  server:
+    image: docker.io/cortezaproject/corteza:latest
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8003:80"
+    environment:
+      DB_DSN: postgres://corteza:${PROBE_DB_PASSWORD:-probe-db-pw}@db:5432/corteza?sslmode=disable
+      AUTH_JWT_SECRET: ${PROBE_SECRET_KEY:-probe-only-not-a-production-secret}
+      HTTP_WEBAPP_ENABLED: "true"
+      HTTP_SERVER_ADDR: :80
+      PROVISION_CONFIGURATION: "true"
+      PROVISION_MIGRATE: "true"

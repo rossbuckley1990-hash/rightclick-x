@@ -1,0 +1,132 @@
+# CONTROLLER-SIDE PROBE. Boots one genuine open-source application per matrix job
+# on a disposable Linux runner, then asks the FROZEN RightClick-X baseline's own
+# discovery code what it can see. Selects the experiment's applications empirically
+# instead of by assumption.
+#
+# fail-fast is off: an application that will not boot is a result, not an error.
+
+name: switchover-probe
+
+on:
+  workflow_dispatch:
+    inputs:
+      budget_seconds:
+        description: 'Seconds to wait for each application to answer'
+        required: false
+        default: '420'
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    strategy:
+      fail-fast: false
+      matrix:
+        recipe:
+          - paperless
+          - twenty
+          - wikijs
+          - espocrm
+          - corteza
+          - nocodb
+          - zammad
+          - teedy
+          - chatwoot
+    steps:
+      - name: Checkout frozen baseline
+        uses: actions/checkout@v4
+        with:
+          ref: 06321fa5632d3fd009d136d7b2dfe90510d8057d
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Record runner facts
+        run: |
+          echo "host=$(hostname) kernel=$(uname -srm)"
+          echo "node=$(node -v) docker=$(docker --version) compose=$(docker compose version --short)"
+          df -h / | tail -1
+          free -m | head -2
+          nproc
+
+      - name: Generate throwaway credentials for this job
+        run: |
+          # Every application in this pool boots on a disposable runner with no
+          # inbound exposure. Credentials are generated per job, passed to the
+          # containers through the environment, and never echoed. auth.json is
+          # written into the recipe directory, which is not uploaded.
+          {
+            echo "PROBE_ADMIN_PASSWORD=$(openssl rand -hex 16)"
+            echo "PROBE_DB_PASSWORD=$(openssl rand -hex 16)"
+            echo "PROBE_SECRET_KEY=$(openssl rand -hex 32)"
+            echo "PROBE_AR_PRIMARY=$(openssl rand -hex 16)"
+            echo "PROBE_AR_DETERMINISTIC=$(openssl rand -hex 16)"
+            echo "PROBE_AR_SALT=$(openssl rand -hex 16)"
+          } >> "$GITHUB_ENV"
+          echo "generated 6 throwaway job credentials"
+
+      - name: Boot the application
+        env:
+          RECIPE: ${{ matrix.recipe }}
+        run: |
+          set -x
+          R="experiments/switchover/probe/recipes/$RECIPE"
+          mkdir -p out
+          if [ -f "$R/compose.url" ]; then
+            URL=$(cat "$R/compose.url")
+            echo "$URL" > out/compose-source.txt
+            curl -fsSL "$URL" -o out/compose.yaml
+            COMPOSE=out/compose.yaml
+          else
+            COMPOSE="$R/compose.yaml"
+          fi
+          # Boot failures are recorded, not fatal: the probe must report them.
+          docker compose -f "$COMPOSE" up -d 2>&1 | tee out/boot.log || true
+          docker compose -f "$COMPOSE" ps 2>&1 | tee out/ps.log || true
+
+      - name: Wait for the application to answer
+        env:
+          RECIPE: ${{ matrix.recipe }}
+          BUDGET: ${{ github.event.inputs.budget_seconds || '420' }}
+        run: |
+          R="experiments/switchover/probe/recipes/$RECIPE"
+          node experiments/switchover/probe/wait.ts "$R/targets.json" "$BUDGET" 2>&1 | tee out/wait.log || true
+          if [ -f out/compose.yaml ]; then C=out/compose.yaml; else C="$R/compose.yaml"; fi
+          docker compose -f "$C" ps 2>&1 | tee out/ps-after-wait.log || true
+          docker compose -f "$C" logs --tail=120 2>&1 | tee out/app.log || true
+
+      - name: Application-specific credential provisioning
+        env:
+          RECIPE: ${{ matrix.recipe }}
+        run: |
+          R="experiments/switchover/probe/recipes/$RECIPE"
+          if [ -f "$R/setup.sh" ]; then bash "$R/setup.sh" "$R" 2>&1 | tee out/setup.log || true; fi
+          # Report only which origins hold credentials, never the values.
+          if [ -f "$R/auth.json" ]; then
+            echo "auth.json produced for origins: $(jq -r 'keys | join(",")' "$R/auth.json")"
+          else
+            echo "no auth.json (probe runs unauthenticated)"
+          fi
+
+      - name: Probe with the frozen baseline's own discovery code
+        env:
+          RECIPE: ${{ matrix.recipe }}
+        run: |
+          R="experiments/switchover/probe/recipes/$RECIPE"
+          AUTH="$R/auth.json"; [ -f "$AUTH" ] || AUTH=""
+          node experiments/switchover/probe/probe.ts "$R/targets.json" "$AUTH" "out/probe-$RECIPE.json" 2>&1 | tee out/probe.log || true
+          df -h / | tail -1
+
+      - name: Upload probe evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: probe-${{ matrix.recipe }}
+          path: out/
+          if-no-files-found: warn
+          retention-days: 30

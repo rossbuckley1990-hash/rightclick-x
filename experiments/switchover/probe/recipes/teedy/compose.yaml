@@ -1,0 +1,34 @@
+# Genuine open-source document management: Teedy (LGPL-2.1, Java).
+# A second document-management product in the pool, so the switchover test has a
+# real candidate to replace Paperless-ngx with.
+
+services:
+  db:
+    image: docker.io/library/postgres:15
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: teedy
+      POSTGRES_USER: teedy
+      POSTGRES_PASSWORD: ${PROBE_DB_PASSWORD:-probe-db-pw}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U teedy"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  teedy:
+    image: docker.io/teedy/teedy:latest
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8007:8080"
+    environment:
+      DOCS_DB: postgres
+      DOCS_DB_HOST: db
+      DOCS_DB_PORT: "5432"
+      DOCS_DB_NAME: teedy
+      DOCS_DB_USERNAME: teedy
+      DOCS_DB_PASSWORD: ${PROBE_DB_PASSWORD:-probe-db-pw}
+      DOCS_ADMIN_PASSWORD_INIT: ${PROBE_ADMIN_PASSWORD:-probe-admin-pw}
+      DOCS_BASE_URL: http://127.0.0.1:8007

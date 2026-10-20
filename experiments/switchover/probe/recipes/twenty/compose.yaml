@@ -1,0 +1,43 @@
+# Genuine open-source CRM: Twenty (AGPL-3.0, NestJS/React).
+# Exposes a GraphQL API - a meaningfully different machine-readable interface
+# from the REST/OpenAPI applications in this pool.
+
+services:
+  db:
+    image: docker.io/library/postgres:15
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: twenty
+      POSTGRES_PASSWORD: ${PROBE_DB_PASSWORD:-probe-db-pw}
+      POSTGRES_DB: twenty
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U twenty"]
+      interval: 5s
+      timeout: 5s
+      retries: 40
+
+  redis:
+    image: docker.io/library/redis:7
+    restart: unless-stopped
+
+  server:
+    image: docker.io/twentyhq/twenty:latest
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    ports:
+      - "3001:3000"
+    environment:
+      PG_DATABASE_HOST: db
+      PG_DATABASE_PORT: "5432"
+      PG_DATABASE_USER: twenty
+      PG_DATABASE_PASSWORD: ${PROBE_DB_PASSWORD:-probe-db-pw}
+      PG_DATABASE_NAME: twenty
+      SERVER_URL: http://127.0.0.1:3001
+      FRONTEND_BASE_URL: http://127.0.0.1:3001
+      REDIS_URL: redis://redis:6379
+      IS_MULTIWORKSPACE_ENABLED: "false"
+      LOGIN_TOKEN_SECRET: ${PROBE_SECRET_KEY:-probe-only-not-a-production-secret}
+      APP_SECRET: ${PROBE_SECRET_KEY:-probe-only-not-a-production-secret}

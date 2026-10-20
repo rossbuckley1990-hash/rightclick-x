@@ -1,0 +1,38 @@
+# Genuine open-source CRM: EspoCRM (AGPL-3.0, PHP).
+# Included deliberately: it is a mainstream business application whose REST API
+# is NOT published as a machine-readable contract. If the frozen baseline cannot
+# reflect it, that is a real discovery limitation to record, not something to
+# paper over with a hand-written spec.
+
+services:
+  db:
+    image: docker.io/library/mariadb:11
+    restart: unless-stopped
+    command: --transaction-isolation=READ-COMMITTED --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    environment:
+      MARIADB_ROOT_PASSWORD: ${PROBE_DB_PASSWORD:-probe-db-pw}
+      MARIADB_DATABASE: espocrm
+      MARIADB_USER: espocrm
+      MARIADB_PASSWORD: ${PROBE_DB_PASSWORD:-probe-db-pw}
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  espocrm:
+    image: docker.io/espocrm/espocrm:latest
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8002:80"
+    environment:
+      ESPOCRM_DATABASE_HOST: db
+      ESPOCRM_DATABASE_NAME: espocrm
+      ESPOCRM_DATABASE_USER: espocrm
+      ESPOCRM_DATABASE_PASSWORD: ${PROBE_DB_PASSWORD:-probe-db-pw}
+      ESPOCRM_ADMIN_USERNAME: admin
+      ESPOCRM_ADMIN_PASSWORD: ${PROBE_ADMIN_PASSWORD:-probe-admin-pw}
+      ESPOCRM_SITE_URL: http://127.0.0.1:8002
+      ESPOCRM_USE_HTTPS: "false"

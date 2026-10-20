@@ -1,0 +1,19 @@
+# Genuine open-source no-code database: NocoDB (AGPL-3.0, Node.js).
+# Exposes BOTH a REST API with a Swagger contract and a GraphQL endpoint, so it
+# tests which of two interfaces on one product the baseline reflects.
+
+services:
+  nocodb:
+    image: docker.io/nocodb/nocodb:latest
+    ports:
+      - "8004:8080"
+    environment:
+      NC_DB: sqlite3:///usr/app/data/noco.db
+      NC_ADMIN_EMAIL: admin@example.test
+      NC_ADMIN_PASSWORD: ${PROBE_ADMIN_PASSWORD:-probe-admin-pw}
+      NC_PUBLIC: "false"
+    volumes:
+      - nc_data:/usr/app/data
+
+volumes:
+  nc_data:
