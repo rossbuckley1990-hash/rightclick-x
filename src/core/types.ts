@@ -81,7 +81,7 @@ export interface HttpInvoke {
 
 /** Local protocol evidence, not an authority grant or proof of absent effects. */
 export interface GraphQLFailureEvidence {
-  kind: "invalid-document" | "execution-errors";
+  kind: "invalid-document" | "execution-errors" | "invalid-response";
   reason: string;
   capability?: string;
   runs: string[];

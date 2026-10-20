@@ -250,3 +250,17 @@ test("omitted root arguments use provider defaults while truly required argument
   assert.equal((await rc.run(id, {})).status, "failed");
   assert.equal(requests.length, 2);
 });
+
+test("malformed GraphQL error/data envelopes never become successful outcomes", async () => {
+  for (const body of [{ data: { parcel: { id: "p1" } }, errors: { message: "broken" } },
+    { data: { parcel: { id: "p1" } }, errors: null }, { data: {} }, { data: null }]) {
+    let calls = 0;
+    const rc = await RightClick.create({ directories: [], sandbox: null, fetch: async () => { calls++; return Response.json(body); } });
+    await rc.learn({ spec: reflectGraphQL(schema(), endpoint) });
+    const result: any = await rc.run(id, { selection: "{ id }" });
+    assert.equal(result.status, "failed");
+    assert.equal(result.graphqlFailure?.kind, "invalid-response");
+    assert.equal(calls, 1);
+    assert.equal(result.healing, undefined);
+  }
+});

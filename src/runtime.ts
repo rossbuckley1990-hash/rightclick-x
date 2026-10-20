@@ -3026,11 +3026,18 @@ export class RightClick {
           throw new PendingOutcomeError({ capability: cap.id, reason: "http-202", runs: [] });
         }
         const j: any = await readBody(res);
+        const malformed = (reason: string) => new GraphQLFailure({ kind: "invalid-response", reason: `GraphQL response: ${reason}`, runs: [] });
+        if (j && typeof j === "object" && Object.hasOwn(j, "errors") &&
+            (!Array.isArray(j.errors) || j.errors.some((e: any) => !e || typeof e.message !== "string"))) {
+          throw malformed("errors must be a list of error objects");
+        }
         if (Array.isArray(j?.errors) && j.errors.length && Object.hasOwn(j, "data")) {
           throw new GraphQLFailure({ kind: "execution-errors",
             reason: `GraphQL execution errors; partial or null data is not a completed outcome: ${JSON.stringify(j.errors).slice(0, 300)}`, runs: [] });
         }
         if (!res.ok || (j?.errors?.length && !j?.data?.[inv.field])) throw new Error(`GraphQL: ${JSON.stringify(j?.errors ?? j).slice(0, 300)}`);
+        if (!j?.data || typeof j.data !== "object" || Array.isArray(j.data) || !Object.hasOwn(j.data, inv.field))
+          throw malformed(`data does not contain the requested root field ${inv.field}`);
         return j.data[inv.field];
       }
       case "mcp":
