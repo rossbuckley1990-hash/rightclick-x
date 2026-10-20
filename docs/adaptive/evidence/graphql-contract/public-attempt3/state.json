@@ -1,0 +1,1942 @@
+{
+  "version": 2,
+  "requirements": [
+    "scoped-composites@1",
+    "http-workflow-continuations@1",
+    "composition-goal-obligations@1",
+    "declared-continuation-contracts@1"
+  ],
+  "reflections": [
+    {
+      "provider": {
+        "id": "graphql:countries-trevorblades-com",
+        "title": "GraphQL countries.trevorblades.com",
+        "source": "graphql",
+        "origin": "https://countries.trevorblades.com/",
+        "learnedAt": "2026-10-20T20:51:13.235Z",
+        "capabilityIds": [
+          "graphql:countries-trevorblades-com:query:continent",
+          "graphql:countries-trevorblades-com:query:continents",
+          "graphql:countries-trevorblades-com:query:countries",
+          "graphql:countries-trevorblades-com:query:country",
+          "graphql:countries-trevorblades-com:query:language",
+          "graphql:countries-trevorblades-com:query:languages"
+        ],
+        "meta": {
+          "graphqlSelection": {
+            "version": 1,
+            "endpoint": "https://countries.trevorblades.com/",
+            "roots": {
+              "query": "Query"
+            },
+            "types": {
+              "Boolean": {
+                "kind": "SCALAR"
+              },
+              "Continent": {
+                "kind": "OBJECT",
+                "fields": {
+                  "code": {
+                    "type": "ID"
+                  },
+                  "countries": {
+                    "type": "Country"
+                  },
+                  "name": {
+                    "type": "String"
+                  }
+                }
+              },
+              "Country": {
+                "kind": "OBJECT",
+                "fields": {
+                  "awsRegion": {
+                    "type": "String"
+                  },
+                  "capital": {
+                    "type": "String"
+                  },
+                  "code": {
+                    "type": "ID"
+                  },
+                  "continent": {
+                    "type": "Continent"
+                  },
+                  "currencies": {
+                    "type": "String"
+                  },
+                  "currency": {
+                    "type": "String"
+                  },
+                  "emoji": {
+                    "type": "String"
+                  },
+                  "emojiU": {
+                    "type": "String"
+                  },
+                  "languages": {
+                    "type": "Language"
+                  },
+                  "name": {
+                    "type": "String"
+                  },
+                  "native": {
+                    "type": "String"
+                  },
+                  "phone": {
+                    "type": "String"
+                  },
+                  "phones": {
+                    "type": "String"
+                  },
+                  "states": {
+                    "type": "State"
+                  },
+                  "subdivisions": {
+                    "type": "Subdivision"
+                  }
+                }
+              },
+              "Float": {
+                "kind": "SCALAR"
+              },
+              "ID": {
+                "kind": "SCALAR"
+              },
+              "Int": {
+                "kind": "SCALAR"
+              },
+              "Language": {
+                "kind": "OBJECT",
+                "fields": {
+                  "code": {
+                    "type": "ID"
+                  },
+                  "countries": {
+                    "type": "Country"
+                  },
+                  "name": {
+                    "type": "String"
+                  },
+                  "native": {
+                    "type": "String"
+                  },
+                  "rtl": {
+                    "type": "Boolean"
+                  }
+                }
+              },
+              "Query": {
+                "kind": "OBJECT",
+                "fields": {
+                  "continent": {
+                    "type": "Continent",
+                    "needsArguments": true
+                  },
+                  "continents": {
+                    "type": "Continent"
+                  },
+                  "countries": {
+                    "type": "Country"
+                  },
+                  "country": {
+                    "type": "Country",
+                    "needsArguments": true
+                  },
+                  "language": {
+                    "type": "Language",
+                    "needsArguments": true
+                  },
+                  "languages": {
+                    "type": "Language"
+                  }
+                }
+              },
+              "State": {
+                "kind": "OBJECT",
+                "fields": {
+                  "code": {
+                    "type": "String"
+                  },
+                  "country": {
+                    "type": "Country"
+                  },
+                  "name": {
+                    "type": "String"
+                  }
+                }
+              },
+              "String": {
+                "kind": "SCALAR"
+              },
+              "Subdivision": {
+                "kind": "OBJECT",
+                "fields": {
+                  "code": {
+                    "type": "ID"
+                  },
+                  "emoji": {
+                    "type": "String"
+                  },
+                  "name": {
+                    "type": "String"
+                  }
+                }
+              }
+            }
+          },
+          "source": "https://countries.trevorblades.com/"
+        }
+      },
+      "capabilities": [
+        {
+          "id": "graphql:countries-trevorblades-com:query:continent",
+          "fields": [
+            {
+              "path": "code",
+              "selected": true,
+              "type": "id"
+            },
+            {
+              "path": "countries",
+              "selected": false
+            },
+            {
+              "path": "name",
+              "selected": true,
+              "type": "text"
+            },
+            {
+              "path": "countries.awsRegion",
+              "selected": true,
+              "type": "list:place"
+            },
+            {
+              "path": "countries.capital",
+              "selected": true,
+              "type": "list:place"
+            },
+            {
+              "path": "countries.code",
+              "selected": true,
+              "type": "list:country"
+            },
+            {
+              "path": "countries.continent",
+              "selected": false
+            },
+            {
+              "path": "countries.currencies",
+              "selected": true,
+              "type": "list:list:text"
+            },
+            {
+              "path": "countries.currency",
+              "selected": true,
+              "type": "list:currency"
+            },
+            {
+              "path": "countries.emoji",
+              "selected": true,
+              "type": "list:text"
+            },
+            {
+              "path": "countries.emojiU",
+              "selected": true,
+              "type": "list:text"
+            },
+            {
+              "path": "countries.languages",
+              "selected": false
+            },
+            {
+              "path": "countries.name",
+              "selected": true,
+              "type": "list:text"
+            },
+            {
+              "path": "countries.native",
+              "selected": false,
+              "type": "list:text"
+            },
+            {
+              "path": "countries.phone",
+              "selected": false,
+              "type": "list:text"
+            },
+            {
+              "path": "countries.phones",
+              "selected": false,
+              "type": "list:list:text"
+            },
+            {
+              "path": "countries.states",
+              "selected": false
+            },
+            {
+              "path": "countries.subdivisions",
+              "selected": false
+            },
+            {
+              "path": "countries.languages.code",
+              "selected": false,
+              "type": "list:list:language"
+            },
+            {
+              "path": "countries.languages.countries",
+              "selected": false
+            },
+            {
+              "path": "countries.languages.name",
+              "selected": false,
+              "type": "list:list:text"
+            },
+            {
+              "path": "countries.languages.native",
+              "selected": false,
+              "type": "list:list:text"
+            },
+            {
+              "path": "countries.languages.rtl",
+              "selected": false,
+              "type": "list:list:boolean"
+            },
+            {
+              "path": "countries.states.code",
+              "selected": false,
+              "type": "list:list:text"
+            },
+            {
+              "path": "countries.states.country",
+              "selected": false
+            },
+            {
+              "path": "countries.states.name",
+              "selected": false,
+              "type": "list:list:text"
+            },
+            {
+              "path": "countries.subdivisions.code",
+              "selected": false,
+              "type": "list:list:id"
+            },
+            {
+              "path": "countries.subdivisions.emoji",
+              "selected": false,
+              "type": "list:list:text"
+            },
+            {
+              "path": "countries.subdivisions.name",
+              "selected": false,
+              "type": "list:list:text"
+            }
+          ],
+          "title": "Continent",
+          "description": "query continent on countries.trevorblades.com",
+          "provider": "graphql:countries-trevorblades-com",
+          "source": "graphql",
+          "inputs": [
+            {
+              "name": "code",
+              "type": "id",
+              "required": true,
+              "wire": "ID!"
+            },
+            {
+              "name": "selection",
+              "type": "text",
+              "required": false,
+              "wire": "selection set",
+              "description": "Optional GraphQL selection set for the returned Continent, e.g. \"{ id name nested { field } }\"; replaces the default selection."
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "json",
+              "required": true
+            },
+            {
+              "name": "code",
+              "type": "id",
+              "required": true
+            },
+            {
+              "name": "countries.awsRegion",
+              "type": "list:place",
+              "required": true
+            },
+            {
+              "name": "countries.capital",
+              "type": "list:place",
+              "required": true
+            },
+            {
+              "name": "countries.code",
+              "type": "list:country",
+              "required": true
+            },
+            {
+              "name": "countries.currencies",
+              "type": "list:text",
+              "required": true
+            },
+            {
+              "name": "countries.currency",
+              "type": "list:currency",
+              "required": true
+            },
+            {
+              "name": "countries.emoji",
+              "type": "list:text",
+              "required": true
+            },
+            {
+              "name": "countries.emojiU",
+              "type": "list:text",
+              "required": true
+            },
+            {
+              "name": "countries.name",
+              "type": "list:text",
+              "required": true
+            },
+            {
+              "name": "name",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "risk": "read",
+          "tags": [
+            "query",
+            "graphql",
+            "countries.trevorblades.com",
+            "Continent"
+          ],
+          "invoke": {
+            "kind": "graphql",
+            "endpoint": "https://countries.trevorblades.com/",
+            "operation": "query",
+            "field": "continent",
+            "args": {
+              "code": "ID!"
+            },
+            "selection": "{ code countries { awsRegion capital code currencies currency emoji emojiU name } name }",
+            "selectPort": "selection"
+          }
+        },
+        {
+          "id": "graphql:countries-trevorblades-com:query:continents",
+          "fields": [
+            {
+              "path": "code",
+              "selected": true,
+              "type": "list:id"
+            },
+            {
+              "path": "countries",
+              "selected": false
+            },
+            {
+              "path": "name",
+              "selected": true,
+              "type": "list:text"
+            },
+            {
+              "path": "countries.awsRegion",
+              "selected": true,
+              "type": "list:list:place"
+            },
+            {
+              "path": "countries.capital",
+              "selected": true,
+              "type": "list:list:place"
+            },
+            {
+              "path": "countries.code",
+              "selected": true,
+              "type": "list:list:country"
+            },
+            {
+              "path": "countries.continent",
+              "selected": false
+            },
+            {
+              "path": "countries.currencies",
+              "selected": true,
+              "type": "list:list:list:text"
+            },
+            {
+              "path": "countries.currency",
+              "selected": true,
+              "type": "list:list:currency"
+            },
+            {
+              "path": "countries.emoji",
+              "selected": true,
+              "type": "list:list:text"
+            },
+            {
+              "path": "countries.emojiU",
+              "selected": true,
+              "type": "list:list:text"
+            },
+            {
+              "path": "countries.languages",
+              "selected": false
+            },
+            {
+              "path": "countries.name",
+              "selected": true,
+              "type": "list:list:text"
+            },
+            {
+              "path": "countries.native",
+              "selected": false,
+              "type": "list:list:text"
+            },
+            {
+              "path": "countries.phone",
+              "selected": false,
+              "type": "list:list:text"
+            },
+            {
+              "path": "countries.phones",
+              "selected": false,
+              "type": "list:list:list:text"
+            },
+            {
+              "path": "countries.states",
+              "selected": false
+            },
+            {
+              "path": "countries.subdivisions",
+              "selected": false
+            },
+            {
+              "path": "countries.languages.code",
+              "selected": false,
+              "type": "list:list:list:language"
+            },
+            {
+              "path": "countries.languages.countries",
+              "selected": false
+            },
+            {
+              "path": "countries.languages.name",
+              "selected": false,
+              "type": "list:list:list:text"
+            },
+            {
+              "path": "countries.languages.native",
+              "selected": false,
+              "type": "list:list:list:text"
+            },
+            {
+              "path": "countries.languages.rtl",
+              "selected": false,
+              "type": "list:list:list:boolean"
+            },
+            {
+              "path": "countries.states.code",
+              "selected": false,
+              "type": "list:list:list:text"
+            },
+            {
+              "path": "countries.states.country",
+              "selected": false
+            },
+            {
+              "path": "countries.states.name",
+              "selected": false,
+              "type": "list:list:list:text"
+            },
+            {
+              "path": "countries.subdivisions.code",
+              "selected": false,
+              "type": "list:list:list:id"
+            },
+            {
+              "path": "countries.subdivisions.emoji",
+              "selected": false,
+              "type": "list:list:list:text"
+            },
+            {
+              "path": "countries.subdivisions.name",
+              "selected": false,
+              "type": "list:list:list:text"
+            }
+          ],
+          "title": "Continents",
+          "description": "query continents on countries.trevorblades.com",
+          "provider": "graphql:countries-trevorblades-com",
+          "source": "graphql",
+          "inputs": [
+            {
+              "name": "filter",
+              "type": "json",
+              "required": false,
+              "wire": "ContinentFilterInput"
+            },
+            {
+              "name": "selection",
+              "type": "text",
+              "required": false,
+              "wire": "selection set",
+              "description": "Optional GraphQL selection set for the returned Continent, e.g. \"{ id name nested { field } }\"; replaces the default selection."
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "list:json",
+              "required": true
+            },
+            {
+              "name": "code",
+              "type": "list:id",
+              "required": true
+            },
+            {
+              "name": "countries.awsRegion",
+              "type": "list:place",
+              "required": true
+            },
+            {
+              "name": "countries.capital",
+              "type": "list:place",
+              "required": true
+            },
+            {
+              "name": "countries.code",
+              "type": "list:country",
+              "required": true
+            },
+            {
+              "name": "countries.currencies",
+              "type": "list:text",
+              "required": true
+            },
+            {
+              "name": "countries.currency",
+              "type": "list:currency",
+              "required": true
+            },
+            {
+              "name": "countries.emoji",
+              "type": "list:text",
+              "required": true
+            },
+            {
+              "name": "countries.emojiU",
+              "type": "list:text",
+              "required": true
+            },
+            {
+              "name": "countries.name",
+              "type": "list:text",
+              "required": true
+            },
+            {
+              "name": "name",
+              "type": "list:text",
+              "required": true
+            }
+          ],
+          "risk": "read",
+          "tags": [
+            "query",
+            "graphql",
+            "countries.trevorblades.com",
+            "Continent"
+          ],
+          "invoke": {
+            "kind": "graphql",
+            "endpoint": "https://countries.trevorblades.com/",
+            "operation": "query",
+            "field": "continents",
+            "args": {
+              "filter": "ContinentFilterInput"
+            },
+            "selection": "{ code countries { awsRegion capital code currencies currency emoji emojiU name } name }",
+            "selectPort": "selection"
+          }
+        },
+        {
+          "id": "graphql:countries-trevorblades-com:query:countries",
+          "fields": [
+            {
+              "path": "awsRegion",
+              "selected": true,
+              "type": "list:place"
+            },
+            {
+              "path": "capital",
+              "selected": true,
+              "type": "list:place"
+            },
+            {
+              "path": "code",
+              "selected": true,
+              "type": "list:country"
+            },
+            {
+              "path": "continent",
+              "selected": false
+            },
+            {
+              "path": "currencies",
+              "selected": true,
+              "type": "list:list:text"
+            },
+            {
+              "path": "currency",
+              "selected": true,
+              "type": "list:currency"
+            },
+            {
+              "path": "emoji",
+              "selected": true,
+              "type": "list:text"
+            },
+            {
+              "path": "emojiU",
+              "selected": true,
+              "type": "list:text"
+            },
+            {
+              "path": "languages",
+              "selected": false
+            },
+            {
+              "path": "name",
+              "selected": true,
+              "type": "list:text"
+            },
+            {
+              "path": "native",
+              "selected": true,
+              "type": "list:text"
+            },
+            {
+              "path": "phone",
+              "selected": true,
+              "type": "list:text"
+            },
+            {
+              "path": "phones",
+              "selected": true,
+              "type": "list:list:text"
+            },
+            {
+              "path": "states",
+              "selected": false
+            },
+            {
+              "path": "subdivisions",
+              "selected": false
+            },
+            {
+              "path": "continent.code",
+              "selected": true,
+              "type": "list:id"
+            },
+            {
+              "path": "continent.countries",
+              "selected": false
+            },
+            {
+              "path": "continent.name",
+              "selected": true,
+              "type": "list:text"
+            },
+            {
+              "path": "languages.code",
+              "selected": true,
+              "type": "list:list:language"
+            },
+            {
+              "path": "languages.countries",
+              "selected": false
+            },
+            {
+              "path": "languages.name",
+              "selected": true,
+              "type": "list:list:text"
+            },
+            {
+              "path": "languages.native",
+              "selected": true,
+              "type": "list:list:text"
+            },
+            {
+              "path": "languages.rtl",
+              "selected": true,
+              "type": "list:list:boolean"
+            },
+            {
+              "path": "states.code",
+              "selected": true,
+              "type": "list:list:text"
+            },
+            {
+              "path": "states.country",
+              "selected": false
+            },
+            {
+              "path": "states.name",
+              "selected": true,
+              "type": "list:list:text"
+            },
+            {
+              "path": "subdivisions.code",
+              "selected": true,
+              "type": "list:list:id"
+            },
+            {
+              "path": "subdivisions.emoji",
+              "selected": true,
+              "type": "list:list:text"
+            },
+            {
+              "path": "subdivisions.name",
+              "selected": true,
+              "type": "list:list:text"
+            }
+          ],
+          "title": "Countries",
+          "description": "query countries on countries.trevorblades.com",
+          "provider": "graphql:countries-trevorblades-com",
+          "source": "graphql",
+          "inputs": [
+            {
+              "name": "filter",
+              "type": "json",
+              "required": false,
+              "wire": "CountryFilterInput"
+            },
+            {
+              "name": "selection",
+              "type": "text",
+              "required": false,
+              "wire": "selection set",
+              "description": "Optional GraphQL selection set for the returned Country, e.g. \"{ id name nested { field } }\"; replaces the default selection."
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "list:json",
+              "required": true
+            },
+            {
+              "name": "awsRegion",
+              "type": "list:place",
+              "required": true
+            },
+            {
+              "name": "capital",
+              "type": "list:place",
+              "required": true
+            },
+            {
+              "name": "code",
+              "type": "list:country",
+              "required": true
+            },
+            {
+              "name": "continent.code",
+              "type": "list:id",
+              "required": true
+            },
+            {
+              "name": "continent.name",
+              "type": "list:text",
+              "required": true
+            },
+            {
+              "name": "currencies",
+              "type": "list:list:text",
+              "required": true
+            },
+            {
+              "name": "currency",
+              "type": "list:currency",
+              "required": true
+            },
+            {
+              "name": "emoji",
+              "type": "list:text",
+              "required": true
+            },
+            {
+              "name": "emojiU",
+              "type": "list:text",
+              "required": true
+            },
+            {
+              "name": "languages.code",
+              "type": "list:language",
+              "required": true
+            },
+            {
+              "name": "languages.name",
+              "type": "list:text",
+              "required": true
+            },
+            {
+              "name": "languages.native",
+              "type": "list:text",
+              "required": true
+            },
+            {
+              "name": "languages.rtl",
+              "type": "list:boolean",
+              "required": true
+            },
+            {
+              "name": "name",
+              "type": "list:text",
+              "required": true
+            },
+            {
+              "name": "native",
+              "type": "list:text",
+              "required": true
+            },
+            {
+              "name": "phone",
+              "type": "list:text",
+              "required": true
+            },
+            {
+              "name": "phones",
+              "type": "list:list:text",
+              "required": true
+            },
+            {
+              "name": "states.code",
+              "type": "list:text",
+              "required": true
+            },
+            {
+              "name": "states.name",
+              "type": "list:text",
+              "required": true
+            },
+            {
+              "name": "subdivisions.code",
+              "type": "list:id",
+              "required": true
+            },
+            {
+              "name": "subdivisions.emoji",
+              "type": "list:text",
+              "required": true
+            },
+            {
+              "name": "subdivisions.name",
+              "type": "list:text",
+              "required": true
+            }
+          ],
+          "risk": "read",
+          "tags": [
+            "query",
+            "graphql",
+            "countries.trevorblades.com",
+            "Country"
+          ],
+          "invoke": {
+            "kind": "graphql",
+            "endpoint": "https://countries.trevorblades.com/",
+            "operation": "query",
+            "field": "countries",
+            "args": {
+              "filter": "CountryFilterInput"
+            },
+            "selection": "{ awsRegion capital code continent { code name } currencies currency emoji emojiU languages { code name native rtl } name native phone phones states { code name } subdivisions { code emoji name } }",
+            "selectPort": "selection"
+          }
+        },
+        {
+          "id": "graphql:countries-trevorblades-com:query:country",
+          "fields": [
+            {
+              "path": "awsRegion",
+              "selected": true,
+              "type": "place"
+            },
+            {
+              "path": "capital",
+              "selected": true,
+              "type": "place"
+            },
+            {
+              "path": "code",
+              "selected": true,
+              "type": "country"
+            },
+            {
+              "path": "continent",
+              "selected": false
+            },
+            {
+              "path": "currencies",
+              "selected": true,
+              "type": "list:text"
+            },
+            {
+              "path": "currency",
+              "selected": true,
+              "type": "currency"
+            },
+            {
+              "path": "emoji",
+              "selected": true,
+              "type": "text"
+            },
+            {
+              "path": "emojiU",
+              "selected": true,
+              "type": "text"
+            },
+            {
+              "path": "languages",
+              "selected": false
+            },
+            {
+              "path": "name",
+              "selected": true,
+              "type": "text"
+            },
+            {
+              "path": "native",
+              "selected": true,
+              "type": "text"
+            },
+            {
+              "path": "phone",
+              "selected": true,
+              "type": "text"
+            },
+            {
+              "path": "phones",
+              "selected": true,
+              "type": "list:text"
+            },
+            {
+              "path": "states",
+              "selected": false
+            },
+            {
+              "path": "subdivisions",
+              "selected": false
+            },
+            {
+              "path": "continent.code",
+              "selected": true,
+              "type": "id"
+            },
+            {
+              "path": "continent.countries",
+              "selected": false
+            },
+            {
+              "path": "continent.name",
+              "selected": true,
+              "type": "text"
+            },
+            {
+              "path": "languages.code",
+              "selected": true,
+              "type": "list:language"
+            },
+            {
+              "path": "languages.countries",
+              "selected": false
+            },
+            {
+              "path": "languages.name",
+              "selected": true,
+              "type": "list:text"
+            },
+            {
+              "path": "languages.native",
+              "selected": true,
+              "type": "list:text"
+            },
+            {
+              "path": "languages.rtl",
+              "selected": true,
+              "type": "list:boolean"
+            },
+            {
+              "path": "states.code",
+              "selected": true,
+              "type": "list:text"
+            },
+            {
+              "path": "states.country",
+              "selected": false
+            },
+            {
+              "path": "states.name",
+              "selected": true,
+              "type": "list:text"
+            },
+            {
+              "path": "subdivisions.code",
+              "selected": true,
+              "type": "list:id"
+            },
+            {
+              "path": "subdivisions.emoji",
+              "selected": true,
+              "type": "list:text"
+            },
+            {
+              "path": "subdivisions.name",
+              "selected": true,
+              "type": "list:text"
+            }
+          ],
+          "title": "Country",
+          "description": "query country on countries.trevorblades.com",
+          "provider": "graphql:countries-trevorblades-com",
+          "source": "graphql",
+          "inputs": [
+            {
+              "name": "code",
+              "type": "country",
+              "required": true,
+              "wire": "ID!"
+            },
+            {
+              "name": "selection",
+              "type": "text",
+              "required": false,
+              "wire": "selection set",
+              "description": "Optional GraphQL selection set for the returned Country, e.g. \"{ id name nested { field } }\"; replaces the default selection."
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "json",
+              "required": true
+            },
+            {
+              "name": "awsRegion",
+              "type": "place",
+              "required": true
+            },
+            {
+              "name": "capital",
+              "type": "place",
+              "required": true
+            },
+            {
+              "name": "code",
+              "type": "country",
+              "required": true
+            },
+            {
+              "name": "continent.code",
+              "type": "id",
+              "required": true
+            },
+            {
+              "name": "continent.name",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "currencies",
+              "type": "list:text",
+              "required": true
+            },
+            {
+              "name": "currency",
+              "type": "currency",
+              "required": true
+            },
+            {
+              "name": "emoji",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "emojiU",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "languages.code",
+              "type": "list:language",
+              "required": true
+            },
+            {
+              "name": "languages.name",
+              "type": "list:text",
+              "required": true
+            },
+            {
+              "name": "languages.native",
+              "type": "list:text",
+              "required": true
+            },
+            {
+              "name": "languages.rtl",
+              "type": "list:boolean",
+              "required": true
+            },
+            {
+              "name": "name",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "native",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "phone",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "phones",
+              "type": "list:text",
+              "required": true
+            },
+            {
+              "name": "states.code",
+              "type": "list:text",
+              "required": true
+            },
+            {
+              "name": "states.name",
+              "type": "list:text",
+              "required": true
+            },
+            {
+              "name": "subdivisions.code",
+              "type": "list:id",
+              "required": true
+            },
+            {
+              "name": "subdivisions.emoji",
+              "type": "list:text",
+              "required": true
+            },
+            {
+              "name": "subdivisions.name",
+              "type": "list:text",
+              "required": true
+            }
+          ],
+          "risk": "read",
+          "tags": [
+            "query",
+            "graphql",
+            "countries.trevorblades.com",
+            "Country"
+          ],
+          "invoke": {
+            "kind": "graphql",
+            "endpoint": "https://countries.trevorblades.com/",
+            "operation": "query",
+            "field": "country",
+            "args": {
+              "code": "ID!"
+            },
+            "selection": "{ awsRegion capital code continent { code name } currencies currency emoji emojiU languages { code name native rtl } name native phone phones states { code name } subdivisions { code emoji name } }",
+            "selectPort": "selection"
+          }
+        },
+        {
+          "id": "graphql:countries-trevorblades-com:query:language",
+          "fields": [
+            {
+              "path": "code",
+              "selected": true,
+              "type": "language"
+            },
+            {
+              "path": "countries",
+              "selected": false
+            },
+            {
+              "path": "name",
+              "selected": true,
+              "type": "text"
+            },
+            {
+              "path": "native",
+              "selected": true,
+              "type": "text"
+            },
+            {
+              "path": "rtl",
+              "selected": true,
+              "type": "boolean"
+            },
+            {
+              "path": "countries.awsRegion",
+              "selected": true,
+              "type": "list:place"
+            },
+            {
+              "path": "countries.capital",
+              "selected": true,
+              "type": "list:place"
+            },
+            {
+              "path": "countries.code",
+              "selected": true,
+              "type": "list:country"
+            },
+            {
+              "path": "countries.continent",
+              "selected": false
+            },
+            {
+              "path": "countries.currencies",
+              "selected": true,
+              "type": "list:list:text"
+            },
+            {
+              "path": "countries.currency",
+              "selected": true,
+              "type": "list:currency"
+            },
+            {
+              "path": "countries.emoji",
+              "selected": true,
+              "type": "list:text"
+            },
+            {
+              "path": "countries.emojiU",
+              "selected": true,
+              "type": "list:text"
+            },
+            {
+              "path": "countries.languages",
+              "selected": false
+            },
+            {
+              "path": "countries.name",
+              "selected": true,
+              "type": "list:text"
+            },
+            {
+              "path": "countries.native",
+              "selected": false,
+              "type": "list:text"
+            },
+            {
+              "path": "countries.phone",
+              "selected": false,
+              "type": "list:text"
+            },
+            {
+              "path": "countries.phones",
+              "selected": false,
+              "type": "list:list:text"
+            },
+            {
+              "path": "countries.states",
+              "selected": false
+            },
+            {
+              "path": "countries.subdivisions",
+              "selected": false
+            },
+            {
+              "path": "countries.continent.code",
+              "selected": false,
+              "type": "list:id"
+            },
+            {
+              "path": "countries.continent.countries",
+              "selected": false
+            },
+            {
+              "path": "countries.continent.name",
+              "selected": false,
+              "type": "list:text"
+            },
+            {
+              "path": "countries.states.code",
+              "selected": false,
+              "type": "list:list:text"
+            },
+            {
+              "path": "countries.states.country",
+              "selected": false
+            },
+            {
+              "path": "countries.states.name",
+              "selected": false,
+              "type": "list:list:text"
+            },
+            {
+              "path": "countries.subdivisions.code",
+              "selected": false,
+              "type": "list:list:id"
+            },
+            {
+              "path": "countries.subdivisions.emoji",
+              "selected": false,
+              "type": "list:list:text"
+            },
+            {
+              "path": "countries.subdivisions.name",
+              "selected": false,
+              "type": "list:list:text"
+            }
+          ],
+          "title": "Language",
+          "description": "query language on countries.trevorblades.com",
+          "provider": "graphql:countries-trevorblades-com",
+          "source": "graphql",
+          "inputs": [
+            {
+              "name": "code",
+              "type": "language",
+              "required": true,
+              "wire": "ID!"
+            },
+            {
+              "name": "selection",
+              "type": "text",
+              "required": false,
+              "wire": "selection set",
+              "description": "Optional GraphQL selection set for the returned Language, e.g. \"{ id name nested { field } }\"; replaces the default selection."
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "json",
+              "required": true
+            },
+            {
+              "name": "code",
+              "type": "language",
+              "required": true
+            },
+            {
+              "name": "countries.awsRegion",
+              "type": "list:place",
+              "required": true
+            },
+            {
+              "name": "countries.capital",
+              "type": "list:place",
+              "required": true
+            },
+            {
+              "name": "countries.code",
+              "type": "list:country",
+              "required": true
+            },
+            {
+              "name": "countries.currencies",
+              "type": "list:text",
+              "required": true
+            },
+            {
+              "name": "countries.currency",
+              "type": "list:currency",
+              "required": true
+            },
+            {
+              "name": "countries.emoji",
+              "type": "list:text",
+              "required": true
+            },
+            {
+              "name": "countries.emojiU",
+              "type": "list:text",
+              "required": true
+            },
+            {
+              "name": "countries.name",
+              "type": "list:text",
+              "required": true
+            },
+            {
+              "name": "name",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "native",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "rtl",
+              "type": "boolean",
+              "required": true
+            }
+          ],
+          "risk": "read",
+          "tags": [
+            "query",
+            "graphql",
+            "countries.trevorblades.com",
+            "Language"
+          ],
+          "invoke": {
+            "kind": "graphql",
+            "endpoint": "https://countries.trevorblades.com/",
+            "operation": "query",
+            "field": "language",
+            "args": {
+              "code": "ID!"
+            },
+            "selection": "{ code countries { awsRegion capital code currencies currency emoji emojiU name } name native rtl }",
+            "selectPort": "selection"
+          }
+        },
+        {
+          "id": "graphql:countries-trevorblades-com:query:languages",
+          "fields": [
+            {
+              "path": "code",
+              "selected": true,
+              "type": "list:language"
+            },
+            {
+              "path": "countries",
+              "selected": false
+            },
+            {
+              "path": "name",
+              "selected": true,
+              "type": "list:text"
+            },
+            {
+              "path": "native",
+              "selected": true,
+              "type": "list:text"
+            },
+            {
+              "path": "rtl",
+              "selected": true,
+              "type": "list:boolean"
+            },
+            {
+              "path": "countries.awsRegion",
+              "selected": true,
+              "type": "list:list:place"
+            },
+            {
+              "path": "countries.capital",
+              "selected": true,
+              "type": "list:list:place"
+            },
+            {
+              "path": "countries.code",
+              "selected": true,
+              "type": "list:list:country"
+            },
+            {
+              "path": "countries.continent",
+              "selected": false
+            },
+            {
+              "path": "countries.currencies",
+              "selected": true,
+              "type": "list:list:list:text"
+            },
+            {
+              "path": "countries.currency",
+              "selected": true,
+              "type": "list:list:currency"
+            },
+            {
+              "path": "countries.emoji",
+              "selected": true,
+              "type": "list:list:text"
+            },
+            {
+              "path": "countries.emojiU",
+              "selected": true,
+              "type": "list:list:text"
+            },
+            {
+              "path": "countries.languages",
+              "selected": false
+            },
+            {
+              "path": "countries.name",
+              "selected": true,
+              "type": "list:list:text"
+            },
+            {
+              "path": "countries.native",
+              "selected": false,
+              "type": "list:list:text"
+            },
+            {
+              "path": "countries.phone",
+              "selected": false,
+              "type": "list:list:text"
+            },
+            {
+              "path": "countries.phones",
+              "selected": false,
+              "type": "list:list:list:text"
+            },
+            {
+              "path": "countries.states",
+              "selected": false
+            },
+            {
+              "path": "countries.subdivisions",
+              "selected": false
+            },
+            {
+              "path": "countries.continent.code",
+              "selected": false,
+              "type": "list:list:id"
+            },
+            {
+              "path": "countries.continent.countries",
+              "selected": false
+            },
+            {
+              "path": "countries.continent.name",
+              "selected": false,
+              "type": "list:list:text"
+            },
+            {
+              "path": "countries.states.code",
+              "selected": false,
+              "type": "list:list:list:text"
+            },
+            {
+              "path": "countries.states.country",
+              "selected": false
+            },
+            {
+              "path": "countries.states.name",
+              "selected": false,
+              "type": "list:list:list:text"
+            },
+            {
+              "path": "countries.subdivisions.code",
+              "selected": false,
+              "type": "list:list:list:id"
+            },
+            {
+              "path": "countries.subdivisions.emoji",
+              "selected": false,
+              "type": "list:list:list:text"
+            },
+            {
+              "path": "countries.subdivisions.name",
+              "selected": false,
+              "type": "list:list:list:text"
+            }
+          ],
+          "title": "Languages",
+          "description": "query languages on countries.trevorblades.com",
+          "provider": "graphql:countries-trevorblades-com",
+          "source": "graphql",
+          "inputs": [
+            {
+              "name": "filter",
+              "type": "json",
+              "required": false,
+              "wire": "LanguageFilterInput"
+            },
+            {
+              "name": "selection",
+              "type": "text",
+              "required": false,
+              "wire": "selection set",
+              "description": "Optional GraphQL selection set for the returned Language, e.g. \"{ id name nested { field } }\"; replaces the default selection."
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "list:json",
+              "required": true
+            },
+            {
+              "name": "code",
+              "type": "list:language",
+              "required": true
+            },
+            {
+              "name": "countries.awsRegion",
+              "type": "list:place",
+              "required": true
+            },
+            {
+              "name": "countries.capital",
+              "type": "list:place",
+              "required": true
+            },
+            {
+              "name": "countries.code",
+              "type": "list:country",
+              "required": true
+            },
+            {
+              "name": "countries.currencies",
+              "type": "list:text",
+              "required": true
+            },
+            {
+              "name": "countries.currency",
+              "type": "list:currency",
+              "required": true
+            },
+            {
+              "name": "countries.emoji",
+              "type": "list:text",
+              "required": true
+            },
+            {
+              "name": "countries.emojiU",
+              "type": "list:text",
+              "required": true
+            },
+            {
+              "name": "countries.name",
+              "type": "list:text",
+              "required": true
+            },
+            {
+              "name": "name",
+              "type": "list:text",
+              "required": true
+            },
+            {
+              "name": "native",
+              "type": "list:text",
+              "required": true
+            },
+            {
+              "name": "rtl",
+              "type": "list:boolean",
+              "required": true
+            }
+          ],
+          "risk": "read",
+          "tags": [
+            "query",
+            "graphql",
+            "countries.trevorblades.com",
+            "Language"
+          ],
+          "invoke": {
+            "kind": "graphql",
+            "endpoint": "https://countries.trevorblades.com/",
+            "operation": "query",
+            "field": "languages",
+            "args": {
+              "filter": "LanguageFilterInput"
+            },
+            "selection": "{ code countries { awsRegion capital code currencies currency emoji emojiU name } name native rtl }",
+            "selectPort": "selection"
+          }
+        }
+      ]
+    }
+  ],
+  "ledger": {
+    "graphql:countries-trevorblades-com:query:continents": {
+      "runs": 1,
+      "ok": 1,
+      "failed": 0,
+      "latencyMs": 821.4,
+      "recent": 1,
+      "lastRunAt": "2026-10-20T20:51:14.066Z"
+    }
+  },
+  "receipts": [
+    {
+      "runId": "run_mvh5rljw_1_d9de45fd-50a4-47f2-8be3-02b26dae5681",
+      "capability": "graphql:countries-trevorblades-com:query:continents",
+      "provider": "graphql:countries-trevorblades-com",
+      "startedAt": "2026-10-20T20:51:13.245Z",
+      "durationMs": 821.4,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 1,
+      "inputDigest": "ac53ce3b69f991d9996550328f7f1a794a2d6133ae5b68ec014169e76aa3f760",
+      "outputDigest": "34f1d6b94bce4b589518775635284b8275edcfdad45865ce68c80322049ce7d8",
+      "prev": "0000000000000000000000000000000000000000000000000000000000000000",
+      "hash": "011b3466dc1b067c79e040053cbdfd2d597b9710cc7f8cd010fab5c0a93eae63"
+    },
+    {
+      "runId": "run_mvh5rm6t_2_5dde2943-0e4c-4b12-8d07-6e2e5df7174a",
+      "capability": "graphql:countries-trevorblades-com:query:continents",
+      "provider": "graphql:countries-trevorblades-com",
+      "startedAt": "2026-10-20T20:51:14.069Z",
+      "durationMs": 0.2,
+      "status": "failed",
+      "verification": "refuted",
+      "seq": 2,
+      "inputDigest": "9e1a6fa810641e90c948f97f16b99f94dc89ad622588e5416bac33d28b626d35",
+      "outputDigest": "2e3961fed77af14ebe04008c75422de4b962009e2503bfe7c2874da39db7aacf",
+      "prev": "011b3466dc1b067c79e040053cbdfd2d597b9710cc7f8cd010fab5c0a93eae63",
+      "hash": "8e69ef9e499b8f1e0c96e4bdf6f92eb29856e9c61a08da61688e08cd378e91e3"
+    }
+  ],
+  "published": [],
+  "meaningChanges": [],
+  "activity": {
+    "version": 1,
+    "sequence": 6,
+    "discarded": 0,
+    "entries": [
+      {
+        "kind": "runtime.started",
+        "status": "observed",
+        "id": "daee1a2d-700d-4b04-8c93-fd2c0c76085b:1",
+        "epoch": "daee1a2d-700d-4b04-8c93-fd2c0c76085b",
+        "seq": 1,
+        "at": "2026-10-20T20:51:09.552Z"
+      },
+      {
+        "kind": "provider.learned",
+        "status": "observed",
+        "subjects": [],
+        "providers": [
+          "graphql:countries-trevorblades-com"
+        ],
+        "contracts": [],
+        "id": "daee1a2d-700d-4b04-8c93-fd2c0c76085b:2",
+        "epoch": "daee1a2d-700d-4b04-8c93-fd2c0c76085b",
+        "seq": 2,
+        "at": "2026-10-20T20:51:13.237Z"
+      },
+      {
+        "kind": "execution.requested",
+        "status": "requested",
+        "subjects": [
+          "graphql:countries-trevorblades-com:query:continents"
+        ],
+        "contracts": [
+          {
+            "capability": "graphql:countries-trevorblades-com:query:continents",
+            "provider": "graphql:countries-trevorblades-com",
+            "contract": "fbe030a3:graphql:countries-trevorblades-com:read:graphql"
+          }
+        ],
+        "id": "daee1a2d-700d-4b04-8c93-fd2c0c76085b:3",
+        "epoch": "daee1a2d-700d-4b04-8c93-fd2c0c76085b",
+        "seq": 3,
+        "at": "2026-10-20T20:51:13.244Z"
+      },
+      {
+        "kind": "execution.finished",
+        "status": "completed",
+        "subjects": [
+          "graphql:countries-trevorblades-com:query:continents"
+        ],
+        "providers": [
+          "graphql:countries-trevorblades-com"
+        ],
+        "runs": [
+          "run_mvh5rljw_1_d9de45fd-50a4-47f2-8be3-02b26dae5681"
+        ],
+        "witnessRuns": [],
+        "related": "daee1a2d-700d-4b04-8c93-fd2c0c76085b:3",
+        "verification": "unverified",
+        "receipt": "011b3466dc1b067c79e040053cbdfd2d597b9710cc7f8cd010fab5c0a93eae63",
+        "durationMs": 821.4,
+        "predicates": 0,
+        "predicatesPassed": 0,
+        "witnessesPassed": 0,
+        "attempts": 0,
+        "contracts": [
+          {
+            "capability": "graphql:countries-trevorblades-com:query:continents",
+            "provider": "graphql:countries-trevorblades-com",
+            "contract": "fbe030a3:graphql:countries-trevorblades-com:read:graphql"
+          }
+        ],
+        "id": "daee1a2d-700d-4b04-8c93-fd2c0c76085b:4",
+        "epoch": "daee1a2d-700d-4b04-8c93-fd2c0c76085b",
+        "seq": 4,
+        "at": "2026-10-20T20:51:14.069Z"
+      },
+      {
+        "kind": "execution.requested",
+        "status": "requested",
+        "subjects": [
+          "graphql:countries-trevorblades-com:query:continents"
+        ],
+        "contracts": [
+          {
+            "capability": "graphql:countries-trevorblades-com:query:continents",
+            "provider": "graphql:countries-trevorblades-com",
+            "contract": "fbe030a3:graphql:countries-trevorblades-com:read:graphql"
+          }
+        ],
+        "id": "daee1a2d-700d-4b04-8c93-fd2c0c76085b:5",
+        "epoch": "daee1a2d-700d-4b04-8c93-fd2c0c76085b",
+        "seq": 5,
+        "at": "2026-10-20T20:51:14.069Z"
+      },
+      {
+        "kind": "execution.finished",
+        "status": "failed",
+        "subjects": [
+          "graphql:countries-trevorblades-com:query:continents"
+        ],
+        "providers": [
+          "graphql:countries-trevorblades-com"
+        ],
+        "runs": [
+          "run_mvh5rm6t_2_5dde2943-0e4c-4b12-8d07-6e2e5df7174a"
+        ],
+        "witnessRuns": [],
+        "related": "daee1a2d-700d-4b04-8c93-fd2c0c76085b:5",
+        "verification": "refuted",
+        "receipt": "8e69ef9e499b8f1e0c96e4bdf6f92eb29856e9c61a08da61688e08cd378e91e3",
+        "durationMs": 0.2,
+        "predicates": 0,
+        "predicatesPassed": 0,
+        "witnessesPassed": 0,
+        "attempts": 0,
+        "contracts": [
+          {
+            "capability": "graphql:countries-trevorblades-com:query:continents",
+            "provider": "graphql:countries-trevorblades-com",
+            "contract": "fbe030a3:graphql:countries-trevorblades-com:read:graphql"
+          }
+        ],
+        "id": "daee1a2d-700d-4b04-8c93-fd2c0c76085b:6",
+        "epoch": "daee1a2d-700d-4b04-8c93-fd2c0c76085b",
+        "seq": 6,
+        "at": "2026-10-20T20:51:14.069Z"
+      }
+    ]
+  },
+  "environment": {
+    "catalogs": [],
+    "sources": []
+  },
+  "httpContinuations": [],
+  "workflowContinuations": [],
+  "authFingerprints": {},
+  "semantics": 27,
+  "identities": {
+    "links": [],
+    "accepted": {},
+    "observed": {}
+  }
+}

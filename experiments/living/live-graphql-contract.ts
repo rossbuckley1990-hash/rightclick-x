@@ -7,7 +7,7 @@ import { buildDocument } from "../../src/reflectors/graphql.ts";
 import { publicReadTransport, type Observation } from "./public-read-transport.ts";
 const [destination] = process.argv.slice(2);
 if (!destination) throw new Error("usage: live-graphql-contract.ts NEW_DIRECTORY");
-const freeze = "7848c3c158421c5070e18b69b2be761f0fe6cfa9";
+const freeze = "d1f21d0116b75710784078ecc39b4e42043996ff";
 execFileSync("git", ["diff", "--quiet", freeze, "--", "src"]);
 mkdirSync(destination, { recursive: false });
 const endpoint = "https://countries.trevorblades.com/";
@@ -28,7 +28,8 @@ try {
   const cap = rc.graph.list().filter(c => c.invoke.kind === "graphql" && c.risk === "read" &&
     c.invoke.selectPort && c.inputs.every(p => !p.required)).sort((a, b) => a.id.localeCompare(b.id))[0];
   if (!cap || cap.invoke.kind !== "graphql") throw new Error("no eligible query advertised");
-  const fields = (cap.fields ?? []).filter(f => !f.path.includes(".") && f.type && !/^(list:|json)/.test(f.type)).slice(0, 2).map(f => f.path);
+  const fields = (cap.fields ?? []).filter(f => !f.path.includes(".") && f.type &&
+    f.type.replace(/^(list:)+/, "") !== "json").slice(0, 2).map(f => f.path);
   if (fields.length !== 2) throw new Error("insufficient scalar selection evidence");
   const selection = `{ ${fields.join(" ")} }`;
   const missing = "rightclick_missing_field_013";

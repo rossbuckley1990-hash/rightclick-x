@@ -1,0 +1,65 @@
+// Bounded public read-only protocol check, chosen after the product freeze.
+import { mkdirSync, writeFileSync, appendFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { join } from "node:path";
+import { RightClick } from "../../src/runtime.ts";
+import { buildDocument } from "../../src/reflectors/graphql.ts";
+import { publicReadTransport, type Observation } from "./public-read-transport.ts";
+const [destination] = process.argv.slice(2);
+if (!destination) throw new Error("usage: live-graphql-contract.ts NEW_DIRECTORY");
+const freeze = "d1f21d0116b75710784078ecc39b4e42043996ff";
+execFileSync("git", ["diff", "--quiet", freeze, "--", "src"]);
+mkdirSync(destination, { recursive: false });
+const endpoint = "https://countries.trevorblades.com/";
+const observations: Observation[] = [];
+const transport = publicReadTransport([{ url: endpoint, kind: "graphql" }], (row, bytes) => {
+  observations.push(row);
+  appendFileSync(join(destination, "network.jsonl"), JSON.stringify(row) + "\n");
+  if (bytes) writeFileSync(join(destination, `response-${row.id}.bin`), bytes, { flag: "wx" });
+}, { requestLimit: 8, bodyLimit: 2 * 1024 * 1024, totalLimit: 8 * 1024 * 1024 });
+let state: any;
+const store = { load: async () => state, save: async (value: any) => { state = structuredClone(value); } };
+const options = { directories: [], sandbox: null, fetch: transport, store,
+  network: { blockPrivate: true, origins: [new URL(endpoint).origin] },
+  authority: { execution: { allowedOrigins: [new URL(endpoint).origin] } } };
+try {
+  const rc = await RightClick.create(options);
+  await rc.learn({ source: endpoint, kinds: { [endpoint]: "graphql" } });
+  const cap = rc.graph.list().filter(c => c.invoke.kind === "graphql" && c.risk === "read" &&
+    c.invoke.selectPort && c.inputs.every(p => !p.required)).sort((a, b) => a.id.localeCompare(b.id))[0];
+  if (!cap || cap.invoke.kind !== "graphql") throw new Error("no eligible query advertised");
+  const fields = (cap.fields ?? []).filter(f => !f.path.includes(".") && f.type && !/^(list:|json)/.test(f.type)).slice(0, 2).map(f => f.path);
+  if (fields.length !== 2) throw new Error("insufficient scalar selection evidence");
+  const selection = `{ ${fields.join(" ")} }`;
+  const missing = "rightclick_missing_field_013";
+  if (cap.fields?.some(f => f.path === missing)) throw new Error("negative field unexpectedly exists");
+  const wrong = `{ ${fields.join(" ")} ${missing} }`;
+  const learnedAt = observations.length;
+  const valid = await rc.run(cap.id, { selection });
+  const beforeInvalid = observations.length;
+  const invalid = await rc.run(cap.id, { selection: wrong });
+  const afterInvalid = observations.length;
+  await rc.flush();
+  writeFileSync(join(destination, "state.json"), JSON.stringify(state, null, 2) + "\n", { flag: "wx" });
+  const fresh = await RightClick.create(options);
+  const warm = await fresh.run(cap.id, { selection });
+  const afterWarm = observations.length;
+  // The independently implemented server checks the same bad document directly.
+  // This is an authorised public read control, not a protected-boundary claim.
+  const response = await transport(endpoint, { method: "POST", headers: { "content-type": "application/json" },
+    body: JSON.stringify({ query: buildDocument({ ...cap.invoke, selection: wrong }, []), variables: {} }) });
+  const server = await response.json();
+  const result = { freeze, endpoint, capability: cap.id, rootField: cap.invoke.field, selection, wrong,
+    learnedAt, beforeInvalid, afterInvalid, afterWarm, valid, invalid, warm, server,
+    requests: observations.length, restartedDiscovery: observations.slice(afterInvalid, afterWarm).filter(r => r.discovery).length,
+    scope: "public protocol check; runtime-instance restart, no new model or independent business-source verification" };
+  writeFileSync(join(destination, "result.json"), JSON.stringify(result, null, 2) + "\n", { flag: "wx" });
+  if (valid.status !== "completed" || warm.status !== "completed" || invalid.graphqlFailure?.kind !== "invalid-document" ||
+      beforeInvalid !== afterInvalid || !server.errors?.length || result.restartedDiscovery)
+    throw new Error("public check failed; raw observations retained");
+  console.log(JSON.stringify({ status: "pass", requests: observations.length, invalidRequests: afterInvalid - beforeInvalid,
+    restartedDiscovery: result.restartedDiscovery, capability: cap.id }));
+} catch (error) {
+  writeFileSync(join(destination, "failure.json"), JSON.stringify({ error: String(error), requests: observations.length }) + "\n", { flag: "wx" });
+  throw error;
+}
