@@ -8,7 +8,7 @@ import { parseYaml } from "../core/yaml.ts";
 import type { Capability, Reflection } from "../core/types.ts";
 import { INTROSPECTION_QUERIES, isIntrospection, reflectGraphQL } from "./graphql.ts";
 import { McpClient, reflectMcpTools } from "./mcp.ts";
-import { readBody, request, slug, type Net } from "./net.ts";
+import { cancelBody, DISCOVERY_BODY_LIMIT, isEventStream, readBody, request, slug, type Net } from "./net.ts";
 import { isOpenAPI, reflectOpenAPI, settleUnstatedBase } from "./openapi.ts";
 import { reflectWeb } from "./web.ts";
 
@@ -132,7 +132,7 @@ async function probeKind(net: Net, url: string, kind: SourceKind, probes: Discov
     if (kind === "graphql") {
       for (const query of INTROSPECTION_QUERIES) {
         const res = await request(net, url, { method: "POST", headers: { "content-type": "application/json", accept: "application/json" }, body: JSON.stringify({ query }) });
-        const body = await readBody(res);
+        const body = await readBody(res, DISCOVERY_BODY_LIMIT);
         if (res.ok && isIntrospection(body)) {
           const r = reflectGraphQL(body, url);
           probes.push({ url, kind, ok: true, detail: `${r.capabilities.length} fields` });
@@ -142,8 +142,8 @@ async function probeKind(net: Net, url: string, kind: SourceKind, probes: Discov
       throw new Error("introspection failed");
     }
     const res = await request(net, url, { headers: { accept: "application/json, text/html;q=0.9" } });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const body = yamlContract(await readBody(res));
+    if (!res.ok) { cancelBody(res); throw new Error(`HTTP ${res.status}`); }
+    const body = yamlContract(await readBody(res, DISCOVERY_BODY_LIMIT));
     if (kind === "openapi" && isOpenAPI(body)) {
       const r = await settleUnstatedBase(net, body as any, url, reflectOpenAPI(body as any, url));
       probes.push({ url, kind, ok: true, detail: `${r.capabilities.length} operations` });
@@ -166,11 +166,23 @@ async function probeUrl(
 ): Promise<{ reflections: Reflection[]; hints: string[]; definitive: boolean; catalog?: string[] }> {
   const reflections: Reflection[] = [];
   let hints: string[] = [];
+  let triedMcp = false;
   // 1. GET: specs, peers and pages.
   try {
     const res = await request(net, url, { headers: { accept: "application/json, text/html;q=0.9, */*;q=0.5" } });
     if (res.ok) {
-      const body = yamlContract(await readBody(res));
+      // A discovery GET may open an SSE subscription, whose body never ends.
+      // Close only that probe and negotiate MCP normally; the media type alone
+      // does not establish a capability or authorise any tool execution.
+      const streaming = isEventStream(res);
+      if (streaming) {
+        cancelBody(res);
+        triedMcp = true;
+        const reflected = await probeKind(net, url, "mcp", probes, opts);
+        if (reflected.length) return { reflections: reflected, hints: [], definitive: true };
+      }
+      // Failed MCP negotiation leaves GraphQL eligible; never read the discarded GET.
+      const body = streaming ? null : yamlContract(await readBody(res, DISCOVERY_BODY_LIMIT));
       const listed = catalogLinks(body, url);
       if (listed) return { reflections: [], hints: [], definitive: false, catalog: listed };
       const linked = body && typeof body === "object" && !(body as any).openapi && !(body as any).swagger ? contractLinks(body, url) : [];
@@ -199,7 +211,7 @@ async function probeUrl(
         }
       }
     } else {
-      await res.body?.cancel();
+      cancelBody(res);
     }
   } catch (e) {
     if (!opts.quiet) probes.push({ url, kind: "get", ok: false, detail: String((e as Error).message ?? e) });
@@ -212,7 +224,7 @@ async function probeUrl(
         headers: { "content-type": "application/json", accept: "application/json" },
         body: JSON.stringify({ query }),
       });
-      const body = await readBody(res);
+      const body = await readBody(res, DISCOVERY_BODY_LIMIT);
       if (res.ok && isIntrospection(body)) {
         const r = reflectGraphQL(body, url);
         probes.push({ url, kind: "graphql", ok: true, detail: `${r.capabilities.length} fields` });
@@ -225,7 +237,7 @@ async function probeUrl(
     }
   }
   // 3. MCP initialize + tools/list.
-  try {
+  if (!triedMcp) try {
     const client = opts.mcp?.(url) ?? new McpClient(url, net);
     const tools = await client.listTools();
     const r = reflectMcpTools(tools, url, client.serverInfo.name);
@@ -240,8 +252,8 @@ async function probeUrl(
 
 export async function reflectPeer(net: Net, origin: string): Promise<Reflection> {
   const res = await request(net, `${origin}/api/graph`, { headers: { accept: "application/json" } });
-  if (!res.ok) throw new Error(`peer ${origin} -> HTTP ${res.status}`);
-  const g = (await res.json()) as { name?: string; region?: string; capabilities: Capability[] };
+  if (!res.ok) { cancelBody(res); throw new Error(`peer ${origin} -> HTTP ${res.status}`); }
+  const g = (await readBody(res, DISCOVERY_BODY_LIMIT)) as { name?: string; region?: string; capabilities: Capability[] };
   const host = new URL(origin).host;
   const providerId = `peer:${slug(host)}`;
   const capabilities: Capability[] = g.capabilities

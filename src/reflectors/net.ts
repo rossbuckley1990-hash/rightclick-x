@@ -66,6 +66,70 @@ export interface Net {
   policy?: NetworkPolicy;
 }
 
+/** Bound contract acquisition without limiting ordinary finite execution outputs. */
+export const DISCOVERY_BODY_LIMIT = 16 * 1024 * 1024;
+
+const responseDeadlines = new WeakMap<Response, { deadline: number; controller: AbortController; signal: AbortSignal; error: Error }>();
+
+export function isEventStream(res: Response): boolean {
+  return res.headers.get("content-type")?.split(";")[0].trim().toLowerCase() === "text/event-stream";
+}
+
+/** Start disposal immediately; a transport's cleanup promise must not hold up discovery. */
+export function cancelBody(res: Response): void {
+  void res.body?.cancel().catch(() => {});
+  responseDeadlines.get(res)?.controller.abort(new Error("response body discarded"));
+}
+
+/** Read within the original request deadline, including adapters whose reads ignore abort. */
+export async function* bodyChunks(res: Response, maxBytes = Infinity): AsyncGenerator<Uint8Array> {
+  if (!res.body) return;
+  const context = responseDeadlines.get(res);
+  const reader = res.body.getReader();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let onAbort: (() => void) | undefined;
+  let rejectRead: ((reason: unknown) => void) | undefined;
+  let complete = false;
+  let size = 0;
+  if (context) {
+    onAbort = () => rejectRead?.(context.signal.reason);
+    context.signal.addEventListener("abort", onAbort, { once: true });
+    timer = setTimeout(() => context.controller.abort(context.error), Math.max(0, context.deadline - Date.now()));
+  }
+  try {
+    while (true) {
+      if (context?.signal.aborted) throw context.signal.reason;
+      if (context && Date.now() >= context.deadline) throw context.error;
+      // Keep only the current read's abort handler, not one pending race per chunk.
+      const { done, value } = await new Promise<ReadableStreamReadResult<Uint8Array>>((resolve, reject) => {
+        rejectRead = reject;
+        reader.read().then(resolve, reject);
+      });
+      rejectRead = undefined;
+      if (done) { complete = true; return; }
+      size += value.byteLength;
+      if (size > maxBytes) throw new Error(`response body exceeds ${maxBytes} bytes`);
+      yield value;
+    }
+  } finally {
+    clearTimeout(timer);
+    rejectRead = undefined;
+    if (onAbort) context!.signal.removeEventListener("abort", onAbort);
+    if (!complete) {
+      void reader.cancel().catch(() => {});
+      context?.controller.abort(new Error("response body no longer needed"));
+    }
+    reader.releaseLock();
+  }
+}
+
+export async function readText(res: Response, maxBytes = Infinity): Promise<string> {
+  const decoder = new TextDecoder();
+  let text = "";
+  for await (const chunk of bodyChunks(res, maxBytes)) text += decoder.decode(chunk, { stream: true });
+  return text + decoder.decode();
+}
+
 const METADATA_HOSTS = new Set(["metadata.google.internal", "metadata", "169.254.169.254", "fd00:ec2::254"]);
 
 export function isPrivateAddress(host: string): boolean {
@@ -119,7 +183,7 @@ export async function request(net: Net, url: string, init: RequestInit = {}): Pr
   const accept = new Headers(init.headers).get("accept") ?? "";
   const first = accept.split(",")[0].split(";")[0].trim();
   if ((method === "GET" || method === "HEAD") && accept.includes(",") && first && first !== "*/*" && (res.status === 406 || res.status >= 500)) {
-    await res.body?.cancel();
+    cancelBody(res);
     const headers = new Headers(init.headers);
     headers.set("accept", first);
     return requestOnce(net, url, { ...init, headers });
@@ -136,7 +200,14 @@ async function requestOnce(net: Net, url: string, init: RequestInit = {}): Promi
   if (!headers.has("user-agent")) headers.set("user-agent", "rightclick-x/0.1 (+https://github.com/rossbuckley1990-hash/rightclick)");
   await checkUrl(net.policy, url);
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(new Error(`timeout after ${net.timeoutMs}ms: ${url}`)), net.timeoutMs);
+  const error = new Error(`timeout after ${net.timeoutMs}ms: ${url}`);
+  const deadline = Date.now() + net.timeoutMs;
+  const signal = init.signal ? AbortSignal.any([ctrl.signal, init.signal]) : ctrl.signal;
+  const timer = setTimeout(() => ctrl.abort(error), net.timeoutMs);
+  const track = (res: Response) => {
+    responseDeadlines.set(res, { deadline, controller: ctrl, signal, error });
+    return res;
+  };
   try {
     // Manual redirects. A caller's headers (credentials of any name: Authorization, Cookie,
     // Proxy-Authorization, X-Api-Key, X-Session-Token, ...) never leave the original origin.
@@ -148,32 +219,34 @@ async function requestOnce(net: Net, url: string, init: RequestInit = {}): Promi
     const caller = new Headers(init.headers);
     const userAgent = headers.get("user-agent")!;
     let tainted = false;
-    let res = await net.fetch(url, { ...init, headers, signal: ctrl.signal, redirect: "manual" });
+    let res = await net.fetch(url, { ...init, headers, signal, redirect: "manual" });
     let hops = 0;
     while (res.status >= 300 && res.status < 400 && res.headers.get("location") && hops++ < 5) {
       const next = new URL(res.headers.get("location")!, url).toString();
-      await checkUrl(net.policy, next);
+      try { await checkUrl(net.policy, next); }
+      catch (e) { cancelBody(res); throw e; }
       const nextOrigin = new URL(next).origin;
       const method = res.status === 303 ? "GET" : (init.method ?? "GET");
       const carriesBody = method !== "GET" && method !== "HEAD" && init.body != null;
-      if (carriesBody && nextOrigin !== new URL(url).origin) return res;
+      if (carriesBody && nextOrigin !== new URL(url).origin) return track(res);
       if (nextOrigin !== origin0) tainted = true;
       const h = new Headers();
       for (const [k, v] of caller) if (!tainted || CROSS_ORIGIN_SAFE.has(k.toLowerCase()) || (carriesBody && k.toLowerCase() === "content-type")) h.set(k, v);
       if (!h.has("user-agent")) h.set("user-agent", userAgent);
       for (const [k, v] of Object.entries(net.auth.headersFor(next))) h.set(k, v);
-      res = await net.fetch(next, { ...init, method, body: method === "GET" || method === "HEAD" ? undefined : init.body, headers: h, signal: ctrl.signal, redirect: "manual" });
+      cancelBody(res);
+      res = await net.fetch(next, { ...init, method, body: method === "GET" || method === "HEAD" ? undefined : init.body, headers: h, signal, redirect: "manual" });
       url = next;
     }
-    return res;
+    return track(res);
   } finally {
     clearTimeout(timer);
   }
 }
 
-export async function readBody(res: Response): Promise<unknown> {
+export async function readBody(res: Response, maxBytes = Infinity): Promise<unknown> {
   const ct = res.headers.get("content-type") ?? "";
-  const text = await res.text();
+  const text = await readText(res, maxBytes);
   if (ct.includes("json") || /^\s*[{[]/.test(text)) {
     try {
       return JSON.parse(text);
