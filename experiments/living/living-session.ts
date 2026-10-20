@@ -6,6 +6,7 @@ import { resolve, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
 import { RpcPeer, startContainedSession, presentSession, holdPresentation, type Wire } from "./challenge-session.ts";
+import { approvedCompression } from "./operator-request.ts";
 import { publicReadTransport, type PublicSource } from "./public-read-transport.ts";
 import { TransportRefused } from "../../src/reflectors/net.ts";
 import { actenonAuthorityEvidence } from "../../integrations/actenon/authority-evidence.ts";
@@ -105,8 +106,7 @@ try {
   const afterDenied = await boundary.call("snapshot");
   if (denied.status !== "failed" || !denied.refusal || JSON.stringify(before.effects) !== JSON.stringify(afterDenied.effects))
     throw new Error("unauthorized effect was not refused without a side effect");
-  const exact: Wire = { method: "POST", url: protectedOrigin + "/jobs", headers: { "content-type": "application/json" },
-    body: Buffer.from(JSON.stringify(args)).toString("base64") };
+  const exact = approvedCompression(protectedOrigin, args);
   save("authorization", await boundary.call("authorize", { requests: [exact] }));
   const changed = await tool("context_run", { id: submit.id, args: { ...args, document: args.document + " Changed." } });
   save("changed-parameters", changed);

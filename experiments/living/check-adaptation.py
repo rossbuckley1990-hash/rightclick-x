@@ -178,7 +178,7 @@ if __name__ == "__main__":
     root = Path(sys.argv[1]).resolve()
     result = check(root)
     corruptions = []
-    for case in ["artifact", "extra-effect", "proof", "dispatch-after-removal", "weakened-goal", "false-validity"]:
+    for case in ["artifact", "extra-effect", "proof", "dispatch-after-removal", "weakened-goal", "false-validity", "operator-header"]:
         with tempfile.TemporaryDirectory(prefix="rcx-adaptation-check-") as temporary:
             copy = Path(temporary) / "session"; shutil.copytree(root, copy)
             if case == "artifact":
@@ -198,10 +198,15 @@ if __name__ == "__main__":
                 path = copy / "adaptation-final.json"; value = json.loads(path.read_text())
                 value["state"]["published"][1]["anchors"] = []
                 path.write_text(json.dumps(value))
-            else:
+            elif case == "false-validity":
                 path = copy / "adaptation-view-removed-after.json"; value = json.loads(path.read_text())
                 value["goal"]["states"]["validity"]["state"] = "descriptor-matches-observation"
                 path.write_text(json.dumps(value))
+            else:
+                path = copy / "boundary/operator.jsonl"
+                rows = [json.loads(s) for s in path.read_text().splitlines()]
+                next(r for r in rows if r["op"] == "authorize")["requests"][0]["headers"]["accept"] = "text/plain"
+                path.write_text("".join(json.dumps(r) + "\n" for r in rows))
             try:
                 check(copy)
             except Exception:

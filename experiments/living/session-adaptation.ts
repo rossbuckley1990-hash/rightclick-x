@@ -3,7 +3,8 @@
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync } from "node:fs";
 import { join, relative } from "node:path";
-import type { RpcPeer, Wire } from "./challenge-session.ts";
+import type { RpcPeer } from "./challenge-session.ts";
+import { approvedCompression } from "./operator-request.ts";
 
 export async function exerciseAdaptation(options: {
   output: string; origin: string; goal: { id: string; path: string }; submit: { id: string; title: string };
@@ -48,8 +49,7 @@ export async function exerciseAdaptation(options: {
   }
   const run = (args: object) => tool("context_run", { id: goal.id, args });
   const authorize = (args: object) => {
-    const request: Wire = { method: "POST", url: origin + "/jobs", headers: { "content-type": "application/json" },
-      body: Buffer.from(JSON.stringify(args)).toString("base64") };
+    const request = approvedCompression(origin, args);
     return boundary.call("authorize", { requests: [request] });
   };
   const second = { label: "second", document: "A second document after an operation rename and nested result." };

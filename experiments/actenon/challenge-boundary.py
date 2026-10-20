@@ -21,13 +21,24 @@ from actenon_permit.model import GrantStatus
 
 
 class ExactBoundary(WorkflowBoundary):
-    approved_writes = set()
+    approved_writes = frozenset()
+
+    @staticmethod
+    def request_key(wire):
+        # Operator equality, not a replacement for Actenon's action hash. Every
+        # agent-controlled request field must match before proof issuance.
+        if set(wire) != {"method", "url", "headers", "body"}:
+            raise ValueError("unsupported exact request profile")
+        if not isinstance(wire["headers"], dict) or any(
+            not isinstance(k, str) or not isinstance(v, str) for k, v in wire["headers"].items()
+        ):
+            raise ValueError("unsupported exact headers")
+        return (wire["method"], wire["url"], wire["body"], tuple(sorted(wire["headers"].items())))
 
     def request_bounds(self, wire, body):
         if wire["method"] == "GET":
             return super().request_bounds(wire, body)
-        key = (wire["method"], wire["url"], hashlib.sha256(body).hexdigest())
-        allowed = self.writes and key in self.approved_writes
+        allowed = self.writes and self.request_key(wire) in self.approved_writes
         return allowed, allowed
 
 
@@ -79,7 +90,7 @@ def main(output):
                             body = base64.b64decode(wire["body"], validate=True)
                             if len(body) > 16384:
                                 raise ValueError("effect body exceeds bound")
-                            approved.add((wire["method"], wire["url"], hashlib.sha256(body).hexdigest()))
+                            approved.add(boundary.request_key(wire))
                         if boundary.grant is not None:
                             boundary.store.set_status(boundary.grant.id, GrantStatus.REVOKED)
                         boundary.approved_writes = approved
