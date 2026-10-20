@@ -144,3 +144,23 @@ private keys to the resource. Host processes are trusted and run as one user;
 this is not isolation against a compromised host service. Network-enabled probes
 test direct HTTP, shell and socket routes against the actual protected service.
 See [results and limitations](../../docs/north-star/evidence/ACTENON-RESOURCE-RESULT.md).
+
+
+## Reproduce protected asynchronous continuation
+
+```sh
+/absolute/audit-root/.venv/bin/python experiments/actenon/protected-async.py \
+  --image sha256:5e95a1b7bdb5ddd279c4c18760a007a98f94c6fb24236433c19b61831bc4e4f5 \
+  --output /absolute/new-protected-async-evidence
+/absolute/audit-root/.venv/bin/python experiments/actenon/check-protected-async.py \
+  /absolute/new-protected-async-evidence
+```
+
+Uses the same macOS/Docker prerequisites and exact audited source pins. The
+controlled service compresses actual document bytes in a background process.
+Catalog discovery, 202/303 continuation, saved-goal new-input reuse and generated
+REST execution use the ordinary runtime. The resource independently checks native
+exact proofs on writes and follow-up reads. The checker reads compressed files,
+request logs and native signed artifacts without importing RightClick or the
+harness. It is a separate implementation by the same author, not an independent
+holdout. See [results, failures, measurements and limits](../../docs/adaptive/PROTECTED-ASYNC.md).

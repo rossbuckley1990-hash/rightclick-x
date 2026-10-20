@@ -1,0 +1,30 @@
+{
+  "native-final.log": {
+    "command": "npm test",
+    "exit": 0
+  },
+  "linux-final.log": {
+    "command": "docker run --rm --pull never --network none --read-only --user 10000:10000 --cap-drop ALL --security-opt no-new-privileges --pids-limit 64 --memory 512m --cpus 1 --mount type=bind,src=/Users/ross/src/rightclick-x-adaptive,dst=/input,readonly --workdir /input --entrypoint node sha256:5e95a1b7bdb5ddd279c4c18760a007a98f94c6fb24236433c19b61831bc4e4f5 --test test/environment-discovery.test.ts test/http-pending.test.ts test/http-continuation.test.ts test/transport-refusal.test.ts test/run-drift.test.ts test/outcomes.test.ts test/fanout.test.ts test/execution-policy.test.ts",
+    "exit": 0
+  },
+  "types3.log": {
+    "command": "npm run typecheck",
+    "exit": 0
+  },
+  "build-final.log": {
+    "command": "npm run build",
+    "exit": 0
+  },
+  "proof-final.log": {
+    "command": "npm run proof",
+    "exit": 0
+  },
+  "final.log": {
+    "command": "/Users/ross/src/actenon-audit/.venv/bin/python experiments/actenon/protected-async.py --image sha256:5e95a1b7bdb5ddd279c4c18760a007a98f94c6fb24236433c19b61831bc4e4f5 --output docs/adaptive/evidence/protected-async/final",
+    "exit": 0
+  },
+  "checker-final.json": {
+    "command": "/Users/ross/src/actenon-audit/.venv/bin/python experiments/actenon/check-protected-async.py docs/adaptive/evidence/protected-async/final",
+    "exit": 0
+  }
+}
