@@ -18,6 +18,7 @@ import { dashboardMetrics, capabilityPage, capabilityState } from "./dashboard-s
 import { executeGraphQL } from "./graphql-server.ts";
 import { handle, type JsonRpc } from "./mcp-server.ts";
 import { TOOLS, dispatch } from "./tools.ts";
+import { authorityEvidenceReader, type AuthorityEvidenceSource } from "./authority-evidence.ts";
 
 export interface HttpOptions {
   /** Bearer token required for every non-public route. */
@@ -28,6 +29,8 @@ export interface HttpOptions {
   maxBodyBytes?: number;
   /** Requests per minute per caller (bearer token, else client address); default 600, 0 disables. */
   ratePerMinute?: number;
+  /** Optional host-owned native verifier. Read-only evidence, never execution permission. */
+  authorityEvidence?: AuthorityEvidenceSource;
 }
 
 /** Token-bucket rate limiter, keyed per caller. */
@@ -71,6 +74,7 @@ function authorized(req: Request, opts: HttpOptions): boolean {
 export function createHandler(rc: RightClick, opts: HttpOptions = {}): (req: Request) => Promise<Response> {
   const limiter = new RateLimiter(opts.ratePerMinute ?? 600);
   const maxBody = opts.maxBodyBytes ?? 1024 * 1024;
+  const authorityEvidence = authorityEvidenceReader(opts.authorityEvidence);
   return async (req: Request) => {
     const url = new URL(req.url);
     const path = url.pathname.replace(/\/+$/, "") || "/";
@@ -130,6 +134,7 @@ export function createHandler(rc: RightClick, opts: HttpOptions = {}): (req: Req
         return json(out, out.status === "pending" ? 202 : out.ok ? 200 : 502);
       }
       if (req.method === "GET" && path === "/api/viz") return json(viz(rc));
+      if (req.method === "GET" && path === "/api/authority-evidence") return json(await authorityEvidence());
       if (req.method === "GET" && path === "/api/overview") return json({
         metrics: dashboardMetrics(rc), runtime: rc.runtime(), providers: rc.providers().slice(0, 200).map(p => ({ id: p.id, title: p.title, source: p.source, capabilities: p.capabilities })),
         providerCount: rc.graph.providers.size, providersOmitted: Math.max(0, rc.graph.providers.size - 200),
