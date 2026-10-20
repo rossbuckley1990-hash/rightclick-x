@@ -59,6 +59,55 @@ test("withdrawal and changed dependency defeat historical success without granti
   await restored.flush();
 });
 
+test("a refused saved goal cannot erase the last completed dependency evidence, including after restart", async () => {
+  const store = new MemoryStore(), { rc } = await world({}, { store });
+  await learnAll(rc);
+  const required = rc.graph.list().find(c => c.source === "mcp" && /weather/i.test(c.title))!.id;
+  const result = await rc.compose({ have: { place: "Lima", language: "es" }, want: "text",
+    intent: "weather translated", through: [required], run: true, publish: "Retained weather", verify: [{ op: "exists" }] });
+  const id = result.published!.id, completed = capabilityState(rc, id).lastObservation!;
+  const dependency = completed.contracts!.find(c => rc.graph.get(c.capability)?.source === "mcp")!;
+  assert.ok(dependency);
+  rc.graph.get(dependency.capability)!.risk = "destructive";
+  const refused = await rc.run(id, { place: "Lima", language: "es" });
+  assert.equal(refused.status, "failed");
+  let view = capabilityState(rc, id);
+  assert.equal(view.states.assurance.state, "last-failed", "latest attempt remains visible");
+  assert.equal(view.states.validity.state, "dependencies-changed");
+  assert.deepEqual(view.states.validity.evidence, [completed.id], "validity names its own historical evidence");
+  assert.ok(view.changedDependencies.includes(dependency.capability));
+  assert.equal(view.states.authority.state, "unknown");
+  rc.graph.forget(dependency.provider);
+  assert.equal((await rc.run(id, { place: "Lima", language: "es" })).status, "failed");
+  assert.equal(capabilityState(rc, id).states.validity.state, "dependencies-changed");
+  await rc.flush();
+  const restored = (await world({}, { store })).rc;
+  view = capabilityState(restored, id);
+  assert.equal(view.states.validity.state, "dependencies-changed");
+  assert.deepEqual(view.states.validity.evidence, [completed.id]);
+  assert.equal(view.states.assurance.state, "last-failed");
+});
+
+test("missing or truncated completed history cannot make a failed retained goal look current", async () => {
+  for (const scenario of ["missing", "truncated"] as const) {
+    const { rc } = await world();
+    await learnAll(rc);
+    const result = await rc.compose({ have: { place: "Lima", language: "es" }, want: "text",
+      intent: "weather translated", run: true, publish: "History controls", verify: [{ op: "exists" }] });
+    const id = result.published!.id, old = rc.activity.snapshot();
+    const dependency = capabilityState(rc, id).lastObservation!.contracts!.find(c => rc.graph.get(c.capability)?.source === "mcp")!;
+    if (scenario === "missing") old.entries = [];
+    else old.entries = old.entries.map(e => e.status === "completed" ? { ...e, truncated: true } : e);
+    rc.activity.restore(old);
+    rc.graph.get(dependency.capability)!.risk = "destructive";
+    assert.equal((await rc.run(id, { place: "Lima", language: "es" })).status, "failed");
+    const view = capabilityState(rc, id);
+    assert.notEqual(view.states.validity.state, "descriptor-matches-observation");
+    if (scenario === "missing") assert.equal(view.states.validity.state, "not-assessed");
+    assert.equal(view.states.authority.state, "unknown");
+  }
+});
+
 test("refusals, unavailable plans and failed checks are real events without provider-error leakage", async () => {
   const rc = await RightClick.create({ directories: [], authority: { execution: { allowedRisks: [] } } });
   const cap = rc.graph.list()[0];

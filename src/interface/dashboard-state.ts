@@ -16,10 +16,11 @@ export interface CapabilityDimension { state: string; source: string; limitation
 /** Six independent questions. A past successful call is not present-day authority. */
 export function capabilityState(rc: RightClick, id: string) {
   const cap = rc.graph.get(id), local = rc.capabilityExecution(id), last = rc.activity.latest(id);
+  const completed = rc.activity.latestCompleted(id);
   const evidence = last ? [last.id] : [];
   const dimension = (state: string, source: string, limitation: string, refs = evidence): CapabilityDimension => ({ state, source, limitation, evidence: refs });
-  const changed = last?.contracts?.filter(r => { const c = rc.graph.get(r.capability); return !c || observedContract(c) !== r.contract; }) ?? [];
-  const hasObservation = !!last?.contracts?.length && !last.truncated;
+  const changed = completed?.contracts?.filter(r => { const c = rc.graph.get(r.capability); return !c || observedContract(c) !== r.contract; }) ?? [];
+  const hasObservation = !!completed?.contracts?.length && !completed.truncated;
   const approval = local?.destructiveApproval;
   const blocked = !!local && (!local.allowed || (approval?.mode === "operator" && !approval.operatorApproved));
   const goal = cap?.invoke.kind === "goal" ? rc.published.get(cap.invoke.slug) : undefined;
@@ -29,7 +30,7 @@ export function capabilityState(rc: RightClick, id: string) {
     authority: dimension("unknown", "No independent exact-action boundary decision attached to this observation", "Discovery, composition and publication grant no authority. A principal, exact action, parameters and protected boundary must be authorised separately. Other shells, tools and credentials are outside this view.", []),
     assurance: dimension(!last ? "not-assessed" : last.status !== "completed" ? `last-${last.status}` : last.verification === "verified" && (last.witnessesPassed ?? 0) > 0 && (last.witnessRuns?.length ?? 0) === last.witnessesPassed ? "witness-passed-on-run" : last.verification === "checked" && (last.predicates ?? 0) > 0 && last.predicatesPassed === last.predicates ? "predicates-passed-on-run" : last.verification === "refuted" ? "refuted-on-run" : "unchecked-on-run", "Latest retained execution/composition observation, not a publication trust label", "Applies only to that historical run. Predicates are local checks. A separate read-only witness provider is not necessarily an independent organisation or a complete business-outcome oracle; receipt hashes are not external attestations."),
     reusability: dimension(!cap ? "unavailable" : goal ? "retained-contract" : cap.invoke.kind === "composite" ? "retained-pipeline" : "descriptor-only", "Matching current graph descriptor and retained goal/pipeline", "Retention does not establish usefulness, current validity, authority or actual fresh-agent reuse.", []),
-    validity: dimension(!cap ? "unavailable" : rc.meaningChanges.has(id) ? "changed-operation" : changed.length ? "dependencies-changed" : !hasObservation ? "not-assessed" : "descriptor-matches-observation", "Current contract change detectors compared with the latest retained run's dependency references", "Non-cryptographic descriptor comparison is not proof of unchanged behaviour. Missing/truncated history stays unassessed; remote behaviour may change without a descriptor change."),
+    validity: dimension(!cap ? "unavailable" : rc.meaningChanges.has(id) ? "changed-operation" : changed.length ? "dependencies-changed" : !hasObservation ? "not-assessed" : "descriptor-matches-observation", "Current contract change detectors compared with the latest completed observation's dependency references", "A later failure cannot erase previously observed dependencies. This historical, non-cryptographic comparison proves neither unchanged behaviour nor current success. Missing/truncated history stays unassessed; remote behaviour may change without a descriptor change.", completed ? [completed.id] : []),
   };
   return { id, title: cap?.title ?? id, provider: cap?.provider ?? null, source: cap?.source ?? null, invocation: cap?.invoke.kind ?? null,
     inputs: cap?.inputs.map(p => ({ name: p.name, type: p.type, required: p.required })) ?? [], outputs: cap?.outputs.map(p => ({ name: p.name, type: p.type })) ?? [],

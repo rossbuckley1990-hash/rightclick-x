@@ -102,6 +102,15 @@ export class ActivityLog {
     return e ? structuredClone(e) : undefined;
   }
 
+  /** A later refusal may contain only the goal itself, not its dependencies.
+   * Preserve the last completed observation for structural validity checks;
+   * this is historical evidence, never current permission or outcome success. */
+  latestCompleted(subject: string): ActivityEntry | undefined {
+    const e = this.entries.findLast(e => (e.kind === "execution.finished" || e.kind === "composition.finished") &&
+      e.status === "completed" && e.subjects?.includes(subject));
+    return e ? structuredClone(e) : undefined;
+  }
+
   forRun(id: string): ActivityEntry | undefined {
     const e = this.entries.findLast(e => e.kind === "execution.finished" && e.runs?.includes(id));
     return e ? structuredClone(e) : undefined;
