@@ -45,4 +45,4 @@ All are general, with synthetic-program tests in `test/generalisation.test.ts`; 
 
 ## Results
 
-See [BENCHMARK-RESULTS.md](BENCHMARK-RESULTS.md) for the holdout on `ns-freeze-1`: programs and tasks chosen by the independent evaluator after the freeze.
+See the retained [holdout selection](evidence/holdout-ns-freeze-1.json) and [raw benchmark results](evidence/benchmark-ns-freeze-1.json) for `ns-freeze-1`. The [evaluation plan](EVALUATION-PLAN.md) records selection and harness limitations; the later [benchmark accounting report](../adaptive/BENCHMARK-REPORTING.md) records the corrected accounting. Evaluator-model selection is not independent-author review. The previously referenced `BENCHMARK-RESULTS.md` report was absent.
