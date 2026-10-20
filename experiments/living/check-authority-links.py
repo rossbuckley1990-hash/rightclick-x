@@ -32,7 +32,7 @@ def check(root, feed_name="adaptation-authority.json", snapshot_name="adaptation
         native[digest] = result if isinstance(result, dict) else result.to_dict()
     fetches = [r for r in lines("session.jsonl") if r["op"] == "fetch"]
     observations = snapshot["activity"]["entries"]
-    logs = lines("boundary/transport-links.jsonl")
+    logs = lines("boundary/issuer/transport-links.jsonl")
     expected = {}
     seen = set()
     for log in logs:

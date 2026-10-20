@@ -58,7 +58,7 @@ def main(output):
         public = private / "issuer-public.json"
         public.write_bytes((issued / "public.json").read_bytes())
         (output / "issuer-public.json").write_bytes(public.read_bytes())
-        (output / "transport-links.jsonl").write_text("")
+        (output / "issuer/transport-links.jsonl").write_text("")
         socket = issuer / "authority.sock"
         service = fixture.resource.authority_service(boundary, socket, output)
         resource = errors = None

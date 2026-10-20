@@ -44,7 +44,7 @@ try {
   save("boundary-ready", ready);
   const authorityEvidence = actenonAuthorityEvidence({ python, attestations: join(output, "boundary/attestations.jsonl"),
     publicKey: join(output, "boundary/public.json"), origin: protectedOrigin,
-    ...(config.authorityLinkage ? { transportLinks: join(output, "boundary/transport-links.jsonl") } : {}),
+    ...(config.authorityLinkage ? { transportLinks: join(output, "boundary/issuer/transport-links.jsonl") } : {}),
     issuer: "resource-edge", boundary: "Disposable compression resource" });
   session = await startContainedSession({ output, image,
     authorityEvidence,
