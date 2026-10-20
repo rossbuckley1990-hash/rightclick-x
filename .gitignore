@@ -6,3 +6,8 @@ dist/
 *.bun-build
 .rcx-deploy/
 lab/results/seed-*.json
+
+# Probe recipes write per-job credentials into auth.json on the runner; they must
+# never reach the repository, even accidentally.
+experiments/**/auth.json
+experiments/**/.env

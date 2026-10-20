@@ -1,0 +1,20 @@
+# Genuine open-source issue tracker and CI server: OneDev (MIT, Java).
+# Second product in the issue/support-case domain alongside Gitea and Vikunja,
+# so a ticket-style capability has a real alternative to be re-homed onto.
+
+services:
+  onedev:
+    image: docker.io/1dev/server:latest
+    ports:
+      - "6610:6610"
+    environment:
+      initial_user: admin
+      initial_password: ${PROBE_ADMIN_PASSWORD:-probe-admin-pw}
+      initial_email: admin@example.test
+      initial_server_url: http://127.0.0.1:6610
+    volumes:
+      - onedev_data:/opt/onedev
+      - /var/run/docker.sock:/var/run/docker.sock
+
+volumes:
+  onedev_data:

@@ -1,0 +1,21 @@
+# Genuine open-source task/issue manager: Vikunja (AGPL-3.0, Go).
+# A second ticket-style product in the pool, so the switchover test has a real
+# candidate to replace a support-case application with.
+
+services:
+  vikunja:
+    image: docker.io/vikunja/vikunja:latest
+    ports:
+      - "8011:3456"
+    environment:
+      VIKUNJA_SERVICE_JWTSECRET: ${PROBE_SECRET_KEY:-probe-only-not-a-production-secret}
+      VIKUNJA_SERVICE_ENABLEREGISTRATION: "false"
+      VIKUNJA_SERVICE_TIMEZONE: UTC
+      VIKUNJA_DATABASE_TYPE: sqlite
+      VIKUNJA_MAILER_ENABLED: "false"
+      VIKUNJA_SERVICE_PUBLICURL: http://127.0.0.1:8011
+    volumes:
+      - vikunja_data:/app/vikunja/data
+
+volumes:
+  vikunja_data:

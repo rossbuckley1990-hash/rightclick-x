@@ -1,0 +1,37 @@
+# Genuine open-source document management: Mayan EDMS (Apache-2.0, Django/DRF).
+# The strongest contract candidate in the document domain, because a DRF product
+# typically serves its own OpenAPI schema - the same shape Paperless-ngx does.
+
+services:
+  db:
+    image: docker.io/library/postgres:15-alpine
+    environment:
+      POSTGRES_DB: mayan
+      POSTGRES_USER: mayan
+      POSTGRES_PASSWORD: ${PROBE_DB_PASSWORD:-probe-db-pw}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mayan"]
+      interval: 5s
+      timeout: 5s
+      retries: 40
+
+  redis:
+    image: docker.io/library/redis:7-alpine
+
+  mayan:
+    image: docker.io/mayanedms/mayanedms:latest
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    ports:
+      - "8009:80"
+    environment:
+      MAYAN_CELERY_BROKER_URL: redis://redis:6379/0
+      MAYAN_REDIS_IP_ADDRESS: redis
+      MAYAN_DATABASES: |
+        {'ENGINE':'django.db.backends.postgresql','NAME':'mayan','USER':'mayan','PASSWORD':'${PROBE_DB_PASSWORD:-probe-db-pw}','HOST':'db','PORT':5432,'CONN_MAX_AGE':60}
+      MAYAN_USER_ADMIN_PASSWORD: ${PROBE_ADMIN_PASSWORD:-probe-admin-pw}
+      MAYAN_LOCK_MANAGER_BACKEND_DEFAULT_LOCK_TIMEOUT: "30"
+      MAYAN_APT_INSTALLS: ""

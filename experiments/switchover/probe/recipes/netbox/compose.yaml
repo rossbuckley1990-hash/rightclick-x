@@ -1,0 +1,53 @@
+# Genuine open-source infrastructure record system: NetBox (Apache-2.0, Django/DRF).
+# Chosen as an independent witness host: it is a different product from every
+# document or ticket application in the pool, so an outcome recorded here is not
+# readable through the same provider that performed the work.
+
+services:
+  netbox-db:
+    image: docker.io/library/postgres:16-alpine
+    environment:
+      POSTGRES_DB: netbox
+      POSTGRES_USER: netbox
+      POSTGRES_PASSWORD: ${PROBE_DB_PASSWORD:-probe-db-pw}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U netbox"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  netbox-redis:
+    image: docker.io/library/redis:7-alpine
+
+  netbox-redis-cache:
+    image: docker.io/library/redis:7-alpine
+
+  netbox:
+    image: docker.io/netboxcommunity/netbox:latest
+    depends_on:
+      netbox-db:
+        condition: service_healthy
+      netbox-redis:
+        condition: service_started
+      netbox-redis-cache:
+        condition: service_started
+    ports:
+      - "8012:8080"
+    environment:
+      DB_HOST: netbox-db
+      DB_NAME: netbox
+      DB_USER: netbox
+      DB_PASSWORD: ${PROBE_DB_PASSWORD:-probe-db-pw}
+      REDIS_HOST: netbox-redis
+      REDIS_PORT: "6379"
+      REDIS_SSL: "false"
+      CACHE_REDIS_HOST: netbox-redis-cache
+      CACHE_REDIS_PORT: "6379"
+      CACHE_REDIS_SSL: "false"
+      SECRET_KEY: ${PROBE_SECRET_KEY:-probe-only-not-a-production-secret}
+      SUPERUSER_NAME: admin
+      SUPERUSER_PASSWORD: ${PROBE_ADMIN_PASSWORD:-probe-admin-pw}
+      SUPERUSER_EMAIL: admin@example.test
+      SKIP_SUPERUSER: "false"
+      METRICS_ENABLED: "false"
+      LOGIN_REQUIRED: "false"

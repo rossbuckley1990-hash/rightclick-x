@@ -1,0 +1,38 @@
+# Genuine open-source document management: Papermerge (Apache-2.0, Django/DRF).
+# A fourth product in the document domain. The `latest` tag on Docker Hub is from
+# 2023, so this pins the maintained 3.6 line explicitly rather than trusting a
+# moving tag - the probe records which version actually answered.
+
+services:
+  db:
+    image: docker.io/library/postgres:16-alpine
+    environment:
+      POSTGRES_DB: papermerge
+      POSTGRES_USER: papermerge
+      POSTGRES_PASSWORD: ${PROBE_DB_PASSWORD:-probe-db-pw}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U papermerge"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  redis:
+    image: docker.io/library/redis:7-alpine
+
+  papermerge:
+    image: docker.io/papermerge/papermerge:3.6.0a16
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    ports:
+      - "8013:80"
+    environment:
+      PAPERMERGE__DATABASE__URL: postgresql://papermerge:${PROBE_DB_PASSWORD:-probe-db-pw}@db:5432/papermerge
+      PAPERMERGE__MAIN__API_PREFIX: /api
+      PAPERMERGE__AUTH__USERNAME: admin
+      PAPERMERGE__AUTH__PASSWORD: ${PROBE_ADMIN_PASSWORD:-probe-admin-pw}
+      PAPERMERGE__SECURITY__SECRET_KEY: ${PROBE_SECRET_KEY:-probe-only-not-a-production-secret}
+      PAPERMERGE__SEARCH__QUERY_SIZE: "5"
+      REDIS_URL: redis://redis:6379/0

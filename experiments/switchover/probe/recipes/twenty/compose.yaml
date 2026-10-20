@@ -1,6 +1,9 @@
 # Genuine open-source CRM: Twenty (AGPL-3.0, NestJS/React).
 # Exposes a GraphQL API - a meaningfully different machine-readable interface
 # from the REST/OpenAPI applications in this pool.
+#
+# Corrected after batch 1: the image is published as twentycrm/twenty, not
+# twentyhq/twenty, which is why the earlier job pulled nothing at all.
 
 services:
   db:
@@ -21,7 +24,7 @@ services:
     restart: unless-stopped
 
   server:
-    image: docker.io/twentyhq/twenty:latest
+    image: docker.io/twentycrm/twenty:latest
     depends_on:
       db:
         condition: service_healthy
@@ -30,14 +33,11 @@ services:
     ports:
       - "3001:3000"
     environment:
-      PG_DATABASE_HOST: db
-      PG_DATABASE_PORT: "5432"
-      PG_DATABASE_USER: twenty
-      PG_DATABASE_PASSWORD: ${PROBE_DB_PASSWORD:-probe-db-pw}
-      PG_DATABASE_NAME: twenty
+      PG_DATABASE_URL: postgres://twenty:${PROBE_DB_PASSWORD:-probe-db-pw}@db:5432/twenty
+      REDIS_URL: redis://redis:6379
       SERVER_URL: http://127.0.0.1:3001
       FRONTEND_BASE_URL: http://127.0.0.1:3001
-      REDIS_URL: redis://redis:6379
-      IS_MULTIWORKSPACE_ENABLED: "false"
-      LOGIN_TOKEN_SECRET: ${PROBE_SECRET_KEY:-probe-only-not-a-production-secret}
       APP_SECRET: ${PROBE_SECRET_KEY:-probe-only-not-a-production-secret}
+      IS_MULTIWORKSPACE_ENABLED: "false"
+      SIGN_IN_PREFILLED: "false"
+      TELEMETRY_ENABLED: "false"

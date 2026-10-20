@@ -1,11 +1,11 @@
-# Genuine open-source document management: Teedy (LGPL-2.1, Java).
-# A second document-management product in the pool, so the switchover test has a
-# real candidate to replace Paperless-ngx with.
+# Genuine open-source document management: Teedy (GPL-2.0, Java/Play).
+# Same business domain as Paperless-ngx: store a document, tag it, retrieve it.
+# Teedy publishes no OpenAPI contract, so it is the harder half of the pairing -
+# whatever RightClick X can see here it must get from the live HTTP surface.
 
 services:
   db:
     image: docker.io/library/postgres:15
-    restart: unless-stopped
     environment:
       POSTGRES_DB: teedy
       POSTGRES_USER: teedy
@@ -17,7 +17,7 @@ services:
       retries: 30
 
   teedy:
-    image: docker.io/teedy/teedy:latest
+    image: docker.io/sismics/docs:latest
     depends_on:
       db:
         condition: service_healthy
