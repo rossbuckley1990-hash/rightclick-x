@@ -149,10 +149,16 @@ test("lifetime budget, expiry, incompatible profile and withdrawn source cannot 
     const checkpoint = store.state!.httpContinuations![0];
     if (mode === "budget") checkpoint.cursor.used = 32;
     if (mode === "expiry") { checkpoint.createdAt = Date.now() - 3_600_000; checkpoint.expiresAt = Date.now() - 1; }
-    if (mode === "profile") (checkpoint.cursor as any).version = 2;
+    if (mode === "profile") {
+      (checkpoint.cursor as any).version = 2;
+      const before = structuredClone(store.state);
+      await assert.rejects(world(store), /unsupported retained HTTP checkpoint/);
+      assert.deepEqual(store.state, before, "an unknown profile remains available to a compatible runtime");
+      continue;
+    }
     const fresh = await world(store);
     if (mode === "withdrawn") fresh.rc.forget("openapi:packager");
-    if (mode === "profile" || mode === "withdrawn") {
+    if (mode === "withdrawn") {
       await assert.rejects(fresh.rc.run(`resume:${run.runId}`), /no resumable|unknown capability/);
     } else {
       const resumed = await fresh.rc.run(`resume:${run.runId}`);

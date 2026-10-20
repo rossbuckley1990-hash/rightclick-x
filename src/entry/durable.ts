@@ -13,6 +13,7 @@
 // secrets:  RCX_TOKEN (required), RCX_AUTH (origin-pinned credentials for peers/APIs)
 
 import { authorityFromEnv } from "../core/authority.ts";
+import { decodeState, encodeState } from "../core/state-format.ts";
 import { createHandler } from "../interface/http.ts";
 import { Authority } from "../reflectors/net.ts";
 import { RightClick, type PersistedState, type Store } from "../runtime.ts";
@@ -22,7 +23,7 @@ type Env = Record<string, any>;
 const CHUNK = 100_000;
 
 /** Durable Object storage values are size-limited; store state as numbered chunks. */
-class DurableStore implements Store {
+export class DurableStore implements Store {
   private storage: any;
   constructor(storage: any) {
     this.storage = storage;
@@ -30,16 +31,21 @@ class DurableStore implements Store {
   async load(): Promise<PersistedState | null> {
     const meta = (await this.storage.get("state:meta")) as { chunks: number } | undefined;
     if (!meta) return null;
+    if (!Number.isSafeInteger(meta.chunks) || meta.chunks <= 0) throw new Error("invalid runtime state chunk manifest");
     let text = "";
     for (let i = 0; i < meta.chunks; i += 100) {
       const keys = Array.from({ length: Math.min(100, meta.chunks - i) }, (_, k) => `state:${i + k}`);
       const got: Map<string, string> = await this.storage.get(keys);
-      for (const k of keys) text += got.get(k) ?? "";
+      for (const k of keys) {
+        const part = got.get(k);
+        if (typeof part !== "string" || !part.length || part.length > CHUNK) throw new Error(`missing or invalid runtime state chunk: ${k}`);
+        text += part;
+      }
     }
-    return JSON.parse(text);
+    return decodeState(JSON.parse(text));
   }
   async save(state: PersistedState): Promise<void> {
-    const text = JSON.stringify(state);
+    const text = encodeState(state);
     const chunks = Math.ceil(text.length / CHUNK);
     const entries: Record<string, string> = {};
     for (let i = 0; i < chunks; i++) entries[`state:${i}`] = text.slice(i * CHUNK, (i + 1) * CHUNK);

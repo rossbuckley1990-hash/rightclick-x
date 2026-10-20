@@ -7,6 +7,7 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
+import { decodeState } from "../src/core/state-format.ts";
 
 const cli = resolve("bin/rcx.ts");
 function fixture() {
@@ -152,7 +153,7 @@ test("CLI execution restrictions remain effective and failed runs exit unsuccess
     assert.equal(run.status, "failed");
     assert.match(run.error, /execution policy/);
     assert.equal(run.output, undefined);
-    assert.ok(JSON.parse(readFileSync(f.state, "utf8")).receipts.length);
+    assert.ok(decodeState(JSON.parse(readFileSync(f.state, "utf8"))).receipts.length);
   } finally { await f.close(); }
 });
 

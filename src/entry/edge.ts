@@ -11,6 +11,7 @@
 //   any other KV / AI bindings become platform capabilities automatically
 
 import { authorityFromEnv } from "../core/authority.ts";
+import { decodeState, encodeState } from "../core/state-format.ts";
 import { createHandler } from "../interface/http.ts";
 import { Authority } from "../reflectors/net.ts";
 import { environmentOptions } from "../reflectors/environment.ts";
@@ -20,16 +21,17 @@ type Env = Record<string, any>;
 
 let instance: Promise<{ rc: RightClick; handler: (r: Request) => Promise<Response> }> | null = null;
 
-class KvStore implements Store {
+export class KvStore implements Store {
   private kv: any;
   constructor(kv: any) {
     this.kv = kv;
   }
   async load(): Promise<PersistedState | null> {
-    return (await this.kv.get("rcx-state", "json")) ?? null;
+    const text = await this.kv.get("rcx-state", "text");
+    return text == null ? null : decodeState(JSON.parse(text));
   }
   async save(state: PersistedState): Promise<void> {
-    await this.kv.put("rcx-state", JSON.stringify(state));
+    await this.kv.put("rcx-state", encodeState(state));
   }
 }
 

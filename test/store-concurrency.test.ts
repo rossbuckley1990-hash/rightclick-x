@@ -5,9 +5,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { FileStore } from "../src/entry/node-host.ts";
 import type { PersistedState } from "../src/runtime.ts";
+import { STATE_REQUIREMENTS } from "../src/core/state-format.ts";
 
 function snapshot(index: number): PersistedState {
-  return { version: 1, reflections: [], receipts: [], ledger: { marker: { index, padding: "x".repeat(1000) } } };
+  return { version: 2, requirements: [...STATE_REQUIREMENTS], reflections: [], receipts: [], ledger: { marker: { index, padding: "x".repeat(1000) } } };
 }
 
 test("overlapping saves preserve call order, own their temporary file and finish without rename races", async () => {

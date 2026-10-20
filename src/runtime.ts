@@ -3,6 +3,7 @@
 // federation) is a thin shell around this class.
 
 import { checkpointValue, validWorkflow, type WorkflowContinuation, type CompositionContinuation } from "./core/workflow-continuation.ts";
+import { decodeState, STATE_FORMAT, STATE_REQUIREMENTS } from "./core/state-format.ts";
 import { ActivityLog, reference, type ActivityState, type ContractReference } from "./core/activity.ts";
 import { CapabilityGraph, signature, tokenize, type GraphEvent, type LearnDelta } from "./core/graph.ts";
 import { Ledger, ReceiptChain, sha256, stableStringify, type Receipt } from "./core/ledger.ts";
@@ -43,7 +44,9 @@ export interface Store {
 }
 
 export interface PersistedState {
-  version: 1;
+  version: 1 | 2;
+  /** Version 1 is a legacy input. New snapshots declare all required execution semantics. */
+  requirements?: string[];
   reflections: Reflection[];
   ledger: Record<string, any>;
   receipts: Receipt[];
@@ -509,9 +512,20 @@ export class RightClick {
     const p = await platformReflection(rc.info, { bindings: opts.bindings, workspace: opts.workspace });
     rc.platformFns = p.fns;
     if (p.reflection.capabilities.length) rc.graph.add(p.reflection);
-    const saved = await opts.store?.load().catch(() => null);
-    if (saved?.version === 1) {
+    const loaded = await opts.store?.load();
+    const saved = loaded == null ? null : decodeState(loaded);
+    if (saved) {
       const stale = saved.semantics !== SEMANTICS;
+      for (const [name, entries, valid] of [
+        ["HTTP", saved.httpContinuations, validHttpRun],
+        ["workflow", saved.workflowContinuations, validWorkflow],
+      ] as const) {
+        if (entries !== undefined && (!Array.isArray(entries) || entries.length > 64 ||
+            entries.some(c => !(valid as (c: any) => boolean)(c)))) {
+          throw new Error(`unsupported retained ${name} checkpoint; state was not discarded`);
+        }
+        if (stale && entries?.length) throw new Error(`cannot migrate inference with retained ${name} continuations; use their compatible runtime`);
+      }
       rc.graph.identities.load(saved.identities);
       rc.graph.restore(saved.reflections);
       rc.ledger.load(saved.ledger);
@@ -607,7 +621,7 @@ export class RightClick {
       graph: { providers: this.graph.providers.size, ...powers },
       runs: this.runs.size,
       receipts: { count: this.chain.receipts.length, head: this.chain.headHash },
-      storage: { status: this.store ? this.saveState : "not-configured", workflowRecovery: this.workflowRecovery },
+      storage: { status: this.store ? this.saveState : "not-configured", workflowRecovery: this.workflowRecovery, format: STATE_FORMAT },
       eventCursor: this.graph.cursor,
       memoryMB: typeof (globalThis as any).process?.memoryUsage === "function" ? Math.round((globalThis as any).process.memoryUsage().rss / 1e6) : undefined,
     };
@@ -2996,7 +3010,7 @@ export class RightClick {
       .filter((p) => p.source !== "builtin" && p.source !== "platform")
       .map((p) => ({ provider: p, capabilities: p.capabilityIds.map((id) => this.graph.get(id)!).filter(Boolean) }));
     try {
-      await this.store.save({ version: 1, reflections, ledger: this.ledger.toJSON(), receipts: this.chain.receipts.slice(-300), published: [...this.published.values()], meaningChanges: [...this.meaningChanges.values()], activity: this.activity.snapshot(), environment: this.environmentReport, httpContinuations: [...this.httpContinuations.values()], workflowContinuations: [...this.workflowContinuations.values()], authFingerprints: await this.net.auth.fingerprints(), semantics: SEMANTICS, identities: this.graph.identities.toJSON() });
+      await this.store.save({ version: 2, requirements: [...STATE_REQUIREMENTS], reflections, ledger: this.ledger.toJSON(), receipts: this.chain.receipts.slice(-300), published: [...this.published.values()], meaningChanges: [...this.meaningChanges.values()], activity: this.activity.snapshot(), environment: this.environmentReport, httpContinuations: [...this.httpContinuations.values()], workflowContinuations: [...this.workflowContinuations.values()], authFingerprints: await this.net.auth.fingerprints(), semantics: SEMANTICS, identities: this.graph.identities.toJSON() });
       this.saveState = "saved";
     } catch (error) {
       this.saveState = "failed";

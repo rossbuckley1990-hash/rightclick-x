@@ -1,6 +1,7 @@
 // Server-runtime glue (Node, Bun, Deno): HTTP serving, stdio MCP, file state.
 
 import type { RightClick, PersistedState, Store } from "../runtime.ts";
+import { decodeState, encodeState } from "../core/state-format.ts";
 import { handle, type JsonRpc } from "../interface/mcp-server.ts";
 
 export type FetchHandler = (req: Request) => Promise<Response>;
@@ -104,15 +105,16 @@ export class FileStore implements Store {
   async load(): Promise<PersistedState | null> {
     const fs = await import("node:fs/promises");
     try {
-      return JSON.parse(await fs.readFile(this.file, "utf8"));
-    } catch {
-      return null;
+      return decodeState(JSON.parse(await fs.readFile(this.file, "utf8")));
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
+      throw error;
     }
   }
   async save(state: PersistedState): Promise<void> {
     // Capture the caller's snapshot before yielding; later graph mutations must
     // not change an already requested save. A flush queues behind prior saves.
-    const content = JSON.stringify(state);
+    const content = encodeState(state);
     const next = this.tail.then(() => this.write(content));
     this.tail = next.catch(() => {});
     return next;

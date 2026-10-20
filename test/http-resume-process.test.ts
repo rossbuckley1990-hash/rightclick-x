@@ -8,6 +8,7 @@ import { join } from "node:path";
 import { createHash } from "node:crypto";
 import { gzipSync, gunzipSync } from "node:zlib";
 import { fileURLToPath } from "node:url";
+import { decodeState } from "../src/core/state-format.ts";
 
 for (const mode of ["leaf", "workflow", "composition"]) test(`a killed runtime recovers a real HTTP ${mode} from FileStore without discovery or a repeated effect`, { timeout: 15_000 }, async () => {
   const directory = await mkdtemp(join(tmpdir(), "rcx-http-resume-"));
@@ -68,9 +69,9 @@ for (const mode of ["leaf", "workflow", "composition"]) test(`a killed runtime r
     origin = `http://127.0.0.1:${(server.address() as any).port}`;
     const first = child("start");
     await Promise.race([polled, first.done.then(result => { throw new Error("client exited before polling: " + result.stderr); })]);
-    const stored = JSON.parse(await readFile(stateFile, "utf8"));
-    const checkpoint = stored.httpContinuations[0];
-    const parent = mode !== "leaf" ? stored.workflowContinuations[0] : undefined;
+    const stored = decodeState(JSON.parse(await readFile(stateFile, "utf8")));
+    const checkpoint = stored.httpContinuations![0];
+    const parent = mode !== "leaf" ? stored.workflowContinuations![0] : undefined;
     if (parent) {
       assert.equal(parent.phase, "waiting");
       assert.equal(parent.next, 0);
@@ -99,11 +100,11 @@ for (const mode of ["leaf", "workflow", "composition"]) test(`a killed runtime r
     assert.deepEqual(calls.slice(before), ["GET /queue/q1", "GET /files/q1", ...(mode !== "leaf" ? ["POST /publish"] : [])]);
     assert.deepEqual(publications, mode !== "leaf" ? [createHash("sha256").update(artifact).digest("hex")] : []);
     if (mode === "composition") {
-      assert.ok(parent.composition);
+      assert.ok(parent!.composition);
       assert.equal(report.run.composition?.published?.slug, "compressed-document");
     }
     assert.equal(calls.filter(c => c === "POST /enqueue").length, 1);
-    const final = JSON.parse(await readFile(stateFile, "utf8"));
+    const final = decodeState(JSON.parse(await readFile(stateFile, "utf8")));
     assert.deepEqual(final.httpContinuations, []);
     assert.deepEqual(final.workflowContinuations, []);
   } finally {
