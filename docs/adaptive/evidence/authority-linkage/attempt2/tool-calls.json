@@ -1,0 +1,345 @@
+[
+  {
+    "at": "2026-10-20T19:09:37.204Z",
+    "tool": "context_research",
+    "args": {},
+    "ok": true,
+    "ms": 528.8
+  },
+  {
+    "at": "2026-10-20T19:09:39.517Z",
+    "tool": "context_learn",
+    "args": {
+      "sources": [
+        "https://data.rcsb.org/graphql"
+      ],
+      "kinds": {
+        "https://data.rcsb.org/graphql": "graphql"
+      }
+    },
+    "ok": true,
+    "ms": 2310.1
+  },
+  {
+    "at": "2026-10-20T19:09:48.729Z",
+    "tool": "context_compose",
+    "args": {
+      "have": {
+        "entry_id": "1CRN"
+      },
+      "want": "json",
+      "intent": "primary citation DOI publication title publisher",
+      "require": [
+        "publisher"
+      ],
+      "maxSteps": 3,
+      "limit": 5,
+      "run": true,
+      "verify": [
+        {
+          "op": "exists",
+          "path": "message.DOI"
+        },
+        {
+          "op": "exists",
+          "path": "message.publisher"
+        },
+        {
+          "op": "exists",
+          "path": "message.title"
+        }
+      ],
+      "publish": "Structure primary publication metadata",
+      "risks": [
+        "read"
+      ]
+    },
+    "ok": true,
+    "ms": 9090.8,
+    "outcome": {
+      "status": "completed",
+      "verification": "checked",
+      "outcome": "established",
+      "contract": "satisfied"
+    }
+  },
+  {
+    "at": "2026-10-20T19:09:49.706Z",
+    "tool": "context_research",
+    "args": {},
+    "ok": true,
+    "ms": 970
+  },
+  {
+    "at": "2026-10-20T19:09:49.895Z",
+    "tool": "context_run",
+    "args": {
+      "id": "openapi:protected-compression:compress",
+      "args": {
+        "label": "first",
+        "document": "A document written only by the explicitly authorized living session."
+      }
+    },
+    "ok": true,
+    "ms": 5.3,
+    "outcome": {
+      "status": "failed",
+      "verification": "unverified"
+    }
+  },
+  {
+    "at": "2026-10-20T19:09:49.921Z",
+    "tool": "context_run",
+    "args": {
+      "id": "openapi:protected-compression:compress",
+      "args": {
+        "label": "first",
+        "document": "A document written only by the explicitly authorized living session. Changed."
+      }
+    },
+    "ok": true,
+    "ms": 1.7,
+    "outcome": {
+      "status": "failed",
+      "verification": "unverified"
+    }
+  },
+  {
+    "at": "2026-10-20T19:09:51.612Z",
+    "tool": "context_compose",
+    "args": {
+      "have": {
+        "label": {
+          "type": "text",
+          "value": "first"
+        },
+        "document": {
+          "type": "text",
+          "value": "A document written only by the explicitly authorized living session."
+        }
+      },
+      "want": "hash",
+      "through": [
+        "openapi:protected-compression:compress"
+      ],
+      "run": true,
+      "publish": "Compressed document digest",
+      "verify": [
+        {
+          "op": "matches",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      ]
+    },
+    "ok": true,
+    "ms": 1689.3,
+    "outcome": {
+      "status": "completed",
+      "verification": "checked",
+      "contract": "satisfied"
+    }
+  },
+  {
+    "at": "2026-10-20T19:09:52.132Z",
+    "tool": "context_run",
+    "args": {
+      "id": "goal:compressed-document-digest",
+      "args": {
+        "label": "first",
+        "document": "A document written only by the explicitly authorized living session."
+      }
+    },
+    "ok": true,
+    "ms": 8.9,
+    "outcome": {
+      "status": "failed",
+      "verification": "unverified"
+    }
+  },
+  {
+    "at": "2026-10-20T19:09:53.005Z",
+    "tool": "context_research",
+    "args": {},
+    "ok": true,
+    "ms": 315.2
+  },
+  {
+    "at": "2026-10-20T19:09:53.048Z",
+    "tool": "context_run",
+    "args": {
+      "id": "goal:compressed-document-digest",
+      "args": {
+        "label": "second",
+        "document": "A second document after an operation rename and nested result."
+      }
+    },
+    "ok": true,
+    "ms": 34,
+    "outcome": {
+      "status": "failed",
+      "verification": "unverified"
+    }
+  },
+  {
+    "at": "2026-10-20T19:09:54.193Z",
+    "tool": "context_run",
+    "args": {
+      "id": "goal:compressed-document-digest",
+      "args": {
+        "label": "second",
+        "document": "A second document after an operation rename and nested result."
+      }
+    },
+    "ok": true,
+    "ms": 1139.9,
+    "outcome": {
+      "status": "completed",
+      "verification": "checked"
+    }
+  },
+  {
+    "at": "2026-10-20T19:09:54.417Z",
+    "tool": "context_research",
+    "args": {},
+    "ok": true,
+    "ms": 213.8
+  },
+  {
+    "at": "2026-10-20T19:09:54.466Z",
+    "tool": "context_run",
+    "args": {
+      "id": "goal:compressed-document-digest",
+      "args": {
+        "label": "generated",
+        "document": "A third document after the compatible provider returns."
+      }
+    },
+    "ok": true,
+    "ms": 43.2,
+    "outcome": {
+      "status": "failed",
+      "verification": "refuted"
+    }
+  },
+  {
+    "at": "2026-10-20T19:09:54.472Z",
+    "tool": "context_run",
+    "args": {
+      "id": "openapi:protected-compression:compressdocument@op-039e9e07b3c6642e",
+      "args": {
+        "label": "generated",
+        "document": "A third document after the compatible provider returns."
+      }
+    },
+    "ok": true,
+    "ms": 1.7,
+    "outcome": {
+      "status": "failed",
+      "verification": "unverified"
+    }
+  },
+  {
+    "at": "2026-10-20T19:09:55.493Z",
+    "tool": "context_research",
+    "args": {},
+    "ok": true,
+    "ms": 975.8
+  },
+  {
+    "at": "2026-10-20T19:09:55.532Z",
+    "tool": "context_run",
+    "args": {
+      "id": "goal:compressed-document-digest",
+      "args": {
+        "label": "generated",
+        "document": "A third document after the compatible provider returns."
+      }
+    },
+    "ok": true,
+    "ms": 31.7,
+    "outcome": {
+      "status": "failed",
+      "verification": "refuted"
+    }
+  },
+  {
+    "at": "2026-10-20T19:09:56.633Z",
+    "tool": "context_research",
+    "args": {},
+    "ok": true,
+    "ms": 1092.4
+  },
+  {
+    "at": "2026-10-20T19:09:56.650Z",
+    "tool": "context_run",
+    "args": {
+      "id": "goal:compressed-document-digest",
+      "args": {
+        "label": "generated",
+        "document": "A third document after the compatible provider returns."
+      }
+    },
+    "ok": true,
+    "ms": 14.9,
+    "outcome": {
+      "status": "failed",
+      "verification": "unverified"
+    }
+  },
+  {
+    "at": "2026-10-20T19:09:57.729Z",
+    "tool": "context_run",
+    "args": {
+      "id": "goal:compressed-document-digest",
+      "args": {
+        "label": "generated",
+        "document": "A third document after the compatible provider returns."
+      }
+    },
+    "ok": true,
+    "ms": 1075.3,
+    "outcome": {
+      "status": "completed",
+      "verification": "checked"
+    }
+  },
+  {
+    "at": "2026-10-20T19:09:57.812Z",
+    "tool": "context_run",
+    "args": {
+      "id": "resume:run_mvh259bx_9_919bfde5-077c-4ffc-969c-c83169d0737c"
+    },
+    "ok": true,
+    "ms": 0.6,
+    "outcome": {
+      "status": "pending",
+      "verification": "unverified"
+    }
+  },
+  {
+    "at": "2026-10-20T19:09:57.814Z",
+    "tool": "context_run",
+    "args": {
+      "id": "resume:run_mvh25a1a_c_ac678580-a8fb-4692-a6cb-0dfe9c6dd466"
+    },
+    "ok": true,
+    "ms": 0.3,
+    "outcome": {
+      "status": "pending",
+      "verification": "unverified"
+    }
+  },
+  {
+    "at": "2026-10-20T19:09:57.815Z",
+    "tool": "context_run",
+    "args": {
+      "id": "resume:run_mvh25cth_l_c205592e-ac5a-4056-aef4-235c7b1bae1b"
+    },
+    "ok": true,
+    "ms": 0.3,
+    "outcome": {
+      "status": "pending",
+      "verification": "unverified"
+    }
+  }
+]
