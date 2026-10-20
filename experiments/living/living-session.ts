@@ -10,7 +10,8 @@ import { approvedCompression } from "./operator-request.ts";
 import { publicReadTransport, type PublicSource } from "./public-read-transport.ts";
 import { TransportRefused } from "../../src/reflectors/net.ts";
 import { actenonAuthorityEvidence } from "../../integrations/actenon/authority-evidence.ts";
-import { exerciseAdaptation } from "./session-adaptation.ts";
+import { captureBasePrefix, exerciseAdaptation } from "./session-adaptation.ts";
+import { exerciseModels } from "./session-models.ts";
 
 const [configFile, directory, image, python, hold] = process.argv.slice(2);
 if (!configFile || !directory || !image?.startsWith("sha256:") || !python)
@@ -131,8 +132,15 @@ try {
     publicGoal: result.published, protectedGoal: effect.published, totalRequests, toolCalls: toolCalls.length,
     protectedOutput: effect.executed.output, stateSha256: createHash("sha256").update(JSON.stringify(final.state)).digest("hex"),
     remaining: ["separate outcome checking", "fresh-model inheritance", "compatible/incompatible change", "authority-to-runtime call linkage", "independent-author holdout", "matched economics"] });
+  if (config.modelReuse) {
+    if (config.adaptation !== true) throw new Error("combined model experiment requires adaptation checking");
+    captureBasePrefix({ output, save, counts: () => ({ totalRequests, toolCalls: toolCalls.length }) });
+    await exerciseModels({ output, url: view.url, peer: session.peer, boundary, tasks: config.modelReuse,
+      counts: () => ({ totalRequests, toolCalls: toolCalls.length }) });
+  }
   if (config.adaptation === true) await exerciseAdaptation({ output, origin: protectedOrigin,
     goal: effect.published, submit, peer: session.peer, boundary, tool, save,
+    baseCaptured: !!config.modelReuse,
     advertise: visible => { exposeProtected = visible; },
     counts: () => ({ totalRequests, toolCalls: toolCalls.length }) });
   if (hold === "hold") {

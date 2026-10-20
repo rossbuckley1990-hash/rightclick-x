@@ -6,13 +6,11 @@ import { join, relative } from "node:path";
 import type { RpcPeer } from "./challenge-session.ts";
 import { approvedCompression } from "./operator-request.ts";
 
-export async function exerciseAdaptation(options: {
-  output: string; origin: string; goal: { id: string; path: string }; submit: { id: string; title: string };
-  peer: RpcPeer; boundary: RpcPeer; tool(name: string, args?: object): Promise<any>;
-  save(name: string, value: unknown): void; advertise(visible: boolean): void;
+export function captureBasePrefix(options: {
+  output: string; save(name: string, value: unknown): void;
   counts(): { totalRequests: number; toolCalls: number };
 }) {
-  const { output, origin, goal, submit, peer, boundary, tool, save } = options;
+  const { output, save } = options;
   const lines: Record<string, number> = {};
   function count(directory: string) {
     for (const entry of readdirSync(directory, { withFileTypes: true })) {
@@ -25,6 +23,16 @@ export async function exerciseAdaptation(options: {
   save("adaptation-base-cutoff", { lines, ...options.counts() });
   save("adaptation-base-tools", JSON.parse(readFileSync(join(output, "tool-calls.json"), "utf8")));
   save("adaptation-base-public", JSON.parse(readFileSync(join(output, "public-network.json"), "utf8")));
+}
+
+export async function exerciseAdaptation(options: {
+  output: string; origin: string; goal: { id: string; path: string }; submit: { id: string; title: string };
+  peer: RpcPeer; boundary: RpcPeer; tool(name: string, args?: object): Promise<any>;
+  save(name: string, value: unknown): void; advertise(visible: boolean): void;
+  counts(): { totalRequests: number; toolCalls: number }; baseCaptured?: boolean;
+}) {
+  const { origin, goal, submit, peer, boundary, tool, save } = options;
+  if (!options.baseCaptured) captureBasePrefix(options);
   const phases: any[] = [];
   async function record(name: string, action: () => Promise<any>) {
     const before = options.counts(), started = performance.now();
