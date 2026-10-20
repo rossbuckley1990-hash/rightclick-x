@@ -17,3 +17,9 @@ Use only ChatGPT subscription authentication, ordinary usage allowed, a supporte
 The generic host permits configured HTTPS public reads only, with manual redirects, no authorization/cookie headers, 24-request and streaming byte budgets, a thirty-second request timeout and request spacing. Runtime origin/private-network and execution policy checks remain in place. The host is evaluation instrumentation; it is not added to the product as a special integration.
 
 After the frozen sessions, run a separate result checker and corrupt its copied inputs to ensure altered output, hidden discovery and concealed requests fail. Run typecheck and native regressions before committing the freeze. Keep the original broad acceptance thresholds and adverse economics unchanged.
+
+## Preserved runner configuration failure
+
+Freeze `5177cb2` completed the first model turn, then stopped on three trace-audit violations. Inspection of the raw trace establishes a runner error: it supplied `rightclick-x` as the audit prefix, whereas the existing `codexSession` contract and earlier runner require `mcp__rightclick-x`. The observed tool names were the configured MCP server's three `context_*` calls. This was not a CLI naming change. The original invalid result, answer, 115,910 reported tokens and 23.1 seconds remain in `attempt1`; they are not silently converted into a valid trial.
+
+Correct only the caller's prefix, keep the auditor, prompts, tasks, retained state and acceptance rules unchanged, commit the correction, then run a new four-session trial. This is a transport-validity retry, not selection by answer quality. Report the additional first-attempt resources alongside the final trial. Rechecking the original trace under the correct unchanged auditor is diagnostic evidence, not a replacement for the recorded failure.

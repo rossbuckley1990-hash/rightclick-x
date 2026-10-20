@@ -47,7 +47,7 @@ Use actual tool execution; do not answer from memory or infer a publication from
 The operator permits read-only access to the two configured public services when the current execution policy allows it. A stored capability never overrides current policy.
 Return a JSON object with exactly entry_id, doi, title and publisher between lines BEGIN and END. If the capability cannot execute, the identifier is unavailable, permission is denied or the required result cannot be established, return UNABLE: followed by the reason. Do not change policy or use another route.`;
   writeFileSync(join(directory, "prompt.txt"), prompt);
-  const session = await codexSession({ prompt, model: task.model, allowed: "rightclick-x", evidenceDir: directory, timeoutMs: 600_000,
+  const session = await codexSession({ prompt, model: task.model, allowed: "mcp__rightclick-x", evidenceDir: directory, timeoutMs: 600_000,
     servers: { "rightclick-x": { command: process.execPath,
       args: [join(root, "experiments/living/public-reuse-host.ts"), configPath, directory, join(directory, "state.json"), task.mode],
       startup_timeout_sec: 40, tool_timeout_sec: 90 } } });
