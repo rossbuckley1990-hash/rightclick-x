@@ -40,6 +40,8 @@ def main(output):
         issuer, provider = private / "issuer", private / "provider"
         issuer.mkdir(mode=0o700)
         provider.mkdir(mode=0o700)
+        release_file = provider / "release.txt"
+        release_file.write_text("original")
         boundary = ExactBoundary(issuer, issued, "pending")
         boundary.artifact_root = output / "artifacts"
         public = private / "issuer-public.json"
@@ -51,7 +53,7 @@ def main(output):
         try:
             resource, errors, ready = fixture.resource.start_resource(private, output, {
                 "private": str(provider), "output": str(output), "issuerPublic": str(public),
-                "authoritySocket": str(socket), "asyncCompression": True,
+                "authoritySocket": str(socket), "asyncCompression": True, "releaseFile": str(release_file),
             }, "living")
             boundary.origin = boundary.direct_origin = ready["origin"]
             print(json.dumps({"op": "ready", "origin": boundary.origin, "resource": ready}), flush=True)
@@ -90,6 +92,15 @@ def main(output):
                             boundary.store.set_status(boundary.grant.id, GrantStatus.REVOKED)
                         append(output / "operator.jsonl", {"op": op})
                         value = {"revoked": True}
+                    elif op == "release":
+                        release = command["release"]
+                        if release not in {"original", "compatible", "incompatible"}:
+                            raise ValueError("unsupported disposable provider release")
+                        temporary_release = release_file.with_suffix(".next")
+                        temporary_release.write_text(release)
+                        temporary_release.replace(release_file)
+                        append(output / "operator.jsonl", {"op": op, "release": release})
+                        value = {"release": release}
                     elif op == "snapshot":
                         value = {"effects": [json.loads(line) for line in (output / "provider.jsonl").read_text().splitlines()]
                             if (output / "provider.jsonl").exists() else [],

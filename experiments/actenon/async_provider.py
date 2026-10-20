@@ -13,11 +13,21 @@ import sys
 
 
 class AsyncCompression:
-    def __init__(self, private, output):
+    def __init__(self, private, output, release_file=None):
         self.private, self.output = private, output
+        self.release_file = Path(release_file) if release_file else None
         self.jobs = {}
         (output / "artifacts").mkdir(exist_ok=True)
         (output / "publications").mkdir(exist_ok=True)
+
+    def release(self):
+        release = self.release_file.read_text() if self.release_file else "original"
+        if release not in {"original", "compatible", "incompatible"}:
+            raise ValueError("unknown controlled provider release")
+        return release
+
+    def result(self, value):
+        return {"artifact": value} if self.release() != "original" else value
 
     def spec(self, origin):
         parameter = [{"in": "path", "name": "label", "required": True, "schema": {"type": "string"}}]
@@ -25,7 +35,11 @@ class AsyncCompression:
             "content": {"application/json": {"schema": {"type": "object", "properties": {
                 "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
                 "size": {"type": "integer"}, "label": {"type": "string"}}}}}}}
-        return {"openapi": "3.1.0", "info": {"title": "Protected compression", "version": "1"},
+        release = self.release()
+        if release != "original":
+            schema = final["200"]["content"]["application/json"]["schema"]
+            final["200"]["content"]["application/json"]["schema"] = {"type": "object", "properties": {"artifact": schema}}
+        contract = {"openapi": "3.1.0", "info": {"title": "Protected compression", "version": "1" if release == "original" else release},
             "servers": [{"url": origin}], "paths": {
                 "/jobs": {"post": {"operationId": "compress", "summary": "Compress a document",
                     "requestBody": {"required": True, "content": {"application/json": {"schema": {
@@ -41,6 +55,11 @@ class AsyncCompression:
                         "type": "object", "required": ["sha256"], "properties": {
                             "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}}}}}}, "responses": final}},
             }}
+        if release != "original":
+            contract["paths"]["/jobs"]["post"]["operationId"] = "compressDocument"
+        if release == "incompatible":
+            contract["paths"]["/deliveries"] = contract["paths"].pop("/jobs")
+        return contract
 
     def dispatch(self, method, path, body, proof_id):
         if method == "POST" and re.fullmatch(r"/publications/[a-z0-9-]{1,40}", path):
@@ -55,7 +74,8 @@ class AsyncCompression:
             with (self.output / "provider.jsonl").open("a") as journal:
                 journal.write(json.dumps(row) + "\n"); journal.flush(); os.fsync(journal.fileno())
             return 200, {}, {"label": label, "sha256": value["sha256"], "size": len(data)}
-        if method == "POST" and path == "/jobs":
+        job_path = "/deliveries" if self.release() == "incompatible" else "/jobs"
+        if method == "POST" and path == job_path:
             value = json.loads(body)
             if set(value) != {"label", "document"} or not re.fullmatch(r"[a-z0-9-]{1,40}", value["label"]):
                 raise ValueError("unsupported job parameters")
@@ -86,7 +106,7 @@ class AsyncCompression:
                 prefix = "/artifacts-moved/" if label == "moved" else "/artifacts/"
                 return 303, {"location": prefix + label, "retry-after": "0"}, {}
             data = (self.output / "artifacts" / f"{label}.gz").read_bytes()
-            return 200, {}, {"label": label, "sha256": hashlib.sha256(data).hexdigest(), "size": len(data)}
+            return 200, {}, self.result({"label": label, "sha256": hashlib.sha256(data).hexdigest(), "size": len(data)})
         raise ValueError("unsupported resource operation")
 
     def close(self):

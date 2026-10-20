@@ -9,6 +9,7 @@ import { RpcPeer, startContainedSession, presentSession, holdPresentation, type 
 import { publicReadTransport, type PublicSource } from "./public-read-transport.ts";
 import { TransportRefused } from "../../src/reflectors/net.ts";
 import { actenonAuthorityEvidence } from "../../integrations/actenon/authority-evidence.ts";
+import { exerciseAdaptation } from "./session-adaptation.ts";
 
 const [configFile, directory, image, python, hold] = process.argv.slice(2);
 if (!configFile || !directory || !image?.startsWith("sha256:") || !python)
@@ -130,6 +131,10 @@ try {
     publicGoal: result.published, protectedGoal: effect.published, totalRequests, toolCalls: toolCalls.length,
     protectedOutput: effect.executed.output, stateSha256: createHash("sha256").update(JSON.stringify(final.state)).digest("hex"),
     remaining: ["separate outcome checking", "fresh-model inheritance", "compatible/incompatible change", "authority-to-runtime call linkage", "independent-author holdout", "matched economics"] });
+  if (config.adaptation === true) await exerciseAdaptation({ output, origin: protectedOrigin,
+    goal: effect.published, submit, peer: session.peer, boundary, tool, save,
+    advertise: visible => { exposeProtected = visible; },
+    counts: () => ({ totalRequests, toolCalls: toolCalls.length }) });
   if (hold === "hold") {
     process.stdout.write(JSON.stringify({ op: "holding", url: view.url,
       instruction: "Closes on stdin line, EOF, signal or after five minutes. Use a terminal for live inspection." }) + "\n");

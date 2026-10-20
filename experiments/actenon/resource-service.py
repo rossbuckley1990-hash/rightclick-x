@@ -35,7 +35,7 @@ journal = output / "provider.jsonl"
 journal.touch(exist_ok=True)
 if config.get("asyncCompression"):
     from async_provider import AsyncCompression
-    business = AsyncCompression(private, output)
+    business = AsyncCompression(private, output, config.get("releaseFile"))
 else:
     business = None
 
