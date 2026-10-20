@@ -29,7 +29,7 @@ export async function exerciseAdaptation(options: {
   output: string; origin: string; goal: { id: string; path: string }; submit: { id: string; title: string };
   peer: RpcPeer; boundary: RpcPeer; tool(name: string, args?: object): Promise<any>;
   save(name: string, value: unknown): void; advertise(visible: boolean): void;
-  counts(): { totalRequests: number; toolCalls: number }; baseCaptured?: boolean;
+  counts(): { totalRequests: number; toolCalls: number }; baseCaptured?: boolean; additionalStopped?: string[];
 }) {
   const { origin, goal, submit, peer, boundary, tool, save } = options;
   if (!options.baseCaptured) captureBasePrefix(options);
@@ -121,7 +121,9 @@ export async function exerciseAdaptation(options: {
   // The runtime conservatively retains stopped workflows after a refusal: HTTP
   // denial alone does not universally establish non-execution. Never replay them.
   assert.equal(retained.state.httpContinuations.length, 0);
-  assert.equal(retained.state.workflowContinuations.length, 3);
+  const additional = options.additionalStopped ?? [];
+  assert.equal(retained.state.workflowContinuations.length, 3 + additional.length);
+  for (const id of additional) assert.ok(retained.state.workflowContinuations.some((c: any) => c.runId === id));
   for (const [index, checkpoint] of retained.state.workflowContinuations.entries()) {
     assert.equal(checkpoint.phase, "stopped");
     const unresolved = await record("stopped-resume-" + index, () =>

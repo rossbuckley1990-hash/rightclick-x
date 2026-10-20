@@ -132,15 +132,17 @@ try {
     publicGoal: result.published, protectedGoal: effect.published, totalRequests, toolCalls: toolCalls.length,
     protectedOutput: effect.executed.output, stateSha256: createHash("sha256").update(JSON.stringify(final.state)).digest("hex"),
     remaining: ["separate outcome checking", "fresh-model inheritance", "compatible/incompatible change", "authority-to-runtime call linkage", "independent-author holdout", "matched economics"] });
+  let modelStops: string[] = [];
   if (config.modelReuse) {
     if (config.adaptation !== true) throw new Error("combined model experiment requires adaptation checking");
     captureBasePrefix({ output, save, counts: () => ({ totalRequests, toolCalls: toolCalls.length }) });
-    await exerciseModels({ output, url: view.url, peer: session.peer, boundary, tasks: config.modelReuse,
+    modelStops = await exerciseModels({ output, url: view.url, peer: session.peer, boundary, tasks: config.modelReuse,
       counts: () => ({ totalRequests, toolCalls: toolCalls.length }) });
   }
   if (config.adaptation === true) await exerciseAdaptation({ output, origin: protectedOrigin,
     goal: effect.published, submit, peer: session.peer, boundary, tool, save,
     baseCaptured: !!config.modelReuse,
+    additionalStopped: modelStops,
     advertise: visible => { exposeProtected = visible; },
     counts: () => ({ totalRequests, toolCalls: toolCalls.length }) });
   if (hold === "hold") {

@@ -158,6 +158,9 @@ def main():
             rejected.append(case)
         else:
             raise ValueError("accepted corruption: " + case)
+    if not offline:
+        (destination / "models-result.json").write_text(json.dumps({"status": "PASS", "checked": checked,
+            "corruptionsRejected": rejected, "scope": "Model acts only; this does not establish combined-session completion"}, indent=2) + "\n")
     adaptation = json.loads(subprocess.check_output([sys.executable, "-B", str(Path(__file__).with_name("check-adaptation.py")), str(root)]))
     result = {"status": "PASS", "models": checked, "modelCorruptionsRejected": rejected, "adaptation": adaptation,
         "scope": "same-author separate public/native checking; same persistent runtime and same-vendor fresh models; no independent holdout or comparative economics"}

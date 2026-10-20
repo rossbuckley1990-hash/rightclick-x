@@ -1,6 +1,7 @@
 // Actual fresh model clients of the existing, still-running MCP endpoint.
 // No retained state copies, new runtime, provider-specific host or grant route.
 import { execFileSync } from "node:child_process";
+import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -45,7 +46,8 @@ export async function exerciseModels(options: {
   const read = (name: string) => JSON.parse(readFileSync(join(output, name + ".json"), "utf8"));
   save("provenance", { revision, sources, tasks, endpoint: endpoint.href,
     scope: "same persistent runtime; fresh same-vendor model clients, exposed development providers; no economic comparison or independent holdout" });
-  save("before", await peer.call("snapshot"));
+  const initial = await peer.call("snapshot");
+  save("before", initial);
   save("effects-before", await boundary.call("snapshot"));
   const sessions: unknown[] = [];
   for (const task of tasks) {
@@ -72,9 +74,20 @@ Return a JSON object with exactly entry_id, doi, title and publisher between lin
     if (session.blocked || session.timedOut || session.exit !== 0)
       throw new Error("stopped after invalid model session; evidence preserved, no automatic retry");
   }
-  save("after", await peer.call("snapshot"));
+  const final = await peer.call("snapshot");
+  save("after", final);
+  const existing = new Set(initial.state.workflowContinuations.map((c: any) => c.runId));
+  const stopped = final.state.workflowContinuations.filter((c: any) => !existing.has(c.runId));
+  assert.equal(stopped.length, 1, "only the missing-resource attempt adds a stopped checkpoint");
+  const missing = tasks.filter(t => t.expected === "unavailable");
+  assert.equal(missing.length, 1);
+  assert.equal(stopped[0].phase, "stopped");
+  assert.deepEqual(stopped[0].inputs, { entry_id: missing[0].entryId });
+  assert.equal(stopped[0].composition.risk, "read");
+  assert.equal(stopped[0].composition.goals[0].slug, "structure-primary-publication-metadata");
   save("effects-after", await boundary.call("snapshot"));
   execFileSync("python3", [resolve("experiments/north-star/codex-preflight.py"), join(destination, "postflight")], { stdio: "pipe" });
   for (const [name, digest] of Object.entries(sources))
     if (hash(readFileSync(name)) !== digest) throw new Error("source changed during model session: " + name);
+  return stopped.map((c: any) => c.runId) as string[];
 }

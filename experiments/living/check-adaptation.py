@@ -45,8 +45,20 @@ def check(root):
     key = lambda value: json.dumps(value, sort_keys=True)
     with tempfile.TemporaryDirectory(prefix="rcx-base-prefix-") as temporary:
         original = base_copy(root, Path(temporary) / "session")
+    extra_stops = []
+    if read("provenance.json")["config"].get("modelReuse"):
+        before = read("models/before.json")["state"]["workflowContinuations"]
+        after = read("models/after.json")["state"]["workflowContinuations"]
+        assert len(before) == 1 and len(after) == 2 and all(c in after for c in before)
+        extra_stops = [c for c in after if c not in before]
+        missing = [t for t in read("models/provenance.json")["tasks"] if t["expected"] == "unavailable"]
+        assert len(extra_stops) == len(missing) == 1
+        stopped = extra_stops[0]
+        assert stopped["phase"] == "stopped" and stopped["inputs"] == {"entry_id": missing[0]["entryId"]}
+        assert stopped["composition"]["risk"] == "read"
+        assert [g["slug"] for g in stopped["composition"]["goals"]] == ["structure-primary-publication-metadata"]
     phases = {row["name"]: row for row in read("adaptation-phases.json")}
-    assert len(phases) == 24
+    assert len(phases) == 24 + len(extra_stops)
     for name in ["incompatible-run", "incompatible-generated", "removed-run"]:
         assert phases[name]["requests"] == 0
     for name in ["compatible-denied", "incompatible-fresh", "returned-denied"]:
@@ -69,7 +81,9 @@ def check(root):
         for field in ["slug", "have", "want", "intent", "verify", "require", "witnesses", "origins", "risks", "through", "anchors", "publishedAt"]:
             assert goal.get(field) == after[goal["slug"]].get(field), ("retained obligation", field)
     assert final["httpContinuations"] == []
-    assert len(final["workflowContinuations"]) == 3
+    assert len(final["workflowContinuations"]) == 3 + len(extra_stops)
+    assert all(c in final["workflowContinuations"] for c in extra_stops)
+    assert {c["inputs"].get("label") for c in final["workflowContinuations"] if c not in extra_stops} == {"first", "second", "generated"}
     for index, checkpoint in enumerate(final["workflowContinuations"]):
         assert checkpoint["phase"] == "stopped"
         resumed = read("adaptation-stopped-resume-" + str(index) + ".json")
@@ -171,7 +185,7 @@ def check(root):
     return {"base": original, "jobs": 3, "unexpectedEffects": 0, "exactProofs": len(accepted),
         "signedArtifacts": len(artifacts), "issuerRefusals": 6, "requests": total["totalRequests"],
         "toolCalls": total["toolCalls"], "goalContractPreserved": True, "lifecycleViews": 7,
-        "stoppedWorkflowsPreservedWithoutReplay": 3}
+        "stoppedWorkflowsPreservedWithoutReplay": len(final["workflowContinuations"])}
 
 
 if __name__ == "__main__":
