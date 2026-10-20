@@ -1,0 +1,76 @@
+{
+  "runtimeRoot": "/Users/ross/src/rightclick-x-adaptive",
+  "node": "v26.12.0",
+  "stateSha256": "884b984ce881dd040ac2c43bf60ef33f8830f62e03d9f31289ea7753a9287d4a",
+  "request": {
+    "have": {
+      "entry_id": "1UBQ"
+    },
+    "want": "json",
+    "intent": "Retrieve primary research publication metadata via RCSB rcsb_primary_citation.pdbx_database_id_DOI then Crossref DOI lookup. Never use structure dataset DOI. Input entry_id is parameterized.",
+    "origins": [
+      "https://data.rcsb.org",
+      "https://api.crossref.org"
+    ],
+    "risks": [
+      "read"
+    ],
+    "require": [
+      "composite:b9028941c83d"
+    ],
+    "verify": [
+      {
+        "op": "equals",
+        "path": "message.type",
+        "value": "journal-article"
+      },
+      {
+        "op": "type",
+        "path": "message.title",
+        "value": "array"
+      },
+      {
+        "op": "length_gt",
+        "path": "message.title",
+        "value": 0
+      },
+      {
+        "op": "exists",
+        "path": "message.publisher"
+      },
+      {
+        "op": "exists",
+        "path": "message.DOI"
+      }
+    ],
+    "publish": "pdb-primary-research-publication",
+    "run": true
+  },
+  "milliseconds": 20576.799583,
+  "rss": 205741816,
+  "requests": 0,
+  "before": 69,
+  "after": 69,
+  "outcome": {
+    "status": "unavailable",
+    "require": [
+      "composite:b9028941c83d"
+    ],
+    "covered": {},
+    "missing": [
+      "composite:b9028941c83d"
+    ],
+    "joins": [
+      {
+        "step": 0,
+        "port": "entry_id",
+        "from": "$in.entry_id",
+        "kind": "caller"
+      }
+    ],
+    "reason": "no plan's result carries: composite:b9028941c83d"
+  },
+  "plans": 5,
+  "executed": false,
+  "published": false
+}

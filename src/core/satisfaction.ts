@@ -60,6 +60,22 @@ export function carries(path: string, term: string): boolean {
   return want.length > 0 && want.every((w) => have.has(w));
 }
 
+/** Terms no current result could carry. This is only a necessary condition for
+ * satisfaction, not evidence of a usable plan. Include unselected and blocked
+ * capabilities: projection or policy diagnosis still needs the normal search.
+ * Result paths only remove prefixes from these fields/ports, so cannot supply
+ * a term absent here. Recompute after discovery; absence is snapshot-local. */
+export function undeclaredRequirements(graph: CapabilityGraph, require: string[]): string[] {
+  if (!require.length) return [];
+  let missing = [...require];
+  for (const cap of graph.capabilities.values()) {
+    const fields = resultFields(cap, "");
+    missing = missing.filter(term => !fields.some(f => carries(f.path, term)));
+    if (!missing.length) break;
+  }
+  return missing;
+}
+
 export function assess(graph: CapabilityGraph, steps: PlanStep[], result: string, require: string[], have: Record<string, string> = {}, haveSchemes: Record<string, string[]> = {}): Satisfaction {
   const covered: Record<string, string> = {};
   const projection: Satisfaction["projection"] = [];

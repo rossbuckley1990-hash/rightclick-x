@@ -9,7 +9,7 @@ import { CapabilityGraph, signature, tokenize, type GraphEvent, type LearnDelta 
 import { Ledger, ReceiptChain, sha256, stableStringify, type Receipt } from "./core/ledger.ts";
 import { shapeOf, type IdentityState } from "./core/identities.ts";
 import { egressOf, plan, type Plan } from "./core/planner.ts";
-import { outputCarries, type Satisfaction } from "./core/satisfaction.ts";
+import { outputCarries, undeclaredRequirements, type Satisfaction } from "./core/satisfaction.ts";
 import { assessPlan, contractFor, lostWords, type Assurance, type ContractAssessment, type OutcomeContract } from "./core/contract.ts";
 import { selectionWith } from "./reflectors/graphql.ts";
 import { hostSandbox, type Sandbox } from "./core/sandbox.ts";
@@ -2002,7 +2002,12 @@ export class RightClick {
     const schemes = Object.fromEntries(Object.entries(values).map(([k, v]) => [k, this.graph.identities.schemesFor(this.graph.capabilities.values(), k, v)]).filter(([, s]) => s.length));
     const require = (opts.require ?? []).map((t) => String(t).trim()).filter(Boolean);
     const goal = { have: types, want: opts.want, intent: opts.intent, maxSteps: opts.maxSteps, limit: opts.limit ?? 5, risks: opts.risks, through, exclude: blocked, origins, schemes, ...(require.length ? { require } : {}) };
-    let plans = plan(this.graph, this.ledger, goal);
+    let undeclared: string[] = [];
+    const search = () => {
+      undeclared = undeclaredRequirements(this.graph, require);
+      return undeclared.length ? [] : plan(this.graph, this.ledger, goal);
+    };
+    let plans = search();
     const titles = (p: Plan) => p.steps.map((s) => this.graph.get(s.capability)!.title + (s.bindings.some((b) => b.each) ? " (each)" : ""));
     const result: ComposeResult = {
       goal: { have: types, want: opts.want, intent: opts.intent, through },
@@ -2022,7 +2027,7 @@ export class RightClick {
     // Diagnose only when the permitted search found nothing. This bounded, pure
     // search cannot return runnable plans, acquire providers or change authority.
     // Keep semantic refusals, recursion, unsupported modes and contract checks.
-    if (!plans.length && (blocked.size || origins !== undefined || opts.risks !== undefined)) {
+    if (!plans.length && !undeclared.length && (blocked.size || origins !== undefined || opts.risks !== undefined)) {
       const structural = new Set(this.graph.list().filter(c => containsActive(c) || !this.executionAssessment(c, {}).allowed).map(c => c.id));
       const candidates = plan(this.graph, this.ledger, { ...goal, exclude: structural, origins: undefined, risks: undefined, limit: 5 }, 512);
       for (const candidate of candidates) {
@@ -2078,7 +2083,7 @@ export class RightClick {
         const res = l.results.find((x) => x.source === c.source);
         result.acquisition!.learned.push({ title: c.title, kind: c.kind, source: c.source, capabilities: res?.learned.reduce((n, d) => n + d.capabilitiesAdded, 0) ?? 0, error: res?.error });
       }
-      plans = plan(this.graph, this.ledger, goal);
+      plans = search();
       result.plans = plans.map((p) => ({ ...p, titles: titles(p) }));
       return true;
     };
@@ -2094,9 +2099,13 @@ export class RightClick {
     if (require.length) {
       const best = plans[0]?.satisfaction;
       const top = established(plans)[0]?.satisfaction;
+      const absentReason = undeclared.length
+        ? `the current graph declares no result field carrying: ${undeclared.join(", ")}. Further authorised discovery may supply evidence.` +
+          (undeclared.some(t => this.graph.get(t)) ? " require describes output information; use through to constrain operations. No constraint was changed." : "")
+        : undefined;
       result.outcome = top
         ? { status: "established", require, covered: top.covered, missing: [], joins: top.joins }
-        : { status: best?.status === "unverified" ? "unverified" : "unavailable", require, covered: best?.covered ?? {}, missing: best?.missing ?? require, joins: best?.joins ?? [], reason: !plans.length ? "no plan reaches the requested type" : best?.status === "unverified" ? "the required information is reachable only through a generic join (no evidence that the values link)" : `no plan's result carries: ${(best?.missing ?? require).join(", ")}` };
+        : { status: best?.status === "unverified" ? "unverified" : "unavailable", require, covered: best?.covered ?? {}, missing: best?.missing ?? require, joins: best?.joins ?? [], reason: absentReason ?? (!plans.length ? "no plan reaches the requested type" : best?.status === "unverified" ? "the required information is reachable only through a generic join (no evidence that the values link)" : `no plan's result carries: ${(best?.missing ?? require).join(", ")}`) };
       plans = established(plans);
     }
     // Outcome contract: the request made explicit, and which plans honour it (lineage: every step
