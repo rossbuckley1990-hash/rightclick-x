@@ -5,9 +5,11 @@ import { resolve, join } from 'node:path';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { RightClick } from '../../src/runtime.ts';
-const [configPath, destination] = process.argv.slice(2);
-if (!configPath || !destination) throw new Error('usage: public-discovery.ts CONFIG NEW_OUTPUT_DIRECTORY');
+const [configPath, destination, statePath] = process.argv.slice(2);
+if (!configPath || !destination) throw new Error('usage: public-discovery.ts CONFIG NEW_OUTPUT_DIRECTORY [RETAINED_STATE]');
 const config=JSON.parse(readFileSync(configPath,'utf8')),out=resolve(destination);
+const retained=statePath?readFileSync(statePath,'utf8'):undefined;
+if(retained&&(config.goals??[]).length)throw new Error('reuse evidence must invoke retained capabilities, not recreate goals');
 mkdirSync(out,{recursive:false});
 const save=(name:string,value:unknown)=>writeFileSync(join(out,name+'.json'),JSON.stringify(value,null,2)+'\n');
 const sources=config.sources as {url:string;kind:'openapi'|'graphql'}[];
@@ -38,12 +40,14 @@ const net:typeof fetch=async(input,init)=>{
  }catch(error){entry.error=String(error);throw error}
  finally{save('network',history);release()}
 };
-save('provenance',{revision:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),node:process.version,config,scope:'exposed public-provider development experiment; not final holdout, independent author evaluation or commercial proof'});
-const rc=await RightClick.create({name:'Public capability development',fetch:net,sandbox:null,network:{blockPrivate:true,origins},authority:{investigate:[],execute:[],execution:{allowedRisks:['read'],allowedOrigins:origins},publish:'checked'},store:{load:async()=>null,save:async s=>{state=s;save('state',s)}}});
+save('provenance',{revision:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),node:process.version,pid:process.pid,config,restored:retained?{path:resolve(statePath!),sha256:createHash('sha256').update(retained).digest('hex')}:undefined,scope:'exposed public-provider development experiment; not final holdout, independent author evaluation, fresh AI agent or commercial proof'});
+const started=performance.now();
+const rc=await RightClick.create({name:'Public capability development',fetch:net,sandbox:null,network:{blockPrivate:true,origins},authority:{investigate:[],execute:[],execution:{allowedRisks:['read'],allowedOrigins:origins},publish:'checked'},store:{load:async()=>retained?JSON.parse(retained):null,save:async s=>{state=s;save('state',s)}}});
 save('baseline',{providers:[...rc.graph.providers.values()],capabilities:rc.graph.list()});
 try{
- save('learn',await rc.learn({sources:sources.map(s=>s.url),kinds:Object.fromEntries(sources.map(s=>[s.url,s.kind]))}));
+ if(!retained)save('learn',await rc.learn({sources:sources.map(s=>s.url),kinds:Object.fromEntries(sources.map(s=>[s.url,s.kind]))}));
  save('discovered',{providers:[...rc.graph.providers.values()],capabilities:rc.graph.list()});
  for(let index=0;index<(config.goals??[]).length;index++)save(`goal-${index}`,await rc.compose(config.goals[index]));
+ for(let index=0;index<(config.runs??[]).length;index++)save(`run-${index}`,await rc.run(config.runs[index].capability,config.runs[index].args));
 }catch(error){save('error',{error:String(error)});process.exitCode=1}
-finally{await rc.flush();save('activity',rc.activity.snapshot());save('final',{providers:rc.graph.providers.size,operations:rc.graph.capabilities.size,published:state?.published??[],networkRequests:history.length,responseBytes:bytes})}
+finally{await rc.flush();save('activity',rc.activity.snapshot());save('final',{providers:rc.graph.providers.size,operations:rc.graph.capabilities.size,published:state?.published??[],networkRequests:history.length,responseBytes:bytes,elapsedMs:performance.now()-started})}

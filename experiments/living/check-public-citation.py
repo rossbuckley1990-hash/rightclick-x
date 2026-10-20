@@ -11,7 +11,8 @@ import urllib.request
 evidence, destination = map(pathlib.Path, sys.argv[1:])
 destination.mkdir(parents=True, exist_ok=False)
 provenance = json.loads((evidence / 'provenance.json').read_text())
-entry_id = provenance['config']['goals'][0]['have']['entry_id']
+reuse = bool(provenance.get('restored'))
+entry_id = (provenance['config']['runs'][0]['args'] if reuse else provenance['config']['goals'][0]['have'])['entry_id']
 if not isinstance(entry_id, str) or not entry_id.isalnum() or len(entry_id) != 4:
     raise ValueError('expected one explicit four-character structure identifier')
 
@@ -29,8 +30,8 @@ def get(url, name):
 record = get('https://data.rcsb.org/rest/v1/core/entry/' + entry_id, 'structure')
 expected_doi = record['rcsb_primary_citation']['pdbx_database_id_DOI']
 expected = get('https://api.crossref.org/works/' + urllib.parse.quote(expected_doi, safe=''), 'publication')['message']
-candidate = json.loads((evidence / 'goal-0.json').read_text())
-output = candidate.get('executed', {}).get('output')
+candidate = json.loads((evidence / ('run-0.json' if reuse else 'goal-0.json')).read_text())
+output = candidate.get('output') if reuse else candidate.get('executed', {}).get('output')
 outputs = output if isinstance(output, list) else [output]
 messages = [row.get('message', {}) for row in outputs if isinstance(row, dict)]
 checks = {
