@@ -7,6 +7,7 @@ import argparse
 from datetime import datetime, timezone
 import hashlib
 import json
+import re
 from pathlib import Path
 import sys
 from urllib.parse import urlsplit
@@ -23,6 +24,51 @@ def read(path, maximum):
     if len(data) > maximum:
         raise ValueError("evidence input exceeds profile")
     return data
+
+
+def transport_links(path):
+    """The operator owns this journal. Native signatures do NOT sign context."""
+    if not path:
+        return {}
+    data = read(path, 4 * 1024 * 1024)
+    if data and not data.endswith(b"\n"):
+        raise ValueError("incomplete transport log")
+    links = {}
+    requests = set()
+    lines = data.splitlines()
+    if len(lines) > 1000:
+        raise ValueError("transport log exceeds profile")
+    for line in lines:
+        if len(line) > 128 * 1024:
+            raise ValueError("oversized transport record")
+        row = json.loads(line)
+        context = row["context"]
+        if row["version"] != 1 or set(context) != {"runtimeId", "runId", "capabilityId", "requestId"}:
+            raise ValueError("unsupported transport context")
+        if any(not isinstance(v, str) or not v or len(v) > 512 or re.search(r"[\x00-\x1f\x7f]", v) for v in context.values()):
+            raise ValueError("invalid transport context")
+        if any(not re.fullmatch(r"[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}", context[k]) for k in ("runtimeId", "requestId")):
+            raise ValueError("invalid transport identity")
+        request = (context["runtimeId"], context["requestId"])
+        if request in requests:
+            raise ValueError("duplicate transport request")
+        requests.add(request)
+        wire = row["wire"]
+        if set(wire) != {"method", "url", "body", "headers"} or not isinstance(wire["headers"], dict):
+            raise ValueError("unsupported wire")
+        refs = row["artifacts"]
+        if not isinstance(refs, list) or not 1 <= len(refs) <= 2:
+            raise ValueError("unsupported artifact references")
+        if len({ref["nativeRequestId"] for ref in refs}) != 1:
+            raise ValueError("one response cannot name different gate attempts")
+        for ref in refs:
+            digest = ref["artifactDigest"]
+            if not isinstance(digest, str) or not re.fullmatch(r"[a-f0-9]{64}", digest) or digest in links:
+                raise ValueError("ambiguous artifact association")
+            if not isinstance(ref["nativeRequestId"], str) or not 1 <= len(ref["nativeRequestId"]) <= 160:
+                raise ValueError("invalid gate request reference")
+            links[digest] = (context, wire, ref["nativeRequestId"])
+    return links
 
 
 def project(args):
@@ -42,6 +88,7 @@ def project(args):
         raise ValueError("incomplete evidence record")
     records = []
     seen = set()
+    links = transport_links(args.transport_links)
     # Historical bounded suffix. Omission/reordering is not cryptographically
     # detectable from standalone attestations; never claim a complete journal.
     for line in data.splitlines()[-100:]:
@@ -64,12 +111,24 @@ def project(args):
         seen.add(digest)
         action_hash = artifact.get("correlation", {}).get("action_hash")
         outcome = "refused" if kind == "refusal" else artifact["outcome"] if artifact.get("outcome") in ("executed", "refused") else "unresolved"
-        records.append({"artifactType": kind, "artifactDigest": digest,
+        record = {"artifactType": kind, "artifactDigest": digest,
             "actionDigest": action_hash["value"] if action_hash and action_hash.get("algorithm") == "sha-256" else None,
             "targetDigest": hashlib.sha256(canonicalize_bytes(artifact["target"])).hexdigest(),
             "principal": artifact["subject"]["id"], "operation": artifact["action"]["capability"],
             "outcome": outcome, "reason": artifact.get("reason_code"),
-            "occurredAt": artifact["refused_at"] if kind == "refusal" else artifact["occurred_at"]})
+            "occurredAt": artifact["refused_at"] if kind == "refusal" else artifact["occurred_at"]}
+        if digest in links:
+            context, wire, native_request = links[digest]
+            # Check actual signed request, not a proof template (which may have
+            # been refused for disagreeing with the actual request).
+            if artifact.get("correlation", {}).get("request_id") != native_request or \
+                    artifact["target"] != {"resource_type": "tool", "resource_id": wire["url"]} or \
+                    artifact["action"] != {"name": "http." + wire["method"].lower(),
+                        "capability": "http." + wire["method"].lower(),
+                        "parameters": {k: wire[k] for k in ("method", "body", "headers")}}:
+                raise ValueError("native artifact does not match transport response")
+            record["runtimeLink"] = {**context, "kind": "operator-correlated"}
+        records.append(record)
     return {"version": 1, "verifiedAt": datetime.now(timezone.utc).isoformat(), "records": records}
 
 
@@ -77,6 +136,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     for name in ["attestations", "public-key", "trust-anchor", "origin", "issuer"]:
         parser.add_argument("--" + name, required=True)
+    parser.add_argument("--transport-links")
     try:
         print(json.dumps(project(parser.parse_args())))
     except Exception:

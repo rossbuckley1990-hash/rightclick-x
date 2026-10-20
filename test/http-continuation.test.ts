@@ -4,6 +4,7 @@ import { RightClick, type RuntimeOptions } from "../src/runtime.ts";
 import { reflectOpenAPI } from "../src/reflectors/openapi.ts";
 import { MemoryStore } from "./helpers.ts";
 import { Authority } from "../src/reflectors/net.ts";
+import type { TransportContext } from "../src/core/types.ts";
 
 const origin = "https://batch.test";
 function specification(family = "Archive") {
@@ -20,9 +21,9 @@ function specification(family = "Archive") {
 }
 
 async function world(options: RuntimeOptions = {}, responder?: (url: URL, n: number, init?: RequestInit) => Response | Promise<Response>) {
-  const calls: Array<{ method: string; path: string }> = []; let document = ""; let polls = 0;
-  const rc = await RightClick.create({ sandbox: null, directories: [], ...options, fetch: async (input, init) => {
-    const u = new URL(String(input)); calls.push({ method: init?.method ?? "GET", path: u.pathname });
+  const calls: Array<{ method: string; path: string; context?: TransportContext }> = []; let document = ""; let polls = 0;
+  const rc = await RightClick.create({ sandbox: null, directories: [], ...options, fetch: async (input, init, context) => {
+    const u = new URL(String(input)); calls.push({ method: init?.method ?? "GET", path: u.pathname, context });
     if (u.pathname === "/submit") {
       document = JSON.parse(String(init?.body)).document;
       return new Response(null, { status: 202, headers: { location: "/progress/t-1", "retry-after": "0" } });
@@ -45,6 +46,9 @@ test("known GET resources carry a bounded 202 -> 202 -> 303 -> result execution"
   assert.deepEqual(calls.map(c => c.method), ["POST", "GET", "GET", "GET"]);
   assert.equal(run.httpContinuation?.stopped, "result");
   assert.equal(run.httpContinuation?.requests.length, 3);
+  assert.ok(calls.every(c => c.context?.runId === run.runId && c.context?.runtimeId === rc.activity.epoch &&
+    c.context.capabilityId === "openapi:archive:submit"));
+  assert.equal(new Set(calls.map(c => c.context?.requestId)).size, 4);
   assert.deepEqual(run.receipt.httpContinuation, run.httpContinuation);
   assert.equal((await rc.verifyReceipts()).intact, true);
 });

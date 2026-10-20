@@ -5,6 +5,7 @@ import { createInterface } from "node:readline";
 import { RightClick, type PersistedState } from "../../src/runtime.ts";
 import { createHandler } from "../../src/interface/http.ts";
 import { TransportRefused } from "../../src/reflectors/net.ts";
+import type { FetchLike } from "../../src/core/types.ts";
 
 const send = (value: unknown) => process.stdout.write(JSON.stringify(value) + "\n");
 const pending = new Map<number, { resolve: (v: any) => void; reject: (e: Error) => void; timer: ReturnType<typeof setTimeout> }>();
@@ -24,7 +25,7 @@ const authorityRead = (signal: AbortSignal) => new Promise<any>((resolve, reject
   signal.addEventListener("abort", abort, { once: true });
   send({ op: "authority-read", id });
 });
-const bridge: typeof fetch = async (input, init) => {
+const bridge: FetchLike = async (input, init, context) => {
   const request = new Request(input, init), id = ++sequence;
   const body = Buffer.from(await request.arrayBuffer());
   if (body.length > 4 * 1024 * 1024) throw new Error("session request exceeds bound");
@@ -34,7 +35,7 @@ const bridge: typeof fetch = async (input, init) => {
       reject(new Error("session transport outcome unresolved"));
     }, 40_000);
     pending.set(id, { resolve, reject, timer });
-    send({ op: "fetch", id, request: { method: request.method, url: request.url,
+    send({ op: "fetch", id, context, request: { method: request.method, url: request.url,
       headers: Object.fromEntries(request.headers), body: body.toString("base64") } });
   });
   if (reply.refused) throw new TransportRefused("operator transport refused: " + String(reply.reason ?? "no permission"));

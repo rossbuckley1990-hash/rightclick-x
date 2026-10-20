@@ -58,6 +58,11 @@ class ResourceBoundary(PublicDiscoveryBoundary):
             connection.close()
         append(self.output / "forwarded.jsonl", {"wire": wire, "intent": intent.to_dict(),
             "proof": proof.to_dict() if hasattr(proof, "to_dict") else proof, "reply": result})
+        context = getattr(self, "transport_context", None)
+        refs = result.get("response", {}).get("headers", {}).get("x-actenon-artifacts")
+        if context is not None and refs:
+            append(self.output / "transport-links.jsonl", {"version": 1, "context": context,
+                "wire": wire, "artifacts": json.loads(refs)})
         return result
 
 

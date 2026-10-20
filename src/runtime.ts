@@ -79,6 +79,7 @@ export interface HttpRunContinuation {
 }
 interface HttpExecution {
   signal?: AbortSignal;
+  transportOwner?: Net["execution"];
   continuation?: HttpContinuationEvidence;
   checkpoint?: (cursor: HttpContinuationCursor | null) => Promise<void>;
 }
@@ -1409,7 +1410,8 @@ export class RightClick {
     let workflowRunId: string | undefined;
     const continuationId = resumed?.runId ?? runId;
     const original = structuredClone(cap);
-    const execution: HttpExecution = { signal: opts.signal };
+    const execution: HttpExecution = { signal: opts.signal,
+      transportOwner: { runtimeId: this.activity.epoch, runId, capabilityId: cap.id } };
     if (this.store && cap.invoke.kind === "http" && !cap.invoke.entry) execution.checkpoint = cursor =>
       this.checkpointHttp(continuationId, original, resumed?.verify ?? opts.verify ?? [], cursor, parent);
     try {
@@ -1792,6 +1794,7 @@ export class RightClick {
   }
 
   private async resumeHttp(state: HttpRunContinuation, cap: Capability, net: Net = this.net, execution: HttpExecution) {
+    net = { ...net, execution: execution.transportOwner };
     const followed = await followHttp202({ response: new Response(null, { status: state.cursor.result ? 303 : 202,
       headers: { location: state.cursor.url } }), url: state.cursor.origin + "/", resume: state.cursor,
       targets: continuationTargets(cap, this.graph.list()), net, policy: this.httpContinuation, signal: execution.signal,
@@ -2887,6 +2890,10 @@ export class RightClick {
     this.assertExecution(cap);
     const origins = intersectOrigins(this.net.policy?.origins, net.policy?.origins);
     if (origins !== undefined) net = { ...net, policy: { blockPrivate: false, ...net.policy, origins } };
+    // Keep session identity independent of per-call observation context. Re-learning
+    // receives the original Net, so discovery cannot masquerade as execution.
+    const sessionNet = net;
+    net = { ...net, execution: execution.transportOwner };
     const inv = cap.invoke;
     switch (inv.kind) {
       case "builtin": {
@@ -2983,7 +2990,7 @@ export class RightClick {
         return j.data[inv.field];
       }
       case "mcp":
-        return this.mcp(inv.endpoint, net).call(inv.tool, args, cap.outputs.some((o) => o.name !== ""));
+        return this.mcp(inv.endpoint, sessionNet).call(inv.tool, args, cap.outputs.some((o) => o.name !== ""), execution.transportOwner);
       case "peer": {
         const res = await request(net, `${inv.endpoint}/api/run`, {
           method: "POST",

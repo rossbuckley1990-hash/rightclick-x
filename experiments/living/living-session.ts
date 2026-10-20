@@ -44,13 +44,14 @@ try {
   save("boundary-ready", ready);
   const authorityEvidence = actenonAuthorityEvidence({ python, attestations: join(output, "boundary/attestations.jsonl"),
     publicKey: join(output, "boundary/public.json"), origin: protectedOrigin,
+    ...(config.authorityLinkage ? { transportLinks: join(output, "boundary/transport-links.jsonl") } : {}),
     issuer: "resource-edge", boundary: "Disposable compression resource" });
   session = await startContainedSession({ output, image,
     authorityEvidence,
     config: { origins: [...publicOrigins, protectedOrigin, new URL(operatorCatalog).origin],
       environment: { catalogs: [operatorCatalog], origins: [...publicOrigins, protectedOrigin] } },
     onTool: row => { toolCalls.push(row); save("tool-calls", toolCalls); },
-    fetch: async (wire: Wire) => {
+    fetch: async (wire: Wire, context) => {
       if (++totalRequests > 64) return { refused: true, reason: "session request budget exhausted" };
       const origin = new URL(wire.url).origin;
       if (wire.url === operatorCatalog && wire.method === "GET" && wire.body === "") {
@@ -59,7 +60,7 @@ try {
         return { response: { status: 200, headers: { "content-type": "application/linkset+json" },
           body: Buffer.from(JSON.stringify({ linkset: [{ "service-desc": links }] })).toString("base64") } };
       }
-      if (origin === protectedOrigin) return boundary.call("fetch", { request: wire });
+      if (origin === protectedOrigin) return boundary.call("fetch", { request: wire, context });
       if (!publicOrigins.includes(origin)) return { refused: true, reason: "origin outside operator-selected sources" };
       try {
         const response = await publicFetch(wire.url, { method: wire.method, headers: wire.headers,

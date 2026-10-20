@@ -166,7 +166,13 @@ def check(root):
         pending[entry] -= 1
     assert not any(pending.values())
     feed = read("adaptation-authority.json")
-    assert feed["status"] == "available" and feed["currentAuthority"] == "unknown" and feed["runtimeLinkage"] == "not-established"
+    assert feed["status"] == "available" and feed["currentAuthority"] == "unknown"
+    if read("provenance.json")["config"].get("authorityLinkage"):
+        spec = importlib.util.spec_from_file_location("link_checker", Path(__file__).with_name("check-authority-links.py"))
+        link_checker = importlib.util.module_from_spec(spec); spec.loader.exec_module(link_checker)
+        link_checker.check(root)
+    else:
+        assert feed["runtimeLinkage"] == "not-established"
     assert {r["artifactDigest"] for r in feed["records"]} == {a["unsigned_payload"]["artifact_digest"]["value"] for a in artifacts}
     assert Counter(r["outcome"] for r in feed["records"]) == {"executed": len(accepted), "refused": 2}
     for phase in ["compatible-before", "compatible-after", "incompatible-before", "incompatible-after", "removed-before", "removed-after", "returned-after"]:

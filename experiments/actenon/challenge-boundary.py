@@ -58,6 +58,7 @@ def main(output):
         public = private / "issuer-public.json"
         public.write_bytes((issued / "public.json").read_bytes())
         (output / "issuer-public.json").write_bytes(public.read_bytes())
+        (output / "transport-links.jsonl").write_text("")
         socket = issuer / "authority.sock"
         service = fixture.resource.authority_service(boundary, socket, output)
         resource = errors = None
@@ -74,7 +75,12 @@ def main(output):
                 try:
                     op = command["op"]
                     if op == "fetch":
-                        result = boundary.fetch(command["request"])
+                        # Serial operator command context, never grant input.
+                        boundary.transport_context = command.get("context")
+                        try:
+                            result = boundary.fetch(command["request"])
+                        finally:
+                            boundary.transport_context = None
                         # Missing response from native forwarding can be ambiguous.
                         # Only an explicit pre-dispatch issuer refusal is refusal.
                         value = result if result.get("response") else {

@@ -74,7 +74,9 @@ function authorized(req: Request, opts: HttpOptions): boolean {
 export function createHandler(rc: RightClick, opts: HttpOptions = {}): (req: Request) => Promise<Response> {
   const limiter = new RateLimiter(opts.ratePerMinute ?? 600);
   const maxBody = opts.maxBodyBytes ?? 1024 * 1024;
-  const authorityEvidence = authorityEvidenceReader(opts.authorityEvidence);
+  const authorityEvidence = authorityEvidenceReader(opts.authorityEvidence, link =>
+    link.runtimeId === rc.activity.epoch &&
+    !!rc.activity.forRun(link.runId)?.subjects?.includes(link.capabilityId));
   return async (req: Request) => {
     const url = new URL(req.url);
     const path = url.pathname.replace(/\/+$/, "") || "/";

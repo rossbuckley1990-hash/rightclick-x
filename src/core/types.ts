@@ -251,7 +251,16 @@ export interface Reflection {
   capabilities: Capability[];
 }
 
-export type FetchLike = (input: string | URL | Request, init?: RequestInit) => Promise<Response>;
+/** Local transport observation, never a credential or proof of authority.
+ * capabilityId identifies the owning run, including its monitor/redirect requests,
+ * not necessarily the operation performed by each HTTP request. Not persisted. */
+export interface TransportContext {
+  readonly runtimeId: string;
+  readonly runId: string;
+  readonly capabilityId: string;
+  readonly requestId: string;
+}
+export type FetchLike = (input: string | URL | Request, init?: RequestInit, context?: TransportContext) => Promise<Response>;
 
 /** A host transport reports refusal, not a provider failure or an authority grant. */
 export interface TransportRefusal {

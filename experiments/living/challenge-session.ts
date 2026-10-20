@@ -9,6 +9,7 @@ import { fileURLToPath } from "node:url";
 import { createServer } from "node:http";
 import type { Readable } from "node:stream";
 import type { AuthorityEvidenceSource } from "../../src/interface/authority-evidence.ts";
+import type { TransportContext } from "../../src/core/types.ts";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
 /** Presentation is bounded and closes on pipe EOF or an operator signal. */
@@ -38,7 +39,7 @@ export class RpcPeer {
   readonly exited: Promise<number | null>;
   readonly process: ChildProcessWithoutNullStreams;
   constructor(process: ChildProcessWithoutNullStreams, log: string,
-    onFetch?: (request: Wire) => Promise<any>, onTool?: (row: unknown) => void, onEvidence?: () => Promise<unknown>) {
+    onFetch?: (request: Wire, context?: TransportContext) => Promise<any>, onTool?: (row: unknown) => void, onEvidence?: () => Promise<unknown>) {
     this.process = process;
     writeFileSync(log, "", { flag: "wx" });
     let ready!: (v: any) => void, failed!: (e: Error) => void;
@@ -73,7 +74,7 @@ export class RpcPeer {
       if (message.op === "fetch") {
         void (async () => {
           let reply: any;
-          try { reply = onFetch ? await onFetch(message.request) : { refused: true, reason: "no transport configured" }; }
+          try { reply = onFetch ? await onFetch(message.request, message.context) : { refused: true, reason: "no transport configured" }; }
           catch { reply = { reason: "transport outcome unresolved" }; }
           if (!process.stdin.destroyed) process.stdin.write(JSON.stringify({ op: "fetch-result", id: message.id, ...reply }) + "\n");
         })();
@@ -132,7 +133,7 @@ export class RpcPeer {
 }
 
 export async function startContainedSession(options: { output: string; image: string; config: object;
-  fetch: (request: Wire) => Promise<any>; onTool?: (row: unknown) => void; authorityEvidence?: AuthorityEvidenceSource }) {
+  fetch: (request: Wire, context?: TransportContext) => Promise<any>; onTool?: (row: unknown) => void; authorityEvidence?: AuthorityEvidenceSource }) {
   const output = resolve(options.output), stage = mkdtempSync(join(tmpdir(), "rcx-living-session-"));
   chmodSync(stage, 0o755);
   const name = "rcx-living-" + crypto.randomUUID().slice(0, 12);

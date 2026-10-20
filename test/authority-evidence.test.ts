@@ -98,3 +98,34 @@ test("operator evidence configuration is not an agent or provider-controlled end
   const result: any = await (await handler(new Request("https://runtime.test/api/authority-evidence"))).json();
   assert.equal(result.status, "not-configured");
 });
+
+test("operator correlation requires a current-epoch retained run, stays projected and grants nothing", async () => {
+  const rc = await RightClick.create({ directories: [], sandbox: null });
+  const run = await rc.run("builtin:text.sha256", { text: "known observation" });
+  const link = { kind: "operator-correlated", runtimeId: rc.activity.epoch, runId: run.runId,
+    capabilityId: run.capability, requestId: crypto.randomUUID() };
+  let candidate: any = { ...link, ignoredPrivateBody: "private" };
+  const handler = createHandler(rc, { open: true, authorityEvidence: source(async () =>
+    ({ ...batch(), records: [{ ...record(), runtimeLink: candidate }] })) });
+  const read = async () => (await handler(new Request("https://runtime.test/api/authority-evidence"))).json() as Promise<any>;
+  const valid = await read();
+  assert.equal(valid.runtimeLinkage, "operator-correlated");
+  assert.deepEqual(valid.records[0].runtimeLink, link);
+  assert.equal(valid.currentAuthority, "unknown");
+  assert.equal(dashboardMetrics(rc).authorised.value, null);
+  assert.doesNotMatch(JSON.stringify(valid), /ignoredPrivateBody|private/);
+  for (const patch of [{ runtimeId: crypto.randomUUID() }, { runId: "unknown" }, { capabilityId: "unknown" }]) {
+    candidate = { ...link, ...patch };
+    const result = await read();
+    assert.equal(result.status, "available");
+    assert.equal(result.runtimeLinkage, "not-established");
+    assert.equal(result.records[0].runtimeLink, undefined);
+  }
+  for (const patch of [{ kind: "signed-runtime-identity" }, { requestId: "not-a-request" }, { runId: "" }]) {
+    candidate = { ...link, ...patch };
+    assert.equal((await read()).status, "unavailable");
+  }
+  candidate = link;
+  for (let i = 0; i < 501; i++) rc.activity.append({ kind: "control", status: "done" });
+  assert.equal((await read()).runtimeLinkage, "not-established");
+});

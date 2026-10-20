@@ -7,6 +7,7 @@ import base64
 from collections import Counter
 import gzip
 import hashlib
+import importlib.util
 import json
 from pathlib import Path
 import shutil
@@ -115,7 +116,12 @@ def check(root):
     if direct_refusal:
         feed = read("authority-evidence.json")
         assert feed["status"] == "available" and feed["currentAuthority"] == "unknown"
-        assert feed["runtimeLinkage"] == "not-established"
+        if read("provenance.json")["config"].get("authorityLinkage"):
+            spec = importlib.util.spec_from_file_location("link_checker", Path(__file__).with_name("check-authority-links.py"))
+            link_checker = importlib.util.module_from_spec(spec); spec.loader.exec_module(link_checker)
+            link_checker.check(root, "authority-evidence.json", "final.json")
+        else:
+            assert feed["runtimeLinkage"] == "not-established"
         assert feed["source"]["trustAnchor"] == hashlib.sha256((root / "boundary/public.json").read_bytes()).hexdigest()
         assert {row["artifactDigest"] for row in feed["records"]} == {a["unsigned_payload"]["artifact_digest"]["value"] for a in artifacts}
         assert Counter(row["outcome"] for row in feed["records"]) == {"executed": len(accepted), "refused": 2}

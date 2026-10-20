@@ -201,10 +201,17 @@ class Handler(BaseHTTPRequestHandler):
 
         outcome = (read_gate if business and self.command == "GET" else gate).protect(actual, proof, effect)
         append("edge.jsonl", {"intent": actual.to_dict(), "proof": proof, "outcome": outcome.to_dict()})
+        references = []
         for kind in ("receipt", "refusal"):
             artifact = getattr(outcome, kind)
             if artifact:
-                append("attestations.jsonl", getattr(attester, "attest_" + kind)(artifact).to_dict())
+                attestation = getattr(attester, "attest_" + kind)(artifact).to_dict()
+                append("attestations.jsonl", attestation)
+                references.append({"artifactDigest": attestation["unsigned_payload"]["artifact_digest"]["value"],
+                    "nativeRequestId": artifact.to_dict()["correlation"]["request_id"]})
+        # A response reference is not proof. Consumers must verify the native
+        # artifact and its exact wire. Distinct gate attempts keep replay separate.
+        evidence_headers = {"x-actenon-artifacts": json.dumps(references, separators=(",", ":"))}
         evidence = outcome.receipt.extensions.get("effect") if outcome.receipt else None
         if evidence:
             # Trusted resource evidence, never a caller-supplied settlement.
@@ -212,7 +219,7 @@ class Handler(BaseHTTPRequestHandler):
                 authority("settle", proof=proof, intent=actual.to_dict(), evidence=evidence)
             except (OSError, ValueError, ConnectionError):
                 append("settlement-failures.jsonl", {"proof": proof["pccb_id"]})
-                self.reply(503, {"error": "settlement unavailable; effect may have occurred"})
+                self.reply(503, {"error": "settlement unavailable; effect may have occurred"}, evidence_headers)
                 return
         if executed.get("label") == "lost":
             self.connection.shutdown(socket.SHUT_RDWR)
@@ -220,9 +227,9 @@ class Handler(BaseHTTPRequestHandler):
             return
         if outcome.ok and "response" in executed:
             status, headers, value = executed["response"]
-            self.reply(status, value, headers)
+            self.reply(status, value, {**headers, **evidence_headers})
         else:
-            self.reply(200 if outcome.ok else 403, executed if outcome.ok else {"reason": outcome.reason_code})
+            self.reply(200 if outcome.ok else 403, executed if outcome.ok else {"reason": outcome.reason_code}, evidence_headers)
 
     do_GET = do_POST = do_PUT = do_DELETE = do_PATCH = do_HEAD = do_OPTIONS = handle_request
 
