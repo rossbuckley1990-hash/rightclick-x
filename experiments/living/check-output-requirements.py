@@ -12,7 +12,7 @@ import tarfile
 
 ROOT = Path(__file__).resolve().parents[2]
 BASELINE = "d4eef5ffc6ad94a87ac70a2116c2bff0e622184d"
-CANDIDATE = "90e453a85ac743740d67dab236250ebc8b748bde"
+CANDIDATES = {"90e453a85ac743740d67dab236250ebc8b748bde", "be84f20f9282a79c86de7b285e465c36739513e7"}
 ORDER = ["baseline", "candidate", "candidate", "baseline", "baseline", "candidate"]
 
 
@@ -36,11 +36,14 @@ def tree_hash(revision):
 def check(folder):
     folder = Path(folder)
     protocol = json.loads((folder / "protocol.json").read_text())
-    insist(protocol["revisions"] == {"baseline": BASELINE, "candidate": CANDIDATE}, "source freeze changed")
+    insist(set(protocol["revisions"]) == {"baseline", "candidate"}
+            and protocol["revisions"]["baseline"] == BASELINE
+            and protocol["revisions"]["candidate"] in CANDIDATES, "source freeze changed")
     insist(protocol["order"] == ORDER, "paired order changed")
-    fixture = ROOT / "docs/adaptive/evidence/reuse-comparison-attempt3/warm2-d"
-    state = (fixture / "before.json").read_bytes()
-    expected_request = next(row["args"] for row in map(json.loads, (fixture / "mcp.jsonl").read_text().splitlines())
+    fixture = "docs/adaptive/evidence/reuse-comparison-attempt3/warm2-d"
+    state = subprocess.check_output(["git", "show", f"{BASELINE}:{fixture}/before.json"], cwd=ROOT)
+    transcript = subprocess.check_output(["git", "show", f"{BASELINE}:{fixture}/mcp.jsonl"], cwd=ROOT, text=True)
+    expected_request = next(row["args"] for row in map(json.loads, transcript.splitlines())
                             if row["tool"] == "context_compose")
     expected_files = {"protocol.json"}
     times = {"baseline": [], "candidate": []}

@@ -8,12 +8,13 @@ import unittest
 spec = importlib.util.spec_from_file_location("checker", Path(__file__).with_name("check-output-requirements.py"))
 checker = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(checker)
-SOURCE = checker.ROOT / "docs/adaptive/evidence/output-requirements/paired"
+SOURCE = checker.ROOT / "docs/adaptive/evidence/output-requirements/paired-final"
 
 
 class EvidenceChecks(unittest.TestCase):
     def test_retained_pairs_pass(self):
         self.assertEqual(checker.check(SOURCE)["trials"], 6)
+        self.assertEqual(checker.check(SOURCE.with_name("paired"))["trials"], 6)
 
     def test_corruptions_refuse(self):
         changes = [
