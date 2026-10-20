@@ -67,7 +67,7 @@ export const TOOLS = [
   },
   {
     name: "context_explain",
-    description: "Get a capability's execution contract: all typed inputs, options and outputs, authority, current restrictions, evidence grade, stored checks and limitations. Default detail: run. Request full for raw synthetic examples, the full card, graph neighbours and run history.",
+    description: "Get a capability's execution contract: typed inputs/outputs, authority, restrictions, evidence, stored checks and limitations. Saved goals include reuse guidance and historical result declarations, not future-output guarantees. Default detail: run. Request full for raw synthetic examples, the full card, graph neighbours and run history.",
     inputSchema: obj({ id: str("Capability id (or a search phrase)."), detail: { type: "string", enum: ["run", "full"], description: "run (default) keeps execution constraints and evidence; full adds underlying detail." } }, ["id"]),
   },
   {

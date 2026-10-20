@@ -1,0 +1,62 @@
+✔ execution disclosure preserves contracts, authority and evidence with full detail available (149.300208ms)
+✔ execution disclosure reports denial without granting or executing a capability (1.44675ms)
+✔ MCP text stays lossless JSON while avoiding presentation whitespace (2.503ms)
+✔ startup disclosure keeps complete retained IDs in a bounded index (51.493666ms)
+✔ an oversized output is withheld whole and summarised by size, count and shape; the record keeps all of it (94.726958ms)
+✔ count, projection and slice come back from the server; context_run_status views a recorded run without calling upstream again (31.505625ms)
+✔ full:true returns the whole output on request, with the same digest as the summarised run (56.061125ms)
+✔ small outputs are returned as before; a missing select path is reported, not mistaken for an empty answer (10.268583ms)
+✔ a malformed view is rejected before the capability runs (1.261708ms)
+✔ path-less checks on a large output report its size instead of echoing it once per predicate (19.809541ms)
+✔ context_compose applies the same guard and views to its executed output (61.284833ms)
+✔ shape outlines types without values (0.263625ms)
+✔ saved goals retain bounded declared result guidance without retaining caller values or granting planning evidence (43.295708ms)
+✔ fresh readers retain guidance while declaration changes, disappearance and failed execution stay explicit (13.468708ms)
+✔ legacy goals remain unknown and disclosure cannot clear execution restrictions (8.146083ms)
+✔ successful legacy reuse records declarations without replacing the saved definition or output (10.828709ms)
+✖ nested composite descriptions stay relative to the chosen result and do not turn scalar leaves into objects (2.418042ms)
+✔ wide declarations are explicitly bounded and malformed advisory metadata stays unknown (3.850208ms)
+✔ unsupported persisted versions or requirements refuse before execution or overwrite (26.753375ms)
+✔ store read errors and corrupt files never become an empty runtime (19.196292ms)
+✔ inference migration cannot discard retained work with an unknown outcome (1.148375ms)
+✔ a valid pending HTTP operation blocks inference migration without discarding its checkpoint (30.046709ms)
+✔ legacy state migrates without discovery and the envelope retains a reusable capability (30.4715ms)
+✔ built-in KV and chunked adapters use the same legacy-refusing state encoding (4.114584ms)
+✔ envelope integrity and unknown operation kinds refuse instead of partial restoration (0.920166ms)
+✔ context_compose retains its complete selected plan, checks and publication across restart (117.226333ms)
+✔ composition recovery preserves input-word obligations and refuses lossy stored checks (68.742625ms)
+✔ repeated composition does not grow the graph or retain per-execution reliability entries (283.26525ms)
+✔ crystallized reuse retains observed preservation checks for a different input (18.256292ms)
+✔ composition recovery retains failed predicates and current publication restrictions (70.381917ms)
+✔ composition recovery preserves scoped egress and pinned independent witness checks (99.547541ms)
+✔ saved-goal recovery binds its full definition, current authority and caller checks (154.073917ms)
+✔ a retained sequential workflow resumes the pending step and remaining effects without replay (19.215542ms)
+✔ a persisted workflow refuses changed remaining contracts before resuming any read (6.770584ms)
+✔ workflow recovery retains host opt-in, policy, expiry, inputs and child ownership boundaries (32.480166ms)
+✔ a workflow dispatch with no retained outcome stays unresolved after restore (5.301167ms)
+✔ failure to persist a completed step prevents every subsequent effect (3.83325ms)
+✔ oversized or credential-named workflow state is refused before dispatch, not silently redacted (8.547917ms)
+✔ a contract changed during checkpoint persistence refuses before the reserved dispatch (1.798125ms)
+✔ successive pending steps advance the same retained workflow without replaying either write (16.92825ms)
+✔ stored predicates cannot be dropped on workflow resume (7.781792ms)
+✔ witness independence includes pre-restart producers after their receipt buffer is gone (8.935917ms)
+✔ two simultaneous resumes cannot dispatch the remaining workflow twice (7.995917ms)
+✔ snapshot restore is order-independent but still retires broken nested contracts (3.139583ms)
+ℹ tests 44
+ℹ suites 0
+ℹ pass 43
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1226.049667
+
+✖ failing tests:
+
+test at test/retained-result.test.ts:93:1
+✖ nested composite descriptions stay relative to the chosen result and do not turn scalar leaves into objects (2.418042ms)
+  TypeError [Error]: Cannot read properties of undefined (reading 'id')
+      at CapabilityGraph.addCapability (file:///Users/ross/src/rightclick-x-adaptive/src/core/graph.ts:117:50)
+      at TestContext.<anonymous> (file:///Users/ross/src/rightclick-x-adaptive/test/retained-result.test.ts:97:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)

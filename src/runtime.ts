@@ -22,6 +22,7 @@ import { JsonRepresentationError, parseJsonValue } from "./core/json.ts";
 import { KNOWLEDGE_FORMAT, type ImportReport, type KnowledgeBundle } from "./core/knowledge.ts";
 import { assessExecution, consequentialRisks, ExecutionDenied, intersectOrigins, parseExecutionPolicy, type ExecutionAssessment, type ExecutionPolicy } from "./core/execution-policy.ts";
 import { distance, inferType, inspectValue, type Inspection } from "./core/semantics.ts";
+import { describeResult, resultDescription, type ResultDescription } from "./core/result-description.ts";
 import type { Capability, CapabilityAnchor, FetchLike, GraphQLFailureEvidence, PlanStep, Reflection, SemType, TransportRefusal } from "./core/types.ts";
 import { check, pick, type Predicate, type PredicateResult, type OutcomeWitness, type WitnessResult } from "./core/verify.ts";
 import { builtinReflection, type BuiltinFn } from "./reflectors/builtins.ts";
@@ -126,6 +127,16 @@ export interface PublishedGoal {
   calls: number;
   lastPipeline?: string[];
   providers?: string[];
+  /** Advisory declaration from a successful plan, never executable ports or authority. */
+  lastResult?: ResultDescription;
+}
+
+interface ReuseGuidance {
+  id: string;
+  invoke: { tool: "context_run"; args: { id: string } };
+  storage: "store-configured" | "session-only";
+  restrictions: Pick<PublishedGoal, "origins" | "risks" | "through" | "require" | "maxSteps">;
+  note: string;
 }
 
 export interface RuntimeOptions {
@@ -231,6 +242,7 @@ export interface RunRecord {
   /** An upstream value needed by this execution was absent; not evidence of API drift. */
   dataUnavailable?: MissingDataEvidence;
   graphqlFailure?: GraphQLFailureEvidence;
+  reuse?: ReuseGuidance;
   planningRefusal?: PlanningRefusal;
   resumes?: string;
   /** Completion of a retained ordinary composition, including deferred publication. */
@@ -1020,6 +1032,7 @@ export class RightClick {
       experience: this.ledger.get(c.id) ?? null,
       reliability: this.ledger.reliability(c.id),
       exampleArgs: example,
+      ...(this.reuseGuidance(c) ? { reuse: this.reuseGuidance(c) } : {}),
     };
   }
 
@@ -1061,8 +1074,19 @@ export class RightClick {
         ...(c.invoke.kind === "cli" ? { storedExamples: c.invoke.examples?.length ?? 0, localContinuityRecords: c.invoke.continuity?.length ?? 0 } : {}),
       },
       exampleArgs: full.exampleArgs,
+      ...(full.reuse ? { reuse: full.reuse } : {}),
       details: { tool: "context_explain", args: { id: c.id, detail: "full" } },
     };
+  }
+
+  private reuseGuidance(c: Capability): ReuseGuidance | undefined {
+    if (c.invoke.kind !== "goal") return;
+    const goal = this.published.get(c.invoke.slug);
+    if (!goal) return;
+    return { id: c.id, invoke: { tool: "context_run", args: { id: c.id } },
+      storage: this.store ? "store-configured" : "session-only",
+      restrictions: structuredClone({ origins: goal.origins, risks: goal.risks, through: goal.through, require: goal.require, maxSteps: goal.maxSteps }),
+      note: "This definition is already saved in runtime state. Supply its inputs to context_run; republish only to replace the definition. A configured store is not proof of a successful durable write. These saved restrictions supplement current operator policy; stored checks still apply. Retention does not imply authority or successful execution." };
   }
 
   /**
@@ -1140,7 +1164,9 @@ export class RightClick {
         : { origin: (this.graph.providers.get(c.provider)?.meta?.source as string) ?? this.graph.providers.get(c.provider)?.origin },
       requiredInputs: c.inputs.filter((p) => p.required).map((p) => ({ name: p.name, type: p.type })),
       optionalInputs: c.inputs.filter((p) => !p.required).map((p) => ({ name: p.name, type: p.type, description: p.description })),
-      outputSemantics: { type: c.outputs[0]?.type, preservesInputWords: c.tags.includes("preserves-input-words") ? "experimentally supported" : "not established" },
+      outputSemantics: { type: c.outputs[0]?.type, preservesInputWords: c.tags.includes("preserves-input-words") ? "experimentally supported" : "not established",
+        ...(goal ? { lastResult: resultDescription(this.graph, goal.lastResult),
+          checkPaths: [...new Set((goal.verify ?? []).flatMap(p => p.path ? [p.path] : []))] } : {}) },
       behaviouralEvidence: claims.map((cl) => ({ claim: cl.claim, status: cl.status })),
       preconditions: [
         ...(inv.kind === "cli" ? ["a host sandbox (macOS sandbox-exec or Linux bubblewrap)", `operator authority to execute ${inv.bin} (RCX_EXECUTE or RCX_INVESTIGATE)`] : []),
@@ -1219,7 +1245,7 @@ export class RightClick {
   }
 
   private goalDigest(g: PublishedGoal) {
-    const { calls, lastPipeline, providers, publishedAt, trust, ...definition } = g;
+    const { calls, lastPipeline, providers, publishedAt, trust, lastResult, ...definition } = g;
     return sha256(stableStringify(definition));
   }
 
@@ -1573,6 +1599,7 @@ export class RightClick {
       ...(refusal ? { refusal } : {}),
       ...(dataUnavailable ? { dataUnavailable } : {}),
       ...(graphqlFailure ? { graphqlFailure } : {}),
+      ...(this.reuseGuidance(cap) ? { reuse: this.reuseGuidance(cap) } : {}),
       ...(planningRefusal ? { planningRefusal } : {}),
       ...(execution.continuation ? { httpContinuation: execution.continuation } : {}),
       output,
@@ -2393,6 +2420,11 @@ export class RightClick {
     };
     if (opts.crystallize !== false && p.steps.length > 1) result.crystallized = await this.crystallize(p, types, opts.intent, opts.verify, witnesses, require, origins,
       c.preservesInput ? [...new Set(p.steps.flatMap(s => s.bindings.filter(b => b.from.startsWith("$in.")).map(b => b.from.slice(4).split(".")[0])))] : undefined);
+    const lastResult = describeResult(this.graph, p.steps, p.result, p.resultType);
+    // Only the innermost active goal completed here. An outer goal may still
+    // fail after this step; it must retain its own prior successful history.
+    const currentGoal = this.published.get(c.goals.at(-1)?.slug ?? "");
+    if (currentGoal) currentGoal.lastResult = lastResult;
     const trust: "verified" | "checked" | "unverified" = verification.status === "verified" ? "verified" : verification.status === "checked" ? "checked" : "unverified";
     if (opts.publish && trust !== "verified" && this.publishPolicy === "verified") {
       result.publishRefused = `not published: the operator publishes only verified goals (an independent outcome witness must pass), and ${trust === "checked" ? "only stored predicates passed" : "no check passed"} on this run`;
@@ -2420,6 +2452,7 @@ export class RightClick {
         calls: 0,
         lastPipeline: titles(p),
         providers: [...new Set(p.steps.map((st) => this.graph.get(st.capability)!.provider))],
+        lastResult,
       });
       this.registerGoal(this.published.get(slug)!);
       result.published = { id: `goal:${slug}`, slug, path: `/x/${slug}`, trust };
