@@ -63,8 +63,8 @@ def project(args):
             raise ValueError("duplicate attestation")
         seen.add(digest)
         action_hash = artifact.get("correlation", {}).get("action_hash")
-        outcome = "refused" if kind == "refusal" else "executed" if artifact.get("outcome") == "executed" else "unresolved"
-        records.append({"artifactDigest": digest,
+        outcome = "refused" if kind == "refusal" else artifact["outcome"] if artifact.get("outcome") in ("executed", "refused") else "unresolved"
+        records.append({"artifactType": kind, "artifactDigest": digest,
             "actionDigest": action_hash["value"] if action_hash and action_hash.get("algorithm") == "sha-256" else None,
             "targetDigest": hashlib.sha256(canonicalize_bytes(artifact["target"])).hexdigest(),
             "principal": artifact["subject"]["id"], "operation": artifact["action"]["capability"],

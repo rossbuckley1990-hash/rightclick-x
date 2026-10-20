@@ -6,7 +6,7 @@ import { RightClick } from "../src/runtime.ts";
 import { MemoryStore } from "./helpers.ts";
 import { dashboardMetrics, capabilityState } from "../src/interface/dashboard-state.ts";
 
-const record = () => ({ artifactDigest: "a".repeat(64), actionDigest: "b".repeat(64), targetDigest: "c".repeat(64),
+const record = () => ({ artifactType: "receipt" as const, artifactDigest: "a".repeat(64), actionDigest: "b".repeat(64), targetDigest: "c".repeat(64),
   principal: "isolated-agent", operation: "http.post", outcome: "executed" as const, reason: null,
   occurredAt: "2026-01-01T00:00:00Z" });
 const batch = () => ({ version: 1 as const, verifiedAt: new Date().toISOString(), records: [record()] });
@@ -54,6 +54,7 @@ test("absence, failed verifier, stale batches and malformed records remain unkno
     (value: any) => { value.verifiedAt = "2020-01-01T00:00:00Z"; },
     (value: any) => { value.verifiedAt = "2100-01-01T00:00:00Z"; },
     (value: any) => { value.records[0].outcome = "authorised"; },
+    (value: any) => { value.records[0].artifactType = "permission"; },
     (value: any) => { value.records[0].actionDigest = "raw secret"; },
     (value: any) => { value.records[0].occurredAt = "2100-01-01T00:00:00Z"; },
     (value: any) => { value.records.push(value.records[0]); },
