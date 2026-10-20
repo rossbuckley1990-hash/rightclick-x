@@ -206,6 +206,8 @@ One powerful pattern is `context_compose` with `publish: "<name>"`: an outcome b
 
 For bounded recovery of flat compositions, start the host with `RCX_WORKFLOW_RECOVERY=1` (SDK: `workflowRecovery: true` plus a `Store`). Pending results expose a `resume:<run-id>` selector for the same chosen execution. Use it with `context_run`, without replacement inputs or checks; current authority still applies. This opt-in stores bounded business inputs/outputs locally. See [the recovery evidence and limits](docs/adaptive/COMPOSE-RESUME.md), including process-kill tests, unsupported shapes and same-revision scope.
 
+Persisted state now uses a versioned envelope. Built-in file/KV stores read known legacy snapshots and upgrade them on save; incompatible or unreadable state stops startup without a reset. The tested older readers refuse the new encoding. Custom state adapters and raw-file consumers should use the exported `encodeState` / `decodeState` helpers. See [compatibility results and scope](docs/adaptive/STATE-COMPATIBILITY.md).
+
 ## Show me the evidence
 
 Don't take a demo transcript on faith. The repository keeps **scripts, manifests, source snapshots, independent truth checks, and failures** next to the results.
