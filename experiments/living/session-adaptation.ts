@@ -76,8 +76,13 @@ export async function exerciseAdaptation(options: {
   assert.equal(fresh.length, 1, "one separately discovered changed action");
   const direct = await record("incompatible-fresh", () => tool("context_run", { id: fresh[0].id, args: returned }));
   assert.equal(direct.status, "failed"); assert.ok(direct.refusal);
-  const generated: any = await record("incompatible-generated", async () => (await peer.http(goal.path, returned)).json());
-  assert.equal(generated.ok, false);
+  const generated: any = await record("incompatible-generated", async () => {
+    const response = await peer.http(goal.path, returned);
+    return { status: response.status, body: await response.json() };
+  });
+  assert.equal(generated.status, 400);
+  assert.match(generated.body.error, /required anchor contract changed meaning/);
+  assert.equal(generated.body.result, undefined);
   assert.equal(phases.at(-1).requests, 0);
   await view("incompatible-after");
   await record("incompatible-effects", () => boundary.call("snapshot"));
