@@ -1,0 +1,1157 @@
+{
+  "op": "report",
+  "phase": "workflow-resume-publication-denied",
+  "results": {
+    "run": {
+      "runId": "run_mvgs5rcs_1_fc0d9445-1623-46a2-8a46-d400ed744fa9",
+      "resumes": "run_mvgs5r3k_1_fc9cd93d-9bcc-4a7c-bff0-da6826874aa5",
+      "capability": "execution:composition:299eaf38-5f89-4bb1-8bfb-172e2cbd6363",
+      "provider": "execution:composition",
+      "title": "Compress a document \u2192 Publish a verified artifact digest",
+      "status": "failed",
+      "refusal": {
+        "reason": "outside operator-approved exact request bounds",
+        "capability": "openapi:protected-compression:publish",
+        "runs": [
+          "run_mvgs5r41_2_51005f55-3f5a-4123-a52f-b59a3b3e31f7",
+          "run_mvgs5rcv_2_9327e732-a969-48d2-9e57-983a29ad4ed2"
+        ]
+      },
+      "error": "blocked by execution boundary: outside operator-approved exact request bounds",
+      "startedAt": "2026-10-20T14:30:19.324Z",
+      "durationMs": 784.1,
+      "verification": {
+        "status": "unverified",
+        "results": []
+      },
+      "receipt": {
+        "runId": "run_mvgs5rcs_1_fc0d9445-1623-46a2-8a46-d400ed744fa9",
+        "capability": "execution:composition:299eaf38-5f89-4bb1-8bfb-172e2cbd6363",
+        "provider": "execution:composition",
+        "startedAt": "2026-10-20T14:30:19.324Z",
+        "durationMs": 784.1,
+        "status": "failed",
+        "verification": "unverified",
+        "resumes": "run_mvgs5r3k_1_fc9cd93d-9bcc-4a7c-bff0-da6826874aa5",
+        "seq": 6,
+        "inputDigest": "91533ac362968c9293d34d55ac357172240421988f07ec7ee61e882f8d589f76",
+        "outputDigest": "b26950c271236e95a08c4a02a329f779eee3e2053d527ce47e63c0113cde6074",
+        "prev": "d8549257372493ab98e96604744e45a0682c8af4f9d1426d004902d2ad9d4fc9",
+        "hash": "45bc1f7027fc0b0d6f378b601d9745ab5f8abd2fb3bf38d5bf9048fe28bd85df"
+      },
+      "steps": [
+        "run_mvgs5r41_2_51005f55-3f5a-4123-a52f-b59a3b3e31f7",
+        "run_mvgs5rcv_2_9327e732-a969-48d2-9e57-983a29ad4ed2"
+      ],
+      "failedCapability": "openapi:protected-compression:publish"
+    },
+    "measurements": {
+      "rssBytes": 65986560,
+      "capabilities": 25,
+      "providers": 2,
+      "node": "v24.22.0"
+    }
+  },
+  "state": {
+    "version": 1,
+    "reflections": [
+      {
+        "provider": {
+          "id": "openapi:protected-compression",
+          "title": "Protected compression",
+          "source": "openapi",
+          "origin": "http://127.0.0.1:55893/openapi.json",
+          "learnedAt": "2026-10-20T14:30:16.917Z",
+          "capabilityIds": [
+            "openapi:protected-compression:compress",
+            "openapi:protected-compression:monitor",
+            "openapi:protected-compression:artifact",
+            "openapi:protected-compression:movedartifact",
+            "openapi:protected-compression:publish"
+          ],
+          "meta": {
+            "base": "http://127.0.0.1:55893",
+            "version": "1",
+            "security": [],
+            "source": "http://127.0.0.1:55893/openapi.json",
+            "environmentCatalog": "http://127.0.0.1:55893/catalog"
+          }
+        },
+        "capabilities": [
+          {
+            "id": "openapi:protected-compression:compress",
+            "title": "Compress a document",
+            "description": "Compress a document",
+            "provider": "openapi:protected-compression",
+            "source": "openapi",
+            "inputs": [
+              {
+                "name": "label",
+                "type": "text",
+                "required": true,
+                "wire": "string"
+              },
+              {
+                "name": "document",
+                "type": "text",
+                "required": true,
+                "wire": "string"
+              }
+            ],
+            "outputs": [
+              {
+                "name": "",
+                "type": "json",
+                "required": true
+              },
+              {
+                "name": "sha256",
+                "type": "hash",
+                "required": true,
+                "wire": "string"
+              },
+              {
+                "name": "size",
+                "type": "number",
+                "required": true,
+                "wire": "integer"
+              },
+              {
+                "name": "label",
+                "type": "text",
+                "required": true,
+                "wire": "string"
+              }
+            ],
+            "risk": "write",
+            "tags": [
+              "Protected compression",
+              "post",
+              "jobs"
+            ],
+            "fields": [
+              {
+                "path": "sha256"
+              },
+              {
+                "path": "size"
+              },
+              {
+                "path": "label"
+              }
+            ],
+            "invoke": {
+              "kind": "http",
+              "method": "POST",
+              "url": "http://127.0.0.1:55893/jobs",
+              "pathParams": [],
+              "queryParams": [],
+              "headerParams": [],
+              "body": "json",
+              "bodyParams": [
+                "label",
+                "document"
+              ]
+            }
+          },
+          {
+            "id": "openapi:protected-compression:monitor",
+            "title": "Monitor",
+            "description": "",
+            "provider": "openapi:protected-compression",
+            "source": "openapi",
+            "inputs": [
+              {
+                "name": "label",
+                "type": "text",
+                "required": true,
+                "wire": "string"
+              }
+            ],
+            "outputs": [
+              {
+                "name": "",
+                "type": "json",
+                "required": true
+              }
+            ],
+            "risk": "read",
+            "tags": [
+              "Protected compression",
+              "get",
+              "jobs"
+            ],
+            "invoke": {
+              "kind": "http",
+              "method": "GET",
+              "url": "http://127.0.0.1:55893/jobs/{label}",
+              "pathParams": [
+                "label"
+              ],
+              "queryParams": [],
+              "headerParams": [],
+              "body": null,
+              "bodyParams": []
+            }
+          },
+          {
+            "id": "openapi:protected-compression:artifact",
+            "title": "Artifact",
+            "description": "",
+            "provider": "openapi:protected-compression",
+            "source": "openapi",
+            "inputs": [
+              {
+                "name": "label",
+                "type": "text",
+                "required": true,
+                "wire": "string"
+              }
+            ],
+            "outputs": [
+              {
+                "name": "",
+                "type": "json",
+                "required": true
+              },
+              {
+                "name": "sha256",
+                "type": "hash",
+                "required": true,
+                "wire": "string"
+              },
+              {
+                "name": "size",
+                "type": "number",
+                "required": true,
+                "wire": "integer"
+              },
+              {
+                "name": "label",
+                "type": "text",
+                "required": true,
+                "wire": "string"
+              }
+            ],
+            "risk": "read",
+            "tags": [
+              "Protected compression",
+              "get",
+              "artifacts"
+            ],
+            "fields": [
+              {
+                "path": "sha256"
+              },
+              {
+                "path": "size"
+              },
+              {
+                "path": "label"
+              }
+            ],
+            "invoke": {
+              "kind": "http",
+              "method": "GET",
+              "url": "http://127.0.0.1:55893/artifacts/{label}",
+              "pathParams": [
+                "label"
+              ],
+              "queryParams": [],
+              "headerParams": [],
+              "body": null,
+              "bodyParams": []
+            }
+          },
+          {
+            "id": "openapi:protected-compression:movedartifact",
+            "title": "Moved Artifact",
+            "description": "",
+            "provider": "openapi:protected-compression",
+            "source": "openapi",
+            "inputs": [
+              {
+                "name": "label",
+                "type": "text",
+                "required": true,
+                "wire": "string"
+              }
+            ],
+            "outputs": [
+              {
+                "name": "",
+                "type": "json",
+                "required": true
+              },
+              {
+                "name": "sha256",
+                "type": "hash",
+                "required": true,
+                "wire": "string"
+              },
+              {
+                "name": "size",
+                "type": "number",
+                "required": true,
+                "wire": "integer"
+              },
+              {
+                "name": "label",
+                "type": "text",
+                "required": true,
+                "wire": "string"
+              }
+            ],
+            "risk": "read",
+            "tags": [
+              "Protected compression",
+              "get",
+              "artifacts-moved"
+            ],
+            "fields": [
+              {
+                "path": "sha256"
+              },
+              {
+                "path": "size"
+              },
+              {
+                "path": "label"
+              }
+            ],
+            "invoke": {
+              "kind": "http",
+              "method": "GET",
+              "url": "http://127.0.0.1:55893/artifacts-moved/{label}",
+              "pathParams": [
+                "label"
+              ],
+              "queryParams": [],
+              "headerParams": [],
+              "body": null,
+              "bodyParams": []
+            }
+          },
+          {
+            "id": "openapi:protected-compression:publish",
+            "title": "Publish a verified artifact digest",
+            "description": "Publish a verified artifact digest",
+            "provider": "openapi:protected-compression",
+            "source": "openapi",
+            "inputs": [
+              {
+                "name": "label",
+                "type": "text",
+                "required": true,
+                "wire": "string"
+              },
+              {
+                "name": "sha256",
+                "type": "hash",
+                "required": true,
+                "wire": "string"
+              }
+            ],
+            "outputs": [
+              {
+                "name": "",
+                "type": "json",
+                "required": true
+              },
+              {
+                "name": "sha256",
+                "type": "hash",
+                "required": true,
+                "wire": "string"
+              },
+              {
+                "name": "size",
+                "type": "number",
+                "required": true,
+                "wire": "integer"
+              },
+              {
+                "name": "label",
+                "type": "text",
+                "required": true,
+                "wire": "string"
+              }
+            ],
+            "risk": "write",
+            "tags": [
+              "Protected compression",
+              "post",
+              "publications"
+            ],
+            "fields": [
+              {
+                "path": "sha256"
+              },
+              {
+                "path": "size"
+              },
+              {
+                "path": "label"
+              }
+            ],
+            "invoke": {
+              "kind": "http",
+              "method": "POST",
+              "url": "http://127.0.0.1:55893/publications/{label}",
+              "pathParams": [
+                "label"
+              ],
+              "queryParams": [],
+              "headerParams": [],
+              "body": "json",
+              "bodyParams": [
+                "sha256"
+              ]
+            }
+          }
+        ]
+      }
+    ],
+    "ledger": {},
+    "receipts": [
+      {
+        "runId": "run_mvgs5pi0_1_9ef280e0-bc12-4da1-97d9-5cd2d3a45932",
+        "capability": "openapi:protected-compression:compress",
+        "provider": "openapi:protected-compression",
+        "startedAt": "2026-10-20T14:30:16.920Z",
+        "durationMs": 8.6,
+        "status": "failed",
+        "verification": "unverified",
+        "seq": 1,
+        "inputDigest": "dd61d83cb3aea238c157ac55a05051be66f211b481252f9a81cc59626d02a66e",
+        "outputDigest": "196a4fa247792add24d26d7e398d5a1e8193184c724cff7d1e6b8a62d32c6af8",
+        "prev": "0000000000000000000000000000000000000000000000000000000000000000",
+        "hash": "f769dfd7da29689987907bdfe3ed2f418eea25245228638608364782288ca406"
+      },
+      {
+        "runId": "run_mvgs5r41_2_51005f55-3f5a-4123-a52f-b59a3b3e31f7",
+        "capability": "openapi:protected-compression:compress",
+        "provider": "openapi:protected-compression",
+        "startedAt": "2026-10-20T14:30:19.013Z",
+        "durationMs": 50.1,
+        "status": "pending",
+        "verification": "unverified",
+        "httpContinuation": {
+          "profile": "http-202-303",
+          "stopped": "budget",
+          "requests": [
+            {
+              "capability": "openapi:protected-compression:monitor",
+              "contractDigest": "bc20c1d33912d950f3bb6acee75b5746f6b05ee706d319a2287521eaabc7dbbc",
+              "actionDigest": "5ca959994d9ca6457f34f7a29089f15bf95dd84a7a0ac00b016f0d7c74152aaf",
+              "status": 202
+            }
+          ]
+        },
+        "seq": 2,
+        "inputDigest": "91533ac362968c9293d34d55ac357172240421988f07ec7ee61e882f8d589f76",
+        "outputDigest": "56ad5a3f46175475fcaf7e1b42f98395fa8eb3d21358c472dca1595120ab4a92",
+        "prev": "f769dfd7da29689987907bdfe3ed2f418eea25245228638608364782288ca406",
+        "hash": "d55402580e3f2c5eda157aae2bda1356924b1cb6ea40cfd41ff97b7404c7f899"
+      },
+      {
+        "runId": "run_mvgs5r3k_1_fc9cd93d-9bcc-4a7c-bff0-da6826874aa5",
+        "capability": "execution:composition:299eaf38-5f89-4bb1-8bfb-172e2cbd6363",
+        "provider": "execution:composition",
+        "startedAt": "2026-10-20T14:30:18.992Z",
+        "durationMs": 73.1,
+        "status": "pending",
+        "verification": "unverified",
+        "seq": 3,
+        "inputDigest": "91533ac362968c9293d34d55ac357172240421988f07ec7ee61e882f8d589f76",
+        "outputDigest": "56ad5a3f46175475fcaf7e1b42f98395fa8eb3d21358c472dca1595120ab4a92",
+        "prev": "d55402580e3f2c5eda157aae2bda1356924b1cb6ea40cfd41ff97b7404c7f899",
+        "hash": "81d3fa962d679845023169e68297ba9765731da570abd092bc9354e4780c5c7c"
+      },
+      {
+        "runId": "run_mvgs5rcv_2_9327e732-a969-48d2-9e57-983a29ad4ed2",
+        "capability": "openapi:protected-compression:compress",
+        "provider": "openapi:protected-compression",
+        "startedAt": "2026-10-20T14:30:19.327Z",
+        "durationMs": 773.1,
+        "status": "completed",
+        "verification": "unverified",
+        "resumes": "run_mvgs5r41_2_51005f55-3f5a-4123-a52f-b59a3b3e31f7",
+        "httpContinuation": {
+          "profile": "http-202-303",
+          "stopped": "result",
+          "requests": [
+            {
+              "capability": "openapi:protected-compression:monitor",
+              "contractDigest": "bc20c1d33912d950f3bb6acee75b5746f6b05ee706d319a2287521eaabc7dbbc",
+              "actionDigest": "5ca959994d9ca6457f34f7a29089f15bf95dd84a7a0ac00b016f0d7c74152aaf",
+              "status": 303
+            },
+            {
+              "capability": "openapi:protected-compression:artifact",
+              "contractDigest": "1e72057fc9ca7a2a3e56785578c10ee1f58c78083598921705ae06a6cc54d079",
+              "actionDigest": "107eae80fb2a99e29f13821c3caa49f967b2c459685929c10d954401bdcd6702",
+              "status": 200
+            }
+          ]
+        },
+        "seq": 4,
+        "inputDigest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "outputDigest": "5c179c5ad4137aa97071b2ce31c457227e4cf64b8c72a1d310ae84a6b83302b3",
+        "prev": "81d3fa962d679845023169e68297ba9765731da570abd092bc9354e4780c5c7c",
+        "hash": "9ee32b84ece830f1b8b0af0b086f9120a53a3f814e729cdb66b8700af390f64d"
+      },
+      {
+        "runId": "run_mvgs5ryf_3_1dd65159-517b-4481-a9ea-19ac5ab9aaa9",
+        "capability": "openapi:protected-compression:publish",
+        "provider": "openapi:protected-compression",
+        "startedAt": "2026-10-20T14:30:20.104Z",
+        "durationMs": 3,
+        "status": "failed",
+        "verification": "unverified",
+        "seq": 5,
+        "inputDigest": "45021033e188f85edd43b0b6e98718be30484cb9b5b272a4d9d561064c9aa75c",
+        "outputDigest": "b26950c271236e95a08c4a02a329f779eee3e2053d527ce47e63c0113cde6074",
+        "prev": "9ee32b84ece830f1b8b0af0b086f9120a53a3f814e729cdb66b8700af390f64d",
+        "hash": "d8549257372493ab98e96604744e45a0682c8af4f9d1426d004902d2ad9d4fc9"
+      },
+      {
+        "runId": "run_mvgs5rcs_1_fc0d9445-1623-46a2-8a46-d400ed744fa9",
+        "capability": "execution:composition:299eaf38-5f89-4bb1-8bfb-172e2cbd6363",
+        "provider": "execution:composition",
+        "startedAt": "2026-10-20T14:30:19.324Z",
+        "durationMs": 784.1,
+        "status": "failed",
+        "verification": "unverified",
+        "resumes": "run_mvgs5r3k_1_fc9cd93d-9bcc-4a7c-bff0-da6826874aa5",
+        "seq": 6,
+        "inputDigest": "91533ac362968c9293d34d55ac357172240421988f07ec7ee61e882f8d589f76",
+        "outputDigest": "b26950c271236e95a08c4a02a329f779eee3e2053d527ce47e63c0113cde6074",
+        "prev": "d8549257372493ab98e96604744e45a0682c8af4f9d1426d004902d2ad9d4fc9",
+        "hash": "45bc1f7027fc0b0d6f378b601d9745ab5f8abd2fb3bf38d5bf9048fe28bd85df"
+      }
+    ],
+    "published": [],
+    "meaningChanges": [],
+    "activity": {
+      "version": 1,
+      "sequence": 21,
+      "discarded": 0,
+      "entries": [
+        {
+          "kind": "runtime.started",
+          "status": "observed",
+          "id": "c4a38c21-dc6c-4d4f-8aee-d19917106d39:1",
+          "epoch": "c4a38c21-dc6c-4d4f-8aee-d19917106d39",
+          "seq": 1,
+          "at": "2026-10-20T14:30:16.881Z"
+        },
+        {
+          "kind": "provider.learned",
+          "status": "observed",
+          "subjects": [],
+          "providers": [
+            "openapi:protected-compression"
+          ],
+          "contracts": [],
+          "id": "c4a38c21-dc6c-4d4f-8aee-d19917106d39:2",
+          "epoch": "c4a38c21-dc6c-4d4f-8aee-d19917106d39",
+          "seq": 2,
+          "at": "2026-10-20T14:30:16.918Z"
+        },
+        {
+          "kind": "environment.source",
+          "status": "learned",
+          "subjects": [
+            "http://127.0.0.1:55893/openapi.json"
+          ],
+          "providers": [
+            "openapi:protected-compression"
+          ],
+          "id": "c4a38c21-dc6c-4d4f-8aee-d19917106d39:3",
+          "epoch": "c4a38c21-dc6c-4d4f-8aee-d19917106d39",
+          "seq": 3,
+          "at": "2026-10-20T14:30:16.918Z"
+        },
+        {
+          "kind": "execution.requested",
+          "status": "requested",
+          "subjects": [
+            "openapi:protected-compression:compress"
+          ],
+          "contracts": [
+            {
+              "capability": "openapi:protected-compression:compress",
+              "provider": "openapi:protected-compression",
+              "contract": "2201c8eb:openapi:protected-compression:write:openapi"
+            }
+          ],
+          "id": "c4a38c21-dc6c-4d4f-8aee-d19917106d39:4",
+          "epoch": "c4a38c21-dc6c-4d4f-8aee-d19917106d39",
+          "seq": 4,
+          "at": "2026-10-20T14:30:16.919Z"
+        },
+        {
+          "kind": "execution.finished",
+          "status": "failed",
+          "subjects": [
+            "openapi:protected-compression:compress"
+          ],
+          "providers": [
+            "openapi:protected-compression"
+          ],
+          "runs": [
+            "run_mvgs5pi0_1_9ef280e0-bc12-4da1-97d9-5cd2d3a45932"
+          ],
+          "witnessRuns": [],
+          "related": "c4a38c21-dc6c-4d4f-8aee-d19917106d39:4",
+          "verification": "unverified",
+          "receipt": "f769dfd7da29689987907bdfe3ed2f418eea25245228638608364782288ca406",
+          "durationMs": 8.6,
+          "predicates": 0,
+          "predicatesPassed": 0,
+          "witnessesPassed": 0,
+          "attempts": 0,
+          "contracts": [
+            {
+              "capability": "openapi:protected-compression:compress",
+              "provider": "openapi:protected-compression",
+              "contract": "2201c8eb:openapi:protected-compression:write:openapi"
+            }
+          ],
+          "id": "c4a38c21-dc6c-4d4f-8aee-d19917106d39:5",
+          "epoch": "c4a38c21-dc6c-4d4f-8aee-d19917106d39",
+          "seq": 5,
+          "at": "2026-10-20T14:30:16.930Z"
+        },
+        {
+          "kind": "runtime.started",
+          "status": "observed",
+          "id": "a97fed07-7252-4fcf-9057-88d9ab5a03b1:6",
+          "epoch": "a97fed07-7252-4fcf-9057-88d9ab5a03b1",
+          "seq": 6,
+          "at": "2026-10-20T14:30:18.940Z"
+        },
+        {
+          "kind": "composition.requested",
+          "status": "requested",
+          "id": "a97fed07-7252-4fcf-9057-88d9ab5a03b1:7",
+          "epoch": "a97fed07-7252-4fcf-9057-88d9ab5a03b1",
+          "seq": 7,
+          "at": "2026-10-20T14:30:18.940Z"
+        },
+        {
+          "kind": "execution.requested",
+          "status": "requested",
+          "subjects": [
+            "execution:composition:299eaf38-5f89-4bb1-8bfb-172e2cbd6363"
+          ],
+          "contracts": [
+            {
+              "capability": "execution:composition:299eaf38-5f89-4bb1-8bfb-172e2cbd6363",
+              "provider": "execution:composition",
+              "contract": "3be008c0:execution:composition:write:composite"
+            }
+          ],
+          "id": "a97fed07-7252-4fcf-9057-88d9ab5a03b1:8",
+          "epoch": "a97fed07-7252-4fcf-9057-88d9ab5a03b1",
+          "seq": 8,
+          "at": "2026-10-20T14:30:18.991Z"
+        },
+        {
+          "kind": "execution.requested",
+          "status": "requested",
+          "subjects": [
+            "openapi:protected-compression:compress"
+          ],
+          "contracts": [
+            {
+              "capability": "openapi:protected-compression:compress",
+              "provider": "openapi:protected-compression",
+              "contract": "2201c8eb:openapi:protected-compression:write:openapi"
+            }
+          ],
+          "id": "a97fed07-7252-4fcf-9057-88d9ab5a03b1:9",
+          "epoch": "a97fed07-7252-4fcf-9057-88d9ab5a03b1",
+          "seq": 9,
+          "at": "2026-10-20T14:30:19.013Z"
+        },
+        {
+          "kind": "execution.continuation",
+          "status": "budget",
+          "subjects": [
+            "openapi:protected-compression:monitor"
+          ],
+          "runs": [
+            "run_mvgs5r41_2_51005f55-3f5a-4123-a52f-b59a3b3e31f7"
+          ],
+          "reason": "http-202-303",
+          "receipt": "d55402580e3f2c5eda157aae2bda1356924b1cb6ea40cfd41ff97b7404c7f899",
+          "id": "a97fed07-7252-4fcf-9057-88d9ab5a03b1:10",
+          "epoch": "a97fed07-7252-4fcf-9057-88d9ab5a03b1",
+          "seq": 10,
+          "at": "2026-10-20T14:30:19.064Z"
+        },
+        {
+          "kind": "execution.finished",
+          "status": "pending",
+          "subjects": [
+            "openapi:protected-compression:compress"
+          ],
+          "providers": [
+            "openapi:protected-compression"
+          ],
+          "runs": [
+            "run_mvgs5r41_2_51005f55-3f5a-4123-a52f-b59a3b3e31f7"
+          ],
+          "witnessRuns": [],
+          "related": "a97fed07-7252-4fcf-9057-88d9ab5a03b1:9",
+          "verification": "unverified",
+          "receipt": "d55402580e3f2c5eda157aae2bda1356924b1cb6ea40cfd41ff97b7404c7f899",
+          "durationMs": 50.1,
+          "predicates": 0,
+          "predicatesPassed": 0,
+          "witnessesPassed": 0,
+          "attempts": 0,
+          "contracts": [
+            {
+              "capability": "openapi:protected-compression:compress",
+              "provider": "openapi:protected-compression",
+              "contract": "2201c8eb:openapi:protected-compression:write:openapi"
+            }
+          ],
+          "id": "a97fed07-7252-4fcf-9057-88d9ab5a03b1:11",
+          "epoch": "a97fed07-7252-4fcf-9057-88d9ab5a03b1",
+          "seq": 11,
+          "at": "2026-10-20T14:30:19.065Z"
+        },
+        {
+          "kind": "execution.finished",
+          "status": "pending",
+          "subjects": [
+            "execution:composition:299eaf38-5f89-4bb1-8bfb-172e2cbd6363"
+          ],
+          "providers": [
+            "execution:composition"
+          ],
+          "runs": [
+            "run_mvgs5r3k_1_fc9cd93d-9bcc-4a7c-bff0-da6826874aa5"
+          ],
+          "witnessRuns": [],
+          "related": "a97fed07-7252-4fcf-9057-88d9ab5a03b1:8",
+          "verification": "unverified",
+          "receipt": "81d3fa962d679845023169e68297ba9765731da570abd092bc9354e4780c5c7c",
+          "durationMs": 73.1,
+          "predicates": 0,
+          "predicatesPassed": 0,
+          "witnessesPassed": 0,
+          "attempts": 0,
+          "contracts": [
+            {
+              "capability": "execution:composition:299eaf38-5f89-4bb1-8bfb-172e2cbd6363",
+              "provider": "execution:composition",
+              "contract": "3be008c0:execution:composition:write:composite"
+            },
+            {
+              "capability": "openapi:protected-compression:compress",
+              "provider": "openapi:protected-compression",
+              "contract": "2201c8eb:openapi:protected-compression:write:openapi"
+            }
+          ],
+          "id": "a97fed07-7252-4fcf-9057-88d9ab5a03b1:12",
+          "epoch": "a97fed07-7252-4fcf-9057-88d9ab5a03b1",
+          "seq": 12,
+          "at": "2026-10-20T14:30:19.067Z"
+        },
+        {
+          "kind": "composition.finished",
+          "status": "pending",
+          "subjects": [],
+          "providers": [
+            "openapi:protected-compression"
+          ],
+          "runs": [
+            "run_mvgs5r41_2_51005f55-3f5a-4123-a52f-b59a3b3e31f7"
+          ],
+          "witnessRuns": [],
+          "related": "a97fed07-7252-4fcf-9057-88d9ab5a03b1:7",
+          "verification": "unverified",
+          "durationMs": 73.1,
+          "predicates": 0,
+          "predicatesPassed": 0,
+          "witnessesPassed": 0,
+          "attempts": 1,
+          "plans": 1,
+          "contracts": [
+            {
+              "capability": "openapi:protected-compression:compress",
+              "provider": "openapi:protected-compression",
+              "contract": "2201c8eb:openapi:protected-compression:write:openapi"
+            }
+          ],
+          "id": "a97fed07-7252-4fcf-9057-88d9ab5a03b1:13",
+          "epoch": "a97fed07-7252-4fcf-9057-88d9ab5a03b1",
+          "seq": 13,
+          "at": "2026-10-20T14:30:19.067Z"
+        },
+        {
+          "kind": "runtime.started",
+          "status": "observed",
+          "id": "53837c76-7ece-4f2b-8ca0-3c5a20421d15:14",
+          "epoch": "53837c76-7ece-4f2b-8ca0-3c5a20421d15",
+          "seq": 14,
+          "at": "2026-10-20T14:30:19.323Z"
+        },
+        {
+          "kind": "execution.requested",
+          "status": "requested",
+          "subjects": [
+            "execution:composition:299eaf38-5f89-4bb1-8bfb-172e2cbd6363"
+          ],
+          "contracts": [
+            {
+              "capability": "execution:composition:299eaf38-5f89-4bb1-8bfb-172e2cbd6363",
+              "provider": "execution:composition",
+              "contract": "3be008c0:execution:composition:write:composite"
+            }
+          ],
+          "id": "53837c76-7ece-4f2b-8ca0-3c5a20421d15:15",
+          "epoch": "53837c76-7ece-4f2b-8ca0-3c5a20421d15",
+          "seq": 15,
+          "at": "2026-10-20T14:30:19.323Z"
+        },
+        {
+          "kind": "execution.requested",
+          "status": "requested",
+          "subjects": [
+            "openapi:protected-compression:compress"
+          ],
+          "contracts": [
+            {
+              "capability": "openapi:protected-compression:compress",
+              "provider": "openapi:protected-compression",
+              "contract": "2201c8eb:openapi:protected-compression:write:openapi"
+            }
+          ],
+          "id": "53837c76-7ece-4f2b-8ca0-3c5a20421d15:16",
+          "epoch": "53837c76-7ece-4f2b-8ca0-3c5a20421d15",
+          "seq": 16,
+          "at": "2026-10-20T14:30:19.327Z"
+        },
+        {
+          "kind": "execution.continuation",
+          "status": "result",
+          "subjects": [
+            "openapi:protected-compression:monitor",
+            "openapi:protected-compression:artifact"
+          ],
+          "runs": [
+            "run_mvgs5rcv_2_9327e732-a969-48d2-9e57-983a29ad4ed2"
+          ],
+          "reason": "http-202-303",
+          "receipt": "9ee32b84ece830f1b8b0af0b086f9120a53a3f814e729cdb66b8700af390f64d",
+          "id": "53837c76-7ece-4f2b-8ca0-3c5a20421d15:17",
+          "epoch": "53837c76-7ece-4f2b-8ca0-3c5a20421d15",
+          "seq": 17,
+          "at": "2026-10-20T14:30:20.101Z"
+        },
+        {
+          "kind": "execution.finished",
+          "status": "completed",
+          "subjects": [
+            "openapi:protected-compression:compress"
+          ],
+          "providers": [
+            "openapi:protected-compression"
+          ],
+          "runs": [
+            "run_mvgs5rcv_2_9327e732-a969-48d2-9e57-983a29ad4ed2"
+          ],
+          "witnessRuns": [],
+          "related": "53837c76-7ece-4f2b-8ca0-3c5a20421d15:16",
+          "verification": "unverified",
+          "receipt": "9ee32b84ece830f1b8b0af0b086f9120a53a3f814e729cdb66b8700af390f64d",
+          "durationMs": 773.1,
+          "predicates": 0,
+          "predicatesPassed": 0,
+          "witnessesPassed": 0,
+          "attempts": 0,
+          "contracts": [
+            {
+              "capability": "openapi:protected-compression:compress",
+              "provider": "openapi:protected-compression",
+              "contract": "2201c8eb:openapi:protected-compression:write:openapi"
+            }
+          ],
+          "id": "53837c76-7ece-4f2b-8ca0-3c5a20421d15:18",
+          "epoch": "53837c76-7ece-4f2b-8ca0-3c5a20421d15",
+          "seq": 18,
+          "at": "2026-10-20T14:30:20.101Z"
+        },
+        {
+          "kind": "execution.requested",
+          "status": "requested",
+          "subjects": [
+            "openapi:protected-compression:publish"
+          ],
+          "contracts": [
+            {
+              "capability": "openapi:protected-compression:publish",
+              "provider": "openapi:protected-compression",
+              "contract": "3d719f54:openapi:protected-compression:write:openapi"
+            }
+          ],
+          "id": "53837c76-7ece-4f2b-8ca0-3c5a20421d15:19",
+          "epoch": "53837c76-7ece-4f2b-8ca0-3c5a20421d15",
+          "seq": 19,
+          "at": "2026-10-20T14:30:20.104Z"
+        },
+        {
+          "kind": "execution.finished",
+          "status": "failed",
+          "subjects": [
+            "openapi:protected-compression:publish"
+          ],
+          "providers": [
+            "openapi:protected-compression"
+          ],
+          "runs": [
+            "run_mvgs5ryf_3_1dd65159-517b-4481-a9ea-19ac5ab9aaa9"
+          ],
+          "witnessRuns": [],
+          "related": "53837c76-7ece-4f2b-8ca0-3c5a20421d15:19",
+          "verification": "unverified",
+          "receipt": "d8549257372493ab98e96604744e45a0682c8af4f9d1426d004902d2ad9d4fc9",
+          "durationMs": 3,
+          "predicates": 0,
+          "predicatesPassed": 0,
+          "witnessesPassed": 0,
+          "attempts": 0,
+          "contracts": [
+            {
+              "capability": "openapi:protected-compression:publish",
+              "provider": "openapi:protected-compression",
+              "contract": "3d719f54:openapi:protected-compression:write:openapi"
+            }
+          ],
+          "id": "53837c76-7ece-4f2b-8ca0-3c5a20421d15:20",
+          "epoch": "53837c76-7ece-4f2b-8ca0-3c5a20421d15",
+          "seq": 20,
+          "at": "2026-10-20T14:30:20.108Z"
+        },
+        {
+          "kind": "execution.finished",
+          "status": "failed",
+          "subjects": [
+            "execution:composition:299eaf38-5f89-4bb1-8bfb-172e2cbd6363"
+          ],
+          "providers": [
+            "execution:composition"
+          ],
+          "runs": [
+            "run_mvgs5rcs_1_fc0d9445-1623-46a2-8a46-d400ed744fa9"
+          ],
+          "witnessRuns": [],
+          "related": "53837c76-7ece-4f2b-8ca0-3c5a20421d15:15",
+          "verification": "unverified",
+          "receipt": "45bc1f7027fc0b0d6f378b601d9745ab5f8abd2fb3bf38d5bf9048fe28bd85df",
+          "durationMs": 784.1,
+          "predicates": 0,
+          "predicatesPassed": 0,
+          "witnessesPassed": 0,
+          "attempts": 0,
+          "contracts": [
+            {
+              "capability": "execution:composition:299eaf38-5f89-4bb1-8bfb-172e2cbd6363",
+              "provider": "execution:composition",
+              "contract": "3be008c0:execution:composition:write:composite"
+            },
+            {
+              "capability": "openapi:protected-compression:compress",
+              "provider": "openapi:protected-compression",
+              "contract": "2201c8eb:openapi:protected-compression:write:openapi"
+            }
+          ],
+          "id": "53837c76-7ece-4f2b-8ca0-3c5a20421d15:21",
+          "epoch": "53837c76-7ece-4f2b-8ca0-3c5a20421d15",
+          "seq": 21,
+          "at": "2026-10-20T14:30:20.108Z"
+        }
+      ]
+    },
+    "environment": {
+      "catalogs": [
+        {
+          "catalog": "http://127.0.0.1:55893/catalog",
+          "checkedAt": "2026-10-20T14:30:16.882Z",
+          "status": "observed",
+          "digest": "09ad90d6d2a2659a1c17d97da2b0d10e9388d5bae8b61a983838cf7e5257265c"
+        }
+      ],
+      "sources": [
+        {
+          "source": "http://127.0.0.1:55893/openapi.json",
+          "catalog": "http://127.0.0.1:55893/catalog",
+          "relation": "service-desc",
+          "kind": "openapi",
+          "status": "learned",
+          "observedAt": "2026-10-20T14:30:16.882Z",
+          "advertisementDigest": "09ad90d6d2a2659a1c17d97da2b0d10e9388d5bae8b61a983838cf7e5257265c",
+          "reachable": true,
+          "authenticated": "unknown",
+          "authority": "not-assessed",
+          "credentials": "absent",
+          "providers": [
+            "openapi:protected-compression"
+          ]
+        }
+      ]
+    },
+    "httpContinuations": [],
+    "workflowContinuations": [
+      {
+        "version": 1,
+        "runId": "run_mvgs5r3k_1_fc9cd93d-9bcc-4a7c-bff0-da6826874aa5",
+        "capability": "execution:composition:299eaf38-5f89-4bb1-8bfb-172e2cbd6363",
+        "contractDigest": "6d0715d7d5d65d440ad827ee3343bb1b2ed47c853d9381ee88f1a7d17c22cb55",
+        "stepDigests": [
+          "ec82f612f8b798702cfd6a5f015ac977a5958575ea1f77affaea8bd352ca35d7",
+          "c0d7d0f6bbc7f5fbcf263e914c74c1a624bcd7e93204629d10532dd74145c7df"
+        ],
+        "inputs": {
+          "label": "generated",
+          "document": "Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. Authorised document for generated. "
+        },
+        "verify": [],
+        "createdAt": 1792506618992,
+        "expiresAt": 1792510218992,
+        "outputs": [
+          {
+            "label": "generated",
+            "sha256": "ec49064b08752938d288da516e0c0a7f96026a5b6e43f5fb4696762364736837",
+            "size": 81
+          }
+        ],
+        "runs": [
+          "run_mvgs5r41_2_51005f55-3f5a-4123-a52f-b59a3b3e31f7",
+          "run_mvgs5rcv_2_9327e732-a969-48d2-9e57-983a29ad4ed2"
+        ],
+        "next": 1,
+        "phase": "stopped",
+        "composition": {
+          "id": "execution:composition:299eaf38-5f89-4bb1-8bfb-172e2cbd6363",
+          "plan": {
+            "steps": [
+              {
+                "capability": "openapi:protected-compression:compress",
+                "bindings": [
+                  {
+                    "port": "label",
+                    "from": "$in.label"
+                  },
+                  {
+                    "port": "document",
+                    "from": "$in.document"
+                  }
+                ]
+              },
+              {
+                "capability": "openapi:protected-compression:publish",
+                "bindings": [
+                  {
+                    "port": "label",
+                    "from": "0.label"
+                  },
+                  {
+                    "port": "sha256",
+                    "from": "0.sha256"
+                  }
+                ]
+              }
+            ],
+            "result": "1.sha256",
+            "resultType": "hash",
+            "cost": 2.7666666666666666,
+            "intentScore": 0,
+            "fit": 2.5,
+            "resultScore": -0.1,
+            "providers": [
+              "openapi:protected-compression"
+            ],
+            "summary": "Compress a document \u2192 Publish a verified artifact digest"
+          },
+          "types": {
+            "label": "text",
+            "document": "text"
+          },
+          "risk": "write",
+          "options": {
+            "want": "hash",
+            "verify": [
+              {
+                "op": "matches",
+                "pattern": "^[a-f0-9]{64}$"
+              }
+            ],
+            "publish": "Delivered document digest",
+            "through": [
+              "openapi:protected-compression:compress",
+              "openapi:protected-compression:publish"
+            ]
+          },
+          "anchors": [
+            {
+              "id": "openapi:protected-compression:compress",
+              "source": "http://127.0.0.1:55893/openapi.json",
+              "title": "compress a document",
+              "risk": "write",
+              "inputTypes": [
+                "text",
+                "text"
+              ],
+              "outputTypes": [
+                "hash",
+                "number",
+                "text"
+              ],
+              "operation": "POST /jobs (write)"
+            },
+            {
+              "id": "openapi:protected-compression:publish",
+              "source": "http://127.0.0.1:55893/openapi.json",
+              "title": "publish a verified artifact digest",
+              "risk": "write",
+              "inputTypes": [
+                "hash",
+                "text"
+              ],
+              "outputTypes": [
+                "hash",
+                "number",
+                "text"
+              ],
+              "operation": "POST /publications/{} (write)"
+            }
+          ],
+          "fixed": {},
+          "origins": [
+            "http://127.0.0.1:55893"
+          ],
+          "witnesses": [],
+          "require": [],
+          "preservesInput": false,
+          "goals": []
+        },
+        "compositionDigest": "b02841071df293f15ca382711fa291609d85355ecbb07200c35276cf4e4706c1",
+        "childRunId": "run_mvgs5ryf_3_1dd65159-517b-4481-a9ea-19ac5ab9aaa9"
+      }
+    ],
+    "authFingerprints": {},
+    "semantics": 27,
+    "identities": {
+      "links": [],
+      "accepted": {},
+      "observed": {}
+    }
+  }
+}

@@ -204,6 +204,8 @@ On one Apple Silicon laptop, synthetic stress tests recorded **20,014 capabiliti
 
 One powerful pattern is `context_compose` with `publish: "<name>"`: an outcome becomes `goal:<slug>`, exposed through MCP and as a generated HTTP API. Saved goals can be found and used by another agent after restart; they retain their declared checks and re-plan when compatible implementations change.
 
+For bounded recovery of flat compositions, start the host with `RCX_WORKFLOW_RECOVERY=1` (SDK: `workflowRecovery: true` plus a `Store`). Pending results expose a `resume:<run-id>` selector for the same chosen execution. Use it with `context_run`, without replacement inputs or checks; current authority still applies. This opt-in stores bounded business inputs/outputs locally. See [the recovery evidence and limits](docs/adaptive/COMPOSE-RESUME.md), including process-kill tests, unsupported shapes and same-revision scope.
+
 ## Show me the evidence
 
 Don't take a demo transcript on faith. The repository keeps **scripts, manifests, source snapshots, independent truth checks, and failures** next to the results.

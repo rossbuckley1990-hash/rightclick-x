@@ -1,5 +1,7 @@
 # Reproduce the feasibility audit
 
+The latest [ordinary composition recovery evidence](../../docs/adaptive/COMPOSE-RESUME.md) uses `workflow.py` and `check-workflow.py` with the same audited Actenon stack. The client now enters through `context_compose`; 30 controls cover exact remaining effects and deferred local goal retention. Older 28-control results remain bound to their source freezes. No production compatibility or economic advantage is claimed.
+
 This is a source audit, not a released integration or a live model benchmark.
 Use a disposable directory and Python 3.12. Install no production credentials.
 
