@@ -335,7 +335,7 @@ async function groupUsage(pgid: number): Promise<{ rss: number; procs: number } 
   });
 }
 
-function makeSandbox(kind: Sandbox["kind"], policy: SandboxPolicy, bwrap = ""): Sandbox {
+export function makeSandbox(kind: Sandbox["kind"], policy: SandboxPolicy, bwrap = ""): Sandbox {
   return {
     kind,
     policy,

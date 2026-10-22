@@ -14,6 +14,7 @@ import type { Capability, CliInvoke, Port, Reflection, SemType } from "../core/t
 import { inferType } from "../core/semantics.ts";
 export type { CliInvoke };
 import type { Sandbox, SandboxRun } from "../core/sandbox.ts";
+import { reportsApplicationError } from "../core/cli-outcome.ts";
 
 export type EvidenceStatus = "declared" | "observed" | "inferred" | "experimentally-supported" | "verified" | "contradicted" | "unknown";
 
@@ -351,7 +352,10 @@ export async function replayExamples(inv: CliInvoke, sandbox: Sandbox): Promise<
     const r = await sandbox.run(inv.bin, argv, { stdin: ex.stdin ?? "", files: ex.files, purpose: "revalidation" });
     const stripped = r.workDir ? r.stdout.split(r.workDir).join("<work>").split(r.workDir.replace(/^\/private/, "")).join("<work>") : r.stdout;
     const out = inv.volatile === "timestamps" ? withoutTimes(stripped) : stripped;
-    if (crypto.createHash("sha256").update(out).digest("hex") === ex.outputSha256) matched++;
+    let applicationError = false;
+    try { applicationError = reportsApplicationError(JSON.parse(r.stdout)); } catch {}
+    if (!r.limit && !r.timedOut && !r.truncated && inv.okExit.includes(r.code ?? -1) && !applicationError &&
+        crypto.createHash("sha256").update(out).digest("hex") === ex.outputSha256) matched++;
     else mismatches.push(`example ${i + 1}: expected ${JSON.stringify(ex.outputPreview.slice(0, 60))}, got ${JSON.stringify(out.slice(0, 60))}`);
   }
   return { matched, total: examples.length, mismatches, runs: examples.length };
@@ -635,7 +639,7 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
           ...(usesStdin ? { stdin: "input" } : {}),
           filesPort: "files",
           operandsPort: "operands",
-          okExit: [0, 1],
+          okExit: [0],
           output: jsonByDefault ? "json" : "text",
           sha256: inv.program.sha256,
         },

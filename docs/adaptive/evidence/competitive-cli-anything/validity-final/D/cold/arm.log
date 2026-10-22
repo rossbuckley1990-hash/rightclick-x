@@ -1,0 +1,25 @@
+API v1 listening on http://127.0.0.1:18086
+learn cold: 9 caps in 452ms; providers 3; failures 0
+providers: builtin:core, openapi:ledger-exposure-api, cli:cli-anything-mlr
+capabilities: 29
+  run cli:cli-anything-mlr:filter -> completed
+T3: pass
+  run openapi:ledger-exposure-api:getinvoice -> completed
+  run openapi:ledger-exposure-api:getsupplier -> completed
+  run openapi:ledger-exposure-api:converttoeur -> completed
+  run openapi:ledger-exposure-api:getinvoice -> completed
+  run openapi:ledger-exposure-api:getsupplier -> completed
+  run openapi:ledger-exposure-api:converttoeur -> completed
+  run openapi:ledger-exposure-api:getinvoice -> completed
+  run openapi:ledger-exposure-api:getsupplier -> completed
+  run openapi:ledger-exposure-api:converttoeur -> completed
+T5: pass
+  run cli:cli-anything-mlr:exposure -> completed
+T6: pass
+  run openapi:ledger-exposure-api:getinvoice -> failed: HTTP 404: {"error":"invoice_not_found","id":"INV-9999"}; re-reflected http://127.0.0.1:18086/openapi.json: no contract change
+N1: pass — explicit 404 refusal
+  run cli:cli-anything-mlr:delete-invoice -> threw: "cli-anything-mlr delete-invoice: Delete an invoice through the API." (cli:cli-anything-mlr:delete-invoice) is destructive and has no operator approval. An operator must approve it
+N2: pass — RCX refused before effect
+  run cli:cli-anything-mlr:delete-invoice -> completed
+N2-operator-control: pass — operator-configured approval on INV-1001
+API stopped

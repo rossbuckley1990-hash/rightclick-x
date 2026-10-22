@@ -204,6 +204,8 @@ export interface CliInvoke {
   output: "text" | "json" | "html" | "xml";
   /** SHA-256 of the program when it was investigated; a different program is not run as this. */
   sha256: string;
+  /** Local environment pin, never proof of complete execution dependency coverage. */
+  environment?: { version: 1; coverage: "partial"; digest: string };
   /**
    * Behaviour fingerprint: a digest of the outputs this mode produced for the investigator's fixed
    * synthetic inputs. Two investigations with the same fingerprint observed the same behaviour, so

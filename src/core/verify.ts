@@ -1,4 +1,5 @@
 import type { GraphQLFailureEvidence, TransportRefusal } from "./types.ts";
+import type { CliValidity } from "./cli-outcome.ts";
 // Outcome verification: "the provider answered" is not "the job got done".
 // Callers attach predicates to a run; the result is verified, refuted, or
 // honestly unverified when no predicate was given.
@@ -38,6 +39,7 @@ export interface WitnessResult {
   error?: string;
   refusal?: TransportRefusal;
   graphqlFailure?: GraphQLFailureEvidence;
+  cliValidity?: CliValidity;
 }
 
 export function pick(value: unknown, path?: string): unknown {

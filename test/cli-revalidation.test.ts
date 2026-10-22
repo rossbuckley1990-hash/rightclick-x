@@ -28,8 +28,8 @@ printf '${output}\\n'
 `;
 }
 
-async function learned(bin: string, dir: string) {
-  const rc = await RightClick.create({ directories: [], authority: { investigate: [bin] }, store: new FileStore(`${dir}/state.json`) });
+async function learned(bin: string, dir: string, retry: string[] = []) {
+  const rc = await RightClick.create({ directories: [], authority: { investigate: [bin], retry }, store: new FileStore(`${dir}/state.json`) });
   await rc.learn({ source: `cli:${bin}` });
   const cap = rc.graph.list().find((c) => c.source === "cli" && c.invoke.kind === "cli")!;
   assert.ok(cap, "the program was learned");
@@ -93,7 +93,7 @@ test("a documented-only subcommand is revalidated against its last successful ca
   const dir = realpathSync(mkdtempSync(`${tmpdir()}/rcx-revalidation-receipt-`));
   const bin = `${dir}/report-tool`;
   writeFileSync(bin, reportTool(), { mode: 0o755 });
-  const { rc, cap } = await learned(bin, dir);
+  const { rc, cap } = await learned(bin, dir, ["cli:report-tool:report"]);
   const args = { files: { "input.csv": "A,B\n1,2\n" }, operands: ["input.csv"] };
   const first = await rc.run(cap.id, args);
   assert.equal(first.status, "completed", first.error);

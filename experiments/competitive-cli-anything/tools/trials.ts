@@ -19,9 +19,9 @@ const ENV = join(EXP, "env");
 const HARNESS = join(EXP, "harness");
 const FIX = join(ENV, "fixtures");
 const EVID = join(ROOT, "docs", "adaptive", "evidence", "competitive-cli-anything");
-const TRIALS = join(EVID, "trials");
-const WORK = "/tmp/rcx-cli-anything-work";
-const PORT = 18082;
+const TRIALS = process.env.RCX_TRIALS_OUTPUT ?? join(EVID, "trials");
+const WORK = process.env.RCX_TRIALS_WORK ?? "/tmp/rcx-cli-anything-work";
+const PORT = Number(process.env.RCX_TRIALS_PORT ?? 18082);
 const API = `http://127.0.0.1:${PORT}`;
 const MLR_PRISTINE = join(WORK, "pristine", "mlr");
 const MLR_TARGET = join(WORK, "bin", "mlr");
@@ -185,11 +185,12 @@ function sanitize(r: RunRecord) {
     runId: r.runId, capability: r.capability, provider: r.provider, status: r.status,
     durationMs: r.durationMs, error: r.error, refusal: r.refusal, changedMeaning: r.changedMeaning,
     verification: r.verification, receipt: r.receipt?.hash ?? r.receipt,
+    cliValidity: r.cliValidity,
     healing: r.healing, attempts: r.attempts,
     output: typeof r.output === "string" ? r.output.slice(0, 2000) : r.output,
   };
 }
-async function rcxRun(rc: RightClick, id: string, args: Record<string, unknown> = {}, opts: Record<string, unknown> = {}) {
+async function rcxRun(rc: RightClick, id: string, args: Record<string, unknown> = {}, opts: Record<string, unknown> = {}): Promise<Partial<ReturnType<typeof sanitize>> & { capability: string; status: RunRecord["status"]; wallMs: number }> {
   const t = Date.now();
   try {
     const r = await rc.run(id, args, opts as any);
@@ -198,7 +199,7 @@ async function rcxRun(rc: RightClick, id: string, args: Record<string, unknown> 
     say(`  run ${id} -> ${r.status}${r.error ? `: ${r.error.slice(0, 180)}` : ""}`);
     return rec;
   } catch (error) {
-    const rec = { capability: id, status: "failed", error: String((error as Error)?.message ?? error), wallMs: Date.now() - t };
+    const rec = { capability: id, status: "failed" as const, error: String((error as Error)?.message ?? error), wallMs: Date.now() - t };
     writeFileSync(join(RUNS, `throw-${Date.now()}.json`), JSON.stringify(rec, null, 2) + "\n");
     say(`  run ${id} -> threw: ${String(rec.error).slice(0, 180)}`);
     return rec;
@@ -567,7 +568,7 @@ async function r1() {
     const note = retained.status === "completed"
       ? (retained.healing ? "retained run was automatically re-investigated and returned identical output" : "retained run completed and returned identical output")
       : after.status === "completed" && correct ? `retained ${retained.status}; explicit re-learn returned identical output` : `retained ${retained.status}; rerun ${after.status}`;
-    recordTask({ task: "R1", status: correct ? "pass" : "fail", runs: [retained, after], learning, note });
+    recordTask({ task: "R1", status: retained.status === "completed" && correct ? "pass" : "fail", runs: [retained, after], learning, note });
     await rc.flush();
     reLearned = { retained, learning, after, autoHealed: !!retained.healing };
   } else if (arm === "D") {

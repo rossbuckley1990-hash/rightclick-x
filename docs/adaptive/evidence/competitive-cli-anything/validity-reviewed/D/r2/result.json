@@ -1,0 +1,59 @@
+{
+  "arm": "D",
+  "phase": "r2",
+  "startedAt": "2026-10-22T18:44:59.844Z",
+  "environment": {
+    "node": "v26.12.0",
+    "mlr": "/tmp/rcx-validity-reviewed-20261022-D/pristine/mlr",
+    "mlrSha256": "976a3ab9527a5f5e62382d2a5fc4b06b1d00733e93d2bb055572b89afaa8de97",
+    "harness": "/Users/ross/src/rightclick-x-competitive/experiments/competitive-cli-anything/env/venv/bin/cli-anything-mlr",
+    "harnessSha256": "4899855f44afd39c0d9f69ff85a3ae3123b126931f5b35d93cda8de45babd047",
+    "api": "http://127.0.0.1:18088",
+    "sandboxRead": "/Users/ross/src/rightclick-x-competitive/experiments/competitive-cli-anything/env:/Users/ross/src/rightclick-x-competitive/experiments/competitive-cli-anything/harness:/tmp/rcx-validity-reviewed-20261022-D:/opt/homebrew/Cellar/python@3.14/3.14.6:/opt/homebrew/Cellar/python@3.14/3.14.6/Frameworks/Python.framework/Versions/3.14",
+    "sandboxPath": "/tmp/rcx-validity-reviewed-20261022-D/bin:/Users/ross/src/rightclick-x-competitive/experiments/competitive-cli-anything/env/bin:/Users/ross/src/rightclick-x-competitive/experiments/competitive-cli-anything/env/venv/bin",
+    "network": "allow",
+    "product": {
+      "cli": "658c9201c10966de7f2cb885d34e3baa000f6bb9a6dc14cbb2c89faf4f323173",
+      "runtime": "b75aefdfe49e1ebbcaa3feb4cc3ae90227647565943af143032dde4454844575",
+      "types": "c82ed9698c06a1d9285ee83257b26382db7699f7ce9a3d9ece0e29baeeb2a8fb"
+    },
+    "sandbox": "macos-sandbox-exec"
+  },
+  "finishedAt": "2026-10-22T18:44:59.997Z",
+  "tasks": [
+    {
+      "task": "R2",
+      "status": "pass",
+      "runs": [
+        {
+          "runId": "run_mvjw4z8i_1_972bbfac-7544-4ecf-a888-e322886e2103",
+          "capability": "cli:cli-anything-mlr:filter",
+          "provider": "cli:cli-anything-mlr",
+          "status": "failed",
+          "durationMs": 14.9,
+          "error": "CLI execution environment changed; retained evidence is insufficient; not run or automatically replayed. Explicit relearning does not replace outcome verification.",
+          "verification": {
+            "status": "unverified",
+            "results": []
+          },
+          "receipt": "98c8e99b00e18668829368c39f726ab3f4e5e889c212861cf77b5c7fc2e610e8",
+          "cliValidity": {
+            "coverage": "partial",
+            "environment": "changed",
+            "expected": "289d49a1ea60112d62c4edcbc26a104be814a585050b702528906a8e3ad41bfa",
+            "observed": "1e9b5a71e78dd45323e91269f8485e9ddb2817b5c4616fffdad2c0c5edb19361",
+            "application": "not-assessed",
+            "limitation": "Only bounded local environment candidates were observed, not complete execution dependencies. Hidden imports, configuration and services require independent outcome verification."
+          },
+          "wallMs": 16
+        }
+      ],
+      "note": "CLI execution environment changed; retained evidence is insufficient; not run or automatically replayed. Explicit relearning does not replace outcome verification."
+    }
+  ],
+  "log": [
+    "installed a wrapper that reverses JSON arrays at the investigated mlr path",
+    "  run cli:cli-anything-mlr:filter -> failed: CLI execution environment changed; retained evidence is insufficient; not run or automatically replayed. Explicit relearning does not replace outcome verification.",
+    "R2: pass — CLI execution environment changed; retained evidence is insufficient; not run or automatically replayed. Explicit relearning does not replace outcome verification."
+  ]
+}

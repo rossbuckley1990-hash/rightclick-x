@@ -3,6 +3,7 @@
 // unknown version as empty state and overwriting it on their next flush.
 import type { PersistedState } from "../runtime.ts";
 import type { Reflection } from "./types.ts";
+import { validCliEnvironment } from "./cli-environment.ts";
 
 export const STATE_FORMAT = "rightclick-x/runtime-state@2";
 export const STATE_REQUIREMENTS = [
@@ -10,6 +11,7 @@ export const STATE_REQUIREMENTS = [
   "http-workflow-continuations@1",
   "composition-goal-obligations@1",
   "declared-continuation-contracts@1",
+  "cli-validity@1",
 ] as const;
 export const CONTRACT_LINK_REQUIREMENT = "response-contract-links@1";
 const supported = new Set<string>([...STATE_REQUIREMENTS, CONTRACT_LINK_REQUIREMENT]);
@@ -51,7 +53,14 @@ export function decodeState(value: unknown): PersistedState {
           !Array.isArray(cap.inputs) || !Array.isArray(cap.outputs)) {
         throw new Error("unsupported runtime state capability");
       }
+      const pin = cap.invoke.kind === "cli" ? cap.invoke.environment : undefined;
+      if (pin !== undefined && (!state.requirements?.includes("cli-validity@1") || !object(pin) ||
+          pin.version !== 1 || pin.coverage !== "partial" || !/^[a-f0-9]{64}$/.test(pin.digest)))
+        throw new Error("unsupported CLI environment evidence");
     }
+    const environment = reflection.provider.meta?.cliEnvironment;
+    if (environment !== undefined && (!state.requirements?.includes("cli-validity@1") || !validCliEnvironment(environment)))
+      throw new Error("unsupported retained CLI environment observation");
   }
   if (usesContractLinks(state.reflections) && !state.requirements?.includes(CONTRACT_LINK_REQUIREMENT))
     throw new Error("runtime state is missing the response contract link requirement");

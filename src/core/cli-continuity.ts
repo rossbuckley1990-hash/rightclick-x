@@ -10,7 +10,7 @@ export function carryCliContinuity(before: Capability | undefined, after: Capabi
   const old = before.invoke, now = after.invoke;
   if (old.kind !== "cli" || now.kind !== "cli" || !old.behaviour || !now.behaviour) return after;
   if (migration ? old.sha256 !== now.sha256 : old.behaviour !== now.behaviour) return after;
-  const shape = ({ sha256, behaviour, examples, continuity, ...invocation }: CliInvoke) => invocation;
+  const shape = ({ sha256, behaviour, examples, continuity, environment, ...invocation }: CliInvoke) => invocation;
   const ports = (list: Port[]) => list.map(({ description, ...port }) => port);
   if (stableStringify(shape(old)) !== stableStringify(shape(now)) ||
       stableStringify(ports(before.inputs)) !== stableStringify(ports(after.inputs)) ||
@@ -28,6 +28,6 @@ export function carryCliContinuity(before: Capability | undefined, after: Capabi
  * contract; it must not inherit aliases supplied by another runtime or caller. */
 export function withoutCliContinuity<T extends Capability["invoke"]>(inv: T): T {
   if (inv.kind !== "cli") return inv;
-  const { continuity, ...portable } = inv;
+  const { continuity, environment, ...portable } = inv;
   return portable as T;
 }

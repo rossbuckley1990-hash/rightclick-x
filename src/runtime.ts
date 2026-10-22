@@ -15,6 +15,8 @@ import { assessPlan, contractFor, lostWords, type Assurance, type ContractAssess
 import { selectionWith } from "./reflectors/graphql.ts";
 import { hostSandbox, type Sandbox } from "./core/sandbox.ts";
 import { validateFileNames } from "./core/cli-files.ts";
+import { observeCliEnvironment } from "./core/cli-environment.ts";
+import { CliValidityError, reportsApplicationError, type CliValidity } from "./core/cli-outcome.ts";
 import { carryCliContinuity, withoutCliContinuity } from "./core/cli-continuity.ts";
 import { checkProgram, sameProgram } from "./core/programs.ts";
 import { isSensitiveName, scrub, sensitiveValues } from "./core/secrets.ts";
@@ -81,6 +83,7 @@ export interface HttpRunContinuation {
 }
 interface HttpExecution {
   responseStatus?: number;
+  cliValidity?: CliValidity;
   signal?: AbortSignal;
   transportOwner?: Net["execution"];
   continuation?: HttpContinuationEvidence;
@@ -261,6 +264,7 @@ export interface RunRecord {
   /** verified: an independent witness passed; checked: stored predicates passed; unverified: no check. */
   verification: { status: "verified" | "checked" | "refuted" | "unverified"; results: PredicateResult[] };
   receipt: Receipt;
+  cliValidity?: CliValidity;
   steps?: string[];
   /** For failed composite runs: the innermost capability that failed. */
   failedCapability?: string;
@@ -287,6 +291,15 @@ class StepError extends Error {
   constructor(capability: string, message: string) {
     super(message);
     this.capability = capability;
+  }
+}
+
+class WitnessPreflightError extends CliValidityError {
+  readonly witness: WitnessResult;
+  constructor(capability: string, cause: unknown) {
+    super(String((cause as Error)?.message ?? cause), cause instanceof CliValidityError ? cause.validity : undefined, capability);
+    this.witness = { capability, runId: "", status: "failed", verification: { status: this.validity ? "unverified" : "refuted", results: [] }, error: this.message,
+      ...(this.validity ? { cliValidity: this.validity } : {}) };
   }
 }
 
@@ -389,6 +402,7 @@ export interface ComposeResult {
     refusal?: TransportRefusal;
     dataUnavailable?: MissingDataEvidence;
     graphqlFailure?: GraphQLFailureEvidence;
+    cliValidity?: CliValidity;
     planningRefusal?: PlanningRefusal;
     verification: RunRecord["verification"];
     runs: string[];
@@ -533,6 +547,7 @@ export class RightClick {
   private shareEvidence = false;
   private publishPolicy: "any" | "checked" | "verified" = "any";
   private sandboxCache?: Promise<Sandbox | null>;
+  private currentSandbox?: Sandbox | null;
   private onInvestigationStart?: (program: string) => void;
   private hashCache = new Map<string, { key: string; sha256: string }>();
   /** Changed CLI bytes that failed conformance revalidation, so repeat calls refuse without re-running examples. */
@@ -806,17 +821,33 @@ export class RightClick {
   // ================================================================ context_learn
 
   async learn(opts: { source?: string; sources?: string[]; deep?: boolean; spec?: Reflection; kinds?: Record<string, SourceKind>; net?: Net }) {
+    return this.learnSources(opts);
+  }
+
+  private async learnSources(opts: Parameters<RightClick["learn"]>[0], retainedCli?: { capability: Capability; execution: HttpExecution }) {
     const sources = [...(opts.source ? [opts.source] : []), ...(opts.sources ?? [])];
     // Batch learning measures powers once for the whole batch, not per provider.
     const batchBefore = this.graph.powers().total;
     this.graph.measuring = sources.length <= 3;
     const results: Array<{ source: string; probes: Discovery["probes"]; learned: LearnDelta[]; drift?: SourceDrift; withdrawn?: string[]; error?: string }> = [];
-    if (opts.spec) results.push({ source: opts.spec.provider.origin, probes: [], learned: [this.graph.add(opts.spec)] });
+    if (opts.spec) {
+      const spec = structuredClone(opts.spec);
+      if (spec.provider.meta) delete spec.provider.meta.cliEnvironment;
+      spec.capabilities = spec.capabilities.map(c => ({ ...c, invoke: withoutCliContinuity(c.invoke) }));
+      results.push({ source: spec.provider.origin, probes: [], learned: [this.graph.add(spec)] });
+    }
     await Promise.all(
       sources.map(async (source) => {
         try {
           const net = opts.net ?? this.net;
           const d = source.startsWith("cli:") ? await this.investigate(source.slice(4)) : await discover(net, source, { deep: opts.deep, mcp: (u) => this.mcp(u, net), kind: opts.kinds?.[source] });
+          if (retainedCli && d.reflections.length) {
+            const sb = await this.sandbox();
+            if (!sb) throw new CliValidityError("no sandbox is available during CLI repair");
+            const current = await this.checkCliEnvironment(retainedCli.capability, sb, retainedCli.execution);
+            if (d.reflections.some(r => r.capabilities.some(c => c.invoke.kind === "cli" && c.invoke.environment?.digest !== current?.digest)))
+              throw new CliValidityError("CLI repair observation no longer matches the retained environment; nothing adopted", retainedCli.execution.cliValidity, retainedCli.capability.id);
+          }
           // Re-learning a source replaces everything it produced before, even when
           // the provider changed protocol (OpenAPI -> GraphQL -> MCP) and so its id.
           const previous = [...this.graph.providers.values()].filter((p) => p.meta?.source === source);
@@ -868,6 +899,7 @@ export class RightClick {
           }
           results.push({ source, probes: d.probes, learned, drift });
         } catch (e) {
+          if (retainedCli && e instanceof CliValidityError) { this.graph.measuring = true; throw e; }
           results.push({ source, probes: [], learned: [], error: String((e as Error).message ?? e) });
         }
       }),
@@ -1118,6 +1150,7 @@ export class RightClick {
       inputs: c.inputs.map((p) => ({ name: p.name, type: p.type, required: p.required })),
       outputs: c.outputs.map((p) => ({ name: p.name || "(result)", type: p.type })),
       dependencies: goal ? goal.providers ?? [] : stepCaps.length ? [...new Set(stepCaps.map(where))] : [where(c)],
+      ...(inv.kind === "cli" ? { dependencyEvidence: { pin: inv.environment ?? null, observation: prov?.meta?.cliEnvironment ?? null, coverage: "partial", note: "Local environment candidates, not a complete dependency graph or proof of semantic correctness." } } : {}),
       semanticAssumptions: inv.kind === "composite"
         ? inv.steps.flatMap((st: PlanStep) => st.bindings.map((b) => `${st.capability}.${b.port} ← ${b.from}`))
         : goal ? [`inputs typed ${JSON.stringify(goal.have)}, result typed ${goal.want}`, ...(goal.fixed ? [`fixed inputs ${JSON.stringify(goal.fixed)}`] : [])]
@@ -1467,6 +1500,7 @@ export class RightClick {
       }
       const coerced = resumed ? {} : coerceArgs(cap, args);
       if (composition) {
+        await this.preflightWitnesses(composition.witnesses);
         workflow ??= await this.startWorkflow(runId, cap, coerced, [], composition);
         const r = await this.runSteps(composition.plan.steps, composition.plan.result, coerced, undefined, undefined, opts.net, workflow);
         workflow.phase = "checking"; await this.saveWorkflow(workflow);
@@ -1495,12 +1529,15 @@ export class RightClick {
         if (r.executed?.refusal) throw new TransportRefused(r.executed.refusal.reason, r.executed.refusal.capability, r.executed.refusal.runs);
         if (r.executed?.dataUnavailable) throw new MissingData(r.executed.dataUnavailable);
         if (r.executed?.graphqlFailure) throw new GraphQLFailure(r.executed.graphqlFailure);
+        if (r.executed?.cliValidity?.environment === "changed" || r.executed?.cliValidity?.application === "reported-error")
+          throw new CliValidityError(r.executed.error ?? "CLI validity refused", r.executed.cliValidity, cap.id, r.executed.runs);
         if (r.planningRefusal ?? r.executed?.planningRefusal) throw new PlanningRefused((r.planningRefusal ?? r.executed?.planningRefusal)!);
         if (r.executed?.status !== "completed") throw new Error(attempts?.map((a) => a.error).join("; ") || "no pipeline found for saved goal");
       } else if (cap.invoke.kind === "composite") {
         if (!workflow && this.workflowRecovery && !suppliedNet && this.recoverableWorkflow(cap)) {
           workflow = await this.startWorkflow(runId, cap, coerced, opts.verify ?? []);
         }
+        await this.preflightWitnesses(cap.invoke.witnesses ?? []);
         const r = await this.runSteps(cap.invoke.steps, cap.invoke.result, coerced, opts.confirm, opts.activeGoals, opts.net, workflow);
         if (workflow) { workflow.phase = "checking"; await this.saveWorkflow(workflow); }
         output = r.output;
@@ -1519,6 +1556,8 @@ export class RightClick {
         if (denied) throw new TransportRefused(denied.refusal!.reason, denied.capability, [...r.runs, denied.runId]);
         const badGraphQL = witnesses.find(w => w.graphqlFailure);
         if (badGraphQL) throw new GraphQLFailure({ ...badGraphQL.graphqlFailure!, runs: [...r.runs, badGraphQL.runId] });
+        const invalidCli = witnesses.find(w => w.cliValidity?.environment === "changed" || w.cliValidity?.application === "reported-error");
+        if (invalidCli) throw new CliValidityError(invalidCli.error ?? "CLI witness validity refused", invalidCli.cliValidity, invalidCli.capability, [...r.runs, invalidCli.runId]);
         if (witnesses.some((w) => w.status !== "completed")) throw new Error("independent outcome witness refuted: " + witnesses.filter((w) => w.status !== "completed").map((w) => w.error ?? w.capability).join("; "));
         if (witnesses.length) verification = { ...verification, status: "verified" };
       } else {
@@ -1528,7 +1567,7 @@ export class RightClick {
         } catch (e) {
           // A caller's own mistake (an undocumented option, a literal that looks like an option)
           // says nothing about the provider: no repair, no re-investigation.
-          if (e instanceof PendingOutcomeError || e instanceof TransportRefused || e instanceof ExecutionDenied || e instanceof JsonRepresentationError || e instanceof GraphQLFailure || opts.planned || !HEALABLE.has(cap.invoke.kind) || /HTTP 400 equivalent|is not one this program documents|needs a value/.test(String((e as Error)?.message ?? e))) throw e;
+          if (e instanceof PendingOutcomeError || e instanceof TransportRefused || e instanceof ExecutionDenied || e instanceof JsonRepresentationError || e instanceof GraphQLFailure || e instanceof CliValidityError || opts.planned || !HEALABLE.has(cap.invoke.kind) || /HTTP 400 equivalent|is not one this program documents|needs a value/.test(String((e as Error)?.message ?? e))) throw e;
           const h = await this.healRun(cap, args, String((e as Error)?.message ?? e), opts.net, execution);
           healing = h.healing;
           if (!h.healed) throw new Error(`${healing.error}; ${healing.note}`);
@@ -1549,7 +1588,14 @@ export class RightClick {
         failedCapability = graphqlFailure.capability;
       }
       if (e instanceof StepError) failedCapability = e.capability;
-      if (e instanceof PendingOutcomeError) {
+      if (e instanceof CliValidityError) {
+        execution.cliValidity = e.validity ?? execution.cliValidity;
+        if (e instanceof WitnessPreflightError) witnesses = [e.witness];
+        failedCapability = e.capability ?? cap.id;
+        output = undefined;
+        steps = e.runs;
+        verification = { status: e instanceof WitnessPreflightError ? e.witness.verification.status : e.validity?.application === "reported-error" ? "refuted" : "unverified", results: [] };
+      } else if (e instanceof PendingOutcomeError) {
         pending = { ...e.pending, runs: [...new Set([...e.pending.runs, runId])].slice(-128) };
         if (workflow) pending = this.workflowPending(workflow, e.pending.detail);
         else if (this.httpContinuations.has(continuationId)) pending.resumeId = `resume:${continuationId}`;
@@ -1585,6 +1631,7 @@ export class RightClick {
       { runId, capability: cap.id, provider: cap.provider, startedAt, durationMs, status: pending ? "pending" : error ? "failed" : "completed", verification: verification.status,
         ...(resumeRunId ? { resumes: resumeRunId } : {}),
         ...(workflowRunId ? { workflowRunId } : {}),
+        ...(execution.cliValidity ? { cliValidity: execution.cliValidity } : {}),
         ...(execution.continuation ? { httpContinuation: execution.continuation } : {}) },
       args,
       error ?? output,
@@ -1609,6 +1656,7 @@ export class RightClick {
       ...(this.reuseGuidance(cap) ? { reuse: this.reuseGuidance(cap) } : {}),
       ...(planningRefusal ? { planningRefusal } : {}),
       ...(execution.continuation ? { httpContinuation: execution.continuation } : {}),
+      ...(execution.cliValidity ? { cliValidity: execution.cliValidity } : {}),
       output,
       error,
       startedAt,
@@ -1654,8 +1702,22 @@ export class RightClick {
    * changed id is never followed, and repair obeys the run's egress policy.
    */
   /** The host sandbox, or null when this host offers none (then programs are never run). */
-  sandbox(): Promise<Sandbox | null> {
-    return (this.sandboxCache ??= hostSandbox());
+  async sandbox(): Promise<Sandbox | null> {
+    return this.currentSandbox = await (this.sandboxCache ??= hostSandbox());
+  }
+
+  private async checkCliEnvironment(cap: Capability, sb: Sandbox, execution: HttpExecution = {}) {
+    if (cap.invoke.kind !== "cli") return;
+    const current = await observeCliEnvironment(cap.invoke.bin, sb.policy);
+    const expected = cap.invoke.environment?.digest;
+    execution.cliValidity = {
+      coverage: "partial", environment: expected ? expected === current.digest ? "unchanged" : "changed" : "unrecorded",
+      ...(expected ? { expected } : {}), observed: current.digest, application: "not-assessed",
+      limitation: "Only bounded local environment candidates were observed, not complete execution dependencies. Hidden imports, configuration and services require independent outcome verification.",
+    };
+    if (execution.cliValidity.environment === "changed")
+      throw new CliValidityError("CLI execution environment changed; retained evidence is insufficient; not run or automatically replayed. Explicit relearning does not replace outcome verification.", execution.cliValidity, cap.id);
+    return current;
   }
 
   /** Investigate an operator-authorised local program (source "cli:/path/to/program"). */
@@ -1666,14 +1728,14 @@ export class RightClick {
     if (!check.ok) return { reflections: [], probes: [{ url: `cli:${bin}`, kind: "cli", ok: false, detail: check.reason }] };
     const sb = await this.sandbox();
     if (!sb) throw new Error(`unavailable: no sandbox on this host, so ${bin} is not investigated or run`);
-    // Already learned and unchanged (same bytes): what was learned stands; nothing is re-run.
+    const environment = await observeCliEnvironment(bin, sb.policy);
     {
       const fs = await import("node:fs");
       const { createHash } = await import("node:crypto");
       const sha = createHash("sha256").update(fs.readFileSync(check.identity.real)).digest("hex");
       const known = [...this.graph.providers.values()].find((p) => p.meta?.source === `cli:${bin}` && p.meta?.sha256 === sha);
       const caps = known ? (known.capabilityIds.map((id) => this.graph.get(id)).filter(Boolean) as Capability[]) : [];
-      if (known && caps.length) {
+      if (known && caps.length && caps.every(c => c.invoke.kind === "cli" && c.invoke.environment?.digest === environment.digest)) {
         const inv = known.meta?.investigation as Investigation | undefined;
         if (inv) this.investigations.set(bin, inv);
         return { reflections: [{ provider: known, capabilities: caps }], probes: [{ url: `cli:${bin}`, kind: "cli", ok: true, detail: `already learned and unchanged (sha256 ${sha.slice(0, 12)}): ${caps.length} capabilit${caps.length === 1 ? "y" : "ies"}: ${caps.map((c) => c.id).join(", ")}; nothing re-run` }] };
@@ -1682,6 +1744,12 @@ export class RightClick {
     this.onInvestigationStart?.(bin);
     const { reflection, investigation } = await investigateCli(bin, sb);
     if (!(await sameProgram(bin, check.identity))) throw new Error(`${bin} changed while it was being investigated; nothing learned`);
+    if ((await observeCliEnvironment(bin, sb.policy)).digest !== environment.digest)
+      throw new CliValidityError("CLI execution environment changed during investigation; nothing learned");
+    if (reflection) {
+      reflection.provider.meta = { ...reflection.provider.meta, cliEnvironment: environment };
+      for (const c of reflection.capabilities) if (c.invoke.kind === "cli") c.invoke.environment = { version: 1, coverage: "partial", digest: environment.digest };
+    }
     this.investigations.set(bin, investigation);
     const probes = [{ url: `cli:${bin}`, kind: "cli", ok: !!reflection, detail: investigation.summary }];
     return { reflections: reflection ? [reflection] : [], probes };
@@ -1691,9 +1759,14 @@ export class RightClick {
     return this.approvals.some((a) => (a.endsWith("*") ? id.startsWith(a.slice(0, -1)) : a === id));
   }
 
-  /** The operator declared this capability side-effect-free (safe to send again). */
   private retryAuthorised(cap: Capability): boolean {
-    if (cap.risk === "read") return true;
+    if (cap.risk === "read" && cap.invoke.kind !== "cli" && cap.invoke.kind !== "goal") return true;
+    if (cap.risk === "read" && cap.invoke.kind === "cli" && cap.invoke.examples?.length &&
+        this.currentSandbox && !this.currentSandbox.policy.network && !this.currentSandbox.policy.writeRoots.length) return true;
+    return this.operatorRetryAuthorised(cap);
+  }
+
+  private operatorRetryAuthorised(cap: Capability): boolean {
     const egress = egressOf(cap, this.graph);
     return this.retrySafe.some((r) =>
       /^https?:\/\//.test(r)
@@ -1709,7 +1782,7 @@ export class RightClick {
   private mayHaveTakenEffect(steps: PlanStep[], failed: string, error: string): Capability[] {
     const out: Capability[] = [];
     const consider = (c: Capability | undefined, completed: boolean) => {
-      if (!c || c.risk === "read") return;
+      if (!c) return;
       if (c.invoke.kind === "composite") {
         // Inside a composite: its steps before the failing inner one completed.
         const inner = c.invoke.steps.map((s) => this.graph.get(s.capability)).filter((x): x is Capability => !!x);
@@ -1740,7 +1813,7 @@ export class RightClick {
     const provider = this.graph.providers.get(cap.provider);
     // A call that can change state may have taken effect before it failed: send it again only if
     // the failure proves it was not applied, or the operator declared it side-effect-free.
-    if (cap.risk !== "read" && !provedNotApplied(error) && !this.retryAuthorised(cap)) return { healing: { source: (provider?.meta?.source as string) ?? "", error, note: `not retried: ${cap.risk} operation may already have taken effect` }, healed: false };
+    if (!provedNotApplied(error) && !this.retryAuthorised(cap)) return { healing: { source: (provider?.meta?.source as string) ?? "", error, note: `not retried: ${cap.invoke.kind === "cli" ? "CLI side effects are unknown; no conformance examples or prior successful call establish replay safety without operator retry authority" : `${cap.risk} operation may already have taken effect`}` }, healed: false };
     const source = provider?.meta?.source as string | undefined;
     const healing: NonNullable<RunRecord["healing"]> = { source: source ?? "", error, note: "" };
     const done = (note: string) => ({ healing: { ...healing, note }, healed: false });
@@ -1756,6 +1829,7 @@ export class RightClick {
     this.healReads.set(source, Date.now());
     const meant = operationOf(cap);
     const prior = cap.invoke.kind === "cli" ? cap.invoke : undefined;
+    let repairCapability = cap;
     // A changed local program is revalidated before its new contract is adopted. Its declared
     // interface can stay identical while its behaviour changes; a documented-only capability has
     // no conformance evidence, so it cannot be adopted silently either.
@@ -1769,12 +1843,18 @@ export class RightClick {
       if (currentSha && currentSha !== prior.sha256) {
         const check = await checkProgram(prior.bin, this.investigable);
         if (!check.ok) return done(`not authorised to revalidate ${prior.bin}: ${check.reason}`);
+        const sandbox = await this.sandbox();
+        if (!sandbox) return done("no sandbox is available to revalidate the changed program");
+        const environment = await this.checkCliEnvironment(cap, sandbox, execution);
+        repairCapability = { ...cap, invoke: { ...prior, environment: { version: 1, coverage: "partial", digest: environment!.digest } } };
         const refusalKey = `${cap.id}\u0000${currentSha}`;
         const known = this.cliRefusals.get(refusalKey);
         if (known) return done(known);
         const refuse = (note: string) => { this.cliRefusals.set(refusalKey, note); return done(note); };
         const inputDigest = await sha256(stableStringify(args));
-        const priorRun = this.chain.receipts.findLast((r) => r.capability === cap.id && r.status === "completed" && r.inputDigest === inputDigest);
+        const priorRun = !prior.examples?.length && this.operatorRetryAuthorised(cap)
+          ? this.chain.receipts.findLast((r) => r.capability === cap.id && r.status === "completed" && r.inputDigest === inputDigest)
+          : undefined;
         if (priorRun) {
           // The same call succeeded before: run it once more with the new bytes and require the
           // same output. This works even for documented-only commands with no conformance samples.
@@ -1784,6 +1864,7 @@ export class RightClick {
             if ((await sha256(stableStringify(output))) !== priorRun.outputDigest)
               return refuse(`program behaviour changed since it was investigated (changed meaning); its output for an identical successful call differs from the retained receipt (HTTP 409 equivalent)`);
           } catch (e) {
+            if (e instanceof CliValidityError) throw e;
             return refuse(`changed program failed an invocation that previously succeeded: ${String((e as Error)?.message ?? e)} (HTTP 409 equivalent)`);
           }
         } else if (!prior.examples?.length) {
@@ -1800,10 +1881,11 @@ export class RightClick {
           if (replay.matched !== replay.total)
             return refuse(`program behaviour changed since it was investigated (changed meaning); conformance examples no longer match: ${replay.mismatches.join("; ")} (HTTP 409 equivalent)`);
         }
+        await this.checkCliEnvironment(repairCapability, sandbox, execution);
         for (const key of this.cliRefusals.keys()) if (key.startsWith(`${cap.id}\u0000`)) this.cliRefusals.delete(key);
       }
     }
-    const r = (await this.learn({ source, deep: true, net })).results[0];
+    const r = (await this.learnSources({ source, deep: true, net }, prior ? { capability: repairCapability, execution } : undefined)).results[0];
     const d = r?.drift;
     if (d) healing.drift = d;
     if (r?.withdrawn) return done(`provider gone at ${source}: withdrew ${r.withdrawn.join(", ")}`);
@@ -1824,7 +1906,7 @@ export class RightClick {
       const output = await this.execute(next, coerceArgs(next, args), net, execution);
       return { healing: { ...healing, note }, healed: true, output };
     } catch (e) {
-      if (e instanceof PendingOutcomeError || e instanceof TransportRefused || e instanceof GraphQLFailure) throw e;
+      if (e instanceof PendingOutcomeError || e instanceof TransportRefused || e instanceof GraphQLFailure || e instanceof CliValidityError) throw e;
       return done(`${note}: ${String((e as Error)?.message ?? e)}`);
     }
   }
@@ -1956,8 +2038,8 @@ export class RightClick {
           args[key] = value;
         }
         const r = await this.run(w.capability, args, { verify: w.verify, net, planned: true });
-        evidence.push({ capability: w.capability, runId: r.runId, status: r.status, verification: r.verification, output: r.output, ...(r.error ? { error: r.error } : {}), ...(r.refusal ? { refusal: r.refusal } : {}), ...(r.graphqlFailure ? { graphqlFailure: r.graphqlFailure } : {}) });
-        if (r.refusal || r.graphqlFailure) break;
+        evidence.push({ capability: w.capability, runId: r.runId, status: r.status, verification: r.verification, output: r.output, ...(r.error ? { error: r.error } : {}), ...(r.refusal ? { refusal: r.refusal } : {}), ...(r.graphqlFailure ? { graphqlFailure: r.graphqlFailure } : {}), ...(r.cliValidity ? { cliValidity: r.cliValidity } : {}) });
+        if (r.refusal || r.graphqlFailure || r.cliValidity?.environment === "changed" || r.cliValidity?.application === "reported-error") break;
       } catch (e) {
         evidence.push({ capability: original.capability, runId: "", status: "failed", verification: { status: "refuted", results: [] }, error: String((e as Error)?.message ?? e) });
       }
@@ -2266,7 +2348,7 @@ export class RightClick {
           const retained = JSON.parse(JSON.stringify(composition)) as CompositionContinuation;
           const rec = await this.dispatchRun(retained.id, values, {}, undefined, retained);
           result.executed = { summary: p.summary, titles: titles(p), output: rec.output ?? null, status: rec.status,
-            pending: rec.pending, refusal: rec.refusal, dataUnavailable: rec.dataUnavailable, graphqlFailure: rec.graphqlFailure, planningRefusal: rec.planningRefusal, verification: rec.verification, runs: rec.steps ?? [],
+            pending: rec.pending, refusal: rec.refusal, dataUnavailable: rec.dataUnavailable, graphqlFailure: rec.graphqlFailure, cliValidity: rec.cliValidity, planningRefusal: rec.planningRefusal, verification: rec.verification, runs: rec.steps ?? [],
             attempts: [...attempts, ...(rec.error ? [{ summary: p.summary, failed: rec.failedCapability ?? p.steps[0].capability,
               error: rec.error, healing: "retained execution: no alternative plan or replay" }] : [])],
             durationMs: rec.durationMs, witnesses: rec.witnesses, error: rec.error,
@@ -2277,9 +2359,19 @@ export class RightClick {
             } as const } : {}) };
           return { ...result, ...rec.composition };
         }
+        await this.preflightWitnesses(witnesses);
         const r = await this.runSteps(steps, p.result, values, opts.confirm, opts.activeGoals, net);
         return await this.finishComposition(composition, values, r, net, result, attempts, t0, ws => { lastWitnesses = ws; });
       } catch (e) {
+        if (e instanceof CliValidityError) {
+          if (e instanceof WitnessPreflightError) lastWitnesses = [e.witness];
+          attempts.push({ summary: p.summary, failed: e.capability ?? p.steps[0].capability, error: e.message,
+            healing: "CLI validity refusal: no repair, alternative plan, replay or publication" });
+          result.executed = { summary: p.summary, titles: titles(p), output: null, status: "failed",
+            cliValidity: e.validity, verification: { status: e instanceof WitnessPreflightError ? e.witness.verification.status : e.validity?.application === "reported-error" ? "refuted" : "unverified", results: [] },
+            runs: e.runs, attempts, witnesses: lastWitnesses, durationMs: performance.now() - t0, error: e.message };
+          return result;
+        }
         if (e instanceof GraphQLFailure) {
           const failed = e.evidence.capability ?? p.steps[0].capability;
           attempts.push({ summary: p.summary, failed, error: e.message,
@@ -2438,6 +2530,8 @@ export class RightClick {
     if (denied) throw new TransportRefused(denied.refusal!.reason, denied.capability, [...r.runs, denied.runId]);
     const badGraphQL = lastWitnesses.find(w => w.graphqlFailure);
     if (badGraphQL) throw new GraphQLFailure({ ...badGraphQL.graphqlFailure!, runs: [...r.runs, badGraphQL.runId] });
+    const invalidCli = lastWitnesses.find(w => w.cliValidity?.environment === "changed" || w.cliValidity?.application === "reported-error");
+    if (invalidCli) throw new CliValidityError(invalidCli.error ?? "CLI witness validity refused", invalidCli.cliValidity, invalidCli.capability, [...r.runs, invalidCli.runId]);
     if (lastWitnesses.some((w) => w.status !== "completed")) throw new StepError(p.steps[p.steps.length - 1].capability, `verification refuted by independent outcome witness: ${lastWitnesses.filter((w) => w.status !== "completed").map((w) => w.error ?? w.capability).join("; ")}`);
     if (lastWitnesses.length) verification = { ...verification, status: "verified" };
     if (require.length) {
@@ -2589,6 +2683,7 @@ export class RightClick {
       ...(r.executed?.refusal ? { refusal: r.executed.refusal } : {}),
       ...(r.executed?.dataUnavailable ? { dataUnavailable: r.executed.dataUnavailable } : {}),
       ...(r.executed?.graphqlFailure ? { graphqlFailure: r.executed.graphqlFailure } : {}),
+      ...(r.executed?.cliValidity ? { cliValidity: r.executed.cliValidity } : {}),
       ...((r.planningRefusal ?? r.executed?.planningRefusal) ? { planningRefusal: r.planningRefusal ?? r.executed?.planningRefusal } : {}),
       result: r.executed?.output ?? null,
       pipeline: r.executed?.titles ?? [],
@@ -2684,6 +2779,48 @@ export class RightClick {
     return { id, title, newPowers: delta.newPowers };
   }
 
+  private async preflightWitnesses(witnesses: OutcomeWitness[]) {
+    for (const witness of witnesses) {
+      try {
+        const w = this.pinWitnesses([witness])[0];
+        await this.preflightCli(this.graph.get(w.capability)!, true);
+      } catch (cause) { throw new WitnessPreflightError(witness.capability, cause); }
+    }
+  }
+
+  private async preflightCli(cap: Capability, witness = false) {
+    const pending = [cap], seen = new Set<string>();
+    while (pending.length) {
+      const c = pending.pop()!;
+      if (seen.has(c.id)) continue;
+      seen.add(c.id);
+      if (seen.size > 1024) throw new CliValidityError("CLI validity preflight bound exceeded");
+      this.assertExecution(c);
+      if (c.invoke.kind === "composite") {
+        await this.preflightWitnesses(c.invoke.witnesses ?? []);
+        for (const id of c.invoke.steps.map(s => s.capability)) {
+          const child = this.graph.get(id);
+          if (!child) throw new CliValidityError(`missing retained dependency ${id}`);
+          pending.push(child);
+        }
+      } else if (c.invoke.kind === "cli") {
+        const allowed = await checkProgram(c.invoke.bin, this.executable);
+        if (!allowed.ok && allowed.missing && !witness) continue;
+        if (!allowed.ok) throw new CliValidityError(`not authorised to run ${c.invoke.bin}: ${allowed.reason} (HTTP 403 equivalent: nothing was run)`);
+        const sb = await this.sandbox();
+        if (!sb) throw new CliValidityError("unavailable: no sandbox on this host");
+        if (witness) {
+          const { readFile } = await import("node:fs/promises");
+          const { createHash } = await import("node:crypto");
+          const digest = createHash("sha256").update(await readFile(allowed.identity.real)).digest("hex");
+          if (digest !== c.invoke.sha256 || !await sameProgram(c.invoke.bin, allowed.identity))
+            throw new CliValidityError(`witness program changed: ${c.id}; establish a new check explicitly`);
+        }
+        await this.checkCliEnvironment(c, sb);
+      }
+    }
+  }
+
   private async runSteps(steps: PlanStep[], resultRef: string, inputs: Record<string, unknown>, confirm?: boolean, activeGoals?: string[], net?: Net, workflow?: WorkflowContinuation) {
     // Check every known dependency before the first effect, including nested composites.
     for (const [index, step] of steps.entries()) {
@@ -2691,6 +2828,7 @@ export class RightClick {
       if (!cap) throw new StepError(step.capability, `missing capability ${step.capability}`);
       try { this.assertExecution(cap); }
       catch (e) { throw new StepError(cap.id, String((e as Error).message)); }
+      await this.preflightCli(cap);
       for (const b of step.bindings) if (b.link) {
         const sourceIndex = /^(\d+)\.$/.exec(b.from);
         const source = sourceIndex ? this.graph.get(steps[Number(sourceIndex[1])]?.capability ?? "") : undefined;
@@ -2756,6 +2894,8 @@ export class RightClick {
         if (r.dataUnavailable) throw new MissingData({ ...r.dataUnavailable, runs: [...runs, ...r.dataUnavailable.runs] });
         if (r.graphqlFailure) throw new GraphQLFailure({ ...r.graphqlFailure, runs: [...new Set([...runs, ...r.graphqlFailure.runs])] });
         if (r.planningRefusal) throw new PlanningRefused({ ...r.planningRefusal, runs: [...runs, ...r.planningRefusal.runs] });
+        if (r.cliValidity?.environment === "changed" || r.cliValidity?.application === "reported-error")
+          throw new CliValidityError(r.error ?? "CLI validity refused", r.cliValidity, r.failedCapability ?? step.capability, runs);
         if (r.status === "failed") throw new StepError(r.failedCapability ?? step.capability, `${step.capability}: ${r.error}`);
         if (r.responseStatus !== undefined) responseStatuses.set(index, r.responseStatus);
         if (workflow) {
@@ -2781,6 +2921,8 @@ export class RightClick {
         if (r.dataUnavailable) throw new MissingData({ ...r.dataUnavailable, runs: [...runs, ...r.dataUnavailable.runs] });
         if (r.graphqlFailure) throw new GraphQLFailure({ ...r.graphqlFailure, runs: [...new Set([...runs, ...r.graphqlFailure.runs])] });
         if (r.planningRefusal) throw new PlanningRefused({ ...r.planningRefusal, runs: [...runs, ...r.planningRefusal.runs] });
+        if (r.cliValidity?.environment === "changed" || r.cliValidity?.application === "reported-error")
+          throw new CliValidityError(r.error ?? "CLI validity refused", r.cliValidity, r.failedCapability ?? step.capability, runs);
         if (r.status === "failed") throw new StepError(r.failedCapability ?? step.capability, `${step.capability} (item ${JSON.stringify(item)}, ${report.ran} of ${items.length}): ${r.error}`);
         each.push(r.output);
       }
@@ -2852,7 +2994,7 @@ export class RightClick {
       source: { os: g.process?.platform, arch: g.process?.arch, runtime: this.name, version: VERSION, semantics: SEMANTICS },
       programs,
       goals,
-      excluded: ["credentials", "caller inputs and outputs", "run records and receipts", "fixed goal values", "published goals' checks bound to caller data", "local operation continuity"],
+      excluded: ["credentials", "caller inputs and outputs", "run records and receipts", "fixed goal values", "published goals' checks bound to caller data", "local operation continuity", "local CLI environment evidence"],
     };
   }
 
@@ -2901,6 +3043,7 @@ export class RightClick {
       entry.localPath = local;
       const localSha = createHash("sha256").update(fs.readFileSync(fs.realpathSync(local))).digest("hex");
       entry.sameBytes = localSha === prog.sha256;
+      const environment = await observeCliEnvironment(local, sb.policy);
       const accepted: Capability[] = [];
       for (const cap of prog.capabilities) {
         const inv = cap.invoke as import("./core/types.ts").CliInvoke;
@@ -2909,12 +3052,23 @@ export class RightClick {
           continue;
         }
         const here = { ...withoutCliContinuity(inv), bin: local, sha256: localSha };
+        if ((sb.policy.network || sb.policy.writeRoots.length || cap.risk !== "read") && !this.operatorRetryAuthorised({ ...cap, invoke: here } as Capability)) {
+          entry.capabilities.push({ id: cap.id, status: "refused", reason: "conformance replay requires confinement or explicit operator retry authority" });
+          continue;
+        }
         const r = await replayExamples(here, sb);
         entry.revalidationRuns += r.runs;
         if (r.matched === r.total) accepted.push({ ...(cap as Capability), provider: `cli:${prog.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`, source: "cli", invoke: here, tags: [...cap.tags.filter((t) => t !== "imported"), "imported"] });
         else entry.capabilities.push({ id: cap.id, status: "refused", reason: `behaves differently here: ${r.mismatches.join("; ")}` });
       }
-      for (const c of accepted) entry.capabilities.push({ id: c.id, status: "accepted" });
+      if ((await observeCliEnvironment(local, sb.policy)).digest !== environment.digest) {
+        entry.reason = "CLI execution environment changed during conformance replay; nothing imported";
+        continue;
+      }
+      for (const c of accepted) {
+        if (c.invoke.kind === "cli") c.invoke.environment = { version: 1, coverage: "partial", digest: environment.digest };
+        entry.capabilities.push({ id: c.id, status: "accepted" });
+      }
       if (accepted.length) {
         const providerId = accepted[0].provider;
         const investigation: Investigation = {
@@ -2931,7 +3085,7 @@ export class RightClick {
           summary: `imported from ${bundle.source.runtime}: ${accepted.length} of ${prog.capabilities.length} capabilities revalidated by ${entry.revalidationRuns} sandboxed runs`,
         };
         this.investigations.set(local, investigation);
-        this.graph.add({ provider: { id: providerId, title: `${prog.name} (command-line program, imported)`, source: "cli", origin: local, learnedAt: new Date().toISOString(), capabilityIds: accepted.map((c) => c.id), meta: { investigation, sha256: localSha, version: prog.version, source: `cli:${local}`, importedFrom: bundle.source } }, capabilities: accepted });
+        this.graph.add({ provider: { id: providerId, title: `${prog.name} (command-line program, imported)`, source: "cli", origin: local, learnedAt: new Date().toISOString(), capabilityIds: accepted.map((c) => c.id), meta: { investigation, cliEnvironment: environment, sha256: localSha, version: prog.version, source: `cli:${local}`, importedFrom: bundle.source } }, capabilities: accepted });
         entry.status = accepted.length === prog.capabilities.length ? "accepted" : "partly-accepted";
       } else entry.reason ??= "no capability reproduced its examples here";
       entry.ms = Math.round(performance.now() - t0);
@@ -2942,7 +3096,7 @@ export class RightClick {
   }
 
   exportGraph() {
-    return { name: this.name, region: this.info.region, version: VERSION, capabilities: this.graph.list() };
+    return { name: this.name, region: this.info.region, version: VERSION, capabilities: this.graph.list().map(c => ({ ...c, invoke: withoutCliContinuity(c.invoke) })) };
   }
 
   async watch(opts: { since?: number; waitMs?: number } = {}): Promise<{ cursor: number; events: GraphEvent[] }> {
@@ -3219,18 +3373,30 @@ export class RightClick {
         const operands = inv.operandsPort ? args[inv.operandsPort] : undefined;
         if (operands !== undefined && (!Array.isArray(operands) || !operands.every(n => typeof n === "string" && names.includes(n)))) throw new Error("operands must be a list of names present in files (HTTP 400 equivalent: nothing was run)");
         argv.push(...(operands === undefined ? names : operands as string[]));
+        const before = await this.checkCliEnvironment(cap, sb, execution);
         const r = await sb.run(inv.bin, argv, { stdin: inv.stdin ? asContent(args[inv.stdin]) : "", files, purpose: "execution" });
+        execution.cliValidity!.processExit = r.code;
+        const after = await observeCliEnvironment(inv.bin, sb.policy);
+        if (after.digest !== before!.digest) {
+          execution.cliValidity!.environment = "changed";
+          execution.cliValidity!.observed = after.digest;
+          throw new CliValidityError("CLI execution environment changed during the call; output discarded; not replayed", execution.cliValidity, cap.id);
+        }
         // A file swapped while it ran: its output belongs to a program nobody checked.
         if (!(await sameProgram(inv.bin, id))) throw new Error(`${inv.bin} was replaced while it ran; its output is discarded (HTTP 409 equivalent)`);
         if (r.limit && r.limit !== "time" && r.limit !== "output") throw new Error(`${inv.bin} exceeded the sandbox's ${r.limit} limit`);
         if (r.timedOut) throw new Error(`${inv.bin} timed out in the sandbox`);
         if (r.truncated) throw new Error(`${inv.bin} exceeded the output limit`);
+        let envelope: unknown;
+        try { envelope = JSON.parse(r.stdout); } catch {}
+        execution.cliValidity!.application = reportsApplicationError(envelope) ? "reported-error" : "not-established";
+        if (execution.cliValidity!.application === "reported-error")
+          throw new CliValidityError(`CLI reported an application-level error envelope (process exit ${r.code}); outcome not established; not replayed`, execution.cliValidity, cap.id);
         if (!inv.okExit.includes(r.code ?? -1) || !r.stdout.trim()) throw new Error(`${inv.bin} exited ${r.code}${r.stdout.trim() ? "" : " without output"}: ${r.stderr.slice(0, 300)}`);
         if (inv.output === "json") {
-          try {
-            return parseJsonValue(r.stdout);
-          } catch (error) {
-            if (error instanceof JsonRepresentationError) throw new JsonRepresentationError(`${error.message}; use ${cap.provider}:stdout for exact output text`);
+          try { return parseJsonValue(r.stdout); }
+          catch (error) {
+            if (error instanceof JsonRepresentationError) throw error;
             throw new Error(`${inv.bin} did not print JSON this time`);
           }
         }

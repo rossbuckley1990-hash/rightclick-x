@@ -6,6 +6,7 @@
 // can be checked anywhere without trusting the instance that produced it.
 
 import type { HttpContinuationEvidence } from "../reflectors/http-continuation.ts";
+import type { CliValidity } from "./cli-outcome.ts";
 
 export interface Experience {
   runs: number;
@@ -87,6 +88,8 @@ export interface Receipt {
   verification: "verified" | "checked" | "refuted" | "unverified";
   /** Local continuation observations, hash-bound to this receipt; not independent authority proof. */
   httpContinuation?: HttpContinuationEvidence;
+  /** Local observations, not independent verification or authority. */
+  cliValidity?: CliValidity;
   /** This receipt continues a retained execution without replaying completed actions. */
   resumes?: string;
   /** Complete selected saved-goal execution; never a leaf-only continuation. */
