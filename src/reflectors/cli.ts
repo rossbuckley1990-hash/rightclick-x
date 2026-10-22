@@ -36,7 +36,10 @@ export interface Investigation {
   summary: string;
 }
 
-const MAX_RUNS = 80;
+const MAX_RUNS = 160;
+// Large multi-verb tools (Miller: 74 documented verbs) must not be truncated mid-alphabet:
+// their most useful verbs (sort, tail, uniq) can come after dozens of others.
+const MAX_VERBS = 96;
 
 // ---------------------------------------------------------------- declared documentation
 
@@ -48,14 +51,15 @@ export function parseUsage(text: string): { options: Investigation["options"]; s
   const lines = clean.split("\n");
   const indent = (l: string) => /^\s*/.exec(l)![0].length;
   // A flag, optionally with an argument: "=MACRO[:FORMAT]", " <file>", " NAME", "[=WHEN]" (optional).
-  const OPTION_LINE = /^(\s{0,12})((?:-{1,2}[A-Za-z0-9?][\w-]*(?:\[=[^\]]+\]|[ =](?:<[^>]+>|[A-Z][A-Z_]+|\[[^\]]+\])(?:\[[^\]]*\])*)?(?:,\s*|\s+or\s+|\s+|$))+)(.*)$/;
+  const OPTION_LINE = /^(\s{0,12})((?:-{1,2}[A-Za-z0-9?][\w-]*(?:\[=[^\]]+\]|[ =](?:<[^>]+>|\{[^}]+\}|[A-Z][A-Z_]+|\[[^\]]+\])(?:\[[^\]]*\])*)?(?:,\s*|\s+or\s+|\s+|$))+)(.*)$/;
   for (let i = 0; i < lines.length; i++) {
     const m = OPTION_LINE.exec(lines[i]);
     if (!m) continue;
     const flags = [...m[2].matchAll(/-{1,2}[A-Za-z0-9?][\w-]*/g)].map((x) => x[0]);
     if (!flags.length || seen.has(flags[0])) continue;
     const optionalArg = /\[=([^\]]+)\]/.exec(m[2])?.[1];
-    let arg = optionalArg ? undefined : /(?:[ =])(<[^>]+>|[A-Z][A-Z_]+|\[[^\]]+\])/.exec(m[2])?.[1];
+    let arg = optionalArg ? undefined : /(?:[ =])(<[^>]+>|\{[^}]+\}|[A-Z][A-Z_]+|\[[^\]]+\])/.exec(m[2])?.[1];
+    arg = arg?.replace(/^\{(.*)\}$/, "$1");
     let rest = m[3];
     // Description lines that follow, indented further than the option itself (manual pages put
     // the description beside or below the flag and wrap it over several lines).
@@ -138,6 +142,100 @@ export function parseOperands(synopsis: string[], name: string): Investigation["
   return { required: collapsed.slice(0, 4), optional: [...new Set(optional)].slice(0, 4), variadic };
 }
 
+// ---------------------------------------------------------------- subcommands
+
+export interface Subcommand { name: string; description: string }
+
+/**
+ * Commands a dispatcher program declares in its help: a "Commands:", "Subcommands:" or
+ * "Verbs:" section followed by indented entries. Entry names are one token; a description,
+ * when present, is separated by a wide gap (Click) or is empty (Miller's verb list).
+ */
+export function parseSubcommands(text: string): Subcommand[] {
+  const out: Subcommand[] = [];
+  const seen = new Set<string>();
+  let inSection = false;
+  for (const line of text.split("\n")) {
+    if (/^\s*(commands?|subcommands?|available commands?|verbs?)\s*:\s*$/i.test(line)) {
+      inSection = true;
+      continue;
+    }
+    if (!inSection) continue;
+    if (!line.trim()) {
+      if (out.length) break;
+      continue;
+    }
+    // An unindented line (or another heading) ends the section.
+    if (!/^\s/.test(line)) break;
+    // The gap between the name and a description is wide; "mlr help list-verbs" is one phrase,
+    // not a command named "mlr" with a description.
+    const m = /^\s{2,}([a-z][a-z0-9._-]{0,40})(?:(?:\t+| {2,})(.*))?\s*$/.exec(line);
+    if (!m) {
+      if (out.length) break;
+      continue;
+    }
+    const name = m[1];
+    if (/^(options?|flags?|usage|commands?|verbs?|help)$/i.test(name) || seen.has(name)) continue;
+    seen.add(name);
+    out.push({ name, description: (m[2] ?? "").trim().replace(/\.{3}$/, "").slice(0, 200) });
+    if (out.length >= 96) break;
+  }
+  return out;
+}
+
+/** A bare command list ("mlr -l"): every non-empty line is one command name, nothing else. */
+export function parseCommandList(text: string, program: string): Subcommand[] {
+  const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
+  if (lines.length < 2 || lines.length > 96) return [];
+  if (!lines.every((l) => /^[a-z][a-z0-9._-]{0,39}$/.test(l))) return [];
+  const seen = new Set<string>();
+  const out: Subcommand[] = [];
+  for (const name of lines) {
+    if (name === program || seen.has(name)) continue;
+    seen.add(name);
+    out.push({ name, description: "" });
+  }
+  return out;
+}
+
+/** Topic names a help command lists ("* help flags", "* help topics"). */
+export function parseHelpTopics(text: string): string[] {
+  const out: string[] = [];
+  for (const line of text.split("\n")) {
+    const m = /^\s*\S+\s+help\s+([a-z][\w/-]*)\s*$/i.exec(line);
+    if (m && !out.includes(m[1])) out.push(m[1]);
+    if (out.length >= 96) break;
+  }
+  return out;
+}
+
+/** Program-level options documented separately from a subcommand (e.g. a help topic). */
+function mergeOptions(base: Investigation["options"], extra: Investigation["options"]): { options: Investigation["options"]; added: number } {
+  const seen = new Set(base.flatMap((o) => o.flags));
+  const options = [...base];
+  let added = 0;
+  for (const o of extra) {
+    if (o.flags.some((f) => seen.has(f))) continue;
+    for (const f of o.flags) seen.add(f);
+    options.push(o);
+    if (++added >= 160) break;
+  }
+  return { options: options.slice(0, 160), added };
+}
+
+const DESTRUCTIVE_COMMAND = /\b(delete|remove|destroy|drop|purge|erase|truncate|revoke|uninstall|kill|terminate|reset|overwrite|deploy|publish)\b/i;
+const WRITE_COMMAND = /\b(create|update|patch|put|post|write|save|rename|move|install|grant|chmod|chown|import|upload|commit|push|merge)\b/i;
+const EXTERNAL_COMMAND = /\b(api|http|https|url|network|remote|fetch|download|upload|send|sync|pull|push)\b/i;
+
+/** The least authority a subcommand's own name and description support. */
+function commandRisk(name: string, description: string): "read" | "write" | "external" | "destructive" {
+  const text = `${name} ${description}`;
+  if (DESTRUCTIVE_COMMAND.test(text)) return "destructive";
+  if (WRITE_COMMAND.test(text)) return "write";
+  if (EXTERNAL_COMMAND.test(text)) return "external";
+  return "read";
+}
+
 // ---------------------------------------------------------------- volatile output
 
 /** Date-times such as file timestamps ("2026:10:17 14:47:38+01:00", "2026-10-17T14:47:38Z"). */
@@ -217,12 +315,26 @@ export function validateOptions(value: unknown, allowed: Array<{ flags: string[]
 }
 
 /** Documented options that are not offered: they write files, run commands or reach the network. */
-const UNOFFERED = /\b(output file|outfile|in[- ]place|overwrite|save[sd]? (it |them |the \w+ )?(to|in|into|as)\b|writes? (it |them |the \w+ |out )?(to|into|in) (?:(?:a|an|the|given|another|specified|named|output)\s+)*(file|files|disk|directory)|delete|remove (the )?files?|execute|exec|shell|run (a |the )?command|spawn|daemon|server|listen|network|connect|socket|url|http|password)\b/i;
+const UNOFFERED = /\b(output file|outfile|in[- ]place|overwrite|save[sd]? (it |them |the \w+ )?(to|in|into|as)\b|writes? (it |them |the \w+ |out )?(to|into|in) (?:(?:a|an|the|given|another|specified|named|output)\s+)*(file|files|disk|directory)|delete|remove (the )?files?|execute|exec|shell|run (a |the )?command|spawn|daemon|server|listen|password|command|code execution)\b/i;
+/** Network-valued options. Their effect is declared by the capability's own risk, and the
+ *  sandbox still decides whether any egress is possible, so they are offered only where the
+ *  subcommand itself is not a read. */
+const NETWORK_OPTION = /\b(network|connect|socket|url|uri|http|https|api|endpoint|host|remote)\b/i;
 
-const offeredOption = (o: Investigation["options"][number]) => !/^-{1,2}(h|help|V|version|\?)$/.test(o.flags[0]) && !UNOFFERED.test(o.description) && !/^(file|outfile|output|output_file|path)$/i.test(o.arg ?? "");
-function optionContract(options: Investigation["options"]): NonNullable<CliInvoke["options"]> {
-  const excluded = [...new Set(options.filter(o => !offeredOption(o)).flatMap(o => o.flags))];
-  return { port: "options", allowed: options.filter(offeredOption).map(o => ({ flags: o.flags.filter(f => !excluded.includes(f)), arg: !!o.arg, ...(o.optionalArg ? { optionalArg: true } : {}) })).filter(o => o.flags.length > 0), excluded };
+const FILE_ARG = /^(file|file ?name|filename|path|input|input ?file)$/i;
+const READS_FILE = /\b(input|read|reads|load|loads|source|from|containing|reads? from)\b/i;
+const offeredOption = (o: Investigation["options"][number], allowNetwork = false) => {
+  if (/^-{1,2}(h|help|V|version|\?)$/.test(o.flags[0]) || UNOFFERED.test(o.description)) return false;
+  if (!allowNetwork && NETWORK_OPTION.test(o.description)) return false;
+  // A file-valued option is offered only when its documentation says it reads: writing paths
+  // stay refused, and a read is confined by the sandbox like any other input.
+  if (o.arg && FILE_ARG.test(o.arg)) return READS_FILE.test(o.description);
+  return true;
+};
+function optionContract(options: Investigation["options"], port = "options", allowNetwork = false): { port: string; allowed: Array<{ flags: string[]; arg: boolean; optionalArg?: boolean }>; excluded?: string[] } {
+  const offered = options.filter((o) => offeredOption(o, allowNetwork));
+  const excluded = [...new Set(options.filter((o) => !offeredOption(o, allowNetwork)).flatMap((o) => o.flags))];
+  return { port, allowed: offered.map(o => ({ flags: o.flags.filter(f => !excluded.includes(f)), arg: !!o.arg, ...(o.optionalArg ? { optionalArg: true } : {}) })).filter(o => o.flags.length > 0), excluded };
 }
 
 /**
@@ -430,7 +542,128 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
   claim(name, `options: ${inv.options.length} declared`, inv.options.length ? "declared" : "unknown", "usage/manual option lines");
   claim(name, `operands: required [${inv.operands.required.join(", ")}], optional [${inv.operands.optional.join(", ")}]${inv.operands.variadic ? ", variadic" : ""}`, synopsis.length ? "inferred" : "unknown", synopsis.slice(0, 2).join(" | "));
 
-  // 2. Experiments with synthetic inputs (never the evaluator's inputs).
+  // 2. Subcommands: a dispatcher declares commands, each with its own options and operands.
+  // Discovery is generic: a command section in the help, or a bare list the help points at.
+  let subcommands = parseSubcommands(docs);
+  if (subcommands.length) {
+    claim(name, `commands: ${subcommands.length} declared in a command section`, "declared", subcommands.slice(0, 8).map((s) => s.name).join(", "));
+  } else if (/\b(commands?|subcommands?|verbs?)\b/i.test(docs)) {
+    for (const probe of [["-l"], ["--list"], ["--list-commands"], ["commands"]]) {
+      const r = await run(`list commands with ${probe.join(" ")}`, probe);
+      const list = r && !r.timedOut ? parseCommandList(r.stdout, name) : [];
+      if (list.length) {
+        subcommands = list;
+        claim(name, `commands: ${list.length} listed by "${name} ${probe.join(" ")}"`, "declared", list.slice(0, 8).map((s) => s.name).join(", "));
+        break;
+      }
+    }
+  }
+  if (subcommands.length) {
+    // Group-level flags are sometimes documented apart from the command list. A program
+    // that says "help topics" documents where; follow only the flags/options topic it names.
+    if (inv.options.filter((o) => offeredOption(o)).length < 2 && /\bhelp topics\b/i.test(docs)) {
+      const topicsRun = await run("read help topics", ["help", "topics"]);
+      const topics = topicsRun && !topicsRun.timedOut ? parseHelpTopics(`${topicsRun.stdout}\n${topicsRun.stderr}`) : [];
+      const topic = topics.find((t) => /^(flags?|options?)$/i.test(t));
+      if (topic) {
+        const flagRun = await run(`read ${topic} documentation`, ["help", topic]);
+        if (flagRun && flagRun.code === 0 && /-{1,2}[A-Za-z]/.test(flagRun.stdout)) {
+          const merged = mergeOptions(inv.options, parseUsage(flagRun.stdout).options.map((o) => ({ ...o, description: `${o.description} (documented by ${name} help ${topic})` })));
+          inv.options = merged.options;
+          claim(name, `global options: ${merged.added} documented by "${name} help ${topic}"`, "declared", `${merged.added} option lines with descriptions`);
+        }
+      }
+    }
+    const subProvider = `cli:${slug(name)}`;
+    const jsonByDefault = inv.options.some((o) => o.flags.includes("--json") && /\bdefault\b/i.test(o.description));
+    const optionList = (xs: Investigation["options"]) => xs.slice(0, 40).map((o) => `${o.flags.join("/")}${o.arg ? ` <${o.arg}>` : o.optionalArg ? `[=${o.optionalArg}]` : ""}`).join(", ");
+    const caps: Capability[] = [];
+    for (const sub of subcommands.slice(0, MAX_VERBS)) {
+      if (!/^[a-z][a-z0-9._-]*$/.test(sub.name)) continue;
+      let verbText = "";
+      let verbSource = "";
+      for (const args of [[sub.name, "--help"], [sub.name, "-h"], ["help", sub.name]]) {
+        const r = await run(`read ${sub.name} usage`, args);
+        const text = `${r?.stdout ?? ""}\n${r?.stderr ?? ""}`;
+        if (r && !r.timedOut && r.code === 0 && /usage|options?/i.test(text) && text.trim().length > verbText.trim().length) {
+          verbText = text;
+          verbSource = `${name} ${args.join(" ")}`;
+        }
+        if (verbText) break;
+      }
+      const id = `${subProvider}:${slug(sub.name)}`;
+      if (!verbText.trim()) {
+        claim(id, `subcommand "${sub.name}" documents its usage`, "unknown", `no help from "${name} ${sub.name} --help", "${name} ${sub.name} -h" or "${name} help ${sub.name}"`);
+        continue;
+      }
+      const vp = parseUsage(verbText);
+      const subProse = verbText.split("\n").map((l) => l.trim()).find((l) => l && !/^(usage|options?|synopsis|examples?|commands?|flags?)\b/i.test(l) && !/^-/.test(l) && /[a-z]{3,}/i.test(l));
+      const description = sub.description || subProse || inv.program.description || name;
+      const risk = commandRisk(sub.name, `${sub.description} ${subProse ?? ""}`);
+      // A subcommand that is not itself a read may declare the network option it exists to use.
+      // A read subcommand keeps network-valued options refused.
+      const globalContract = optionContract(inv.options, "global_options", risk !== "read");
+      const globalOffered = inv.options.filter((o) => offeredOption(o, risk !== "read"));
+      const local = optionContract(vp.options, "options", risk !== "read");
+      const offered = vp.options.filter((o) => offeredOption(o, risk !== "read"));
+      const usesStdin = /\b(stdin|standard input)\b/i.test(`${docs}\n${verbText}`);
+      const required = offered.filter((o) => /\brequired\b/i.test(o.description)).map((o) => o.flags.join("/"));
+      const inputs: Port[] = [];
+      if (globalContract.allowed.length) inputs.push({ name: "global_options", type: "list:text", required: false, description: `Options placed before the subcommand (${globalContract.allowed.length} documented): ${optionList(globalOffered)}` });
+      if (local.allowed.length) inputs.push({ name: "options", type: "list:text", required: false, description: `Options placed after "${sub.name}" (${local.allowed.length} documented): ${optionList(offered)}${required.length ? `. Required: ${required.join(", ")}` : ""}` });
+      if (usesStdin) inputs.push({ name: "input", type: "text", required: false, anyText: true, description: "Content given on standard input" });
+      inputs.push(
+        { name: "files", type: "json", required: false, description: 'Named input files {"name.ext": "content"}: staged with exact flat names (no paths or leading dash). Options can refer to these names.' },
+        { name: "operands", type: "list:text", required: false, description: 'Names from "files" to append as positional operands, in this order. Pass [] when the subcommand takes no file operands.' },
+      );
+      const cap: Capability = {
+        id,
+        title: `${name} ${sub.name}${sub.description ? `: ${sub.description}` : subProse ? `: ${subProse.replace(/\.$/, "")}` : ""}`.slice(0, 200),
+        description: `${inv.program.description ?? name}. Subcommand "${sub.name}": ${description.replace(/\.$/, "")}. Runs the documented subcommand; options outside the declared lists are refused.${required.length ? ` Required options: ${required.join(", ")}.` : ""}${usesStdin ? ' Content may be given on standard input ("input").' : ""} Files are staged by exact name; pass "operands" to select which are appended ([] for none). Runs only in the sandbox.`.slice(0, 600),
+        provider: subProvider,
+        source: "cli",
+        inputs,
+        outputs: [{ name: "", type: jsonByDefault ? "json" : "text", required: true }],
+        risk,
+        tags: [name, sub.name, "declared-interface", "declared-only", "direct-only", ...(risk === "read" ? [] : [risk])].slice(0, 32),
+        invoke: {
+          kind: "cli",
+          bin,
+          args: [sub.name],
+          ...(globalContract.allowed.length ? { options: globalContract } : {}),
+          ...(local.allowed.length ? { optionsAfterArgs: local } : {}),
+          ...(usesStdin ? { stdin: "input" } : {}),
+          filesPort: "files",
+          operandsPort: "operands",
+          okExit: [0, 1],
+          output: jsonByDefault ? "json" : "text",
+          sha256: inv.program.sha256,
+        },
+      };
+      caps.push(cap);
+      claim(id, `subcommand "${sub.name}" documents ${vp.options.length} option(s)${required.length ? `, ${required.length} required` : ""}`, "declared", verbSource);
+    }
+    if (caps.length) {
+      inv.summary = `${caps.length} subcommand capabilit${caps.length === 1 ? "y" : "ies"} from ${inv.runs.length} sandboxed runs (${subcommands.length} commands discovered)`;
+      return {
+        reflection: {
+          provider: {
+            id: subProvider,
+            title: `${name} (command-line program with subcommands)`,
+            source: "cli",
+            origin: bin,
+            learnedAt: new Date().toISOString(),
+            capabilityIds: caps.map((c) => c.id),
+            meta: { investigation: inv, sha256: inv.program.sha256, version: inv.program.version },
+          },
+          capabilities: caps,
+        },
+        investigation: inv,
+      };
+    }
+  }
+
+  // 3. Experiments with synthetic inputs (never the evaluator's inputs).
   const samples = samplesFor(docs, seed);
   const kinds = [...new Set(samples.map((s) => s.kind))];
   // Literal operands (values, not files) are supplied as argv text; only the rest are file operands.
@@ -518,7 +751,7 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
     // Generic inputs cannot exercise every program (a decoder needs encoded input). If the program
     // documents options, it is still offered, clearly as a declared interface: behaviour not
     // observed, never composed automatically, no fingerprint (so never imported elsewhere).
-    const declared = inv.options.filter(offeredOption);
+    const declared = inv.options.filter((o) => offeredOption(o));
     if (!precondition && declared.length && docs.trim()) {
       const providerId = `cli:${slug(name)}`;
       const id = `${providerId}:invoke`;
@@ -698,7 +931,7 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
   // The documented-options interface: the program run with options its documentation declares,
   // chosen by a caller who knows what it needs (an agent asking for "wrap at 20 columns").
   // Each option's effect is declared, and tested here where the budget allows.
-  const offered = inv.options.filter(offeredOption);
+  const offered = inv.options.filter((o) => offeredOption(o));
   const base = capabilities.find((c) => c.id === `${providerId}:default`) ?? capabilities[0];
   if (offered.length && base && base.invoke.kind === "cli") {
     const id = `${providerId}:invoke`;

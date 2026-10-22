@@ -535,6 +535,8 @@ export class RightClick {
   private sandboxCache?: Promise<Sandbox | null>;
   private onInvestigationStart?: (program: string) => void;
   private hashCache = new Map<string, { key: string; sha256: string }>();
+  /** Changed CLI bytes that failed conformance revalidation, so repeat calls refuse without re-running examples. */
+  private cliRefusals = new Map<string, string>();
 
   private constructor(opts: RuntimeOptions) {
     this.executionPolicy = parseExecutionPolicy(opts.authority?.execution);
@@ -1753,6 +1755,54 @@ export class RightClick {
     if (last !== undefined && Date.now() - last < HEAL_REREAD_MS) return done(`contract at ${source} was re-read ${Math.round((Date.now() - last) / 1000)}s ago for an earlier failure; not re-read again yet`);
     this.healReads.set(source, Date.now());
     const meant = operationOf(cap);
+    const prior = cap.invoke.kind === "cli" ? cap.invoke : undefined;
+    // A changed local program is revalidated before its new contract is adopted. Its declared
+    // interface can stay identical while its behaviour changes; a documented-only capability has
+    // no conformance evidence, so it cannot be adopted silently either.
+    if (prior) {
+      const fs = await import("node:fs");
+      let currentSha: string | undefined;
+      try {
+        const { createHash } = await import("node:crypto");
+        currentSha = createHash("sha256").update(fs.readFileSync(fs.realpathSync(prior.bin))).digest("hex");
+      } catch { /* the re-read below reports a missing program */ }
+      if (currentSha && currentSha !== prior.sha256) {
+        const check = await checkProgram(prior.bin, this.investigable);
+        if (!check.ok) return done(`not authorised to revalidate ${prior.bin}: ${check.reason}`);
+        const refusalKey = `${cap.id}\u0000${currentSha}`;
+        const known = this.cliRefusals.get(refusalKey);
+        if (known) return done(known);
+        const refuse = (note: string) => { this.cliRefusals.set(refusalKey, note); return done(note); };
+        const inputDigest = await sha256(stableStringify(args));
+        const priorRun = this.chain.receipts.findLast((r) => r.capability === cap.id && r.status === "completed" && r.inputDigest === inputDigest);
+        if (priorRun) {
+          // The same call succeeded before: run it once more with the new bytes and require the
+          // same output. This works even for documented-only commands with no conformance samples.
+          try {
+            const probe: Capability = { ...cap, invoke: { ...prior, sha256: currentSha } };
+            const output = await this.execute(probe, coerceArgs(probe, args), net, execution);
+            if ((await sha256(stableStringify(output))) !== priorRun.outputDigest)
+              return refuse(`program behaviour changed since it was investigated (changed meaning); its output for an identical successful call differs from the retained receipt (HTTP 409 equivalent)`);
+          } catch (e) {
+            return refuse(`changed program failed an invocation that previously succeeded: ${String((e as Error)?.message ?? e)} (HTTP 409 equivalent)`);
+          }
+        } else if (!prior.examples?.length) {
+          return refuse(`program changed since it was investigated and ${cap.id} has no conformance examples or prior successful call to revalidate it; re-investigate to accept the new program (HTTP 409 equivalent)`);
+        } else {
+          const sb = await this.sandbox();
+          if (!sb) return done(`program changed since it was investigated and no sandbox is available to revalidate it; not retried (HTTP 409 equivalent)`);
+          let replay: Awaited<ReturnType<typeof replayExamples>>;
+          try {
+            replay = await replayExamples(prior, sb);
+          } catch (e) {
+            return done(`could not revalidate the changed program against its conformance examples: ${String((e as Error)?.message ?? e)}`);
+          }
+          if (replay.matched !== replay.total)
+            return refuse(`program behaviour changed since it was investigated (changed meaning); conformance examples no longer match: ${replay.mismatches.join("; ")} (HTTP 409 equivalent)`);
+        }
+        for (const key of this.cliRefusals.keys()) if (key.startsWith(`${cap.id}\u0000`)) this.cliRefusals.delete(key);
+      }
+    }
     const r = (await this.learn({ source, deep: true, net })).results[0];
     const d = r?.drift;
     if (d) healing.drift = d;
@@ -3139,6 +3189,7 @@ export class RightClick {
         const files: Record<string, string> = Object.create(null);
         // Documented options chosen by the caller, checked against the declared list first.
         const chosen = inv.options ? validateOptions(args[inv.options.port], inv.options.allowed, inv.options.excluded) : [];
+        const chosenAfterArgs = inv.optionsAfterArgs ? validateOptions(args[inv.optionsAfterArgs.port], inv.optionsAfterArgs.allowed, inv.optionsAfterArgs.excluded) : [];
         const argv = [...chosen, ...inv.args.map((a, i) => {
           if (typeof a === "string") return a;
           if (a.literal) {
@@ -3153,7 +3204,7 @@ export class RightClick {
           const name = `in${i}-${a.input.replace(/[^\w]/g, "")}.${contentExtension(asContent(args[a.input]))}`;
           files[name] = asContent(args[a.input]);
           return name;
-        })].filter((x): x is string => x !== null);
+        }), ...chosenAfterArgs].filter((x): x is string => x !== null);
         // Auxiliary files and positional operands are different roles. Do not guess a role from
         // an option value: a pattern can equal a file name. The caller can name the exact operands.
         const named = inv.filesPort ? args[inv.filesPort] : undefined;

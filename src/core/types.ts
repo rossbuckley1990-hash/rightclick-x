@@ -185,8 +185,14 @@ export interface CliInvoke {
   /**
    * The documented-options interface: the caller may pass options from this declared list (and
    * their arguments) in the input named `port`; anything else is refused before running.
+   * These are placed before `args`: group-level options, or a program's only options.
    */
   options?: { port: string; allowed: Array<{ flags: string[]; arg: boolean; optionalArg?: boolean }>; excluded?: string[] };
+  /**
+   * Documented options placed after `args`. A subcommand's own options belong after the verb
+   * when a program requires `prog [global options] verb [verb options] [files]`.
+   */
+  optionsAfterArgs?: { port: string; allowed: Array<{ flags: string[]; arg: boolean; optionalArg?: boolean }>; excluded?: string[] };
   /** Input holding named files ({name: content}) written exactly into the sandbox. */
   filesPort?: string;
   /** Optional list of named files to append as operands, in order. Omitted means all files; [] means none. */

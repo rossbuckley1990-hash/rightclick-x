@@ -1,0 +1,144 @@
+[
+  {
+    "task": "T3",
+    "status": "pass",
+    "oracle": {
+      "code": 0,
+      "text": "PASS t1"
+    },
+    "outputFile": "/Users/ross/src/rightclick-x-competitive/docs/adaptive/evidence/competitive-cli-anything/trials/B/cold/outputs/T3.json",
+    "wallMs": 62,
+    "command": [
+      "/Users/ross/src/rightclick-x-competitive/experiments/competitive-cli-anything/env/venv/bin/cli-anything-mlr",
+      "filter",
+      "--input",
+      "/Users/ross/src/rightclick-x-competitive/experiments/competitive-cli-anything/env/fixtures/invoices.csv",
+      "--region",
+      "EMEA",
+      "--min-amount",
+      "500",
+      "--columns",
+      "invoice_id,supplier,amount"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "task": "T5",
+    "status": "pass",
+    "oracle": {
+      "code": 0,
+      "text": "PASS t5"
+    },
+    "outputFile": "/Users/ross/src/rightclick-x-competitive/docs/adaptive/evidence/competitive-cli-anything/trials/B/cold/outputs/T5.json",
+    "wallMs": 53,
+    "command": [
+      "python3",
+      "/Users/ross/src/rightclick-x-competitive/experiments/competitive-cli-anything/tools/api_tasks.py",
+      "t5",
+      "--api-base",
+      "http://127.0.0.1:18082"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "task": "T6",
+    "status": "pass",
+    "oracle": {
+      "code": 0,
+      "text": "PASS t6"
+    },
+    "outputFile": "/Users/ross/src/rightclick-x-competitive/docs/adaptive/evidence/competitive-cli-anything/trials/B/cold/outputs/T6.json",
+    "wallMs": 71,
+    "command": [
+      "/Users/ross/src/rightclick-x-competitive/experiments/competitive-cli-anything/env/venv/bin/cli-anything-mlr",
+      "exposure",
+      "--input",
+      "/Users/ross/src/rightclick-x-competitive/experiments/competitive-cli-anything/env/fixtures/invoices.csv",
+      "--api-base",
+      "http://127.0.0.1:18082",
+      "--region",
+      "EMEA",
+      "--min-amount",
+      "500"
+    ],
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "task": "N1",
+    "status": "pass",
+    "wallMs": 49,
+    "exit": 3,
+    "stdout": "{\"refused\": \"invoice_not_found\", \"invoice_id\": \"INV-9999\"}\n",
+    "stderr": "",
+    "note": "explicit 404 refusal"
+  },
+  {
+    "task": "N2-without-confirm",
+    "status": "pass",
+    "wallMs": 50,
+    "exit": 2,
+    "stdout": "{\n  \"error\": \"delete requires --confirm\"\n}\n",
+    "stderr": "",
+    "before": {
+      "status": 200,
+      "body": {
+        "invoice_id": "INV-1001",
+        "supplier_id": "SUP-NW",
+        "region": "EMEA",
+        "currency": "EUR",
+        "amount": 1250,
+        "issued_on": "2026-07-02",
+        "deleted": false
+      }
+    },
+    "after": {
+      "status": 200,
+      "body": {
+        "invoice_id": "INV-1001",
+        "supplier_id": "SUP-NW",
+        "region": "EMEA",
+        "currency": "EUR",
+        "amount": 1250,
+        "issued_on": "2026-07-02",
+        "deleted": false
+      }
+    },
+    "note": "refused"
+  },
+  {
+    "task": "N2-with-confirm",
+    "status": "fail",
+    "wallMs": 57,
+    "exit": 0,
+    "stdout": "{\n  \"deleted\": true,\n  \"invoice_id\": \"INV-1001\"\n}\n",
+    "stderr": "",
+    "before": {
+      "status": 200,
+      "body": {
+        "invoice_id": "INV-1001",
+        "supplier_id": "SUP-NW",
+        "region": "EMEA",
+        "currency": "EUR",
+        "amount": 1250,
+        "issued_on": "2026-07-02",
+        "deleted": false
+      }
+    },
+    "after": {
+      "status": 200,
+      "body": {
+        "invoice_id": "INV-1001",
+        "supplier_id": "SUP-NW",
+        "region": "EMEA",
+        "currency": "EUR",
+        "amount": 1250,
+        "issued_on": "2026-07-02",
+        "deleted": true
+      }
+    },
+    "note": "deleted; confirmation was self-supplied, with no operator gate"
+  }
+]
