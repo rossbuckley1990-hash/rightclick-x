@@ -2,6 +2,7 @@
 // audited legacy readers stop at graph restoration instead of interpreting an
 // unknown version as empty state and overwriting it on their next flush.
 import type { PersistedState } from "../runtime.ts";
+import type { Reflection } from "./types.ts";
 
 export const STATE_FORMAT = "rightclick-x/runtime-state@2";
 export const STATE_REQUIREMENTS = [
@@ -10,7 +11,12 @@ export const STATE_REQUIREMENTS = [
   "composition-goal-obligations@1",
   "declared-continuation-contracts@1",
 ] as const;
-const supported = new Set<string>(STATE_REQUIREMENTS);
+export const CONTRACT_LINK_REQUIREMENT = "response-contract-links@1";
+const supported = new Set<string>([...STATE_REQUIREMENTS, CONTRACT_LINK_REQUIREMENT]);
+export function usesContractLinks(reflections: Reflection[]): boolean {
+  return reflections.some(r => r.capabilities.some(c => c.links?.length ||
+    c.invoke.kind === "composite" && c.invoke.steps.some(s => s.bindings.some(b => b.link))));
+}
 const invocations = new Set(["http", "graphql", "mcp", "peer", "builtin", "platform", "cli", "goal", "composite"]);
 const object = (value: unknown): value is Record<string, any> => value !== null && typeof value === "object" && !Array.isArray(value);
 
@@ -47,6 +53,8 @@ export function decodeState(value: unknown): PersistedState {
       }
     }
   }
+  if (usesContractLinks(state.reflections) && !state.requirements?.includes(CONTRACT_LINK_REQUIREMENT))
+    throw new Error("runtime state is missing the response contract link requirement");
   return state as PersistedState;
 }
 

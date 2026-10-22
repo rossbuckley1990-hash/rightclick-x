@@ -62,7 +62,7 @@ function contractIdentity(c: Capability) {
   // Preserve every other port field and the complete invocation in the pin.
   const declared = ({ schemes, ...port }: Port) => port;
   return stableStringify({ id: c.id, provider: c.provider, risk: c.risk, inputs: c.inputs.map(declared),
-    outputs: c.outputs.filter(p => !p.observed).map(declared), invoke: c.invoke });
+    outputs: c.outputs.filter(p => !p.observed).map(declared), invoke: c.invoke, ...(c.links?.length ? { links: c.links } : {}) });
 }
 
 /** Match the transport route without reinterpreting a string as another resource identity. */

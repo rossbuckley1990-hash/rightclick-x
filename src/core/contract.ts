@@ -151,7 +151,7 @@ export function assessPlan(graph: CapabilityGraph, steps: PlanStep[], result: st
   };
   walk(judged, "");
   for (const st of steps) {
-    const froms = st.bindings.filter((b) => b.value === undefined && !b.each).map((b) => b.from);
+    const froms = st.bindings.filter((b) => b.value === undefined && !b.each).map((b) => JSON.stringify([b.from, b.link?.pointer]));
     if (new Set(froms).size !== froms.length) violations.push(`distinct inputs: ${st.capability} receives the same value on two ports`);
   }
   return { status: violations.length ? "violated" : "satisfied", steps: judged, violations, preservesInput: steps.length > 0 && steps.every((s) => preserving(graph, graph.get(s.capability))) };

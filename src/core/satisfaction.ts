@@ -12,9 +12,10 @@
 // Plan length and fan-out earn nothing by themselves.
 import type { CapabilityGraph } from "./graph.ts";
 import { tokenize } from "./graph.ts";
+import { validLinkBinding } from "./links.ts";
 import type { Capability, DeclaredField, PlanStep } from "./types.ts";
 
-export type JoinKind = "caller" | "evidence" | "declared" | "generic";
+export type JoinKind = "caller" | "evidence" | "declared" | "contract" | "generic";
 export type SatisfactionStatus = "established" | "unverified" | "incomplete";
 
 export interface Satisfaction {
@@ -142,7 +143,8 @@ export function assess(graph: CapabilityGraph, steps: PlanStep[], result: string
         }
         const outType = out?.type.replace(/^list:/, "") ?? "json";
         const portType = port?.type.replace(/^list:/, "") ?? "json";
-        if (port?.schemes?.length && out?.schemes?.some((s) => port.schemes!.includes(s))) kind = "evidence";
+        if (b.link && validLinkBinding(src, c, b)) kind = "contract";
+        else if (port?.schemes?.length && out?.schemes?.some((s) => port.schemes!.includes(s))) kind = "evidence";
         else if (port && !GENERIC.has(port.type) && !GENERIC.has(portType) && (outType === portType || (portType.startsWith("id.") && outType === portType))) kind = "declared";
         else kind = "generic";
       }

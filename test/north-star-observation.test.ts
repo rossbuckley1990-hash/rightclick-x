@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { recordSandbox, assessObservation } from "../experiments/north-star/observation.ts";
 import type { Sandbox, SandboxRun } from "../src/core/sandbox.ts";
+import { CONFINED_POLICY } from "../src/core/sandbox.ts";
 import type { Task } from "../experiments/north-star/common.ts";
 
 const dir = () => realpathSync(mkdtempSync(join(tmpdir(), "rcx-measure-")));
@@ -13,7 +14,7 @@ const task: Task = { id: "echo", program: "cat", kind: "feasible", request: "ech
 const result: SandboxRun = { code: 0, stdout: task.expected!, stderr: "", timedOut: false, truncated: false, durationMs: 1, created: [], workDir: "/tmp/example" };
 async function fixture(opts: { program?: string; input?: string; purpose?: "execution" | "investigation" | "revalidation"; result?: Partial<SandboxRun>; error?: boolean; mode?: "candidate" | "baseline" } = {}) {
   const path = join(dir(), "events.jsonl");
-  const base: Sandbox = { kind: "macos-sandbox-exec", enforces: [], run: async () => { if (opts.error) throw new Error("launch failed"); return { ...result, ...opts.result }; } };
+  const base: Sandbox = { kind: "macos-sandbox-exec", policy: CONFINED_POLICY, enforces: [], run: async () => { if (opts.error) throw new Error("launch failed"); return { ...result, ...opts.result }; } };
   const recorder = recordSandbox(path, session, target, base, opts.mode ?? "candidate");
   await recorder.sandbox!.run(opts.program ?? target, [], { stdin: opts.input ?? task.input.stdin, purpose: opts.purpose ?? "execution" }).catch(() => {});
   recorder.close();

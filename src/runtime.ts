@@ -3,7 +3,8 @@
 // federation) is a thin shell around this class.
 
 import { checkpointValue, validWorkflow, type WorkflowContinuation, type CompositionContinuation } from "./core/workflow-continuation.ts";
-import { decodeState, STATE_FORMAT, STATE_REQUIREMENTS } from "./core/state-format.ts";
+import { CONTRACT_LINK_REQUIREMENT, decodeState, STATE_FORMAT, STATE_REQUIREMENTS, usesContractLinks } from "./core/state-format.ts";
+import { pointerValue, validLinkBinding, validLinkGroup, validLinkValue } from "./core/links.ts";
 import { ActivityLog, reference, type ActivityState, type ContractReference } from "./core/activity.ts";
 import { CapabilityGraph, signature, tokenize, type GraphEvent, type LearnDelta } from "./core/graph.ts";
 import { Ledger, ReceiptChain, sha256, stableStringify, type Receipt } from "./core/ledger.ts";
@@ -79,6 +80,7 @@ export interface HttpRunContinuation {
   verify: Predicate[];
 }
 interface HttpExecution {
+  responseStatus?: number;
   signal?: AbortSignal;
   transportOwner?: Net["execution"];
   continuation?: HttpContinuationEvidence;
@@ -230,6 +232,8 @@ export interface RunOptions {
 }
 
 export interface RunRecord {
+  /** Actual initial HTTP status, for response-scoped relationships; not outcome verification. */
+  responseStatus?: number;
   runId: string;
   capability: string;
   provider: string;
@@ -1262,7 +1266,7 @@ export class RightClick {
       !consequentialRisks(cap).includes("destructive") &&
       cap.invoke.steps.every(s => {
         const c = this.graph.get(s.capability);
-        return c && !s.bindings.some(b => b.each) && c.invoke.kind !== "composite" && c.invoke.kind !== "goal" &&
+        return c && !s.bindings.some(b => b.each || b.link) && c.invoke.kind !== "composite" && c.invoke.kind !== "goal" &&
           !consequentialRisks(c).includes("destructive");
       });
   }
@@ -1594,6 +1598,7 @@ export class RightClick {
       capability: cap.id,
       provider: cap.provider,
       title: cap.title,
+      ...(execution.responseStatus !== undefined ? { responseStatus: execution.responseStatus } : {}),
       status: pending ? "pending" : error ? "failed" : "completed",
       ...(pending ? { pending } : {}),
       ...(refusal ? { refusal } : {}),
@@ -2631,15 +2636,22 @@ export class RightClick {
 
   private async runSteps(steps: PlanStep[], resultRef: string, inputs: Record<string, unknown>, confirm?: boolean, activeGoals?: string[], net?: Net, workflow?: WorkflowContinuation) {
     // Check every known dependency before the first effect, including nested composites.
-    for (const step of steps) {
+    for (const [index, step] of steps.entries()) {
       const cap = this.graph.get(step.capability);
       if (!cap) throw new StepError(step.capability, `missing capability ${step.capability}`);
       try { this.assertExecution(cap); }
       catch (e) { throw new StepError(cap.id, String((e as Error).message)); }
+      for (const b of step.bindings) if (b.link) {
+        const sourceIndex = /^(\d+)\.$/.exec(b.from);
+        const source = sourceIndex ? this.graph.get(steps[Number(sourceIndex[1])]?.capability ?? "") : undefined;
+        if (!sourceIndex || Number(sourceIndex[1]) >= index || b.each || b.value !== undefined || !validLinkGroup(source, cap, step.bindings))
+          throw new MissingData({ producer: source?.id ?? step.capability, consumer: step.capability, port: b.port, path: "unsupported or changed contract link", runs: [] });
+      }
     }
     const outputs: unknown[] = workflow?.outputs ?? [];
     const runs: string[] = workflow?.runs ?? [];
     const fanOuts: FanOutReport[] = [];
+    const responseStatuses = new Map<number, number>();
     // Steps that fanned out hold one output per item; a path reads into each of them.
     const fanned = new Set<number>();
     const resolve = (ref: string) => {
@@ -2652,7 +2664,16 @@ export class RightClick {
       if (workflow && index < workflow.next) continue;
       if (workflow) await this.assertWorkflow(workflow);
       const args: Record<string, unknown> = {};
-      for (const b of step.bindings) if (!b.each) args[b.port] = b.value !== undefined ? b.value : resolve(b.from);
+      for (const b of step.bindings) if (!b.each) {
+        if (b.link) {
+          const producerIndex = Number(b.from.split(".")[0]), producer = steps[producerIndex].capability;
+          const target = this.graph.get(step.capability)!;
+          const value = pointerValue(outputs[producerIndex], b.link.pointer);
+          if (responseStatuses.get(producerIndex) !== b.link.status || !validLinkBinding(this.graph.get(producer), target, b) || !validLinkValue(value, b, target))
+            throw new MissingData({ producer, consumer: step.capability, port: b.port, path: `contract link ${b.link.name}: ${b.link.pointer}`, runs });
+          args[b.port] = value;
+        } else args[b.port] = b.value !== undefined ? b.value : resolve(b.from);
+      }
       // Missing data is not evidence that an interface changed. Preserve the
       // producing runs and stop; do not rediscover or select another identity.
       const cap = this.graph.get(step.capability);
@@ -2686,6 +2707,7 @@ export class RightClick {
         if (r.graphqlFailure) throw new GraphQLFailure({ ...r.graphqlFailure, runs: [...new Set([...runs, ...r.graphqlFailure.runs])] });
         if (r.planningRefusal) throw new PlanningRefused({ ...r.planningRefusal, runs: [...runs, ...r.planningRefusal.runs] });
         if (r.status === "failed") throw new StepError(r.failedCapability ?? step.capability, `${step.capability}: ${r.error}`);
+        if (r.responseStatus !== undefined) responseStatuses.set(index, r.responseStatus);
         if (workflow) {
           if (workflow.phase !== "ready") throw new PendingOutcomeError(this.workflowPending(workflow, "step result could not be retained"));
         } else outputs.push(r.output);
@@ -3011,6 +3033,7 @@ export class RightClick {
         }
         const targets = continuationTargets(cap, this.graph.list());
         const res = await request(net, u.toString(), { method: inv.method, headers, body, signal: execution.signal });
+        execution.responseStatus = res.status;
         refuseDeniedResponse(res);
         let out: unknown;
         if (res.status === 202) {
@@ -3212,7 +3235,7 @@ export class RightClick {
       .filter((p) => p.source !== "builtin" && p.source !== "platform")
       .map((p) => ({ provider: p, capabilities: p.capabilityIds.map((id) => this.graph.get(id)!).filter(Boolean) }));
     try {
-      await this.store.save({ version: 2, requirements: [...STATE_REQUIREMENTS], reflections, ledger: this.ledger.toJSON(), receipts: this.chain.receipts.slice(-300), published: [...this.published.values()], meaningChanges: [...this.meaningChanges.values()], activity: this.activity.snapshot(), environment: this.environmentReport, httpContinuations: [...this.httpContinuations.values()], workflowContinuations: [...this.workflowContinuations.values()], authFingerprints: await this.net.auth.fingerprints(), semantics: SEMANTICS, identities: this.graph.identities.toJSON() });
+      await this.store.save({ version: 2, requirements: [...STATE_REQUIREMENTS, ...(usesContractLinks(reflections) ? [CONTRACT_LINK_REQUIREMENT] : [])], reflections, ledger: this.ledger.toJSON(), receipts: this.chain.receipts.slice(-300), published: [...this.published.values()], meaningChanges: [...this.meaningChanges.values()], activity: this.activity.snapshot(), environment: this.environmentReport, httpContinuations: [...this.httpContinuations.values()], workflowContinuations: [...this.workflowContinuations.values()], authFingerprints: await this.net.auth.fingerprints(), semantics: SEMANTICS, identities: this.graph.identities.toJSON() });
       this.saveState = "saved";
     } catch (error) {
       this.saveState = "failed";

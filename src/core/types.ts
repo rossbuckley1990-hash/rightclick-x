@@ -128,6 +128,8 @@ export interface Binding {
   value?: unknown;
   /** Either a goal input ("$in.<name>") or "<stepIndex>.<outputPath>". */
   from: string;
+  /** Exact declared relationship, checked against the producing HTTP response before extraction. */
+  link?: { name: string; status: number; pointer: string; wire: "string" | "number" | "integer" | "boolean"; format?: "uuid" | "uri" };
   /**
    * Fan-out: `from` is a list and this single-value port takes one item at a time. The step
    * runs once per item, in order, and each of its outputs becomes the list of per-item outputs.
@@ -135,6 +137,14 @@ export interface Binding {
    * (see core/identities.ts) are used, because the list was linked by a learned scheme.
    */
   each?: { max: number; shapes?: string[] };
+}
+
+/** Directed contract evidence; never an identifier equivalence or execution grant. */
+export interface ContractLink {
+  name: string;
+  target: string;
+  status: number;
+  parameters: Array<{ port: string; pointer: string; wire: "string" | "number" | "integer" | "boolean"; format?: "uuid" | "uri" }>;
 }
 
 export interface PlanStep {
@@ -242,6 +252,7 @@ export interface Capability {
   invoke: Invoke;
   /** Result fields the contract declares (deeper than the output ports); used to judge goal satisfaction. */
   fields?: DeclaredField[];
+  links?: ContractLink[];
 }
 
 export interface Provider {

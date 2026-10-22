@@ -442,7 +442,7 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
   // Numbered file operands ("FILE1 [FILE2]"): a comparison wants two files even when the second is optional.
   if (required < 2 && [...inv.operands.required, ...inv.operands.optional].some((n) => /2$/.test(n) && !isLiteralOperand(n))) channels.push({ id: "files", arity: 2 });
 
-  interface Trial { mode: string; flags: string[]; channel: string; kind: string; inputs: string[]; literals: string[]; r: SandboxRun }
+  interface Trial { mode: string; flags: string[]; channel: string; kind: string; inputs: string[]; literals: string[]; args: string[]; r: SandboxRun }
   const trials: Trial[] = [];
   // variant selects a different sample (or a different pair of samples for two-operand programs).
   const attempt = async (mode: string, flags: string[], channel: { id: string; arity: number }, kind: string, variant = 0): Promise<Trial | null> => {
@@ -457,7 +457,7 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
     const args = [...flags, ...literals, ...(files ? Object.keys(files) : [])];
     const r = await run(`mode ${mode}: ${kind} via ${channel.id}${literals.length ? ` with ${literals.join(" ")}` : ""}`, args, { stdin: channel.id === "stdin" ? texts[0] : undefined, files });
     if (!r) return null;
-    const t = { mode, flags, channel: channel.id, kind, inputs: texts as string[], literals, r };
+    const t = { mode, flags, channel: channel.id, kind, inputs: texts as string[], literals, args, r };
     trials.push(t);
     return t;
   };
@@ -504,7 +504,14 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
   if (!best) {
     // Say why, when the program said why: a missing configuration, file, device or privilege is an
     // environmental precondition, not a capability that failed.
-    const reasons = trials.map((t) => t.r.stderr.split("\n").find((l) => /no such file|not found|cannot open|can't open|configuration|config file|permission denied|not permitted|must be (run as )?root|requires? root|not supported|no .*configured|unable to/i.test(l))).filter(Boolean) as string[];
+    //
+    // A line naming a path RCX staged itself does not count. An interpreter handed a generic data
+    // sample reports "can't open file <work>/input1.txt": that says the sample was not a program,
+    // not that something is missing from the environment. Misreading it also hides the program,
+    // because the declared interface below is offered only when nothing environmental is wrong.
+    const supplied = new Set(trials.flatMap((t) => t.args));
+    const ownOperand = (line: string) => [...supplied].some((a) => a && line.includes(`<work>/${a}`));
+    const reasons = trials.map((t) => t.r.stderr.split("\n").find((l) => !ownOperand(l) && /no such file|not found|cannot open|can't open|configuration|config file|permission denied|not permitted|must be (run as )?root|requires? root|not supported|no .*configured|unable to/i.test(l))).filter(Boolean) as string[];
     const precondition = reasons.length >= Math.max(2, trials.length / 2) ? reasons[0].trim().slice(0, 160) : undefined;
     inv.summary = precondition ? `not investigable here: ${name} reports a missing precondition ("${precondition}") on every input tried (${trials.length} trials)` : `no input channel produced output for ${name} (${trials.length} trials)`;
     claim(name, "produces output for supplied input", trials.length ? "contradicted" : "unknown", inv.summary);

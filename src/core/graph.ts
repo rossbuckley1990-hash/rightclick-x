@@ -233,6 +233,7 @@ export class CapabilityGraph {
   outSet(a: Capability): Set<string> {
     const { byInputType, nominal, byScheme } = this.inputIndex();
     const out = new Set<string>();
+    for (const link of a.links ?? []) if (this.capabilities.has(link.target)) out.add(link.target);
     for (const port of a.outputs) {
       // Identifier schemes learned from observed values link ports whose declared types differ.
       for (const s of port.schemes ?? []) for (const b of byScheme.get(schemeSlot(s, port.type)) ?? []) if (b !== a.id) out.add(b);
@@ -371,7 +372,7 @@ export class CapabilityGraph {
 
 /** Contract signature of a capability: its typed ports and how it is invoked (FNV-1a). */
 export function signature(c: Capability): string {
-  const text = JSON.stringify([c.inputs.map((p) => [p.name, p.type, p.required]), c.outputs.filter((p) => !p.observed).map((p) => [p.name, p.type]), c.invoke]);
+  const text = JSON.stringify([c.inputs.map((p) => [p.name, p.type, p.required]), c.outputs.filter((p) => !p.observed).map((p) => [p.name, p.type]), c.invoke, ...(c.links?.length ? [c.links] : [])]);
   let h = 0x811c9dc5;
   for (let i = 0; i < text.length; i++) {
     h ^= text.charCodeAt(i);

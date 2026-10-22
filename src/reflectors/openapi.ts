@@ -3,6 +3,7 @@
 import { inferInContext, inferType, type SchemaLike } from "../core/semantics.ts";
 import type { Capability, DeclaredField, Port, Reflection, Risk } from "../core/types.ts";
 import { schemaFields } from "../core/fields.ts";
+import { reflectLinks, type LinkedOperation } from "./openapi-links.ts";
 import { cancelBody, DISCOVERY_BODY_LIMIT, readBody, request, slug, type Net } from "./net.ts";
 
 type Obj = Record<string, any>;
@@ -19,6 +20,7 @@ export function reflectOpenAPI(spec: Obj, specUrl: string): Reflection {
   const providerId = `openapi:${slug(title)}`;
   const base = serverBase(spec, specUrl);
   const capabilities: Capability[] = [];
+  const operations: LinkedOperation[] = [];
 
   for (const [path, rawItem] of Object.entries<Obj>(spec.paths ?? {})) {
     const item = resolve(rawItem);
@@ -115,6 +117,7 @@ export function reflectOpenAPI(spec: Obj, specUrl: string): Reflection {
       // A typed keyed map (JSON Schema additionalProperties, keys from propertyNames or examples)
       // answers one question per key: offer that as its own operation, keyed by a typed input.
       const parent = capabilities[capabilities.length - 1];
+      operations.push({ path, method, operation: op, parameters: params, capability: parent, serverOverride: !!(op.servers || item.servers) });
       for (const k of keyed) {
         const keyInput = `${k.map.replace(/\W+/g, "_")}_key`;
         if (inputs.some((i) => i.name === keyInput)) continue;
@@ -133,6 +136,7 @@ export function reflectOpenAPI(spec: Obj, specUrl: string): Reflection {
     }
   }
 
+  reflectLinks(operations, resolve);
   return {
     provider: {
       id: providerId,

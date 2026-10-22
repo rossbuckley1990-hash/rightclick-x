@@ -19,7 +19,7 @@ export function recordSandbox(file: string, sessionId: string, target: string, b
   };
   emit({ type: "ready", mode, sandbox: base?.kind ?? null });
   const sandbox: Sandbox | null = base ? {
-    kind: base.kind, enforces: [...base.enforces],
+    kind: base.kind, policy: base.policy, enforces: [...base.enforces],
     async run(program, args, opts = {}) {
       const id = ++invocation;
       emit({ type: "started", id, program, args, stdin: opts.stdin ?? "", files: opts.files ?? {}, purpose: opts.purpose ?? "unclassified", identity: identity(program) });

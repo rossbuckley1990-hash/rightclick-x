@@ -9,6 +9,7 @@
 
 import { assess, carries, STATUS_RANK, type Satisfaction } from "./satisfaction.ts";
 import { schemeFits, schemeOnly } from "./identities.ts";
+import { validLinkGroup } from "./links.ts";
 import { accepts, distance, isNominal } from "./semantics.ts";
 import { tokenize, type CapabilityGraph } from "./graph.ts";
 import type { Ledger } from "./ledger.ts";
@@ -169,6 +170,7 @@ export function plan(graph: CapabilityGraph, ledger: Ledger, goal: Goal, expansi
   const shapes = new Map(graph.identities.evidence().length ? graph.identities.schemes(graph.list()).map((s) => [s.id, s.shapes]) : []);
 
   const results: Plan[] = [];
+  const linkTargets = new Set(caps.flatMap(c => (c.links ?? []).map(l => l.target)));
   const seen = new Set<string>();
   // Values are shared by descendant search nodes. Parse each name once in this
   // search; nothing is retained across calls or changes to the graph/intent.
@@ -197,7 +199,24 @@ export function plan(graph: CapabilityGraph, ledger: Ledger, goal: Goal, expansi
       const covered = new Set(node.steps.flatMap((st) => [...tokensOf(graph.get(st.capability)!)]).filter((t) => intent.has(t)));
       for (const cap of caps) {
         if (node.used.has(cap.id)) continue;
-        const bindings = bind(cap, node.values, describeValue, consumed, shapes);
+        const declared = linkTargets.has(cap.id) ? node.steps.flatMap((s, index) => s.bindings.some(b => b.each) ? [] :
+          (graph.get(s.capability)?.links ?? []).filter(l => l.target === cap.id).map(link => ({ index, link }))) : [];
+        let bindings: Binding[] | null;
+        if (declared.length) {
+          // Never combine parameters from different relationships or choose
+          // between ambiguous links. Explicit caller inputs still use normal binding.
+          const named = new Set(node.values.filter(v => v.step === -1).map(v => v.ref.slice(4)));
+          const explicit = declared.every(({ link }) => link.parameters.every(p => named.has(p.port)));
+          if (explicit) bindings = bind(cap, node.values, describeValue, consumed, shapes);
+          else if (declared.length !== 1) bindings = null;
+          else {
+            const { index, link } = declared[0];
+            const linked: Binding[] = link.parameters.map(p => ({ port: p.port, from: `${index}.`,
+              link: { name: link.name, status: link.status, pointer: p.pointer, wire: p.wire, ...(p.format ? { format: p.format } : {}) } }));
+            const rest = bind({ ...cap, inputs: cap.inputs.filter(p => !linked.some(b => b.port === p.name)) }, node.values, describeValue, consumed, shapes);
+            bindings = rest && validLinkGroup(graph.get(node.steps[index].capability), cap, [...linked, ...rest]) ? [...linked, ...rest] : null;
+          }
+        } else bindings = bind(cap, node.values, describeValue, consumed, shapes);
         if (!bindings) continue;
         if (++expansions > depthBudget) break;
         // A step must consume something produced or supplied, not only constants,
@@ -223,7 +242,7 @@ export function plan(graph: CapabilityGraph, ledger: Ledger, goal: Goal, expansi
         // So is intent: a type-preserving transformation (html -> corrected html) that covers intent
         // words the plan has not covered yet is progress, even as an intermediate step.
         const advances = [...tokensOf(cap)].some((t) => intent.has(t) && !covered.has(t));
-        const novel = informs || advances || produced.some((v) => !node.values.some((h) => h.type === v.type && (v.schemes ?? []).every((s) => h.schemes?.includes(s))));
+        const novel = informs || advances || !!cap.links?.some(l => caps.some(c => c.id === l.target)) || produced.some((v) => !node.values.some((h) => h.type === v.type && (v.schemes ?? []).every((s) => h.schemes?.includes(s))));
         if (!novel && !finishes && !anchors.has(cap.id)) continue;
         const child: Node = {
           values: [...node.values, ...produced],
