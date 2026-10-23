@@ -1,7 +1,7 @@
 // Server-runtime glue (Node, Bun, Deno): HTTP serving, stdio MCP, file state.
 
 import type { RightClick, PersistedState, Store } from "../runtime.ts";
-import { decodeState, encodeState } from "../core/state-format.ts";
+import { backupSuffix, decodeState, encodeState, migrationReplaces } from "../core/state-format.ts";
 import { handle, type JsonRpc } from "../interface/mcp-server.ts";
 
 export type FetchHandler = (req: Request) => Promise<Response>;
@@ -99,30 +99,53 @@ export async function serveStdio(rc: RightClick): Promise<void> {
 export class FileStore implements Store {
   private file: string;
   private tail: Promise<void> = Promise.resolve();
-  constructor(file: string) {
+  /** The file as loaded, held until a save has replaced it: if that save changes its format or
+   *  inference version, these exact bytes are kept on disk first. */
+  private loaded?: { value: unknown; bytes: Uint8Array };
+  private onBackup?: (path: string) => void;
+  constructor(file: string, opts: { onBackup?: (path: string) => void } = {}) {
     this.file = file;
+    this.onBackup = opts.onBackup;
   }
   async load(): Promise<PersistedState | null> {
     const fs = await import("node:fs/promises");
+    let bytes: Uint8Array;
     try {
-      return decodeState(JSON.parse(await fs.readFile(this.file, "utf8")));
+      bytes = await fs.readFile(this.file);
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
       throw error;
     }
+    const value = JSON.parse(new TextDecoder().decode(bytes));
+    const state = decodeState(value);
+    this.loaded = { value, bytes };
+    return state;
   }
   async save(state: PersistedState): Promise<void> {
     // Capture the caller's snapshot before yielding; later graph mutations must
     // not change an already requested save. A flush queues behind prior saves.
     const content = encodeState(state);
-    const next = this.tail.then(() => this.write(content));
+    const next = this.tail.then(() => this.write(content, state));
     this.tail = next.catch(() => {});
     return next;
   }
-  private async write(content: string): Promise<void> {
+  private async write(content: string, state: PersistedState): Promise<void> {
     const fs = await import("node:fs/promises");
     const path = await import("node:path");
     await fs.mkdir(path.dirname(this.file), { recursive: true });
+    // A save that changes the loaded file's format or inference version keeps its original bytes
+    // first, under a name that is never reused. If they cannot be kept, nothing is replaced, and
+    // the next save tries again rather than proceeding without them.
+    const replaced = this.loaded && migrationReplaces(this.loaded.value, state);
+    let backup: string | undefined;
+    if (replaced) {
+      backup = `${this.file}${backupSuffix(replaced)}`;
+      const handle = await fs.open(backup, "wx", 0o600);
+      try {
+        await handle.writeFile(this.loaded!.bytes);
+        await handle.sync();
+      } finally { await handle.close(); }
+    }
     // Distinct instances/processes also need distinct staging paths. This
     // prevents collisions, not concurrent read-modify-write lost updates.
     const tmp = `${this.file}.${process.pid}.${crypto.randomUUID()}.tmp`;
@@ -131,6 +154,8 @@ export class FileStore implements Store {
       try { await handle.writeFile(content); }
       finally { await handle.close(); }
       await fs.rename(tmp, this.file);
+      this.loaded = undefined;
+      if (backup) this.onBackup?.(backup);
     } finally {
       await fs.unlink(tmp).catch(error => { if (error.code !== "ENOENT") throw error; });
     }

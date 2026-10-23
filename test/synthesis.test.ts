@@ -16,7 +16,9 @@ test("API synthesis: a published goal becomes an OpenAPI endpoint that another i
   const a = await RightClick.create({ name: "instance-a", fetch: f, directories: [] });
   await a.learn({ sources: ["https://polyglot.test/openapi.json", "https://atlas.test/graphql", "https://skycast.test/mcp"] });
   const pub = await a.compose({ have: { place: "Lisbon" }, want: "text", intent: "weather forecast", run: true, publish: "Weather for a place" });
-  assert.deepEqual(pub.published, { id: "goal:weather-for-a-place", slug: "weather-for-a-place", path: "/x/weather-for-a-place", trust: "unverified" });
+  // Instance A has no store, so the goal is served from this process and says so.
+  assert.deepEqual(pub.published, { id: "goal:weather-for-a-place", slug: "weather-for-a-place", path: "/x/weather-for-a-place", trust: "unverified",
+    durable: false, persistence: "no store configured: available in this process only" });
   routes["https://a.test"] = createHandler(a, { open: true });
 
   const spec = a.openApi("https://a.test") as any;
