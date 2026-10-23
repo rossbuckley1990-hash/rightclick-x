@@ -287,6 +287,7 @@ async function doctor(stateFile: string) {
   line(null, "programs agents may investigate", auth.investigate?.length ? auth.investigate.join(", ") : "none (set RCX_INVESTIGATE, or rcx connect <client> --authorise <paths>)");
   line(null, "destructive operations", auth.destructive === "operator" ? "only with operator approval (RCX_APPROVE) plus the caller's confirm" : auth.destructive ?? "operator");
   line(null, "evidence export", auth.shareEvidence ? "allowed (RCX_SHARE_EVIDENCE=1)" : "not allowed (default)");
+  line(null, "startup network", "none: restoring state never contacts a provider; deferred ones re-derive on first use or context_learn (docs/STARTUP-NETWORK.md)");
   console.log(`\nNext: rcx connect claude-code --authorise /path/to/program   then ask your agent to use it.`);
 }
 
