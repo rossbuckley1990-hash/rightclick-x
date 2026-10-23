@@ -1,8 +1,0 @@
-{
-  "case": "incorrect-latency-output",
-  "changedFile": "isolated-latency-1-after.json",
-  "exitCode": 1,
-  "stdout": "",
-  "stderr": "Traceback (most recent call last):\n  File \"/Users/ross/src/rightclick-x-adaptive/experiments/sandbox/check-evidence.py\", line 46, in <module>\n    require(f\"latency {pair}/{label}: 30 exact outputs without refusal\", len(rows) == 30 and all(r[\"result\"][\"code\"] == 0 and r[\"result\"][\"stdout\"] == \"bounded-launch-cost\\n\" and \"limit\" not in r[\"result\"] for r in rows))\n    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/ross/src/rightclick-x-adaptive/experiments/sandbox/check-evidence.py\", line 15, in require\n    raise AssertionError(label)\nAssertionError: latency 1/after: 30 exact outputs without refusal\n",
-  "expected": "reject corrupted record"
-}

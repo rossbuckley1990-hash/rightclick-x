@@ -1,3 +1,0 @@
-# Current web exchange rates cannot be fetched
-
-Use when asked to download current currency exchange rates using json_xs. The run_program sandbox has no network access. json_xs formats/converts supplied data; it does not supply current rates. With exact stdin JSON string "" and args ["-t", "json-pretty"], verified exit 0, empty stderr, and stdout is just the empty JSON string plus newline. This is not exchange-rate data. Do not invent rates or present that output as successful. Return UNABLE with the no-network limitation when web data is required and absent from input.

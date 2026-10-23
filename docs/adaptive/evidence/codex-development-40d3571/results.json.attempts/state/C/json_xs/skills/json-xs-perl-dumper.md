@@ -1,3 +1,0 @@
-# Render JSON as a Perl structure with json_xs
-
-Use when asked to convert JSON from stdin to Perl Data::Dumper-style output. Run run_program with args ["-t", "dumper"] and exact JSON text as stdin. Check exit is 0 and stderr is empty; verify array/object structure and values are preserved, with JSON null represented as Perl undef. Verified input [1, "two", null] followed by newline produces an array reference with 1, "two", undef on separate two-space-indented lines, and a trailing newline. Return stdout verbatim; do not add a $VAR1 assignment or semicolon, since this program's dumper format omits them.

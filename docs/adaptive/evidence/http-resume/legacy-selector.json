@@ -1,8 +1,0 @@
-{
-  "revision": "c76f32e973f5dc1d673a731820cee875cdad53d7",
-  "command": "node check.ts against git archive of pinned baseline src",
-  "exit": 0,
-  "stdout": "{\"optionCalls\":2,\"selectorRejected\":true,\"selectorDispatchDelta\":0}\n",
-  "stderr": "",
-  "script": "import { RightClick } from \"file://EXPORTED_BASELINE/src/runtime.ts\";\nimport { reflectOpenAPI } from \"file://EXPORTED_BASELINE/src/reflectors/openapi.ts\";\nlet calls=0;\nconst rc=await RightClick.create({directories:[],sandbox:null,fetch:async()=>{calls++;return new Response(\"ok\");}});\nrc.graph.add(reflectOpenAPI({openapi:\"3.1.0\",info:{title:\"Legacy\"},servers:[{url:\"https://legacy.test\"}],paths:{\"/write\":{post:{operationId:\"write\",responses:{\"200\":{content:{\"text/plain\":{schema:{type:\"string\"}}}}}}}}},\"https://legacy.test/spec\"));\nawait rc.run(\"openapi:legacy:write\");\nawait rc.run(\"openapi:legacy:write\",{}, {resumeRunId:\"missing\"} as any);\nconst optionCalls=calls;\nlet selectorRejected=false;\ntry {await rc.run(\"resume:missing\");} catch {selectorRejected=true;}\nconsole.log(JSON.stringify({optionCalls,selectorRejected,selectorDispatchDelta:calls-optionCalls}));\n"
-}

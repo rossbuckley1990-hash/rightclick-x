@@ -1,3 +1,0 @@
-# Extract names from a JSON array as plain text
-
-Use when asked to print each name from a JSON array of person objects, one per line. Run json_xs with args ["-e", "for (@$_) { print $_->{name}, \"\\n\" }", "-t", "none"] and supply the exact JSON input as stdin. The Perl -e code iterates the decoded array and prints each name followed by a newline; -t none suppresses serialized JSON output. Check exit is 0, stderr is empty, and stdout has exactly one name per input object in input order, with no quotes or array punctuation. Verified with Ann, Bob, and Cy (ages 30, 25, 41): stdout contained those three names in order on separate lines with a final newline. Return the tool stdout verbatim.

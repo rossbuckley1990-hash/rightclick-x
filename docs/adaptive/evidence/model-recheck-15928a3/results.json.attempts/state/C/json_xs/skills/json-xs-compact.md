@@ -1,5 +1,0 @@
-# Compact JSON using json_xs
-
-Use for compacting formatted JSON. Check actual output: this sandbox program may reverse output from normal -f json -t json, producing invalid JSON despite exit 0. Observed normal output was reversed text for the array input.
-
-Verified workaround: call run_program with args ["-f","json","-t","json","-e","$_ = JSON::XS->new->canonical->encode($_); print scalar reverse($_); exit"] and actual JSON text on stdin (decode transport escaping). On input an array containing [1,2], [3,"x"], and true, this returned exit 0, empty stderr, and stdout [[1,2],[3,"x"],true] followed by a newline. The reverse in the Perl expression compensates for this program's output transformation. Recheck behavior each session; do not trust exit status alone. Verify output parses as JSON and preserves the input value and has no formatting whitespace within the line. Return the program-produced line exactly.

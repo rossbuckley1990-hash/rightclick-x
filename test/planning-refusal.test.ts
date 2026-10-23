@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { gunzipSync } from "node:zlib";
 import { RightClick, type RuntimeOptions } from "../src/runtime.ts";
 import { reflectOpenAPI } from "../src/reflectors/openapi.ts";
 import { dispatch } from "../src/interface/tools.ts";
@@ -176,7 +177,9 @@ test("peer-reported planning refusal stops execution but remote claims never bec
 
 test("unchanged retained public GraphQL/OpenAPI state explains origin revocation without any network request", async () => {
   const store = new MemoryStore();
-  store.state = JSON.parse(await readFile(new URL("../docs/adaptive/evidence/living-public/attempt3/state.json", import.meta.url), "utf8"));
+  // Retained state from docs/adaptive/evidence/living-public/attempt3/state.json at archive/pr4-e413876
+  // (SHA-256 30b02ea9…62ea3 uncompressed, as listed in that directory's MANIFEST.sha256).
+  store.state = JSON.parse(gunzipSync(await readFile(new URL("./fixtures/living-public-attempt3-state.json.gz", import.meta.url))).toString("utf8"));
   let calls = 0;
   const rc = await RightClick.create({ directories: [], sandbox: null, store,
     authority: { execution: { allowedOrigins: [], allowedRisks: ["read"] } },
