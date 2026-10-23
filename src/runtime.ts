@@ -1218,6 +1218,19 @@ export class RightClick {
     };
   }
 
+  /** A deferred capability, described as retained knowledge and never offered for execution:
+   *  why it is deferred, the inference version it was typed with, and how it returns. */
+  explainDeferred(id: string) {
+    if (this.graph.get(id)) return undefined;
+    const d = this.deferredInference.find((x) => x.reflection.capabilities.some((c) => c.id === id));
+    if (!d) return undefined;
+    const c = d.reflection.capabilities.find((x) => x.id === id)!;
+    const p = d.reflection.provider;
+    return { deferred: true as const, executable: false as const, reason: d.reason, inference: d.semantics, restore: this.restoreHint(d),
+      capability: { id: c.id, title: c.title, description: c.description, risk: c.risk, inputs: c.inputs, outputs: c.outputs },
+      provider: { id: p.id, title: p.title, source: p.source, origin: p.origin } };
+  }
+
   explain(id: string) {
     const c = this.graph.get(id) ?? this.graph.search(id, 1)[0]?.capability;
     if (!c) throw new Error(`unknown capability: ${id}`);
@@ -1432,14 +1445,37 @@ export class RightClick {
   }
 
   providers() {
-    return [...this.graph.providers.values()].map((p) => ({
-      id: p.id,
-      title: p.title,
-      source: p.source,
-      origin: p.origin,
-      learnedAt: p.learnedAt,
-      capabilities: p.capabilityIds.length,
-    }));
+    return [
+      ...[...this.graph.providers.values()].map((p) => ({
+        id: p.id,
+        title: p.title,
+        source: p.source,
+        origin: p.origin,
+        learnedAt: p.learnedAt,
+        capabilities: p.capabilityIds.length,
+      })),
+      // Known, not executable: listed so an agent can see what it had and how it returns.
+      ...this.deferredInference.map((d) => ({
+        id: d.reflection.provider.id,
+        title: d.reflection.provider.title,
+        source: d.reflection.provider.source,
+        origin: d.reflection.provider.origin,
+        learnedAt: d.reflection.provider.learnedAt,
+        capabilities: d.reflection.capabilities.length,
+        deferred: true as const,
+        executable: false as const,
+        reason: d.reason,
+        restore: this.restoreHint(d),
+      })),
+    ];
+  }
+
+  /** How a deferred reflection becomes executable again. */
+  private restoreHint(d: Deferral): string {
+    const p = d.reflection.provider;
+    if (p.source === "cli") return `re-derived when a process with program authority and a sandbox loads this state, or by context_learn cli:${p.origin}`;
+    if (p.source === "composite") return "returns when the deferred steps it needs are re-derived";
+    return `re-derived on first use, or by context_learn ${(p.meta?.source as string | undefined) ?? p.origin}`;
   }
 
   // ================================================================ context_run
@@ -2296,7 +2332,8 @@ export class RightClick {
   // ================================================================ context_compose
 
   async compose(opts: ComposeOptions): Promise<ComposeResult> {
-    await this.restoreDeferredFor([...opts.through ?? [], ...(opts.anchors ?? []).map(a => a.id)], opts.origins);
+    // Independent witnesses are part of the call: a deferred checker is restored like a step.
+    await this.restoreDeferredFor([...opts.through ?? [], ...(opts.anchors ?? []).map(a => a.id), ...(opts.witnesses ?? []).map(w => w.capability)], opts.origins);
     const request = this.activity.append({ kind: "composition.requested", status: "requested" });
     try {
       const result = await this.composeNow(opts);
