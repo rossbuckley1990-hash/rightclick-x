@@ -1,6 +1,6 @@
 # Live-internet experiments
 
-Run with `node experiments/cloud.ts` (or `node experiments/cloud.ts E3 E7` for a subset). Every provider below is a real public service. RightClick X contains no code specific to any of them. All calls are read-only. Raw results: [`results/latest.json`](results/latest.json), console log: [`results/latest.log`](results/latest.log). Numbers below are from the run on 2026-10-16 (Node 24.16, one laptop, home network).
+Run with `node experiments/cloud.ts` (or `node experiments/cloud.ts E3 E7` for a subset). Every provider below is a real public service. RightClick X contains no code specific to any of them. All calls are read-only. Raw results: [`results/latest.json`](results/latest.json), console log: `results/latest.log` (written by the run; not committed, `*.log` is ignored). Numbers below are from the run on 2026-10-16 (Node 24.16, one laptop, home network).
 
 "Powers" = capabilities + typed links + 3-step typed chains. It measures how much *can* be wired together, not how much of it is useful; the planner's job is to find the useful part.
 

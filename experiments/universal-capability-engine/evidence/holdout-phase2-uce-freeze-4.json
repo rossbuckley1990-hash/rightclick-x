@@ -1,0 +1,55 @@
+{
+  "tag": "uce-freeze-4",
+  "commit": "1fa3c7e8b62d55bba7ebca1f4e96a0f82cde6141",
+  "programs": {
+    "htmltree": {
+      "runs": [
+        {
+          "status": "completed",
+          "plan": [
+            "Summarize text",
+            "Detect language",
+            "htmltree: Parse the given HTML file(s) and dump the parse tree",
+            "Extract readable text"
+          ],
+          "attempts": []
+        }
+      ],
+      "outputs": [
+        "==============================================================================\nParsing in0-file1.txt...\n- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -\n@0 (IMPLICIT)\n@0.0 (IMPLICIT)\n@0.1 (IMPLICIT)\n\"pt\"\n==============================================================================\nParsing in1-file2.txt...\n- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -\n@0\n@0.0\n@0.0.0\n\"Garden log\"\n@0.1\n@0.1.0\n\"Spring\"\n@0.1.1\n\"Tulips \"\n@0.1.1.1\n\"early\"\n@0.1.2\n@0.1.2.0\n\"water\"\n==============================================================================\nParsing in2-file3.txt...\n- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -\n@0\n@0.0\n@0.0.0\n\"Garden log\"\n@0.1\n@0.1.0\n\"Spring\"\n@0.1.1\n\"Tulips \"\n@0.1.1.1\n\"early\"\n@0.1.2\n@0.1.2.0\n\"water\""
+      ],
+      "check": {
+        "pass": false,
+        "detail": "elements missing html,head,title,body,h1,p,em,ul,li; words missing none"
+      },
+      "supported": true,
+      "retained": true,
+      "executed": true,
+      "wrongOutcome": true,
+      "pass": false
+    },
+    "mp2bug": {
+      "runs": [
+        {
+          "status": "completed",
+          "plan": [
+            "mp2bug: mod_perl bug report generator"
+          ],
+          "attempts": []
+        }
+      ],
+      "outputs": [
+        "-------------8<---------- Start Bug Report ------------8<----------\n1. Problem Description:\n\n  [DESCRIBE THE PROBLEM HERE]\n\n2. Used Components and their Configuration:\n\n*** mod_perl version 2.000012\n\n*** using /System/Library/Perl/Extras/5.34/darwin-thread-multi-2level/Apache2/BuildConfig.pm\n\n*** Makefile.PL options:\n  MP_APR_LIB     => aprext\n  MP_APXS        => /Applications/Xcode.app/Contents/Developer/Toolchains/OSX26.4.xctoolchain/usr/local/bin/apxs\n  MP_CCOPTS      => -arch arm64e -arch x86_64 -g -Os -pipe  -std=c89\n  MP_COMPAT_1X   => 1\n  MP_GENERATE_XS => 1\n  MP_LIBNAME     => mod_perl\n  MP_USE_DSO     => 1\n\n\n*** The httpd binary was not found\n\n\n*** (apr|apu)-config linking info\n\n(apr|apu)-config scripts were not found\n\n\n\n*** /usr/bin/perl -V\nSummary of my perl5 (revision 5 version 34 subversion 1) configuration:\n   \n  Platform:\n    osname=darwin\n    osvers=25.0\n    archname=darwin-thread-multi-2level\n    uname='darwin 66b96.p1s.plx.sd.apple.com 25.0 darwin kernel version 23.0.0: thu feb 1 13:18:34 pst 2024; root:xnu-10002.1.11.100.4~1development_x86_64 x86_64 '\n    config_args='-ds -e -Dprefix=/usr -Dccflags=-g  -pipe  -Dldflags= -Dman3ext=3pm -Duseithreads -Duseshrplib -Dinc_version_list=none -Dcc=cc'\n    hint=recommended\n    useposix=true\n    d_sigaction=define\n    useithreads=define\n    usemultiplicity=define\n    use64bitint=define\n    use64bitall=define\n    uselongdouble=undef\n    usemymalloc=n\n    default_inc_excludes_dot=define\n  Compiler:\n    cc='cc'\n    ccflags =' -g -pipe -fno-strict-aliasing -fstack-protector-strong -DPERL_USE_SAFE_PUTENV'\n    optimize='-Os'\n    cppflags='-g -pipe -fno-strict-aliasing -fstack-protector-strong'\n    ccversion=''\n    gccversion='Apple LLVM 21.0.0 (clang-2100.0.123.2) [+internal-os]'\n    gccosandvers=''\n    intsize=4\n    longsize=8\n    ptrsize=8\n    doublesize=8\n    byteorder=12345678\n    doublekind=3\n    d_longlong=define\n    longlongsize=8\n    d_longdbl=define\n    longdblsize=16\n    longdblkind=3\n    ivtype='long'\n    ivsize=8\n    nvtype='double'\n    nvsize=8\n    Off_t='off_t'\n    lseeksize=8\n    alignbytes=8\n    prototype=define\n  Linker and Libraries:\n    ld='cc'\n    ldflags =' -fstack-protector-strong'\n    libpth=/AppleInternal/Library/BuildRoots/4~CJi6ugCLUuvRBk-XfMtUJBfls5l_-1lpb02XzCg/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.Internal.sdk/usr/local/lib /AppleInternal/Library/BuildRoots/4~CJi6ugCLUuvRBk-XfMtUJBfls5l_-1lpb02XzCg/Applications/Xcode.app/Contents/Developer/Toolchains/OSX26.4.xctoolchain/usr/lib/clang/21/lib /AppleInternal/Library/BuildRoots/4~CJi6ugCLUuvRBk-XfMtUJBfls5l_-1lpb02XzCg/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.Internal.sdk/usr/lib /AppleInternal/Library/BuildRoots/4~CJi6ugCLUuvRBk-XfMtUJBfls5l_-1lpb02XzCg/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib /usr/lib /usr/local/lib\n    libs= \n    perllibs=\n    libc=\n    so=dylib\n    useshrplib=true\n    libperl=libperl.dylib\n    gnulibc_version=''\n  Dynamic Linking:\n    dlsrc=dl_dlopen.xs\n    dlext=bundle\n    d_dlsymun=undef\n    ccdlflags=' '\n    cccdlflags=' '\n    lddlflags=' -bundle -undefined dynamic_lookup -fstack-protector-strong'\n\n\nCharacteristics of this binary (from libperl): \n  Compile-time options:\n    HAS_TIMES\n    MULTIPLICITY\n    PERLIO_LAYERS\n    PERL_COPY_ON_WRITE\n    PERL_DONT_CREATE_GVSV\n    PERL_IMPLICIT_CONTEXT\n    PERL_MALLOC_WRAP\n    PERL_OP_PARENT\n    PERL_PRESERVE_IVUV\n    PERL_USE_SAFE_PUTENV\n    USE_64_BIT_ALL\n    USE_64_BIT_INT\n    USE_ITHREADS\n    USE_LARGE_FILES\n    USE_LOCALE\n    USE_LOCALE_COLLATE\n    USE_LOCALE_CTYPE\n    USE_LOCALE_NUMERIC\n    USE_LOCALE_TIME\n    USE_PERLIO\n    USE_PERL_ATOF\n    USE_REENTRANT_API\n    USE_THREAD_SAFE_LOCALE\n  Locally applied patches:\n    /Library/Perl/Updates/<version> comes before system perl directories\n    installprivlib and installarchlib points to the Updates directory\n  Built under darwin\n  Compiled at Feb 21 2026 15:08:19\n  %ENV:\n    PERL_LWP_USE_HTTP_10=\"1\"\n  @INC:\n    /Library/Perl/5.34/darwin-thread-multi-2level\n    /Library/Perl/5.34\n    /Network/Library/Perl/5.34/darwin-thread-multi-2level\n    /Network/Library/Perl/5.34\n    /Library/Perl/Updates/5.34.1\n    /System/Library/Perl/5.34/darwin-thread-multi-2level\n    /System/Library/Perl/5.34\n    /System/Library/Perl/Extras/5.34/darwin-thread-multi-2level\n    /System/Library/Perl/Extras/5.34\n\n*** Packages of interest status:\n\nApache2            : -\nApache2::Request   : -\nCGI                : 4.48\nExtUtils::MakeMaker: 7.62\nLWP                : 6.44\nmod_perl           : -\nmod_perl2          : 2.000012\n\n\n3. This is the core dump trace: (if you get a core dump):\n\n  [CORE TRACE COMES HERE]\n\nThis report was generated by /private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-holdout-jAfoxB/bin/mp2bug on Fri Oct 16 22:15:50 2026 GMT.\n\n-------------8<---------- End Bug Report --------------8<----------\n\nNote: Complete the rest of the details and post this bug report to\nmodperl <at> perl.apache.org. To subscribe to the list send an empty\nemail to modperl-subscribe@perl.apache.org.\n\n\n"
+      ],
+      "check": {
+        "pass": false,
+        "detail": "description words missing from the report: requests,gallery,handler,hang,after,upgrading,server"
+      },
+      "supported": false,
+      "retained": true,
+      "executed": true,
+      "wrongOutcome": true,
+      "pass": false
+    }
+  }
+}

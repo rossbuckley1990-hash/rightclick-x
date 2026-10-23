@@ -1,0 +1,288 @@
+........................................................................ [ 36%]
+........................................................................ [ 72%]
+.......sFF.............................................                  [100%]
+=================================== FAILURES ===================================
+_ test_real_sdk_through_real_permit_kernel_without_live_provider[from openai import OpenAI\nr=OpenAI().chat.completions.create(model="test", messages=[{"role":"user","content":"hello"}])\nassert r.choices[0].message.content == "offline"\n-OPENAI_API_KEY-body0] _
+
+project = <function project.<locals>.create at 0x10a684860>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10a672420>
+source = 'from openai import OpenAI\nr=OpenAI().chat.completions.create(model="test", messages=[{"role":"user","content":"hello"}])\nassert r.choices[0].message.content == "offline"\n'
+env_name = 'OPENAI_API_KEY'
+body = {'id': 'chatcmpl-offline', 'object': 'chat.completion', 'created': 0, 'model': 'test', ...}
+
+    @pytest.mark.parametrize(
+        "source,env_name,body",
+        [
+            (
+                "from openai import OpenAI\n"
+                'r=OpenAI().chat.completions.create(model="test", messages=[{"role":"user","content":"hello"}])\n'
+                'assert r.choices[0].message.content == "offline"\n',
+                "OPENAI_API_KEY",
+                {
+                    "id": "chatcmpl-offline",
+                    "object": "chat.completion",
+                    "created": 0,
+                    "model": "test",
+                    "choices": [
+                        {
+                            "index": 0,
+                            "message": {"role": "assistant", "content": "offline"},
+                            "finish_reason": "stop",
+                        }
+                    ],
+                },
+            ),
+            (
+                "from anthropic import Anthropic\n"
+                'r=Anthropic().messages.create(model="test", max_tokens=10, messages=[{"role":"user","content":"hello"}])\n'
+                'assert r.content[0].text == "offline"\n',
+                "ANTHROPIC_API_KEY",
+                {
+                    "id": "msg_offline",
+                    "type": "message",
+                    "role": "assistant",
+                    "model": "test",
+                    "content": [{"type": "text", "text": "offline"}],
+                    "stop_reason": "end_turn",
+                    "stop_sequence": None,
+                    "usage": {"input_tokens": 1, "output_tokens": 1},
+                },
+            ),
+            (
+                "import os\nfrom github import Github, Auth\n"
+                'g=Github(auth=Auth.Token(os.environ["GITHUB_TOKEN"]))\n'
+                'issue=g.get_repo("acme/support", lazy=True).create_issue(title="offline")\n'
+                "assert issue.number == 1\n",
+                "GITHUB_TOKEN",
+                {
+                    "id": 1,
+                    "number": 1,
+                    "title": "offline",
+                    "url": "https://api.github.com/repos/acme/support/issues/1",
+                },
+            ),
+        ],
+    )
+    def test_real_sdk_through_real_permit_kernel_without_live_provider(
+        project, monkeypatch, source, env_name, body
+    ):
+        monkeypatch.setenv(env_name, "offline-secret")
+        state = project(source)
+        observed = []
+        original = Broker.__init__
+    
+        def initialize(self, *args, **kwargs):
+            original(self, *args, **kwargs)
+            self.http.close()
+    
+            def transport(req):
+                observed.append(req)
+                return httpx.Response(200, json=body)
+    
+            self.http = httpx.Client(transport=httpx.MockTransport(transport), trust_env=False)
+    
+        monkeypatch.setattr(Broker, "__init__", initialize)
+>       assert launch(state.root, ["main.py"]) == 0
+E       AssertionError: assert 3 == 0
+E        +  where 3 = launch(PosixPath('/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/pytest-of-ross/pytest-458/test_real_sdk_through_real_per0'), ['main.py'])
+E        +    where PosixPath('/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/pytest-of-ross/pytest-458/test_real_sdk_through_real_per0') = <actenon_airlock.state.State object at 0x10a8d3c80>.root
+
+tests/test_provider_sdks.py:79: AssertionError
+----------------------------- Captured stderr call -----------------------------
+AIRLOCK DENY ctypes.dlopen @ <local>: Unsupported runtime effect [receipt_adf3508a3db5417e9c29debce8eb27c4]
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/Users/ross/src/actenon-audit/actenon-airlock/src/actenon_airlock/worker.py", line 492, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/Users/ross/src/actenon-audit/actenon-airlock/src/actenon_airlock/worker.py", line 480, in main
+    runpy.run_path(str(path), run_name="__main__")
+  File "<frozen runpy>", line 287, in run_path
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/pytest-of-ross/pytest-458/test_real_sdk_through_real_per0/main.py", line 2, in <module>
+    r=OpenAI().chat.completions.create(model="test", messages=[{"role":"user","content":"hello"}])
+      ^^^^^^^^
+  File "/Users/ross/src/actenon-audit/.venv/lib/python3.12/site-packages/openai/_client.py", line 337, in __init__
+    super().__init__(
+  File "/Users/ross/src/actenon-audit/.venv/lib/python3.12/site-packages/openai/_base_client.py", line 1014, in __init__
+    self._client = http_client or SyncHttpxClientWrapper(
+                                  ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/ross/src/actenon-audit/.venv/lib/python3.12/site-packages/openai/_base_client.py", line 938, in __init__
+    super().__init__(**kwargs)
+  File "/Users/ross/src/actenon-audit/.venv/lib/python3.12/site-packages/httpx2/_client.py", line 662, in __init__
+    self._transport = self._init_transport(
+                      ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/ross/src/actenon-audit/.venv/lib/python3.12/site-packages/httpx2/_client.py", line 703, in _init_transport
+    return HTTPTransport(
+           ^^^^^^^^^^^^^^
+  File "/Users/ross/src/actenon-audit/.venv/lib/python3.12/site-packages/httpx2/_transports/default.py", line 146, in __init__
+    import httpcore2
+  File "/Users/ross/src/actenon-audit/.venv/lib/python3.12/site-packages/httpcore2/__init__.py", line 3, in <module>
+    from ._api import request, stream
+  File "/Users/ross/src/actenon-audit/.venv/lib/python3.12/site-packages/httpcore2/_api.py", line 8, in <module>
+    from ._sync.connection_pool import ConnectionPool
+  File "/Users/ross/src/actenon-audit/.venv/lib/python3.12/site-packages/httpcore2/_sync/__init__.py", line 1, in <module>
+    from .connection import HTTPConnection
+  File "/Users/ross/src/actenon-audit/.venv/lib/python3.12/site-packages/httpcore2/_sync/connection.py", line 13, in <module>
+    from .._ssl import default_ssl_context
+  File "/Users/ross/src/actenon-audit/.venv/lib/python3.12/site-packages/httpcore2/_ssl.py", line 4, in <module>
+    import truststore
+  File "/Users/ross/src/actenon-audit/.venv/lib/python3.12/site-packages/truststore/__init__.py", line 31, in <module>
+    from ._api import SSLContext, extract_from_ssl, inject_into_ssl
+  File "/Users/ross/src/actenon-audit/.venv/lib/python3.12/site-packages/truststore/_api.py", line 20, in <module>
+    from ._macos import _configure_context, _verify_peercerts_impl
+  File "/Users/ross/src/actenon-audit/.venv/lib/python3.12/site-packages/truststore/_macos.py", line 48, in <module>
+    Security = _load_cdll(
+               ^^^^^^^^^^^
+  File "/Users/ross/src/actenon-audit/.venv/lib/python3.12/site-packages/truststore/_macos.py", line 45, in _load_cdll
+    raise ImportError(f"The library {name} failed to load") from None
+ImportError: The library Security failed to load
+_ test_real_sdk_through_real_permit_kernel_without_live_provider[from anthropic import Anthropic\nr=Anthropic().messages.create(model="test", max_tokens=10, messages=[{"role":"user","content":"hello"}])\nassert r.content[0].text == "offline"\n-ANTHROPIC_API_KEY-body1] _
+
+project = <function project.<locals>.create at 0x10aaa6700>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10a8d2d80>
+source = 'from anthropic import Anthropic\nr=Anthropic().messages.create(model="test", max_tokens=10, messages=[{"role":"user","content":"hello"}])\nassert r.content[0].text == "offline"\n'
+env_name = 'ANTHROPIC_API_KEY'
+body = {'id': 'msg_offline', 'type': 'message', 'role': 'assistant', 'model': 'test', ...}
+
+    @pytest.mark.parametrize(
+        "source,env_name,body",
+        [
+            (
+                "from openai import OpenAI\n"
+                'r=OpenAI().chat.completions.create(model="test", messages=[{"role":"user","content":"hello"}])\n'
+                'assert r.choices[0].message.content == "offline"\n',
+                "OPENAI_API_KEY",
+                {
+                    "id": "chatcmpl-offline",
+                    "object": "chat.completion",
+                    "created": 0,
+                    "model": "test",
+                    "choices": [
+                        {
+                            "index": 0,
+                            "message": {"role": "assistant", "content": "offline"},
+                            "finish_reason": "stop",
+                        }
+                    ],
+                },
+            ),
+            (
+                "from anthropic import Anthropic\n"
+                'r=Anthropic().messages.create(model="test", max_tokens=10, messages=[{"role":"user","content":"hello"}])\n'
+                'assert r.content[0].text == "offline"\n',
+                "ANTHROPIC_API_KEY",
+                {
+                    "id": "msg_offline",
+                    "type": "message",
+                    "role": "assistant",
+                    "model": "test",
+                    "content": [{"type": "text", "text": "offline"}],
+                    "stop_reason": "end_turn",
+                    "stop_sequence": None,
+                    "usage": {"input_tokens": 1, "output_tokens": 1},
+                },
+            ),
+            (
+                "import os\nfrom github import Github, Auth\n"
+                'g=Github(auth=Auth.Token(os.environ["GITHUB_TOKEN"]))\n'
+                'issue=g.get_repo("acme/support", lazy=True).create_issue(title="offline")\n'
+                "assert issue.number == 1\n",
+                "GITHUB_TOKEN",
+                {
+                    "id": 1,
+                    "number": 1,
+                    "title": "offline",
+                    "url": "https://api.github.com/repos/acme/support/issues/1",
+                },
+            ),
+        ],
+    )
+    def test_real_sdk_through_real_permit_kernel_without_live_provider(
+        project, monkeypatch, source, env_name, body
+    ):
+        monkeypatch.setenv(env_name, "offline-secret")
+        state = project(source)
+        observed = []
+        original = Broker.__init__
+    
+        def initialize(self, *args, **kwargs):
+            original(self, *args, **kwargs)
+            self.http.close()
+    
+            def transport(req):
+                observed.append(req)
+                return httpx.Response(200, json=body)
+    
+            self.http = httpx.Client(transport=httpx.MockTransport(transport), trust_env=False)
+    
+        monkeypatch.setattr(Broker, "__init__", initialize)
+>       assert launch(state.root, ["main.py"]) == 0
+E       AssertionError: assert 3 == 0
+E        +  where 3 = launch(PosixPath('/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/pytest-of-ross/pytest-458/test_real_sdk_through_real_per1'), ['main.py'])
+E        +    where PosixPath('/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/pytest-of-ross/pytest-458/test_real_sdk_through_real_per1') = <actenon_airlock.state.State object at 0x10a671be0>.root
+
+tests/test_provider_sdks.py:79: AssertionError
+----------------------------- Captured stderr call -----------------------------
+ANTHROPIC_API_KEY is set and takes precedence over the SDK's profile / federation auto-discovery; unset ANTHROPIC_API_KEY to use the auto-discovered credential.
+AIRLOCK DENY ctypes.dlopen @ <local>: Unsupported runtime effect [receipt_7653605e79e640fabd5c6a074b82737a]
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/Users/ross/src/actenon-audit/actenon-airlock/src/actenon_airlock/worker.py", line 492, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/Users/ross/src/actenon-audit/actenon-airlock/src/actenon_airlock/worker.py", line 480, in main
+    runpy.run_path(str(path), run_name="__main__")
+  File "<frozen runpy>", line 287, in run_path
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/pytest-of-ross/pytest-458/test_real_sdk_through_real_per1/main.py", line 2, in <module>
+    r=Anthropic().messages.create(model="test", max_tokens=10, messages=[{"role":"user","content":"hello"}])
+      ^^^^^^^^^^^
+  File "/Users/ross/src/actenon-audit/.venv/lib/python3.12/site-packages/anthropic/_client.py", line 312, in __init__
+    super().__init__(
+  File "/Users/ross/src/actenon-audit/.venv/lib/python3.12/site-packages/anthropic/_base_client.py", line 1129, in __init__
+    self._client = http_client or SyncHttpxClientWrapper(
+                                  ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/ross/src/actenon-audit/.venv/lib/python3.12/site-packages/anthropic/_base_client.py", line 1031, in __init__
+    default_transport = HTTPTransport(**transport_kwargs)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/ross/src/actenon-audit/.venv/lib/python3.12/site-packages/httpx2/_transports/default.py", line 146, in __init__
+    import httpcore2
+  File "/Users/ross/src/actenon-audit/.venv/lib/python3.12/site-packages/httpcore2/__init__.py", line 3, in <module>
+    from ._api import request, stream
+  File "/Users/ross/src/actenon-audit/.venv/lib/python3.12/site-packages/httpcore2/_api.py", line 8, in <module>
+    from ._sync.connection_pool import ConnectionPool
+  File "/Users/ross/src/actenon-audit/.venv/lib/python3.12/site-packages/httpcore2/_sync/__init__.py", line 1, in <module>
+    from .connection import HTTPConnection
+  File "/Users/ross/src/actenon-audit/.venv/lib/python3.12/site-packages/httpcore2/_sync/connection.py", line 13, in <module>
+    from .._ssl import default_ssl_context
+  File "/Users/ross/src/actenon-audit/.venv/lib/python3.12/site-packages/httpcore2/_ssl.py", line 4, in <module>
+    import truststore
+  File "/Users/ross/src/actenon-audit/.venv/lib/python3.12/site-packages/truststore/__init__.py", line 31, in <module>
+    from ._api import SSLContext, extract_from_ssl, inject_into_ssl
+  File "/Users/ross/src/actenon-audit/.venv/lib/python3.12/site-packages/truststore/_api.py", line 20, in <module>
+    from ._macos import _configure_context, _verify_peercerts_impl
+  File "/Users/ross/src/actenon-audit/.venv/lib/python3.12/site-packages/truststore/_macos.py", line 48, in <module>
+    Security = _load_cdll(
+               ^^^^^^^^^^^
+  File "/Users/ross/src/actenon-audit/.venv/lib/python3.12/site-packages/truststore/_macos.py", line 45, in _load_cdll
+    raise ImportError(f"The library {name} failed to load") from None
+ImportError: The library Security failed to load
+Exception ignored in: <function SyncHttpxClientWrapper.__del__ at 0x10d9d91c0>
+Traceback (most recent call last):
+  File "/Users/ross/src/actenon-audit/.venv/lib/python3.12/site-packages/anthropic/_base_client.py", line 1057, in __del__
+    if self.is_closed:
+       ^^^^^^^^^^^^^^
+  File "/Users/ross/src/actenon-audit/.venv/lib/python3.12/site-packages/httpx2/_client.py", line 219, in is_closed
+    return self._state == ClientState.CLOSED
+           ^^^^^^^^^^^
+AttributeError: 'SyncHttpxClientWrapper' object has no attribute '_state'
+=========================== short test summary info ============================
+SKIPPED [1] tests/test_protected.py:279: Protected container acceptance runs in its required separate CI job
+FAILED tests/test_provider_sdks.py::test_real_sdk_through_real_permit_kernel_without_live_provider[from openai import OpenAI\nr=OpenAI().chat.completions.create(model="test", messages=[{"role":"user","content":"hello"}])\nassert r.choices[0].message.content == "offline"\n-OPENAI_API_KEY-body0]
+FAILED tests/test_provider_sdks.py::test_real_sdk_through_real_permit_kernel_without_live_provider[from anthropic import Anthropic\nr=Anthropic().messages.create(model="test", max_tokens=10, messages=[{"role":"user","content":"hello"}])\nassert r.content[0].text == "offline"\n-ANTHROPIC_API_KEY-body1]
+2 failed, 196 passed, 1 skipped in 70.48s (0:01:10)

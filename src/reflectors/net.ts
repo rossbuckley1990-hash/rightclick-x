@@ -4,7 +4,27 @@
 // attached only to requests whose origin is exactly that, so a reflected
 // capability (or a redirect) can never carry a key to some other host.
 
-import type { FetchLike } from "../core/types.ts";
+import type { FetchLike, TransportContext, TransportRefusal } from "../core/types.ts";
+
+/** Trusted host adapters can distinguish a boundary denial from transport failure.
+ * This marker only stops work; it cannot authorize anything or attest a grant. */
+export class TransportRefused extends Error {
+  readonly refusal: TransportRefusal;
+  constructor(reason: string, capability?: string, runs: string[] = []) {
+    super(`blocked by execution boundary: ${reason}`);
+    this.name = "TransportRefused";
+    this.refusal = { reason, capability, runs };
+  }
+}
+
+/** A standard authentication/authorization denial stops execution, without
+ * treating the response as a signed proof or interpreting arbitrary body text. */
+export function refuseDeniedResponse(res: Response): void {
+  if (res.status === 401 || res.status === 403) {
+    cancelBody(res);
+    throw new TransportRefused(`HTTP ${res.status}: authentication or authorization refused`);
+  }
+}
 
 export class Authority {
   private byOrigin = new Map<string, Record<string, string>>();
@@ -64,6 +84,8 @@ export interface Net {
   auth: Authority;
   timeoutMs: number;
   policy?: NetworkPolicy;
+  /** Owning execution only. Never serialized into the HTTP request. */
+  execution?: Omit<TransportContext, "requestId">;
 }
 
 /** Bound contract acquisition without limiting ordinary finite execution outputs. */
@@ -221,7 +243,9 @@ async function requestOnce(net: Net, url: string, init: RequestInit = {}): Promi
     let tainted = false;
     let method = (init.method ?? "GET").toUpperCase();
     let body = init.body;
-    let res = await net.fetch(url, { ...init, headers, signal, redirect: "manual" });
+    const context = () => net.execution ? Object.freeze({ ...net.execution, requestId: crypto.randomUUID() }) : undefined;
+    let res = await net.fetch(url, { ...init, headers, signal, redirect: "manual" }, context());
+    if (init.redirect === "manual") return track(res);
     let hops = 0;
     while (res.status >= 300 && res.status < 400 && res.headers.get("location") && hops++ < 5) {
       const next = new URL(res.headers.get("location")!, url).toString();
@@ -243,7 +267,7 @@ async function requestOnce(net: Net, url: string, init: RequestInit = {}): Promi
       if (!h.has("user-agent")) h.set("user-agent", userAgent);
       for (const [k, v] of Object.entries(net.auth.headersFor(next))) h.set(k, v);
       cancelBody(res);
-      res = await net.fetch(next, { ...init, method, body, headers: h, signal, redirect: "manual" });
+      res = await net.fetch(next, { ...init, method, body, headers: h, signal, redirect: "manual" }, context());
       url = next;
     }
     return track(res);

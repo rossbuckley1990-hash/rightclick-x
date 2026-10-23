@@ -1,0 +1,46 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.13, pytest-9.1.1, pluggy-1.7.0
+rootdir: /Users/ross/src/actenon-audit/actenon-permit
+configfile: pyproject.toml
+plugins: asyncio-1.4.0, anyio-4.15.1
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 310 items
+
+tests/test_2_0_edge_authority.py ..............                          [  4%]
+tests/test_effect_kernel_integration.py ......                           [  6%]
+tests/test_aggregate_delegated_budgets.py .....................          [ 13%]
+tests/test_adversarial.py .............................................. [ 28%]
+.                                                                        [ 28%]
+tests/test_adversarial_round2.py ..............................          [ 38%]
+tests/test_adversarial_round3.py ......................                  [ 45%]
+tests/test_broker_security.py .................                          [ 50%]
+tests/test_boundary_kit.py .............................                 [ 60%]
+tests/test_authority_independence.py ..................                  [ 65%]
+tests/test_execution_modes.py ............                               [ 69%]
+tests/test_reservation_settlement.py .......................             [ 77%]
+tests/test_effect_ledger.py ........................................     [ 90%]
+tests/test_control_plane_auth.py ...............................         [100%]
+
+=============================== warnings summary ===============================
+tests/test_2_0_edge_authority.py::test_development_intent_keeps_local_signing
+tests/test_authority_independence.py::TestProtocolConformingProof::test_issue_protocol_conforming_pccb
+tests/test_authority_independence.py::TestLocalSigning::test_local_hmac_signing
+tests/test_authority_independence.py::TestNoSideEffectOnIssuance::test_proof_issuance_does_not_call_provider
+tests/test_authority_independence.py::TestNoSideEffectOnIssuance::test_proof_issuance_does_not_write_to_database
+tests/test_control_plane_auth.py::test_agent_without_admin_token_cannot_escalate
+  /Users/ross/src/actenon-audit/actenon-permit/src/actenon_permit/ed25519_signer.py:306: RuntimeWarning: ACTENON LOCAL HMAC SIGNER IS FOR LOCAL/DEV/DEMO ONLY. The default local proof secret is public; production must use asymmetric well-known/KMS/HSM signing custody.
+    return build_local_proof_signer()
+
+tests/test_authority_independence.py::TestLocalSigning::test_local_ed25519_signing
+tests/test_authority_independence.py::TestExternalSigning::test_external_signing_secret
+tests/test_effect_ledger.py::test_real_pdp_mints_signed_effect_only_after_policy_and_atomic_debit
+  /Users/ross/src/actenon-audit/actenon-permit/src/actenon_permit/ed25519_signer.py:294: RuntimeWarning: ACTENON LOCAL HMAC SIGNER IS FOR LOCAL/DEV/DEMO ONLY. The default local proof secret is public; production must use asymmetric well-known/KMS/HSM signing custody.
+    return build_local_proof_signer(secret=secret)
+
+tests/test_authority_independence.py::TestExternalSigning::test_external_signing_secret
+  /Users/ross/src/actenon-audit/actenon-permit/tests/test_authority_independence.py:191: RuntimeWarning: ACTENON LOCAL HMAC SIGNER IS FOR LOCAL/DEV/DEMO ONLY. The default local proof secret is public; production must use asymmetric well-known/KMS/HSM signing custody.
+    signer=build_local_proof_signer(secret="external-supplied-secret-key"),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+- generated xml file: /Users/ross/src/rightclick-x-adaptive/docs/north-star/evidence/actenon/permit-20261018T012948.xml -
+======================= 310 passed, 10 warnings in 4.12s =======================

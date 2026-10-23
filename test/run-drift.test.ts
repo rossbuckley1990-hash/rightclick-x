@@ -86,7 +86,7 @@ test("a failed plain run with no contract change fails with the re-reflection no
   assert.equal(r.healing!.retried, undefined);
 });
 
-test("an operation id reassigned to a different operation is refused until acknowledged, and names its successor", async () => {
+test("an operation id reassigned to a different operation stays refused despite acknowledgement, and names its successor", async () => {
   const classes = () => json(["child-a", "child-b"]);
   const individuals = () => json([]);
   const svc = catalog({ spec: contract("/api", { "/classes/{term}/children": op("getChildren", "term") }), routes: { "/api/classes/{term}/children": classes } });
@@ -111,7 +111,8 @@ test("an operation id reassigned to a different operation is refused until ackno
   assert.equal(refused.status, "failed");
   assert.equal(svc.calls.length, before, "the new operation was not called");
   assert.match(refused.error!, /changed meaning.*GET \/api\/classes\/\{\}\/children.*GET \/api\/individuals\/\{\}\/children.*Not run/);
-  assert.deepEqual({ ...refused.changedMeaning, at: undefined }, { id, source: SOURCE, at: undefined, before: "GET /api/classes/{}/children", after: "GET /api/individuals/{}/children", successor });
+  assert.deepEqual({ ...refused.changedMeaning, at: undefined }, { id, source: SOURCE, at: undefined, before: "GET /api/classes/{}/children", after: "GET /api/individuals/{}/children", successor, current: rc.meaningChanges.get(id)!.current });
+  assert.ok(refused.changedMeaning?.current && refused.changedMeaning.current !== id);
   assert.equal(rc.ledger.get(id)!.runs, runsBefore, "a refusal is not evidence about the operation");
   assert.deepEqual((await rc.run(successor, { term: "T1" })).output, ["child-a", "child-b"]);
 
@@ -120,14 +121,14 @@ test("an operation id reassigned to a different operation is refused until ackno
   const restarted = await RightClick.create({ fetch: routerFetch({ [ORIGIN]: svc.handler }), directories: [], store });
   assert.match((await restarted.run(id, { term: "T1" })).error ?? "", /changed meaning/);
 
-  // Having seen the change, the caller may run the new operation; after that the id is ordinary again.
+  // Seeing a change is not authority to clear it, including after a restart.
   const acknowledged = await restarted.run(id, { term: "T1" }, { acknowledgeChange: true });
-  assert.equal(acknowledged.status, "completed");
-  assert.deepEqual(acknowledged.output, []);
+  assert.equal(acknowledged.status, "failed");
+  assert.equal(acknowledged.output, undefined);
   assert.equal(acknowledged.changedMeaning?.after, "GET /api/individuals/{}/children");
   const plain = await restarted.run(id, { term: "T1" });
-  assert.equal(plain.status, "completed");
-  assert.equal(plain.changedMeaning, undefined);
+  assert.equal(plain.status, "failed");
+  assert.equal(plain.changedMeaning?.after, "GET /api/individuals/{}/children");
 });
 
 test("re-learning an id back to the operation callers last saw clears its refusal", async () => {
@@ -178,7 +179,7 @@ test("when a failed id now names a different operation, repair retries the opera
   assert.match((await rc2.run(id, { term: "T1" })).error ?? "", /changed meaning/, "the id itself stays refused");
 });
 
-test("plan steps are chosen by their current contract: compose is not refused by a changed id", async () => {
+test("a new plan cannot bypass the refusal on a changed retained id", async () => {
   const svc = catalog({ spec: contract("/api", { "/classes/{term}/children": op("getChildren", "term") }), routes: { "/api/classes/{term}/children": () => json(["child-a"]) } });
   const rc = await RightClick.create({ fetch: routerFetch({ [ORIGIN]: svc.handler }), directories: [] });
   await rc.learn({ source: SOURCE });
@@ -187,8 +188,9 @@ test("plan steps are chosen by their current contract: compose is not refused by
   await rc.learn({ source: SOURCE });
   assert.ok(rc.meaningChanges.has(id));
   const r = await rc.compose({ have: { term: "T1" }, want: "json", through: [id], run: true, crystallize: false });
-  assert.equal(r.executed?.status, "completed", JSON.stringify(r.executed?.attempts));
-  assert.ok(rc.meaningChanges.has(id), "a plan step does not acknowledge the change for id-addressed callers");
+  assert.notEqual(r.executed?.status, "completed", JSON.stringify(r.executed?.attempts));
+  assert.ok(!svc.calls.some(p => p.startsWith("/api/individuals")), "planning must not dispatch the changed operation");
+  assert.ok(rc.meaningChanges.has(id), "planning does not clear the refusal");
 });
 
 test("repeated failures re-read the contract once, not on every call", async () => {

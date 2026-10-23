@@ -1,0 +1,14 @@
+## uce-freeze-5 (git archive)
+cli:/usr/bin/mandoc 3 capabilities from 32 sandboxed runs (stdin, files; ok exit 0)
+cli:/usr/bin/od 9 capabilities from 38 sandboxed runs (files; ok exit 0)
+{"intent":"octal dump of the bytes of a text","plan":["mandoc: format manual pages","od -b: Output octal bytes.  Equivalent to -t o1"],"status":"completed","roundTrips":false}
+{"intent":"octal dump of the text","plan":["Octal dump of the bytes of a text: mandoc: format manual pages → od -b: Output octal bytes.  Equivalent to -t o1"],"status":"completed","roundTrips":false}
+{"intent":"show the bytes of the text in octal","plan":["Octal dump of the bytes of a text: mandoc: format manual pages → od -b: Output octal bytes.  Equivalent to -t o1"],"status":"completed","roundTrips":false}
+{"intent":"Output octal bytes","plan":["Octal dump of the bytes of a text: mandoc: format manual pages → od -b: Output octal bytes.  Equivalent to -t o1"],"status":"completed","roundTrips":false}
+## ns-baseline
+cli:/usr/bin/mandoc 3 capabilities from 32 sandboxed runs (stdin, files; ok exit 0)
+cli:/usr/bin/od 9 capabilities from 48 sandboxed runs (stdin, files; ok exit 0)
+{"intent":"octal dump of the bytes of a text","plan":["od -b: Output octal bytes.  Equivalent to -t o1"],"status":"completed","roundTrips":true}
+{"intent":"octal dump of the text","plan":["od -b: Output octal bytes.  Equivalent to -t o1"],"status":"completed","roundTrips":true}
+{"intent":"show the bytes of the text in octal","plan":["od -b: Output octal bytes.  Equivalent to -t o1"],"status":"completed","roundTrips":true}
+{"intent":"Output octal bytes","plan":["od -b: Output octal bytes.  Equivalent to -t o1"],"status":"completed","roundTrips":true}

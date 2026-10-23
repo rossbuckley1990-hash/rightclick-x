@@ -1,0 +1,56 @@
+{
+  "tag": "uce-freeze-7",
+  "commit": "202bcafddac43441b8540c307dabe724da947e91",
+  "programs": {
+    "uuname": {
+      "runs": [
+        {},
+        {}
+      ],
+      "outputs": [
+        null,
+        null
+      ],
+      "check": {
+        "pass": false,
+        "detail": "stable true; echoes input false; error text false"
+      },
+      "supported": true,
+      "retained": true,
+      "executed": false,
+      "wrongOutcome": false,
+      "pass": false
+    },
+    "base64": {
+      "runs": [
+        {
+          "status": "completed",
+          "plan": [
+            "base64: encode / decode a binary file"
+          ],
+          "attempts": []
+        },
+        {
+          "status": "completed",
+          "plan": [
+            "base64: encode / decode a binary file"
+          ],
+          "attempts": []
+        }
+      ],
+      "outputs": [
+        "SGFyYm91ciBsaWdodHMgYXQgZHVzawo=\n",
+        "Q29wcGVyIHdpcmUsIGJyYXNzIGhpbmdlcwo=\n"
+      ],
+      "check": {
+        "pass": true,
+        "detail": "equal to the harness's own base64 encoding: true, true"
+      },
+      "supported": true,
+      "retained": true,
+      "executed": true,
+      "wrongOutcome": false,
+      "pass": true
+    }
+  }
+}

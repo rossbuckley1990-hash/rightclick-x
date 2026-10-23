@@ -1,0 +1,234 @@
+{
+  "tag": "uce-freeze-3",
+  "commit": "fdf5be342ad58aba71ea1e81487d99db19c14934",
+  "seedFrom": "frozen build fdf5be342ad58aba71ea1e81487d99db19c14934",
+  "attempts": [
+    {
+      "program": "fc",
+      "description": "builtin, !, %, ., :, @, [, {, }, alias, alloc, bg, bind, bindkey, break, breaksw, builtins, case, cd, chdir, command, complete, continue, default, dirs, do, done, echo, echotc, elif, else, end, endif, endsw, esac, eval, exec, exit, export, false, fc, fg, filetest, fi, for, foreach, getopts, glob, goto, hash, hashstat, history, hup, if, jobid, jobs, kill, limit, local, log, login, logout, ls-F, nice, nohup, notify, onintr, popd, printenv, printf, pushd, pwd, read, readonly, rehash, repeat, return, sched, set, setenv, settc, setty, setvar, shift, source, stop, suspend, switch, telltc, test, then, time, times, trap, true, type, ulimit, umask, unalias, uncomplete, unhash, unlimit, unset, unsetenv, until, wait, where, which, while - shell built-in commands",
+      "ms": 363,
+      "probes": [
+        {
+          "url": "cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-holdout-74SCVN/bin/fc",
+          "kind": "cli",
+          "ok": false,
+          "detail": "no input channel produced output for fc (10 trials)"
+        }
+      ],
+      "capabilities": [],
+      "investigable": false,
+      "supported": false
+    },
+    {
+      "program": "zipinfo",
+      "description": "zipinfo - list detailed information about a ZIP archive",
+      "ms": 406,
+      "probes": [
+        {
+          "url": "cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-holdout-74SCVN/bin/zipinfo",
+          "kind": "cli",
+          "ok": true,
+          "detail": "2 capabilities from 29 sandboxed runs (files; ok exit 9)"
+        }
+      ],
+      "capabilities": [
+        {
+          "id": "cli:zipinfo:default",
+          "title": "zipinfo: list detailed information about a ZIP archive",
+          "inputs": [
+            {
+              "name": "file",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "outputs": [
+            {
+              "name": "(result)",
+              "type": "text"
+            }
+          ],
+          "evidence": [
+            "documents its usage [declared]",
+            "purpose: zipinfo - list detailed information about a ZIP archive [declared]",
+            "options: 18 declared [declared]",
+            "operands: required [file], optional [zip, list], variadic [inferred]",
+            "accepts html/xml/json/csv/text input via files and prints text [experimentally-supported]",
+            "deterministic for identical input [experimentally-supported]",
+            "side effects outside the sandbox [unknown]",
+            "equivalent to -z (print zipfile comment   -T  print file times in sortable decimal format) [experimentally-supported]",
+            "equivalent to -C (be case-insensitive     -M  page output through built-in \"more\") [experimentally-supported]",
+            "equivalent to -s (list zipfile info in short Unix ``ls -l'' format.  This is the) [experimentally-supported]",
+            "equivalent to -m (list zipfile info in medium Unix ``ls -l'' format.  Identical to) [experimentally-supported]",
+            "equivalent to -l (list zipfile info in long Unix ``ls -l'' format.  As with -m) [experimentally-supported]",
+            "on empty input exits 9 with output [observed]"
+          ],
+          "limitations": [
+            "side effects outside the sandbox [unknown]",
+            "runs only inside the host sandbox: no network, inputs passed as content"
+          ]
+        },
+        {
+          "id": "cli:zipinfo:h",
+          "title": "zipinfo -h: print header line       -t  print totals for listed files or for all",
+          "inputs": [
+            {
+              "name": "file",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "outputs": [
+            {
+              "name": "(result)",
+              "type": "text"
+            }
+          ],
+          "evidence": [
+            "documents its usage [declared]",
+            "purpose: zipinfo - list detailed information about a ZIP archive [declared]",
+            "options: 18 declared [declared]",
+            "operands: required [file], optional [zip, list], variadic [inferred]",
+            "accepts text input via files and prints text [experimentally-supported]",
+            "deterministic for identical input [experimentally-supported]",
+            "side effects outside the sandbox [unknown]",
+            "output did not vary across the distinct inputs tried [observed]",
+            "on empty input exits 9 with output [observed]"
+          ],
+          "limitations": [
+            "side effects outside the sandbox [unknown]",
+            "runs only inside the host sandbox: no network, inputs passed as content"
+          ]
+        }
+      ],
+      "investigable": true,
+      "supported": true
+    },
+    {
+      "program": "zgrep",
+      "description": "grep, egrep, fgrep, rgrep, bzgrep, bzegrep, bzfgrep, zgrep, zegrep, zfgrep - file pattern searcher",
+      "ms": 228,
+      "probes": [
+        {
+          "url": "cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-holdout-74SCVN/bin/zgrep",
+          "kind": "cli",
+          "ok": false,
+          "detail": "no input channel produced output for zgrep (10 trials)"
+        }
+      ],
+      "capabilities": [],
+      "investigable": false,
+      "supported": false
+    },
+    {
+      "program": "sdp",
+      "description": "sdp - scripting definition (sdef) processor",
+      "ms": 6359,
+      "probes": [
+        {
+          "url": "cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-holdout-74SCVN/bin/sdp",
+          "kind": "cli",
+          "ok": false,
+          "detail": "no input channel produced output for sdp (10 trials)"
+        }
+      ],
+      "capabilities": [],
+      "investigable": false,
+      "supported": false
+    },
+    {
+      "program": "cal",
+      "description": "cal, ncal - displays a calendar and the date of Easter",
+      "ms": 242,
+      "probes": [
+        {
+          "url": "cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-holdout-74SCVN/bin/cal",
+          "kind": "cli",
+          "ok": false,
+          "detail": "no input channel produced output for cal (10 trials)"
+        }
+      ],
+      "capabilities": [],
+      "investigable": false,
+      "supported": false
+    },
+    {
+      "program": "xmllint",
+      "description": "xmllint - command line XML tool",
+      "ms": 400,
+      "probes": [
+        {
+          "url": "cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-holdout-74SCVN/bin/xmllint",
+          "kind": "cli",
+          "ok": true,
+          "detail": "1 capability from 29 sandboxed runs (files; ok exit 0)"
+        }
+      ],
+      "capabilities": [
+        {
+          "id": "cli:xmllint:default",
+          "title": "xmllint: command line XML tool",
+          "inputs": [
+            {
+              "name": "version",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "debug",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "shell",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "xpath",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "outputs": [
+            {
+              "name": "(result)",
+              "type": "text"
+            }
+          ],
+          "evidence": [
+            "documents its usage [declared]",
+            "purpose: xmllint - command line XML tool [declared]",
+            "options: 61 declared [declared]",
+            "operands: required [version, debug, shell, xpath], optional [] [inferred]",
+            "accepts xml input via files and prints xml [observed]",
+            "deterministic for identical input [experimentally-supported]",
+            "output keeps every word of the input [observed]",
+            "output equals the input (no transformation) [observed]",
+            "side effects outside the sandbox [unknown]",
+            "equivalent to --recover (: output what was parsable on broken XML documents) [experimentally-supported]",
+            "equivalent to --noenc (: ignore any encoding specified inside the document) [experimentally-supported]",
+            "equivalent to --load-trace (: print trace of all external entities loaded) [experimentally-supported]",
+            "equivalent to --nocompact (: do not generate compact text nodes) [experimentally-supported]",
+            "equivalent to --htmlout (: output results as HTML) [experimentally-supported]",
+            "equivalent to --quiet (: be quiet when succeeded) [experimentally-supported]",
+            "equivalent to --timing (: print some timings) [experimentally-supported]",
+            "on empty input exits 1 without output [observed]"
+          ],
+          "limitations": [
+            "side effects outside the sandbox [unknown]",
+            "runs only inside the host sandbox: no network, inputs passed as content"
+          ]
+        }
+      ],
+      "investigable": true,
+      "supported": true
+    }
+  ],
+  "chosen": [
+    "zipinfo",
+    "xmllint"
+  ],
+  "state": "/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-holdout-74SCVN/server/state.json",
+  "bin": "/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-holdout-74SCVN/bin"
+}

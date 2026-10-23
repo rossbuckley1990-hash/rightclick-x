@@ -5,6 +5,9 @@
 // Receipts are a SHA-256 hash chain, so a run log exported from one region
 // can be checked anywhere without trusting the instance that produced it.
 
+import type { HttpContinuationEvidence } from "../reflectors/http-continuation.ts";
+import type { CliValidity } from "./cli-outcome.ts";
+
 export interface Experience {
   runs: number;
   ok: number;
@@ -81,8 +84,16 @@ export interface Receipt {
   provider: string;
   startedAt: string;
   durationMs: number;
-  status: "completed" | "failed";
-  verification: "verified" | "refuted" | "unverified";
+  status: "completed" | "failed" | "pending";
+  verification: "verified" | "checked" | "refuted" | "unverified";
+  /** Local continuation observations, hash-bound to this receipt; not independent authority proof. */
+  httpContinuation?: HttpContinuationEvidence;
+  /** Local observations, not independent verification or authority. */
+  cliValidity?: CliValidity;
+  /** This receipt continues a retained execution without replaying completed actions. */
+  resumes?: string;
+  /** Complete selected saved-goal execution; never a leaf-only continuation. */
+  workflowRunId?: string;
   inputDigest: string;
   outputDigest: string;
   prev: string;

@@ -1,0 +1,840 @@
+{
+  "tag": "ns-freeze-1",
+  "commit": "1e248695cd16227e88d6a0825f397817979e69b9",
+  "at": "2026-10-17T10:23:13.303Z",
+  "rules": "You are an independent evaluator for a software benchmark. You have no tools and no other context: judge only from the documentation given. Reply with JSON only (no prose, no code fences).\n\nELIGIBILITY. A program is eligible only if, by its documentation, ALL hold:\n1. It transforms, analyses or reports on data given on standard input or as file operands, and writes the result to standard output.\n2. It needs no network, root privileges, hardware, GUI, running daemon, user account or interactive input.\n3. It changes no files except temporary ones.\n4. Its output is deterministic for the same input (no dates, random values, process or machine state).\n5. Four distinct, useful tasks with small plain-text inputs can be written for it (no binary files, archives, images or special formats you cannot write as plain text).\n\nTASKS. For each eligible program write exactly 4 feasible tasks and 1 infeasible task.\n- \"request\": what a user wants, in plain words, as a user would ask it. Do NOT write option syntax, flags or command lines. The request must be achievable with this program alone.\n- \"input\": {\"stdin\": \"...\"} and/or {\"files\": {\"name.txt\": \"...\"}}; plain UTF-8 text, at most 20 lines. Tasks needing two inputs use two files.\n- \"reference\": {\"argv\": [...]}: the arguments (without the program name) that produce the correct result; file inputs are referred to by the names you gave. Use only options in the documentation shown.\n- \"compare\": one of \"exact\", \"trim\", \"whitespace\", \"lines-unordered\", \"contains-all\" (then also \"expect\": [strings that must all appear]). Choose the least strict mode under which only a correct result passes.\n- The 4 feasible tasks should need different options or behaviours of the program where it has them.\n- The infeasible task: a plausible request this program cannot do; give \"request\" and \"input\" only.\n\nFORMAT: {\"programs\":[{\"name\":\"<name>\",\"eligible\":true|false,\"reason\":\"<one sentence>\",\"tasks\":[{\"kind\":\"feasible\"|\"infeasible\",\"request\":\"...\",\"input\":{...},\"reference\":{\"argv\":[...]},\"compare\":\"...\",\"expect\":[...]}]}]}\nPrograms that are not eligible get \"tasks\": [].",
+  "model": "opus (Claude Code -p)",
+  "pool": {
+    "total": 1745,
+    "excluded": {
+      "package/build/vcs": 39,
+      "clipboard/audio/speech/display/UI": 33,
+      "shell/interpreter/compiler/debugger": 96,
+      "development set": 47,
+      "named in RightClick X's source": 50,
+      "interactive/pager": 24,
+      "prints system state": 39,
+      "process/system control": 48,
+      "changes files or system": 97,
+      "privilege/account": 18,
+      "network": 89
+    },
+    "candidates": 1165
+  },
+  "order": [
+    "xzcmp",
+    "ri",
+    "bluetoothaudiod",
+    "usbdiagnose",
+    "debinhex.pl",
+    "ttyd",
+    "pg_verifybackup-17",
+    "tkcon",
+    "initdb-17",
+    "universalaccessd",
+    "power_report.sh",
+    "rotatelogs",
+    "nsupdate",
+    "fixproc",
+    "autoheader",
+    "PasswordService",
+    "parldyn",
+    "rwsnoop",
+    "rtadvd",
+    "xsubpp5.34",
+    "dbiproxy5.34",
+    "rdjpgcom",
+    "llama-simple",
+    "findrule",
+    "wheel3.13",
+    "gtester",
+    "systemkeychain",
+    "exiftool",
+    "sleep",
+    "autom4te",
+    "webpng",
+    "tkpp",
+    "tunnel-client",
+    "general_assembly.pl",
+    "json_xs",
+    "bbedit",
+    "uucp",
+    "glib-compile-schemas",
+    "kgetcred",
+    "cupsctl",
+    "otctl",
+    "system-override",
+    "rmiregistry",
+    "tidy_changelog5.34",
+    "ppdc",
+    "datacopy",
+    "dbiproxy",
+    "loudnorm.rb",
+    "pg_rewind",
+    "idle3.14",
+    "avbdeviced",
+    "oid2name-17",
+    "tdspool",
+    "treereg",
+    "pathopens.d",
+    "racoon",
+    "wheel3.12",
+    "pp5.34",
+    "lzdiff",
+    "memacct",
+    "pg_resetwal",
+    "db_recover",
+    "IOSDebug",
+    "cvadmin",
+    "phar",
+    "pn",
+    "sdl2-config",
+    "postlock",
+    "jcontrol",
+    "slencheck",
+    "nologin",
+    "hidutil",
+    "sum",
+    "aslmanager",
+    "sc_auth",
+    "sidxindex",
+    "ktrace",
+    "rvim",
+    "libnetcfg5.34",
+    "pcre2grep"
+  ],
+  "screened": [
+    {
+      "name": "xzcmp",
+      "eligible": false,
+      "reason": "It exists to compare compressed files, and the cmp options it relies on are not documented here, so four distinct useful plain-text tasks using only the documented interface cannot be written."
+    },
+    {
+      "name": "ri",
+      "eligible": false,
+      "reason": "It looks up installed Ruby documentation instead of processing given input, so its output depends on what is installed on the machine, and it can be interactive or run a server."
+    },
+    {
+      "name": "bluetoothaudiod",
+      "eligible": false,
+      "reason": "No documentation is available, and the name suggests a Bluetooth audio daemon that needs hardware."
+    },
+    {
+      "name": "usbdiagnose",
+      "eligible": false,
+      "reason": "No documentation is available, and the name suggests a USB hardware diagnostic tool that depends on machine state."
+    },
+    {
+      "name": "debinhex.pl",
+      "eligible": false,
+      "reason": "It decodes BinHex files into output files on disk instead of writing to standard output, and its inputs are in a special encoded format."
+    },
+    {
+      "name": "ttyd",
+      "eligible": false,
+      "reason": "It is a network server that shares a terminal over the web and does not turn input into output on stdout."
+    },
+    {
+      "name": "pg_verifybackup-17",
+      "eligible": false,
+      "reason": "It needs a full PostgreSQL backup directory with a checksummed backup_manifest in a special format and usually binary WAL files, and its results go mainly to stderr, so useful tasks with small plain-text inputs cannot practically be written."
+    },
+    {
+      "name": "tkcon",
+      "eligible": false,
+      "reason": "It is an interactive GUI console built on Tk and does not transform input into standard output."
+    },
+    {
+      "name": "initdb-17",
+      "eligible": false,
+      "reason": "It creates a database cluster on disk by writing to a data directory, so it changes files other than temporary ones."
+    },
+    {
+      "name": "universalaccessd",
+      "eligible": false,
+      "reason": "It is a macOS system daemon with no options that users should not run by hand."
+    },
+    {
+      "name": "power_report.sh",
+      "eligible": false,
+      "reason": "Its documentation says it requires root privileges."
+    },
+    {
+      "name": "rotatelogs",
+      "eligible": false,
+      "reason": "It writes and rotates log files on disk using time-based or size-based naming, so it changes files and its output depends on the time."
+    },
+    {
+      "name": "nsupdate",
+      "eligible": false,
+      "reason": "It sends Dynamic DNS update requests to a name server, so it needs the network and a running DNS server, and it does not transform input into output on standard output."
+    },
+    {
+      "name": "fixproc",
+      "eligible": false,
+      "reason": "It checks, kills and restarts running processes and reads a system database, so its result depends on process state and it changes system state."
+    },
+    {
+      "name": "autoheader",
+      "eligible": false,
+      "reason": "It writes a template header file such as config.h.in instead of writing its result to standard output, and it needs Autoconf input files and macro libraries."
+    },
+    {
+      "name": "PasswordService",
+      "eligible": false,
+      "reason": "It is a password server daemon that must run as root and writes log files, so it does not process input data."
+    },
+    {
+      "name": "parldyn",
+      "eligible": false,
+      "reason": "No usable documentation was given (only an error message), so it cannot be shown to meet any criterion."
+    },
+    {
+      "name": "rwsnoop",
+      "eligible": false,
+      "reason": "It uses DTrace to trace live system read and write events, so it needs root privileges, runs until interrupted and gives non-deterministic output."
+    },
+    {
+      "name": "rtadvd",
+      "eligible": false,
+      "reason": "It is a network daemon that sends IPv6 router advertisements, needs root and network interfaces, and writes pid and dump files instead of turning input into standard output."
+    },
+    {
+      "name": "xsubpp5.34",
+      "eligible": true,
+      "reason": "It turns a plain-text .xs file operand into C code on standard output, needs no network or privileges, gives the same output for the same input, and has several options that change that output."
+    },
+    {
+      "name": "dbiproxy5.34",
+      "eligible": false,
+      "reason": "It is a network proxy server daemon that listens on a port, and it may change user, group or root directory, so it does not process input into standard output."
+    },
+    {
+      "name": "rdjpgcom",
+      "eligible": false,
+      "reason": "Its only input is a JPEG image, which is a binary format that cannot be written as plain text."
+    },
+    {
+      "name": "llama-simple",
+      "eligible": false,
+      "reason": "It needs a binary GGUF model file and runs model inference, which cannot be supplied as plain text and may not give the same output every time."
+    },
+    {
+      "name": "findrule",
+      "eligible": false,
+      "reason": "It searches the filesystem for directory entries instead of processing data given on standard input or file contents, and its output depends on the machine's filesystem."
+    },
+    {
+      "name": "wheel3.13",
+      "eligible": false,
+      "reason": "no decision returned"
+    },
+    {
+      "name": "gtester",
+      "eligible": false,
+      "reason": "no decision returned"
+    },
+    {
+      "name": "systemkeychain",
+      "eligible": false,
+      "reason": "no decision returned"
+    },
+    {
+      "name": "exiftool",
+      "eligible": false,
+      "reason": "no decision returned"
+    },
+    {
+      "name": "sleep",
+      "eligible": false,
+      "reason": "no decision returned"
+    },
+    {
+      "name": "autom4te",
+      "eligible": false,
+      "reason": "no decision returned"
+    },
+    {
+      "name": "webpng",
+      "eligible": false,
+      "reason": "no decision returned"
+    },
+    {
+      "name": "tkpp",
+      "eligible": false,
+      "reason": "no decision returned"
+    },
+    {
+      "name": "tunnel-client",
+      "eligible": false,
+      "reason": "no decision returned"
+    },
+    {
+      "name": "general_assembly.pl",
+      "eligible": false,
+      "reason": "no decision returned"
+    },
+    {
+      "name": "json_xs",
+      "eligible": false,
+      "reason": "no decision returned"
+    },
+    {
+      "name": "bbedit",
+      "eligible": false,
+      "reason": "no decision returned"
+    },
+    {
+      "name": "uucp",
+      "eligible": false,
+      "reason": "no decision returned"
+    },
+    {
+      "name": "glib-compile-schemas",
+      "eligible": false,
+      "reason": "no decision returned"
+    },
+    {
+      "name": "kgetcred",
+      "eligible": false,
+      "reason": "no decision returned"
+    },
+    {
+      "name": "cupsctl",
+      "eligible": false,
+      "reason": "no decision returned"
+    },
+    {
+      "name": "otctl",
+      "eligible": false,
+      "reason": "no decision returned"
+    },
+    {
+      "name": "system-override",
+      "eligible": false,
+      "reason": "no decision returned"
+    },
+    {
+      "name": "rmiregistry",
+      "eligible": false,
+      "reason": "no decision returned"
+    },
+    {
+      "name": "tidy_changelog5.34",
+      "eligible": false,
+      "reason": "no decision returned"
+    },
+    {
+      "name": "ppdc",
+      "eligible": false,
+      "reason": "no decision returned"
+    },
+    {
+      "name": "datacopy",
+      "eligible": false,
+      "reason": "no decision returned"
+    },
+    {
+      "name": "dbiproxy",
+      "eligible": false,
+      "reason": "no decision returned"
+    },
+    {
+      "name": "loudnorm.rb",
+      "eligible": false,
+      "reason": "no decision returned"
+    },
+    {
+      "name": "pg_rewind",
+      "eligible": false,
+      "reason": "no decision returned"
+    },
+    {
+      "name": "idle3.14",
+      "eligible": false,
+      "reason": "no decision returned"
+    },
+    {
+      "name": "avbdeviced",
+      "eligible": false,
+      "reason": "no decision returned"
+    },
+    {
+      "name": "oid2name-17",
+      "eligible": false,
+      "reason": "no decision returned"
+    },
+    {
+      "name": "tdspool",
+      "eligible": false,
+      "reason": "no decision returned"
+    },
+    {
+      "name": "treereg",
+      "eligible": false,
+      "reason": "no decision returned"
+    },
+    {
+      "name": "pathopens.d",
+      "eligible": false,
+      "reason": "no decision returned"
+    },
+    {
+      "name": "racoon",
+      "eligible": false,
+      "reason": "no decision returned"
+    },
+    {
+      "name": "wheel3.12",
+      "eligible": false,
+      "reason": "no decision returned"
+    },
+    {
+      "name": "pp5.34",
+      "eligible": false,
+      "reason": "no decision returned"
+    },
+    {
+      "name": "lzdiff",
+      "eligible": false,
+      "reason": "no decision returned"
+    },
+    {
+      "name": "memacct",
+      "eligible": false,
+      "reason": "no decision returned"
+    },
+    {
+      "name": "pg_resetwal",
+      "eligible": false,
+      "reason": "no decision returned"
+    },
+    {
+      "name": "db_recover",
+      "eligible": false,
+      "reason": "no decision returned"
+    },
+    {
+      "name": "IOSDebug",
+      "eligible": false,
+      "reason": "no decision returned"
+    },
+    {
+      "name": "cvadmin",
+      "eligible": false,
+      "reason": "no decision returned"
+    },
+    {
+      "name": "phar",
+      "eligible": false,
+      "reason": "no decision returned"
+    },
+    {
+      "name": "pn",
+      "eligible": false,
+      "reason": "no decision returned"
+    },
+    {
+      "name": "sdl2-config",
+      "eligible": false,
+      "reason": "no decision returned"
+    },
+    {
+      "name": "postlock",
+      "eligible": false,
+      "reason": "no decision returned"
+    },
+    {
+      "name": "jcontrol",
+      "eligible": false,
+      "reason": "no decision returned"
+    },
+    {
+      "name": "slencheck",
+      "eligible": false,
+      "reason": "no decision returned"
+    },
+    {
+      "name": "nologin",
+      "eligible": false,
+      "reason": "no decision returned"
+    },
+    {
+      "name": "hidutil",
+      "eligible": false,
+      "reason": "no decision returned"
+    },
+    {
+      "name": "sum",
+      "eligible": false,
+      "reason": "no decision returned"
+    },
+    {
+      "name": "aslmanager",
+      "eligible": false,
+      "reason": "no decision returned"
+    },
+    {
+      "name": "sc_auth",
+      "eligible": false,
+      "reason": "no decision returned"
+    },
+    {
+      "name": "sidxindex",
+      "eligible": false,
+      "reason": "no decision returned"
+    },
+    {
+      "name": "ktrace",
+      "eligible": false,
+      "reason": "no decision returned"
+    },
+    {
+      "name": "rvim",
+      "eligible": false,
+      "reason": "no decision returned"
+    },
+    {
+      "name": "libnetcfg5.34",
+      "eligible": false,
+      "reason": "no decision returned"
+    },
+    {
+      "name": "pcre2grep",
+      "eligible": false,
+      "reason": "no decision returned"
+    },
+    {
+      "name": "pg_dumpall-17",
+      "eligible": false,
+      "reason": "no decision returned"
+    },
+    {
+      "name": "uudecode",
+      "eligible": false,
+      "reason": "no decision returned"
+    },
+    {
+      "name": "launchd",
+      "eligible": false,
+      "reason": "no decision returned"
+    },
+    {
+      "name": "pg_checksums-17",
+      "eligible": false,
+      "reason": "no decision returned"
+    }
+  ],
+  "programs": [
+    {
+      "name": "xsubpp5.34",
+      "path": "/usr/bin/xsubpp5.34",
+      "docs": "Unknown option: help\nUsage: xsubpp [-v] [-csuffix csuffix] [-except] [-prototypes] [-noversioncheck] [-nolinenumbers] [-nooptimize] [-noinout] [-noargtypes] [-strip|s pattern] [-typemap typemap]... file.xs",
+      "tasks": [
+        {
+          "id": "xsubpp5.34#1",
+          "program": "xsubpp5.34",
+          "kind": "feasible",
+          "request": "Turn my XS file into C code, but leave out the #line directives that point back to the original file.",
+          "input": {
+            "files": {
+              "foo.xs": "#include \"EXTERN.h\"\n#include \"perl.h\"\n#include \"XSUB.h\"\n\nMODULE = Foo  PACKAGE = Foo\n\nint\nadd(a, b)\n    int a\n    int b\n  CODE:\n    RETVAL = a + b;\n  OUTPUT:\n    RETVAL\n"
+            }
+          },
+          "reference": {
+            "argv": [
+              "-nolinenumbers",
+              "foo.xs"
+            ]
+          },
+          "compare": "contains-all",
+          "expect": [
+            "XS_Foo_add",
+            "RETVAL = a + b;"
+          ],
+          "expected": "/*\n * This file was generated automatically by ExtUtils::ParseXS version 3.43 from the\n * contents of foo.xs. Do not edit this file, edit foo.xs instead.\n *\n *    ANY CHANGES MADE HERE WILL BE LOST!\n *\n */\n\n#include \"EXTERN.h\"\n#include \"perl.h\"\n#include \"XSUB.h\"\n\n#ifndef PERL_UNUSED_VAR\n#  define PERL_UNUSED_VAR(var) if (0) var = var\n#endif\n\n#ifndef dVAR\n#  define dVAR\t\tdNOOP\n#endif\n\n\n/* This stuff is not part of the API! You have been warned. */\n#ifndef PERL_VERSION_DECIMAL\n#  define PERL_VERSION_DECIMAL(r,v,s) (r*1000000 + v*1000 + s)\n#endif\n#ifndef PERL_DECIMAL_VERSION\n#  define PERL_DECIMAL_VERSION \\\n\t  PERL_VERSION_DECIMAL(PERL_REVISION,PERL_VERSION,PERL_SUBVERSION)\n#endif\n#ifndef PERL_VERSION_GE\n#  define PERL_VERSION_GE(r,v,s) \\\n\t  (PERL_DECIMAL_VERSION >= PERL_VERSION_DECIMAL(r,v,s))\n#endif\n#ifndef PERL_VERSION_LE\n#  define PERL_VERSION_LE(r,v,s) \\\n\t  (PERL_DECIMAL_VERSION <= PERL_VERSION_DECIMAL(r,v,s))\n#endif\n\n/* XS_INTERNAL is the explicit static-linkage variant of the default\n * XS macro.\n *\n * XS_EXTERNAL is the same as XS_INTERNAL except it does not include\n * \"STATIC\", ie. it exports XSUB symbols. You probably don't want that\n * for anything but the BOOT XSUB.\n *\n * See XSUB.h in core!\n */\n\n\n/* TODO: This might be compatible further back than 5.10.0. */\n#if PERL_VERSION_GE(5, 10, 0) && PERL_VERSION_LE(5, 15, 1)\n#  undef XS_EXTERNAL\n#  undef XS_INTERNAL\n#  if defined(__CYGWIN__) && defined(USE_DYNAMIC_LOADING)\n#    define XS_EXTERNAL(name) __declspec(dllexport) XSPROTO(name)\n#    define XS_INTERNAL(name) STATIC XSPROTO(name)\n#  endif\n#  if defined(__SYMBIAN32__)\n#    define XS_EXTERNAL(name) EXPORT_C XSPROTO(name)\n#    define XS_INTERNAL(name) EXPORT_C STATIC XSPROTO(name)\n#  endif\n#  ifndef XS_EXTERNAL\n#    if defined(HASATTRIBUTE_UNUSED) && !defined(__cplusplus)\n#      define XS_EXTERNAL(name) void name(pTHX_ CV* cv __attribute__unused__)\n#      define XS_INTERNAL(name) STATIC void name(pTHX_ CV* cv __attribute__unused__)\n#    else\n#      ifdef __cplusplus\n#        define XS_EXTERNAL(name) extern \"C\" XSPROTO(name)\n#        define XS_INTERNAL(name) static XSPROTO(name)\n#      else\n#        define XS_EXTERNAL(name) XSPROTO(name)\n#        define XS_INTERNAL(name) STATIC XSPROTO(name)\n#      endif\n#    endif\n#  endif\n#endif\n\n/* perl >= 5.10.0 && perl <= 5.15.1 */\n\n\n/* The XS_EXTERNAL macro is used for functions that must not be static\n * like the boot XSUB of a module. If perl didn't have an XS_EXTERNAL\n * macro defined, the best we can do is assume XS is the same.\n * Dito for XS_INTERNAL.\n */\n#ifndef XS_EXTERNAL\n#  define XS_EXTERNAL(name) XS(name)\n#endif\n#ifndef XS_INTERNAL\n#  define XS_INTERNAL(name) XS(name)\n#endif\n\n/* Now, finally, after all this mess, we want an ExtUtils::ParseXS\n * internal macro that we're free to redefine for varying linkage due\n * to the EXPORT_XSUB_SYMBOLS XS keyword. This is internal, use\n * XS_EXTERNAL(name) or XS_INTERNAL(name) in your code if you need to!\n */\n\n#undef XS_EUPXS\n#if defined(PERL_EUPXS_ALWAYS_EXPORT)\n#  define XS_EUPXS(name) XS_EXTERNAL(name)\n#else\n   /* default to internal */\n#  define XS_EUPXS(name) XS_INTERNAL(name)\n#endif\n\n#ifndef PERL_ARGS_ASSERT_CROAK_XS_USAGE\n#define PERL_ARGS_ASSERT_CROAK_XS_USAGE assert(cv); assert(params)\n\n/* prototype to pass -Wmissing-prototypes */\nSTATIC void\nS_croak_xs_usage(const CV *const cv, const char *const params);\n\nSTATIC void\nS_croak_xs_usage(const CV *const cv, const char *const params)\n{\n    const GV *const gv = CvGV(cv);\n\n    PERL_ARGS_ASSERT_CROAK_XS_USAGE;\n\n    if (gv) {\n        const char *const gvname = GvNAME(gv);\n        const HV *const stash = GvSTASH(gv);\n        const char *const hvname = stash ? HvNAME(stash) : NULL;\n\n        if (hvname)\n\t    Perl_croak_nocontext(\"Usage: %s::%s(%s)\", hvname, gvname, params);\n        else\n\t    Perl_croak_nocontext(\"Usage: %s(%s)\", gvname, params);\n    } else {\n        /* Pants. I don't think that it should be possible to get here. */\n\tPerl_croak_nocontext(\"Usage: CODE(0x%\" UVxf \")(%s)\", PTR2UV(cv), params);\n    }\n}\n#undef  PERL_ARGS_ASSERT_CROAK_XS_USAGE\n\n#define croak_xs_usage        S_croak_xs_usage\n\n#endif\n\n/* NOTE: the prototype of newXSproto() is different in versions of perls,\n * so we define a portable version of newXSproto()\n */\n#ifdef newXS_flags\n#define newXSproto_portable(name, c_impl, file, proto) newXS_flags(name, c_impl, file, proto, 0)\n#else\n#define newXSproto_portable(name, c_impl, file, proto) (PL_Sv=(SV*)newXS(name, c_impl, file), sv_setpv(PL_Sv, proto), (CV*)PL_Sv)\n#endif /* !defined(newXS_flags) */\n\n#if PERL_VERSION_LE(5, 21, 5)\n#  define newXS_deffile(a,b) Perl_newXS(aTHX_ a,b,file)\n#else\n#  define newXS_deffile(a,b) Perl_newXS_deffile(aTHX_ a,b)\n#endif\n\n\nXS_EUPXS(XS_Foo_add); /* prototype to pass -Wmissing-prototypes */\nXS_EUPXS(XS_Foo_add)\n{\n    dVAR; dXSARGS;\n    if (items != 2)\n       croak_xs_usage(cv,  \"a, b\");\n    {\n\tint\ta = (int)SvIV(ST(0))\n;\n\tint\tb = (int)SvIV(ST(1))\n;\n\tint\tRETVAL;\n\tdXSTARG;\n    RETVAL = a + b;\n\tXSprePUSH; PUSHi((IV)RETVAL);\n    }\n    XSRETURN(1);\n}\n\n#ifdef __cplusplus\nextern \"C\"\n#endif\nXS_EXTERNAL(boot_Foo); /* prototype to pass -Wmissing-prototypes */\nXS_EXTERNAL(boot_Foo)\n{\n#if PERL_VERSION_LE(5, 21, 5)\n    dVAR; dXSARGS;\n#else\n    dVAR; dXSBOOTARGSXSAPIVERCHK;\n#endif\n#if PERL_VERSION_LE(5, 8, 999) /* PERL_VERSION_LT is 5.33+ */\n    char* file = __FILE__;\n#else\n    const char* file = __FILE__;\n#endif\n\n    PERL_UNUSED_VAR(file);\n\n    PERL_UNUSED_VAR(cv); /* -W */\n    PERL_UNUSED_VAR(items); /* -W */\n#if PERL_VERSION_LE(5, 21, 5)\n    XS_VERSION_BOOTCHECK;\n#  ifdef XS_APIVERSION_BOOTCHECK\n    XS_APIVERSION_BOOTCHECK;\n#  endif\n#endif\n\n        newXS_deffile(\"Foo::add\", XS_Foo_add);\n#if PERL_VERSION_LE(5, 21, 5)\n#  if PERL_VERSION_GE(5, 9, 0)\n    if (PL_unitcheckav)\n        call_list(PL_scopestack_ix, PL_unitcheckav);\n#  endif\n    XSRETURN_YES;\n#else\n    Perl_xs_boot_epilog(aTHX_ ax);\n#endif\n}\n\n",
+          "valid": true
+        },
+        {
+          "id": "xsubpp5.34#2",
+          "program": "xsubpp5.34",
+          "kind": "feasible",
+          "request": "Generate the C glue code for this XS file, and give the Perl function a prototype so Perl knows it takes two scalar arguments.",
+          "input": {
+            "files": {
+              "foo.xs": "#include \"EXTERN.h\"\n#include \"perl.h\"\n#include \"XSUB.h\"\n\nMODULE = Foo  PACKAGE = Foo\n\nint\nadd(a, b)\n    int a\n    int b\n  CODE:\n    RETVAL = a + b;\n  OUTPUT:\n    RETVAL\n"
+            }
+          },
+          "reference": {
+            "argv": [
+              "-prototypes",
+              "foo.xs"
+            ]
+          },
+          "compare": "contains-all",
+          "expect": [
+            "XS_Foo_add",
+            "\"$$\""
+          ],
+          "expected": "/*\n * This file was generated automatically by ExtUtils::ParseXS version 3.43 from the\n * contents of foo.xs. Do not edit this file, edit foo.xs instead.\n *\n *    ANY CHANGES MADE HERE WILL BE LOST!\n *\n */\n\n#line 1 \"foo.xs\"\n#include \"EXTERN.h\"\n#include \"perl.h\"\n#include \"XSUB.h\"\n\n#line 15 \"foo.c\"\n#ifndef PERL_UNUSED_VAR\n#  define PERL_UNUSED_VAR(var) if (0) var = var\n#endif\n\n#ifndef dVAR\n#  define dVAR\t\tdNOOP\n#endif\n\n\n/* This stuff is not part of the API! You have been warned. */\n#ifndef PERL_VERSION_DECIMAL\n#  define PERL_VERSION_DECIMAL(r,v,s) (r*1000000 + v*1000 + s)\n#endif\n#ifndef PERL_DECIMAL_VERSION\n#  define PERL_DECIMAL_VERSION \\\n\t  PERL_VERSION_DECIMAL(PERL_REVISION,PERL_VERSION,PERL_SUBVERSION)\n#endif\n#ifndef PERL_VERSION_GE\n#  define PERL_VERSION_GE(r,v,s) \\\n\t  (PERL_DECIMAL_VERSION >= PERL_VERSION_DECIMAL(r,v,s))\n#endif\n#ifndef PERL_VERSION_LE\n#  define PERL_VERSION_LE(r,v,s) \\\n\t  (PERL_DECIMAL_VERSION <= PERL_VERSION_DECIMAL(r,v,s))\n#endif\n\n/* XS_INTERNAL is the explicit static-linkage variant of the default\n * XS macro.\n *\n * XS_EXTERNAL is the same as XS_INTERNAL except it does not include\n * \"STATIC\", ie. it exports XSUB symbols. You probably don't want that\n * for anything but the BOOT XSUB.\n *\n * See XSUB.h in core!\n */\n\n\n/* TODO: This might be compatible further back than 5.10.0. */\n#if PERL_VERSION_GE(5, 10, 0) && PERL_VERSION_LE(5, 15, 1)\n#  undef XS_EXTERNAL\n#  undef XS_INTERNAL\n#  if defined(__CYGWIN__) && defined(USE_DYNAMIC_LOADING)\n#    define XS_EXTERNAL(name) __declspec(dllexport) XSPROTO(name)\n#    define XS_INTERNAL(name) STATIC XSPROTO(name)\n#  endif\n#  if defined(__SYMBIAN32__)\n#    define XS_EXTERNAL(name) EXPORT_C XSPROTO(name)\n#    define XS_INTERNAL(name) EXPORT_C STATIC XSPROTO(name)\n#  endif\n#  ifndef XS_EXTERNAL\n#    if defined(HASATTRIBUTE_UNUSED) && !defined(__cplusplus)\n#      define XS_EXTERNAL(name) void name(pTHX_ CV* cv __attribute__unused__)\n#      define XS_INTERNAL(name) STATIC void name(pTHX_ CV* cv __attribute__unused__)\n#    else\n#      ifdef __cplusplus\n#        define XS_EXTERNAL(name) extern \"C\" XSPROTO(name)\n#        define XS_INTERNAL(name) static XSPROTO(name)\n#      else\n#        define XS_EXTERNAL(name) XSPROTO(name)\n#        define XS_INTERNAL(name) STATIC XSPROTO(name)\n#      endif\n#    endif\n#  endif\n#endif\n\n/* perl >= 5.10.0 && perl <= 5.15.1 */\n\n\n/* The XS_EXTERNAL macro is used for functions that must not be static\n * like the boot XSUB of a module. If perl didn't have an XS_EXTERNAL\n * macro defined, the best we can do is assume XS is the same.\n * Dito for XS_INTERNAL.\n */\n#ifndef XS_EXTERNAL\n#  define XS_EXTERNAL(name) XS(name)\n#endif\n#ifndef XS_INTERNAL\n#  define XS_INTERNAL(name) XS(name)\n#endif\n\n/* Now, finally, after all this mess, we want an ExtUtils::ParseXS\n * internal macro that we're free to redefine for varying linkage due\n * to the EXPORT_XSUB_SYMBOLS XS keyword. This is internal, use\n * XS_EXTERNAL(name) or XS_INTERNAL(name) in your code if you need to!\n */\n\n#undef XS_EUPXS\n#if defined(PERL_EUPXS_ALWAYS_EXPORT)\n#  define XS_EUPXS(name) XS_EXTERNAL(name)\n#else\n   /* default to internal */\n#  define XS_EUPXS(name) XS_INTERNAL(name)\n#endif\n\n#ifndef PERL_ARGS_ASSERT_CROAK_XS_USAGE\n#define PERL_ARGS_ASSERT_CROAK_XS_USAGE assert(cv); assert(params)\n\n/* prototype to pass -Wmissing-prototypes */\nSTATIC void\nS_croak_xs_usage(const CV *const cv, const char *const params);\n\nSTATIC void\nS_croak_xs_usage(const CV *const cv, const char *const params)\n{\n    const GV *const gv = CvGV(cv);\n\n    PERL_ARGS_ASSERT_CROAK_XS_USAGE;\n\n    if (gv) {\n        const char *const gvname = GvNAME(gv);\n        const HV *const stash = GvSTASH(gv);\n        const char *const hvname = stash ? HvNAME(stash) : NULL;\n\n        if (hvname)\n\t    Perl_croak_nocontext(\"Usage: %s::%s(%s)\", hvname, gvname, params);\n        else\n\t    Perl_croak_nocontext(\"Usage: %s(%s)\", gvname, params);\n    } else {\n        /* Pants. I don't think that it should be possible to get here. */\n\tPerl_croak_nocontext(\"Usage: CODE(0x%\" UVxf \")(%s)\", PTR2UV(cv), params);\n    }\n}\n#undef  PERL_ARGS_ASSERT_CROAK_XS_USAGE\n\n#define croak_xs_usage        S_croak_xs_usage\n\n#endif\n\n/* NOTE: the prototype of newXSproto() is different in versions of perls,\n * so we define a portable version of newXSproto()\n */\n#ifdef newXS_flags\n#define newXSproto_portable(name, c_impl, file, proto) newXS_flags(name, c_impl, file, proto, 0)\n#else\n#define newXSproto_portable(name, c_impl, file, proto) (PL_Sv=(SV*)newXS(name, c_impl, file), sv_setpv(PL_Sv, proto), (CV*)PL_Sv)\n#endif /* !defined(newXS_flags) */\n\n#if PERL_VERSION_LE(5, 21, 5)\n#  define newXS_deffile(a,b) Perl_newXS(aTHX_ a,b,file)\n#else\n#  define newXS_deffile(a,b) Perl_newXS_deffile(aTHX_ a,b)\n#endif\n\n#line 159 \"foo.c\"\n\nXS_EUPXS(XS_Foo_add); /* prototype to pass -Wmissing-prototypes */\nXS_EUPXS(XS_Foo_add)\n{\n    dVAR; dXSARGS;\n    if (items != 2)\n       croak_xs_usage(cv,  \"a, b\");\n    {\n\tint\ta = (int)SvIV(ST(0))\n;\n\tint\tb = (int)SvIV(ST(1))\n;\n\tint\tRETVAL;\n\tdXSTARG;\n#line 12 \"foo.xs\"\n    RETVAL = a + b;\n#line 176 \"foo.c\"\n\tXSprePUSH; PUSHi((IV)RETVAL);\n    }\n    XSRETURN(1);\n}\n\n#ifdef __cplusplus\nextern \"C\"\n#endif\nXS_EXTERNAL(boot_Foo); /* prototype to pass -Wmissing-prototypes */\nXS_EXTERNAL(boot_Foo)\n{\n#if PERL_VERSION_LE(5, 21, 5)\n    dVAR; dXSARGS;\n#else\n    dVAR; dXSBOOTARGSXSAPIVERCHK;\n#endif\n#if PERL_VERSION_LE(5, 8, 999) /* PERL_VERSION_LT is 5.33+ */\n    char* file = __FILE__;\n#else\n    const char* file = __FILE__;\n#endif\n\n    PERL_UNUSED_VAR(file);\n\n    PERL_UNUSED_VAR(cv); /* -W */\n    PERL_UNUSED_VAR(items); /* -W */\n#if PERL_VERSION_LE(5, 21, 5)\n    XS_VERSION_BOOTCHECK;\n#  ifdef XS_APIVERSION_BOOTCHECK\n    XS_APIVERSION_BOOTCHECK;\n#  endif\n#endif\n\n        (void)newXSproto_portable(\"Foo::add\", XS_Foo_add, file, \"$$\");\n#if PERL_VERSION_LE(5, 21, 5)\n#  if PERL_VERSION_GE(5, 9, 0)\n    if (PL_unitcheckav)\n        call_list(PL_scopestack_ix, PL_unitcheckav);\n#  endif\n    XSRETURN_YES;\n#else\n    Perl_xs_boot_epilog(aTHX_ ax);\n#endif\n}\n\n",
+          "valid": true
+        },
+        {
+          "id": "xsubpp5.34#3",
+          "program": "xsubpp5.34",
+          "kind": "feasible",
+          "request": "Convert this XS file to C, wrapping each function body in exception-handling code.",
+          "input": {
+            "files": {
+              "bar.xs": "#include \"EXTERN.h\"\n#include \"perl.h\"\n#include \"XSUB.h\"\n\nMODULE = Bar  PACKAGE = Bar\n\nint\ntwice(x)\n    int x\n  CODE:\n    RETVAL = x * 2;\n  OUTPUT:\n    RETVAL\n"
+            }
+          },
+          "reference": {
+            "argv": [
+              "-except",
+              "bar.xs"
+            ]
+          },
+          "compare": "contains-all",
+          "expect": [
+            "XS_Bar_twice",
+            "TRY",
+            "errbuf"
+          ],
+          "expected": "/*\n * This file was generated automatically by ExtUtils::ParseXS version 3.43 from the\n * contents of bar.xs. Do not edit this file, edit bar.xs instead.\n *\n *    ANY CHANGES MADE HERE WILL BE LOST!\n *\n */\n\n#line 1 \"bar.xs\"\n#include \"EXTERN.h\"\n#include \"perl.h\"\n#include \"XSUB.h\"\n\n#line 15 \"bar.c\"\n#ifndef PERL_UNUSED_VAR\n#  define PERL_UNUSED_VAR(var) if (0) var = var\n#endif\n\n#ifndef dVAR\n#  define dVAR\t\tdNOOP\n#endif\n\n\n/* This stuff is not part of the API! You have been warned. */\n#ifndef PERL_VERSION_DECIMAL\n#  define PERL_VERSION_DECIMAL(r,v,s) (r*1000000 + v*1000 + s)\n#endif\n#ifndef PERL_DECIMAL_VERSION\n#  define PERL_DECIMAL_VERSION \\\n\t  PERL_VERSION_DECIMAL(PERL_REVISION,PERL_VERSION,PERL_SUBVERSION)\n#endif\n#ifndef PERL_VERSION_GE\n#  define PERL_VERSION_GE(r,v,s) \\\n\t  (PERL_DECIMAL_VERSION >= PERL_VERSION_DECIMAL(r,v,s))\n#endif\n#ifndef PERL_VERSION_LE\n#  define PERL_VERSION_LE(r,v,s) \\\n\t  (PERL_DECIMAL_VERSION <= PERL_VERSION_DECIMAL(r,v,s))\n#endif\n\n/* XS_INTERNAL is the explicit static-linkage variant of the default\n * XS macro.\n *\n * XS_EXTERNAL is the same as XS_INTERNAL except it does not include\n * \"STATIC\", ie. it exports XSUB symbols. You probably don't want that\n * for anything but the BOOT XSUB.\n *\n * See XSUB.h in core!\n */\n\n\n/* TODO: This might be compatible further back than 5.10.0. */\n#if PERL_VERSION_GE(5, 10, 0) && PERL_VERSION_LE(5, 15, 1)\n#  undef XS_EXTERNAL\n#  undef XS_INTERNAL\n#  if defined(__CYGWIN__) && defined(USE_DYNAMIC_LOADING)\n#    define XS_EXTERNAL(name) __declspec(dllexport) XSPROTO(name)\n#    define XS_INTERNAL(name) STATIC XSPROTO(name)\n#  endif\n#  if defined(__SYMBIAN32__)\n#    define XS_EXTERNAL(name) EXPORT_C XSPROTO(name)\n#    define XS_INTERNAL(name) EXPORT_C STATIC XSPROTO(name)\n#  endif\n#  ifndef XS_EXTERNAL\n#    if defined(HASATTRIBUTE_UNUSED) && !defined(__cplusplus)\n#      define XS_EXTERNAL(name) void name(pTHX_ CV* cv __attribute__unused__)\n#      define XS_INTERNAL(name) STATIC void name(pTHX_ CV* cv __attribute__unused__)\n#    else\n#      ifdef __cplusplus\n#        define XS_EXTERNAL(name) extern \"C\" XSPROTO(name)\n#        define XS_INTERNAL(name) static XSPROTO(name)\n#      else\n#        define XS_EXTERNAL(name) XSPROTO(name)\n#        define XS_INTERNAL(name) STATIC XSPROTO(name)\n#      endif\n#    endif\n#  endif\n#endif\n\n/* perl >= 5.10.0 && perl <= 5.15.1 */\n\n\n/* The XS_EXTERNAL macro is used for functions that must not be static\n * like the boot XSUB of a module. If perl didn't have an XS_EXTERNAL\n * macro defined, the best we can do is assume XS is the same.\n * Dito for XS_INTERNAL.\n */\n#ifndef XS_EXTERNAL\n#  define XS_EXTERNAL(name) XS(name)\n#endif\n#ifndef XS_INTERNAL\n#  define XS_INTERNAL(name) XS(name)\n#endif\n\n/* Now, finally, after all this mess, we want an ExtUtils::ParseXS\n * internal macro that we're free to redefine for varying linkage due\n * to the EXPORT_XSUB_SYMBOLS XS keyword. This is internal, use\n * XS_EXTERNAL(name) or XS_INTERNAL(name) in your code if you need to!\n */\n\n#undef XS_EUPXS\n#if defined(PERL_EUPXS_ALWAYS_EXPORT)\n#  define XS_EUPXS(name) XS_EXTERNAL(name)\n#else\n   /* default to internal */\n#  define XS_EUPXS(name) XS_INTERNAL(name)\n#endif\n\n#ifndef PERL_ARGS_ASSERT_CROAK_XS_USAGE\n#define PERL_ARGS_ASSERT_CROAK_XS_USAGE assert(cv); assert(params)\n\n/* prototype to pass -Wmissing-prototypes */\nSTATIC void\nS_croak_xs_usage(const CV *const cv, const char *const params);\n\nSTATIC void\nS_croak_xs_usage(const CV *const cv, const char *const params)\n{\n    const GV *const gv = CvGV(cv);\n\n    PERL_ARGS_ASSERT_CROAK_XS_USAGE;\n\n    if (gv) {\n        const char *const gvname = GvNAME(gv);\n        const HV *const stash = GvSTASH(gv);\n        const char *const hvname = stash ? HvNAME(stash) : NULL;\n\n        if (hvname)\n\t    Perl_croak_nocontext(\"Usage: %s::%s(%s)\", hvname, gvname, params);\n        else\n\t    Perl_croak_nocontext(\"Usage: %s(%s)\", gvname, params);\n    } else {\n        /* Pants. I don't think that it should be possible to get here. */\n\tPerl_croak_nocontext(\"Usage: CODE(0x%\" UVxf \")(%s)\", PTR2UV(cv), params);\n    }\n}\n#undef  PERL_ARGS_ASSERT_CROAK_XS_USAGE\n\n#define croak_xs_usage        S_croak_xs_usage\n\n#endif\n\n/* NOTE: the prototype of newXSproto() is different in versions of perls,\n * so we define a portable version of newXSproto()\n */\n#ifdef newXS_flags\n#define newXSproto_portable(name, c_impl, file, proto) newXS_flags(name, c_impl, file, proto, 0)\n#else\n#define newXSproto_portable(name, c_impl, file, proto) (PL_Sv=(SV*)newXS(name, c_impl, file), sv_setpv(PL_Sv, proto), (CV*)PL_Sv)\n#endif /* !defined(newXS_flags) */\n\n#if PERL_VERSION_LE(5, 21, 5)\n#  define newXS_deffile(a,b) Perl_newXS(aTHX_ a,b,file)\n#else\n#  define newXS_deffile(a,b) Perl_newXS_deffile(aTHX_ a,b)\n#endif\n\n#line 159 \"bar.c\"\n\nXS_EUPXS(XS_Bar_twice); /* prototype to pass -Wmissing-prototypes */\nXS_EUPXS(XS_Bar_twice)\n{\n    dVAR; dXSARGS;\n    char errbuf[1024];\n    *errbuf = '\\0';\n    if (items != 1)\n       croak_xs_usage(cv,  \"x\");\n    TRY {\n\tint\tx = (int)SvIV(ST(0))\n;\n\tint\tRETVAL;\n\tdXSTARG;\n#line 11 \"bar.xs\"\n    RETVAL = x * 2;\n#line 176 \"bar.c\"\n\tXSprePUSH; PUSHi((IV)RETVAL);\n    }\n    BEGHANDLERS\n    CATCHALL\n    sprintf(errbuf, \"%s: %s\\tpropagated\", Xname, Xreason);\n    ENDHANDLERS\n    if (errbuf[0])\n    Perl_croak(aTHX_ errbuf);\n    XSRETURN(1);\n}\n\n#ifdef __cplusplus\nextern \"C\"\n#endif\nXS_EXTERNAL(boot_Bar); /* prototype to pass -Wmissing-prototypes */\nXS_EXTERNAL(boot_Bar)\n{\n#if PERL_VERSION_LE(5, 21, 5)\n    dVAR; dXSARGS;\n#else\n    dVAR; dXSBOOTARGSXSAPIVERCHK;\n#endif\n#if PERL_VERSION_LE(5, 8, 999) /* PERL_VERSION_LT is 5.33+ */\n    char* file = __FILE__;\n#else\n    const char* file = __FILE__;\n#endif\n\n    PERL_UNUSED_VAR(file);\n\n    PERL_UNUSED_VAR(cv); /* -W */\n    PERL_UNUSED_VAR(items); /* -W */\n#if PERL_VERSION_LE(5, 21, 5)\n    XS_VERSION_BOOTCHECK;\n#  ifdef XS_APIVERSION_BOOTCHECK\n    XS_APIVERSION_BOOTCHECK;\n#  endif\n#endif\n\n        newXS_deffile(\"Bar::twice\", XS_Bar_twice);\n#if PERL_VERSION_LE(5, 21, 5)\n#  if PERL_VERSION_GE(5, 9, 0)\n    if (PL_unitcheckav)\n        call_list(PL_scopestack_ix, PL_unitcheckav);\n#  endif\n    XSRETURN_YES;\n#else\n    Perl_xs_boot_epilog(aTHX_ ax);\n#endif\n}\n\n",
+          "valid": true
+        },
+        {
+          "id": "xsubpp5.34#4",
+          "program": "xsubpp5.34",
+          "kind": "feasible",
+          "request": "My XS file uses a custom C type called Color. Use my extra typemap file, which says to treat Color as an integer, and generate the C code.",
+          "input": {
+            "files": {
+              "paint.xs": "#include \"EXTERN.h\"\n#include \"perl.h\"\n#include \"XSUB.h\"\n\ntypedef int Color;\n\nMODULE = Paint  PACKAGE = Paint\n\nint\nbrightness(c)\n    Color c\n  CODE:\n    RETVAL = c / 2;\n  OUTPUT:\n    RETVAL\n",
+              "mytypemap": "TYPEMAP\nColor\tT_IV\n"
+            }
+          },
+          "reference": {
+            "argv": [
+              "-typemap",
+              "mytypemap",
+              "paint.xs"
+            ]
+          },
+          "compare": "contains-all",
+          "expect": [
+            "XS_Paint_brightness",
+            "(Color)SvIV(ST(0))"
+          ],
+          "expected": "/*\n * This file was generated automatically by ExtUtils::ParseXS version 3.43 from the\n * contents of paint.xs. Do not edit this file, edit paint.xs instead.\n *\n *    ANY CHANGES MADE HERE WILL BE LOST!\n *\n */\n\n#line 1 \"paint.xs\"\n#include \"EXTERN.h\"\n#include \"perl.h\"\n#include \"XSUB.h\"\n\ntypedef int Color;\n\n#line 17 \"paint.c\"\n#ifndef PERL_UNUSED_VAR\n#  define PERL_UNUSED_VAR(var) if (0) var = var\n#endif\n\n#ifndef dVAR\n#  define dVAR\t\tdNOOP\n#endif\n\n\n/* This stuff is not part of the API! You have been warned. */\n#ifndef PERL_VERSION_DECIMAL\n#  define PERL_VERSION_DECIMAL(r,v,s) (r*1000000 + v*1000 + s)\n#endif\n#ifndef PERL_DECIMAL_VERSION\n#  define PERL_DECIMAL_VERSION \\\n\t  PERL_VERSION_DECIMAL(PERL_REVISION,PERL_VERSION,PERL_SUBVERSION)\n#endif\n#ifndef PERL_VERSION_GE\n#  define PERL_VERSION_GE(r,v,s) \\\n\t  (PERL_DECIMAL_VERSION >= PERL_VERSION_DECIMAL(r,v,s))\n#endif\n#ifndef PERL_VERSION_LE\n#  define PERL_VERSION_LE(r,v,s) \\\n\t  (PERL_DECIMAL_VERSION <= PERL_VERSION_DECIMAL(r,v,s))\n#endif\n\n/* XS_INTERNAL is the explicit static-linkage variant of the default\n * XS macro.\n *\n * XS_EXTERNAL is the same as XS_INTERNAL except it does not include\n * \"STATIC\", ie. it exports XSUB symbols. You probably don't want that\n * for anything but the BOOT XSUB.\n *\n * See XSUB.h in core!\n */\n\n\n/* TODO: This might be compatible further back than 5.10.0. */\n#if PERL_VERSION_GE(5, 10, 0) && PERL_VERSION_LE(5, 15, 1)\n#  undef XS_EXTERNAL\n#  undef XS_INTERNAL\n#  if defined(__CYGWIN__) && defined(USE_DYNAMIC_LOADING)\n#    define XS_EXTERNAL(name) __declspec(dllexport) XSPROTO(name)\n#    define XS_INTERNAL(name) STATIC XSPROTO(name)\n#  endif\n#  if defined(__SYMBIAN32__)\n#    define XS_EXTERNAL(name) EXPORT_C XSPROTO(name)\n#    define XS_INTERNAL(name) EXPORT_C STATIC XSPROTO(name)\n#  endif\n#  ifndef XS_EXTERNAL\n#    if defined(HASATTRIBUTE_UNUSED) && !defined(__cplusplus)\n#      define XS_EXTERNAL(name) void name(pTHX_ CV* cv __attribute__unused__)\n#      define XS_INTERNAL(name) STATIC void name(pTHX_ CV* cv __attribute__unused__)\n#    else\n#      ifdef __cplusplus\n#        define XS_EXTERNAL(name) extern \"C\" XSPROTO(name)\n#        define XS_INTERNAL(name) static XSPROTO(name)\n#      else\n#        define XS_EXTERNAL(name) XSPROTO(name)\n#        define XS_INTERNAL(name) STATIC XSPROTO(name)\n#      endif\n#    endif\n#  endif\n#endif\n\n/* perl >= 5.10.0 && perl <= 5.15.1 */\n\n\n/* The XS_EXTERNAL macro is used for functions that must not be static\n * like the boot XSUB of a module. If perl didn't have an XS_EXTERNAL\n * macro defined, the best we can do is assume XS is the same.\n * Dito for XS_INTERNAL.\n */\n#ifndef XS_EXTERNAL\n#  define XS_EXTERNAL(name) XS(name)\n#endif\n#ifndef XS_INTERNAL\n#  define XS_INTERNAL(name) XS(name)\n#endif\n\n/* Now, finally, after all this mess, we want an ExtUtils::ParseXS\n * internal macro that we're free to redefine for varying linkage due\n * to the EXPORT_XSUB_SYMBOLS XS keyword. This is internal, use\n * XS_EXTERNAL(name) or XS_INTERNAL(name) in your code if you need to!\n */\n\n#undef XS_EUPXS\n#if defined(PERL_EUPXS_ALWAYS_EXPORT)\n#  define XS_EUPXS(name) XS_EXTERNAL(name)\n#else\n   /* default to internal */\n#  define XS_EUPXS(name) XS_INTERNAL(name)\n#endif\n\n#ifndef PERL_ARGS_ASSERT_CROAK_XS_USAGE\n#define PERL_ARGS_ASSERT_CROAK_XS_USAGE assert(cv); assert(params)\n\n/* prototype to pass -Wmissing-prototypes */\nSTATIC void\nS_croak_xs_usage(const CV *const cv, const char *const params);\n\nSTATIC void\nS_croak_xs_usage(const CV *const cv, const char *const params)\n{\n    const GV *const gv = CvGV(cv);\n\n    PERL_ARGS_ASSERT_CROAK_XS_USAGE;\n\n    if (gv) {\n        const char *const gvname = GvNAME(gv);\n        const HV *const stash = GvSTASH(gv);\n        const char *const hvname = stash ? HvNAME(stash) : NULL;\n\n        if (hvname)\n\t    Perl_croak_nocontext(\"Usage: %s::%s(%s)\", hvname, gvname, params);\n        else\n\t    Perl_croak_nocontext(\"Usage: %s(%s)\", gvname, params);\n    } else {\n        /* Pants. I don't think that it should be possible to get here. */\n\tPerl_croak_nocontext(\"Usage: CODE(0x%\" UVxf \")(%s)\", PTR2UV(cv), params);\n    }\n}\n#undef  PERL_ARGS_ASSERT_CROAK_XS_USAGE\n\n#define croak_xs_usage        S_croak_xs_usage\n\n#endif\n\n/* NOTE: the prototype of newXSproto() is different in versions of perls,\n * so we define a portable version of newXSproto()\n */\n#ifdef newXS_flags\n#define newXSproto_portable(name, c_impl, file, proto) newXS_flags(name, c_impl, file, proto, 0)\n#else\n#define newXSproto_portable(name, c_impl, file, proto) (PL_Sv=(SV*)newXS(name, c_impl, file), sv_setpv(PL_Sv, proto), (CV*)PL_Sv)\n#endif /* !defined(newXS_flags) */\n\n#if PERL_VERSION_LE(5, 21, 5)\n#  define newXS_deffile(a,b) Perl_newXS(aTHX_ a,b,file)\n#else\n#  define newXS_deffile(a,b) Perl_newXS_deffile(aTHX_ a,b)\n#endif\n\n#line 161 \"paint.c\"\n\nXS_EUPXS(XS_Paint_brightness); /* prototype to pass -Wmissing-prototypes */\nXS_EUPXS(XS_Paint_brightness)\n{\n    dVAR; dXSARGS;\n    if (items != 1)\n       croak_xs_usage(cv,  \"c\");\n    {\n\tColor\tc = (Color)SvIV(ST(0))\n;\n\tint\tRETVAL;\n\tdXSTARG;\n#line 13 \"paint.xs\"\n    RETVAL = c / 2;\n#line 176 \"paint.c\"\n\tXSprePUSH; PUSHi((IV)RETVAL);\n    }\n    XSRETURN(1);\n}\n\n#ifdef __cplusplus\nextern \"C\"\n#endif\nXS_EXTERNAL(boot_Paint); /* prototype to pass -Wmissing-prototypes */\nXS_EXTERNAL(boot_Paint)\n{\n#if PERL_VERSION_LE(5, 21, 5)\n    dVAR; dXSARGS;\n#else\n    dVAR; dXSBOOTARGSXSAPIVERCHK;\n#endif\n#if PERL_VERSION_LE(5, 8, 999) /* PERL_VERSION_LT is 5.33+ */\n    char* file = __FILE__;\n#else\n    const char* file = __FILE__;\n#endif\n\n    PERL_UNUSED_VAR(file);\n\n    PERL_UNUSED_VAR(cv); /* -W */\n    PERL_UNUSED_VAR(items); /* -W */\n#if PERL_VERSION_LE(5, 21, 5)\n    XS_VERSION_BOOTCHECK;\n#  ifdef XS_APIVERSION_BOOTCHECK\n    XS_APIVERSION_BOOTCHECK;\n#  endif\n#endif\n\n        newXS_deffile(\"Paint::brightness\", XS_Paint_brightness);\n#if PERL_VERSION_LE(5, 21, 5)\n#  if PERL_VERSION_GE(5, 9, 0)\n    if (PL_unitcheckav)\n        call_list(PL_scopestack_ix, PL_unitcheckav);\n#  endif\n    XSRETURN_YES;\n#else\n    Perl_xs_boot_epilog(aTHX_ ax);\n#endif\n}\n\n",
+          "valid": true
+        },
+        {
+          "id": "xsubpp5.34#5",
+          "program": "xsubpp5.34",
+          "kind": "infeasible",
+          "request": "Compile this XS file into a loadable shared library and write the matching Foo.pm Perl module for it.",
+          "input": {
+            "files": {
+              "foo.xs": "#include \"EXTERN.h\"\n#include \"perl.h\"\n#include \"XSUB.h\"\n\nMODULE = Foo  PACKAGE = Foo\n\nint\nadd(a, b)\n    int a\n    int b\n  CODE:\n    RETVAL = a + b;\n  OUTPUT:\n    RETVAL\n"
+            }
+          },
+          "valid": true
+        }
+      ],
+      "discarded": []
+    }
+  ],
+  "evaluatorCalls": [
+    {
+      "purpose": "screen",
+      "programs": [
+        "xzcmp",
+        "ri",
+        "bluetoothaudiod",
+        "usbdiagnose",
+        "debinhex.pl",
+        "ttyd"
+      ],
+      "seconds": 15,
+      "reply": "{\"programs\":[{\"name\":\"xzcmp\",\"eligible\":false,\"reason\":\"It exists to compare compressed files, and the cmp options it relies on are not documented here, so four distinct useful plain-text tasks using only the documented interface cannot be written.\",\"tasks\":[]},{\"name\":\"ri\",\"eligible\":false,\"reason\":\"It looks up installed Ruby documentation instead of processing given input, so its output depends on what is installed on the machine, and it can be interactive or run a server.\",\"tasks\":[]},{\"name\":\"bluetoothaudiod\",\"eligible\":false,\"reason\":\"No documentation is available, and the name suggests a Bluetooth audio daemon that needs hardware.\",\"tasks\":[]},{\"name\":\"usbdiagnose\",\"eligible\":false,\"reason\":\"No documentation is available, and the name suggests a USB hardware diagnostic tool that depends on machine state.\",\"tasks\":[]},{\"name\":\"debinhex.pl\",\"eligible\":false,\"reason\":\"It decodes BinHex files into output files on disk instead of writing to standard output, and its inputs are in a special encoded format.\",\"tasks\":[]},{\"name\":\"ttyd\",\"eligible\":false,\"reason\":\"It is a network server that shares a terminal over the web and does not turn input into output on stdout.\",\"tasks\":[]}]}"
+    },
+    {
+      "purpose": "screen",
+      "programs": [
+        "pg_verifybackup-17",
+        "tkcon",
+        "initdb-17",
+        "universalaccessd",
+        "power_report.sh",
+        "rotatelogs"
+      ],
+      "seconds": 11,
+      "reply": "{\"programs\":[{\"name\":\"pg_verifybackup-17\",\"eligible\":false,\"reason\":\"It needs a full PostgreSQL backup directory with a checksummed backup_manifest in a special format and usually binary WAL files, and its results go mainly to stderr, so useful tasks with small plain-text inputs cannot practically be written.\",\"tasks\":[]},{\"name\":\"tkcon\",\"eligible\":false,\"reason\":\"It is an interactive GUI console built on Tk and does not transform input into standard output.\",\"tasks\":[]},{\"name\":\"initdb-17\",\"eligible\":false,\"reason\":\"It creates a database cluster on disk by writing to a data directory, so it changes files other than temporary ones.\",\"tasks\":[]},{\"name\":\"universalaccessd\",\"eligible\":false,\"reason\":\"It is a macOS system daemon with no options that users should not run by hand.\",\"tasks\":[]},{\"name\":\"power_report.sh\",\"eligible\":false,\"reason\":\"Its documentation says it requires root privileges.\",\"tasks\":[]},{\"name\":\"rotatelogs\",\"eligible\":false,\"reason\":\"It writes and rotates log files on disk using time-based or size-based naming, so it changes files and its output depends on the time.\",\"tasks\":[]}]}"
+    },
+    {
+      "purpose": "screen",
+      "programs": [
+        "nsupdate",
+        "fixproc",
+        "autoheader",
+        "PasswordService",
+        "parldyn",
+        "rwsnoop"
+      ],
+      "seconds": 8,
+      "reply": "{\"programs\":[{\"name\":\"nsupdate\",\"eligible\":false,\"reason\":\"It sends Dynamic DNS update requests to a name server, so it needs the network and a running DNS server, and it does not transform input into output on standard output.\",\"tasks\":[]},{\"name\":\"fixproc\",\"eligible\":false,\"reason\":\"It checks, kills and restarts running processes and reads a system database, so its result depends on process state and it changes system state.\",\"tasks\":[]},{\"name\":\"autoheader\",\"eligible\":false,\"reason\":\"It writes a template header file such as config.h.in instead of writing its result to standard output, and it needs Autoconf input files and macro libraries.\",\"tasks\":[]},{\"name\":\"PasswordService\",\"eligible\":false,\"reason\":\"It is a password server daemon that must run as root and writes log files, so it does not process input data.\",\"tasks\":[]},{\"name\":\"parldyn\",\"eligible\":false,\"reason\":\"No usable documentation was given (only an error message), so it cannot be shown to meet any criterion.\",\"tasks\":[]},{\"name\":\"rwsnoop\",\"eligible\":false,\"reason\":\"It uses DTrace to trace live system read and write events, so it needs root privileges, runs until interrupted and gives non-deterministic output.\",\"tasks\":[]}]}"
+    },
+    {
+      "purpose": "screen",
+      "programs": [
+        "rtadvd",
+        "xsubpp5.34",
+        "dbiproxy5.34",
+        "rdjpgcom",
+        "llama-simple",
+        "findrule"
+      ],
+      "seconds": 34,
+      "reply": "{\"programs\":[{\"name\":\"rtadvd\",\"eligible\":false,\"reason\":\"It is a network daemon that sends IPv6 router advertisements, needs root and network interfaces, and writes pid and dump files instead of turning input into standard output.\",\"tasks\":[]},{\"name\":\"xsubpp5.34\",\"eligible\":true,\"reason\":\"It turns a plain-text .xs file operand into C code on standard output, needs no network or privileges, gives the same output for the same input, and has several options that change that output.\",\"tasks\":[{\"kind\":\"feasible\",\"request\":\"Turn my XS file into C code, but leave out the #line directives that point back to the original file.\",\"input\":{\"files\":{\"foo.xs\":\"#include \\\"EXTERN.h\\\"\\n#include \\\"perl.h\\\"\\n#include \\\"XSUB.h\\\"\\n\\nMODULE = Foo  PACKAGE = Foo\\n\\nint\\nadd(a, b)\\n    int a\\n    int b\\n  CODE:\\n    RETVAL = a + b;\\n  OUTPUT:\\n    RETVAL\\n\"}},\"reference\":{\"argv\":[\"-nolinenumbers\",\"foo.xs\"]},\"compare\":\"contains-all\",\"expect\":[\"XS_Foo_add\",\"RETVAL = a + b;\"]},{\"kind\":\"feasible\",\"request\":\"Generate the C glue code for this XS file, and give the Perl function a prototype so Perl knows it takes two scalar arguments.\",\"input\":{\"files\":{\"foo.xs\":\"#include \\\"EXTERN.h\\\"\\n#include \\\"perl.h\\\"\\n#include \\\"XSUB.h\\\"\\n\\nMODULE = Foo  PACKAGE = Foo\\n\\nint\\nadd(a, b)\\n    int a\\n    int b\\n  CODE:\\n    RETVAL = a + b;\\n  OUTPUT:\\n    RETVAL\\n\"}},\"reference\":{\"argv\":[\"-prototypes\",\"foo.xs\"]},\"compare\":\"contains-all\",\"expect\":[\"XS_Foo_add\",\"\\\"$$\\\"\"]},{\"kind\":\"feasible\",\"request\":\"Convert this XS file to C, wrapping each function body in exception-handling code.\",\"input\":{\"files\":{\"bar.xs\":\"#include \\\"EXTERN.h\\\"\\n#include \\\"perl.h\\\"\\n#include \\\"XSUB.h\\\"\\n\\nMODULE = Bar  PACKAGE = Bar\\n\\nint\\ntwice(x)\\n    int x\\n  CODE:\\n    RETVAL = x * 2;\\n  OUTPUT:\\n    RETVAL\\n\"}},\"reference\":{\"argv\":[\"-except\",\"bar.xs\"]},\"compare\":\"contains-all\",\"expect\":[\"XS_Bar_twice\",\"TRY\",\"errbuf\"]},{\"kind\":\"feasible\",\"request\":\"My XS file uses a custom C type called Color. Use my extra typemap file, which says to treat Color as an integer, and generate the C code.\",\"input\":{\"files\":{\"paint.xs\":\"#include \\\"EXTERN.h\\\"\\n#include \\\"perl.h\\\"\\n#include \\\"XSUB.h\\\"\\n\\ntypedef int Color;\\n\\nMODULE = Paint  PACKAGE = Paint\\n\\nint\\nbrightness(c)\\n    Color c\\n  CODE:\\n    RETVAL = c / 2;\\n  OUTPUT:\\n    RETVAL\\n\",\"mytypemap\":\"TYPEMAP\\nColor\\tT_IV\\n\"}},\"reference\":{\"argv\":[\"-typemap\",\"mytypemap\",\"paint.xs\"]},\"compare\":\"contains-all\",\"expect\":[\"XS_Paint_brightness\",\"(Color)SvIV(ST(0))\"]},{\"kind\":\"infeasible\",\"request\":\"Compile this XS file into a loadable shared library and write the matching Foo.pm Perl module for it.\",\"input\":{\"files\":{\"foo.xs\":\"#include \\\"EXTERN.h\\\"\\n#include \\\"perl.h\\\"\\n#include \\\"XSUB.h\\\"\\n\\nMODULE = Foo  PACKAGE = Foo\\n\\nint\\nadd(a, b)\\n    int a\\n    int b\\n  CODE:\\n    RETVAL = a + b;\\n  OUTPUT:\\n    RETVAL\\n\"}}}]},{\"name\":\"dbiproxy5.34\",\"eligible\":false,\"reason\":\"It is a network proxy server daemon that listens on a port, and it may change user, group or root directory, so it does not process input into standard output.\",\"tasks\":[]},{\"name\":\"rdjpgcom\",\"eligible\":false,\"reason\":\"Its only input is a JPEG image, which is a binary format that cannot be written as plain text.\",\"tasks\":[]},{\"name\":\"llama-simple\",\"eligible\":false,\"reason\":\"It needs a binary GGUF model file and runs model inference, which cannot be supplied as plain text and may not give the same output every time.\",\"tasks\":[]},{\"name\":\"findrule\",\"eligible\":false,\"reason\":\"It searches the filesystem for directory entries instead of processing data given on standard input or file contents, and its output depends on the machine's filesystem.\",\"tasks\":[]}]}"
+    },
+    {
+      "purpose": "screen",
+      "programs": [
+        "wheel3.13",
+        "gtester",
+        "systemkeychain",
+        "exiftool",
+        "sleep",
+        "autom4te"
+      ],
+      "seconds": 2,
+      "reply": "You've hit your session limit · resets 2:40pm (Europe/London)"
+    },
+    {
+      "purpose": "screen",
+      "programs": [
+        "webpng",
+        "tkpp",
+        "tunnel-client",
+        "general_assembly.pl",
+        "json_xs",
+        "bbedit"
+      ],
+      "seconds": 2,
+      "reply": "You've hit your session limit · resets 2:40pm (Europe/London)"
+    },
+    {
+      "purpose": "screen",
+      "programs": [
+        "uucp",
+        "glib-compile-schemas",
+        "kgetcred",
+        "cupsctl",
+        "otctl",
+        "system-override"
+      ],
+      "seconds": 1,
+      "reply": "You've hit your session limit · resets 2:40pm (Europe/London)"
+    },
+    {
+      "purpose": "screen",
+      "programs": [
+        "rmiregistry",
+        "tidy_changelog5.34",
+        "ppdc",
+        "datacopy",
+        "dbiproxy",
+        "loudnorm.rb"
+      ],
+      "seconds": 1,
+      "reply": "You've hit your session limit · resets 2:40pm (Europe/London)"
+    },
+    {
+      "purpose": "screen",
+      "programs": [
+        "pg_rewind",
+        "idle3.14",
+        "avbdeviced",
+        "oid2name-17",
+        "tdspool",
+        "treereg"
+      ],
+      "seconds": 1,
+      "reply": "You've hit your session limit · resets 2:40pm (Europe/London)"
+    },
+    {
+      "purpose": "screen",
+      "programs": [
+        "pathopens.d",
+        "racoon",
+        "wheel3.12",
+        "pp5.34",
+        "lzdiff",
+        "memacct"
+      ],
+      "seconds": 1,
+      "reply": "You've hit your session limit · resets 2:40pm (Europe/London)"
+    },
+    {
+      "purpose": "screen",
+      "programs": [
+        "pg_resetwal",
+        "db_recover",
+        "IOSDebug",
+        "cvadmin",
+        "phar",
+        "pn"
+      ],
+      "seconds": 1,
+      "reply": "You've hit your session limit · resets 2:40pm (Europe/London)"
+    },
+    {
+      "purpose": "screen",
+      "programs": [
+        "sdl2-config",
+        "postlock",
+        "jcontrol",
+        "slencheck",
+        "nologin",
+        "hidutil"
+      ],
+      "seconds": 1,
+      "reply": "You've hit your session limit · resets 2:40pm (Europe/London)"
+    },
+    {
+      "purpose": "screen",
+      "programs": [
+        "sum",
+        "aslmanager",
+        "sc_auth",
+        "sidxindex",
+        "ktrace",
+        "rvim"
+      ],
+      "seconds": 1,
+      "reply": "You've hit your session limit · resets 2:40pm (Europe/London)"
+    },
+    {
+      "purpose": "screen",
+      "programs": [
+        "libnetcfg5.34",
+        "pcre2grep",
+        "pg_dumpall-17",
+        "uudecode",
+        "launchd",
+        "pg_checksums-17"
+      ],
+      "seconds": 2,
+      "reply": "You've hit your session limit · resets 2:40pm (Europe/London)"
+    }
+  ],
+  "summary": {
+    "screened": 84,
+    "eligible": 1,
+    "programs": 1,
+    "feasibleTasks": 4,
+    "infeasibleTasks": 1
+  }
+}

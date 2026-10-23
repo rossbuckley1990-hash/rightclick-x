@@ -1,0 +1,65 @@
+{
+  "tag": "uce-freeze-3",
+  "commit": "fdf5be342ad58aba71ea1e81487d99db19c14934",
+  "programs": {
+    "zipinfo": {
+      "runs": [
+        {
+          "status": "completed",
+          "plan": [
+            "zipinfo: list detailed information about a ZIP archive"
+          ],
+          "attempts": []
+        },
+        {
+          "status": "completed",
+          "plan": [
+            "zipinfo: list detailed information about a ZIP archive"
+          ],
+          "attempts": []
+        }
+      ],
+      "outputs": [
+        "Archive:  in0-file.txt\n[in0-file.txt]\n  End-of-central-directory signature not found.  Either this file is not\n  a zipfile, or it constitutes one disk of a multi-part archive.  In the\n  latter case the central directory and zipfile comment will be found on\n  the last disk(s) of this archive.\nzipinfo:  cannot find zipfile directory in one of in0-file.txt or\n          in0-file.txt.zip, and cannot find in0-file.txt.ZIP, period.\n",
+        "Archive:  in0-file.txt\n[in0-file.txt]\n  End-of-central-directory signature not found.  Either this file is not\n  a zipfile, or it constitutes one disk of a multi-part archive.  In the\n  latter case the central directory and zipfile comment will be found on\n  the last disk(s) of this archive.\nzipinfo:  cannot find zipfile directory in one of in0-file.txt or\n          in0-file.txt.zip, and cannot find in0-file.txt.ZIP, period.\n"
+      ],
+      "check": {
+        "pass": false,
+        "detail": "output is an error report: true"
+      },
+      "supported": true,
+      "retained": true,
+      "executed": true,
+      "wrongOutcome": true,
+      "pass": false
+    },
+    "xmllint": {
+      "runs": [
+        {
+          "status": "failed",
+          "plan": [],
+          "attempts": [
+            {
+              "summary": "Summarize text → zipinfo -h: print header line       -t  print totals for listed files or for all → zipinfo: list detailed information about a ZIP archive → xmllint: command line XML tool",
+              "failed": "cli:xmllint:default",
+              "error": "cli:xmllint:default: /private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-holdout-74SCVN/bin/xmllint exited 1: in0-version.txt:1: parser error : Start tag expected, '<' not found\nArchive:  in0-file.txt\n^\nin1-debug.txt:1: parser error : Start tag expected, '<' not found\nArchive:  in1-file.txt\n^\n",
+              "healing": "re-reflected cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-holdout-74SCVN/bin/xmllint: no contract change"
+            }
+          ]
+        }
+      ],
+      "outputs": [
+        null
+      ],
+      "check": {
+        "pass": false,
+        "detail": "balanced true; words missing harbour,lights,1998,salt,roads"
+      },
+      "supported": true,
+      "retained": true,
+      "executed": false,
+      "wrongOutcome": false,
+      "pass": false
+    }
+  }
+}

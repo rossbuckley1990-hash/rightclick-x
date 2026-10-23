@@ -6,10 +6,9 @@
 // every change is an event that watchers (MCP context_watch, the dashboard
 // stream, federation peers) can follow.
 //
-// "Powers" are what the graph can do, not what it lists: every capability,
-// plus every 2- and 3-step pipeline the edges allow. Adding one provider can
-// add far more powers than capabilities, because its nodes connect to
-// everything already present. That is the number the dashboard shows.
+// The legacy "powers" API counts descriptors and potential typed walks through
+// two or three operation nodes. These are topology statistics, not evidence of
+// executable, authorised, semantically valid or verified workflows.
 
 import { IdentityEvidence, schemeOnly } from "./identities.ts";
 import { accepts, distance, isNominal, parentOf, strongly } from "./semantics.ts";
@@ -24,6 +23,7 @@ export type GraphEventKind =
   | "provider.drifted"
   | "provider.withdrawn"
   | "run.completed"
+  | "run.pending"
   | "research";
 
 export interface GraphEvent {
@@ -65,6 +65,19 @@ export class CapabilityGraph {
   private listeners = new Set<(e: GraphEvent) => void>();
   /** Identifier schemes learned from observed values; applied to every capability the graph holds. */
   readonly identities = new IdentityEvidence();
+
+  /** Restore one complete snapshot before checking dependencies. Provider order
+   * is not a lifecycle event: a later entry has not disappeared from the world. */
+  restore(reflections: Reflection[]): void {
+    for (const { provider, capabilities } of reflections) {
+      this.dropProvider(provider.id);
+      for (const cap of capabilities) this.capabilities.set(cap.id, cap);
+      this.providers.set(provider.id, { ...provider, capabilityIds: capabilities.map(c => c.id) });
+    }
+    this.relink();
+    // Removing a broken inner composite can invalidate an earlier outer one.
+    while (this.retireBroken().length) { /* finite: each pass removes nodes */ }
+  }
 
   add(reflection: Reflection): LearnDelta {
     const before = this.measure ? this.powers().total : 0;
@@ -113,10 +126,11 @@ export class CapabilityGraph {
 
   forget(providerId: string): boolean {
     if (!this.providers.has(providerId)) return false;
+    const capabilities = [...this.providers.get(providerId)!.capabilityIds];
     this.dropProvider(providerId);
     this.invalidate();
     this.retireBroken();
-    this.emit("provider.forgotten", { provider: providerId });
+    this.emit("provider.forgotten", { provider: providerId, capabilities });
     return true;
   }
 
@@ -219,6 +233,7 @@ export class CapabilityGraph {
   outSet(a: Capability): Set<string> {
     const { byInputType, nominal, byScheme } = this.inputIndex();
     const out = new Set<string>();
+    for (const link of a.links ?? []) if (this.capabilities.has(link.target)) out.add(link.target);
     for (const port of a.outputs) {
       // Identifier schemes learned from observed values link ports whose declared types differ.
       for (const s of port.schemes ?? []) for (const b of byScheme.get(schemeSlot(s, port.type)) ?? []) if (b !== a.id) out.add(b);
@@ -357,7 +372,7 @@ export class CapabilityGraph {
 
 /** Contract signature of a capability: its typed ports and how it is invoked (FNV-1a). */
 export function signature(c: Capability): string {
-  const text = JSON.stringify([c.inputs.map((p) => [p.name, p.type, p.required]), c.outputs.filter((p) => !p.observed).map((p) => [p.name, p.type]), c.invoke]);
+  const text = JSON.stringify([c.inputs.map((p) => [p.name, p.type, p.required]), c.outputs.filter((p) => !p.observed).map((p) => [p.name, p.type]), c.invoke, ...(c.links?.length ? [c.links] : [])]);
   let h = 0x811c9dc5;
   for (let i = 0; i < text.length; i++) {
     h ^= text.charCodeAt(i);

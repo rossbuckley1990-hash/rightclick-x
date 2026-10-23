@@ -1,8 +1,8 @@
 {
-  "seed": 912576545,
+  "seed": 779250842,
   "domain": "invoicing",
   "gateway": true,
-  "startedAt": "2026-10-17T08:44:13.905Z",
+  "startedAt": "2026-10-17T10:22:43.569Z",
   "steps": [
     {
       "n": 1,
@@ -17,7 +17,7 @@
       "title": "Connect an MCP client to RightClick X (stdio)",
       "ok": true,
       "tools": 13,
-      "startupMs": 115.4
+      "startupMs": 124.1
     },
     {
       "n": 3,
@@ -43,11 +43,11 @@
       "ok": true,
       "found": [
         "graphql",
-        "graphql",
-        "openapi"
+        "openapi",
+        "mcp"
       ],
       "newCapabilities": 3,
-      "ms": 36.5
+      "ms": 38.1
     },
     {
       "n": 5,
@@ -55,79 +55,79 @@
       "ok": true,
       "candidatePlans": 3,
       "best": [
-        "Invoice Lookup",
-        "Fetch Customer Record",
-        "Get tax rate"
+        "Retrieve Invoice",
+        "Fetch customer record",
+        "Lookup tax rate for a country"
       ],
-      "planningMs": 3
+      "planningMs": 3.9
     },
     {
       "n": 6,
       "title": "Compose a multi-provider workflow",
       "ok": true,
       "steps": [
-        "Invoice Lookup ← invoice_number=$in.invoice_id",
-        "Fetch Customer Record ← customer_number=0.customerId",
-        "Get tax rate ← country=1.countryCode"
+        "Retrieve Invoice ← invoice_number=$in.invoice_id",
+        "Fetch customer record ← customer_id=0.customerId",
+        "Lookup tax rate for a country ← countryCode=1.countryCode"
       ]
     },
     {
       "n": 7,
       "title": "Execute the workflow",
       "ok": true,
-      "input": "INV-1005",
+      "input": "INV-1001",
       "pipeline": [
-        "Invoice Lookup",
-        "Fetch Customer Record",
-        "Get tax rate"
+        "Retrieve Invoice",
+        "Fetch customer record",
+        "Lookup tax rate for a country"
       ],
-      "ms": 5.1
+      "ms": 6.1
     },
     {
       "n": 8,
       "title": "Verify against independently held test data",
       "ok": true,
-      "expected": 24.1,
-      "got": 24.1
+      "expected": 7.3,
+      "got": 7.3
     },
     {
       "n": 9,
       "title": "Save the successful composition and reuse it",
       "ok": true,
-      "saved": "Tax rate invoice customer country: Invoice Lookup → Fetch Customer Record → Get tax rate",
+      "saved": "Tax rate invoice customer country: Retrieve Invoice → Fetch customer record → Lookup tax rate for a country",
       "reusedAs": [
-        "Tax rate invoice customer country: Invoice Lookup → Fetch Customer Record → Get tax rate"
+        "Tax rate invoice customer country: Retrieve Invoice → Fetch customer record → Lookup tax rate for a country"
       ],
-      "expected": 5.8,
-      "got": 5.8,
-      "ms": 2.6
+      "expected": 7.3,
+      "got": 7.3,
+      "ms": 3.2
     },
     {
       "n": 10,
-      "title": "Change the interface of the last provider in the chain (Brightmark)",
+      "title": "Change the interface of the last provider in the chain (Quillbase)",
       "ok": true,
-      "before": "openapi \"Get tax rate\" country → country, vat_rate",
-      "after": "graphql \"Country tax rate\" country_code → result.{country_code, standard_rate}"
+      "before": "mcp \"Lookup tax rate for a country\" countryCode → countryCode, tax_rate",
+      "after": "graphql \"Get tax rate\" country → result.{country, rate}"
     },
     {
       "n": 11,
       "title": "Recover without changing integration code",
       "ok": true,
       "healing": [
-        "API drift at http://127.0.0.1:64296/: graphql:127-0-0-1-64293-graphql,graphql:127-0-0-1-64294-graphql,openapi:brightmark → graphql:127-0-0-1-64293-graphql,graphql:127-0-0-1-64294-graphql,graphql:127-0-0-1-64295-graphql; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:51329/: graphql:127-0-0-1-51326-graphql,openapi:northwind-billing,mcp:quillbase → graphql:127-0-0-1-51326-graphql,openapi:northwind-billing,graphql:127-0-0-1-51328-graphql; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "via": [
-        "graphql:127-0-0-1-64293-graphql",
-        "graphql:127-0-0-1-64294-graphql",
-        "graphql:127-0-0-1-64295-graphql"
+        "graphql:127-0-0-1-51326-graphql",
+        "openapi:northwind-billing",
+        "graphql:127-0-0-1-51328-graphql"
       ],
-      "expected": 9.7,
-      "got": 9.7,
-      "ms": 17.1
+      "expected": 9.4,
+      "got": 9.4,
+      "ms": 17.5
     },
     {
       "n": 12,
-      "title": "Remove that provider (Brightmark)",
+      "title": "Remove that provider (Quillbase)",
       "ok": true
     },
     {
@@ -136,41 +136,41 @@
       "ok": true,
       "status": "failed",
       "healing": [
-        "API drift at http://127.0.0.1:64296/: graphql:127-0-0-1-64293-graphql,graphql:127-0-0-1-64294-graphql,graphql:127-0-0-1-64295-graphql → graphql:127-0-0-1-64293-graphql,graphql:127-0-0-1-64294-graphql; +0 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:51329/: graphql:127-0-0-1-51326-graphql,openapi:northwind-billing,graphql:127-0-0-1-51328-graphql → graphql:127-0-0-1-51326-graphql,openapi:northwind-billing; +0 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "withdrawn": [
-        "GraphQL 127.0.0.1:64295"
+        "GraphQL 127.0.0.1:51328"
       ],
       "capabilities": "27 → 25",
       "savedPipelines": "1 → 0"
     },
     {
       "n": 14,
-      "title": "Introduce a different provider (Quillbase, mcp): the objective works again",
+      "title": "Introduce a different provider (Tallyport, graphql): the objective works again",
       "ok": true,
       "learned": [
         "api-catalog: 3 services listed",
         "graphql: 1 fields",
-        "graphql: 1 fields",
-        "mcp: 1 tools"
+        "openapi: 1 operations",
+        "graphql: 1 fields"
       ],
       "via": [
-        "graphql:127-0-0-1-64293-graphql",
-        "graphql:127-0-0-1-64294-graphql",
-        "mcp:quillbase"
+        "graphql:127-0-0-1-51326-graphql",
+        "openapi:northwind-billing",
+        "graphql:127-0-0-1-51391-graphql"
       ],
-      "expected": 9.7,
-      "got": 9.7,
+      "expected": 16.7,
+      "got": 16.7,
       "ms": 2.1
     }
   ],
   "benchmarks": {
-    "startupMs": 115.4,
+    "startupMs": 124.1,
     "mcpLatencyMs": {
-      "p50": 0.04,
+      "p50": 0.03,
       "p95": 0.12
     },
-    "discoveryMs": 36.5,
+    "discoveryMs": 38.1,
     "graph": {
       "providers": 5,
       "capabilities": 26,
@@ -180,67 +180,67 @@
       "total": 132
     },
     "graphStatsMs": 0.1,
-    "planningMs": 3,
-    "executionMs": 5.1,
-    "recoveryAfterChangeMs": 17.1,
+    "planningMs": 3.9,
+    "executionMs": 6.1,
+    "recoveryAfterChangeMs": 17.5,
     "recoveryAfterNewProviderMs": 2.1,
-    "memoryMB": 147
+    "memoryMB": 150
   },
   "freeze": {
-    "commit": "c27289e2570cc0a18512787082095ac32ba0eb80",
+    "commit": "02c96d4af5f4d92208321a0145ab31deb3572b35",
     "tag": "lab-freeze-9",
-    "productCodeChangedSinceTag": "src/core/graph.ts\nsrc/core/identities.ts\nsrc/core/planner.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/interface/http.ts\nsrc/interface/tools.ts\nsrc/reflectors/net.ts\nsrc/runtime.ts",
-    "uncommittedProductChanges": "M  bin/rcx.ts\nA  src/core/authority.ts\nM  src/entry/durable.ts\nM  src/entry/edge.ts\nM  src/interface/http.ts\nM  src/reflectors/mcp.ts\nM  src/reflectors/platform.ts\nM  src/runtime.ts",
+    "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/core/authority.ts\nsrc/core/contract.ts\nsrc/core/fields.ts\nsrc/core/graph.ts\nsrc/core/identities.ts\nsrc/core/knowledge.ts\nsrc/core/ledger.ts\nsrc/core/planner.ts\nsrc/core/programs.ts\nsrc/core/sandbox.ts\nsrc/core/satisfaction.ts\nsrc/core/secrets.ts\nsrc/core/semantics.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/core/yaml.ts\nsrc/entry/durable.ts\nsrc/entry/edge.ts\nsrc/interface/http.ts\nsrc/interface/mcp-server.ts\nsrc/interface/tools.ts\nsrc/reflectors/cli.ts\nsrc/reflectors/discover.ts\nsrc/reflectors/graphql.ts\nsrc/reflectors/mcp.ts\nsrc/reflectors/net.ts\nsrc/reflectors/openapi.ts\nsrc/reflectors/platform.ts\nsrc/runtime.ts",
+    "uncommittedProductChanges": "",
     "frozen": false
   },
   "environment": [
     {
       "service": "invoices",
-      "brand": "Lumen Cargo",
+      "brand": "Kestrel Freight",
       "protocol": "graphql",
-      "operation": "Invoice lookup",
+      "operation": "Retrieve invoice",
       "input": "invoice_number",
       "outputs": [
         "invoice_number",
         "customerId",
-        "total",
+        "amount",
         "currency_code"
       ]
     },
     {
       "service": "customers",
-      "brand": "Kestrel Freight",
-      "protocol": "graphql",
+      "brand": "Northwind Billing",
+      "protocol": "openapi",
       "operation": "Fetch customer record",
-      "input": "customer_number",
+      "input": "customer_id",
       "outputs": [
-        "customer_number",
+        "customer_id",
         "legal_name",
         "countryCode"
       ]
     },
     {
       "service": "tax",
-      "brand": "Brightmark",
-      "protocol": "openapi",
-      "operation": "Get tax rate",
-      "input": "country",
+      "brand": "Quillbase",
+      "protocol": "mcp",
+      "operation": "Lookup tax rate for a country",
+      "input": "countryCode",
       "outputs": [
-        "country",
-        "vat_rate"
+        "countryCode",
+        "tax_rate"
       ]
     }
   ],
   "firstRunProviders": [
-    "graphql:127-0-0-1-64293-graphql",
-    "graphql:127-0-0-1-64294-graphql",
-    "openapi:brightmark"
+    "graphql:127-0-0-1-51326-graphql",
+    "openapi:northwind-billing",
+    "mcp:quillbase"
   ],
   "receipts": {
     "count": 21,
     "intact": true,
     "brokenAt": null,
-    "head": "a08a74c286ea12f7292ff5aeccc97b90525e5c494886267aefcdade2bd77d02b"
+    "head": "8b0cd9ed87c7d23374059f3a943ddd097e057c28962fe7e57165c9dfc4775190"
   },
   "passed": 14,
   "total": 14

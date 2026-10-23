@@ -16,7 +16,7 @@ test("API synthesis: a published goal becomes an OpenAPI endpoint that another i
   const a = await RightClick.create({ name: "instance-a", fetch: f, directories: [] });
   await a.learn({ sources: ["https://polyglot.test/openapi.json", "https://atlas.test/graphql", "https://skycast.test/mcp"] });
   const pub = await a.compose({ have: { place: "Lisbon" }, want: "text", intent: "weather forecast", run: true, publish: "Weather for a place" });
-  assert.deepEqual(pub.published, { id: "goal:weather-for-a-place", slug: "weather-for-a-place", path: "/x/weather-for-a-place" });
+  assert.deepEqual(pub.published, { id: "goal:weather-for-a-place", slug: "weather-for-a-place", path: "/x/weather-for-a-place", trust: "unverified" });
   routes["https://a.test"] = createHandler(a, { open: true });
 
   const spec = a.openApi("https://a.test") as any;
@@ -43,7 +43,7 @@ test("API synthesis: a published goal becomes an OpenAPI endpoint that another i
   const id = c.graph.list().find((x) => x.id.endsWith("weatherforaplaceinalanguage"))!.id;
   const out = await c.run(id, { place: "Nairobi", language: "es" }, { verify: [{ op: "contains", path: "result", value: "°C" }] });
   assert.equal(out.status, "completed");
-  assert.equal(out.verification.status, "verified");
+  assert.equal(out.verification.status, "checked"); // stored predicates passed: checked, not independently verified (North Star Stage 2)
   assert.equal(a.published.get("weather-for-a-place")!.calls, 2, "A served B's chained call and C's call through B");
 });
 
@@ -84,5 +84,5 @@ test("universal interface: an MCP-only tool answers GraphQL queries, and a peer 
   assert.deepEqual(cap.inputs.filter((p) => p.required).map((p) => [p.name, p.type]), [["place", "place"]]);
   assert.ok(cap.outputs.some((o) => o.name === "result" && o.type === "text"));
   const r = await b.run(cap.id, { place: "Nairobi" }, { verify: [{ op: "contains", path: "result", value: "°C" }] });
-  assert.equal(r.verification.status, "verified");
+  assert.equal(r.verification.status, "checked"); // stored predicates passed: checked, not independently verified (North Star Stage 2)
 });

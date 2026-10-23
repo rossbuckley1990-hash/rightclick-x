@@ -22,7 +22,7 @@ test("self-maintaining integration survives four breaking API releases, includin
 
   const first = await rc.compose({ ...GOAL, run: true });
   assert.equal(first.executed?.status, "completed");
-  assert.equal(first.executed?.verification.status, "verified");
+  assert.equal(first.executed?.verification.status, "checked"); // stored predicates passed: checked, not independently verified (North Star Stage 2)
   assert.ok(first.crystallized, "the v1 pipeline is crystallized");
   const v1Pipeline = first.crystallized!.id;
 
@@ -32,7 +32,7 @@ test("self-maintaining integration survives four breaking API releases, includin
     await assert.rejects(handWrittenClient(ORIGIN, "Hello world", "es", f), "the hand-written v1 client breaks");
     const r = await rc.compose({ ...GOAL, run: true });
     assert.equal(r.executed?.status, "completed", `v${v}: ${JSON.stringify(r.executed?.attempts)}`);
-    assert.equal(r.executed?.verification.status, "verified");
+    assert.equal(r.executed?.verification.status, "checked"); // stored predicates passed: checked, not independently verified (North Star Stage 2)
     assert.match(String(r.executed?.output), /Hola mundo/);
     assert.ok(r.executed!.attempts.some((a) => /API drift/.test(a.healing ?? "")), `v${v} detected drift`);
     const translator = r.executed!.runs.map((id) => rc.runs.get(id)!).find((x) => !x.provider.startsWith("builtin") && !x.provider.startsWith("composite"));

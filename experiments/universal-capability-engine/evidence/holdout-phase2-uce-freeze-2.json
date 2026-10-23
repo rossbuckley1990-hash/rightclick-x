@@ -1,0 +1,69 @@
+{
+  "tag": "uce-freeze-2",
+  "commit": "899a7b9e2774eb91b6921fdae6794276e81b1e39",
+  "programs": {
+    "expand": {
+      "runs": [
+        {
+          "status": "completed",
+          "plan": [
+            "expand: expand tabs to spaces, and vice versa"
+          ],
+          "attempts": []
+        },
+        {
+          "status": "completed",
+          "plan": [
+            "expand: expand tabs to spaces, and vice versa"
+          ],
+          "attempts": []
+        }
+      ],
+      "outputs": [
+        "name    qty     price\napple   3       0.5\nkiwi    12      0.25\n",
+        "a       bc      defghijkl       m\n        indented\n"
+      ],
+      "check": {
+        "pass": true,
+        "detail": "exact match with the harness's own expansion: true, true"
+      },
+      "supported": true,
+      "retained": true,
+      "executed": true,
+      "wrongOutcome": false,
+      "pass": true
+    },
+    "cups-config": {
+      "runs": [
+        {
+          "status": "completed",
+          "plan": [
+            "expand: expand tabs to spaces, and vice versa",
+            "cups-config: config - get cups api, compiler, directory, and link information."
+          ],
+          "attempts": []
+        },
+        {
+          "status": "completed",
+          "plan": [
+            "Get cups api, compiler, directory and link information: expand: expand tabs to spaces, and vice versa → cups-config: config - get cups api, compiler, directory, and link information."
+          ],
+          "attempts": []
+        }
+      ],
+      "outputs": [
+        "Usage: cups-config --api-version\n       cups-config --build\n       cups-config --cflags\n       cups-config --datadir\n       cups-config --help\n       cups-config --ldflags\n       cups-config [--image] [--static] --libs\n       cups-config --serverbin\n       cups-config --serverroot\n       cups-config --version\n",
+        "Usage: cups-config --api-version\n       cups-config --build\n       cups-config --cflags\n       cups-config --datadir\n       cups-config --help\n       cups-config --ldflags\n       cups-config [--image] [--static] --libs\n       cups-config --serverbin\n       cups-config --serverroot\n       cups-config --version\n"
+      ],
+      "check": {
+        "pass": false,
+        "detail": "output is a usage message: true; identical for different inputs: true"
+      },
+      "supported": true,
+      "retained": true,
+      "executed": true,
+      "wrongOutcome": true,
+      "pass": false
+    }
+  }
+}

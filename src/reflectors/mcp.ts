@@ -4,7 +4,7 @@
 
 import { inferType } from "../core/semantics.ts";
 import type { Capability, Port, Reflection, Risk } from "../core/types.ts";
-import { bodyChunks, cancelBody, DISCOVERY_BODY_LIMIT, isEventStream, readText, request, slug, type Net } from "./net.ts";
+import { bodyChunks, cancelBody, DISCOVERY_BODY_LIMIT, isEventStream, readText, refuseDeniedResponse, request, slug, type Net } from "./net.ts";
 
 const PROTOCOL = "2025-06-18";
 
@@ -29,7 +29,7 @@ export class McpClient {
     this.net = net;
   }
 
-  private async rpc(method: string, params?: unknown, notify = false): Promise<any> {
+  private async rpc(method: string, params?: unknown, notify = false, owner?: Net["execution"]): Promise<any> {
     const body = notify ? { jsonrpc: "2.0", method, params } : { jsonrpc: "2.0", id: ++this.id, method, params };
     const headers: Record<string, string> = {
       "content-type": "application/json",
@@ -37,7 +37,8 @@ export class McpClient {
       "mcp-protocol-version": PROTOCOL,
     };
     if (this.session) headers["mcp-session-id"] = this.session;
-    const res = await request(this.net, this.endpoint, { method: "POST", headers, body: JSON.stringify(body) });
+    const res = await request({ ...this.net, execution: owner }, this.endpoint, { method: "POST", headers, body: JSON.stringify(body) });
+    refuseDeniedResponse(res);
     const sid = res.headers.get("mcp-session-id");
     if (sid) this.session = sid;
     if (notify) {
@@ -55,15 +56,15 @@ export class McpClient {
     return msg.result;
   }
 
-  async init(): Promise<void> {
+  async init(owner?: Net["execution"]): Promise<void> {
     this.ready ??= (async () => {
       const r = await this.rpc("initialize", {
         protocolVersion: PROTOCOL,
         capabilities: {},
         clientInfo: { name: "rightclick-x", version: "0.1.0" },
-      });
+      }, false, owner);
       this.serverInfo = r?.serverInfo ?? {};
-      await this.rpc("notifications/initialized", undefined, true);
+      await this.rpc("notifications/initialized", undefined, true, owner);
       return r;
     })().catch((e) => {
       this.ready = null;
@@ -85,19 +86,22 @@ export class McpClient {
     return tools;
   }
 
-  /** Session recovery resends the call, so the caller must explicitly establish retry safety. */
-  async call(name: string, args: Record<string, unknown>, structured = true, retrySafe = false): Promise<unknown> {
-    await this.init();
+  /**
+   * Returns structured content when the caller wants it (tool has an output schema), else the text.
+   * Session recovery resends the call, so the caller must explicitly establish retry safety.
+   */
+  async call(name: string, args: Record<string, unknown>, structured = true, retrySafe = false, owner?: Net["execution"]): Promise<unknown> {
+    await this.init(owner);
     let r: any;
     try {
-      r = await this.rpc("tools/call", { name, arguments: args });
+      r = await this.rpc("tools/call", { name, arguments: args }, false, owner);
     } catch (e) {
       // A status or provider-controlled error message does not prove a write never committed.
       if (!retrySafe || !(e instanceof McpHttpError) || ![400, 404].includes(e.status)) throw e;
       this.session = null;
       this.ready = null;
-      await this.init();
-      r = await this.rpc("tools/call", { name, arguments: args });
+      await this.init(owner);
+      r = await this.rpc("tools/call", { name, arguments: args }, false, owner);
     }
     const text = (r?.content ?? [])
       .filter((c: any) => c.type === "text")

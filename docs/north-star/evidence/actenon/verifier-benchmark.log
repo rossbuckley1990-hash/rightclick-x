@@ -1,0 +1,25 @@
+=== Actenon Kernel Verification Benchmark ===
+Python: 3.12.13
+Platform: macOS-26.4.1-arm64-arm-64bit
+Processor: arm
+
+--- Symmetric (HMAC) path, 1000 iterations ---
+Traceback (most recent call last):
+  File "/Users/ross/src/actenon-audit/actenon-kernel/benchmarks/verify_benchmark.py", line 232, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/Users/ross/src/actenon-audit/actenon-kernel/benchmarks/verify_benchmark.py", line 201, in main
+    sym = benchmark_symmetric(iterations)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/ross/src/actenon-audit/actenon-kernel/benchmarks/verify_benchmark.py", line 78, in benchmark_symmetric
+    signer = build_local_proof_signer()
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/ross/src/actenon-audit/actenon-kernel/actenon/proof/signers/local.py", line 150, in build_local_proof_signer
+    return HmacSha256Signer(secret=resolved_secret, key_id=key_id)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 6, in __init__
+  File "/Users/ross/src/actenon-audit/actenon-kernel/actenon/proof/signers/local.py", line 112, in __post_init__
+    _guard_public_secret(self.secret)
+  File "/Users/ross/src/actenon-audit/actenon-kernel/actenon/proof/signers/local.py", line 83, in _guard_public_secret
+    raise LocalHmacProductionGuardError(
+actenon.proof.signers.local.LocalHmacProductionGuardError: the public development HMAC secret (LOCAL_PROOF_SECRET) is refused without explicit development intent (ACTENON_ENV='benchmark'). It is published in the package, so a proof signed with it proves nothing. For local development, demos or tests set ACTENON_ENV=development (or dev, local, test) or use ActenonGate.local_dev(...). In production use asymmetric well-known/KMS/HSM signing custody.

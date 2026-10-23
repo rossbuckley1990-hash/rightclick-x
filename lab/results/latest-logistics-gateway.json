@@ -1,8 +1,8 @@
 {
-  "seed": 795633634,
+  "seed": 251863261,
   "domain": "logistics",
   "gateway": true,
-  "startedAt": "2026-10-17T08:44:17.660Z",
+  "startedAt": "2026-10-17T10:22:47.339Z",
   "steps": [
     {
       "n": 1,
@@ -17,7 +17,7 @@
       "title": "Connect an MCP client to RightClick X (stdio)",
       "ok": true,
       "tools": 13,
-      "startupMs": 116.9
+      "startupMs": 124
     },
     {
       "n": 3,
@@ -42,12 +42,12 @@
       "title": "Discover the environment's services from its catalog only (no service addresses, protocols or schemas given)",
       "ok": true,
       "found": [
-        "graphql",
-        "graphql",
+        "openapi",
+        "openapi",
         "graphql"
       ],
       "newCapabilities": 3,
-      "ms": 36.1
+      "ms": 35.5
     },
     {
       "n": 5,
@@ -55,79 +55,79 @@
       "ok": true,
       "candidatePlans": 2,
       "best": [
-        "Shipment Details",
-        "Fetch Warehouse",
-        "City Shipping Rate"
+        "Track shipment",
+        "Fetch warehouse",
+        "Get Shipping Rate"
       ],
-      "planningMs": 2.4
+      "planningMs": 3
     },
     {
       "n": 6,
       "title": "Compose a multi-provider workflow",
       "ok": true,
       "steps": [
-        "Shipment Details ← shipment_number=$in.shipment_id",
-        "Fetch Warehouse ← warehouseId=0.warehouse_number",
-        "City Shipping Rate ← location=1.location"
+        "Track shipment ← shipmentId=$in.shipment_id",
+        "Fetch warehouse ← warehouse_id=0.warehouse_number",
+        "Get Shipping Rate ← town=1.city"
       ]
     },
     {
       "n": 7,
       "title": "Execute the workflow",
       "ok": true,
-      "input": "SHP-1004",
+      "input": "SHP-1003",
       "pipeline": [
-        "Shipment Details",
-        "Fetch Warehouse",
-        "City Shipping Rate"
+        "Track shipment",
+        "Fetch warehouse",
+        "Get Shipping Rate"
       ],
-      "ms": 4.9
+      "ms": 5.3
     },
     {
       "n": 8,
       "title": "Verify against independently held test data",
       "ok": true,
-      "expected": 8.3,
-      "got": 8.3
+      "expected": 4.5,
+      "got": 4.5
     },
     {
       "n": 9,
       "title": "Save the successful composition and reuse it",
       "ok": true,
-      "saved": "Shipping rate shipment warehouse city: Shipment Details → Fetch Warehouse → City Shipping Rate",
+      "saved": "Shipping rate shipment warehouse city: Track shipment → Fetch warehouse → Get Shipping Rate",
       "reusedAs": [
-        "Shipping rate shipment warehouse city: Shipment Details → Fetch Warehouse → City Shipping Rate"
+        "Shipping rate shipment warehouse city: Track shipment → Fetch warehouse → Get Shipping Rate"
       ],
-      "expected": 36.9,
-      "got": 36.9,
-      "ms": 2.5
+      "expected": 4.5,
+      "got": 4.5,
+      "ms": 2.2
     },
     {
       "n": 10,
-      "title": "Change the interface of the last provider in the chain (Quillbase)",
+      "title": "Change the interface of the last provider in the chain (Mistral Depot)",
       "ok": true,
-      "before": "graphql \"City shipping rate\" location → location, rate",
-      "after": "mcp \"Get shipping rate\" town → result.{town, price_per_kg}"
+      "before": "graphql \"Get shipping rate\" town → town, freight_rate",
+      "after": "openapi \"Lookup shipping rate for a city\" city → result.{city, shipping_rate}"
     },
     {
       "n": 11,
       "title": "Recover without changing integration code",
       "ok": true,
       "healing": [
-        "API drift at http://127.0.0.1:65099/: graphql:127-0-0-1-65096-graphql,graphql:127-0-0-1-65097-graphql,graphql:127-0-0-1-65098-graphql → graphql:127-0-0-1-65096-graphql,graphql:127-0-0-1-65097-graphql,mcp:quillbase; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:52131/: openapi:harbourly,openapi:ashgrove,graphql:127-0-0-1-52130-graphql → openapi:harbourly,openapi:ashgrove,openapi:mistral-depot; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "via": [
-        "graphql:127-0-0-1-65096-graphql",
-        "graphql:127-0-0-1-65097-graphql",
-        "mcp:quillbase"
+        "openapi:harbourly",
+        "openapi:ashgrove",
+        "openapi:mistral-depot"
       ],
-      "expected": 35.7,
-      "got": 35.7,
-      "ms": 16.8
+      "expected": 16.7,
+      "got": 16.7,
+      "ms": 15.8
     },
     {
       "n": 12,
-      "title": "Remove that provider (Quillbase)",
+      "title": "Remove that provider (Mistral Depot)",
       "ok": true
     },
     {
@@ -136,41 +136,41 @@
       "ok": true,
       "status": "failed",
       "healing": [
-        "API drift at http://127.0.0.1:65099/: graphql:127-0-0-1-65096-graphql,graphql:127-0-0-1-65097-graphql,mcp:quillbase → graphql:127-0-0-1-65096-graphql,graphql:127-0-0-1-65097-graphql; +0 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:52131/: openapi:harbourly,openapi:ashgrove,openapi:mistral-depot → openapi:harbourly,openapi:ashgrove; +0 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "withdrawn": [
-        "Quillbase"
+        "Mistral Depot"
       ],
       "capabilities": "27 → 25",
       "savedPipelines": "1 → 0"
     },
     {
       "n": 14,
-      "title": "Introduce a different provider (Ashgrove, openapi): the objective works again",
+      "title": "Introduce a different provider (Northwind Billing, openapi): the objective works again",
       "ok": true,
       "learned": [
         "api-catalog: 3 services listed",
-        "graphql: 1 fields",
-        "graphql: 1 fields",
+        "openapi: 1 operations",
+        "openapi: 1 operations",
         "openapi: 1 operations"
       ],
       "via": [
-        "graphql:127-0-0-1-65096-graphql",
-        "graphql:127-0-0-1-65097-graphql",
-        "openapi:ashgrove"
+        "openapi:harbourly",
+        "openapi:ashgrove",
+        "openapi:northwind-billing"
       ],
-      "expected": 36.9,
-      "got": 36.9,
-      "ms": 2.2
+      "expected": 27.7,
+      "got": 27.7,
+      "ms": 1.8
     }
   ],
   "benchmarks": {
-    "startupMs": 116.9,
+    "startupMs": 124,
     "mcpLatencyMs": {
-      "p50": 0.03,
+      "p50": 0.04,
       "p95": 0.11
     },
-    "discoveryMs": 36.1,
+    "discoveryMs": 35.5,
     "graph": {
       "providers": 5,
       "capabilities": 26,
@@ -180,66 +180,66 @@
       "total": 114
     },
     "graphStatsMs": 0.1,
-    "planningMs": 2.4,
-    "executionMs": 4.9,
-    "recoveryAfterChangeMs": 16.8,
-    "recoveryAfterNewProviderMs": 2.2,
-    "memoryMB": 146
+    "planningMs": 3,
+    "executionMs": 5.3,
+    "recoveryAfterChangeMs": 15.8,
+    "recoveryAfterNewProviderMs": 1.8,
+    "memoryMB": 147
   },
   "freeze": {
-    "commit": "c27289e2570cc0a18512787082095ac32ba0eb80",
+    "commit": "02c96d4af5f4d92208321a0145ab31deb3572b35",
     "tag": "lab-freeze-9",
-    "productCodeChangedSinceTag": "src/core/graph.ts\nsrc/core/identities.ts\nsrc/core/planner.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/interface/http.ts\nsrc/interface/tools.ts\nsrc/reflectors/net.ts\nsrc/runtime.ts",
-    "uncommittedProductChanges": "M  bin/rcx.ts\nA  src/core/authority.ts\nM  src/entry/durable.ts\nM  src/entry/edge.ts\nM  src/interface/http.ts\nM  src/reflectors/mcp.ts\nM  src/reflectors/platform.ts\nM  src/runtime.ts",
+    "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/core/authority.ts\nsrc/core/contract.ts\nsrc/core/fields.ts\nsrc/core/graph.ts\nsrc/core/identities.ts\nsrc/core/knowledge.ts\nsrc/core/ledger.ts\nsrc/core/planner.ts\nsrc/core/programs.ts\nsrc/core/sandbox.ts\nsrc/core/satisfaction.ts\nsrc/core/secrets.ts\nsrc/core/semantics.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/core/yaml.ts\nsrc/entry/durable.ts\nsrc/entry/edge.ts\nsrc/interface/http.ts\nsrc/interface/mcp-server.ts\nsrc/interface/tools.ts\nsrc/reflectors/cli.ts\nsrc/reflectors/discover.ts\nsrc/reflectors/graphql.ts\nsrc/reflectors/mcp.ts\nsrc/reflectors/net.ts\nsrc/reflectors/openapi.ts\nsrc/reflectors/platform.ts\nsrc/runtime.ts",
+    "uncommittedProductChanges": "",
     "frozen": false
   },
   "environment": [
     {
       "service": "shipments",
-      "brand": "Lumen Cargo",
-      "protocol": "graphql",
-      "operation": "Shipment details",
-      "input": "shipment_number",
+      "brand": "Harbourly",
+      "protocol": "openapi",
+      "operation": "Track shipment",
+      "input": "shipmentId",
       "outputs": [
-        "shipment_number",
+        "shipmentId",
         "warehouse_number",
-        "gross_weight"
+        "weight"
       ]
     },
     {
       "service": "warehouses",
-      "brand": "Cobaltix",
-      "protocol": "graphql",
+      "brand": "Ashgrove",
+      "protocol": "openapi",
       "operation": "Fetch warehouse",
-      "input": "warehouseId",
+      "input": "warehouse_id",
       "outputs": [
-        "warehouseId",
-        "location",
+        "warehouse_id",
+        "city",
         "manager_email"
       ]
     },
     {
       "service": "rates",
-      "brand": "Quillbase",
+      "brand": "Mistral Depot",
       "protocol": "graphql",
-      "operation": "City shipping rate",
-      "input": "location",
+      "operation": "Get shipping rate",
+      "input": "town",
       "outputs": [
-        "location",
-        "rate"
+        "town",
+        "freight_rate"
       ]
     }
   ],
   "firstRunProviders": [
-    "graphql:127-0-0-1-65096-graphql",
-    "graphql:127-0-0-1-65097-graphql",
-    "graphql:127-0-0-1-65098-graphql"
+    "openapi:harbourly",
+    "openapi:ashgrove",
+    "graphql:127-0-0-1-52130-graphql"
   ],
   "receipts": {
     "count": 21,
     "intact": true,
     "brokenAt": null,
-    "head": "74d655870bf485fcdeb2a5f92f6f67607dd17e35c3f41ffd9839a780b6de0566"
+    "head": "fee2806bc9e0a6faafa41e501c80f775377ec7274429ccf4260d49653a0f50da"
   },
   "passed": 14,
   "total": 14

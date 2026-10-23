@@ -1,0 +1,12 @@
+Traceback (most recent call last):
+  File "/Users/ross/src/rightclick-x-adaptive/experiments/actenon/lifecycle.py", line 222, in <module>
+    run(args.output, args.image)
+  File "/Users/ross/src/rightclick-x-adaptive/experiments/actenon/lifecycle.py", line 161, in run
+    warm = phase("warm", "warm")
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/ross/src/rightclick-x-adaptive/experiments/actenon/lifecycle.py", line 144, in phase
+    response = contained(docker, image_id, stage, boundary, name, state,
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/ross/src/rightclick-x-adaptive/experiments/actenon/containment.py", line 283, in contained
+    raise RuntimeError(f"contained {phase} failed or timed out; see preserved stderr")
+RuntimeError: contained warm failed or timed out; see preserved stderr

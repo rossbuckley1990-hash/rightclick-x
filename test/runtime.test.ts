@@ -15,7 +15,7 @@ test("compose finds a 3-protocol pipeline nobody wrote, runs it, verifies it", a
   assert.deepEqual(r.plans[0].titles, ["Geocode", "Weather forecast", "Translate text"]);
   assert.equal(r.plans[0].providers.length, 3);
   assert.equal(r.executed?.status, "completed");
-  assert.equal(r.executed?.verification.status, "verified");
+  assert.equal(r.executed?.verification.status, "checked"); // stored predicates passed: checked, not independently verified (North Star Stage 2)
   assert.match(String(r.executed?.output), /^Se esperan .* °?\d+°C/);
   assert.equal(r.executed?.runs.length, 3);
 });
@@ -131,7 +131,7 @@ test("receipt chain stays linear under 200 concurrent runs", async () => {
 test("verification: refuted predicates fail the run honestly", async () => {
   const { rc } = await world();
   const ok = await rc.run("builtin:url.domain", { url: "https://x.test/p" }, { verify: [{ op: "equals", value: "x.test" }] });
-  assert.equal(ok.verification.status, "verified");
+  assert.equal(ok.verification.status, "checked"); // stored predicates passed: checked, not independently verified (North Star Stage 2)
   const bad = await rc.run("builtin:url.domain", { url: "https://x.test/p" }, { verify: [{ op: "equals", value: "y.test" }] });
   assert.equal(bad.verification.status, "refuted");
   const none = await rc.run("builtin:url.domain", { url: "https://x.test/p" });

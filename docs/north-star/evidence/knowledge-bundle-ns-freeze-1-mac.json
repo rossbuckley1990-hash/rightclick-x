@@ -1,0 +1,2384 @@
+{
+  "format": "rightclick-x/capability-knowledge@1",
+  "exportedAt": "2026-10-17T13:47:39.598Z",
+  "source": {
+    "os": "darwin",
+    "arch": "arm64",
+    "runtime": "mac-exporter",
+    "version": "0.1.0"
+  },
+  "programs": [
+    {
+      "name": "sum",
+      "path": "/usr/bin/sum",
+      "sha256": "ad6a258ec3bf0e1e0f97c368a5db1d251a00ddb9da765efc8bce0c5d5340d1cc",
+      "investigation": {
+        "runs": 27,
+        "summary": "2 capabilities from 27 sandboxed runs (stdin, files; ok exit 0)"
+      },
+      "capabilities": [
+        {
+          "id": "cli:sum:default",
+          "title": "sum: display file checksums and block counts",
+          "description": "cksum, sum - display file checksums and block counts. Default behaviour. Learned by sandboxed investigation of /usr/bin/sum (sha256 ad6a258ec3bf), not from a contract; runs only in the sandbox.",
+          "inputs": [
+            {
+              "name": "input",
+              "type": "text",
+              "required": true,
+              "anyText": true,
+              "description": "Content given on standard input"
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "risk": "read",
+          "tags": [
+            "sum",
+            "cksum",
+            "sum",
+            "display",
+            "file",
+            "checksums",
+            "and",
+            "block",
+            "counts"
+          ],
+          "invoke": {
+            "kind": "cli",
+            "bin": "/usr/bin/sum",
+            "args": [],
+            "stdin": "input",
+            "okExit": [
+              0
+            ],
+            "output": "text",
+            "sha256": "ad6a258ec3bf0e1e0f97c368a5db1d251a00ddb9da765efc8bce0c5d5340d1cc",
+            "behaviour": "b4c5b0a84aec62c4",
+            "examples": [
+              {
+                "stdin": "<html><head><title>india lima delta line 1</title></head><body><h1>juliet alpha echo line 2</h1><p>kilo bravo foxtrot line 3<p>lima charlie golf line 4<ul><li>alpha<li>bravo</ul></body></html>\n",
+                "outputSha256": "ba85dc91995a8924345a327e6efa2b823548607e13d641991d54ccdc1f1acb3a",
+                "outputPreview": "10245 1\n"
+              },
+              {
+                "stdin": "<!DOCTYPE html>\n<html>\n<head><title>alpha delta hotel line 5</title></head>\n<body>\n<div><b>bravo echo india line 6</div>\n<table><tr><td>delta<td>echo</table>\n</body>\n</html>\n",
+                "outputSha256": "27554d855c8d21dcc3e21246ae7329d3b3ac44970125352877bb70288490f100",
+                "outputPreview": "33421 1\n"
+              }
+            ]
+          }
+        },
+        {
+          "id": "cli:sum:invoke",
+          "title": "sum with documented options: display file checksums and block counts",
+          "description": "cksum, sum - display file checksums and block counts. Runs the program with options chosen by the caller from the 1 its documentation declares (pass them in \"options\", e.g. [\"-o\"]); undocumented options are refused. Option effects are declared by the documentation; see the card's evidence for those tested. Runs only in the sandbox.",
+          "inputs": [
+            {
+              "name": "input",
+              "type": "text",
+              "required": false,
+              "anyText": true,
+              "description": "Content given on standard input"
+            },
+            {
+              "name": "options",
+              "type": "list:text",
+              "required": false,
+              "description": "Documented options and their values, one item each: -o"
+            },
+            {
+              "name": "files",
+              "type": "json",
+              "required": false,
+              "description": "Named input files {\"name.txt\": \"content\"}: written into the sandbox and passed as operands in this order (refer to them by name in options that take a file)"
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "risk": "read",
+          "tags": [
+            "sum",
+            "declared-interface",
+            "direct-only",
+            "cksum",
+            "sum",
+            "display",
+            "file",
+            "checksums",
+            "and",
+            "block",
+            "counts"
+          ],
+          "invoke": {
+            "kind": "cli",
+            "bin": "/usr/bin/sum",
+            "args": [],
+            "stdin": "input",
+            "okExit": [
+              0
+            ],
+            "output": "text",
+            "sha256": "ad6a258ec3bf0e1e0f97c368a5db1d251a00ddb9da765efc8bce0c5d5340d1cc",
+            "behaviour": "b4c5b0a84aec62c4+options",
+            "examples": [
+              {
+                "stdin": "<html><head><title>india lima delta line 1</title></head><body><h1>juliet alpha echo line 2</h1><p>kilo bravo foxtrot line 3<p>lima charlie golf line 4<ul><li>alpha<li>bravo</ul></body></html>\n",
+                "outputSha256": "ba85dc91995a8924345a327e6efa2b823548607e13d641991d54ccdc1f1acb3a",
+                "outputPreview": "10245 1\n"
+              },
+              {
+                "stdin": "<!DOCTYPE html>\n<html>\n<head><title>alpha delta hotel line 5</title></head>\n<body>\n<div><b>bravo echo india line 6</div>\n<table><tr><td>delta<td>echo</table>\n</body>\n</html>\n",
+                "outputSha256": "27554d855c8d21dcc3e21246ae7329d3b3ac44970125352877bb70288490f100",
+                "outputPreview": "33421 1\n"
+              }
+            ],
+            "options": {
+              "port": "options",
+              "allowed": [
+                {
+                  "flags": [
+                    "-o"
+                  ],
+                  "arg": false
+                }
+              ]
+            },
+            "filesPort": "files"
+          }
+        }
+      ],
+      "claims": [
+        {
+          "subject": "sum",
+          "claim": "documents its usage",
+          "status": "declared"
+        },
+        {
+          "subject": "sum",
+          "claim": "purpose: cksum, sum - display file checksums and block counts",
+          "status": "declared"
+        },
+        {
+          "subject": "sum",
+          "claim": "options: 1 declared",
+          "status": "declared"
+        },
+        {
+          "subject": "sum",
+          "claim": "operands: required [], optional [file], variadic",
+          "status": "inferred"
+        },
+        {
+          "subject": "cli:sum:default",
+          "claim": "accepts html/xml/json/csv/text input via stdin and prints text",
+          "status": "experimentally-supported"
+        },
+        {
+          "subject": "cli:sum:default",
+          "claim": "deterministic for identical input",
+          "status": "experimentally-supported"
+        },
+        {
+          "subject": "cli:sum:default",
+          "claim": "side effects outside the sandbox",
+          "status": "unknown"
+        },
+        {
+          "subject": "cli:sum:o",
+          "claim": "option -o produces output",
+          "status": "contradicted"
+        },
+        {
+          "subject": "cli:sum:invoke",
+          "claim": "offers 1 documented options; refuses any other",
+          "status": "declared"
+        },
+        {
+          "subject": "sum",
+          "claim": "on empty input exits 0 with output",
+          "status": "observed"
+        }
+      ]
+    },
+    {
+      "name": "json_xs",
+      "path": "/usr/bin/json_xs",
+      "sha256": "c0903b27ef64f0f42952c12ce1367dcd0beebb0dad84cb70a6e6681cf4ec9c0b",
+      "investigation": {
+        "runs": 28,
+        "summary": "2 capabilities from 28 sandboxed runs (stdin; ok exit 0)"
+      },
+      "capabilities": [
+        {
+          "id": "cli:json-xs:default",
+          "title": "json_xs: JSON::XS commandline utility",
+          "description": "json_xs - JSON::XS commandline utility. Default behaviour. Learned by sandboxed investigation of /usr/bin/json_xs (sha256 c0903b27ef64), not from a contract; runs only in the sandbox. Equivalent to -v: Be slightly more verbose.",
+          "inputs": [
+            {
+              "name": "json",
+              "type": "json",
+              "required": true,
+              "description": "Content given on standard input"
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "json",
+              "required": true
+            },
+            {
+              "name": "count",
+              "type": "number",
+              "required": true,
+              "observed": true
+            },
+            {
+              "name": "name",
+              "type": "text",
+              "required": true,
+              "observed": true
+            },
+            {
+              "name": "tags",
+              "type": "list:json",
+              "required": true,
+              "observed": true
+            }
+          ],
+          "risk": "read",
+          "tags": [
+            "json_xs",
+            "json",
+            "commandline",
+            "utility",
+            "unsupported",
+            "slightly",
+            "more",
+            "verbose"
+          ],
+          "invoke": {
+            "kind": "cli",
+            "bin": "/usr/bin/json_xs",
+            "args": [],
+            "stdin": "json",
+            "okExit": [
+              0
+            ],
+            "output": "json",
+            "sha256": "c0903b27ef64f0f42952c12ce1367dcd0beebb0dad84cb70a6e6681cf4ec9c0b",
+            "behaviour": "8a71a27dc170a3c7",
+            "examples": [
+              {
+                "stdin": "{\"name\":\"india\",\"count\":7,\"tags\":[\"juliet\",\"kilo\"]}\n",
+                "outputSha256": "1d22d2a378182cbe162ffde6d75e310092cc3e92c8d7818c1fd7ad293ef9d3f5",
+                "outputPreview": "{\n   \"count\" : 7,\n   \"name\" : \"india\",\n   \"tags\" : [\n      \"juliet\",\n      \"kilo\"\n   ]\n}\n"
+              },
+              {
+                "stdin": "{\"name\":\"india\",\"count\":7,\"tags\":[\"juliet\",\"kilo\"]}\n",
+                "outputSha256": "1d22d2a378182cbe162ffde6d75e310092cc3e92c8d7818c1fd7ad293ef9d3f5",
+                "outputPreview": "{\n   \"count\" : 7,\n   \"name\" : \"india\",\n   \"tags\" : [\n      \"juliet\",\n      \"kilo\"\n   ]\n}\n"
+              }
+            ]
+          }
+        },
+        {
+          "id": "cli:json-xs:invoke",
+          "title": "json_xs with documented options: JSON::XS commandline utility",
+          "description": "json_xs - JSON::XS commandline utility. Runs the program with options chosen by the caller from the 3 its documentation declares (pass them in \"options\", e.g. [\"-v\"]); undocumented options are refused. Option effects are declared by the documentation; see the card's evidence for those tested. Runs only in the sandbox.",
+          "inputs": [
+            {
+              "name": "json",
+              "type": "json",
+              "required": false,
+              "description": "Content given on standard input"
+            },
+            {
+              "name": "options",
+              "type": "list:text",
+              "required": false,
+              "description": "Documented options and their values, one item each: -v, -f <fromformat>, -e <code>"
+            },
+            {
+              "name": "files",
+              "type": "json",
+              "required": false,
+              "description": "Named input files {\"name.txt\": \"content\"}: written into the sandbox and passed as operands in this order (refer to them by name in options that take a file)"
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "json",
+              "required": true
+            },
+            {
+              "name": "count",
+              "type": "number",
+              "required": true,
+              "observed": true
+            },
+            {
+              "name": "name",
+              "type": "text",
+              "required": true,
+              "observed": true
+            },
+            {
+              "name": "tags",
+              "type": "list:json",
+              "required": true,
+              "observed": true
+            }
+          ],
+          "risk": "read",
+          "tags": [
+            "json_xs",
+            "declared-interface",
+            "direct-only",
+            "unsupported",
+            "json",
+            "json",
+            "commandline",
+            "utility"
+          ],
+          "invoke": {
+            "kind": "cli",
+            "bin": "/usr/bin/json_xs",
+            "args": [],
+            "stdin": "json",
+            "okExit": [
+              0
+            ],
+            "output": "json",
+            "sha256": "c0903b27ef64f0f42952c12ce1367dcd0beebb0dad84cb70a6e6681cf4ec9c0b",
+            "behaviour": "8a71a27dc170a3c7+options",
+            "examples": [
+              {
+                "stdin": "{\"name\":\"india\",\"count\":7,\"tags\":[\"juliet\",\"kilo\"]}\n",
+                "outputSha256": "1d22d2a378182cbe162ffde6d75e310092cc3e92c8d7818c1fd7ad293ef9d3f5",
+                "outputPreview": "{\n   \"count\" : 7,\n   \"name\" : \"india\",\n   \"tags\" : [\n      \"juliet\",\n      \"kilo\"\n   ]\n}\n"
+              },
+              {
+                "stdin": "{\"name\":\"india\",\"count\":7,\"tags\":[\"juliet\",\"kilo\"]}\n",
+                "outputSha256": "1d22d2a378182cbe162ffde6d75e310092cc3e92c8d7818c1fd7ad293ef9d3f5",
+                "outputPreview": "{\n   \"count\" : 7,\n   \"name\" : \"india\",\n   \"tags\" : [\n      \"juliet\",\n      \"kilo\"\n   ]\n}\n"
+              }
+            ],
+            "options": {
+              "port": "options",
+              "allowed": [
+                {
+                  "flags": [
+                    "-v"
+                  ],
+                  "arg": false
+                },
+                {
+                  "flags": [
+                    "-f"
+                  ],
+                  "arg": true
+                },
+                {
+                  "flags": [
+                    "-e"
+                  ],
+                  "arg": true
+                }
+              ]
+            },
+            "filesPort": "files"
+          }
+        }
+      ],
+      "claims": [
+        {
+          "subject": "json_xs",
+          "claim": "documents its usage",
+          "status": "declared"
+        },
+        {
+          "subject": "json_xs",
+          "claim": "purpose: json_xs - JSON::XS commandline utility",
+          "status": "declared"
+        },
+        {
+          "subject": "json_xs",
+          "claim": "options: 4 declared",
+          "status": "declared"
+        },
+        {
+          "subject": "json_xs",
+          "claim": "operands: required [], optional []",
+          "status": "inferred"
+        },
+        {
+          "subject": "cli:json-xs:default",
+          "claim": "accepts json input via stdin and prints json",
+          "status": "observed"
+        },
+        {
+          "subject": "cli:json-xs:default",
+          "claim": "deterministic for identical input",
+          "status": "experimentally-supported"
+        },
+        {
+          "subject": "cli:json-xs:default",
+          "claim": "output keeps every word of the input",
+          "status": "observed"
+        },
+        {
+          "subject": "cli:json-xs:default",
+          "claim": "side effects outside the sandbox",
+          "status": "unknown"
+        },
+        {
+          "subject": "cli:json-xs:v",
+          "claim": "option -v changes the output",
+          "status": "contradicted"
+        },
+        {
+          "subject": "cli:json-xs:default",
+          "claim": "equivalent to -v (Be slightly more verbose.)",
+          "status": "experimentally-supported"
+        },
+        {
+          "subject": "cli:json-xs:invoke",
+          "claim": "option -f fromformat (Read a file in the given format from STDIN.) changes the output (tried -f %s)",
+          "status": "unknown"
+        },
+        {
+          "subject": "cli:json-xs:invoke",
+          "claim": "option -e code (Evaluate perl code after reading the data and before writing it out again - can ) changes the output (tried -e 2)",
+          "status": "contradicted"
+        },
+        {
+          "subject": "cli:json-xs:invoke",
+          "claim": "offers 3 documented options; refuses any other",
+          "status": "declared"
+        },
+        {
+          "subject": "json_xs",
+          "claim": "on empty input exits 255 without output",
+          "status": "observed"
+        }
+      ]
+    },
+    {
+      "name": "xsubpp5.34",
+      "path": "/usr/bin/xsubpp5.34",
+      "sha256": "c8c0f265dd2f3f247f179a5464bddfe6391b9e06996e961fa15c51c2e26e39a3",
+      "investigation": {
+        "runs": 24,
+        "summary": "1 capability from 24 sandboxed runs (files; ok exit 0)"
+      },
+      "capabilities": [
+        {
+          "id": "cli:xsubpp5-34:default",
+          "title": "xsubpp5.34: Unknown option: help",
+          "description": "xsubpp5.34 - Unknown option: help. Default behaviour. Learned by sandboxed investigation of /usr/bin/xsubpp5.34 (sha256 c8c0f265dd2f), not from a contract; runs only in the sandbox.",
+          "inputs": [
+            {
+              "name": "file",
+              "type": "text",
+              "required": true,
+              "anyText": true,
+              "description": "Content passed as a file operand"
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "risk": "read",
+          "tags": [
+            "xsubpp5.34",
+            "xsubpp",
+            "unknown",
+            "option",
+            "help",
+            "preserves-input-words"
+          ],
+          "invoke": {
+            "kind": "cli",
+            "bin": "/usr/bin/xsubpp5.34",
+            "args": [
+              {
+                "input": "file"
+              }
+            ],
+            "okExit": [
+              0
+            ],
+            "output": "text",
+            "sha256": "c8c0f265dd2f3f247f179a5464bddfe6391b9e06996e961fa15c51c2e26e39a3",
+            "behaviour": "853f3d86144beae7",
+            "examples": [
+              {
+                "files": {
+                  "input1.html": "<html><head><title>india lima delta line 1</title></head><body><h1>juliet alpha echo line 2</h1><p>kilo bravo foxtrot line 3<p>lima charlie golf line 4<ul><li>alpha<li>bravo</ul></body></html>\n"
+                },
+                "outputSha256": "b3ec502e95da7886d5210ce8a80e97ef9894d258e38477f01f2aa933e21fc3a8",
+                "outputPreview": "/*\n * This file was generated automatically by ExtUtils::ParseXS version 3.43 from the\n * contents of input1.html. Do not edit this file, edit input1.html inste"
+              },
+              {
+                "files": {
+                  "input1.html": "<!DOCTYPE html>\n<html>\n<head><title>alpha delta hotel line 5</title></head>\n<body>\n<div><b>bravo echo india line 6</div>\n<table><tr><td>delta<td>echo</table>\n</body>\n</html>\n"
+                },
+                "outputSha256": "85e35ae680cc04828a94d8e1d34627a1080c24a227de94ecbc0305f52d690024",
+                "outputPreview": "/*\n * This file was generated automatically by ExtUtils::ParseXS version 3.43 from the\n * contents of input1.html. Do not edit this file, edit input1.html inste"
+              }
+            ]
+          }
+        }
+      ],
+      "claims": [
+        {
+          "subject": "xsubpp5.34",
+          "claim": "documents its usage",
+          "status": "declared"
+        },
+        {
+          "subject": "xsubpp5.34",
+          "claim": "purpose: xsubpp5.34 - Unknown option: help",
+          "status": "declared"
+        },
+        {
+          "subject": "xsubpp5.34",
+          "claim": "options: 0 declared",
+          "status": "unknown"
+        },
+        {
+          "subject": "xsubpp5.34",
+          "claim": "operands: required [], optional []",
+          "status": "inferred"
+        },
+        {
+          "subject": "cli:xsubpp5-34:default",
+          "claim": "accepts html/xml/json/csv/text input via files and prints text",
+          "status": "experimentally-supported"
+        },
+        {
+          "subject": "cli:xsubpp5-34:default",
+          "claim": "deterministic for identical input",
+          "status": "experimentally-supported"
+        },
+        {
+          "subject": "cli:xsubpp5-34:default",
+          "claim": "output keeps every word of the input",
+          "status": "experimentally-supported"
+        },
+        {
+          "subject": "cli:xsubpp5-34:default",
+          "claim": "side effects outside the sandbox",
+          "status": "unknown"
+        },
+        {
+          "subject": "xsubpp5.34",
+          "claim": "on empty input exits 0 with output",
+          "status": "observed"
+        }
+      ]
+    },
+    {
+      "name": "autom4te",
+      "path": "/opt/homebrew/bin/autom4te",
+      "sha256": "2d8dd8ec830c99d7eed2cf03ef54fb558ee04be476d04271244c16ae7464b833",
+      "version": "autom4te (GNU Autoconf) 2.73",
+      "investigation": {
+        "runs": 34,
+        "summary": "3 capabilities from 34 sandboxed runs (files; ok exit 0)"
+      },
+      "capabilities": [
+        {
+          "id": "cli:autom4te:default",
+          "title": "autom4te: Run GNU M4 on the FILES, avoiding useless runs.  Output the traces if tracing,",
+          "description": "autom4te - Run GNU M4 on the FILES, avoiding useless runs.  Output the traces if tracing,. Default behaviour. Learned by sandboxed investigation of /opt/homebrew/bin/autom4te (sha256 2d8dd8ec830c), not from a contract; runs only in the sandbox.",
+          "inputs": [
+            {
+              "name": "file",
+              "type": "text",
+              "required": true,
+              "anyText": true,
+              "description": "Content passed as a file operand"
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "risk": "read",
+          "tags": [
+            "autom4te",
+            "autom",
+            "run",
+            "gnu",
+            "the",
+            "files",
+            "avoiding",
+            "useless",
+            "runs",
+            "output",
+            "the",
+            "traces",
+            "tracing"
+          ],
+          "invoke": {
+            "kind": "cli",
+            "bin": "/opt/homebrew/bin/autom4te",
+            "args": [
+              {
+                "input": "file"
+              }
+            ],
+            "okExit": [
+              0
+            ],
+            "output": "text",
+            "sha256": "2d8dd8ec830c99d7eed2cf03ef54fb558ee04be476d04271244c16ae7464b833",
+            "behaviour": "7f3553cab6f20139",
+            "examples": [
+              {
+                "files": {
+                  "input1.html": "<html><head><title>india lima delta line 1</title></head><body><h1>juliet alpha echo line 2</h1><p>kilo bravo foxtrot line 3<p>lima charlie golf line 4<ul><li>alpha<li>bravo</ul></body></html>\n"
+                },
+                "outputSha256": "81c1bdbf038ec7f84fcdb901466e5aa8059fe9f141c449d7799c2073e567351b",
+                "outputPreview": "<html><head><title>india lima delta line 1</title></head><body><h1>juliet alpha echo line 2</h1><p>kilo bravo foxtrot line 3<p>lima charlie golf line 4<ul><li>a"
+              },
+              {
+                "files": {
+                  "input1.html": "<!DOCTYPE html>\n<html>\n<head><title>alpha delta hotel line 5</title></head>\n<body>\n<div><b>bravo echo india line 6</div>\n<table><tr><td>delta<td>echo</table>\n</body>\n</html>\n"
+                },
+                "outputSha256": "29a691b20eef34a6f28a10f95d01475cc66c391aac5475855b1fdc9285441ca4",
+                "outputPreview": "<!DOCTYPE html>\n<html>\n<head><title>alpha delta hotel line 5</title></head>\n<body>\n<div><b>bravo echo india line 6</div>\n<table><tr><td>delta<td>echo</table>\n</"
+              }
+            ]
+          }
+        },
+        {
+          "id": "cli:autom4te:verbose",
+          "title": "autom4te --verbose: verbosely report processing",
+          "description": "autom4te - Run GNU M4 on the FILES, avoiding useless runs.  Output the traces if tracing,. With --verbose: verbosely report processing. Learned by sandboxed investigation of /opt/homebrew/bin/autom4te (sha256 2d8dd8ec830c), not from a contract; runs only in the sandbox.",
+          "inputs": [
+            {
+              "name": "file",
+              "type": "text",
+              "required": true,
+              "anyText": true,
+              "description": "Content passed as a file operand"
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "risk": "read",
+          "tags": [
+            "autom4te",
+            "autom",
+            "run",
+            "gnu",
+            "the",
+            "files",
+            "avoiding",
+            "useless",
+            "runs",
+            "output",
+            "the",
+            "traces",
+            "tracing",
+            "verbosely",
+            "report",
+            "processing"
+          ],
+          "invoke": {
+            "kind": "cli",
+            "bin": "/opt/homebrew/bin/autom4te",
+            "args": [
+              "--verbose",
+              {
+                "input": "file"
+              }
+            ],
+            "okExit": [
+              0
+            ],
+            "output": "text",
+            "sha256": "2d8dd8ec830c99d7eed2cf03ef54fb558ee04be476d04271244c16ae7464b833",
+            "behaviour": "326df2fdaf238b51",
+            "examples": [
+              {
+                "files": {
+                  "input1.txt": "juliet\t17\tLIMA\nalpha  bravo   end\n\njuliet\t17\tLIMA\nZeta 3\nalpha 21\n"
+                },
+                "outputSha256": "8b7a09bdc3bad166c39f12f18b188805443ae714e2513bc571aee9c5340dc00a",
+                "outputPreview": "juliet\t17\tLIMA\nalpha  bravo   end\n\njuliet\t17\tLIMA\nZeta 3\nalpha 21\n"
+              },
+              {
+                "files": {
+                  "input1.txt": "hotel kilo charlie line 0\nindia lima delta line 1\njuliet alpha echo line 2\nkilo bravo foxtrot line 3\nlima charlie golf line 4\nalpha delta hotel line 5\n"
+                },
+                "outputSha256": "3559c564ae87edfab1660b48929ccdedf4371b514e23eb0fea87bd6743a1fe62",
+                "outputPreview": "hotel kilo charlie line 0\nindia lima delta line 1\njuliet alpha echo line 2\nkilo bravo foxtrot line 3\nlima charlie golf line 4\nalpha delta hotel line 5\n"
+              }
+            ]
+          }
+        },
+        {
+          "id": "cli:autom4te:invoke",
+          "title": "autom4te with documented options: Run GNU M4 on the FILES, avoiding useless runs.  Output the traces if tracing,",
+          "description": "autom4te - Run GNU M4 on the FILES, avoiding useless runs.  Output the traces if tracing,. Runs the program with options chosen by the caller from the 12 its documentation declares (pass them in \"options\", e.g. [\"-v\"]); undocumented options are refused. Option effects are declared by the documentation; see the card's evidence for those tested. Runs only in the sandbox.",
+          "inputs": [
+            {
+              "name": "file",
+              "type": "text",
+              "required": false,
+              "anyText": true,
+              "description": "Content passed as a file operand"
+            },
+            {
+              "name": "options",
+              "type": "list:text",
+              "required": false,
+              "description": "Documented options and their values, one item each: -v/--verbose, -f/--force, -W/--warnings <CATEGORY>, -l/--language <LANG>, -C/--cache <DIRECTORY>, --no-cache, -M/--melt, -B/--prepend-include <DIR>, -I/--include <DIR>, -t, -p/--preselect <MACRO>, -F/--freeze"
+            },
+            {
+              "name": "files",
+              "type": "json",
+              "required": false,
+              "description": "Named input files {\"name.txt\": \"content\"}: written into the sandbox and passed as operands in this order (refer to them by name in options that take a file)"
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "risk": "read",
+          "tags": [
+            "autom4te",
+            "declared-interface",
+            "direct-only",
+            "autom",
+            "run",
+            "gnu",
+            "the",
+            "files",
+            "avoiding",
+            "useless",
+            "runs",
+            "output",
+            "the",
+            "traces",
+            "tracing"
+          ],
+          "invoke": {
+            "kind": "cli",
+            "bin": "/opt/homebrew/bin/autom4te",
+            "args": [
+              {
+                "input": "file"
+              }
+            ],
+            "okExit": [
+              0
+            ],
+            "output": "text",
+            "sha256": "2d8dd8ec830c99d7eed2cf03ef54fb558ee04be476d04271244c16ae7464b833",
+            "behaviour": "7f3553cab6f20139+options",
+            "examples": [
+              {
+                "files": {
+                  "input1.html": "<html><head><title>india lima delta line 1</title></head><body><h1>juliet alpha echo line 2</h1><p>kilo bravo foxtrot line 3<p>lima charlie golf line 4<ul><li>alpha<li>bravo</ul></body></html>\n"
+                },
+                "outputSha256": "81c1bdbf038ec7f84fcdb901466e5aa8059fe9f141c449d7799c2073e567351b",
+                "outputPreview": "<html><head><title>india lima delta line 1</title></head><body><h1>juliet alpha echo line 2</h1><p>kilo bravo foxtrot line 3<p>lima charlie golf line 4<ul><li>a"
+              },
+              {
+                "files": {
+                  "input1.html": "<!DOCTYPE html>\n<html>\n<head><title>alpha delta hotel line 5</title></head>\n<body>\n<div><b>bravo echo india line 6</div>\n<table><tr><td>delta<td>echo</table>\n</body>\n</html>\n"
+                },
+                "outputSha256": "29a691b20eef34a6f28a10f95d01475cc66c391aac5475855b1fdc9285441ca4",
+                "outputPreview": "<!DOCTYPE html>\n<html>\n<head><title>alpha delta hotel line 5</title></head>\n<body>\n<div><b>bravo echo india line 6</div>\n<table><tr><td>delta<td>echo</table>\n</"
+              }
+            ],
+            "options": {
+              "port": "options",
+              "allowed": [
+                {
+                  "flags": [
+                    "-v",
+                    "--verbose"
+                  ],
+                  "arg": false
+                },
+                {
+                  "flags": [
+                    "-f",
+                    "--force"
+                  ],
+                  "arg": false
+                },
+                {
+                  "flags": [
+                    "-W",
+                    "--warnings"
+                  ],
+                  "arg": true
+                },
+                {
+                  "flags": [
+                    "-l",
+                    "--language"
+                  ],
+                  "arg": true
+                },
+                {
+                  "flags": [
+                    "-C",
+                    "--cache"
+                  ],
+                  "arg": true
+                },
+                {
+                  "flags": [
+                    "--no-cache"
+                  ],
+                  "arg": false
+                },
+                {
+                  "flags": [
+                    "-M",
+                    "--melt"
+                  ],
+                  "arg": false
+                },
+                {
+                  "flags": [
+                    "-B",
+                    "--prepend-include"
+                  ],
+                  "arg": true
+                },
+                {
+                  "flags": [
+                    "-I",
+                    "--include"
+                  ],
+                  "arg": true
+                },
+                {
+                  "flags": [
+                    "-t"
+                  ],
+                  "arg": false
+                },
+                {
+                  "flags": [
+                    "-p",
+                    "--preselect"
+                  ],
+                  "arg": true
+                },
+                {
+                  "flags": [
+                    "-F",
+                    "--freeze"
+                  ],
+                  "arg": false
+                }
+              ]
+            },
+            "filesPort": "files"
+          }
+        }
+      ],
+      "claims": [
+        {
+          "subject": "autom4te",
+          "claim": "documents its usage",
+          "status": "declared"
+        },
+        {
+          "subject": "autom4te",
+          "claim": "purpose: autom4te - Run GNU M4 on the FILES, avoiding useless runs.  Output the traces if tracing,",
+          "status": "declared"
+        },
+        {
+          "subject": "autom4te",
+          "claim": "options: 17 declared",
+          "status": "declared"
+        },
+        {
+          "subject": "autom4te",
+          "claim": "operands: required [], optional [OPTION, FILES], variadic",
+          "status": "inferred"
+        },
+        {
+          "subject": "cli:autom4te:default",
+          "claim": "accepts html/xml/json/csv/text input via files and prints text",
+          "status": "experimentally-supported"
+        },
+        {
+          "subject": "cli:autom4te:default",
+          "claim": "deterministic for identical input",
+          "status": "experimentally-supported"
+        },
+        {
+          "subject": "cli:autom4te:default",
+          "claim": "output keeps every word of the input",
+          "status": "experimentally-supported"
+        },
+        {
+          "subject": "cli:autom4te:default",
+          "claim": "output equals the input (no transformation)",
+          "status": "observed"
+        },
+        {
+          "subject": "cli:autom4te:default",
+          "claim": "side effects outside the sandbox",
+          "status": "unknown"
+        },
+        {
+          "subject": "cli:autom4te:verbose",
+          "claim": "accepts text input via files and prints text",
+          "status": "experimentally-supported"
+        },
+        {
+          "subject": "cli:autom4te:verbose",
+          "claim": "deterministic for identical input",
+          "status": "experimentally-supported"
+        },
+        {
+          "subject": "cli:autom4te:verbose",
+          "claim": "output keeps every word of the input",
+          "status": "experimentally-supported"
+        },
+        {
+          "subject": "cli:autom4te:verbose",
+          "claim": "output equals the input (no transformation)",
+          "status": "observed"
+        },
+        {
+          "subject": "cli:autom4te:verbose",
+          "claim": "side effects outside the sandbox",
+          "status": "unknown"
+        },
+        {
+          "subject": "cli:autom4te:t",
+          "claim": "option -t produces output",
+          "status": "contradicted"
+        },
+        {
+          "subject": "cli:autom4te:invoke",
+          "claim": "option --warnings CATEGORY (report the warnings falling in CATEGORY (comma-separated list accepted)) changes the output (tried --warnings 2)",
+          "status": "contradicted"
+        },
+        {
+          "subject": "cli:autom4te:invoke",
+          "claim": "option --language LANG (specify the set of M4 macros to use) changes the output (tried --language 2)",
+          "status": "unknown"
+        },
+        {
+          "subject": "cli:autom4te:invoke",
+          "claim": "option --cache DIRECTORY (preserve results for future runs in DIRECTORY --no-cache disable the cache) changes the output (tried --cache 2)",
+          "status": "contradicted"
+        },
+        {
+          "subject": "cli:autom4te:invoke",
+          "claim": "option --prepend-include DIR (prepend directory DIR to search path) changes the output (tried --prepend-include 2)",
+          "status": "contradicted"
+        },
+        {
+          "subject": "cli:autom4te:invoke",
+          "claim": "option --include DIR (append directory DIR to search path) changes the output (tried --include 2)",
+          "status": "contradicted"
+        },
+        {
+          "subject": "cli:autom4te:invoke",
+          "claim": "option --preselect MACRO (prepare to trace MACRO in a future run) changes the output (tried --preselect 2)",
+          "status": "contradicted"
+        },
+        {
+          "subject": "cli:autom4te:invoke",
+          "claim": "offers 12 documented options; refuses any other",
+          "status": "declared"
+        },
+        {
+          "subject": "autom4te",
+          "claim": "on empty input exits 0 without output",
+          "status": "observed"
+        }
+      ]
+    },
+    {
+      "name": "exiftool",
+      "path": "/opt/homebrew/bin/exiftool",
+      "sha256": "18b091f3a5cecac39f97440c1f4ae968c5fed2fcf1c74b29536b10d5fc12a4e2",
+      "version": "NAME",
+      "investigation": {
+        "runs": 54,
+        "summary": "10 capabilities from 54 sandboxed runs (files; ok exit 0)"
+      },
+      "capabilities": [
+        {
+          "id": "cli:exiftool:default",
+          "title": "exiftool: exiftool - Read and write meta information in files",
+          "description": "exiftool - exiftool - Read and write meta information in files. Default behaviour. Learned by sandboxed investigation of /opt/homebrew/bin/exiftool (sha256 18b091f3a5ce), not from a contract; runs only in the sandbox.",
+          "inputs": [
+            {
+              "name": "file",
+              "type": "text",
+              "required": true,
+              "anyText": true,
+              "description": "Content passed as a file operand"
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "risk": "read",
+          "tags": [
+            "exiftool",
+            "exiftool",
+            "exiftool",
+            "read",
+            "and",
+            "write",
+            "meta",
+            "information",
+            "files",
+            "nondeterministic",
+            "unsupported"
+          ],
+          "invoke": {
+            "kind": "cli",
+            "bin": "/opt/homebrew/bin/exiftool",
+            "args": [
+              {
+                "input": "file"
+              }
+            ],
+            "okExit": [
+              0
+            ],
+            "output": "text",
+            "sha256": "18b091f3a5cecac39f97440c1f4ae968c5fed2fcf1c74b29536b10d5fc12a4e2",
+            "behaviour": "142e9a1a559d61b3",
+            "examples": [
+              {
+                "files": {
+                  "input1.html": "<html><head><title>india lima delta line 1</title></head><body><h1>juliet alpha echo line 2</h1><p>kilo bravo foxtrot line 3<p>lima charlie golf line 4<ul><li>alpha<li>bravo</ul></body></html>\n"
+                },
+                "outputSha256": "2f3e09ffc367d04669e4062e3d5b54ea748b8caf3b013bcdd02565cc926ae9a2",
+                "outputPreview": "ExifTool Version Number         : 13.55\nFile Name                       : input1.html\nDirectory                       : .\nFile Size                       : 193 "
+              },
+              {
+                "files": {
+                  "input1.html": "<!DOCTYPE html>\n<html>\n<head><title>alpha delta hotel line 5</title></head>\n<body>\n<div><b>bravo echo india line 6</div>\n<table><tr><td>delta<td>echo</table>\n</body>\n</html>\n"
+                },
+                "outputSha256": "49e0d2140af6dad5ee4428c27ff36bfac977ffeacf232778f8770c8daa083c04",
+                "outputPreview": "ExifTool Version Number         : 13.55\nFile Name                       : input1.html\nDirectory                       : .\nFile Size                       : 174 "
+              }
+            ]
+          }
+        },
+        {
+          "id": "cli:exiftool:args",
+          "title": "exiftool -args: (-argFormat) Format metadata as exiftool arguments",
+          "description": "exiftool - exiftool - Read and write meta information in files. With -args: (-argFormat) Format metadata as exiftool arguments. Learned by sandboxed investigation of /opt/homebrew/bin/exiftool (sha256 18b091f3a5ce), not from a contract; runs only in the sandbox.",
+          "inputs": [
+            {
+              "name": "file",
+              "type": "text",
+              "required": true,
+              "anyText": true,
+              "description": "Content passed as a file operand"
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "risk": "read",
+          "tags": [
+            "exiftool",
+            "exiftool",
+            "exiftool",
+            "read",
+            "and",
+            "write",
+            "meta",
+            "information",
+            "files",
+            "argformat",
+            "format",
+            "metadata",
+            "exiftool",
+            "arguments"
+          ],
+          "invoke": {
+            "kind": "cli",
+            "bin": "/opt/homebrew/bin/exiftool",
+            "args": [
+              "-args",
+              {
+                "input": "file"
+              }
+            ],
+            "okExit": [
+              0
+            ],
+            "output": "text",
+            "sha256": "18b091f3a5cecac39f97440c1f4ae968c5fed2fcf1c74b29536b10d5fc12a4e2",
+            "behaviour": "dd08325a74d3c6fe",
+            "examples": [
+              {
+                "files": {
+                  "input1.txt": "juliet\t17\tLIMA\nalpha  bravo   end\n\njuliet\t17\tLIMA\nZeta 3\nalpha 21\n"
+                },
+                "outputSha256": "8660522436e8584d8b21d7ba4c6b45263003d535d8635dbbbfe145d81d522279",
+                "outputPreview": "-ExifToolVersion=13.55\n-FileName=input1.txt\n-Directory=.\n-FileSize=66 bytes\n-FileModifyDate=2026:10:17 14:47:38+01:00\n-FileAccessDate=2026:10:17 14:47:38+01:00\n"
+              },
+              {
+                "files": {
+                  "input1.txt": "hotel kilo charlie line 0\nindia lima delta line 1\njuliet alpha echo line 2\nkilo bravo foxtrot line 3\nlima charlie golf line 4\nalpha delta hotel line 5\n"
+                },
+                "outputSha256": "c09ee63e7746adecb68329ad76a5e4343a74a0e5e440c115cc4dd75a5a2a7ec1",
+                "outputPreview": "-ExifToolVersion=13.55\n-FileName=input1.txt\n-Directory=.\n-FileSize=151 bytes\n-FileModifyDate=2026:10:17 14:47:38+01:00\n-FileAccessDate=2026:10:17 14:47:38+01:00"
+              }
+            ]
+          }
+        },
+        {
+          "id": "cli:exiftool:b",
+          "title": "exiftool -b: (-binary) Output metadata in binary format",
+          "description": "exiftool - exiftool - Read and write meta information in files. With -b: (-binary) Output metadata in binary format. Learned by sandboxed investigation of /opt/homebrew/bin/exiftool (sha256 18b091f3a5ce), not from a contract; runs only in the sandbox.",
+          "inputs": [
+            {
+              "name": "file",
+              "type": "text",
+              "required": true,
+              "anyText": true,
+              "description": "Content passed as a file operand"
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "risk": "read",
+          "tags": [
+            "exiftool",
+            "exiftool",
+            "exiftool",
+            "read",
+            "and",
+            "write",
+            "meta",
+            "information",
+            "files",
+            "binary",
+            "output",
+            "metadata",
+            "binary",
+            "format"
+          ],
+          "invoke": {
+            "kind": "cli",
+            "bin": "/opt/homebrew/bin/exiftool",
+            "args": [
+              "-b",
+              {
+                "input": "file"
+              }
+            ],
+            "okExit": [
+              0
+            ],
+            "output": "text",
+            "sha256": "18b091f3a5cecac39f97440c1f4ae968c5fed2fcf1c74b29536b10d5fc12a4e2",
+            "behaviour": "4a6d298bb1ecc996",
+            "examples": [
+              {
+                "files": {
+                  "input1.txt": "juliet\t17\tLIMA\nalpha  bravo   end\n\njuliet\t17\tLIMA\nZeta 3\nalpha 21\n"
+                },
+                "outputSha256": "df0fd640dd82874f40b1e36708748939d8a9c90346b1fd7e908d1102385e88ea",
+                "outputPreview": "13.55input1.txt.662026:10:17 14:47:38+01:002026:10:17 14:47:38+01:002026:10:17 14:47:38+01:00100644TXTTXTtext/plainus-ascii\n613"
+              },
+              {
+                "files": {
+                  "input1.txt": "hotel kilo charlie line 0\nindia lima delta line 1\njuliet alpha echo line 2\nkilo bravo foxtrot line 3\nlima charlie golf line 4\nalpha delta hotel line 5\n"
+                },
+                "outputSha256": "b8dbe551e69d02d718aed7e39c6806293178f0414dabeecc7f323627e8a81bfb",
+                "outputPreview": "13.55input1.txt.1512026:10:17 14:47:38+01:002026:10:17 14:47:38+01:002026:10:17 14:47:38+01:00100644TXTTXTtext/plainus-ascii\n630"
+              }
+            ]
+          }
+        },
+        {
+          "id": "cli:exiftool:d",
+          "title": "exiftool -D: (-decimal) Show tag ID numbers in decimal",
+          "description": "exiftool - exiftool - Read and write meta information in files. With -D: (-decimal) Show tag ID numbers in decimal. Learned by sandboxed investigation of /opt/homebrew/bin/exiftool (sha256 18b091f3a5ce), not from a contract; runs only in the sandbox.",
+          "inputs": [
+            {
+              "name": "file",
+              "type": "text",
+              "required": true,
+              "anyText": true,
+              "description": "Content passed as a file operand"
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "risk": "read",
+          "tags": [
+            "exiftool",
+            "exiftool",
+            "exiftool",
+            "read",
+            "and",
+            "write",
+            "meta",
+            "information",
+            "files",
+            "decimal",
+            "show",
+            "tag",
+            "numbers",
+            "decimal",
+            "nondeterministic",
+            "unsupported"
+          ],
+          "invoke": {
+            "kind": "cli",
+            "bin": "/opt/homebrew/bin/exiftool",
+            "args": [
+              "-D",
+              {
+                "input": "file"
+              }
+            ],
+            "okExit": [
+              0
+            ],
+            "output": "text",
+            "sha256": "18b091f3a5cecac39f97440c1f4ae968c5fed2fcf1c74b29536b10d5fc12a4e2",
+            "behaviour": "026f13b74fec2b80",
+            "examples": [
+              {
+                "files": {
+                  "input1.txt": "juliet\t17\tLIMA\nalpha  bravo   end\n\njuliet\t17\tLIMA\nZeta 3\nalpha 21\n"
+                },
+                "outputSha256": "30063f4bd034290d49ecfdeaddad0b175e0142679e1af537c1e3bc66555f2a50",
+                "outputPreview": "    - ExifTool Version Number         : 13.55\n    - File Name                       : input1.txt\n    - Directory                       : .\n    - File Size      "
+              },
+              {
+                "files": {
+                  "input1.txt": "hotel kilo charlie line 0\nindia lima delta line 1\njuliet alpha echo line 2\nkilo bravo foxtrot line 3\nlima charlie golf line 4\nalpha delta hotel line 5\n"
+                },
+                "outputSha256": "a8fd144c04e5aaa90292cb7772c3a030ea5b0cc8384f914661a32c76d335c92d",
+                "outputPreview": "    - ExifTool Version Number         : 13.55\n    - File Name                       : input1.txt\n    - Directory                       : .\n    - File Size      "
+              }
+            ]
+          }
+        },
+        {
+          "id": "cli:exiftool:ec",
+          "title": "exiftool -ec: (-escape(HTML|XML|C))Escape tag values for HTML, XML or C",
+          "description": "exiftool - exiftool - Read and write meta information in files. With -ec: (-escape(HTML|XML|C))Escape tag values for HTML, XML or C. Learned by sandboxed investigation of /opt/homebrew/bin/exiftool (sha256 18b091f3a5ce), not from a contract; runs only in the sandbox.",
+          "inputs": [
+            {
+              "name": "file",
+              "type": "text",
+              "required": true,
+              "anyText": true,
+              "description": "Content passed as a file operand"
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "risk": "read",
+          "tags": [
+            "exiftool",
+            "exiftool",
+            "exiftool",
+            "read",
+            "and",
+            "write",
+            "meta",
+            "information",
+            "files",
+            "escape",
+            "html",
+            "xml",
+            "escape",
+            "tag",
+            "values",
+            "for",
+            "html",
+            "xml",
+            "nondeterministic",
+            "unsupported"
+          ],
+          "invoke": {
+            "kind": "cli",
+            "bin": "/opt/homebrew/bin/exiftool",
+            "args": [
+              "-ec",
+              {
+                "input": "file"
+              }
+            ],
+            "okExit": [
+              0
+            ],
+            "output": "text",
+            "sha256": "18b091f3a5cecac39f97440c1f4ae968c5fed2fcf1c74b29536b10d5fc12a4e2",
+            "behaviour": "c7bc8fde18e98647",
+            "examples": [
+              {
+                "files": {
+                  "input1.txt": "juliet\t17\tLIMA\nalpha  bravo   end\n\njuliet\t17\tLIMA\nZeta 3\nalpha 21\n"
+                },
+                "outputSha256": "6931d9c7140236871850603fcc70d0134b4945f43cd8a426ea5586f47f8d1860",
+                "outputPreview": "ExifTool Version Number         : 13.55\nFile Name                       : input1.txt\nDirectory                       : .\nFile Size                       : 66 by"
+              },
+              {
+                "files": {
+                  "input1.txt": "hotel kilo charlie line 0\nindia lima delta line 1\njuliet alpha echo line 2\nkilo bravo foxtrot line 3\nlima charlie golf line 4\nalpha delta hotel line 5\n"
+                },
+                "outputSha256": "8b7af2798a57904b0bd0242048d13d59f029b0be1ec12b93b51babb56f5f6a73",
+                "outputPreview": "ExifTool Version Number         : 13.55\nFile Name                       : input1.txt\nDirectory                       : .\nFile Size                       : 151 b"
+              }
+            ]
+          }
+        },
+        {
+          "id": "cli:exiftool:h",
+          "title": "exiftool -H: (-hex) Show tag ID numbers in hexadecimal",
+          "description": "exiftool - exiftool - Read and write meta information in files. With -H: (-hex) Show tag ID numbers in hexadecimal. Learned by sandboxed investigation of /opt/homebrew/bin/exiftool (sha256 18b091f3a5ce), not from a contract; runs only in the sandbox.",
+          "inputs": [
+            {
+              "name": "file",
+              "type": "text",
+              "required": true,
+              "anyText": true,
+              "description": "Content passed as a file operand"
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "risk": "read",
+          "tags": [
+            "exiftool",
+            "exiftool",
+            "exiftool",
+            "read",
+            "and",
+            "write",
+            "meta",
+            "information",
+            "files",
+            "hex",
+            "show",
+            "tag",
+            "numbers",
+            "hexadecimal",
+            "nondeterministic",
+            "unsupported"
+          ],
+          "invoke": {
+            "kind": "cli",
+            "bin": "/opt/homebrew/bin/exiftool",
+            "args": [
+              "-H",
+              {
+                "input": "file"
+              }
+            ],
+            "okExit": [
+              0
+            ],
+            "output": "text",
+            "sha256": "18b091f3a5cecac39f97440c1f4ae968c5fed2fcf1c74b29536b10d5fc12a4e2",
+            "behaviour": "68bac4c6108fa0d2",
+            "examples": [
+              {
+                "files": {
+                  "input1.txt": "juliet\t17\tLIMA\nalpha  bravo   end\n\njuliet\t17\tLIMA\nZeta 3\nalpha 21\n"
+                },
+                "outputSha256": "435b434a240168b111cd3b4449670b99e5e1d5e39a60b4839d782e73b2e41ae8",
+                "outputPreview": "     - ExifTool Version Number         : 13.55\n     - File Name                       : input1.txt\n     - Directory                       : .\n     - File Size  "
+              },
+              {
+                "files": {
+                  "input1.txt": "hotel kilo charlie line 0\nindia lima delta line 1\njuliet alpha echo line 2\nkilo bravo foxtrot line 3\nlima charlie golf line 4\nalpha delta hotel line 5\n"
+                },
+                "outputSha256": "8052205f27beffb140ae701f4335c5cd210c7c92b1a4900cba4016bba9ed4aea",
+                "outputPreview": "     - ExifTool Version Number         : 13.55\n     - File Name                       : input1.txt\n     - Directory                       : .\n     - File Size  "
+              }
+            ]
+          }
+        },
+        {
+          "id": "cli:exiftool:l",
+          "title": "exiftool -l: (-long) Use long 2-line output format",
+          "description": "exiftool - exiftool - Read and write meta information in files. With -l: (-long) Use long 2-line output format. Learned by sandboxed investigation of /opt/homebrew/bin/exiftool (sha256 18b091f3a5ce), not from a contract; runs only in the sandbox.",
+          "inputs": [
+            {
+              "name": "file",
+              "type": "text",
+              "required": true,
+              "anyText": true,
+              "description": "Content passed as a file operand"
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "risk": "read",
+          "tags": [
+            "exiftool",
+            "exiftool",
+            "exiftool",
+            "read",
+            "and",
+            "write",
+            "meta",
+            "information",
+            "files",
+            "long",
+            "use",
+            "long",
+            "line",
+            "output",
+            "format",
+            "nondeterministic",
+            "unsupported"
+          ],
+          "invoke": {
+            "kind": "cli",
+            "bin": "/opt/homebrew/bin/exiftool",
+            "args": [
+              "-l",
+              {
+                "input": "file"
+              }
+            ],
+            "okExit": [
+              0
+            ],
+            "output": "text",
+            "sha256": "18b091f3a5cecac39f97440c1f4ae968c5fed2fcf1c74b29536b10d5fc12a4e2",
+            "behaviour": "6634cb97fb35d681",
+            "examples": [
+              {
+                "files": {
+                  "input1.txt": "juliet\t17\tLIMA\nalpha  bravo   end\n\njuliet\t17\tLIMA\nZeta 3\nalpha 21\n"
+                },
+                "outputSha256": "81bd1830cbd486d2d37480f5d1cf0f8a8f3f19b023d31fa2f5ed7b3fde705ece",
+                "outputPreview": "ExifTool Version Number\n      13.55\nFile Name\n      input1.txt\nDirectory\n      .\nFile Size\n      66 bytes\nFile Modification Date/Time\n      2026:10:17 14:47:38+"
+              },
+              {
+                "files": {
+                  "input1.txt": "hotel kilo charlie line 0\nindia lima delta line 1\njuliet alpha echo line 2\nkilo bravo foxtrot line 3\nlima charlie golf line 4\nalpha delta hotel line 5\n"
+                },
+                "outputSha256": "f615c5c5fbf1835dd344f0dc8c3afeac8d2a0223a1e1ed9953198cc9fe48ebf5",
+                "outputPreview": "ExifTool Version Number\n      13.55\nFile Name\n      input1.txt\nDirectory\n      .\nFile Size\n      151 bytes\nFile Modification Date/Time\n      2026:10:17 14:47:38"
+              }
+            ]
+          }
+        },
+        {
+          "id": "cli:exiftool:plot",
+          "title": "exiftool -plot: Output tags as SVG plot file",
+          "description": "exiftool - exiftool - Read and write meta information in files. With -plot: Output tags as SVG plot file. Learned by sandboxed investigation of /opt/homebrew/bin/exiftool (sha256 18b091f3a5ce), not from a contract; runs only in the sandbox.",
+          "inputs": [
+            {
+              "name": "file",
+              "type": "text",
+              "required": true,
+              "anyText": true,
+              "description": "Content passed as a file operand"
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "risk": "read",
+          "tags": [
+            "exiftool",
+            "exiftool",
+            "exiftool",
+            "read",
+            "and",
+            "write",
+            "meta",
+            "information",
+            "files",
+            "output",
+            "tags",
+            "svg",
+            "plot",
+            "file"
+          ],
+          "invoke": {
+            "kind": "cli",
+            "bin": "/opt/homebrew/bin/exiftool",
+            "args": [
+              "-plot",
+              {
+                "input": "file"
+              }
+            ],
+            "okExit": [
+              0
+            ],
+            "output": "xml",
+            "sha256": "18b091f3a5cecac39f97440c1f4ae968c5fed2fcf1c74b29536b10d5fc12a4e2",
+            "behaviour": "6247842021b58f06",
+            "examples": [
+              {
+                "files": {
+                  "input1.txt": "juliet\t17\tLIMA\nalpha  bravo   end\n\njuliet\t17\tLIMA\nZeta 3\nalpha 21\n"
+                },
+                "outputSha256": "59e97382a838552288b3ab959f7d4b8fa21c33ad04d595a22e54cf6d74cd4dc4",
+                "outputPreview": "<?xml version=\"1.0\" standalone=\"no\"?>\n<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 20010904//EN\" \"http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd\">\n<svg versi"
+              },
+              {
+                "files": {
+                  "input1.txt": "hotel kilo charlie line 0\nindia lima delta line 1\njuliet alpha echo line 2\nkilo bravo foxtrot line 3\nlima charlie golf line 4\nalpha delta hotel line 5\n"
+                },
+                "outputSha256": "aa82ff1858769708cd1c63a9cb20a10cea86d7c83e4ad172e2f3544da21a8d7e",
+                "outputPreview": "<?xml version=\"1.0\" standalone=\"no\"?>\n<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 20010904//EN\" \"http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd\">\n<svg versi"
+              }
+            ]
+          }
+        },
+        {
+          "id": "cli:exiftool:s",
+          "title": "exiftool -S: (-veryShort) Very short output format",
+          "description": "exiftool - exiftool - Read and write meta information in files. With -S: (-veryShort) Very short output format. Learned by sandboxed investigation of /opt/homebrew/bin/exiftool (sha256 18b091f3a5ce), not from a contract; runs only in the sandbox.",
+          "inputs": [
+            {
+              "name": "file",
+              "type": "text",
+              "required": true,
+              "anyText": true,
+              "description": "Content passed as a file operand"
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "risk": "read",
+          "tags": [
+            "exiftool",
+            "exiftool",
+            "exiftool",
+            "read",
+            "and",
+            "write",
+            "meta",
+            "information",
+            "files",
+            "veryshort",
+            "very",
+            "short",
+            "output",
+            "format",
+            "nondeterministic",
+            "unsupported"
+          ],
+          "invoke": {
+            "kind": "cli",
+            "bin": "/opt/homebrew/bin/exiftool",
+            "args": [
+              "-S",
+              {
+                "input": "file"
+              }
+            ],
+            "okExit": [
+              0
+            ],
+            "output": "text",
+            "sha256": "18b091f3a5cecac39f97440c1f4ae968c5fed2fcf1c74b29536b10d5fc12a4e2",
+            "behaviour": "9690be14a7e9188c",
+            "examples": [
+              {
+                "files": {
+                  "input1.txt": "juliet\t17\tLIMA\nalpha  bravo   end\n\njuliet\t17\tLIMA\nZeta 3\nalpha 21\n"
+                },
+                "outputSha256": "84dc6b4e091f159d89d5c227524c9cba6b2b272d2d55ff371cd3510985427444",
+                "outputPreview": "ExifToolVersion: 13.55\nFileName: input1.txt\nDirectory: .\nFileSize: 66 bytes\nFileModifyDate: 2026:10:17 14:47:38+01:00\nFileAccessDate: 2026:10:17 14:47:38+01:00\n"
+              },
+              {
+                "files": {
+                  "input1.txt": "hotel kilo charlie line 0\nindia lima delta line 1\njuliet alpha echo line 2\nkilo bravo foxtrot line 3\nlima charlie golf line 4\nalpha delta hotel line 5\n"
+                },
+                "outputSha256": "809c5823e3d3d8588c3445f109b3dcfbe0ac3f0c390d23c45a9eab0453868d59",
+                "outputPreview": "ExifToolVersion: 13.55\nFileName: input1.txt\nDirectory: .\nFileSize: 151 bytes\nFileModifyDate: 2026:10:17 14:47:38+01:00\nFileAccessDate: 2026:10:17 14:47:38+01:00"
+              }
+            ]
+          }
+        },
+        {
+          "id": "cli:exiftool:invoke",
+          "title": "exiftool with documented options: exiftool - Read and write meta information in files",
+          "description": "exiftool - exiftool - Read and write meta information in files. Runs the program with options chosen by the caller from the 65 its documentation declares (pass them in \"options\", e.g. [\"-TAG\"]); undocumented options are refused. Option effects are declared by the documentation; see the card's evidence for those tested. Runs only in the sandbox.",
+          "inputs": [
+            {
+              "name": "file",
+              "type": "text",
+              "required": false,
+              "anyText": true,
+              "description": "Content passed as a file operand"
+            },
+            {
+              "name": "options",
+              "type": "list:text",
+              "required": false,
+              "description": "Documented options and their values, one item each: -TAG/--TAG, -tagsFromFile <SRCFILE>, -x <TAG>, -args, -b, -c <FMT>, -charset, -csvDelim <STR>, -d <FMT>, -D, -E/-ex/-ec, -f, -H, -l, -L, -lang <[LANG]>, -listItem <INDEX>, -n, -php, -plot, -S, -sep <STR>, -sort, -struct, -t, -T, -X, -a, -e, -i <DIR>, -m, -P, -q, -scanForXMP, -u, -U, -wm <MODE>, -k, -ver, -diff"
+            },
+            {
+              "name": "files",
+              "type": "json",
+              "required": false,
+              "description": "Named input files {\"name.txt\": \"content\"}: written into the sandbox and passed as operands in this order (refer to them by name in options that take a file)"
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "risk": "read",
+          "tags": [
+            "exiftool",
+            "declared-interface",
+            "direct-only",
+            "nondeterministic",
+            "unsupported",
+            "exiftool",
+            "exiftool",
+            "read",
+            "and",
+            "write",
+            "meta",
+            "information",
+            "files"
+          ],
+          "invoke": {
+            "kind": "cli",
+            "bin": "/opt/homebrew/bin/exiftool",
+            "args": [
+              {
+                "input": "file"
+              }
+            ],
+            "okExit": [
+              0
+            ],
+            "output": "text",
+            "sha256": "18b091f3a5cecac39f97440c1f4ae968c5fed2fcf1c74b29536b10d5fc12a4e2",
+            "behaviour": "142e9a1a559d61b3+options",
+            "examples": [
+              {
+                "files": {
+                  "input1.html": "<html><head><title>india lima delta line 1</title></head><body><h1>juliet alpha echo line 2</h1><p>kilo bravo foxtrot line 3<p>lima charlie golf line 4<ul><li>alpha<li>bravo</ul></body></html>\n"
+                },
+                "outputSha256": "2f3e09ffc367d04669e4062e3d5b54ea748b8caf3b013bcdd02565cc926ae9a2",
+                "outputPreview": "ExifTool Version Number         : 13.55\nFile Name                       : input1.html\nDirectory                       : .\nFile Size                       : 193 "
+              },
+              {
+                "files": {
+                  "input1.html": "<!DOCTYPE html>\n<html>\n<head><title>alpha delta hotel line 5</title></head>\n<body>\n<div><b>bravo echo india line 6</div>\n<table><tr><td>delta<td>echo</table>\n</body>\n</html>\n"
+                },
+                "outputSha256": "49e0d2140af6dad5ee4428c27ff36bfac977ffeacf232778f8770c8daa083c04",
+                "outputPreview": "ExifTool Version Number         : 13.55\nFile Name                       : input1.html\nDirectory                       : .\nFile Size                       : 174 "
+              }
+            ],
+            "options": {
+              "port": "options",
+              "allowed": [
+                {
+                  "flags": [
+                    "-TAG",
+                    "--TAG"
+                  ],
+                  "arg": false
+                },
+                {
+                  "flags": [
+                    "-tagsFromFile"
+                  ],
+                  "arg": true
+                },
+                {
+                  "flags": [
+                    "-x"
+                  ],
+                  "arg": true
+                },
+                {
+                  "flags": [
+                    "-args"
+                  ],
+                  "arg": false
+                },
+                {
+                  "flags": [
+                    "-b"
+                  ],
+                  "arg": false
+                },
+                {
+                  "flags": [
+                    "-c"
+                  ],
+                  "arg": true
+                },
+                {
+                  "flags": [
+                    "-charset"
+                  ],
+                  "arg": false
+                },
+                {
+                  "flags": [
+                    "-csvDelim"
+                  ],
+                  "arg": true
+                },
+                {
+                  "flags": [
+                    "-d"
+                  ],
+                  "arg": true
+                },
+                {
+                  "flags": [
+                    "-D"
+                  ],
+                  "arg": false
+                },
+                {
+                  "flags": [
+                    "-E",
+                    "-ex",
+                    "-ec"
+                  ],
+                  "arg": false
+                },
+                {
+                  "flags": [
+                    "-f"
+                  ],
+                  "arg": false
+                },
+                {
+                  "flags": [
+                    "-H"
+                  ],
+                  "arg": false
+                },
+                {
+                  "flags": [
+                    "-l"
+                  ],
+                  "arg": false
+                },
+                {
+                  "flags": [
+                    "-L"
+                  ],
+                  "arg": false
+                },
+                {
+                  "flags": [
+                    "-lang"
+                  ],
+                  "arg": true
+                },
+                {
+                  "flags": [
+                    "-listItem"
+                  ],
+                  "arg": true
+                },
+                {
+                  "flags": [
+                    "-n"
+                  ],
+                  "arg": false
+                },
+                {
+                  "flags": [
+                    "-php"
+                  ],
+                  "arg": false
+                },
+                {
+                  "flags": [
+                    "-plot"
+                  ],
+                  "arg": false
+                },
+                {
+                  "flags": [
+                    "-S"
+                  ],
+                  "arg": false
+                },
+                {
+                  "flags": [
+                    "-sep"
+                  ],
+                  "arg": true
+                },
+                {
+                  "flags": [
+                    "-sort"
+                  ],
+                  "arg": false
+                },
+                {
+                  "flags": [
+                    "-struct"
+                  ],
+                  "arg": false
+                },
+                {
+                  "flags": [
+                    "-t"
+                  ],
+                  "arg": false
+                },
+                {
+                  "flags": [
+                    "-T"
+                  ],
+                  "arg": false
+                },
+                {
+                  "flags": [
+                    "-X"
+                  ],
+                  "arg": false
+                },
+                {
+                  "flags": [
+                    "-a"
+                  ],
+                  "arg": false
+                },
+                {
+                  "flags": [
+                    "-e"
+                  ],
+                  "arg": false
+                },
+                {
+                  "flags": [
+                    "-i"
+                  ],
+                  "arg": true
+                },
+                {
+                  "flags": [
+                    "-m"
+                  ],
+                  "arg": false
+                },
+                {
+                  "flags": [
+                    "-P"
+                  ],
+                  "arg": false
+                },
+                {
+                  "flags": [
+                    "-q"
+                  ],
+                  "arg": false
+                },
+                {
+                  "flags": [
+                    "-scanForXMP"
+                  ],
+                  "arg": false
+                },
+                {
+                  "flags": [
+                    "-u"
+                  ],
+                  "arg": false
+                },
+                {
+                  "flags": [
+                    "-U"
+                  ],
+                  "arg": false
+                },
+                {
+                  "flags": [
+                    "-wm"
+                  ],
+                  "arg": true
+                },
+                {
+                  "flags": [
+                    "-k"
+                  ],
+                  "arg": false
+                },
+                {
+                  "flags": [
+                    "-ver"
+                  ],
+                  "arg": false
+                },
+                {
+                  "flags": [
+                    "-diff"
+                  ],
+                  "arg": false
+                },
+                {
+                  "flags": [
+                    "-geotag"
+                  ],
+                  "arg": true
+                },
+                {
+                  "flags": [
+                    "-globalTimeShift"
+                  ],
+                  "arg": true
+                },
+                {
+                  "flags": [
+                    "-use"
+                  ],
+                  "arg": true
+                },
+                {
+                  "flags": [
+                    "-restore_original"
+                  ],
+                  "arg": false
+                },
+                {
+                  "flags": [
+                    "-api"
+                  ],
+                  "arg": false
+                },
+                {
+                  "flags": [
+                    "-common_args"
+                  ],
+                  "arg": false
+                },
+                {
+                  "flags": [
+                    "-config"
+                  ],
+                  "arg": true
+                },
+                {
+                  "flags": [
+                    "-fileNUM"
+                  ],
+                  "arg": true
+                },
+                {
+                  "flags": [
+                    "-list_dir"
+                  ],
+                  "arg": false
+                },
+                {
+                  "flags": [
+                    "-srcfile"
+                  ],
+                  "arg": true
+                },
+                {
+                  "flags": [
+                    "-stay_open"
+                  ],
+                  "arg": true
+                },
+                {
+                  "flags": [
+                    "-userParam"
+                  ],
+                  "arg": false
+                },
+                {
+                  "flags": [
+                    "-addTagsFromFile"
+                  ],
+                  "arg": false
+                },
+                {
+                  "flags": [
+                    "-j",
+                    "-php",
+                    "-X"
+                  ],
+                  "arg": false
+                },
+                {
+                  "flags": [
+                    "-listx"
+                  ],
+                  "arg": false
+                },
+                {
+                  "flags": [
+                    "-progress"
+                  ],
+                  "arg": false
+                },
+                {
+                  "flags": [
+                    "-ee",
+                    "-X"
+                  ],
+                  "arg": false
+                },
+                {
+                  "flags": [
+                    "-if"
+                  ],
+                  "arg": false
+                },
+                {
+                  "flags": [
+                    "-fast"
+                  ],
+                  "arg": false
+                },
+                {
+                  "flags": [
+                    "-list",
+                    "-listw",
+                    "-listf",
+                    "-listr",
+                    "-listwf"
+                  ],
+                  "arg": false
+                },
+                {
+                  "flags": [
+                    "-listgeo"
+                  ],
+                  "arg": false
+                },
+                {
+                  "flags": [
+                    "-s",
+                    "-sep",
+                    "-struct"
+                  ],
+                  "arg": false
+                },
+                {
+                  "flags": [
+                    "-echo4"
+                  ],
+                  "arg": false
+                },
+                {
+                  "flags": [
+                    "-file2"
+                  ],
+                  "arg": false
+                },
+                {
+                  "flags": [
+                    "-p"
+                  ],
+                  "arg": false
+                }
+              ]
+            },
+            "filesPort": "files"
+          }
+        }
+      ],
+      "claims": [
+        {
+          "subject": "exiftool",
+          "claim": "documents its usage",
+          "status": "declared"
+        },
+        {
+          "subject": "exiftool",
+          "claim": "purpose: exiftool - exiftool - Read and write meta information in files",
+          "status": "declared"
+        },
+        {
+          "subject": "exiftool",
+          "claim": "options: 72 declared",
+          "status": "declared"
+        },
+        {
+          "subject": "exiftool",
+          "claim": "operands: required [], optional []",
+          "status": "unknown"
+        },
+        {
+          "subject": "cli:exiftool:default",
+          "claim": "accepts html/xml/json/csv/text input via files and prints text",
+          "status": "observed"
+        },
+        {
+          "subject": "cli:exiftool:default",
+          "claim": "deterministic for identical input",
+          "status": "contradicted"
+        },
+        {
+          "subject": "cli:exiftool:default",
+          "claim": "side effects outside the sandbox",
+          "status": "unknown"
+        },
+        {
+          "subject": "cli:exiftool:args",
+          "claim": "accepts text input via files and prints text",
+          "status": "experimentally-supported"
+        },
+        {
+          "subject": "cli:exiftool:args",
+          "claim": "deterministic for identical input",
+          "status": "experimentally-supported"
+        },
+        {
+          "subject": "cli:exiftool:args",
+          "claim": "side effects outside the sandbox",
+          "status": "unknown"
+        },
+        {
+          "subject": "cli:exiftool:b",
+          "claim": "accepts text input via files and prints text",
+          "status": "experimentally-supported"
+        },
+        {
+          "subject": "cli:exiftool:b",
+          "claim": "deterministic for identical input",
+          "status": "experimentally-supported"
+        },
+        {
+          "subject": "cli:exiftool:b",
+          "claim": "side effects outside the sandbox",
+          "status": "unknown"
+        },
+        {
+          "subject": "cli:exiftool:d",
+          "claim": "accepts text input via files and prints text",
+          "status": "observed"
+        },
+        {
+          "subject": "cli:exiftool:d",
+          "claim": "deterministic for identical input",
+          "status": "contradicted"
+        },
+        {
+          "subject": "cli:exiftool:d",
+          "claim": "side effects outside the sandbox",
+          "status": "unknown"
+        },
+        {
+          "subject": "cli:exiftool:ec",
+          "claim": "accepts text input via files and prints text",
+          "status": "observed"
+        },
+        {
+          "subject": "cli:exiftool:ec",
+          "claim": "deterministic for identical input",
+          "status": "contradicted"
+        },
+        {
+          "subject": "cli:exiftool:ec",
+          "claim": "side effects outside the sandbox",
+          "status": "unknown"
+        },
+        {
+          "subject": "cli:exiftool:h",
+          "claim": "accepts text input via files and prints text",
+          "status": "observed"
+        },
+        {
+          "subject": "cli:exiftool:h",
+          "claim": "deterministic for identical input",
+          "status": "contradicted"
+        },
+        {
+          "subject": "cli:exiftool:h",
+          "claim": "side effects outside the sandbox",
+          "status": "unknown"
+        },
+        {
+          "subject": "cli:exiftool:l",
+          "claim": "accepts text input via files and prints text",
+          "status": "observed"
+        },
+        {
+          "subject": "cli:exiftool:l",
+          "claim": "deterministic for identical input",
+          "status": "contradicted"
+        },
+        {
+          "subject": "cli:exiftool:l",
+          "claim": "side effects outside the sandbox",
+          "status": "unknown"
+        },
+        {
+          "subject": "cli:exiftool:plot",
+          "claim": "accepts text input via files and prints xml",
+          "status": "experimentally-supported"
+        },
+        {
+          "subject": "cli:exiftool:plot",
+          "claim": "deterministic for identical input",
+          "status": "experimentally-supported"
+        },
+        {
+          "subject": "cli:exiftool:plot",
+          "claim": "side effects outside the sandbox",
+          "status": "unknown"
+        },
+        {
+          "subject": "cli:exiftool:s",
+          "claim": "accepts text input via files and prints text",
+          "status": "observed"
+        },
+        {
+          "subject": "cli:exiftool:s",
+          "claim": "deterministic for identical input",
+          "status": "contradicted"
+        },
+        {
+          "subject": "cli:exiftool:s",
+          "claim": "side effects outside the sandbox",
+          "status": "unknown"
+        },
+        {
+          "subject": "cli:exiftool:invoke",
+          "claim": "option -tagsFromFile SRCFILE (Copy tag values from file) changes the output (tried -tagsFromFile 2)",
+          "status": "unknown"
+        },
+        {
+          "subject": "cli:exiftool:invoke",
+          "claim": "option -x TAG ((-exclude) Exclude specified tag) changes the output (tried -x 2)",
+          "status": "observed"
+        },
+        {
+          "subject": "cli:exiftool:invoke",
+          "claim": "option -c FMT ((-coordFormat) Set format for GPS coordinates) changes the output (tried -c %s)",
+          "status": "observed"
+        },
+        {
+          "subject": "cli:exiftool:invoke",
+          "claim": "option -csvDelim STR (Set delimiter for CSV file) changes the output (tried -csvDelim 2)",
+          "status": "observed"
+        },
+        {
+          "subject": "cli:exiftool:invoke",
+          "claim": "option -d FMT ((-dateFormat) Set format for date/time values) changes the output (tried -d %s)",
+          "status": "observed"
+        },
+        {
+          "subject": "cli:exiftool:invoke",
+          "claim": "option -lang [LANG] (Set current language) changes the output (tried -lang 2)",
+          "status": "unknown"
+        },
+        {
+          "subject": "cli:exiftool:invoke",
+          "claim": "offers 65 documented options; refuses any other",
+          "status": "declared"
+        },
+        {
+          "subject": "exiftool",
+          "claim": "on empty input exits 1 with output",
+          "status": "observed"
+        }
+      ]
+    }
+  ],
+  "goals": [],
+  "excluded": [
+    "credentials",
+    "caller inputs and outputs",
+    "run records and receipts",
+    "fixed goal values",
+    "published goals' checks bound to caller data"
+  ]
+}

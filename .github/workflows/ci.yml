@@ -1,0 +1,74 @@
+# Continuous integration. Written in the North Star programme and first run on GitHub with the
+# adaptive reconciliation (PR #6). Every job runs only the project's own commands.
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  macos:
+    # The macOS sandbox (sandbox-exec) and the programs the semantic suite uses are present here.
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm run typecheck
+      - run: npm test
+      - run: npx tsc -p tsconfig.harness.json
+      - run: node proof/run.ts
+      - run: node lab/report.ts 10
+      - run: node experiments/open-world/negative-controls.ts
+  linux-bubblewrap:
+    # The Linux sandbox (bubblewrap) needs unprivileged user namespaces; the container runs privileged.
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      # Ubuntu 24.04 restricts unprivileged user namespaces through AppArmor, and the restriction
+      # reaches the non-root test user even in a privileged container. Without this the sandbox is
+      # unavailable and every sandbox test skips, which is the linux-no-sandbox job, not this one.
+      - run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - run: docker build -f ci/linux.Dockerfile -t rightclick-x-linux-test .
+      - name: the bubblewrap sandbox is actually available, so its tests run rather than skip
+        run: |
+          docker run --rm --privileged rightclick-x-linux-test node --input-type=module -e '
+            const { hostSandbox } = await import("./src/core/sandbox.ts");
+            const sb = await hostSandbox();
+            if (!sb) { console.error("bubblewrap sandbox unavailable"); process.exit(1); }
+            console.log(sb.kind + ": " + sb.enforces.join("; "));'
+      - run: docker run --rm --privileged rightclick-x-linux-test
+  linux-no-sandbox:
+    # Without user namespaces there is no sandbox: programs must be reported unavailable, never run.
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -f ci/linux.Dockerfile -t rightclick-x-linux-test .
+      - run: docker run --rm rightclick-x-linux-test
+  package:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: oven-sh/setup-bun@v2
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm run build
+      - name: install the packed tarball in a clean project and run it
+        run: |
+          npm pack --pack-destination /tmp
+          mkdir /tmp/smoke && cd /tmp/smoke && npm init -y >/dev/null
+          npm install --no-audit --no-fund /tmp/rightclick-x-*.tgz
+          ./node_modules/.bin/rcx version
+          ./node_modules/.bin/rcx doctor
+          echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | ./node_modules/.bin/rcx mcp | grep -q context_compose
+          npm uninstall rightclick-x && test ! -e node_modules/rightclick-x
+      - name: dependency review
+        run: npm audit --omit=dev --audit-level=high
+      - name: documentation links
+        run: node ci/check-links.ts

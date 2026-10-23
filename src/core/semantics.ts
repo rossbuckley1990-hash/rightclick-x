@@ -6,6 +6,7 @@
 // semantic types from names, formats and descriptions, and defines the
 // lattice that says which values can flow into which ports.
 
+import { JsonRepresentationError, parseJsonValue } from "./json.ts";
 import type { SemType } from "./types.ts";
 import { inferMoneyType, isQuantityType, isResolvedQuantity } from "./quantities.ts";
 
@@ -87,8 +88,11 @@ const NOMINAL = /^(title|q|query|search|term|keyword|topic|subject)$/i;
 const NOT_NOMINAL = new Set(["html", "markdown", "text"]);
 
 /** Can a value of type `value` flow into port (`name`, `type`)? */
-export function accepts(portName: string, portType: SemType, value: SemType): boolean {
+export function accepts(portName: string, portType: SemType, value: SemType, anyText = false): boolean {
   if (strongly(portType, value)) return true;
+  // A port shown to take any text (a program reading files) takes markup and other text kinds.
+  // ...documents only: a language tag or a country code is text-shaped but not content.
+  if (anyText && ["text", "html", "markdown"].includes(value) && distance("text", portType) >= 0) return true;
   return portType === "text" && NOMINAL.test(portName) && !NOT_NOMINAL.has(value) && distance("text", value) === 1;
 }
 
@@ -217,6 +221,9 @@ export function inferType(name: string, schema: SchemaLike = {}, description = "
     if (/\biso ?639\b|\blanguage\b|\blocale\b|\bbcp ?47\b/.test(d)) return "language";
     return "language";
   }
+  // DOI is a shared identifier scheme, including qualified schema field names.
+  // Do not match incidental substrings (e.g. medoid) or override numeric/URI wire types.
+  if (/(^|_)doi$/.test(n)) return "id.doi";
   for (const [re, t] of NAME_RULES) {
     if (re.test(n) || re.test(compact)) return t;
   }
@@ -309,15 +316,22 @@ export function inspectValue(value: unknown): Inspection {
     return { type: image ? "image.url" : "url", confidence: 0.99, value: s, meta };
   }
   if (/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(s)) return { type: "email", confidence: 0.98, value: s, meta };
-  if (/^-?\d+(\.\d+)?$/.test(s)) return { type: "number", confidence: 0.9, value: Number(s), meta };
+  if (/^-?\d+(\.\d+)?$/.test(s)) {
+    try { return { type: "number", confidence: 0.9, value: parseJsonValue(s), meta }; }
+    catch (error) {
+      if (error instanceof JsonRepresentationError) return { type: "text", confidence: 1, value, meta: { ...meta, representation: "number-text", reason: error.message } };
+      // Numeric-looking identifiers with leading zeroes are text, not JSON numbers.
+    }
+  }
   if (/^(\d{1,3}\.){3}\d{1,3}$/.test(s)) return { type: "ip", confidence: 0.97, value: s, meta };
   if (/^\d{4}-\d{2}-\d{2}(T[\d:.]+(Z|[+-]\d{2}:?\d{2})?)?$/.test(s)) return { type: "datetime", confidence: 0.97, value: s, meta };
   if (/^#[0-9a-f]{6}$/i.test(s)) return { type: "color", confidence: 0.95, value: s, meta };
   if (/^[0-9a-f]{64}$/i.test(s)) return { type: "hash", confidence: 0.9, value: s, meta };
   if (/^[{[]/.test(s)) {
     try {
-      return { type: "json", confidence: 0.99, value: JSON.parse(s), meta };
-    } catch {
+      return { type: "json", confidence: 0.99, value: parseJsonValue(s), meta };
+    } catch (error) {
+      if (error instanceof JsonRepresentationError) return { type: "text", confidence: 1, value, meta: { ...meta, representation: "json-text", reason: error.message } };
       /* not json */
     }
   }

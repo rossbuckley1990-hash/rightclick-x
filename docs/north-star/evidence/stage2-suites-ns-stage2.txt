@@ -1,0 +1,33 @@
+## npm test
+ℹ tests 181
+ℹ pass 181
+ℹ fail 0
+ℹ duration_ms 12021.1825
+## typecheck
+ok
+## build
+> bun build bin/rcx.ts --target node --outfile dist/rcx.mjs && bun build src/entry/edge.ts --target browser --outfile dist/edge.js
+  rcx.mjs  0.34 MB  (entry point)
+  edge.js  1.25 MB  (entry point)
+## lab
+30/30 environments passed all steps → lab/RESULTS.md
+30/30 environments passed all steps → lab/RESULTS-GATEWAY.md
+## negative controls
+6/6 negative controls pass
+## proof
+PASS: 28/28 checks; proof/results/latest.json
+## challenge ns-stage2
+A: PASS · 7 capabilities (7 experimentally supported) in 496 ms · compose completed via tidy: validate, correct, and pretty-print HTML files · check: tags balanced; words missing none; unclosed p/li now closed true
+B (claude): PASS · 35.9s · 3 tool calls (context_research, context_actions, context_run) · relearned false · used capability true · tags balanced; words missing none; unclosed p/li now closed true
+F (codex): FAIL · 3s · 0 tool calls () · relearned false · used capability false · no HTML output
+C: PASS · Correct HTML → sdiff: side-by-side diff · providers goal:published, cli:tidy, cli:sdiff · original lines in order true; change markers true; corrected side has closing tags true; words missing 0
+  D baseline v1: completed · "ABC DEF\n" · expected adapt · ok
+  D renamed operation (-u -> -U): completed · "GHI JKL\n" · expected adapt · ok
+  D changed input (stdin -> file operand): completed · "MNO PQR\n" · expected adapt · ok
+  D nested output (JSON result.text): completed · "STU VWX" · expected adapt · ok
+  D incompatible semantic change (now lower-cases): failed · "cli:textkit:u: program changed since it was investigated: /private/var/folders/tz/y04t4d0 · expected fail · ok
+  D temporarily unavailable (exit 75): failed · "cli:textkit:u: program changed since it was investigated: /private/var/folders/tz/y04t4d0 · expected fail · ok
+  D restored (operator re-investigates): completed · "KLM NOP" · expected adapt · ok
+D: PASS
+E: PASS · before completed · removed → failed (program capabilities left: 0) · restored → completed
+N1: PASS · N2: PASS

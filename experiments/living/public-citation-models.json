@@ -1,0 +1,63 @@
+{
+  "sources": [
+    {
+      "url": "https://data.rcsb.org/graphql",
+      "kind": "graphql"
+    },
+    {
+      "url": "https://api.crossref.org/swagger-docs",
+      "kind": "openapi"
+    }
+  ],
+  "goals": [
+    {
+      "have": {
+        "entry_id": "1CRN"
+      },
+      "want": "json",
+      "intent": "primary citation DOI publication title publisher",
+      "require": [
+        "publisher"
+      ],
+      "maxSteps": 3,
+      "limit": 5,
+      "run": true,
+      "verify": [
+        {
+          "op": "exists",
+          "path": "message.DOI"
+        },
+        {
+          "op": "exists",
+          "path": "message.publisher"
+        },
+        {
+          "op": "exists",
+          "path": "message.title"
+        }
+      ],
+      "publish": "Structure primary publication metadata"
+    }
+  ],
+  "adaptation": true,
+  "modelReuse": [
+    {
+      "id": "sol61-positive",
+      "model": "gpt-6.1-sol",
+      "entryId": "2LYZ",
+      "expected": "publication"
+    },
+    {
+      "id": "sol6-positive",
+      "model": "gpt-6-sol",
+      "entryId": "1UBQ",
+      "expected": "publication"
+    },
+    {
+      "id": "sol6-missing",
+      "model": "gpt-6-sol",
+      "entryId": "0000",
+      "expected": "unavailable"
+    }
+  ]
+}

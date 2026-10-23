@@ -1,0 +1,1733 @@
+{
+  "build": "lifesci-satisfy-1",
+  "commit": "f3c49c20ebf6c3da090b1b9e215af1e8a6c8071d",
+  "tasks": [
+    {
+      "args": {
+        "have": {
+          "accession": "P41159"
+        },
+        "want": "json",
+        "intent": "protein structure entries resolution",
+        "require": [
+          "resolution"
+        ],
+        "run": true,
+        "limit": 25,
+        "maxSteps": 3
+      },
+      "ms": 4893,
+      "ranking": [
+        {
+          "summary": "Get UniParc longest sequence for entries. → Entry",
+          "satisfaction": {
+            "status": "established",
+            "covered": {
+              "resolution": "em_diffraction_shell.high_resolution"
+            },
+            "missing": [],
+            "joins": [
+              {
+                "step": 0,
+                "port": "accession",
+                "from": "$in.accession",
+                "kind": "caller"
+              },
+              {
+                "step": 1,
+                "port": "entry_id",
+                "from": "0.id",
+                "kind": "declared"
+              }
+            ],
+            "projection": []
+          }
+        },
+        {
+          "summary": "Get UniParc entry only by UniProt accession → Entry",
+          "satisfaction": {
+            "status": "established",
+            "covered": {
+              "resolution": "em_diffraction_shell.high_resolution"
+            },
+            "missing": [],
+            "joins": [
+              {
+                "step": 0,
+                "port": "accession",
+                "from": "$in.accession",
+                "kind": "caller"
+              },
+              {
+                "step": 1,
+                "port": "entry_id",
+                "from": "0.id",
+                "kind": "declared"
+              }
+            ],
+            "projection": []
+          }
+        },
+        {
+          "summary": "Get UniRef entry by UniProtKB accession → Entry",
+          "satisfaction": {
+            "status": "established",
+            "covered": {
+              "resolution": "em_diffraction_shell.high_resolution"
+            },
+            "missing": [],
+            "joins": [
+              {
+                "step": 0,
+                "port": "accession",
+                "from": "$in.accession",
+                "kind": "caller"
+              },
+              {
+                "step": 0,
+                "port": "dataset",
+                "from": "$in.accession",
+                "kind": "caller"
+              },
+              {
+                "step": 1,
+                "port": "entry_id",
+                "from": "0.id",
+                "kind": "declared"
+              }
+            ],
+            "projection": []
+          }
+        },
+        {
+          "summary": "Get UniProt entry by accession → Entry (each)",
+          "satisfaction": {
+            "status": "established",
+            "covered": {
+              "resolution": "em_diffraction_shell.high_resolution"
+            },
+            "missing": [],
+            "joins": [
+              {
+                "step": 0,
+                "port": "accession",
+                "from": "$in.accession",
+                "kind": "caller"
+              },
+              {
+                "step": 1,
+                "port": "entry_id",
+                "from": "0.dbReferences.id",
+                "kind": "evidence"
+              }
+            ],
+            "projection": []
+          }
+        },
+        {
+          "summary": "Get UniProtKB entry by a single accession. → Get UniProt entry by accession → Entry (each)",
+          "satisfaction": {
+            "status": "established",
+            "covered": {
+              "resolution": "em_diffraction_shell.high_resolution"
+            },
+            "missing": [],
+            "joins": [
+              {
+                "step": 0,
+                "port": "accession",
+                "from": "$in.accession",
+                "kind": "caller"
+              },
+              {
+                "step": 1,
+                "port": "accession",
+                "from": "0.primaryAccession",
+                "kind": "evidence"
+              },
+              {
+                "step": 2,
+                "port": "entry_id",
+                "from": "1.dbReferences.id",
+                "kind": "evidence"
+              }
+            ],
+            "projection": []
+          }
+        }
+      ],
+      "outcome": {
+        "status": "established",
+        "require": [
+          "resolution"
+        ],
+        "covered": {
+          "resolution": "em_diffraction_shell.high_resolution"
+        },
+        "missing": [],
+        "joins": [
+          {
+            "step": 0,
+            "port": "accession",
+            "from": "$in.accession",
+            "kind": "caller"
+          },
+          {
+            "step": 1,
+            "port": "entry_id",
+            "from": "0.id",
+            "kind": "declared"
+          }
+        ]
+      },
+      "executed": {
+        "status": "failed",
+        "titles": [],
+        "runs": [],
+        "attempts": [
+          {
+            "summary": "Get UniParc longest sequence for entries. → Entry",
+            "failed": "graphql:data-rcsb-org-graphql:query:entry",
+            "error": "graphql:data-rcsb-org-graphql:query:entry: missing required input(s): entry_id",
+            "healing": "re-reflected https://data.rcsb.org/graphql: no contract change"
+          }
+        ]
+      },
+      "output": null,
+      "id": "Q03",
+      "seconds": 4.893,
+      "score": {
+        "pass": false,
+        "detail": "outcome established: ",
+        "truth": null
+      }
+    },
+    {
+      "args": {
+        "have": {
+          "entry_id": "4HHB"
+        },
+        "want": "json",
+        "intent": "gene name",
+        "require": [
+          "gene name"
+        ],
+        "run": true,
+        "limit": 25,
+        "maxSteps": 3
+      },
+      "ms": 1097,
+      "ranking": [
+        {
+          "summary": "Entry → Scan Competitor AI Presence → Get gene centric proteins by proteome UPID is deprecated, please use new /genecentric?upid= endpoint",
+          "satisfaction": {
+            "status": "unverified",
+            "covered": {
+              "gene name": "canonicalGene.gene.geneName"
+            },
+            "missing": [],
+            "joins": [
+              {
+                "step": 0,
+                "port": "entry_id",
+                "from": "$in.entry_id",
+                "kind": "caller"
+              },
+              {
+                "step": 1,
+                "port": "entities",
+                "from": "0.audit_author.name",
+                "kind": "generic"
+              },
+              {
+                "step": 2,
+                "port": "upid",
+                "from": "1.",
+                "kind": "generic"
+              }
+            ],
+            "projection": []
+          }
+        },
+        {
+          "summary": "Entry → Get gene centric proteins by proteome UPID is deprecated, please use new /genecentric?upid= endpoint → Retrieve UniProtKB entries by a search query.",
+          "satisfaction": {
+            "status": "unverified",
+            "covered": {
+              "gene name": "results.genes.orderedLocusNames"
+            },
+            "missing": [],
+            "joins": [
+              {
+                "step": 0,
+                "port": "entry_id",
+                "from": "$in.entry_id",
+                "kind": "caller"
+              },
+              {
+                "step": 1,
+                "port": "upid",
+                "from": "0.em_experiment.aggregation_state",
+                "kind": "generic"
+              },
+              {
+                "step": 2,
+                "port": "query",
+                "from": "1.name",
+                "kind": "generic"
+              }
+            ],
+            "projection": []
+          }
+        },
+        {
+          "summary": "Entry → Get gene centric proteins by proteome UPID is deprecated, please use new /genecentric?upid= endpoint → Download UniProtKB entries retrieved by a search query. (Max. 10 million entries)",
+          "satisfaction": {
+            "status": "unverified",
+            "covered": {
+              "gene name": "results.genes.orderedLocusNames"
+            },
+            "missing": [],
+            "joins": [
+              {
+                "step": 0,
+                "port": "entry_id",
+                "from": "$in.entry_id",
+                "kind": "caller"
+              },
+              {
+                "step": 1,
+                "port": "upid",
+                "from": "0.em_experiment.aggregation_state",
+                "kind": "generic"
+              },
+              {
+                "step": 2,
+                "port": "query",
+                "from": "1.name",
+                "kind": "generic"
+              }
+            ],
+            "projection": []
+          }
+        },
+        {
+          "summary": "Entry → Get gene centric proteins by proteome UPID is deprecated, please use new /genecentric?upid= endpoint → Get proteome by proteome UPID",
+          "satisfaction": {
+            "status": "unverified",
+            "covered": {
+              "gene name": "canonicalGene.gene.geneName"
+            },
+            "missing": [],
+            "joins": [
+              {
+                "step": 0,
+                "port": "entry_id",
+                "from": "$in.entry_id",
+                "kind": "caller"
+              },
+              {
+                "step": 1,
+                "port": "upid",
+                "from": "0.em_experiment.aggregation_state",
+                "kind": "generic"
+              },
+              {
+                "step": 2,
+                "port": "upid",
+                "from": "1.name",
+                "kind": "generic"
+              }
+            ],
+            "projection": []
+          }
+        },
+        {
+          "summary": "Entry → Get gene centric proteins by proteome UPID is deprecated, please use new /genecentric?upid= endpoint → Get proteins by proteome UPID",
+          "satisfaction": {
+            "status": "unverified",
+            "covered": {
+              "gene name": "canonicalGene.gene.geneName"
+            },
+            "missing": [],
+            "joins": [
+              {
+                "step": 0,
+                "port": "entry_id",
+                "from": "$in.entry_id",
+                "kind": "caller"
+              },
+              {
+                "step": 1,
+                "port": "upid",
+                "from": "0.em_experiment.aggregation_state",
+                "kind": "generic"
+              },
+              {
+                "step": 2,
+                "port": "upid",
+                "from": "1.name",
+                "kind": "generic"
+              }
+            ],
+            "projection": []
+          }
+        }
+      ],
+      "outcome": {
+        "status": "unverified",
+        "require": [
+          "gene name"
+        ],
+        "covered": {
+          "gene name": "canonicalGene.gene.geneName"
+        },
+        "missing": [],
+        "joins": [
+          {
+            "step": 0,
+            "port": "entry_id",
+            "from": "$in.entry_id",
+            "kind": "caller"
+          },
+          {
+            "step": 1,
+            "port": "entities",
+            "from": "0.audit_author.name",
+            "kind": "generic"
+          },
+          {
+            "step": 2,
+            "port": "upid",
+            "from": "1.",
+            "kind": "generic"
+          }
+        ],
+        "reason": "the required information is reachable only through a generic join (no evidence that the values link)"
+      },
+      "executed": null,
+      "output": null,
+      "id": "Q04",
+      "seconds": 1.097,
+      "score": {
+        "pass": false,
+        "detail": "outcome unverified: the required information is reachable only through a generic join (no evidence that the values link)",
+        "truth": null
+      }
+    },
+    {
+      "args": {
+        "have": {
+          "entry_id": "6M0J"
+        },
+        "want": "json",
+        "intent": "organism scientific name",
+        "require": [
+          "organism scientific name"
+        ],
+        "run": true,
+        "limit": 25,
+        "maxSteps": 3
+      },
+      "ms": 1227,
+      "ranking": [
+        {
+          "summary": "Entry → Polymer entities → Polymer entity instances",
+          "satisfaction": {
+            "status": "unverified",
+            "covered": {
+              "organism scientific name": "polymer_entity.rcsb_entity_host_organism.ncbi_parent_scientific_name"
+            },
+            "missing": [],
+            "joins": [
+              {
+                "step": 0,
+                "port": "entry_id",
+                "from": "$in.entry_id",
+                "kind": "caller"
+              },
+              {
+                "step": 1,
+                "port": "entity_ids",
+                "from": "0.audit_author.name",
+                "kind": "generic"
+              },
+              {
+                "step": 2,
+                "port": "instance_ids",
+                "from": "1.pdbx_entity_src_syn.organism_scientific",
+                "kind": "generic"
+              }
+            ],
+            "projection": [
+              {
+                "step": 2,
+                "fields": [
+                  "polymer_entity.rcsb_entity_host_organism.ncbi_parent_scientific_name"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "summary": "Entry → Polymer entities",
+          "satisfaction": {
+            "status": "unverified",
+            "covered": {
+              "organism scientific name": "rcsb_entity_host_organism.ncbi_parent_scientific_name"
+            },
+            "missing": [],
+            "joins": [
+              {
+                "step": 0,
+                "port": "entry_id",
+                "from": "$in.entry_id",
+                "kind": "caller"
+              },
+              {
+                "step": 1,
+                "port": "entity_ids",
+                "from": "0.audit_author.name",
+                "kind": "generic"
+              }
+            ],
+            "projection": []
+          }
+        },
+        {
+          "summary": "Entry → Polymer entity instances",
+          "satisfaction": {
+            "status": "unverified",
+            "covered": {
+              "organism scientific name": "polymer_entity.rcsb_entity_host_organism.ncbi_parent_scientific_name"
+            },
+            "missing": [],
+            "joins": [
+              {
+                "step": 0,
+                "port": "entry_id",
+                "from": "$in.entry_id",
+                "kind": "caller"
+              },
+              {
+                "step": 1,
+                "port": "instance_ids",
+                "from": "0.audit_author.name",
+                "kind": "generic"
+              }
+            ],
+            "projection": [
+              {
+                "step": 1,
+                "fields": [
+                  "polymer_entity.rcsb_entity_host_organism.ncbi_parent_scientific_name"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "summary": "Entry → Scan Competitor AI Presence → Retrieve UniProtKB entries by a search query.",
+          "satisfaction": {
+            "status": "unverified",
+            "covered": {
+              "organism scientific name": "results.organismHosts.scientificName"
+            },
+            "missing": [],
+            "joins": [
+              {
+                "step": 0,
+                "port": "entry_id",
+                "from": "$in.entry_id",
+                "kind": "caller"
+              },
+              {
+                "step": 1,
+                "port": "entities",
+                "from": "0.audit_author.name",
+                "kind": "generic"
+              },
+              {
+                "step": 2,
+                "port": "query",
+                "from": "1.",
+                "kind": "generic"
+              }
+            ],
+            "projection": []
+          }
+        },
+        {
+          "summary": "Entry → Scan Competitor AI Presence → Download UniProtKB entries retrieved by a search query. (Max. 10 million entries)",
+          "satisfaction": {
+            "status": "unverified",
+            "covered": {
+              "organism scientific name": "results.organismHosts.scientificName"
+            },
+            "missing": [],
+            "joins": [
+              {
+                "step": 0,
+                "port": "entry_id",
+                "from": "$in.entry_id",
+                "kind": "caller"
+              },
+              {
+                "step": 1,
+                "port": "entities",
+                "from": "0.audit_author.name",
+                "kind": "generic"
+              },
+              {
+                "step": 2,
+                "port": "query",
+                "from": "1.",
+                "kind": "generic"
+              }
+            ],
+            "projection": []
+          }
+        }
+      ],
+      "outcome": {
+        "status": "unverified",
+        "require": [
+          "organism scientific name"
+        ],
+        "covered": {
+          "organism scientific name": "polymer_entity.rcsb_entity_host_organism.ncbi_parent_scientific_name"
+        },
+        "missing": [],
+        "joins": [
+          {
+            "step": 0,
+            "port": "entry_id",
+            "from": "$in.entry_id",
+            "kind": "caller"
+          },
+          {
+            "step": 1,
+            "port": "entity_ids",
+            "from": "0.audit_author.name",
+            "kind": "generic"
+          },
+          {
+            "step": 2,
+            "port": "instance_ids",
+            "from": "1.pdbx_entity_src_syn.organism_scientific",
+            "kind": "generic"
+          }
+        ],
+        "reason": "the required information is reachable only through a generic join (no evidence that the values link)"
+      },
+      "executed": null,
+      "output": null,
+      "id": "Q05",
+      "seconds": 1.227,
+      "score": {
+        "pass": false,
+        "detail": "outcome unverified: the required information is reachable only through a generic join (no evidence that the values link)",
+        "truth": null
+      }
+    },
+    {
+      "args": {
+        "have": {
+          "accession": "P68871"
+        },
+        "want": "json",
+        "intent": "ontology term parents",
+        "require": [
+          "label"
+        ],
+        "run": true,
+        "limit": 25,
+        "maxSteps": 3
+      },
+      "ms": 1051,
+      "ranking": [
+        {
+          "summary": "Term Parents By Ontology",
+          "satisfaction": {
+            "status": "established",
+            "covered": {
+              "label": "_embedded.terms.label"
+            },
+            "missing": [],
+            "joins": [
+              {
+                "step": 0,
+                "port": "onto",
+                "from": "$in.accession",
+                "kind": "caller"
+              }
+            ],
+            "projection": []
+          }
+        },
+        {
+          "summary": "Terms By Ontology",
+          "satisfaction": {
+            "status": "established",
+            "covered": {
+              "label": "_embedded.terms.label"
+            },
+            "missing": [],
+            "joins": [
+              {
+                "step": 0,
+                "port": "onto",
+                "from": "$in.accession",
+                "kind": "caller"
+              }
+            ],
+            "projection": []
+          }
+        },
+        {
+          "summary": "Get Roots",
+          "satisfaction": {
+            "status": "established",
+            "covered": {
+              "label": "_embedded.terms.label"
+            },
+            "missing": [],
+            "joins": [
+              {
+                "step": 0,
+                "port": "onto",
+                "from": "$in.accession",
+                "kind": "caller"
+              }
+            ],
+            "projection": []
+          }
+        },
+        {
+          "summary": "Get Preferred Roots",
+          "satisfaction": {
+            "status": "established",
+            "covered": {
+              "label": "_embedded.terms.label"
+            },
+            "missing": [],
+            "joins": [
+              {
+                "step": 0,
+                "port": "onto",
+                "from": "$in.accession",
+                "kind": "caller"
+              }
+            ],
+            "projection": []
+          }
+        },
+        {
+          "summary": "Term Hierarchical Descendants By Ontology",
+          "satisfaction": {
+            "status": "established",
+            "covered": {
+              "label": "_embedded.terms.label"
+            },
+            "missing": [],
+            "joins": [
+              {
+                "step": 0,
+                "port": "onto",
+                "from": "$in.accession",
+                "kind": "caller"
+              }
+            ],
+            "projection": []
+          }
+        }
+      ],
+      "outcome": {
+        "status": "incomplete",
+        "require": [
+          "label"
+        ],
+        "covered": {},
+        "missing": [
+          "label"
+        ],
+        "joins": [
+          {
+            "step": 0,
+            "port": "onto",
+            "from": "$in.accession",
+            "kind": "caller"
+          }
+        ],
+        "reason": "the executed result lacks: label"
+      },
+      "executed": {
+        "status": "completed",
+        "titles": [
+          "Term Parents By Ontology"
+        ],
+        "runs": [
+          "run_mvbi118k_3"
+        ],
+        "attempts": []
+      },
+      "output": {
+        "_links": {
+          "self": {
+            "href": "http://www.ebi.ac.uk/ols4/api/ontologies/P68871/parents"
+          }
+        },
+        "page": {
+          "size": 0,
+          "totalElements": 0,
+          "totalPages": 1,
+          "number": 0
+        }
+      },
+      "id": "Q07",
+      "seconds": 1.051,
+      "score": {
+        "pass": false,
+        "detail": "GO:0015671 parents [\"gas transport\"]",
+        "truth": [
+          "GO:0015671",
+          [
+            "gas transport"
+          ]
+        ]
+      }
+    },
+    {
+      "args": {
+        "have": {
+          "accession": "P38398"
+        },
+        "want": "json",
+        "intent": "genomic coordinates",
+        "require": [
+          "chromosome",
+          "ensembl gene"
+        ],
+        "run": true,
+        "limit": 25,
+        "maxSteps": 3
+      },
+      "ms": 7750,
+      "ranking": [
+        {
+          "summary": "Get genomic coordinates for a UniProt accession",
+          "satisfaction": {
+            "status": "established",
+            "covered": {
+              "chromosome": "gnCoordinate.genomicLocation.chromosome",
+              "ensembl gene": "gnCoordinate.ensemblGeneId"
+            },
+            "missing": [],
+            "joins": [
+              {
+                "step": 0,
+                "port": "accession",
+                "from": "$in.accession",
+                "kind": "caller"
+              }
+            ],
+            "projection": []
+          }
+        },
+        {
+          "summary": "Search genomic coordinates for UniProt entries",
+          "satisfaction": {
+            "status": "established",
+            "covered": {
+              "chromosome": ".gnCoordinate.genomicLocation.chromosome",
+              "ensembl gene": ".gnCoordinate.ensemblGeneId"
+            },
+            "missing": [],
+            "joins": [
+              {
+                "step": 0,
+                "port": "accession",
+                "from": "$in.accession",
+                "kind": "caller"
+              }
+            ],
+            "projection": []
+          }
+        },
+        {
+          "summary": "Get UniProtKB entry by a single accession. → Get genomic coordinates for a UniProt accession",
+          "satisfaction": {
+            "status": "established",
+            "covered": {
+              "chromosome": "gnCoordinate.genomicLocation.chromosome",
+              "ensembl gene": "gnCoordinate.ensemblGeneId"
+            },
+            "missing": [],
+            "joins": [
+              {
+                "step": 0,
+                "port": "accession",
+                "from": "$in.accession",
+                "kind": "caller"
+              },
+              {
+                "step": 1,
+                "port": "accession",
+                "from": "0.primaryAccession",
+                "kind": "evidence"
+              }
+            ],
+            "projection": []
+          }
+        },
+        {
+          "summary": "Get UniProt entry by accession → Get genomic coordinates for a UniProt accession",
+          "satisfaction": {
+            "status": "established",
+            "covered": {
+              "chromosome": "gnCoordinate.genomicLocation.chromosome",
+              "ensembl gene": "gnCoordinate.ensemblGeneId"
+            },
+            "missing": [],
+            "joins": [
+              {
+                "step": 0,
+                "port": "accession",
+                "from": "$in.accession",
+                "kind": "caller"
+              },
+              {
+                "step": 1,
+                "port": "accession",
+                "from": "0.accession",
+                "kind": "evidence"
+              }
+            ],
+            "projection": []
+          }
+        },
+        {
+          "summary": "Get UniProt protein sequence features by accession  → Get genomic coordinates for a UniProt accession",
+          "satisfaction": {
+            "status": "established",
+            "covered": {
+              "chromosome": "gnCoordinate.genomicLocation.chromosome",
+              "ensembl gene": "gnCoordinate.ensemblGeneId"
+            },
+            "missing": [],
+            "joins": [
+              {
+                "step": 0,
+                "port": "accession",
+                "from": "$in.accession",
+                "kind": "caller"
+              },
+              {
+                "step": 1,
+                "port": "accession",
+                "from": "0.accession",
+                "kind": "evidence"
+              }
+            ],
+            "projection": []
+          }
+        }
+      ],
+      "outcome": {
+        "status": "established",
+        "require": [
+          "chromosome",
+          "ensembl gene"
+        ],
+        "covered": {
+          "chromosome": "gnCoordinate.genomicLocation.chromosome",
+          "ensembl gene": "gnCoordinate.ensemblGeneId"
+        },
+        "missing": [],
+        "joins": [
+          {
+            "step": 0,
+            "port": "accession",
+            "from": "$in.accession",
+            "kind": "caller"
+          }
+        ],
+        "checkedAfterRun": true
+      },
+      "executed": {
+        "status": "completed",
+        "titles": [
+          "Get genomic coordinates for a UniProt accession"
+        ],
+        "runs": [
+          "run_mvbi14g0_4"
+        ],
+        "attempts": []
+      },
+      "output": null,
+      "id": "Q08",
+      "seconds": 7.75,
+      "score": {
+        "pass": false,
+        "detail": "chromosome [\"17\"], gene [\"ENSG00000012048\"]",
+        "truth": [
+          "P38398",
+          [
+            "17"
+          ],
+          [
+            "ENSG00000012048"
+          ]
+        ]
+      }
+    },
+    {
+      "args": {
+        "have": {
+          "gene": "BRCA1",
+          "taxid": "9606"
+        },
+        "want": "json",
+        "intent": "genomic coordinates",
+        "require": [
+          "chromosome",
+          "ensembl gene"
+        ],
+        "run": true,
+        "limit": 25,
+        "maxSteps": 3
+      },
+      "ms": 9902,
+      "ranking": [
+        {
+          "summary": "Get genomic coordinates for a UniProt accession → Get genome coordinate by protein sequence position",
+          "satisfaction": {
+            "status": "established",
+            "covered": {
+              "chromosome": "locations.chromosome",
+              "ensembl gene": "locations.ensemblGeneId"
+            },
+            "missing": [],
+            "joins": [
+              {
+                "step": 0,
+                "port": "accession",
+                "from": "$in.gene",
+                "kind": "caller"
+              },
+              {
+                "step": 1,
+                "port": "accession",
+                "from": "0.accession",
+                "kind": "evidence"
+              },
+              {
+                "step": 1,
+                "port": "pPosition",
+                "from": "$in.taxid",
+                "kind": "caller"
+              }
+            ],
+            "projection": []
+          }
+        },
+        {
+          "summary": "Get genomic coordinates for a UniProt accession → Get UniProt entry by accession → Get genome coordinate by protein sequence position",
+          "satisfaction": {
+            "status": "established",
+            "covered": {
+              "chromosome": "locations.chromosome",
+              "ensembl gene": "locations.ensemblGeneId"
+            },
+            "missing": [],
+            "joins": [
+              {
+                "step": 0,
+                "port": "accession",
+                "from": "$in.gene",
+                "kind": "caller"
+              },
+              {
+                "step": 1,
+                "port": "accession",
+                "from": "0.accession",
+                "kind": "evidence"
+              },
+              {
+                "step": 2,
+                "port": "accession",
+                "from": "1.accession",
+                "kind": "evidence"
+              },
+              {
+                "step": 2,
+                "port": "pPosition",
+                "from": "$in.taxid",
+                "kind": "caller"
+              }
+            ],
+            "projection": []
+          }
+        },
+        {
+          "summary": "Get genome coordinate by protein sequence position range",
+          "satisfaction": {
+            "status": "established",
+            "covered": {
+              "chromosome": "locations.chromosome",
+              "ensembl gene": "locations.ensemblGeneId"
+            },
+            "missing": [],
+            "joins": [
+              {
+                "step": 0,
+                "port": "accession",
+                "from": "$in.gene",
+                "kind": "caller"
+              },
+              {
+                "step": 0,
+                "port": "pStart",
+                "from": "$in.taxid",
+                "kind": "caller"
+              },
+              {
+                "step": 0,
+                "port": "pEnd",
+                "from": "$in.taxid",
+                "kind": "caller"
+              }
+            ],
+            "projection": []
+          }
+        },
+        {
+          "summary": "Get genome coordinate by protein sequence position",
+          "satisfaction": {
+            "status": "established",
+            "covered": {
+              "chromosome": "locations.chromosome",
+              "ensembl gene": "locations.ensemblGeneId"
+            },
+            "missing": [],
+            "joins": [
+              {
+                "step": 0,
+                "port": "accession",
+                "from": "$in.gene",
+                "kind": "caller"
+              },
+              {
+                "step": 0,
+                "port": "pPosition",
+                "from": "$in.taxid",
+                "kind": "caller"
+              }
+            ],
+            "projection": []
+          }
+        },
+        {
+          "summary": "Get UniProt entry by accession → Get genome coordinate by protein sequence position range",
+          "satisfaction": {
+            "status": "established",
+            "covered": {
+              "chromosome": "locations.chromosome",
+              "ensembl gene": "locations.ensemblGeneId"
+            },
+            "missing": [],
+            "joins": [
+              {
+                "step": 0,
+                "port": "accession",
+                "from": "$in.gene",
+                "kind": "caller"
+              },
+              {
+                "step": 1,
+                "port": "accession",
+                "from": "0.accession",
+                "kind": "evidence"
+              },
+              {
+                "step": 1,
+                "port": "pStart",
+                "from": "$in.taxid",
+                "kind": "caller"
+              },
+              {
+                "step": 1,
+                "port": "pEnd",
+                "from": "$in.taxid",
+                "kind": "caller"
+              }
+            ],
+            "projection": []
+          }
+        }
+      ],
+      "outcome": {
+        "status": "established",
+        "require": [
+          "chromosome",
+          "ensembl gene"
+        ],
+        "covered": {
+          "chromosome": "locations.chromosome",
+          "ensembl gene": "locations.ensemblGeneId"
+        },
+        "missing": [],
+        "joins": [
+          {
+            "step": 0,
+            "port": "accession",
+            "from": "$in.gene",
+            "kind": "caller"
+          },
+          {
+            "step": 1,
+            "port": "accession",
+            "from": "0.accession",
+            "kind": "evidence"
+          },
+          {
+            "step": 1,
+            "port": "pPosition",
+            "from": "$in.taxid",
+            "kind": "caller"
+          }
+        ]
+      },
+      "executed": {
+        "status": "failed",
+        "titles": [],
+        "runs": [],
+        "attempts": [
+          {
+            "summary": "Get genomic coordinates for a UniProt accession → Get genome coordinate by protein sequence position",
+            "failed": "openapi:proteins-rest-api:getbyaccession-1",
+            "error": "openapi:proteins-rest-api:getbyaccession-1: HTTP 400: {\"requestedURL\":\"https://www.ebi.ac.uk/proteins/api/coordinates/BRCA1\",\"errorMessage\":[\"Invalid accession parameter. The values's format should be a valid UniProtKB accession.\"]}",
+            "healing": "re-reflected https://www.ebi.ac.uk/proteins/api/openapi.json: no contract change"
+          }
+        ]
+      },
+      "output": null,
+      "id": "Q08g",
+      "seconds": 9.902,
+      "score": {
+        "pass": false,
+        "detail": "outcome established: ",
+        "truth": null
+      }
+    }
+  ],
+  "negatives": [
+    {
+      "args": {
+        "have": {
+          "accession": "P41159"
+        },
+        "want": "json",
+        "intent": "protein melting point",
+        "require": [
+          "melting point"
+        ],
+        "run": true,
+        "limit": 25,
+        "maxSteps": 3
+      },
+      "ms": 1812,
+      "ranking": [
+        {
+          "summary": "Get UniProt entry by accession",
+          "satisfaction": {
+            "status": "incomplete",
+            "covered": {},
+            "missing": [
+              "melting point"
+            ],
+            "joins": [
+              {
+                "step": 0,
+                "port": "accession",
+                "from": "$in.accession",
+                "kind": "caller"
+              }
+            ],
+            "projection": []
+          }
+        },
+        {
+          "summary": "Get UniParc longest sequence for entries.",
+          "satisfaction": {
+            "status": "incomplete",
+            "covered": {},
+            "missing": [
+              "melting point"
+            ],
+            "joins": [
+              {
+                "step": 0,
+                "port": "accession",
+                "from": "$in.accession",
+                "kind": "caller"
+              }
+            ],
+            "projection": []
+          }
+        },
+        {
+          "summary": "Get UniProt protein sequence features by accession ",
+          "satisfaction": {
+            "status": "incomplete",
+            "covered": {},
+            "missing": [
+              "melting point"
+            ],
+            "joins": [
+              {
+                "step": 0,
+                "port": "accession",
+                "from": "$in.accession",
+                "kind": "caller"
+              }
+            ],
+            "projection": []
+          }
+        },
+        {
+          "summary": "Get antigen by UniProt accession",
+          "satisfaction": {
+            "status": "incomplete",
+            "covered": {},
+            "missing": [
+              "melting point"
+            ],
+            "joins": [
+              {
+                "step": 0,
+                "port": "accession",
+                "from": "$in.accession",
+                "kind": "caller"
+              }
+            ],
+            "projection": []
+          }
+        },
+        {
+          "summary": "Search antigens in UniProt",
+          "satisfaction": {
+            "status": "incomplete",
+            "covered": {},
+            "missing": [
+              "melting point"
+            ],
+            "joins": [
+              {
+                "step": 0,
+                "port": "accession",
+                "from": "$in.accession",
+                "kind": "caller"
+              }
+            ],
+            "projection": []
+          }
+        }
+      ],
+      "outcome": {
+        "status": "unavailable",
+        "require": [
+          "melting point"
+        ],
+        "covered": {},
+        "missing": [
+          "melting point"
+        ],
+        "joins": [
+          {
+            "step": 0,
+            "port": "accession",
+            "from": "$in.accession",
+            "kind": "caller"
+          }
+        ],
+        "reason": "no plan's result carries: melting point"
+      },
+      "executed": null,
+      "output": null,
+      "id": "N2",
+      "seconds": 1.812,
+      "pass": true
+    },
+    {
+      "args": {
+        "have": {
+          "comp_id": "MK1"
+        },
+        "want": "json",
+        "intent": "gene name",
+        "require": [
+          "gene name"
+        ],
+        "run": true,
+        "limit": 25,
+        "maxSteps": 3
+      },
+      "ms": 1045,
+      "ranking": [
+        {
+          "summary": "Chem comp → Get gene centric proteins by proteome UPID is deprecated, please use new /genecentric?upid= endpoint",
+          "satisfaction": {
+            "status": "unverified",
+            "covered": {
+              "gene name": "canonicalGene.gene.geneName"
+            },
+            "missing": [],
+            "joins": [
+              {
+                "step": 0,
+                "port": "comp_id",
+                "from": "$in.comp_id",
+                "kind": "caller"
+              },
+              {
+                "step": 1,
+                "port": "upid",
+                "from": "0.pdbx_reference_molecule_family.name",
+                "kind": "generic"
+              }
+            ],
+            "projection": []
+          }
+        },
+        {
+          "summary": "Chem comp → Get Ontology 1 → Get gene centric proteins by proteome UPID is deprecated, please use new /genecentric?upid= endpoint",
+          "satisfaction": {
+            "status": "unverified",
+            "covered": {
+              "gene name": "canonicalGene.gene.geneName"
+            },
+            "missing": [],
+            "joins": [
+              {
+                "step": 0,
+                "port": "comp_id",
+                "from": "$in.comp_id",
+                "kind": "caller"
+              },
+              {
+                "step": 1,
+                "port": "onto",
+                "from": "0.pdbx_reference_molecule_family.name",
+                "kind": "generic"
+              },
+              {
+                "step": 2,
+                "port": "upid",
+                "from": "1.message",
+                "kind": "generic"
+              }
+            ],
+            "projection": []
+          }
+        },
+        {
+          "summary": "Chem comp → Retrieve UniProtKB entries by a search query.",
+          "satisfaction": {
+            "status": "unverified",
+            "covered": {
+              "gene name": "results.genes.orderedLocusNames"
+            },
+            "missing": [],
+            "joins": [
+              {
+                "step": 0,
+                "port": "comp_id",
+                "from": "$in.comp_id",
+                "kind": "caller"
+              },
+              {
+                "step": 1,
+                "port": "query",
+                "from": "0.pdbx_reference_molecule_family.name",
+                "kind": "generic"
+              }
+            ],
+            "projection": []
+          }
+        },
+        {
+          "summary": "Chem comp → Download UniProtKB entries retrieved by a search query. (Max. 10 million entries)",
+          "satisfaction": {
+            "status": "unverified",
+            "covered": {
+              "gene name": "results.genes.orderedLocusNames"
+            },
+            "missing": [],
+            "joins": [
+              {
+                "step": 0,
+                "port": "comp_id",
+                "from": "$in.comp_id",
+                "kind": "caller"
+              },
+              {
+                "step": 1,
+                "port": "query",
+                "from": "0.pdbx_reference_molecule_family.name",
+                "kind": "generic"
+              }
+            ],
+            "projection": []
+          }
+        },
+        {
+          "summary": "Chem comp → Get proteome by proteome UPID",
+          "satisfaction": {
+            "status": "unverified",
+            "covered": {
+              "gene name": "canonicalGene.gene.geneName"
+            },
+            "missing": [],
+            "joins": [
+              {
+                "step": 0,
+                "port": "comp_id",
+                "from": "$in.comp_id",
+                "kind": "caller"
+              },
+              {
+                "step": 1,
+                "port": "upid",
+                "from": "0.pdbx_reference_molecule_family.name",
+                "kind": "generic"
+              }
+            ],
+            "projection": []
+          }
+        }
+      ],
+      "outcome": {
+        "status": "unverified",
+        "require": [
+          "gene name"
+        ],
+        "covered": {
+          "gene name": "canonicalGene.gene.geneName"
+        },
+        "missing": [],
+        "joins": [
+          {
+            "step": 0,
+            "port": "comp_id",
+            "from": "$in.comp_id",
+            "kind": "caller"
+          },
+          {
+            "step": 1,
+            "port": "upid",
+            "from": "0.pdbx_reference_molecule_family.name",
+            "kind": "generic"
+          }
+        ],
+        "reason": "the required information is reachable only through a generic join (no evidence that the values link)"
+      },
+      "executed": null,
+      "output": null,
+      "id": "N3",
+      "seconds": 1.044,
+      "pass": true
+    },
+    {
+      "args": {
+        "have": {
+          "purl": "pkg:npm/lodash@4.17.20"
+        },
+        "want": "json",
+        "intent": "vulnerability summary",
+        "require": [
+          "summary"
+        ],
+        "run": true,
+        "limit": 25,
+        "maxSteps": 3
+      },
+      "ms": 10,
+      "ranking": [
+        {
+          "summary": "Summarize text",
+          "satisfaction": {
+            "status": "incomplete",
+            "covered": {},
+            "missing": [
+              "summary"
+            ],
+            "joins": [
+              {
+                "step": 0,
+                "port": "text",
+                "from": "$in.purl",
+                "kind": "caller"
+              }
+            ],
+            "projection": []
+          }
+        }
+      ],
+      "outcome": {
+        "status": "unavailable",
+        "require": [
+          "summary"
+        ],
+        "covered": {},
+        "missing": [
+          "summary"
+        ],
+        "joins": [
+          {
+            "step": 0,
+            "port": "text",
+            "from": "$in.purl",
+            "kind": "caller"
+          }
+        ],
+        "reason": "no plan's result carries: summary"
+      },
+      "executed": null,
+      "output": null,
+      "id": "N1",
+      "pass": true
+    }
+  ],
+  "holdout": {
+    "learn": [
+      {
+        "source": "https://raw.githubusercontent.com/google/osv.dev/master/docs/osv_service_v1.swagger.json",
+        "learned": 1
+      },
+      {
+        "source": "https://advisories.ecosyste.ms/docs/api/v1/openapi.yaml",
+        "learned": 0
+      }
+    ],
+    "seeding": {
+      "lookup": null,
+      "vuln": "openapi:osv:osv-getvulnbyid",
+      "runs": []
+    },
+    "h1": {
+      "args": {
+        "have": {
+          "purl": "pkg:npm/lodash@4.17.20"
+        },
+        "want": "json",
+        "intent": "vulnerability summary",
+        "require": [
+          "summary"
+        ],
+        "run": true,
+        "limit": 25,
+        "maxSteps": 3
+      },
+      "ms": 3,
+      "ranking": [
+        {
+          "summary": "Summarize text",
+          "satisfaction": {
+            "status": "incomplete",
+            "covered": {},
+            "missing": [
+              "summary"
+            ],
+            "joins": [
+              {
+                "step": 0,
+                "port": "text",
+                "from": "$in.purl",
+                "kind": "caller"
+              }
+            ],
+            "projection": []
+          }
+        }
+      ],
+      "outcome": {
+        "status": "unavailable",
+        "require": [
+          "summary"
+        ],
+        "covered": {},
+        "missing": [
+          "summary"
+        ],
+        "joins": [
+          {
+            "step": 0,
+            "port": "text",
+            "from": "$in.purl",
+            "kind": "caller"
+          }
+        ],
+        "reason": "no plan's result carries: summary"
+      },
+      "executed": null,
+      "output": null,
+      "id": "H1",
+      "score": {
+        "pass": false,
+        "detail": "outcome unavailable: no plan's result carries: summary"
+      },
+      "truth": {
+        "advisories": [
+          {
+            "uuid": "MDE2OlNlY3VyaXR5QWR2aXNvcnlHSFNBLTM1amgtcjNoNC02amht",
+            "identifiers": [
+              "GHSA-35jh-r3h4-6jhm",
+              "CVE-2021-23337"
+            ]
+          },
+          {
+            "uuid": "MDE2OlNlY3VyaXR5QWR2aXNvcnlHSFNBLTI5bXctd3BnbS1obXI5",
+            "identifiers": [
+              "GHSA-29mw-wpgm-hmr9",
+              "CVE-2020-28500"
+            ]
+          },
+          {
+            "uuid": "GSA_kwCzR0hTQS14eGpyLW1tanYtNGdwZ84ABRXc",
+            "identifiers": [
+              "GHSA-xxjr-mmjv-4gpg",
+              "CVE-2025-13465"
+            ]
+          },
+          {
+            "uuid": "GSA_kwCzR0hTQS1yNWZyLXJqeHItNjZqY84ABUmW",
+            "identifiers": [
+              "GHSA-r5fr-rjxr-66jc",
+              "CVE-2026-4800"
+            ]
+          },
+          {
+            "uuid": "GSA_kwCzR0hTQS1mMjNtLXIzcGYtNDJyaM4ABUmV",
+            "identifiers": [
+              "GHSA-f23m-r3pf-42rh",
+              "CVE-2026-2950"
+            ]
+          }
+        ],
+        "witnessIds": [
+          "GHSA-29mw-wpgm-hmr9",
+          "GHSA-35jh-r3h4-6jhm",
+          "GHSA-f23m-r3pf-42rh",
+          "GHSA-r5fr-rjxr-66jc",
+          "GHSA-xxjr-mmjv-4gpg"
+        ]
+      }
+    }
+  },
+  "network": {
+    "dev": 10,
+    "holdout": 4
+  },
+  "fanOutLimitsHeld": true
+}
