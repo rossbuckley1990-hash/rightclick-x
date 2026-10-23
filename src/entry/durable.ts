@@ -20,7 +20,12 @@ import { RightClick, type PersistedState, type Store } from "../runtime.ts";
 
 type Env = Record<string, any>;
 
-const CHUNK = 100_000;
+/** Written chunk size, in UTF-16 code units. A Durable Object value is limited to 128 KiB on the
+ *  key-value backend (2 MB on SQLite), and a string serialises at up to two bytes per unit, so
+ *  60,000 units stay under the smaller limit whatever the text contains. */
+const CHUNK = 60_000;
+/** Largest chunk accepted when reading: chunks written before the limit was lowered held 100,000. */
+const READ_CHUNK = 100_000;
 
 /** Which chunks hold a state: a generation's `state:<generation>:<i>`, or legacy `state:<i>`. */
 interface Manifest {
@@ -29,6 +34,16 @@ interface Manifest {
   generation?: string;
   /** The generation a migrating save replaced, kept until a later migration replaces it. */
   backup?: { chunks: number; generation: string | null; replaced: string; at: string };
+}
+
+/** A generation of chunks; null names the legacy layout. */
+type Generation = { generation: string | null; chunks: number };
+
+/** A save in progress, with earlier ones that never switched the manifest. */
+function validPending(p: unknown): p is Generation & { generation: string; orphans: Generation[] } {
+  const v = p as { generation?: unknown; chunks?: unknown; orphans?: unknown };
+  const one = (g: any) => !!g && Number.isSafeInteger(g.chunks) && g.chunks > 0 && typeof g.generation === "string" && /^[a-f0-9-]{36}$/.test(g.generation);
+  return one(v) && Array.isArray(v.orphans) && v.orphans.every(one);
 }
 
 const chunkKey = (generation: string | null | undefined, i: number) => generation ? `state:${generation}:${i}` : `state:${i}`;
@@ -74,7 +89,7 @@ export class DurableStore implements Store {
       const got: Map<string, string> = await this.storage.get(keys);
       for (const k of keys) {
         const part = got.get(k);
-        if (typeof part !== "string" || !part.length || part.length > CHUNK) throw new Error(`missing or invalid runtime state chunk: ${k}`);
+        if (typeof part !== "string" || !part.length || part.length > READ_CHUNK) throw new Error(`missing or invalid runtime state chunk: ${k}`);
         text += part;
       }
     }
@@ -89,6 +104,11 @@ export class DurableStore implements Store {
   private async write(text: string, state: PersistedState): Promise<void> {
     const generation = crypto.randomUUID();
     const chunks = Math.ceil(text.length / CHUNK);
+    // Recorded before any chunk, with any earlier save that never switched the manifest, so their
+    // chunks can be found and removed without listing (and loading) everything in storage.
+    const earlier = await this.storage.get("state:pending");
+    const orphans: Generation[] = validPending(earlier) ? [{ generation: earlier.generation, chunks: earlier.chunks }, ...earlier.orphans].slice(0, 16) : [];
+    await this.storage.put("state:pending", { generation, chunks, orphans });
     const keys = Array.from({ length: chunks }, (_, i) => chunkKey(generation, i));
     for (let i = 0; i < keys.length; i += 100) {
       await this.storage.put(Object.fromEntries(keys.slice(i, i + 100).map((k, j) => [k, text.slice((i + j) * CHUNK, (i + j + 1) * CHUNK)])));
@@ -103,15 +123,18 @@ export class DurableStore implements Store {
     await this.storage.put("state:meta", manifest);
     this.loaded = undefined;
     this.current = manifest;
-    await this.sweep(manifest).catch(() => { /* stale chunks are removed by a later save */ });
+    await this.sweep(manifest, current, orphans).catch(() => { /* the pending record keeps them for a later save */ });
   }
-  /** Delete chunks no manifest refers to: superseded generations and interrupted saves. */
-  private async sweep(manifest: Manifest): Promise<void> {
-    const keep = new Set<string>(["state:meta"]);
-    for (const [g, n] of [[manifest.generation, manifest.chunks], [manifest.backup?.generation, manifest.backup?.chunks ?? 0]] as const)
-      for (let i = 0; i < n; i++) keep.add(chunkKey(g, i));
-    const stale = [...(await this.storage.list({ prefix: "state:" })).keys()].filter((k: string) => !keep.has(k));
+  /** Delete chunks no manifest refers to: the generation just superseded, a backup just replaced,
+   *  and saves that never switched. Then clear the pending record. */
+  private async sweep(manifest: Manifest, previous: Manifest | undefined, orphans: Generation[]): Promise<void> {
+    const kept = (g: string | null | undefined) => g === manifest.generation || (manifest.backup !== undefined && (manifest.backup.generation ?? undefined) === (g ?? undefined));
+    const gone: Generation[] = [...orphans];
+    if (previous) gone.push({ generation: previous.generation ?? null, chunks: previous.chunks });
+    if (previous?.backup) gone.push({ generation: previous.backup.generation, chunks: previous.backup.chunks });
+    const stale = gone.filter((g) => !kept(g.generation)).flatMap((g) => Array.from({ length: g.chunks }, (_, i) => chunkKey(g.generation, i)));
     for (let i = 0; i < stale.length; i += 128) await this.storage.delete(stale.slice(i, i + 128));
+    await this.storage.delete("state:pending");
   }
 }
 
