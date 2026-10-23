@@ -7,11 +7,11 @@
 //   RCX_SOURCES  comma-separated URLs to learn at cold start
 //   RCX_AUTH     JSON {origin: "Bearer ..."} credentials, origin-pinned
 //   RCX_NAME     instance name shown to peers
-//   RCX_STATE    (binding) KV namespace to persist the graph across isolates
+//   RCX_STATE    (binding) KV namespace holding a state to load, read-only (persist via the Durable Object entry)
 //   any other KV / AI bindings become platform capabilities automatically
 
 import { authorityFromEnv } from "../core/authority.ts";
-import { backupSuffix, decodeState, encodeState, migrationReplaces } from "../core/state-format.ts";
+import { decodeState } from "../core/state-format.ts";
 import { createHandler } from "../interface/http.ts";
 import { Authority } from "../reflectors/net.ts";
 import { environmentOptions } from "../reflectors/environment.ts";
@@ -21,58 +21,26 @@ type Env = Record<string, any>;
 
 let instance: Promise<{ rc: RightClick; handler: (r: Request) => Promise<Response> }> | null = null;
 
-/** How long a state replaced by another isolate's save is kept (Workers KV expirationTtl). */
-const SUPERSEDED_TTL_SECONDS = 7 * 24 * 3600;
+/** Why Workers KV is read and never written. */
+const KV_READ_ONLY = "Workers KV is eventually consistent, allows one write per second per key and has no atomic operations, so this Worker's many isolates cannot share it as one writer; persist state through the Durable Object entry (src/entry/durable.ts)";
 
 /**
- * Workers KV is eventually consistent and last-writer-wins, and one state is shared by every
- * isolate. A save that would replace a state this isolate neither loaded nor wrote keeps that state
- * first under `rcx-state.superseded-<generation>-<time>`, expiring after a bounded time, and
- * reports it, so a concurrent writer's work is not destroyed silently. A concurrent write not yet
- * visible here cannot be detected; use DurableStore where writers must not race.
+ * A state read from Workers KV, never written. Cloudflare's documented pattern is to route a key's
+ * writes through one Durable Object and read it from KV elsewhere; the KV value can be seeded from
+ * that deployment or by the operator. A legacy value loads and is migrated in memory only.
  */
 export class KvStore implements Store {
+  readonly readOnly = KV_READ_ONLY;
   private kv: any;
-  /** The value as loaded, kept under its own key before a save that changes its format or
-   *  inference version replaces it. */
-  private loaded?: { value: unknown; text: string };
-  /** What this isolate last saw in KV: whether a state existed, and its generation. */
-  private known?: { found: boolean; generation: string | null };
-  private onSuperseded?: (key: string) => void;
-  constructor(kv: any, opts: { onSuperseded?: (key: string) => void } = {}) {
+  constructor(kv: any) {
     this.kv = kv;
-    this.onSuperseded = opts.onSuperseded;
-  }
-  private async read(): Promise<{ text: string | null; generation: string | null }> {
-    if (typeof this.kv.getWithMetadata !== "function") return { text: await this.kv.get("rcx-state", "text"), generation: null };
-    const r = await this.kv.getWithMetadata("rcx-state", "text");
-    const generation = (r?.metadata as { generation?: unknown } | null)?.generation;
-    return { text: r?.value ?? null, generation: typeof generation === "string" ? generation : null };
   }
   async load(): Promise<PersistedState | null> {
-    const { text, generation } = await this.read();
-    this.known = { found: text != null, generation };
-    if (text == null) return null;
-    const value = JSON.parse(text);
-    const state = decodeState(value);
-    this.loaded = { value, text };
-    return state;
+    const text = await this.kv.get("rcx-state", "text");
+    return text == null ? null : decodeState(JSON.parse(text));
   }
-  async save(state: PersistedState): Promise<void> {
-    const content = encodeState(state);
-    const replaced = this.loaded && migrationReplaces(this.loaded.value, state);
-    if (replaced) await this.kv.put(`rcx-state${backupSuffix(replaced)}`, this.loaded!.text);
-    // Without metadata reads, generations cannot be compared, so nothing can be detected.
-    const current = typeof this.kv.getWithMetadata === "function" ? await this.read() : { text: null, generation: null };
-    if (current.text != null && (!this.known?.found || current.generation !== this.known.generation)) {
-      const key = `rcx-state.superseded-${current.generation ?? "unversioned"}-${new Date().toISOString().replace(/[:.]/g, "-")}`;
-      await this.kv.put(key, current.text, { expirationTtl: SUPERSEDED_TTL_SECONDS });
-      this.onSuperseded?.(key);
-    }
-    const generation = crypto.randomUUID();
-    await this.kv.put("rcx-state", content, { metadata: { generation } });
-    this.known = { found: true, generation };
-    this.loaded = undefined;
+  async save(_state: PersistedState): Promise<void> {
+    throw new Error(`KV state is read-only: ${KV_READ_ONLY}`);
   }
 }
 
@@ -85,7 +53,7 @@ async function boot(env: Env) {
     name: env.RCX_NAME ?? "rightclick-x-edge",
     auth,
     bindings,
-    store: env.RCX_STATE ? new KvStore(env.RCX_STATE, { onSuperseded: (key) => console.warn(`RightClick X: another isolate's state was replaced by this save; it is kept for 7 days at KV key ${key}`) }) : undefined,
+    store: env.RCX_STATE ? new KvStore(env.RCX_STATE) : undefined,
     authority: authorityFromEnv(env as Record<string, unknown>),
     environment: environmentOptions(env.RCX_ENVIRONMENT),
   });
