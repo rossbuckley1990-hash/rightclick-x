@@ -7,7 +7,7 @@
 // therefore checked against the documented limit in test/durable-store.test.ts.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -16,13 +16,29 @@ import { MemoryStore } from "./helpers.ts";
 
 const HARNESS = fileURLToPath(new URL("./fixtures/durable-harness/", import.meta.url));
 
+/** wrangler writes a .wrangler/ directory into its project root (the config's directory, else the
+ *  working directory). A checkout may not be writable (the CI test image is not), so each run gets
+ *  a fresh project directory holding a generated config whose entry is the harness, by absolute path.
+ *  node --test runs each file in its own process, so the chdir stays here. */
+function project(): string {
+  const dir = mkdtempSync(join(tmpdir(), "rcx-workerd-project-"));
+  const config = readFileSync(join(HARNESS, "wrangler.toml"), "utf8").replace(/^main = .*$/m, `main = ${JSON.stringify(join(HARNESS, "worker.ts"))}`);
+  writeFileSync(join(dir, "wrangler.toml"), config);
+  process.chdir(dir);
+  return dir;
+}
+
 async function start(persistTo: string) {
   const { unstable_dev } = await import("wrangler");
+  const dir = project();
   return unstable_dev(join(HARNESS, "worker.ts"), {
-    config: join(HARNESS, "wrangler.toml"), local: true, persist: true, persistTo, logLevel: "error",
+    config: join(dir, "wrangler.toml"), local: true, persist: true, persistTo, logLevel: "error",
     experimental: { disableExperimentalWarning: true },
   });
 }
+
+/** A start failure must fail the test, not hold CI: unstable_dev waited 300 s on an unwritable root. */
+const limit = { timeout: 120_000 };
 
 async function state(label: string, size = 150_000): Promise<PersistedState> {
   const memory = new MemoryStore();
@@ -36,7 +52,7 @@ type Worker = Awaited<ReturnType<typeof start>>;
 const call = async (w: Worker, path: string, body?: unknown, raw = false) =>
   (await (await w.fetch(`http://harness${path}`, body === undefined ? undefined : { method: "POST", body: raw ? String(body) : JSON.stringify(body) })).json()) as any;
 
-test("workerd: an interrupted save keeps the previous state, which survives a restart", async () => {
+test("workerd: an interrupted save keeps the previous state, which survives a restart", limit, async () => {
   const dir = mkdtempSync(join(tmpdir(), "rcx-workerd-"));
   try {
     const a = await state("A"), b = await state("B", 250_000), c = await state("C");
@@ -60,7 +76,7 @@ test("workerd: an interrupted save keeps the previous state, which survives a re
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
-test("workerd: a save interrupted between chunk batches keeps the previous state", async () => {
+test("workerd: a save interrupted between chunk batches keeps the previous state", limit, async () => {
   const dir = mkdtempSync(join(tmpdir(), "rcx-workerd-"));
   const w = await start(dir);
   try {
@@ -72,7 +88,7 @@ test("workerd: a save interrupted between chunk batches keeps the previous state
   } finally { await w.stop(); rmSync(dir, { recursive: true, force: true }); }
 });
 
-test("workerd: migrating the previous release's layout keeps it as the backup", async () => {
+test("workerd: migrating the previous release's layout keeps it as the backup", limit, async () => {
   const dir = mkdtempSync(join(tmpdir(), "rcx-workerd-"));
   const w = await start(dir);
   try {
@@ -88,7 +104,7 @@ test("workerd: migrating the previous release's layout keeps it as the backup", 
   } finally { await w.stop(); rmSync(dir, { recursive: true, force: true }); }
 });
 
-test("workerd: concurrent requests leave one consistent state and no stray chunks", async () => {
+test("workerd: concurrent requests leave one consistent state and no stray chunks", limit, async () => {
   const dir = mkdtempSync(join(tmpdir(), "rcx-workerd-"));
   const w = await start(dir);
   try {
