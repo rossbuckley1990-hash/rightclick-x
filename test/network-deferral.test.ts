@@ -181,3 +181,25 @@ test("a pipeline over a program deferred for want of authority survives and retu
     assert.equal((await withAuthority.run("goal:sorted-digest", { text: "d\nc\n" })).status, "completed");
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
+
+test("learning a deferred source again during a session resolves its deferral", async () => {
+  const f = await upgradeFixture();
+  try {
+    const rc = await RightClick.create({ directories: [], sandbox: null, store: new FileStore(f.file) });
+    assert.equal(rc.graph.get(f.capability), undefined);
+    const service = await notes(f.port);
+    try {
+      await rc.learn({ source: service.source });
+      assert.ok(rc.graph.get(f.capability), "learning the source did not restore its capability");
+      await rc.flush();
+      assert.equal(saved(f.file).deferredInference, undefined, "a stale deferred copy outlived a successful learn");
+    } finally { await service.close(); }
+    // Unreachable again on the next start: the state is current, so there is no migration. The
+    // newer copy stays as it is and the stale one does not come back over it.
+    const next = await RightClick.create({ directories: [], sandbox: null, store: new FileStore(f.file) });
+    assert.ok(next.graph.get(f.capability));
+    for (const id of f.composites) assert.ok(next.graph.get(id), `the pipeline ${id} did not return with its provider`);
+    await next.flush();
+    assert.equal(saved(f.file).deferredInference, undefined);
+  } finally { rmSync(f.dir, { recursive: true, force: true }); }
+});

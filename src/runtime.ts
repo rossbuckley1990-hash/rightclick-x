@@ -770,6 +770,28 @@ export class RightClick {
     this.persist();
   }
 
+  /** A source learned successfully is no longer deferred: drop its stale copies, and bring back
+   *  deferred pipelines whose steps are all present again (retireBroken still applies). */
+  private resolveDeferred(source: string): void {
+    const of = (p: Provider) => p.source === "cli" ? `cli:${p.origin}` : (p.meta?.source as string | undefined) ?? p.origin;
+    const before = this.deferredInference.length;
+    this.deferredInference = this.deferredInference.filter(d => of(d.reflection.provider) !== source || d.reflection.provider.source === "composite");
+    if (this.deferredInference.length === before) return;
+    for (let restored = true; restored;) {
+      restored = false;
+      for (const d of [...this.deferredInference]) {
+        const cap = d.reflection.capabilities[0];
+        if (d.reflection.provider.source !== "composite" || cap?.invoke.kind !== "composite" || this.graph.get(cap.id)) continue;
+        if (!cap.invoke.steps.every(st => this.graph.get(st.capability))) continue;
+        const { capabilityIds: _, ...provider } = d.reflection.provider;
+        this.graph.addCapability(cap, provider);
+        this.deferredInference = this.deferredInference.filter(x => x !== d);
+        restored = true;
+      }
+    }
+    this.graph.retireBroken();
+  }
+
   /** Tell the runtime where it is (e.g. Cloudflare's request.cf.colo). */
   observeLocation(region?: string, country?: string): void {
     if (region) this.info.region = region;
@@ -975,6 +997,7 @@ export class RightClick {
           const compositesBefore = this.graph.list().filter((c) => c.source === "composite").map((c) => c.id);
           for (const p of previous) if (!ids.has(p.id)) this.graph.forget(p.id);
           const learned = d.reflections.map((r) => this.graph.add({ ...r, provider: { ...r.provider, meta: { ...r.provider.meta, source } } }));
+          this.resolveDeferred(source);
           let drift: SourceDrift | undefined;
           if (previous.length) {
             const after = new Map(learned.flatMap((l) => (this.graph.providers.get(l.provider)?.capabilityIds ?? []).map((id) => [id, signature(this.graph.get(id)!)] as const)));
