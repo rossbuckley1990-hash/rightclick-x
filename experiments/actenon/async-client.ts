@@ -47,7 +47,7 @@ if (config.phase === "workflow-pause") {
   const plan: any = await dispatch(rc, "context_compose", { have: { label: { type: "text", value: args.label }, document: { type: "text", value: args.document } },
     want: "hash", through: [submit.id, publish.id], run: true, origins: [config.origin],
     publish: "Delivered document digest", verify: [{ op: "matches", pattern: "^[a-f0-9]{64}$" }] });
-  const selected = plan.plans.find(p => p.steps.length === 2 && p.steps[0].capability === submit.id && p.steps[1].capability === publish.id);
+  const selected = plan.plans.find((p: any) => p.steps.length === 2 && p.steps[0].capability === submit.id && p.steps[1].capability === publish.id);
   if (!selected) throw new Error("no ordinary two-step plan");
   result.plan = selected;
   result.compose = plan;
