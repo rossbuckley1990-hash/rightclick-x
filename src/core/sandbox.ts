@@ -235,14 +235,47 @@ function resolutionAncestors(paths: string[], denyRoots: string[]): string[] {
   return [...out];
 }
 
+/** Mach services a confined command-line program may look up: user/group and host lookups,
+ *  logging and notifications. Every other service is denied, because a service acts for its
+ *  caller outside the caller's sandbox: the pasteboard hands over the user's clipboard,
+ *  LaunchServices opens applications, launchd enumerates the session, cfprefsd's agent reads
+ *  the user's preferences and securityd the keychain. */
+export const MACH_SERVICES = [
+  "com.apple.system.opendirectoryd.libinfo",
+  "com.apple.system.opendirectoryd.membership",
+  "com.apple.system.logger",
+  "com.apple.system.notification_center",
+  "com.apple.logd",
+  "com.apple.diagnosticd",
+  "com.apple.cfprefsd.daemon",
+];
+
+/** Added only when the operator allows the network: name resolution, proxy configuration and
+ *  certificate trust evaluation, without which TLS clients cannot connect. */
+export const NETWORK_MACH_SERVICES = [
+  "com.apple.dnssd.service",
+  "com.apple.SystemConfiguration.configd",
+  "com.apple.SystemConfiguration.DNSConfiguration",
+  "com.apple.trustd",
+  "com.apple.trustd.agent",
+];
+
 /** SBPL applies the last matching rule, so declared roots are appended after the
  *  blanket home-directory denial instead of narrowing it. */
 export function macProfile(policy: SandboxPolicy, work: string): { text: string; params: string[] } {
   const params: string[] = [];
+  const services = [...MACH_SERVICES, ...(policy.network ? NETWORK_MACH_SERVICES : [])];
   const lines = [
     "(version 1)",
     "(allow default)",
     ...(policy.network ? [] : ["(deny network*)"]),
+    // IPC is default-deny even though the base is not: a service a program reaches acts outside
+    // the program's confinement. Opening documents or applications and sending Apple Events are
+    // denied outright, whatever services are allowed.
+    "(deny mach-lookup)",
+    `(allow mach-lookup ${services.map((s) => `(global-name "${s}")`).join(" ")})`,
+    "(deny lsopen)",
+    "(deny appleevent-send)",
     "(deny file-write*)",
     `(allow file-write* (subpath (param "WORK")) (literal "/dev/null") (literal "/dev/tty"))`,
     `(deny file-read* ${HOME_DENY_ROOTS.map((h) => `(subpath "${h}")`).join(" ")})`,
@@ -272,6 +305,9 @@ export function macProfile(policy: SandboxPolicy, work: string): { text: string;
   }
   return { text: lines.join("\n") + "\n", params };
 }
+
+/** Hidden behind empty tmpfs mounts inside the Linux sandbox. */
+const LINUX_SOCKET_DIRS = ["/tmp", "/var/tmp", "/run"];
 
 // A constant script: it only sets resource limits, then replaces itself with the program. The
 // program and its arguments arrive as positional parameters ("$0" "$@"), never as shell text.
@@ -357,6 +393,9 @@ export function makeSandbox(kind: Sandbox["kind"], policy: SandboxPolicy, bwrap 
           "; above a declared root only stat is permitted, so those directories cannot be listed or read"
         : "no reads under home directories",
       `PATH limited to ${policy.pathDirs.join(":")}`,
+      kind === "macos-sandbox-exec"
+        ? `Mach services limited to directory, logging and notification lookups${policy.network ? ", name resolution, network configuration and certificate trust" : ""}; no LaunchServices opens or Apple Events, so no clipboard or application launch; launchd still answers read-only queries about the session (service labels, endpoints, environment)`
+        : `host ${LINUX_SOCKET_DIRS.join(", ")} hidden, so Unix sockets there (user bus, docker.sock, X11, SSH agents) are unreachable; sockets elsewhere under readable paths are not${policy.network ? "; abstract sockets reachable because the network is shared" : ""}`,
       "scrubbed environment",
       "argv only",
       `wall-time ${policy.limits.timeoutMs}ms, CPU-time, per-file ${Math.round(policy.limits.maxFileBytes / (1024 * 1024))}MB, open-file and output limits`,
@@ -394,10 +433,13 @@ export function makeSandbox(kind: Sandbox["kind"], policy: SandboxPolicy, bwrap 
           ...wrapped,
         ];
       } else {
-        // bwrap applies bindings in order, so declared roots are bound after the
-        // /home and /root tmpfs mounts that would otherwise hide them.
+        // bwrap applies bindings in order, so declared roots and the work directory are bound
+        // after the tmpfs mounts that would otherwise hide them. A read-only bind does not stop
+        // connect() on a Unix socket, so the directories that hold them are replaced, not bound:
+        // /run (the user's systemd bus, docker.sock) and the temporary directories (X11, SSH agents).
         argv = [
           bwrap, "--ro-bind", "/", "/", "--tmpfs", "/home", "--tmpfs", "/root",
+          ...LINUX_SOCKET_DIRS.filter((d) => fs.existsSync(d)).flatMap((d) => ["--tmpfs", d]),
           ...policy.readRoots.flatMap((r) => ["--ro-bind", r, r]),
           ...policy.readDenyRoots.flatMap((r) => ["--tmpfs", r]),
           ...policy.writeRoots.flatMap((r) => ["--bind", r, r]),
