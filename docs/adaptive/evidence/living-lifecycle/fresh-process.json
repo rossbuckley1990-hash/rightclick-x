@@ -1,0 +1,520 @@
+{
+  "capability": {
+    "id": "goal:observed-weather",
+    "title": "Observed weather",
+    "provider": "goal:published",
+    "source": "composite",
+    "invocation": "goal",
+    "inputs": [
+      {
+        "name": "place",
+        "type": "place",
+        "required": true
+      },
+      {
+        "name": "language",
+        "type": "language",
+        "required": true
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "text"
+      }
+    ],
+    "states": {
+      "discovery": {
+        "state": "known-descriptor",
+        "source": "Current runtime graph",
+        "limitation": "A descriptor is not proof that its provider is reachable or truthful.",
+        "evidence": []
+      },
+      "executability": {
+        "state": "locally-blocked",
+        "source": "Current local execution policy and destructive-approval configuration",
+        "limitation": "Passing local policy does not establish credentials, program authority, sandbox availability, valid inputs or service reachability. No operation is executed by this view.",
+        "evidence": []
+      },
+      "authority": {
+        "state": "unknown",
+        "source": "No independent exact-action boundary decision attached to this observation",
+        "limitation": "Discovery, composition and publication grant no authority. A principal, exact action, parameters and protected boundary must be authorised separately. Other shells, tools and credentials are outside this view.",
+        "evidence": []
+      },
+      "assurance": {
+        "state": "predicates-passed-on-run",
+        "source": "Latest retained execution/composition observation, not a publication trust label",
+        "limitation": "Applies only to that historical run. Predicates are local checks. A separate read-only witness provider is not necessarily an independent organisation or a complete business-outcome oracle; receipt hashes are not external attestations.",
+        "evidence": [
+          "c3c33e3b-02e1-4252-8bdd-c15d1694c5bc:15"
+        ]
+      },
+      "reusability": {
+        "state": "retained-contract",
+        "source": "Matching current graph descriptor and retained goal/pipeline",
+        "limitation": "Retention does not establish usefulness, current validity, authority or actual fresh-agent reuse.",
+        "evidence": []
+      },
+      "validity": {
+        "state": "dependencies-changed",
+        "source": "Current contract change detectors compared with the latest retained run's dependency references",
+        "limitation": "Non-cryptographic descriptor comparison is not proof of unchanged behaviour. Missing/truncated history stays unassessed; remote behaviour may change without a descriptor change.",
+        "evidence": [
+          "c3c33e3b-02e1-4252-8bdd-c15d1694c5bc:15"
+        ]
+      }
+    },
+    "lastObservation": {
+      "kind": "composition.finished",
+      "status": "completed",
+      "subjects": [
+        "goal:observed-weather",
+        "composite:83f23e4cd72a"
+      ],
+      "providers": [
+        "graphql:atlas-test-graphql",
+        "mcp:skycast",
+        "openapi:polyglot"
+      ],
+      "runs": [
+        "run_mvdnykou_1",
+        "run_mvdnykp5_2",
+        "run_mvdnykp8_3"
+      ],
+      "witnessRuns": [],
+      "related": "c3c33e3b-02e1-4252-8bdd-c15d1694c5bc:6",
+      "verification": "checked",
+      "durationMs": 16,
+      "predicates": 1,
+      "predicatesPassed": 1,
+      "witnessesPassed": 0,
+      "attempts": 0,
+      "plans": 4,
+      "contracts": [
+        {
+          "capability": "goal:observed-weather",
+          "provider": "goal:published",
+          "contract": "f9ecc371:goal:published:write:composite"
+        },
+        {
+          "capability": "composite:83f23e4cd72a",
+          "provider": "composite:crystallized",
+          "contract": "085f76d6:composite:crystallized:write:composite"
+        },
+        {
+          "capability": "graphql:atlas-test-graphql:query:geocode",
+          "provider": "graphql:atlas-test-graphql",
+          "contract": "0729a008:graphql:atlas-test-graphql:read:graphql"
+        },
+        {
+          "capability": "mcp:skycast:forecast",
+          "provider": "mcp:skycast",
+          "contract": "1c89c9cd:mcp:skycast:read:mcp"
+        },
+        {
+          "capability": "openapi:polyglot:translatetext",
+          "provider": "openapi:polyglot",
+          "contract": "430f2596:openapi:polyglot:write:openapi"
+        }
+      ],
+      "id": "c3c33e3b-02e1-4252-8bdd-c15d1694c5bc:15",
+      "epoch": "c3c33e3b-02e1-4252-8bdd-c15d1694c5bc",
+      "seq": 15,
+      "at": "2026-10-18T10:09:27.119Z"
+    },
+    "changedDependencies": [
+      "composite:83f23e4cd72a",
+      "mcp:skycast:forecast"
+    ],
+    "localPolicy": {
+      "allowed": false,
+      "requiresPlan": true,
+      "declaredRisk": "write",
+      "consequentialRisks": [
+        "write"
+      ],
+      "reasonCount": 1
+    }
+  },
+  "activity": {
+    "version": 1,
+    "sequence": 20,
+    "discarded": 0,
+    "entries": [
+      {
+        "kind": "runtime.started",
+        "status": "observed",
+        "id": "c3c33e3b-02e1-4252-8bdd-c15d1694c5bc:1",
+        "epoch": "c3c33e3b-02e1-4252-8bdd-c15d1694c5bc",
+        "seq": 1,
+        "at": "2026-10-18T10:08:41.829Z"
+      },
+      {
+        "kind": "provider.learned",
+        "status": "observed",
+        "subjects": [],
+        "providers": [
+          "openapi:polyglot"
+        ],
+        "contracts": [],
+        "id": "c3c33e3b-02e1-4252-8bdd-c15d1694c5bc:2",
+        "epoch": "c3c33e3b-02e1-4252-8bdd-c15d1694c5bc",
+        "seq": 2,
+        "at": "2026-10-18T10:08:41.836Z"
+      },
+      {
+        "kind": "provider.learned",
+        "status": "observed",
+        "subjects": [],
+        "providers": [
+          "graphql:atlas-test-graphql"
+        ],
+        "contracts": [],
+        "id": "c3c33e3b-02e1-4252-8bdd-c15d1694c5bc:3",
+        "epoch": "c3c33e3b-02e1-4252-8bdd-c15d1694c5bc",
+        "seq": 3,
+        "at": "2026-10-18T10:08:41.836Z"
+      },
+      {
+        "kind": "provider.learned",
+        "status": "observed",
+        "subjects": [],
+        "providers": [
+          "mcp:skycast"
+        ],
+        "contracts": [],
+        "id": "c3c33e3b-02e1-4252-8bdd-c15d1694c5bc:4",
+        "epoch": "c3c33e3b-02e1-4252-8bdd-c15d1694c5bc",
+        "seq": 4,
+        "at": "2026-10-18T10:08:41.838Z"
+      },
+      {
+        "kind": "provider.learned",
+        "status": "observed",
+        "subjects": [],
+        "providers": [
+          "web:news-test"
+        ],
+        "contracts": [],
+        "id": "c3c33e3b-02e1-4252-8bdd-c15d1694c5bc:5",
+        "epoch": "c3c33e3b-02e1-4252-8bdd-c15d1694c5bc",
+        "seq": 5,
+        "at": "2026-10-18T10:08:41.838Z"
+      },
+      {
+        "kind": "composition.requested",
+        "status": "requested",
+        "id": "c3c33e3b-02e1-4252-8bdd-c15d1694c5bc:6",
+        "epoch": "c3c33e3b-02e1-4252-8bdd-c15d1694c5bc",
+        "seq": 6,
+        "at": "2026-10-18T10:09:27.054Z"
+      },
+      {
+        "kind": "execution.requested",
+        "status": "requested",
+        "subjects": [
+          "graphql:atlas-test-graphql:query:geocode"
+        ],
+        "contracts": [
+          {
+            "capability": "graphql:atlas-test-graphql:query:geocode",
+            "provider": "graphql:atlas-test-graphql",
+            "contract": "0729a008:graphql:atlas-test-graphql:read:graphql"
+          }
+        ],
+        "id": "c3c33e3b-02e1-4252-8bdd-c15d1694c5bc:7",
+        "epoch": "c3c33e3b-02e1-4252-8bdd-c15d1694c5bc",
+        "seq": 7,
+        "at": "2026-10-18T10:09:27.102Z"
+      },
+      {
+        "kind": "execution.finished",
+        "status": "completed",
+        "subjects": [
+          "graphql:atlas-test-graphql:query:geocode"
+        ],
+        "providers": [
+          "graphql:atlas-test-graphql"
+        ],
+        "runs": [
+          "run_mvdnykou_1"
+        ],
+        "witnessRuns": [],
+        "related": "c3c33e3b-02e1-4252-8bdd-c15d1694c5bc:7",
+        "verification": "unverified",
+        "receipt": "2b20fddd2a270b9c4838fcd3e4d2e8638346a10eefe5b16985b82d7fa3554133",
+        "durationMs": 0.7,
+        "predicates": 0,
+        "predicatesPassed": 0,
+        "witnessesPassed": 0,
+        "attempts": 0,
+        "contracts": [
+          {
+            "capability": "graphql:atlas-test-graphql:query:geocode",
+            "provider": "graphql:atlas-test-graphql",
+            "contract": "0729a008:graphql:atlas-test-graphql:read:graphql"
+          }
+        ],
+        "id": "c3c33e3b-02e1-4252-8bdd-c15d1694c5bc:8",
+        "epoch": "c3c33e3b-02e1-4252-8bdd-c15d1694c5bc",
+        "seq": 8,
+        "at": "2026-10-18T10:09:27.112Z"
+      },
+      {
+        "kind": "execution.requested",
+        "status": "requested",
+        "subjects": [
+          "mcp:skycast:forecast"
+        ],
+        "contracts": [
+          {
+            "capability": "mcp:skycast:forecast",
+            "provider": "mcp:skycast",
+            "contract": "1c89c9cd:mcp:skycast:read:mcp"
+          }
+        ],
+        "id": "c3c33e3b-02e1-4252-8bdd-c15d1694c5bc:9",
+        "epoch": "c3c33e3b-02e1-4252-8bdd-c15d1694c5bc",
+        "seq": 9,
+        "at": "2026-10-18T10:09:27.113Z"
+      },
+      {
+        "kind": "execution.finished",
+        "status": "completed",
+        "subjects": [
+          "mcp:skycast:forecast"
+        ],
+        "providers": [
+          "mcp:skycast"
+        ],
+        "runs": [
+          "run_mvdnykp5_2"
+        ],
+        "witnessRuns": [],
+        "related": "c3c33e3b-02e1-4252-8bdd-c15d1694c5bc:9",
+        "verification": "unverified",
+        "receipt": "46c773718a4209835f2318882a838676fadf1419f4ba06a559a6b8b51d3d5c21",
+        "durationMs": 0.6,
+        "predicates": 0,
+        "predicatesPassed": 0,
+        "witnessesPassed": 0,
+        "attempts": 0,
+        "contracts": [
+          {
+            "capability": "mcp:skycast:forecast",
+            "provider": "mcp:skycast",
+            "contract": "1c89c9cd:mcp:skycast:read:mcp"
+          }
+        ],
+        "id": "c3c33e3b-02e1-4252-8bdd-c15d1694c5bc:10",
+        "epoch": "c3c33e3b-02e1-4252-8bdd-c15d1694c5bc",
+        "seq": 10,
+        "at": "2026-10-18T10:09:27.116Z"
+      },
+      {
+        "kind": "execution.requested",
+        "status": "requested",
+        "subjects": [
+          "openapi:polyglot:translatetext"
+        ],
+        "contracts": [
+          {
+            "capability": "openapi:polyglot:translatetext",
+            "provider": "openapi:polyglot",
+            "contract": "430f2596:openapi:polyglot:write:openapi"
+          }
+        ],
+        "id": "c3c33e3b-02e1-4252-8bdd-c15d1694c5bc:11",
+        "epoch": "c3c33e3b-02e1-4252-8bdd-c15d1694c5bc",
+        "seq": 11,
+        "at": "2026-10-18T10:09:27.116Z"
+      },
+      {
+        "kind": "execution.finished",
+        "status": "completed",
+        "subjects": [
+          "openapi:polyglot:translatetext"
+        ],
+        "providers": [
+          "openapi:polyglot"
+        ],
+        "runs": [
+          "run_mvdnykp8_3"
+        ],
+        "witnessRuns": [],
+        "related": "c3c33e3b-02e1-4252-8bdd-c15d1694c5bc:11",
+        "verification": "unverified",
+        "receipt": "7dd010f9a547540410e524e127b5a1d6822aedcd1e49435d03ab2bd353479760",
+        "durationMs": 0.5,
+        "predicates": 0,
+        "predicatesPassed": 0,
+        "witnessesPassed": 0,
+        "attempts": 0,
+        "contracts": [
+          {
+            "capability": "openapi:polyglot:translatetext",
+            "provider": "openapi:polyglot",
+            "contract": "430f2596:openapi:polyglot:write:openapi"
+          }
+        ],
+        "id": "c3c33e3b-02e1-4252-8bdd-c15d1694c5bc:12",
+        "epoch": "c3c33e3b-02e1-4252-8bdd-c15d1694c5bc",
+        "seq": 12,
+        "at": "2026-10-18T10:09:27.117Z"
+      },
+      {
+        "kind": "capability.crystallized",
+        "status": "observed",
+        "subjects": [
+          "composite:83f23e4cd72a"
+        ],
+        "providers": [],
+        "contracts": [
+          {
+            "capability": "composite:83f23e4cd72a",
+            "provider": "composite:crystallized",
+            "contract": "085f76d6:composite:crystallized:write:composite"
+          }
+        ],
+        "id": "c3c33e3b-02e1-4252-8bdd-c15d1694c5bc:13",
+        "epoch": "c3c33e3b-02e1-4252-8bdd-c15d1694c5bc",
+        "seq": 13,
+        "at": "2026-10-18T10:09:27.119Z"
+      },
+      {
+        "kind": "goal.published",
+        "status": "observed",
+        "subjects": [
+          "goal:observed-weather"
+        ],
+        "providers": [],
+        "contracts": [
+          {
+            "capability": "goal:observed-weather",
+            "provider": "goal:published",
+            "contract": "f9ecc371:goal:published:write:composite"
+          }
+        ],
+        "id": "c3c33e3b-02e1-4252-8bdd-c15d1694c5bc:14",
+        "epoch": "c3c33e3b-02e1-4252-8bdd-c15d1694c5bc",
+        "seq": 14,
+        "at": "2026-10-18T10:09:27.119Z"
+      },
+      {
+        "kind": "composition.finished",
+        "status": "completed",
+        "subjects": [
+          "goal:observed-weather",
+          "composite:83f23e4cd72a"
+        ],
+        "providers": [
+          "graphql:atlas-test-graphql",
+          "mcp:skycast",
+          "openapi:polyglot"
+        ],
+        "runs": [
+          "run_mvdnykou_1",
+          "run_mvdnykp5_2",
+          "run_mvdnykp8_3"
+        ],
+        "witnessRuns": [],
+        "related": "c3c33e3b-02e1-4252-8bdd-c15d1694c5bc:6",
+        "verification": "checked",
+        "durationMs": 16,
+        "predicates": 1,
+        "predicatesPassed": 1,
+        "witnessesPassed": 0,
+        "attempts": 0,
+        "plans": 4,
+        "contracts": [
+          {
+            "capability": "goal:observed-weather",
+            "provider": "goal:published",
+            "contract": "f9ecc371:goal:published:write:composite"
+          },
+          {
+            "capability": "composite:83f23e4cd72a",
+            "provider": "composite:crystallized",
+            "contract": "085f76d6:composite:crystallized:write:composite"
+          },
+          {
+            "capability": "graphql:atlas-test-graphql:query:geocode",
+            "provider": "graphql:atlas-test-graphql",
+            "contract": "0729a008:graphql:atlas-test-graphql:read:graphql"
+          },
+          {
+            "capability": "mcp:skycast:forecast",
+            "provider": "mcp:skycast",
+            "contract": "1c89c9cd:mcp:skycast:read:mcp"
+          },
+          {
+            "capability": "openapi:polyglot:translatetext",
+            "provider": "openapi:polyglot",
+            "contract": "430f2596:openapi:polyglot:write:openapi"
+          }
+        ],
+        "id": "c3c33e3b-02e1-4252-8bdd-c15d1694c5bc:15",
+        "epoch": "c3c33e3b-02e1-4252-8bdd-c15d1694c5bc",
+        "seq": 15,
+        "at": "2026-10-18T10:09:27.119Z"
+      },
+      {
+        "kind": "runtime.started",
+        "status": "observed",
+        "id": "9b621156-6259-4345-a2ba-97221db83190:16",
+        "epoch": "9b621156-6259-4345-a2ba-97221db83190",
+        "seq": 16,
+        "at": "2026-10-18T10:09:33.516Z"
+      },
+      {
+        "kind": "capability.retired",
+        "status": "observed",
+        "subjects": [
+          "composite:83f23e4cd72a"
+        ],
+        "providers": [],
+        "contracts": [],
+        "id": "9b621156-6259-4345-a2ba-97221db83190:17",
+        "epoch": "9b621156-6259-4345-a2ba-97221db83190",
+        "seq": 17,
+        "at": "2026-10-18T10:09:33.516Z"
+      },
+      {
+        "kind": "provider.forgotten",
+        "status": "observed",
+        "subjects": [],
+        "providers": [
+          "mcp:skycast"
+        ],
+        "contracts": [],
+        "id": "9b621156-6259-4345-a2ba-97221db83190:18",
+        "epoch": "9b621156-6259-4345-a2ba-97221db83190",
+        "seq": 18,
+        "at": "2026-10-18T10:09:33.516Z"
+      },
+      {
+        "kind": "provider.learned",
+        "status": "observed",
+        "subjects": [],
+        "providers": [
+          "fixture:labels"
+        ],
+        "contracts": [],
+        "id": "9b621156-6259-4345-a2ba-97221db83190:19",
+        "epoch": "9b621156-6259-4345-a2ba-97221db83190",
+        "seq": 19,
+        "at": "2026-10-18T10:09:33.517Z"
+      },
+      {
+        "kind": "runtime.started",
+        "status": "observed",
+        "id": "1f8ef32b-ef5a-4a30-a961-9cffb0f82599:20",
+        "epoch": "1f8ef32b-ef5a-4a30-a961-9cffb0f82599",
+        "seq": 20,
+        "at": "2026-10-18T10:12:28.559Z"
+      }
+    ]
+  },
+  "runs": 0
+}

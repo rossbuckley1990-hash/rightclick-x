@@ -1,0 +1,1430 @@
+{
+  "initial": {
+    "learned": {
+      "results": [
+        {
+          "source": "http://127.0.0.1:65350/openapi.json",
+          "probes": [
+            {
+              "url": "http://127.0.0.1:65350/openapi.json",
+              "kind": "openapi",
+              "ok": true,
+              "detail": "1 operations"
+            }
+          ],
+          "learned": [
+            {
+              "provider": "openapi:lifecycle-entries",
+              "capabilitiesAdded": 1,
+              "powersBefore": 79,
+              "powersAfter": 105,
+              "newPowers": 26
+            }
+          ]
+        },
+        {
+          "source": "http://127.0.0.1:65351/openapi.json",
+          "probes": [
+            {
+              "url": "http://127.0.0.1:65351/openapi.json",
+              "kind": "openapi",
+              "ok": true,
+              "detail": "1 operations"
+            }
+          ],
+          "learned": [
+            {
+              "provider": "openapi:independent-journal-observer",
+              "capabilitiesAdded": 1,
+              "powersBefore": 105,
+              "powersAfter": 115,
+              "newPowers": 10
+            }
+          ]
+        }
+      ],
+      "totalNewCapabilities": 2,
+      "totalNewPowers": 36,
+      "graph": {
+        "providers": 3,
+        "capabilities": 22,
+        "edges": 36,
+        "chains2": 36,
+        "chains3": 57,
+        "total": 115
+      }
+    },
+    "compose": {
+      "goal": {
+        "have": {
+          "label": "text"
+        },
+        "want": "hash",
+        "intent": "append entry and fingerprint label",
+        "through": [
+          "openapi:lifecycle-entries:appendentry",
+          "builtin:text.sha256"
+        ]
+      },
+      "plans": [
+        {
+          "steps": [
+            {
+              "capability": "openapi:lifecycle-entries:appendentry",
+              "bindings": [
+                {
+                  "port": "label",
+                  "from": "$in.label"
+                }
+              ]
+            },
+            {
+              "capability": "builtin:text.sha256",
+              "bindings": [
+                {
+                  "port": "text",
+                  "from": "0."
+                }
+              ]
+            }
+          ],
+          "result": "1.",
+          "resultType": "hash",
+          "cost": 2.7666666666666666,
+          "intentScore": 4,
+          "fit": 1.25,
+          "resultScore": 2.4,
+          "providers": [
+            "openapi:lifecycle-entries",
+            "builtin:core"
+          ],
+          "summary": "Append entry label \u2192 SHA-256 fingerprint",
+          "titles": [
+            "Append entry label",
+            "SHA-256 fingerprint"
+          ],
+          "contract": {
+            "status": "satisfied",
+            "steps": [
+              {
+                "step": 0,
+                "capability": "openapi:lifecycle-entries:appendentry",
+                "title": "Append entry label",
+                "reason": "caller-anchored"
+              },
+              {
+                "step": 1,
+                "capability": "builtin:text.sha256",
+                "title": "SHA-256 fingerprint",
+                "reason": "caller-anchored"
+              }
+            ],
+            "violations": [],
+            "preservesInput": false
+          }
+        }
+      ],
+      "contract": {
+        "input": [
+          {
+            "name": "label",
+            "type": "text"
+          }
+        ],
+        "output": {
+          "type": "hash",
+          "requires": []
+        },
+        "transformations": [
+          "append",
+          "entry",
+          "fingerprint",
+          "label"
+        ],
+        "invariants": [
+          "lineage: every step is requested, provides required information, converts a type a later step needs, or was named by the caller",
+          "distinct inputs: no step receives the same value on two required ports",
+          "preservation: where every step has evidence of keeping its input's words, the result must keep the caller's words"
+        ],
+        "completeness": "the result is of type hash",
+        "provenance": "every bound value comes from the caller or an earlier step of this plan",
+        "verification": {
+          "predicates": 0,
+          "witnesses": 1,
+          "strongest": "independently-checked"
+        },
+        "authority": {
+          "risks": [],
+          "destructiveNeedsOperatorApproval": true
+        },
+        "allowedUncertainty": "none: a result whose contract cannot be established is reported as not established, not as success",
+        "failureConditions": [
+          "a step not justified by the request (lineage)",
+          "a required piece of information missing from the result",
+          "a join supported only by a generic type when information is required",
+          "a check (predicate or witness) refuted",
+          "content lost where every step was expected to preserve it"
+        ]
+      },
+      "executed": {
+        "contract": {
+          "status": "satisfied",
+          "violations": [],
+          "assurance": "independently-checked"
+        },
+        "summary": "Append entry label \u2192 SHA-256 fingerprint",
+        "titles": [
+          "Append entry label",
+          "SHA-256 fingerprint"
+        ],
+        "output": "ac1b5c0961a7269b6a053ee64276ed0e20a7f48aefb9f67519539d23aaf10149",
+        "status": "completed",
+        "verification": {
+          "status": "verified",
+          "results": []
+        },
+        "runs": [
+          "run_mvglcfft_1",
+          "run_mvglcfg2_2"
+        ],
+        "attempts": [],
+        "durationMs": 15,
+        "witnesses": [
+          {
+            "capability": "openapi:independent-journal-observer:containslabel",
+            "runId": "run_mvglcfg3_3",
+            "status": "completed",
+            "verification": {
+              "status": "checked",
+              "results": [
+                {
+                  "predicate": {
+                    "op": "equals",
+                    "path": "present",
+                    "value": true
+                  },
+                  "ok": true,
+                  "actual": true
+                }
+              ]
+            },
+            "output": {
+              "present": true
+            }
+          }
+        ]
+      },
+      "crystallized": {
+        "id": "composite:1271ad94a189",
+        "title": "Append entry and fingerprint label: Append entry label \u2192 SHA-256 fingerprint",
+        "newPowers": 10
+      },
+      "published": {
+        "id": "goal:record-label",
+        "slug": "record-label",
+        "path": "/x/record-label",
+        "trust": "verified"
+      }
+    }
+  },
+  "warm": {
+    "run": {
+      "runId": "run_mvglcfmt_1",
+      "capability": "goal:record-label",
+      "provider": "goal:published",
+      "title": "Record label",
+      "status": "completed",
+      "output": "0f0aa408c1832abefd06bced5378aa7945c11b3fe2f24f8a22cd6dbdbe4bccd8",
+      "startedAt": "2026-10-20T11:19:33.413Z",
+      "durationMs": 27.2,
+      "verification": {
+        "status": "verified",
+        "results": []
+      },
+      "receipt": {
+        "runId": "run_mvglcfmt_1",
+        "capability": "goal:record-label",
+        "provider": "goal:published",
+        "startedAt": "2026-10-20T11:19:33.413Z",
+        "durationMs": 27.2,
+        "status": "completed",
+        "verification": "verified",
+        "seq": 7,
+        "inputDigest": "3662105ea9700cf16d4424197ac8fb70c0c2ab192e47ffd59484cded475f71b0",
+        "outputDigest": "bd3c0b6bee3027a6ee1e03068c2366d1167826acc249b07ab29afeea7c73e1e7",
+        "prev": "bc78be3eaee7ae74089dc952b54f81b3fa93f45c3748a959f8722da6abf0134f",
+        "hash": "575bcdedf70687e086ac2f34b4aa1fa83a14e74a211511b50518df0f81458752"
+      },
+      "steps": [
+        "run_mvglcfn3_2",
+        "run_mvglcfnf_3"
+      ],
+      "witnesses": [
+        {
+          "capability": "openapi:independent-journal-observer:containslabel",
+          "runId": "run_mvglcfnf_4",
+          "status": "completed",
+          "verification": {
+            "status": "checked",
+            "results": [
+              {
+                "predicate": {
+                  "op": "equals",
+                  "path": "present",
+                  "value": true
+                },
+                "ok": true,
+                "actual": true
+              }
+            ]
+          },
+          "output": {
+            "present": true
+          }
+        }
+      ],
+      "attempts": []
+    },
+    "deniedComposite": {
+      "runId": "run_mvglcfnk_5",
+      "capability": "composite:1271ad94a189",
+      "provider": "composite:crystallized",
+      "title": "Append entry and fingerprint label: Append entry label \u2192 SHA-256 fingerprint",
+      "status": "failed",
+      "error": "openapi:lifecycle-entries:appendentry: independent authority refused: outside operator-approved exact request bounds",
+      "startedAt": "2026-10-20T11:19:33.440Z",
+      "durationMs": 1.5,
+      "verification": {
+        "status": "refuted",
+        "results": []
+      },
+      "receipt": {
+        "runId": "run_mvglcfnk_5",
+        "capability": "composite:1271ad94a189",
+        "provider": "composite:crystallized",
+        "startedAt": "2026-10-20T11:19:33.440Z",
+        "durationMs": 1.5,
+        "status": "failed",
+        "verification": "refuted",
+        "seq": 9,
+        "inputDigest": "9dc2b0ae6a7b30b5e70696c21c94a4895f60c8c6b7d7f6c2682c95755e6f082c",
+        "outputDigest": "3cf1ad480e80c732e31a166598867eb5a854f70c17b18c4c649f05f4c8286179",
+        "prev": "013a80d309c165501375a8883d9e0e3fd483239644b74064c12e10ed84e60b47",
+        "hash": "6bb8fd78dcfc2026fb04fb0916f94b92458b85ebe6d01daa7c31a08af09fd68f"
+      },
+      "failedCapability": "openapi:lifecycle-entries:appendentry"
+    },
+    "deniedREST": {
+      "ok": false,
+      "result": null,
+      "pipeline": [],
+      "verification": "refuted",
+      "trust": "verified",
+      "witnesses": [],
+      "healed": 1,
+      "receipt": "8b2aef19850fbd6e67dade89399482a7bbf946db419238ecd78d24b550d69c9f",
+      "error": "openapi:lifecycle-entries:appendentry: independent authority refused: outside operator-approved exact request bounds"
+    },
+    "deniedGraphQL": {
+      "data": {
+        "recordLabel": {
+          "result": null,
+          "ok": false
+        }
+      },
+      "errors": [
+        {
+          "message": "openapi:lifecycle-entries:appendentry: independent authority refused: outside operator-approved exact request bounds"
+        }
+      ]
+    },
+    "federation": {
+      "results": [
+        {
+          "source": "https://retained.peer/",
+          "probes": [
+            {
+              "url": "https://retained.peer/",
+              "kind": "web",
+              "ok": false,
+              "detail": "0 forms, 0 hints"
+            },
+            {
+              "url": "https://retained.peer/openapi.json",
+              "kind": "openapi",
+              "ok": true,
+              "detail": "1 operations"
+            },
+            {
+              "url": "https://retained.peer/graphql",
+              "kind": "graphql",
+              "ok": true,
+              "detail": "1 fields"
+            },
+            {
+              "url": "https://retained.peer/.well-known/rightclick.json",
+              "kind": "peer",
+              "ok": true,
+              "detail": "4 federated capabilities"
+            },
+            {
+              "url": "https://retained.peer/mcp",
+              "kind": "mcp",
+              "ok": true,
+              "detail": "13 tools"
+            }
+          ],
+          "learned": [
+            {
+              "provider": "peer:retained-peer",
+              "capabilitiesAdded": 4,
+              "powersBefore": 79,
+              "powersAfter": 135,
+              "newPowers": 56
+            }
+          ]
+        }
+      ],
+      "totalNewCapabilities": 4,
+      "totalNewPowers": 56,
+      "graph": {
+        "providers": 2,
+        "capabilities": 24,
+        "edges": 42,
+        "chains2": 42,
+        "chains3": 69,
+        "total": 135
+      }
+    },
+    "peerAllowed": {
+      "runId": "run_mvglcfpi_1",
+      "capability": "peer:retained-peer:goal:record-label",
+      "provider": "peer:retained-peer",
+      "title": "Record label",
+      "status": "completed",
+      "output": "2ffc1d06387ef8bb7a34312b6c6c3f691550684508c3ce7ee3889375a18d6fa0",
+      "startedAt": "2026-10-20T11:19:33.510Z",
+      "durationMs": 25.7,
+      "verification": {
+        "status": "unverified",
+        "results": []
+      },
+      "receipt": {
+        "runId": "run_mvglcfpi_1",
+        "capability": "peer:retained-peer:goal:record-label",
+        "provider": "peer:retained-peer",
+        "startedAt": "2026-10-20T11:19:33.510Z",
+        "durationMs": 25.7,
+        "status": "completed",
+        "verification": "unverified",
+        "seq": 1,
+        "inputDigest": "3a4e4a253878d5d839f9196fce1304109a923073b5e584c8d7e6d68c3c1222dc",
+        "outputDigest": "b3d63f9709116c009f342a809e10530367d2aa5601c60140990d044c5acd33f0",
+        "prev": "0000000000000000000000000000000000000000000000000000000000000000",
+        "hash": "8e662e367a5bdd63d0ed192045615c980a4ee4c8074a250b2f9c977f9ff431a9"
+      }
+    },
+    "peerDenied": {
+      "runId": "run_mvglcfq8_2",
+      "capability": "peer:retained-peer:goal:record-label",
+      "provider": "peer:retained-peer",
+      "title": "Record label",
+      "status": "failed",
+      "error": "peer: openapi:lifecycle-entries:appendentry: independent authority refused: outside operator-approved exact request bounds",
+      "startedAt": "2026-10-20T11:19:33.536Z",
+      "durationMs": 6.8,
+      "verification": {
+        "status": "refuted",
+        "results": []
+      },
+      "receipt": {
+        "runId": "run_mvglcfq8_2",
+        "capability": "peer:retained-peer:goal:record-label",
+        "provider": "peer:retained-peer",
+        "startedAt": "2026-10-20T11:19:33.536Z",
+        "durationMs": 6.8,
+        "status": "failed",
+        "verification": "refuted",
+        "seq": 2,
+        "inputDigest": "9dc2b0ae6a7b30b5e70696c21c94a4895f60c8c6b7d7f6c2682c95755e6f082c",
+        "outputDigest": "29fddc0dca276874d8e9ac17872ffbe039bb6fbdebf4ea01ea3345a8c39b5186",
+        "prev": "8e662e367a5bdd63d0ed192045615c980a4ee4c8074a250b2f9c977f9ff431a9",
+        "hash": "c14bcebb7b5a81ed29d295455a4e74496170d64d0bcbd9c283d96616c42e9a5e"
+      }
+    }
+  },
+  "compatible": {
+    "learned": {
+      "results": [
+        {
+          "source": "http://127.0.0.1:65350/openapi.json",
+          "probes": [
+            {
+              "url": "http://127.0.0.1:65350/openapi.json",
+              "kind": "openapi",
+              "ok": true,
+              "detail": "1 operations"
+            }
+          ],
+          "learned": [
+            {
+              "provider": "openapi:lifecycle-entries",
+              "capabilitiesAdded": 1,
+              "powersBefore": 135,
+              "powersAfter": 125,
+              "newPowers": -10,
+              "drift": {
+                "changed": true,
+                "added": [
+                  "openapi:lifecycle-entries:appendentryv2"
+                ],
+                "removed": [
+                  "openapi:lifecycle-entries:appendentry"
+                ],
+                "modified": []
+              },
+              "retired": [
+                "composite:1271ad94a189"
+              ]
+            }
+          ],
+          "drift": {
+            "changed": true,
+            "providersBefore": [
+              "openapi:lifecycle-entries"
+            ],
+            "providersAfter": [
+              "openapi:lifecycle-entries"
+            ],
+            "added": [
+              "openapi:lifecycle-entries:appendentryv2"
+            ],
+            "removed": [
+              "openapi:lifecycle-entries:appendentry"
+            ],
+            "modified": [],
+            "retired": [
+              "composite:1271ad94a189"
+            ],
+            "changedMeaning": []
+          }
+        }
+      ],
+      "totalNewCapabilities": 1,
+      "totalNewPowers": -10,
+      "graph": {
+        "providers": 5,
+        "capabilities": 23,
+        "edges": 39,
+        "chains2": 39,
+        "chains3": 63,
+        "total": 125
+      }
+    },
+    "run": {
+      "runId": "run_mvglcfwv_1",
+      "capability": "goal:record-label",
+      "provider": "goal:published",
+      "title": "Record label",
+      "status": "completed",
+      "output": "a1613be9e3df6e9a2d9f0562bc73df744d6e440e5d3a244e1c647eb6489073dc",
+      "startedAt": "2026-10-20T11:19:33.775Z",
+      "durationMs": 22.6,
+      "verification": {
+        "status": "verified",
+        "results": []
+      },
+      "receipt": {
+        "runId": "run_mvglcfwv_1",
+        "capability": "goal:record-label",
+        "provider": "goal:published",
+        "startedAt": "2026-10-20T11:19:33.775Z",
+        "durationMs": 22.6,
+        "status": "completed",
+        "verification": "verified",
+        "seq": 21,
+        "inputDigest": "495b669a0e1284b184a06f60d383c724b169798612ad7393c4a75b14f6c45b18",
+        "outputDigest": "fe987614f2a2a47c5892bb90e80122d45677aef36e88b9c5cee4a4c328ddee18",
+        "prev": "ded120b36aeef44f68aa21757071199638794889c082023bf37559b93efd4ad2",
+        "hash": "c478df4212662b372634c4b783a3e5beb7e359b98b0ea73ac2404dfdb2b0a696"
+      },
+      "steps": [
+        "run_mvglcfx3_2",
+        "run_mvglcfxc_3"
+      ],
+      "witnesses": [
+        {
+          "capability": "openapi:independent-journal-observer:containslabel",
+          "runId": "run_mvglcfxd_4",
+          "status": "completed",
+          "verification": {
+            "status": "checked",
+            "results": [
+              {
+                "predicate": {
+                  "op": "equals",
+                  "path": "present",
+                  "value": true
+                },
+                "ok": true,
+                "actual": true
+              }
+            ]
+          },
+          "output": {
+            "present": true
+          }
+        }
+      ],
+      "attempts": []
+    }
+  },
+  "moved": {
+    "learned": {
+      "results": [
+        {
+          "source": "http://127.0.0.1:65350/openapi.json",
+          "probes": [
+            {
+              "url": "http://127.0.0.1:65350/openapi.json",
+              "kind": "openapi",
+              "ok": true,
+              "detail": "1 operations"
+            }
+          ],
+          "learned": [
+            {
+              "provider": "openapi:lifecycle-entries",
+              "capabilitiesAdded": 2,
+              "powersBefore": 125,
+              "powersAfter": 183,
+              "newPowers": 58,
+              "drift": {
+                "changed": true,
+                "added": [
+                  "openapi:lifecycle-entries:appendentryv2@op-421c7887b5bcb6ba"
+                ],
+                "removed": [],
+                "modified": [
+                  "openapi:lifecycle-entries:appendentryv2"
+                ]
+              }
+            }
+          ],
+          "drift": {
+            "changed": true,
+            "providersBefore": [
+              "openapi:lifecycle-entries"
+            ],
+            "providersAfter": [
+              "openapi:lifecycle-entries"
+            ],
+            "added": [
+              "openapi:lifecycle-entries:appendentryv2@op-421c7887b5bcb6ba"
+            ],
+            "removed": [],
+            "modified": [
+              "openapi:lifecycle-entries:appendentryv2"
+            ],
+            "retired": [],
+            "changedMeaning": [
+              "openapi:lifecycle-entries:appendentryv2"
+            ]
+          }
+        }
+      ],
+      "totalNewCapabilities": 2,
+      "totalNewPowers": 58,
+      "graph": {
+        "providers": 5,
+        "capabilities": 24,
+        "edges": 50,
+        "chains2": 50,
+        "chains3": 109,
+        "total": 183
+      }
+    },
+    "run": {
+      "runId": "run_mvglcg33_1",
+      "capability": "goal:record-label",
+      "provider": "goal:published",
+      "title": "Record label",
+      "status": "failed",
+      "error": "required anchor contract changed meaning: openapi:lifecycle-entries:appendentry; no current operation matches POST /entries (write)",
+      "startedAt": "2026-10-20T11:19:33.999Z",
+      "durationMs": 1.1,
+      "verification": {
+        "status": "refuted",
+        "results": []
+      },
+      "receipt": {
+        "runId": "run_mvglcg33_1",
+        "capability": "goal:record-label",
+        "provider": "goal:published",
+        "startedAt": "2026-10-20T11:19:33.999Z",
+        "durationMs": 1.1,
+        "status": "failed",
+        "verification": "refuted",
+        "seq": 22,
+        "inputDigest": "292e32125feda1f46c9388a3feec3805edbf1f374ba821f9718bb72becbbef92",
+        "outputDigest": "2963d9df765232b9928446b96655934ff4eae8f8d08086d1689b0712c3c0f740",
+        "prev": "c478df4212662b372634c4b783a3e5beb7e359b98b0ea73ac2404dfdb2b0a696",
+        "hash": "3b05cfdf7bcfa9115e946fa64f99e28ae2abb7c6a14d78e6a84fa645c6f418dc"
+      }
+    },
+    "explicitChangedTarget": {
+      "runId": "run_mvglcg35_2",
+      "capability": "openapi:lifecycle-entries:appendentryv2@op-421c7887b5bcb6ba",
+      "provider": "openapi:lifecycle-entries",
+      "title": "Append entry label",
+      "status": "failed",
+      "error": "independent authority refused: outside operator-approved exact request bounds; not retried: write operation may already have taken effect",
+      "startedAt": "2026-10-20T11:19:34.001Z",
+      "durationMs": 1.5,
+      "verification": {
+        "status": "refuted",
+        "results": []
+      },
+      "receipt": {
+        "runId": "run_mvglcg35_2",
+        "capability": "openapi:lifecycle-entries:appendentryv2@op-421c7887b5bcb6ba",
+        "provider": "openapi:lifecycle-entries",
+        "startedAt": "2026-10-20T11:19:34.001Z",
+        "durationMs": 1.5,
+        "status": "failed",
+        "verification": "refuted",
+        "seq": 23,
+        "inputDigest": "292e32125feda1f46c9388a3feec3805edbf1f374ba821f9718bb72becbbef92",
+        "outputDigest": "0bd00ae7371920650f8bfc12145ea4b9325a8296eb40fcd8b6fad4c9a1c5666d",
+        "prev": "3b05cfdf7bcfa9115e946fa64f99e28ae2abb7c6a14d78e6a84fa645c6f418dc",
+        "hash": "0be1ae9e9e836be438c2be3f569512206fab057c33bd7645f1873c80e41a4487"
+      },
+      "healing": {
+        "source": "http://127.0.0.1:65350/openapi.json",
+        "error": "independent authority refused: outside operator-approved exact request bounds",
+        "note": "not retried: write operation may already have taken effect"
+      }
+    },
+    "replanChangedTarget": {
+      "goal": {
+        "have": {
+          "label": "text"
+        },
+        "want": "hash",
+        "through": [
+          "openapi:lifecycle-entries:appendentryv2@op-421c7887b5bcb6ba",
+          "builtin:text.sha256"
+        ]
+      },
+      "plans": [
+        {
+          "steps": [
+            {
+              "capability": "openapi:lifecycle-entries:appendentryv2@op-421c7887b5bcb6ba",
+              "bindings": [
+                {
+                  "port": "label",
+                  "from": "$in.label"
+                }
+              ]
+            },
+            {
+              "capability": "builtin:text.sha256",
+              "bindings": [
+                {
+                  "port": "text",
+                  "from": "0."
+                }
+              ]
+            }
+          ],
+          "result": "1.",
+          "resultType": "hash",
+          "cost": 2.699084731182796,
+          "intentScore": 0,
+          "fit": 1.25,
+          "resultScore": 0.4,
+          "providers": [
+            "openapi:lifecycle-entries",
+            "builtin:core"
+          ],
+          "summary": "Append entry label \u2192 SHA-256 fingerprint",
+          "titles": [
+            "Append entry label",
+            "SHA-256 fingerprint"
+          ],
+          "contract": {
+            "status": "satisfied",
+            "steps": [
+              {
+                "step": 0,
+                "capability": "openapi:lifecycle-entries:appendentryv2@op-421c7887b5bcb6ba",
+                "title": "Append entry label",
+                "reason": "caller-anchored"
+              },
+              {
+                "step": 1,
+                "capability": "builtin:text.sha256",
+                "title": "SHA-256 fingerprint",
+                "reason": "caller-anchored"
+              }
+            ],
+            "violations": [],
+            "preservesInput": false
+          }
+        }
+      ],
+      "contract": {
+        "input": [
+          {
+            "name": "label",
+            "type": "text"
+          }
+        ],
+        "output": {
+          "type": "hash",
+          "requires": []
+        },
+        "transformations": [],
+        "invariants": [
+          "lineage: every step is requested, provides required information, converts a type a later step needs, or was named by the caller",
+          "distinct inputs: no step receives the same value on two required ports",
+          "preservation: where every step has evidence of keeping its input's words, the result must keep the caller's words"
+        ],
+        "completeness": "the result is of type hash",
+        "provenance": "every bound value comes from the caller or an earlier step of this plan",
+        "verification": {
+          "predicates": 0,
+          "witnesses": 1,
+          "strongest": "independently-checked"
+        },
+        "authority": {
+          "risks": [],
+          "destructiveNeedsOperatorApproval": true
+        },
+        "allowedUncertainty": "none: a result whose contract cannot be established is reported as not established, not as success",
+        "failureConditions": [
+          "a step not justified by the request (lineage)",
+          "a required piece of information missing from the result",
+          "a join supported only by a generic type when information is required",
+          "a check (predicate or witness) refuted",
+          "content lost where every step was expected to preserve it"
+        ]
+      },
+      "executed": {
+        "summary": "no working pipeline",
+        "titles": [],
+        "output": null,
+        "status": "failed",
+        "verification": {
+          "status": "refuted",
+          "results": []
+        },
+        "runs": [],
+        "attempts": [
+          {
+            "summary": "Append entry label \u2192 SHA-256 fingerprint",
+            "failed": "openapi:lifecycle-entries:appendentryv2@op-421c7887b5bcb6ba",
+            "error": "openapi:lifecycle-entries:appendentryv2@op-421c7887b5bcb6ba: independent authority refused: outside operator-approved exact request bounds",
+            "healing": "not retried: openapi:lifecycle-entries:appendentryv2@op-421c7887b5bcb6ba can change state and may already have taken effect (an operator can declare side-effect-free operations in authority.retry)"
+          }
+        ],
+        "durationMs": 2,
+        "witnesses": []
+      }
+    }
+  },
+  "approved-move": {
+    "learned": {
+      "results": [
+        {
+          "source": "http://127.0.0.1:65350/openapi.json",
+          "probes": [
+            {
+              "url": "http://127.0.0.1:65350/openapi.json",
+              "kind": "openapi",
+              "ok": true,
+              "detail": "1 operations"
+            }
+          ],
+          "learned": [
+            {
+              "provider": "openapi:lifecycle-entries",
+              "capabilitiesAdded": 2,
+              "powersBefore": 183,
+              "powersAfter": 183,
+              "newPowers": 0,
+              "drift": {
+                "changed": false,
+                "added": [],
+                "removed": [],
+                "modified": []
+              }
+            }
+          ],
+          "drift": {
+            "changed": false,
+            "providersBefore": [
+              "openapi:lifecycle-entries"
+            ],
+            "providersAfter": [
+              "openapi:lifecycle-entries"
+            ],
+            "added": [],
+            "removed": [],
+            "modified": [],
+            "retired": [],
+            "changedMeaning": []
+          }
+        }
+      ],
+      "totalNewCapabilities": 2,
+      "totalNewPowers": 0,
+      "graph": {
+        "providers": 5,
+        "capabilities": 24,
+        "edges": 50,
+        "chains2": 50,
+        "chains3": 109,
+        "total": 183
+      }
+    },
+    "compose": {
+      "goal": {
+        "have": {
+          "label": "text"
+        },
+        "want": "hash",
+        "intent": "append entry and fingerprint label",
+        "through": [
+          "openapi:lifecycle-entries:appendentryv2@op-421c7887b5bcb6ba",
+          "builtin:text.sha256"
+        ]
+      },
+      "plans": [
+        {
+          "steps": [
+            {
+              "capability": "openapi:lifecycle-entries:appendentryv2@op-421c7887b5bcb6ba",
+              "bindings": [
+                {
+                  "port": "label",
+                  "from": "$in.label"
+                }
+              ]
+            },
+            {
+              "capability": "builtin:text.sha256",
+              "bindings": [
+                {
+                  "port": "text",
+                  "from": "0."
+                }
+              ]
+            }
+          ],
+          "result": "1.",
+          "resultType": "hash",
+          "cost": 3.0324060645161293,
+          "intentScore": 4,
+          "fit": 1.25,
+          "resultScore": 2.4,
+          "providers": [
+            "openapi:lifecycle-entries",
+            "builtin:core"
+          ],
+          "summary": "Append entry label \u2192 SHA-256 fingerprint",
+          "titles": [
+            "Append entry label",
+            "SHA-256 fingerprint"
+          ],
+          "contract": {
+            "status": "satisfied",
+            "steps": [
+              {
+                "step": 0,
+                "capability": "openapi:lifecycle-entries:appendentryv2@op-421c7887b5bcb6ba",
+                "title": "Append entry label",
+                "reason": "caller-anchored"
+              },
+              {
+                "step": 1,
+                "capability": "builtin:text.sha256",
+                "title": "SHA-256 fingerprint",
+                "reason": "caller-anchored"
+              }
+            ],
+            "violations": [],
+            "preservesInput": false
+          }
+        }
+      ],
+      "contract": {
+        "input": [
+          {
+            "name": "label",
+            "type": "text"
+          }
+        ],
+        "output": {
+          "type": "hash",
+          "requires": []
+        },
+        "transformations": [
+          "append",
+          "entry",
+          "fingerprint",
+          "label"
+        ],
+        "invariants": [
+          "lineage: every step is requested, provides required information, converts a type a later step needs, or was named by the caller",
+          "distinct inputs: no step receives the same value on two required ports",
+          "preservation: where every step has evidence of keeping its input's words, the result must keep the caller's words"
+        ],
+        "completeness": "the result is of type hash",
+        "provenance": "every bound value comes from the caller or an earlier step of this plan",
+        "verification": {
+          "predicates": 0,
+          "witnesses": 1,
+          "strongest": "independently-checked"
+        },
+        "authority": {
+          "risks": [],
+          "destructiveNeedsOperatorApproval": true
+        },
+        "allowedUncertainty": "none: a result whose contract cannot be established is reported as not established, not as success",
+        "failureConditions": [
+          "a step not justified by the request (lineage)",
+          "a required piece of information missing from the result",
+          "a join supported only by a generic type when information is required",
+          "a check (predicate or witness) refuted",
+          "content lost where every step was expected to preserve it"
+        ]
+      },
+      "executed": {
+        "contract": {
+          "status": "satisfied",
+          "violations": [],
+          "assurance": "independently-checked"
+        },
+        "summary": "Append entry label \u2192 SHA-256 fingerprint",
+        "titles": [
+          "Append entry label",
+          "SHA-256 fingerprint"
+        ],
+        "output": "5edd1832df25e2f1a72585c0ee55c1e585e7f4902eb1d15f7abf1c71c1b296ae",
+        "status": "completed",
+        "verification": {
+          "status": "verified",
+          "results": []
+        },
+        "runs": [
+          "run_mvglcga2_1",
+          "run_mvglcga9_2"
+        ],
+        "attempts": [],
+        "durationMs": 12,
+        "witnesses": [
+          {
+            "capability": "openapi:independent-journal-observer:containslabel",
+            "runId": "run_mvglcgaa_3",
+            "status": "completed",
+            "verification": {
+              "status": "checked",
+              "results": [
+                {
+                  "predicate": {
+                    "op": "equals",
+                    "path": "present",
+                    "value": true
+                  },
+                  "ok": true,
+                  "actual": true
+                }
+              ]
+            },
+            "output": {
+              "present": true
+            }
+          }
+        ]
+      },
+      "crystallized": {
+        "id": "composite:da7f52b1590e",
+        "title": "Append entry and fingerprint label: Append entry label \u2192 SHA-256 fingerprint",
+        "newPowers": 16
+      },
+      "published": {
+        "id": "goal:record-moved-label",
+        "slug": "record-moved-label",
+        "path": "/x/record-moved-label",
+        "trust": "verified"
+      }
+    },
+    "retainedChangedId": {
+      "runId": "run_mvglcgae_4",
+      "capability": "openapi:lifecycle-entries:appendentryv2",
+      "provider": "openapi:lifecycle-entries",
+      "title": "Append entry label",
+      "status": "failed",
+      "error": "blocked by execution policy: openapi:lifecycle-entries:appendentryv2: openapi:lifecycle-entries:appendentryv2 changed meaning when http://127.0.0.1:65350/openapi.json was re-learned (2026-10-20T11:19:33.999Z): it called POST /entries (write), it now calls POST /entries-v2 (write). Not run. The new operation is separately discoverable as openapi:lifecycle-entries:appendentryv2@op-421c7887b5bcb6ba; its authority must be established independently. Caller acknowledgement cannot clear this refusal; this retained identifier no longer names the original operation.",
+      "startedAt": "2026-10-20T11:19:34.262Z",
+      "durationMs": 0.1,
+      "verification": {
+        "status": "refuted",
+        "results": []
+      },
+      "receipt": {
+        "runId": "run_mvglcgae_4",
+        "capability": "openapi:lifecycle-entries:appendentryv2",
+        "provider": "openapi:lifecycle-entries",
+        "startedAt": "2026-10-20T11:19:34.262Z",
+        "durationMs": 0.1,
+        "status": "failed",
+        "verification": "refuted",
+        "seq": 28,
+        "inputDigest": "292e32125feda1f46c9388a3feec3805edbf1f374ba821f9718bb72becbbef92",
+        "outputDigest": "4e4d061c0603dc0cf687ae86a463c5651de249236dd000b033f6725bea717b20",
+        "prev": "e43474b5ac3fbf24757e7db28f50acea14b56d5e8e2d916457ff2da753e52b12",
+        "hash": "2e515f40437eb545e69dabb4c557dbf2ee97584ea93bba56f6f852ef24450c27"
+      },
+      "changedMeaning": {
+        "id": "openapi:lifecycle-entries:appendentryv2",
+        "source": "http://127.0.0.1:65350/openapi.json",
+        "at": "2026-10-20T11:19:33.999Z",
+        "before": "POST /entries (write)",
+        "after": "POST /entries-v2 (write)",
+        "current": "openapi:lifecycle-entries:appendentryv2@op-421c7887b5bcb6ba"
+      }
+    }
+  },
+  "incompatible": {
+    "learned": {
+      "results": [
+        {
+          "source": "http://127.0.0.1:65350/openapi.json",
+          "probes": [
+            {
+              "url": "http://127.0.0.1:65350/openapi.json",
+              "kind": "openapi",
+              "ok": true,
+              "detail": "1 operations"
+            }
+          ],
+          "learned": [
+            {
+              "provider": "openapi:lifecycle-entries",
+              "capabilitiesAdded": 2,
+              "powersBefore": 199,
+              "powersAfter": 199,
+              "newPowers": 0,
+              "drift": {
+                "changed": true,
+                "added": [
+                  "openapi:lifecycle-entries:appendentryv2@op-6fe6000dbea20638"
+                ],
+                "removed": [
+                  "openapi:lifecycle-entries:appendentryv2@op-421c7887b5bcb6ba"
+                ],
+                "modified": [
+                  "openapi:lifecycle-entries:appendentryv2"
+                ]
+              }
+            }
+          ],
+          "drift": {
+            "changed": true,
+            "providersBefore": [
+              "openapi:lifecycle-entries"
+            ],
+            "providersAfter": [
+              "openapi:lifecycle-entries"
+            ],
+            "added": [
+              "openapi:lifecycle-entries:appendentryv2@op-6fe6000dbea20638"
+            ],
+            "removed": [
+              "openapi:lifecycle-entries:appendentryv2@op-421c7887b5bcb6ba"
+            ],
+            "modified": [
+              "openapi:lifecycle-entries:appendentryv2"
+            ],
+            "retired": [],
+            "changedMeaning": [
+              "openapi:lifecycle-entries:appendentryv2"
+            ]
+          }
+        }
+      ],
+      "totalNewCapabilities": 2,
+      "totalNewPowers": 0,
+      "graph": {
+        "providers": 5,
+        "capabilities": 25,
+        "edges": 54,
+        "chains2": 54,
+        "chains3": 120,
+        "total": 199
+      }
+    },
+    "run": {
+      "runId": "run_mvglcggj_1",
+      "capability": "goal:record-moved-label",
+      "provider": "goal:published",
+      "title": "Record moved label",
+      "status": "failed",
+      "error": "unresolved required anchor: openapi:lifecycle-entries:appendentryv2@op-421c7887b5bcb6ba; expected one equivalent operation at http://127.0.0.1:65350/openapi.json, found 0",
+      "startedAt": "2026-10-20T11:19:34.483Z",
+      "durationMs": 1,
+      "verification": {
+        "status": "refuted",
+        "results": []
+      },
+      "receipt": {
+        "runId": "run_mvglcggj_1",
+        "capability": "goal:record-moved-label",
+        "provider": "goal:published",
+        "startedAt": "2026-10-20T11:19:34.483Z",
+        "durationMs": 1,
+        "status": "failed",
+        "verification": "refuted",
+        "seq": 29,
+        "inputDigest": "f7d7ea072afa4b011def7e762aa570040961662303fd79a24101025b150cae8d",
+        "outputDigest": "8ab1b0688131e814f65eac50e26caa975361e89e4df57dd929b6633a832c6672",
+        "prev": "2e515f40437eb545e69dabb4c557dbf2ee97584ea93bba56f6f852ef24450c27",
+        "hash": "60382b63175e0f3cb8b794ea6efc18798aa673cb3656b17f91df151e4cb6ac63"
+      }
+    }
+  },
+  "removed": {
+    "learned": {
+      "results": [
+        {
+          "source": "http://127.0.0.1:65350/openapi.json",
+          "probes": [
+            {
+              "url": "http://127.0.0.1:65350/openapi.json",
+              "kind": "unknown",
+              "ok": false,
+              "detail": "no supported contract found"
+            }
+          ],
+          "learned": [],
+          "drift": {
+            "changed": true,
+            "providersBefore": [
+              "openapi:lifecycle-entries"
+            ],
+            "providersAfter": [],
+            "added": [],
+            "removed": [
+              "openapi:lifecycle-entries:appendentryv2@op-6fe6000dbea20638",
+              "openapi:lifecycle-entries:appendentryv2"
+            ],
+            "modified": [],
+            "retired": []
+          },
+          "withdrawn": [
+            "openapi:lifecycle-entries"
+          ]
+        }
+      ],
+      "totalNewCapabilities": 0,
+      "totalNewPowers": -102,
+      "graph": {
+        "providers": 4,
+        "capabilities": 23,
+        "edges": 32,
+        "chains2": 32,
+        "chains3": 42,
+        "total": 97
+      }
+    },
+    "run": {
+      "runId": "run_mvglcgmq_1",
+      "capability": "goal:record-moved-label",
+      "provider": "goal:published",
+      "title": "Record moved label",
+      "status": "failed",
+      "error": "unresolved required anchor: openapi:lifecycle-entries:appendentryv2@op-421c7887b5bcb6ba; expected one equivalent operation at http://127.0.0.1:65350/openapi.json, found 0",
+      "startedAt": "2026-10-20T11:19:34.706Z",
+      "durationMs": 1,
+      "verification": {
+        "status": "refuted",
+        "results": []
+      },
+      "receipt": {
+        "runId": "run_mvglcgmq_1",
+        "capability": "goal:record-moved-label",
+        "provider": "goal:published",
+        "startedAt": "2026-10-20T11:19:34.706Z",
+        "durationMs": 1,
+        "status": "failed",
+        "verification": "refuted",
+        "seq": 30,
+        "inputDigest": "c0ae51ae1ba467aa1af60fd4a2a8e49512615a4b4f8c797d847b9be22438386d",
+        "outputDigest": "8ab1b0688131e814f65eac50e26caa975361e89e4df57dd929b6633a832c6672",
+        "prev": "60382b63175e0f3cb8b794ea6efc18798aa673cb3656b17f91df151e4cb6ac63",
+        "hash": "6458442e66892770ea2bf27fc4285a69744f4f27bb3975d2a354c86f784fee43"
+      }
+    }
+  },
+  "returned": {
+    "learned": {
+      "results": [
+        {
+          "source": "http://127.0.0.1:65350/openapi.json",
+          "probes": [
+            {
+              "url": "http://127.0.0.1:65350/openapi.json",
+              "kind": "openapi",
+              "ok": true,
+              "detail": "1 operations"
+            }
+          ],
+          "learned": [
+            {
+              "provider": "openapi:lifecycle-entries",
+              "capabilitiesAdded": 1,
+              "powersBefore": 97,
+              "powersAfter": 135,
+              "newPowers": 38
+            }
+          ]
+        }
+      ],
+      "totalNewCapabilities": 1,
+      "totalNewPowers": 38,
+      "graph": {
+        "providers": 5,
+        "capabilities": 24,
+        "edges": 42,
+        "chains2": 42,
+        "chains3": 69,
+        "total": 135
+      }
+    },
+    "run": {
+      "runId": "run_mvglcgt5_1",
+      "capability": "goal:record-moved-label",
+      "provider": "goal:published",
+      "title": "Record moved label",
+      "status": "completed",
+      "output": "68752bf62253f655b49bd5e8d989fc11d439d0e90cccbca77f13180179706cea",
+      "startedAt": "2026-10-20T11:19:34.937Z",
+      "durationMs": 22.6,
+      "verification": {
+        "status": "verified",
+        "results": []
+      },
+      "receipt": {
+        "runId": "run_mvglcgt5_1",
+        "capability": "goal:record-moved-label",
+        "provider": "goal:published",
+        "startedAt": "2026-10-20T11:19:34.937Z",
+        "durationMs": 22.6,
+        "status": "completed",
+        "verification": "verified",
+        "seq": 34,
+        "inputDigest": "3c2ba9822c003768b8d293d3c85c4f123b115c94dc14b0f9cf51c72c907d1722",
+        "outputDigest": "7464949c05dcc16125746259f36d2d7b862d478df1fa62a97304740fede7aa9f",
+        "prev": "aa96f0802a94a20334c0e40e9a40c7fff2840d692f3d24ad747450b82f86ba3f",
+        "hash": "6123c05a3a43d06885c3bbce56d1d0ca52d8366b8936a5af30641f2a9e18af4c"
+      },
+      "steps": [
+        "run_mvglcgte_2",
+        "run_mvglcgtm_3"
+      ],
+      "witnesses": [
+        {
+          "capability": "openapi:independent-journal-observer:containslabel",
+          "runId": "run_mvglcgtm_4",
+          "status": "completed",
+          "verification": {
+            "status": "checked",
+            "results": [
+              {
+                "predicate": {
+                  "op": "equals",
+                  "path": "present",
+                  "value": true
+                },
+                "ok": true,
+                "actual": true
+              }
+            ]
+          },
+          "output": {
+            "present": true
+          }
+        }
+      ],
+      "attempts": []
+    }
+  },
+  "ack-only": {
+    "run": {
+      "runId": "run_mvglcgyv_1",
+      "capability": "goal:record-moved-label",
+      "provider": "goal:published",
+      "title": "Record moved label",
+      "status": "failed",
+      "output": null,
+      "error": "verification refuted by independent outcome witness: verification refuted: [{\"predicate\":{\"op\":\"equals\",\"path\":\"present\",\"value\":true},\"ok\":false,\"actual\":false}]",
+      "startedAt": "2026-10-20T11:19:35.143Z",
+      "durationMs": 25.4,
+      "verification": {
+        "status": "refuted",
+        "results": []
+      },
+      "receipt": {
+        "runId": "run_mvglcgyv_1",
+        "capability": "goal:record-moved-label",
+        "provider": "goal:published",
+        "startedAt": "2026-10-20T11:19:35.143Z",
+        "durationMs": 25.4,
+        "status": "failed",
+        "verification": "refuted",
+        "seq": 38,
+        "inputDigest": "1f689eedaae30f62bd38df4cd8253cc2b3c8a64fcd4dd22d0c2acc14acd032ad",
+        "outputDigest": "6987b56f4687621d1d58b3b29b24f424b94e7d599d9a149496fcfb628106a7d2",
+        "prev": "fdb4290b492c22dae9bc3bb8f3e905a4c72d50b1f9bea2ef0208b387a703329c",
+        "hash": "246d04561a59294f4535f1394306b19852f59cca7644c2076f6de6509a3212de"
+      },
+      "steps": [],
+      "witnesses": [
+        {
+          "capability": "openapi:independent-journal-observer:containslabel",
+          "runId": "run_mvglcgzg_4",
+          "status": "failed",
+          "verification": {
+            "status": "refuted",
+            "results": [
+              {
+                "predicate": {
+                  "op": "equals",
+                  "path": "present",
+                  "value": true
+                },
+                "ok": false,
+                "actual": false
+              }
+            ]
+          },
+          "output": {
+            "present": false
+          },
+          "error": "verification refuted: [{\"predicate\":{\"op\":\"equals\",\"path\":\"present\",\"value\":true},\"ok\":false,\"actual\":false}]"
+        }
+      ],
+      "attempts": [
+        {
+          "summary": "Append entry label \u2192 SHA-256 fingerprint",
+          "failed": "builtin:text.sha256",
+          "error": "verification refuted by independent outcome witness: verification refuted: [{\"predicate\":{\"op\":\"equals\",\"path\":\"present\",\"value\":true},\"ok\":false,\"actual\":false}]",
+          "healing": "not retried: openapi:lifecycle-entries:appendentryv2 can change state and may already have taken effect (an operator can declare side-effect-free operations in authority.retry)"
+        }
+      ]
+    }
+  }
+}

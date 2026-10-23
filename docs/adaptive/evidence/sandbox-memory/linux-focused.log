@@ -1,0 +1,63 @@
+✔ measurement requires completed target invocation, exact supplied input and oracle output (9.539666ms)
+✔ launch failure, timeout, output limit and unstable identity cannot establish usable execution (4.770125ms)
+✔ builtin-only sessions cannot become target execution even when MCP reported success (0.417917ms)
+✔ supervision refusal remains a complete observation without becoming usable execution (0.484ms)
+✔ missing, truncated, mismatched and interrupted observations are unknown, never zero (7.964541ms)
+✔ baseline investigation count stays unknown; unrelated lifecycle events are rejected (0.863375ms)
+✔ input multiplicity and missing oracle eligibility cannot be bypassed (0.767667ms)
+✔ observation attempts are exclusive and closed recorders reject later events (0.553625ms)
+✔ model telemetry preserves missing usage and does not inherit paid-provider environment (0.81075ms)
+✔ A1 redirect: a caller-supplied credential header (OpenAPI header parameter) never reaches another origin (31.963625ms)
+✔ A2 redirect: Proxy-Authorization, Cookie and custom headers stay on the original origin, including A -> B -> A (0.552917ms)
+✔ A3 redirect: a request body is never re-sent to another origin (307/308) (0.191166ms)
+✔ A4 redirect: same-origin redirects keep the caller's headers; pinned credentials still apply per origin (0.277542ms)
+✔ B1 executable: '..' cannot climb out of an authorised directory (1.330042ms)
+✔ B2 executable: a symlink in an authorised directory pointing outside is refused unless the alias itself is authorised (171.73225ms)
+✔ B3 executable: nested directories under an authorised directory are allowed when their real path stays inside (141.951542ms)
+✔ B4 executable: a nonexistent target is reported without running anything (0.928792ms)
+✔ B5 executable: a program writable by other users is refused (it could be swapped between check and use) (0.6035ms)
+✔ B6 executable: replacing the program after it was learned (different identity) stops it running (152.92575ms)
+✔ C1 sandbox: background processes a program leaves behind are terminated with the run (311.148333ms)
+✔ C2 sandbox: memory use is bounded (450.734376ms)
+✔ C3 sandbox: the size of files a program writes is bounded (25.408792ms)
+✔ C4 sandbox: the number of processes a run may create is bounded (426.74925ms)
+✔ C5 sandbox: CPU-bound runaways are stopped and the reason is reported (3007.456793ms)
+✔ D1 untrusted text: instructions in a program's help text change no authority and no trust (127.637541ms)
+✔ F1 permissions: authority to investigate is separate from authority to execute (114.237125ms)
+✔ F2 federation: a peer runtime never receives this runtime's credentials (2.106291ms)
+✔ G1 secrets: a credential passed as an argument appears in no log, run record, persisted state or export (70.112083ms)
+✔ G2 secrets: an upstream error that echoes the credential is not persisted with it (51.081084ms)
+✖ sandbox refuses availability when the resource observer fails (181.219917ms)
+✔ sandbox rejects malformed resource snapshots instead of treating them as zero usage (75.975583ms)
+✔ sandbox stops a workload after resource supervision is lost (92.7795ms)
+✔ sandbox withholds output when an in-flight resource observation fails after child exit (229.18475ms)
+✔ sandbox serialises slow resource observations instead of spawning overlapping polls (770.532459ms)
+ℹ tests 34
+ℹ suites 0
+ℹ pass 33
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5310.571628
+
+✖ failing tests:
+
+test at test/sandbox-observer.test.ts:20:1
+✖ sandbox refuses availability when the resource observer fails (181.219917ms)
+  AssertionError [ERR_ASSERTION]: only the bounded availability probe was dispatched
+  
+  2 !== 1
+  
+      at TestContext.<anonymous> (file:///source/test/sandbox-observer.test.ts:23:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

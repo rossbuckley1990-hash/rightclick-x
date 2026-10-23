@@ -1,0 +1,36 @@
+✔ explicit external transport denial is not provider drift or negative behavioral evidence (41.210042ms)
+✔ a saved goal stops on external denial without repair or alternative execution (9.560875ms)
+✔ generated REST and GraphQL cannot replan around an external denial (5.291084ms)
+✔ a denied fan-out item stops the retained composite before later items (1.1895ms)
+✖ denied witness leaves an already executed effect unverified and never replays it (3.014958ms)
+✔ a peer refusal stops execution but never acts as a local authority proof (0.938875ms)
+✔ boundary denial after HTTP acceptance remains pending without replay (1.914792ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 6
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 205.572958
+
+✖ failing tests:
+
+test at test/transport-refusal.test.ts:95:1
+✖ denied witness leaves an already executed effect unverified and never replays it (3.014958ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'refuted'
+  - 'unverified'
+  
+      at TestContext.<anonymous> (file:///Users/ross/src/rightclick-x-adaptive/test/transport-refusal.test.ts:110:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'refuted',
+    expected: 'unverified',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

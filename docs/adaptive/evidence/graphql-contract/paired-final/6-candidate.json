@@ -1,0 +1,101 @@
+{
+  "sourceTreeSha256": "4a0fcba8300ed84c7e67376c2f3594b0f5f4f2b455534cb294a9a006bdc17328",
+  "node": "v26.12.0",
+  "invalidRequest": {
+    "id": "graphql:data-rcsb-org-graphql:query:entry",
+    "args": {
+      "entry_id": "1CRN",
+      "selection": "{ rcsb_id rcsb_primary_citation { id title pdbx_database_id_DOI rcsb_is_primary journal_abbrev year } database_2 { database_id pdbx_DOI } }"
+    },
+    "verify": [
+      {
+        "op": "exists",
+        "path": "rcsb_primary_citation.pdbx_database_id_DOI"
+      }
+    ]
+  },
+  "correctedRequest": {
+    "id": "graphql:data-rcsb-org-graphql:query:entry",
+    "args": {
+      "entry_id": "1CRN",
+      "selection": "{ rcsb_id rcsb_primary_citation { id title pdbx_database_id_DOI journal_abbrev year } citation { id rcsb_is_primary pdbx_database_id_DOI } database_2 { database_id pdbx_DOI } }"
+    }
+  },
+  "invalid": {
+    "status": "failed",
+    "error": "GraphQL selection: entry.rcsb_primary_citation.rcsb_is_primary is not declared on learned type RcsbPrimaryCitation; refresh the contract explicitly if the provider changed",
+    "graphqlFailure": {
+      "kind": "invalid-document",
+      "reason": "GraphQL selection: entry.rcsb_primary_citation.rcsb_is_primary is not declared on learned type RcsbPrimaryCitation; refresh the contract explicitly if the provider changed",
+      "runs": [
+        "run_mvh5f1wc_1_3e47d42c-e6f3-49d3-9aba-e98a42ddb2e1"
+      ],
+      "capability": "graphql:data-rcsb-org-graphql:query:entry"
+    },
+    "invalidMs": 5.407707999999985,
+    "traffic": []
+  },
+  "restarted": {
+    "status": "failed",
+    "graphqlFailure": {
+      "kind": "invalid-document",
+      "reason": "GraphQL selection: entry.rcsb_primary_citation.rcsb_is_primary is not declared on learned type RcsbPrimaryCitation; refresh the contract explicitly if the provider changed",
+      "runs": [
+        "run_mvh5f1wg_1_e5b7ec94-8da5-4813-9272-3a02982a5d76"
+      ],
+      "capability": "graphql:data-rcsb-org-graphql:query:entry"
+    },
+    "traffic": []
+  },
+  "corrected": {
+    "status": "completed",
+    "output": {
+      "rcsb_id": "1CRN",
+      "rcsb_primary_citation": {
+        "id": "primary",
+        "title": "Water structure of a hydrophobic protein at atomic resolution: Pentagon rings of water molecules in crystals of crambin.",
+        "pdbx_database_id_DOI": "10.1073/pnas.81.19.6014",
+        "journal_abbrev": "Proc.Natl.Acad.Sci.Usa",
+        "year": 1984
+      },
+      "citation": [
+        {
+          "id": "primary",
+          "rcsb_is_primary": "Y",
+          "pdbx_database_id_DOI": "10.1073/pnas.81.19.6014"
+        },
+        {
+          "id": "1",
+          "rcsb_is_primary": "N",
+          "pdbx_database_id_DOI": null
+        },
+        {
+          "id": "2",
+          "rcsb_is_primary": "N",
+          "pdbx_database_id_DOI": null
+        }
+      ],
+      "database_2": [
+        {
+          "database_id": "PDB",
+          "pdbx_DOI": "10.2210/pdb1crn/pdb"
+        },
+        {
+          "database_id": "WWPDB",
+          "pdbx_DOI": null
+        }
+      ]
+    },
+    "traffic": [
+      {
+        "method": "POST",
+        "kind": "corrected",
+        "bytes": 645
+      }
+    ]
+  },
+  "graphSize": 49,
+  "finalGraphSize": 49,
+  "retainedBytes": 2063266,
+  "schemaBytes": 112000
+}

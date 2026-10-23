@@ -1,0 +1,124 @@
+{
+  "private": "/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/rcx-actenon-workers-9p5li1hk",
+  "output": "/Users/ross/src/rightclick-x-adaptive/docs/north-star/evidence/actenon/workers-attempt2/workers/revocation-outage-0",
+  "origin": "http://127.0.0.1:52705",
+  "wire": {
+    "method": "POST",
+    "url": "http://127.0.0.1:52705/entries",
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body": "eyJsYWJlbCI6InJldm9jYXRpb24tb3V0YWdlIn0="
+  },
+  "intent": {
+    "contract": {
+      "name": "action_intent",
+      "version": "v1"
+    },
+    "intent_id": "exec_04de1e9e105d9836e01b8628dfc52592",
+    "issued_at": "2026-10-18T03:03:53.147308Z",
+    "expires_at": "2026-10-18T03:05:53.147308Z",
+    "tenant": {
+      "tenant_id": "default"
+    },
+    "requester": {
+      "type": "agent",
+      "id": "contained-node-principal"
+    },
+    "action": {
+      "name": "http.post",
+      "capability": "http.post",
+      "parameters": {
+        "method": "POST",
+        "body": "eyJsYWJlbCI6InJldm9jYXRpb24tb3V0YWdlIn0=",
+        "headers": {
+          "content-type": "application/json"
+        }
+      }
+    },
+    "target": {
+      "resource_type": "tool",
+      "resource_id": "http://127.0.0.1:52705/entries"
+    },
+    "metadata": {
+      "operation_id": "act_73a3794048e840c2",
+      "authority_ref": "authref_269493dc43deb8ed02a30b69459a43ee",
+      "grant_id": "grant_2e3a1c7ae3bd4d3a",
+      "execution_mode": "brokered"
+    }
+  },
+  "proof": {
+    "contract": {
+      "name": "pccb",
+      "version": "v1"
+    },
+    "pccb_id": "pccb_4a6130e216404efeb45bfdc534e526d4",
+    "issued_at": "2026-10-18T03:03:53.148230Z",
+    "not_before": "2026-10-18T03:03:53.148230Z",
+    "expires_at": "2026-10-18T03:05:53.147308Z",
+    "issuer": {
+      "type": "service",
+      "id": "actenon-permit"
+    },
+    "subject": {
+      "type": "agent",
+      "id": "contained-node-principal"
+    },
+    "tenant": {
+      "tenant_id": "default"
+    },
+    "audience": {
+      "type": "service",
+      "id": "actenon-permit-gateway"
+    },
+    "action": {
+      "name": "http.post",
+      "capability": "http.post",
+      "parameters": {
+        "method": "POST",
+        "body": "eyJsYWJlbCI6InJldm9jYXRpb24tb3V0YWdlIn0=",
+        "headers": {
+          "content-type": "application/json"
+        }
+      }
+    },
+    "target": {
+      "resource_type": "tool",
+      "resource_id": "http://127.0.0.1:52705/entries"
+    },
+    "scope": {
+      "mode": "exact",
+      "capabilities": [
+        "http.post"
+      ],
+      "single_use": true
+    },
+    "nonce": "oLB75QwTJUGZ7O4ZUNKDd13uZKycVmrJ",
+    "action_hash": {
+      "algorithm": "sha-256",
+      "canonicalization": "ACTENON-JCS-STRICT-1",
+      "value": "e3961fd728aeaf17afbce535ad83cc1bed0e966484f3672cadfb307d732a4e7a"
+    },
+    "intent_id": "exec_04de1e9e105d9836e01b8628dfc52592",
+    "extensions": {
+      "authority": {
+        "issuer": "service:actenon-permit",
+        "grant_id": "grant_2e3a1c7ae3bd4d3a",
+        "revocable": true
+      },
+      "effect": {
+        "profile": "ACTENON-EFFECT-1",
+        "effect_id": "effect_6dda565a9fcb0ce1f95712ebe63f0aa2961f71a662ca6e3daec8d4904e046bb8",
+        "reservation_id": "reservation_26852146fa544330b69bb1c92cecbfbe",
+        "owner_attempt_id": "exec_04de1e9e105d9836e01b8628dfc52592"
+      }
+    },
+    "signature": {
+      "algorithm": "EdDSA",
+      "key_id": "disposable-experiment",
+      "encoding": "base64url",
+      "value": "QG1pAoW-nCBaOb1AMS_Y7wiXj-vrltcTploJGt1X5D-k2hs6yTPIVSbsP8Uo-8I20J_mdqfKm4Db5CB34o5qCg"
+    }
+  },
+  "fault": "revocation-outage"
+}

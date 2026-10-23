@@ -1,6 +1,6 @@
 # Cross-provider identifier links: design note and measurement
 
-**Status:** prototype on `main` (`4975352`, `c578aac`), tags `lifesci-links-1` and `lifesci-links-2`. This follows up on prediction P3 of the life-science experiment ([REPORT.md](REPORT.md), *Typed links*). It was **not pre-registered**.
+**Status:** prototype on `main` (`4975352`, `c578aac`), tags `lifesci-links-1` and `lifesci-links-2`. List fan-out followed (`c215966`, `1143e3d`, tags `lifesci-fanout-1` and `lifesci-fanout-2`; see [List fan-out](#list-fan-out-lifesci-fanout-1--2)). This follows up on prediction P3 of the life-science experiment ([REPORT.md](REPORT.md), *Typed links*). It was **not pre-registered**.
 
 ## The problem, from the real evidence
 
@@ -102,15 +102,19 @@ The within-provider schemes are also correct:
 
 Two fed ports are **mixed lists**: RCSB `polymer_entity_groups.rcsb_id` (feeding the accession scheme) and Proteins `dbReferences.id` (feeding `entry_id`). They are harmless today only because no list port belongs to those schemes. If one did, these lists would hand it non-matching ids.
 
-**Planner probes** (plan only, ≤3 steps; a plan is meaningful when every cross-source binding is a scheme or id-type binding). The table shows meaningful plans / plans with a generic crossing, among the top 5:
+**Planner probes** (plan only, ≤3 steps; a plan is meaningful when every cross-source binding is a scheme or id-type binding). The table shows meaningful plans / plans with a generic crossing, among the top 5. Where a probe returned a fan-out plan it would be counted as well, but no probe did on either fan-out tag:
 
-| Hop the agents needed | before replay | after replay |
-|---|---|---|
-| accession → genomic coordinates (Q08) | 1 / 2 | **1 / 0** |
-| accession → structure (Q03, Q11) | 0 / 5 | 0 / 5 |
-| accession → GO term → ontology parents (Q07) | 0 / 5 | 0 / 5 |
-| PDB entry → accession → gene (Q04) | 0 / 5 | 0 / 5 |
-| PDB entry → accession → organism (Q05) | 0 / 5 | 0 / 5 |
+| Hop the agents needed | links-2 before replay | links-2 after replay | fanout-1 before / after | fanout-2 before / after | fan-out plans in top 5 (fanout-1, fanout-2) |
+|---|---|---|---|---|---|
+| accession → genomic coordinates (Q08) | 1 / 2 | **1 / 0** | 1 / 2 · **1 / 0** | 1 / 1 · 1 / 1 | 0, 0 |
+| accession → structure (Q03, Q11) | 0 / 5 | 0 / 5 | 0 / 5 · 0 / 5 | 0 / 5 · 0 / 5 | 0, 0 |
+| accession → GO term → ontology parents (Q07) | 0 / 5 | 0 / 5 | 0 / 5 · 0 / 5 | 0 / 5 · 0 / 5 | 0, 0 |
+| PDB entry → accession → gene (Q04) | 0 / 5 | 0 / 5 | 0 / 5 · 0 / 5 | 0 / 5 · 0 / 5 | 0, 0 |
+| PDB entry → accession → organism (Q05) | 0 / 5 | 0 / 5 | 0 / 5 · 0 / 5 | 0 / 5 · 0 / 5 | 0, 0 |
+| *added:* PDB entry → accessions → genes, `want: list:text` (Q04) | – | – | 0 / 5 · 0 / 5 | 0 / 5 · 0 / 5 | 0, 0 |
+| *added:* PDB entry → accessions → organisms, `want: list:text` (Q05) | – | – | 0 / 0 · 0 / 0 | 0 / 0 · 0 / 0 | 0, 0 |
+
+The last two rows were added to `links.ts` together with fan-out, because an entry with several chains has one gene per accession and `text` cannot hold a list. Their 0 / 0 means five plans that never leave RCSB (`Entry → … → Polymer entities`), so they have no cross-source binding to count.
 
 On `lifesci-links-1` (before the text-port rule) the schemes were the same. But the planner still bound RCSB `em_experiment.aggregation_state` to Proteins `accession`, which is what motivated `c578aac`.
 
@@ -124,9 +128,76 @@ On `lifesci-links-1` (before the text-port rule) the schemes were the same. But 
    - **Generic plumbing still dominates ranking.** Unschemed text ports (`accession_locations`, `upid`, OLS `onto`) still take arbitrary text. In the probes the planner moved its junk there.
 3. **Evidence can also expose wrong lexical types.** The 81 baseline `id.entry` links from UniParc/UniRef ids are wrong. Detecting that would need negative evidence, which this prototype does not record.
 
+## List fan-out (`lifesci-fanout-1`, `-2`)
+
+This was the main blocker named above. It is built and tested, but **no probe changed because of it**. The reasons are measured below.
+
+### Design (`src/core/planner.ts`, `src/runtime.ts` `runSteps`)
+
+**Planning.** A step may take a `list:X` value into a single-value port and run once per item ("fan out") only when all of these hold:
+
+- the capability is read-only;
+- the port is required, single-value and not an enum;
+- each item is known to fit, either through a learned scheme or through a specific type:
+  - **through a learned scheme**: the list feeds a scheme the port belongs to. Then only items with one of the scheme's observed identifier shapes are used, which guards against mixed cross-reference lists (see above);
+  - **through a specific type**: `id.*` and similar. `text`, `json`, `number`, `boolean` and bare `id` never fan out by type.
+
+Further rules:
+
+- At most one port per step fans out, so a step never builds a cross product nobody chose.
+- A single value that fits is preferred over mapping a list.
+- The fan-out step's outputs become lists of its per-item outputs, so later steps and goals see `list:…` and can fan out again.
+- Everywhere else a list still never fills a single-value port.
+
+**Explicit in plans.** The binding carries `each: { max: 20, shapes?: [...] }`, the summary marks the step `(each)`, and `context_compose` returns both unchanged.
+
+**Running.** In `runSteps`:
+
+- Items are de-duplicated, filtered by shape, then run **one at a time**.
+- Over `FANOUT_MAX` = 20 items, the step is refused **before the first call**. `compose` routes around the refusal without re-reading the provider's contract: a long list is not drift.
+- A failing item fails the step. Nothing is filled in for it.
+- On success, `executed.fanOuts` reports, per fanned step, how many items the list had, how many ran, and how many were skipped by shape.
+- A plan with a fan-out crystallizes and runs again as a composite.
+
+**Second change (`1143e3d`, after measuring fanout-1): evidence beats a declared-type guess.** At a port that has a learned scheme, values seen to carry the port's identifiers (one value or a list of them) outrank values that only share its declared type. Without scheme evidence, a single typed value still wins over a list. It was needed because of the case below.
+
+**Tests:** `test/fan-out.test.ts`, 5 synthetic tests, no real provider names. They cover:
+
+- entry → [accessions] → one registry lookup per accession: before evidence there is no route; after two runs the accession path becomes an observed `list:id.stable` port of the scheme. The plan then carries `each: {max: 20, shapes: ["6A"]}` and runs. A duplicate accession is looked up once, a `TM:0001` cross-reference is skipped by shape (`fanOuts` reports 3 items, 2 ran, 1 skipped), and the pipeline crystallizes and runs again;
+- 25 accessions: refused before any lookup, with no contract re-read;
+- a failing item fails the step;
+- plan rules: typed fan-out without shapes; no fan-out into a destructive step, a plain-text port, or two ports at once; every list → single-value binding carries `each`; a fitting single value is preferred;
+- evidence over type, with the single typed value still preferred when there is no evidence.
+
+Both rules were mutation-checked: disabling fan-out fails all four original tests, and removing the cap check fails the cap test. The full suite passes (121/121), and `tsc` is clean.
+
+### Measurement on the real APIs
+
+- Same protocol as above on each tag: `phase-a.ts` (21 requests), then `links.ts` (104 requests: replaying the agents' 77 calls; 76 completed, and the agent's call to a non-existent id failed as it did originally).
+- Read-only, under 1 request per second per host, no refusals.
+- Evidence: `evidence/phase-a-lifesci-fanout-{1,2}.json` and `evidence/links-lifesci-fanout-{1,2}.json`.
+- Link counts are **unchanged** on both tags: 86 id-type pairs, 26 scheme pairs (25 not already id-typed), and 5 schemes after replay, exactly as on links-2. Fan-out changes planning only, not learning.
+- The probe numbers are in the table above. **No probe returned a fan-out plan in its top 5 on either tag.**
+
+Why, from `fanout-check.ts` (offline, plan only, on the after-replay state; `evidence/fanout-check-lifesci-fanout-{1,2}.json`):
+
+1. **accession → structure (Q03).** The one real cross-source fan-out the graph supports is Proteins `getbyaccession-2`.`dbReferences.id` (observed `list:id.entry`, feeding `entry_id`) → RCSB `entry(entry_id)`. Its shape filter is `["49"]`: four characters starting with a digit. In the replay bodies that list is mixed: across 11,035 records it holds PubMed (10,969), DOI, PDB (3,984), PDBsum (the same ids as PDB, so de-duplication folds them), EMDB, GO, EMBL, Ensembl and other references. Only the PDB-shaped ids would be looked up.
+   - **fanout-1:** the plan is never built, not even with `entry` anchored. The same Proteins record has a single `id` output that description inference typed `id.entry`. Its values are not PDB ids (the wrong lexical type noted in the baseline), and it never fed the scheme. It filled `entry_id` by type, and a single value always beat a list. This led to `1143e3d`.
+   - **fanout-2:** the plan `Get UniProt entry by accession → Entry (each)` is built, but not kept among the ranked plans. The probe asks for `json`, so the one-step `getbyaccession-2` plan already answers it with the same intent score (2 = 2). The planner's existing rule drops a plan that extends a kept plan without covering more of the intent. RCSB's `Entry` title adds no intent term, and the fan-out's `json` result is the whole list, not `resolution`. This rule was left as it is: changing ranking to suit a probe is not a general fix.
+2. **PDB entry → accessions (Q04, Q05, and both list rows).** The fan-out works where types allow: with `polymer_entity` anchored, `entity_id` (`id.entity`) is filled `(each)` from `polymer_entities`'s `list:id.entity`. But **nothing meaningful reaches that list.** `polymer_entities(entity_ids: list:text)` is fed only by generic plumbing (`entry.audit_author.name`), and `entry`'s default selection exposes no entity ids, only `em_entity_assembly.entity_id_list` (`list:text`). Upstream of fan-out, the hop is blocked by an undeclared or unpopulated identifier and by generic list plumbing. The anchored plans are wrong and none of them crosses sources.
+3. **accession → GO terms (Q07).** No list output carries a GO-term scheme. UniProt's cross-references are inside the opaque `results` and `uniProtKBCrossReferences` objects, two array levels deep (see *Undeclared nested paths*).
+
+**Side effect of `1143e3d` on the probes, kept as measured.** After replay, Q08 went from 1 / 0 to 1 / 1; before replay, from 1 / 2 to 1 / 1. The meaningful plan is still there. Two-step plans reranked, and the fifth slot after replay now holds `Get UniProtKB entry → Search UniProt entries by taxonomy and genomic coordinates`. That plan has a correct `taxonId → taxonomy` id-type crossing and a generic `entryType → locations` crossing. It replaced a two-step plan within one source that had no crossing to count. If the evidence rule is judged not worth that, reverting `1143e3d` restores fanout-1's numbers. The fan-out itself does not depend on it.
+
+### What this shows
+
+- Fan-out is in place, explicit and bounded, and it combines with identifier schemes as intended. The synthetic entry → accessions → lookup chain plans and runs end to end.
+- On these five real APIs it is **not sufficient**. The first real fan-out was blocked by a wrong lexical type, then by ranking on a `json` goal. The PDB-entry hops are blocked before any list exists. P3 is no closer by the probe numbers.
+- The next blockers, in order: nested observed ports (the GO terms, and UniProt cross-references in general); entity ids, which RCSB's default selections do not expose, while generic `list:text` plumbing fills `entity_ids`; and negative evidence to retire wrong `id.*` types, such as the record's `id`.
+
 ## Not done / next
 
-- **List fan-out in the planner** (map a single-value step over a list). Without it, most cross-database hops stay unplannable whatever the identifier evidence.
+- ~~**List fan-out in the planner**~~: done (`c215966`, `1143e3d`), see above. Not yet run end to end against the real APIs: the probes are plan-only, and no probe's top 5 contains a fan-out plan.
 - **Observed ports up to two array levels**, flattened, under the same "no optional input" rule.
 - **Cross-session flow evidence.** Recent produced values are kept per process only. In Phase B each session started from the Phase A state, so in real use most evidence would come from long-lived servers.
 - **An x-bte / annotation adapter** that seeds named schemes; it needs a contract that carries such annotations to test.

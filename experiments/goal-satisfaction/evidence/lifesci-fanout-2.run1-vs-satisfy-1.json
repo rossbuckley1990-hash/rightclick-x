@@ -1,0 +1,773 @@
+{
+  "build": "lifesci-fanout-2",
+  "commit": "1143e3d1c8e4eae75a57c66c74d60c352e5dcdc6",
+  "tasks": [
+    {
+      "args": {
+        "have": {
+          "accession": "P41159"
+        },
+        "want": "json",
+        "intent": "protein structure entries resolution",
+        "require": [
+          "resolution"
+        ],
+        "run": true,
+        "limit": 25,
+        "maxSteps": 3
+      },
+      "ms": 2490,
+      "ranking": [
+        {
+          "summary": "Get UniParc longest sequence for entries. → Entry → Search Classes By Vector",
+          "satisfaction": null
+        },
+        {
+          "summary": "Get UniParc entry only by UniProt accession → Entry → Search Classes By Vector",
+          "satisfaction": null
+        },
+        {
+          "summary": "Get UniRef entry by UniProtKB accession → Entry → Search Classes By Vector",
+          "satisfaction": null
+        },
+        {
+          "summary": "Get UniParc entries by sequence → Entry → Search Classes By Vector",
+          "satisfaction": null
+        },
+        {
+          "summary": "Get UniParc entries by all UniParc cross reference accessions → Entry → Search Classes By Vector",
+          "satisfaction": null
+        }
+      ],
+      "outcome": null,
+      "executed": {
+        "status": "completed",
+        "titles": [
+          "Get UniProt entry by accession"
+        ],
+        "runs": [
+          "run_mvbhzdt8_3"
+        ],
+        "attempts": [
+          {
+            "summary": "Get UniParc longest sequence for entries. → Entry → Search Classes By Vector",
+            "failed": "graphql:data-rcsb-org-graphql:query:entry",
+            "error": "graphql:data-rcsb-org-graphql:query:entry: missing required input(s): entry_id",
+            "healing": "re-reflected https://data.rcsb.org/graphql: no contract change"
+          }
+        ]
+      },
+      "output": null,
+      "id": "Q03",
+      "seconds": 2.491,
+      "score": {
+        "pass": false,
+        "detail": "entries found 0/9; unrelated 0; lowest belongs to a winner false",
+        "truth": {
+          "accession": "P41159",
+          "entries": [
+            {
+              "id": "7Z3Q",
+              "res": 3.617,
+              "method": "X-RAY DIFFRACTION"
+            },
+            {
+              "id": "8AVE",
+              "res": 5.62,
+              "method": "ELECTRON MICROSCOPY"
+            },
+            {
+              "id": "8AVF",
+              "res": 6.45,
+              "method": "ELECTRON MICROSCOPY"
+            },
+            {
+              "id": "8AVO",
+              "res": 6.84,
+              "method": "ELECTRON MICROSCOPY"
+            },
+            {
+              "id": "8X81",
+              "res": 3.77,
+              "method": "ELECTRON MICROSCOPY"
+            },
+            {
+              "id": "8X85",
+              "res": 3.58,
+              "method": "ELECTRON MICROSCOPY"
+            },
+            {
+              "id": "9PUO",
+              "res": 3.1,
+              "method": "X-RAY DIFFRACTION"
+            },
+            {
+              "id": "8X80",
+              "res": 3.88,
+              "method": "ELECTRON MICROSCOPY"
+            },
+            {
+              "id": "1AX8",
+              "res": 2.4,
+              "method": "X-RAY DIFFRACTION"
+            }
+          ],
+          "uniprotResolutions": {
+            "1AX8": "2.40 A",
+            "7Z3Q": "3.62 A",
+            "8AVE": "5.62 A",
+            "8AVF": "6.45 A",
+            "8AVO": "6.84 A",
+            "8K6Z": "-",
+            "8X80": "3.88 A",
+            "8X81": "3.77 A",
+            "8X85": "3.58 A",
+            "9PUO": "3.10 A"
+          }
+        }
+      }
+    },
+    {
+      "args": {
+        "have": {
+          "entry_id": "4HHB"
+        },
+        "want": "json",
+        "intent": "gene name",
+        "require": [
+          "gene name"
+        ],
+        "run": true,
+        "limit": 25,
+        "maxSteps": 3
+      },
+      "ms": 13287,
+      "ranking": [
+        {
+          "summary": "Entry → Scan Competitor AI Presence → Get gene centric proteins by proteome UPID is deprecated, please use new /genecentric?upid= endpoint",
+          "satisfaction": null
+        },
+        {
+          "summary": "Entry → Get gene centric proteins by proteome UPID is deprecated, please use new /genecentric?upid= endpoint → Search",
+          "satisfaction": null
+        },
+        {
+          "summary": "Entry → Get gene centric proteins by proteome UPID is deprecated, please use new /genecentric?upid= endpoint → Released data search API endpoint allows you to perform GET requests with textual and scientific searches against current RCSB PDB entries",
+          "satisfaction": null
+        },
+        {
+          "summary": "Entry → Get gene centric proteins by proteome UPID is deprecated, please use new /genecentric?upid= endpoint → Retrieve UniProtKB entries by a search query.",
+          "satisfaction": null
+        },
+        {
+          "summary": "Entry → Get gene centric proteins by proteome UPID is deprecated, please use new /genecentric?upid= endpoint → Term Parents By Ontology",
+          "satisfaction": null
+        }
+      ],
+      "outcome": null,
+      "executed": {
+        "status": "completed",
+        "titles": [
+          "Entry",
+          "Nonpolymer entity groups"
+        ],
+        "runs": [
+          "run_mvbhzoc0_7",
+          "run_mvbhzom6_8"
+        ],
+        "attempts": [
+          {
+            "summary": "Entry → Scan Competitor AI Presence → Get gene centric proteins by proteome UPID is deprecated, please use new /genecentric?upid= endpoint",
+            "failed": "openapi:proteins-rest-api:getgenecentricbyupiddeprecated",
+            "error": "openapi:proteins-rest-api:getgenecentricbyupiddeprecated: HTTP 500: \"\"",
+            "healing": "re-reflected https://www.ebi.ac.uk/proteins/api/openapi.json: no contract change"
+          }
+        ]
+      },
+      "output": [
+        null,
+        null
+      ],
+      "id": "Q04",
+      "seconds": 13.287,
+      "score": {
+        "pass": false,
+        "detail": "accessions [\"P68871\",\"P69905\"], genes [\"HBB\",\"HBA1\"]",
+        "truth": [
+          "X-RAY DIFFRACTION",
+          1.74,
+          [
+            "P68871",
+            "P69905"
+          ],
+          [
+            "HBB",
+            "HBA1"
+          ]
+        ]
+      }
+    },
+    {
+      "args": {
+        "have": {
+          "entry_id": "6M0J"
+        },
+        "want": "json",
+        "intent": "organism scientific name",
+        "require": [
+          "organism scientific name"
+        ],
+        "run": true,
+        "limit": 25,
+        "maxSteps": 3
+      },
+      "ms": 2494,
+      "ranking": [
+        {
+          "summary": "Entry → Polymer entities → Nonpolymer entity groups",
+          "satisfaction": null
+        },
+        {
+          "summary": "Entry → Polymer entities → Polymer entity groups",
+          "satisfaction": null
+        },
+        {
+          "summary": "Entry → Polymer entities → Nonpolymer entities",
+          "satisfaction": null
+        },
+        {
+          "summary": "Entry → Polymer entities → Branched entity instances",
+          "satisfaction": null
+        },
+        {
+          "summary": "Entry → Polymer entities → Polymer entity instances",
+          "satisfaction": null
+        }
+      ],
+      "outcome": null,
+      "executed": {
+        "status": "completed",
+        "titles": [
+          "Entry",
+          "Polymer entities",
+          "Nonpolymer entity groups"
+        ],
+        "runs": [
+          "run_mvbhzqmw_9",
+          "run_mvbhzqqz_a",
+          "run_mvbhzri5_b"
+        ],
+        "attempts": []
+      },
+      "output": [],
+      "id": "Q05",
+      "seconds": 2.494,
+      "score": {
+        "pass": false,
+        "detail": "{\"P0DTC2\":\"Severe acute respiratory syndrome coronavirus 2\",\"Q9BYF1\":\"Homo sapiens\"}",
+        "truth": {
+          "P0DTC2": "Severe acute respiratory syndrome coronavirus 2",
+          "Q9BYF1": "Homo sapiens"
+        }
+      }
+    },
+    {
+      "args": {
+        "have": {
+          "accession": "P68871"
+        },
+        "want": "json",
+        "intent": "ontology term parents",
+        "require": [
+          "label"
+        ],
+        "run": true,
+        "limit": 25,
+        "maxSteps": 3
+      },
+      "ms": 7206,
+      "ranking": [
+        {
+          "summary": "Get UniProt entry by accession → Term Parents By Ontology",
+          "satisfaction": null
+        },
+        {
+          "summary": "Get UniProtKB entry by a single accession. → Term Parents By Ontology",
+          "satisfaction": null
+        },
+        {
+          "summary": "Get UniParc longest sequence for entries. → Term Parents By Ontology",
+          "satisfaction": null
+        },
+        {
+          "summary": "Get genomic coordinates for a UniProt accession → Term Parents By Ontology",
+          "satisfaction": null
+        },
+        {
+          "summary": "Term Parents By Ontology → Get genome coordinate by protein sequence position range",
+          "satisfaction": null
+        }
+      ],
+      "outcome": null,
+      "executed": {
+        "status": "failed",
+        "titles": [],
+        "runs": [],
+        "attempts": [
+          {
+            "summary": "Get UniProt entry by accession → Term Parents By Ontology",
+            "failed": "openapi:ols-service:termparentsbyontology",
+            "error": "openapi:ols-service:termparentsbyontology: missing required input(s): onto",
+            "healing": "re-reflected https://www.ebi.ac.uk/ols4/v3/api-docs: no contract change"
+          },
+          {
+            "summary": "Get Ontology 1 → Get Parents → Get genome coordinate by protein sequence position range",
+            "failed": "openapi:ols-service:getontology-1",
+            "error": "openapi:ols-service:getontology-1: HTTP 404: {\"status\":404,\"message\":\"The requested resource was not found\"}"
+          },
+          {
+            "summary": "Terms By Ontology → Polymer entities → Get Parents (each)",
+            "failed": "graphql:data-rcsb-org-graphql:query:polymer_entities",
+            "error": "graphql:data-rcsb-org-graphql:query:polymer_entities: missing required input(s): entity_ids",
+            "healing": "re-reflected https://data.rcsb.org/graphql: no contract change"
+          },
+          {
+            "summary": "Terms By Ontology → Nonpolymer entity groups → Compare Entities",
+            "failed": "graphql:data-rcsb-org-graphql:query:nonpolymer_entity_groups",
+            "error": "graphql:data-rcsb-org-graphql:query:nonpolymer_entity_groups: missing required input(s): group_ids"
+          },
+          {
+            "summary": "Terms By Ontology → Polymer entity groups → Compare Entities",
+            "failed": "graphql:data-rcsb-org-graphql:query:polymer_entity_groups",
+            "error": "graphql:data-rcsb-org-graphql:query:polymer_entity_groups: missing required input(s): group_ids"
+          },
+          {
+            "summary": "Terms By Ontology → Entry groups → Compare Entities",
+            "failed": "graphql:data-rcsb-org-graphql:query:entry_groups",
+            "error": "graphql:data-rcsb-org-graphql:query:entry_groups: missing required input(s): group_ids"
+          }
+        ]
+      },
+      "output": null,
+      "id": "Q07",
+      "seconds": 7.206,
+      "score": {
+        "pass": false,
+        "detail": "nothing executed",
+        "truth": null
+      }
+    },
+    {
+      "args": {
+        "have": {
+          "accession": "P38398"
+        },
+        "want": "json",
+        "intent": "genomic coordinates",
+        "require": [
+          "chromosome",
+          "ensembl gene"
+        ],
+        "run": true,
+        "limit": 25,
+        "maxSteps": 3
+      },
+      "ms": 1313,
+      "ranking": [
+        {
+          "summary": "Get genomic coordinates for a UniProt accession",
+          "satisfaction": null
+        },
+        {
+          "summary": "Search genomic coordinates for UniProt entries",
+          "satisfaction": null
+        },
+        {
+          "summary": "Get UniProt entry by accession → Get genomic coordinates for a UniProt accession",
+          "satisfaction": null
+        },
+        {
+          "summary": "Get UniProtKB entry by a single accession. → Get genomic coordinates for a UniProt accession",
+          "satisfaction": null
+        },
+        {
+          "summary": "Get UniProtKB entry by a single accession. → Search UniProt entries by taxonomy and genomic coordinates",
+          "satisfaction": null
+        }
+      ],
+      "outcome": null,
+      "executed": {
+        "status": "completed",
+        "titles": [
+          "Get genomic coordinates for a UniProt accession"
+        ],
+        "runs": [
+          "run_mvbhzyvy_n"
+        ],
+        "attempts": []
+      },
+      "output": null,
+      "id": "Q08",
+      "seconds": 1.313,
+      "score": {
+        "pass": false,
+        "detail": "chromosome [\"17\"], gene [\"ENSG00000012048\"]",
+        "truth": [
+          "P38398",
+          [
+            "17"
+          ],
+          [
+            "ENSG00000012048"
+          ]
+        ]
+      }
+    },
+    {
+      "args": {
+        "have": {
+          "gene": "BRCA1",
+          "taxid": "9606"
+        },
+        "want": "json",
+        "intent": "genomic coordinates",
+        "require": [
+          "chromosome",
+          "ensembl gene"
+        ],
+        "run": true,
+        "limit": 25,
+        "maxSteps": 3
+      },
+      "ms": 4444,
+      "ranking": [
+        {
+          "summary": "Get genomic coordinates for a UniProt accession → Get genome coordinate by protein sequence position range",
+          "satisfaction": null
+        },
+        {
+          "summary": "Get genomic coordinates for a UniProt accession → Get genome coordinate by protein sequence position",
+          "satisfaction": null
+        },
+        {
+          "summary": "Get genomic coordinates for a UniProt accession → Get UniProt entry by accession → Get genome coordinate by protein sequence position range",
+          "satisfaction": null
+        },
+        {
+          "summary": "Get genomic coordinates for a UniProt accession → Get UniProt entry by accession → Get genome coordinate by protein sequence position",
+          "satisfaction": null
+        },
+        {
+          "summary": "Get genomic coordinates for a UniProt accession → Get gene centric proteins by Uniprot accession → Get genome coordinate by protein sequence position range",
+          "satisfaction": null
+        }
+      ],
+      "outcome": null,
+      "executed": {
+        "status": "failed",
+        "titles": [],
+        "runs": [],
+        "attempts": [
+          {
+            "summary": "Get genomic coordinates for a UniProt accession → Get genome coordinate by protein sequence position range",
+            "failed": "openapi:proteins-rest-api:getbyaccession-1",
+            "error": "openapi:proteins-rest-api:getbyaccession-1: HTTP 400: {\"requestedURL\":\"https://www.ebi.ac.uk/proteins/api/coordinates/BRCA1\",\"errorMessage\":[\"Invalid accession parameter. The values's format should be a valid UniProtKB accession.\"]}",
+            "healing": "re-reflected https://www.ebi.ac.uk/proteins/api/openapi.json: no contract change"
+          }
+        ]
+      },
+      "output": null,
+      "id": "Q08g",
+      "seconds": 4.444,
+      "score": {
+        "pass": false,
+        "detail": "nothing executed",
+        "truth": null
+      }
+    }
+  ],
+  "negatives": [
+    {
+      "args": {
+        "have": {
+          "accession": "P41159"
+        },
+        "want": "json",
+        "intent": "protein melting point",
+        "require": [
+          "melting point"
+        ],
+        "run": true,
+        "limit": 25,
+        "maxSteps": 3
+      },
+      "ms": 940,
+      "ranking": [
+        {
+          "summary": "Get UniProt entry by accession",
+          "satisfaction": null
+        },
+        {
+          "summary": "Get UniParc longest sequence for entries.",
+          "satisfaction": null
+        },
+        {
+          "summary": "Get antigen by UniProt accession",
+          "satisfaction": null
+        },
+        {
+          "summary": "Search antigens in UniProt",
+          "satisfaction": null
+        },
+        {
+          "summary": "Get epitope by UniProt accession",
+          "satisfaction": null
+        }
+      ],
+      "outcome": null,
+      "executed": {
+        "status": "completed",
+        "titles": [
+          "Get UniProt entry by accession"
+        ],
+        "runs": [
+          "run_mvbi05dw_p"
+        ],
+        "attempts": []
+      },
+      "output": null,
+      "id": "N2",
+      "seconds": 0.94,
+      "pass": false
+    },
+    {
+      "args": {
+        "have": {
+          "comp_id": "MK1"
+        },
+        "want": "json",
+        "intent": "gene name",
+        "require": [
+          "gene name"
+        ],
+        "run": true,
+        "limit": 25,
+        "maxSteps": 3
+      },
+      "ms": 9548,
+      "ranking": [
+        {
+          "summary": "Chem comp → Get gene centric proteins by proteome UPID is deprecated, please use new /genecentric?upid= endpoint",
+          "satisfaction": null
+        },
+        {
+          "summary": "Chem comp → Search",
+          "satisfaction": null
+        },
+        {
+          "summary": "Chem comp → Released data search API endpoint allows you to perform GET requests with textual and scientific searches against current RCSB PDB entries",
+          "satisfaction": null
+        },
+        {
+          "summary": "Chem comp → Terms By Ontology",
+          "satisfaction": null
+        },
+        {
+          "summary": "Chem comp → Retrieve UniProtKB entries by a search query.",
+          "satisfaction": null
+        }
+      ],
+      "outcome": null,
+      "executed": {
+        "status": "failed",
+        "titles": [],
+        "runs": [],
+        "attempts": [
+          {
+            "summary": "Chem comp → Get gene centric proteins by proteome UPID is deprecated, please use new /genecentric?upid= endpoint",
+            "failed": "openapi:proteins-rest-api:getgenecentricbyupiddeprecated",
+            "error": "openapi:proteins-rest-api:getgenecentricbyupiddeprecated: missing required input(s): upid",
+            "healing": "re-reflected https://www.ebi.ac.uk/proteins/api/openapi.json: no contract change"
+          },
+          {
+            "summary": "Chem comp → Search",
+            "failed": "openapi:ols-service:search",
+            "error": "openapi:ols-service:search: missing required input(s): q",
+            "healing": "re-reflected https://www.ebi.ac.uk/ols4/v3/api-docs: no contract change"
+          },
+          {
+            "summary": "Chem comp → Get UniParc entries by sequence → Gene name: Entry → Nonpolymer entity groups",
+            "failed": "openapi:proteins-rest-api:getbysequence",
+            "error": "openapi:proteins-rest-api:getbysequence: missing required input(s): sequence"
+          },
+          {
+            "summary": "Chem comp → Get natural variants by list of accession and its locations → Released data search API endpoint allows you to perform GET requests with textual and scientific searches against current RCSB PDB entries",
+            "failed": "openapi:proteins-rest-api:getvariationforaccessionlocation",
+            "error": "openapi:proteins-rest-api:getvariationforaccessionlocation: missing required input(s): accession_locations"
+          },
+          {
+            "summary": "Chem comp → Get proteome by proteome UPID → Nonpolymer entity groups",
+            "failed": "openapi:proteins-rest-api:getbyupid",
+            "error": "openapi:proteins-rest-api:getbyupid: missing required input(s): upid"
+          },
+          {
+            "summary": "Chem comp → Get proteins by proteome UPID → Nonpolymer entity groups",
+            "failed": "openapi:proteins-rest-api:getproteinsbyupid",
+            "error": "openapi:proteins-rest-api:getproteinsbyupid: missing required input(s): upid"
+          }
+        ]
+      },
+      "output": null,
+      "id": "N3",
+      "seconds": 9.548,
+      "pass": true
+    },
+    {
+      "args": {
+        "have": {
+          "purl": "pkg:npm/lodash@4.17.20"
+        },
+        "want": "json",
+        "intent": "vulnerability summary",
+        "require": [
+          "summary"
+        ],
+        "run": true,
+        "limit": 25,
+        "maxSteps": 3
+      },
+      "ms": 5,
+      "ranking": [
+        {
+          "summary": "Summarize text",
+          "satisfaction": null
+        }
+      ],
+      "outcome": null,
+      "executed": {
+        "status": "completed",
+        "titles": [
+          "Summarize text"
+        ],
+        "runs": [
+          "run_mvbi0fch_1"
+        ],
+        "attempts": []
+      },
+      "output": "pkg:npm/lodash@4.17.20",
+      "id": "N1",
+      "pass": false
+    }
+  ],
+  "holdout": {
+    "learn": [
+      {
+        "source": "https://raw.githubusercontent.com/google/osv.dev/master/docs/osv_service_v1.swagger.json",
+        "learned": 1
+      },
+      {
+        "source": "https://advisories.ecosyste.ms/docs/api/v1/openapi.yaml",
+        "learned": 0
+      }
+    ],
+    "seeding": {
+      "lookup": null,
+      "vuln": "openapi:osv:osv-getvulnbyid",
+      "runs": []
+    },
+    "h1": {
+      "args": {
+        "have": {
+          "purl": "pkg:npm/lodash@4.17.20"
+        },
+        "want": "json",
+        "intent": "vulnerability summary",
+        "require": [
+          "summary"
+        ],
+        "run": true,
+        "limit": 25,
+        "maxSteps": 3
+      },
+      "ms": 2,
+      "ranking": [
+        {
+          "summary": "Summarize text",
+          "satisfaction": null
+        }
+      ],
+      "outcome": null,
+      "executed": {
+        "status": "completed",
+        "titles": [
+          "Summarize text"
+        ],
+        "runs": [
+          "run_mvbi0fcl_2"
+        ],
+        "attempts": []
+      },
+      "output": "pkg:npm/lodash@4.17.20",
+      "id": "H1",
+      "score": {
+        "pass": false,
+        "coverage": false,
+        "exact": true,
+        "related": true,
+        "records": 0,
+        "resolvableAdvisories": 5
+      },
+      "truth": {
+        "advisories": [
+          {
+            "uuid": "MDE2OlNlY3VyaXR5QWR2aXNvcnlHSFNBLTM1amgtcjNoNC02amht",
+            "identifiers": [
+              "GHSA-35jh-r3h4-6jhm",
+              "CVE-2021-23337"
+            ]
+          },
+          {
+            "uuid": "MDE2OlNlY3VyaXR5QWR2aXNvcnlHSFNBLTI5bXctd3BnbS1obXI5",
+            "identifiers": [
+              "GHSA-29mw-wpgm-hmr9",
+              "CVE-2020-28500"
+            ]
+          },
+          {
+            "uuid": "GSA_kwCzR0hTQS14eGpyLW1tanYtNGdwZ84ABRXc",
+            "identifiers": [
+              "GHSA-xxjr-mmjv-4gpg",
+              "CVE-2025-13465"
+            ]
+          },
+          {
+            "uuid": "GSA_kwCzR0hTQS1yNWZyLXJqeHItNjZqY84ABUmW",
+            "identifiers": [
+              "GHSA-r5fr-rjxr-66jc",
+              "CVE-2026-4800"
+            ]
+          },
+          {
+            "uuid": "GSA_kwCzR0hTQS1mMjNtLXIzcGYtNDJyaM4ABUmV",
+            "identifiers": [
+              "GHSA-f23m-r3pf-42rh",
+              "CVE-2026-2950"
+            ]
+          }
+        ],
+        "witnessIds": [
+          "GHSA-29mw-wpgm-hmr9",
+          "GHSA-35jh-r3h4-6jhm",
+          "GHSA-f23m-r3pf-42rh",
+          "GHSA-r5fr-rjxr-66jc",
+          "GHSA-xxjr-mmjv-4gpg"
+        ]
+      }
+    }
+  },
+  "network": {
+    "dev": 46,
+    "holdout": 4
+  },
+  "fanOutLimitsHeld": true
+}

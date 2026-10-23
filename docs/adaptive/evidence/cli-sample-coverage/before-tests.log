@@ -1,0 +1,59 @@
+✖ structured unary programs receive distinct probes and compose on unseen input (877.132917ms)
+✖ structured two-file programs receive two distinct pairs, then compose both new inputs (571.548292ms)
+✔ more synthetic samples do not promote constant output or one successful distinct input (1168.882292ms)
+✖ old CLI inference is re-derived on upgrade only under current program authority (457.456292ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 1
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3268.024417
+
+✖ failing tests:
+
+test at test/cli-sample-coverage.test.ts:45:1
+✖ structured unary programs receive distinct probes and compose on unseen input (877.132917ms)
+  AssertionError [ERR_ASSERTION]: json: distinct evidence was not established
+      at TestContext.<anonymous> (file:///Users/ross/src/rightclick-x-adaptive/test/cli-sample-coverage.test.ts:50:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at test/cli-sample-coverage.test.ts:63:1
+✖ structured two-file programs receive two distinct pairs, then compose both new inputs (571.548292ms)
+  AssertionError [ERR_ASSERTION]: json
+      at TestContext.<anonymous> (file:///Users/ross/src/rightclick-x-adaptive/test/cli-sample-coverage.test.ts:67:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at test/cli-sample-coverage.test.ts:93:1
+✖ old CLI inference is re-derived on upgrade only under current program authority (457.456292ms)
+  AssertionError [ERR_ASSERTION]: changed inference must not reuse a byte-only cache
+      at TestContext.<anonymous> (file:///Users/ross/src/rightclick-x-adaptive/test/cli-sample-coverage.test.ts:102:14)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

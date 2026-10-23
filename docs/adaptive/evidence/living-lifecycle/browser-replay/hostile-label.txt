@@ -1,0 +1,469 @@
+Browser tab: 3, Title: "RightClick X · Capability plane", URL: "http://127.0.0.1:52470/".
+1 AXWebArea RightClick X · Capability plane, URL: 127.0.0.1:52470/
+	2 link Description: Skip to capability views, Value: 127.0.0.1:52470/#main
+	3 container
+		4 text LIVING CAPABILITY PLANE
+		5 heading RightClick X, Value: 1
+			6 text RightClick  X
+		28 text Development fixtures · restarted · node · 3 receipt records
+		29 text 7
+		9 text providers
+		30 text 27
+		11 text discovered operations
+		31 text 463
+		13 text potential typed paths
+		32 text NOT ASSESSED
+		15 text independently verified capabilities
+		33 text UNKNOWN
+		17 text authorised capabilities
+		34 text 1
+		19 text retained reusable contracts Discovery does not grant authority. Typed connections are potential paths, not verified workflows. 
+		20 button (collapsed) Metric sources, ID: metrics-toggle, Secondary Actions: Expand
+	35 text Connected · last complete refresh 11:09:53 · observations are polled every 5 seconds.
+	22 container Capability views
+		23 button Live environment
+		24 button Capability intelligence
+		25 button New abilities
+		26 button Authority & consequences
+		27 button Execution evidence
+	36 container
+		37 text 01 / ENVIRONMENT
+		38 heading Software becomes discoverable., Value: 2
+			39 text Software becomes discoverable.
+		40 text Inspect known providers and their operations. Each capability carries separate discovery, execution, authority, assurance, reuse and validity states.
+		41 container providers
+			42 button RightClick X core transforms builtin · 20 operations
+			43 button Polyglot openapi · 2 operations
+			44 button GraphQL atlas.test graphql · 2 operations
+			45 button Newsroom web · 1 operations
+			46 button Crystallized pipelines composite · 0 operations
+			47 button Reusable environmental capabilities composite · 1 operations
+			48 button "><img src=x onerror="document.title='INJECTED'"> builtin · 1 operations
+		49 text 7 providers · Select a cluster to inspect its operations.
+		50 container search-form
+			51 text Find an operation
+			52 text field (settable) Find an operation, Value: fixture:hostile, ID: search
+			53 button Search
+		54 text 1 matching operations · showing 1–1
+		55 content list capabilities
+			56 container
+				57 button
+		58 button (disabled) Previous, ID: previous
+		59 button (disabled) Next, ID: next
+		60 container
+			61 heading Introduce software, Value: 3
+				62 text Introduce software
+			63 text Learn a contract from an authorised URL. Discovery does not authorise its operations.
+			64 container learn-form
+				65 container
+					66 text Source URL
+					67 text field (settable) Source URL, ID: learn-url
+				68 button Learn
+			69 button (collapsed) Research public directories, Secondary Actions: Expand
+				70 text Research public directories
+		71 container
+			72 heading Ask for an outcome, Value: 3
+				73 text Ask for an outcome
+			74 container compose-form
+				75 text Available inputs (JSON)
+				76 text entry area (settable) Available inputs (JSON), Value: {"place":"Lima","language":"es"}, ID: c-have
+				77 container
+					78 text Output type
+					79 text field (settable) Output type, Value: text, ID: c-want
+				80 container
+					81 text Intent
+					82 text field (settable) Intent, Value: weather translated, ID: c-intent
+				83 container
+					84 text Retain as (optional)
+					85 text field (settable) Retain as (optional), Value: Observed weather, ID: c-publish
+				86 text Output predicates (JSON)
+				87 text entry area (settable) Output predicates (JSON), Value: [{"op":"equals","value":"Se esperan nublado cielos con una máxima de 19°C y una suave brisa hoy."}], ID: c-verify
+				88 text Predicates are local checks. Independent witness contracts can be supplied through context_compose.
+				89 button Compose + run
+		90 container
+			91 heading Operation result, Value: 3
+				92 text Operation result
+			93 text {
+  "goal": {
+    "have": {
+      "place": "place",
+      "language": "language"
+    },
+    "want": "text",
+    "intent": "weather translated",
+    "through": []
+  },
+  "plans": [
+    {
+      "steps": [
+        {
+          "capability": "graphql:atlas-test-graphql:query:geocode",
+          "bindings": [
+            {
+              "port": "place",
+              "from": "$in.place"
+            }
+          ]
+        },
+        {
+          "capability": "mcp:skycast:forecast",
+          "bindings": [
+            {
+              "port": "latitude",
+              "from": "0.latitude"
+            },
+            {
+              "port": "longitude",
+              "from": "0.longitude"
+            }
+          ]
+        },
+        {
+          "capability": "openapi:polyglot:translatetext",
+          "bindings": [
+            {
+              "port": "text",
+              "from": "1.summary"
+            },
+            {
+              "port": "target",
+              "from": "$in.language"
+            }
+          ]
+        }
+      ],
+      "result": "2.translatedText",
+      "resultType": "text",
+      "cost": 4.15,
+      "intentScore": 2,
+      "fit": 2.25,
+      "resultScore": 2.9,
+      "providers": [
+        "graphql:atlas-test-graphql",
+        "mcp:skycast",
+        "openapi:polyglot"
+      ],
+      "summary": "Geocode → Weather forecast → Translate text",
+      "titles": [
+        "Geocode",
+        "Weather forecast",
+        "Translate text"
+      ],
+      "contract": {
+        "status": "satisfied",
+        "steps": [
+          {
+            "step": 0,
+            "capability": "graphql:atlas-test-graphql:query:geocode",
+            "title": "Geocode",
+            "reason": "type-conversion"
+          },
+          {
+            "step": 1,
+            "capability": "mcp:skycast:forecast",
+            "title": "Weather forecast",
+            "reason": "requested"
+          },
+          {
+            "step": 2,
+            "capability": "openapi:polyglot:translatetext",
+            "title": "Translate text",
+            "reason": "requested"
+          }
+        ],
+        "violations": [],
+        "preservesInput": false
+      }
+    },
+    {
+      "steps": [
+        {
+          "capability": "graphql:atlas-test-graphql:query:geocode",
+          "bindings": [
+            {
+              "port": "place",
+              "from": "$in.place"
+            }
+          ]
+        },
+        {
+          "capability": "openapi:polyglot:translatetext",
+          "bindings": [
+            {
+              "port": "text",
+              "from": "0.name"
+            },
+            {
+              "port": "target",
+              "from": "$in.language"
+            }
+          ]
+        }
+      ],
+      "result": "1.translatedText",
+      "resultType": "text",
+      "cost": 2.7666666666666666,
+      "intentScore": 1,
+      "fit": 2.25,
+      "resultScore": 2.9,
+      "providers": [
+        "graphql:atlas-test-graphql",
+        "openapi:polyglot"
+      ],
+      "summary": "Geocode → Translate text",
+      "titles": [
+        "Geocode",
+        "Translate text"
+      ],
+      "contract": {
+        "status": "satisfied",
+        "steps": [
+          {
+            "step": 0,
+            "capability": "graphql:atlas-test-graphql:query:geocode",
+            "title": "Geocode",
+            "reason": "type-conversion"
+          },
+          {
+            "step": 1,
+            "capability": "openapi:polyglot:translatetext",
+            "title": "Translate text",
+            "reason": "requested"
+          }
+        ],
+        "violations": [],
+        "preservesInput": false
+      }
+    },
+    {
+      "steps": [
+        {
+          "capability": "web:news-test:form-search-articles",
+          "bindings": [
+            {
+              "port": "q",
+              "from": "$in.place"
+            }
+          ]
+        },
+        {
+          "capability": "builtin:html.text",
+          "bindings": [
+            {
+              "port": "html",
+              "from": "0."
+            }
+          ]
+        },
+        {
+          "capability": "openapi:polyglot:translatetext",
+          "bindings": [
+            {
+              "port": "text",
+              "from": "1."
+            },
+            {
+              "port": "target",
+              "from": "$in.language"
+            }
+          ]
+        }
+      ],
+      "result": "2.translatedText",
+      "resultType": "text",
+      "cost": 4.15,
+      "intentScore": 1,
+      "fit": 2,
+      "resultScore": 2.9,
+      "providers": [
+        "web:news-test",
+        "builtin:core",
+        "openapi:polyglot"
+      ],
+      "summary": "Newsroom: Search articles → Extract readable text → Translate text",
+      "titles": [
+        "Newsroom: Search articles",
+        "Extract readable text",
+        "Translate text"
+      ],
+      "contract": {
+        "status": "satisfied",
+        "steps": [
+          {
+            "step": 0,
+            "capability": "web:news-test:form-search-articles",
+            "title": "Newsroom: Search articles",
+            "reason": "type-conversion"
+          },
+          {
+            "step": 1,
+            "capability": "builtin:html.text",
+            "title": "Extract readable text",
+            "reason": "type-conversion"
+          },
+          {
+            "step": 2,
+            "capability": "openapi:polyglot:translatetext",
+            "title": "Translate text",
+            "reason": "requested"
+          }
+        ],
+        "violations": [],
+        "preservesInput": false
+      }
+    },
+    {
+      "steps": [
+        {
+          "capability": "graphql:atlas-test-graphql:query:geocode",
+          "bindings": [
+            {
+              "port": "place",
+              "from": "$in.place"
+            }
+          ]
+        },
+        {
+          "capability": "mcp:skycast:forecast",
+          "bindings": [
+            {
+              "port": "latitude",
+              "from": "0.latitude"
+            },
+            {
+              "port": "longitude",
+              "from": "0.longitude"
+            }
+          ]
+        }
+      ],
+      "result": "1.summary",
+      "resultType": "text",
+      "cost": 2.7666666666666666,
+      "intentScore": 1,
+      "fit": 1.25,
+      "resultScore": 1.9,
+      "providers": [
+        "graphql:atlas-test-graphql",
+        "mcp:skycast"
+      ],
+      "summary": "Geocode → Weather forecast",
+      "titles": [
+        "Geocode",
+        "Weather forecast"
+      ],
+      "contract": {
+        "status": "satisfied",
+        "steps": [
+          {
+            "step": 0,
+            "capability": "graphql:atlas-test-graphql:query:geocode",
+            "title": "Geocode",
+            "reason": "type-conversion"
+          },
+          {
+            "step": 1,
+            "capability": "mcp:skycast:forecast",
+            "title": "Weather forecast",
+            "reason": "requested"
+          }
+        ],
+        "violations": [],
+        "preservesInput": false
+      }
+    }
+  ],
+  "contract": {
+    "input": [
+      {
+        "name": "place",
+        "type": "place"
+      },
+      {
+        "name": "language",
+        "type": "language"
+      }
+    ],
+    "output": {
+      "type": "text",
+      "requires": []
+    },
+    "transformations": [
+      "weath",
+      "transl"
+    ],
+    "invariants": [
+      "lineage: every step is requested, provides required information, converts a type a later step needs, or was named by the caller",
+      "distinct inputs: no step receives the same value on two required ports",
+      "preservation: where every step has evidence of keeping its input's words, the result must keep the caller's words"
+    ],
+    "completeness": "the result is of type text",
+    "provenance": "every bound value comes from the caller or an earlier step of this plan",
+    "verification": {
+      "predicates": 1,
+      "witnesses": 0,
+      "strongest": "predicate-checked"
+    },
+    "authority": {
+      "risks": [],
+      "destructiveNeedsOperatorApproval": true
+    },
+    "allowedUncertainty": "none: a result whose contract cannot be established is reported as not established, not as success",
+    "failureConditions": [
+      "a step not justified by the request (lineage)",
+      "a required piece of information missing from the result",
+      "a join supported only by a generic type when information is required",
+      "a check (predicate or witness) refuted",
+      "content lost where every step was expected to preserve it"
+    ]
+  },
+  "executed": {
+    "contract": {
+      "status": "satisfied",
+      "violations": [],
+      "assurance": "predicate-checked"
+    },
+    "summary": "Geocode → Weather forecast → Translate text",
+    "titles": [
+      "Geocode",
+      "Weather forecast",
+      "Translate text"
+    ],
+    "output": "Se esperan nublado cielos con una máxima de 19°C y una suave brisa hoy.",
+    "status": "completed",
+    "verification": {
+      "status": "checked",
+      "results": [
+        {
+          "predicate": {
+            "op": "equals",
+            "value": "Se esperan nublado cielos con una máxima de 19°C y una suave brisa hoy."
+          },
+          "ok": true,
+          "actual": "Se esperan nublado cielos con una máxima de 19°C y una suave brisa hoy."
+        }
+      ]
+    },
+    "runs": [
+      "run_mvdnykou_1",
+      "run_mvdnykp5_2",
+      "run_mvdnykp8_3"
+    ],
+    "attempts": [],
+    "durationMs": 16,
+    "witnesses": []
+  },
+  "crystallized": {
+    "id": "composite:83f23e4cd72a",
+    "title": "Weather translated: Geocode → Weather forecast → Translate text",
+    "newPowers": 82
+  },
+  "published": {
+    "id": "goal:observed-weather",
+    "slug": "observed-weather",
+    "path": "/x/observed-weather",
+    "trust": "checked"
+  }
+}
+
+The focused UI element is 53 button Search

@@ -11,7 +11,7 @@ const num = (description: string) => ({ type: "number", description });
 const bool = (description: string) => ({ type: "boolean", description });
 const predicates = {
   type: "array",
-  description: 'Outcome checks on the result, e.g. [{"op":"contains","value":"Lisbon"}, {"op":"gt","path":"temperature","value":-50}]. ops: exists, equals, contains, matches, type, gt, lt, length_gt.',
+  description: 'Outcome checks on the result, e.g. [{"op":"contains","value":"Lisbon"}, {"op":"gt","path":"temperature","value":-50}]. ops: exists, equals, contains, matches, type, gt, lt, length_gt. Passing them makes a result "checked"; only an independent witness makes it "verified".',
   items: { type: "object" },
 };
 const witnesses = {
@@ -41,14 +41,14 @@ export const TOOLS = [
   {
     name: "context_research",
     description:
-      "Research the environment: what runtime and platform bindings exist, which semantic types the graph produces and consumes, which inputs have no producer yet (gaps), and — given a topic — which public sources worldwide (APIs.guru OpenAPI directory, the official MCP Registry) could add powers. Pass learn:N to pull the top N candidates straight into the graph.",
+      "Refresh operator-configured environment catalogs: observe advertised sources, learn supported contracts within the approved discovery scope, and withdraw catalog-owned sources removed by a valid catalog. Discovery never grants execution authority. Also report runtime/platform bindings and semantic gaps; with a topic, search public API directories. Pass learn:N to learn the top N public-directory candidates.",
     inputSchema: obj({ topic: str("What to look for, e.g. 'weather', 'translation', 'geocoding'."), limit: num("Candidates per directory (default 5)."), learn: num("Learn the top N candidates immediately.") }),
   },
   {
     name: "context_learn",
     description:
-      "Point RightClick X at any URL. It detects what is there (OpenAPI/Swagger spec, GraphQL endpoint, MCP server, another RightClick X peer, or a web page whose forms become capabilities), reflects it into typed capabilities, and reports how many new capabilities and composite powers the graph gained.",
-    inputSchema: obj({ source: str("URL of a spec, endpoint, server, peer or page."), sources: { type: "array", items: { type: "string" } }, deep: bool("Also probe well-known locations at the origin.") }),
+      "Discover capabilities from a URL (OpenAPI, GraphQL, MCP, peer or web page) or an operator-authorised local program (cli:/absolute/path). Reports learned capabilities and graph changes; discovery never grants execution authority.",
+    inputSchema: obj({ source: str("URL or cli:/absolute/path to an authorised program."), sources: { type: "array", items: { type: "string" } }, deep: bool("Also probe well-known locations at the origin.") }),
   },
   {
     name: "context_forget",
@@ -67,13 +67,13 @@ export const TOOLS = [
   },
   {
     name: "context_explain",
-    description: "Everything about one capability: typed ports, provider, risk label, how it is invoked, its neighbours in the graph, observed reliability and latency, and example arguments.",
-    inputSchema: obj({ id: str("Capability id (or a search phrase).") }, ["id"]),
+    description: "Get a capability's execution contract: typed inputs/outputs, authority, restrictions, evidence, stored checks and limitations. Saved goals include reuse guidance and historical result declarations, not future-output guarantees. Default detail: run. Request full for raw synthetic examples, the full card, graph neighbours and run history.",
+    inputSchema: obj({ id: str("Capability id (or a search phrase)."), detail: { type: "string", enum: ["run", "full"], description: "run (default) keeps execution constraints and evidence; full adds underlying detail." } }, ["id"]),
   },
   {
     name: "context_run",
-    description: "Run one capability now. Saved goal:<slug> capabilities re-plan against the current environment, heal API changes and repeat their stored result checks and independent witnesses. Returns output, timing, receipt, verification and witness evidence. Optional predicates add checks; they never remove stored checks. A failed call to a learned API re-reads its contract once and retries the same operation if the API moved; an id that re-learning pointed at a different operation is refused until called with acknowledgeChange: true. Large outputs: pass view to get a count, field projection or slice instead of the whole payload.",
-    inputSchema: obj({ id: str("Capability id."), args: { type: "object", description: "Input arguments by port name." }, verify: predicates, confirm: bool("Required for capabilities labelled destructive."), acknowledgeChange: bool("Run an id whose operation changed when its API was re-learned, after reading the change."), view }, ["id"]),
+    description: "Run one capability now. Saved goal:<slug> capabilities re-plan against the current environment, heal API changes and repeat their stored result checks and independent witnesses. Returns output, timing, receipt, verification and witness evidence. Optional predicates add checks; they never remove stored checks. A failed call to a learned API re-reads its contract once and retries the same operation if the API moved; an id that re-learning pointed at a different operation remains refused; caller acknowledgement cannot authorise the change. Large outputs: pass view to get a count, field projection or slice instead of the whole payload.",
+    inputSchema: obj({ id: str("Capability id, or the explicit resume:<run-id> selector from context_run_status. HTTP recovery reads the retained result; host-enabled workflow recovery continues its exact remaining steps. Completed actions are never replayed. Omit args, verify and confirm when resuming; stored checks and current authority apply."), args: { type: "object", description: "Input arguments by port name." }, verify: predicates, confirm: bool("Required for capabilities labelled destructive."), view }, ["id"]),
   },
   {
     name: "context_run_status",
@@ -94,10 +94,11 @@ export const TOOLS = [
         witnesses,
         maxSteps: num("Max pipeline length (default 4)."),
         confirm: bool("Required to run plans containing destructive capabilities."),
-        publish: str("After a successful run, save this goal as goal:<slug> in the graph AND as /x/<slug> in the synthesized API. Checks and witnesses are retained and re-run on every invocation. Supply checks/witnesses to establish verified outcomes."),
+        publish: str("After a successful run, save this goal as goal:<slug> in the graph AND as /x/<slug> in the synthesized API. Checks and witnesses are retained and re-run on every invocation. Stored predicates make a goal \"checked\"; an independent witness makes it \"verified\"."),
         acquire: bool("If nothing in the graph can do it: research public directories (APIs.guru, MCP Registry), learn the best candidates and re-plan."),
         through: { type: "array", items: { type: "string" }, description: "Anchors: capability ids or search phrases the pipeline must pass through; the planner wires the types between them." },
         risks: { type: "array", items: { type: "string", enum: ["read", "write", "external", "destructive"] }, description: 'Optional constraint: plan only with these risk labels, e.g. ["read"].' },
+        require: { type: "array", items: { type: "string" }, description: 'Required information the result must carry, e.g. ["resolution"] or ["gene name"]. Use through to constrain capability ids. Plans are judged by the fields their result declares and by how each join is supported; only an established plan runs, otherwise the outcome says unavailable/unverified and nothing runs. After running, the output is checked for every term.' },
         origins: { type: "array", items: { type: "string" }, description: 'Optional egress policy, e.g. ["https://api.example.com"]: use only capabilities that send data to these origins, now and in every automatic repair. Saved with publish.' },
         view,
       },
@@ -106,7 +107,7 @@ export const TOOLS = [
   },
   {
     name: "context_graph",
-    description: "Query the live graph. op: stats | types | search (query) | neighbors (id) | paths (from, to) | edges | export.",
+    description: "Query the live graph. op: stats | types | search (query) | neighbors (id) | paths (from, to) | edges | export | authority. authority audits consequential execution capabilities and operator restrictions; it cannot change policy.",
     inputSchema: obj({ op: str("Operation."), id: str("Capability id."), query: str("Search text."), from: str("From semantic type."), to: str("To semantic type."), limit: num("Max results.") }, ["op"]),
   },
   {
@@ -171,8 +172,11 @@ export async function dispatch(rc: RightClick, name: string, a: Record<string, a
     case "context_actions":
       return rc.actions({ value: a.value, type: a.type, limit: a.limit });
     case "context_explain":
-      return rc.explain(a.id);
+      if (a.detail !== undefined && !["run", "full"].includes(a.detail)) throw new Error("detail must be run or full");
+      return a.detail === "full" ? rc.explain(a.id) : rc.explainForRun(a.id);
     case "context_run": {
+      if ("acknowledgeChange" in a) throw new Error("acknowledgeChange is no longer supported: caller acknowledgement cannot authorise a changed operation");
+      if ("resumeRunId" in a) throw new Error("resume uses the explicit resume:<run-id> selector");
       // Validate the view before running: a malformed view must not cost a side effect.
       const v = parseView(a.view);
       const r = await rc.run(a.id, a.args ?? {}, { verify: a.verify, confirm: a.confirm, acknowledgeChange: a.acknowledgeChange });
@@ -185,7 +189,7 @@ export async function dispatch(rc: RightClick, name: string, a: Record<string, a
     }
     case "context_compose": {
       const v = parseView(a.view);
-      const r = await rc.compose({ have: a.have ?? {}, want: a.want, intent: a.intent, run: a.run, verify: a.verify, witnesses: a.witnesses, maxSteps: a.maxSteps, risks: a.risks, through: a.through, origins: a.origins, acquire: a.acquire, publish: a.publish, confirm: a.confirm });
+      const r = await rc.compose({ have: a.have ?? {}, want: a.want, intent: a.intent, run: a.run, verify: a.verify, witnesses: a.witnesses, maxSteps: a.maxSteps, risks: a.risks, through: a.through, origins: a.origins, require: a.require, acquire: a.acquire, publish: a.publish, confirm: a.confirm });
       if (!r.executed) return r;
       return { ...r, executed: viewed(r.executed, v, "To view a step's recorded output without re-running: context_run_status with a runId from executed.runs and a view.") };
     }

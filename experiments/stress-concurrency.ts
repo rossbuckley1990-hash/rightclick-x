@@ -14,7 +14,8 @@ const N = Number(process.argv[2] ?? 1000);
 const stage = await startStage();
 const rc = await RightClick.create({ name: "rcx-load" });
 await rc.learn({ sources: [stage.polyglot, stage.atlas, stage.skycast] });
-const server = await serve(createHandler(rc, { open: true }), 0);
+// A load test measures throughput, not the per-caller rate limiter (on by default since 8280576).
+const server = await serve(createHandler(rc, { open: true, ratePerMinute: 1_000_000_000 }), 0);
 const PLACES = ["Lisbon", "Tokyo", "Nairobi", "Lima"];
 
 async function burst(label: string, body: (i: number) => unknown) {

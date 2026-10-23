@@ -1,0 +1,317 @@
+{
+  "tag": "uce-freeze-6",
+  "commit": "8849a5b860949b8b9389d510feab55b4d0e2a250",
+  "seedFrom": "frozen build 8849a5b860949b8b9389d510feab55b4d0e2a250",
+  "attempts": [
+    {
+      "program": "syscallbyproc.d",
+      "description": "syscallbyproc.d - syscalls by process name. Uses DTrace.",
+      "ms": 337,
+      "probes": [
+        {
+          "url": "cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-holdout-HtBXuS/bin/syscallbyproc.d",
+          "kind": "cli",
+          "ok": false,
+          "detail": "no input channel produced output for syscallbyproc.d (20 trials)"
+        }
+      ],
+      "capabilities": [],
+      "investigable": false,
+      "supported": false
+    },
+    {
+      "program": "infotocap",
+      "description": "infotocap - convert a terminfo description into a termcap description",
+      "ms": 191,
+      "probes": [
+        {
+          "url": "cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-holdout-HtBXuS/bin/infotocap",
+          "kind": "cli",
+          "ok": false,
+          "detail": "no input channel produced output for infotocap (10 trials)"
+        }
+      ],
+      "capabilities": [],
+      "investigable": false,
+      "supported": false
+    },
+    {
+      "program": "dsexport",
+      "description": "dsexport - export records from OpenDirectory",
+      "ms": 212,
+      "probes": [
+        {
+          "url": "cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-holdout-HtBXuS/bin/dsexport",
+          "kind": "cli",
+          "ok": false,
+          "detail": "no input channel produced output for dsexport (10 trials)"
+        }
+      ],
+      "capabilities": [],
+      "investigable": false,
+      "supported": false
+    },
+    {
+      "program": "tailspin",
+      "description": "tailspin - configure, save and print tailspin output",
+      "ms": 221,
+      "probes": [
+        {
+          "url": "cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-holdout-HtBXuS/bin/tailspin",
+          "kind": "cli",
+          "ok": false,
+          "detail": "no input channel produced output for tailspin (10 trials)"
+        }
+      ],
+      "capabilities": [],
+      "investigable": false,
+      "supported": false
+    },
+    {
+      "program": "rview",
+      "description": "vim - Vi IMproved, a programmer's text editor",
+      "ms": 80567,
+      "probes": [
+        {
+          "url": "cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-holdout-HtBXuS/bin/rview",
+          "kind": "cli",
+          "ok": false,
+          "detail": "no input channel produced output for rview (20 trials)"
+        }
+      ],
+      "capabilities": [],
+      "investigable": false,
+      "supported": false
+    },
+    {
+      "program": "dispqlen.d",
+      "description": "dispqlen.d - dispatcher queue length by CPU. Uses DTrace.",
+      "ms": 363,
+      "probes": [
+        {
+          "url": "cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-holdout-HtBXuS/bin/dispqlen.d",
+          "kind": "cli",
+          "ok": false,
+          "detail": "no input channel produced output for dispqlen.d (20 trials)"
+        }
+      ],
+      "capabilities": [],
+      "investigable": false,
+      "supported": false
+    },
+    {
+      "program": "net-snmp-create-v3-user",
+      "description": "net-snmp-create-v3-user - create a SNMPv3 user in net-snmp configuration file",
+      "ms": 1033,
+      "probes": [
+        {
+          "url": "cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-holdout-HtBXuS/bin/net-snmp-create-v3-user",
+          "kind": "cli",
+          "ok": true,
+          "detail": "2 capabilities from 27 sandboxed runs (stdin; ok exit 1)"
+        }
+      ],
+      "capabilities": [
+        {
+          "id": "cli:net-snmp-create-v3-user:default",
+          "title": "net-snmp-create-v3-user: snmp-create-v3-user - create a SNMPv3 user in net-snmp configuration file",
+          "inputs": [
+            {
+              "name": "input",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "outputs": [
+            {
+              "name": "(result)",
+              "type": "text"
+            }
+          ],
+          "evidence": [
+            "documents its usage [declared]",
+            "purpose: net-snmp-create-v3-user - create a SNMPv3 user in net-snmp configuration file [declared]",
+            "options: 4 declared [declared]",
+            "operands: required [], optional [authpass, privpass, AES, username] [inferred]",
+            "accepts html/xml/csv/text input via stdin and prints text [experimentally-supported]",
+            "deterministic for identical input [experimentally-supported]",
+            "side effects outside the sandbox [unknown]",
+            "on empty input exits 1 with output [observed]"
+          ],
+          "limitations": [
+            "side effects outside the sandbox [unknown]",
+            "runs only inside the host sandbox: no network, inputs passed as content"
+          ]
+        },
+        {
+          "id": "cli:net-snmp-create-v3-user:ro",
+          "title": "net-snmp-create-v3-user -ro: create an user with read-only permissions",
+          "inputs": [
+            {
+              "name": "input",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "outputs": [
+            {
+              "name": "(result)",
+              "type": "text"
+            }
+          ],
+          "evidence": [
+            "documents its usage [declared]",
+            "purpose: net-snmp-create-v3-user - create a SNMPv3 user in net-snmp configuration file [declared]",
+            "options: 4 declared [declared]",
+            "operands: required [], optional [authpass, privpass, AES, username] [inferred]",
+            "accepts text input via stdin and prints text [experimentally-supported]",
+            "deterministic for identical input [experimentally-supported]",
+            "side effects outside the sandbox [unknown]",
+            "on empty input exits 1 with output [observed]"
+          ],
+          "limitations": [
+            "side effects outside the sandbox [unknown]",
+            "runs only inside the host sandbox: no network, inputs passed as content"
+          ]
+        }
+      ],
+      "investigable": true,
+      "supported": true
+    },
+    {
+      "program": "gzcat",
+      "description": "gzip, gunzip, zcat - compression/decompression tool using Lempel-Ziv coding (LZ77)",
+      "ms": 144,
+      "probes": [
+        {
+          "url": "cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-holdout-HtBXuS/bin/gzcat",
+          "kind": "cli",
+          "ok": false,
+          "detail": "no input channel produced output for gzcat (10 trials)"
+        }
+      ],
+      "capabilities": [],
+      "investigable": false,
+      "supported": false
+    },
+    {
+      "program": "productsign",
+      "description": "productsign - Sign a macOS Installer product archive",
+      "ms": 168,
+      "probes": [
+        {
+          "url": "cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-holdout-HtBXuS/bin/productsign",
+          "kind": "cli",
+          "ok": false,
+          "detail": "no input channel produced output for productsign (10 trials)"
+        }
+      ],
+      "capabilities": [],
+      "investigable": false,
+      "supported": false
+    },
+    {
+      "program": "db_stat",
+      "description": "db_stat",
+      "ms": 149,
+      "probes": [
+        {
+          "url": "cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-holdout-HtBXuS/bin/db_stat",
+          "kind": "cli",
+          "ok": false,
+          "detail": "no input channel produced output for db_stat (10 trials)"
+        }
+      ],
+      "capabilities": [],
+      "investigable": false,
+      "supported": false
+    },
+    {
+      "program": "base64",
+      "description": "bintrans, uuencode, uudecode, b64encode, b64decode, base64 - encode / decode a binary file",
+      "ms": 161,
+      "probes": [
+        {
+          "url": "cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-holdout-HtBXuS/bin/base64",
+          "kind": "cli",
+          "ok": false,
+          "detail": "no input channel produced output for base64 (10 trials)"
+        }
+      ],
+      "capabilities": [],
+      "investigable": false,
+      "supported": false
+    },
+    {
+      "program": "creatbyproc.d",
+      "description": "creatbyproc.d - snoop creat()s by process name. Uses DTrace.",
+      "ms": 229,
+      "probes": [
+        {
+          "url": "cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-holdout-HtBXuS/bin/creatbyproc.d",
+          "kind": "cli",
+          "ok": false,
+          "detail": "no input channel produced output for creatbyproc.d (20 trials)"
+        }
+      ],
+      "capabilities": [],
+      "investigable": false,
+      "supported": false
+    },
+    {
+      "program": "tab2space",
+      "description": "tab2space - Utility to expand tabs and ensure consistent line endings",
+      "ms": 230,
+      "probes": [
+        {
+          "url": "cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-holdout-HtBXuS/bin/tab2space",
+          "kind": "cli",
+          "ok": true,
+          "detail": "1 capability from 26 sandboxed runs (stdin, files; ok exit 0)"
+        }
+      ],
+      "capabilities": [
+        {
+          "id": "cli:tab2space:default",
+          "title": "tab2space: Utility to expand tabs and ensure consistent line endings",
+          "inputs": [
+            {
+              "name": "input",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "outputs": [
+            {
+              "name": "(result)",
+              "type": "text"
+            }
+          ],
+          "evidence": [
+            "documents its usage [declared]",
+            "purpose: tab2space - Utility to expand tabs and ensure consistent line endings [declared]",
+            "options: 5 declared [declared]",
+            "operands: required [], optional [options, infile], variadic [inferred]",
+            "accepts html/xml/json/csv/text input via stdin and prints text [experimentally-supported]",
+            "deterministic for identical input [experimentally-supported]",
+            "output keeps every word of the input [experimentally-supported]",
+            "side effects outside the sandbox [unknown]",
+            "on empty input exits 0 without output [observed]"
+          ],
+          "limitations": [
+            "side effects outside the sandbox [unknown]",
+            "runs only inside the host sandbox: no network, inputs passed as content"
+          ]
+        }
+      ],
+      "investigable": true,
+      "supported": true
+    }
+  ],
+  "chosen": [
+    "net-snmp-create-v3-user",
+    "tab2space"
+  ],
+  "state": "/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-holdout-HtBXuS/server/state.json",
+  "bin": "/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-holdout-HtBXuS/bin"
+}

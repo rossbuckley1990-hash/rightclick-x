@@ -1,0 +1,49 @@
+{
+  "revision": "6d543e38a62d422ff54ce207d5a63da4851010c2",
+  "workingChanges": " M experiments/actenon/challenge-boundary.py\n M experiments/living/challenge-host.ts\n M experiments/living/challenge-session.ts\n M experiments/living/check-session.py\n M experiments/living/living-session.ts\n M proof/results/latest.json\n?? docs/adaptive/evidence/authority-feed/\n?? experiments/living/test-authority-adapter.py\n",
+  "config": {
+    "sources": [
+      {
+        "url": "https://data.rcsb.org/graphql",
+        "kind": "graphql"
+      },
+      {
+        "url": "https://api.crossref.org/swagger-docs",
+        "kind": "openapi"
+      }
+    ],
+    "goals": [
+      {
+        "have": {
+          "entry_id": "1CRN"
+        },
+        "want": "json",
+        "intent": "primary citation DOI publication title publisher",
+        "require": [
+          "publisher"
+        ],
+        "maxSteps": 3,
+        "limit": 5,
+        "run": true,
+        "verify": [
+          {
+            "op": "exists",
+            "path": "message.DOI"
+          },
+          {
+            "op": "exists",
+            "path": "message.publisher"
+          },
+          {
+            "op": "exists",
+            "path": "message.title"
+          }
+        ],
+        "publish": "Structure primary publication metadata"
+      }
+    ]
+  },
+  "node": "v26.12.0",
+  "image": "sha256:5e95a1b7bdb5ddd279c4c18760a007a98f94c6fb24236433c19b61831bc4e4f5",
+  "scope": "same-author integrated development session; not final holdout, fresh model or complete challenge"
+}

@@ -1,0 +1,40 @@
+✖ a retained sequential workflow resumes the pending step and remaining effects without replay (48.043625ms)
+✖ a persisted workflow refuses changed remaining contracts before resuming any read (2.849875ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 0
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 238.434625
+
+✖ failing tests:
+
+test at test/workflow-resume.test.ts:46:1
+✖ a retained sequential workflow resumes the pending step and remaining effects without replay (48.043625ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'resume:run_mvgq45r3_3'
+  - 'resume:run_mvgq45qw_1'
+                      ^
+  
+      at TestContext.<anonymous> (file:///Users/ross/src/rightclick-x-adaptive/test/workflow-resume.test.ts:50:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'resume:run_mvgq45r3_3',
+    expected: 'resume:run_mvgq45qw_1',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/workflow-resume.test.ts:68:1
+✖ a persisted workflow refuses changed remaining contracts before resuming any read (2.849875ms)
+  Error: no resumable HTTP operation: run_mvgq45r7_1
+      at RightClick.run (file:///Users/ross/src/rightclick-x-adaptive/src/runtime.ts:1146:27)
+      at TestContext.<anonymous> (file:///Users/ross/src/rightclick-x-adaptive/test/workflow-resume.test.ts:75:33)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)

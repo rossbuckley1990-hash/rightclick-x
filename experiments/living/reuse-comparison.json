@@ -1,0 +1,18 @@
+{
+  "model": "gpt-6.1-sol",
+  "image": "sha256:5e95a1b7bdb5ddd279c4c18760a007a98f94c6fb24236433c19b61831bc4e4f5",
+  "sources": [
+    {"url": "https://data.rcsb.org/graphql", "kind": "graphql"},
+    {"url": "https://api.crossref.org/swagger-docs", "kind": "openapi"}
+  ],
+  "tasks": [
+    {"id": "cold-c", "arm": "C", "phase": "cold", "entryId": "1CRN", "expected": "publication"},
+    {"id": "cold-d", "arm": "D", "phase": "cold", "entryId": "1CRN", "expected": "publication"},
+    {"id": "warm1-d", "arm": "D", "phase": "warm", "entryId": "2LYZ", "expected": "publication"},
+    {"id": "warm1-c", "arm": "C", "phase": "warm", "entryId": "2LYZ", "expected": "publication"},
+    {"id": "missing-c", "arm": "C", "phase": "negative", "entryId": "0000", "expected": "unavailable"},
+    {"id": "missing-d", "arm": "D", "phase": "negative", "entryId": "0000", "expected": "unavailable"},
+    {"id": "warm2-d", "arm": "D", "phase": "warm", "entryId": "1UBQ", "expected": "publication"},
+    {"id": "warm2-c", "arm": "C", "phase": "warm", "entryId": "1UBQ", "expected": "publication"}
+  ]
+}

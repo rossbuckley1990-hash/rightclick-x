@@ -1,0 +1,44 @@
+{
+  "sources": [
+    {
+      "url": "https://data.rcsb.org/graphql",
+      "kind": "graphql"
+    },
+    {
+      "url": "https://api.crossref.org/swagger-docs",
+      "kind": "openapi"
+    }
+  ],
+  "goals": [
+    {
+      "have": {
+        "entry_id": "1CRN"
+      },
+      "want": "json",
+      "intent": "primary citation DOI publication title publisher",
+      "require": [
+        "publisher"
+      ],
+      "maxSteps": 3,
+      "limit": 5,
+      "run": true,
+      "verify": [
+        {
+          "op": "exists",
+          "path": "message.DOI"
+        },
+        {
+          "op": "exists",
+          "path": "message.publisher"
+        },
+        {
+          "op": "exists",
+          "path": "message.title"
+        }
+      ],
+      "publish": "Structure primary publication metadata"
+    }
+  ],
+  "adaptation": true,
+  "authorityLinkage": true
+}

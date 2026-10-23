@@ -1,0 +1,112 @@
+{
+  "startingRevision": "6fa0da732a28c285764ea90578f94da17db4abfb",
+  "productRevision": "9fb6b24c0c45221f297ed1343033f29c5efeae57",
+  "branch": "programme/adaptive-capability-plane",
+  "testSourceBinding": "Pre-commit tested-sources.json hashes are reconciled against the product commit and working bytes by verify-state-compatibility.py. The final compatibility and protected regression runs identify the product commit.",
+  "checks": {
+    "baseline": {
+      "log": "baseline-failures.log",
+      "tests": 3,
+      "passed": 0,
+      "failed": 3,
+      "exitCode": 1
+    },
+    "focusedFirst": {
+      "log": "focused-attempt1.log",
+      "tests": 39,
+      "passed": 37,
+      "failed": 2,
+      "exitCode": 1
+    },
+    "focusedFinal": {
+      "log": "focused-attempt2.log",
+      "tests": 39,
+      "passed": 39,
+      "failed": 0,
+      "exitCode": 0
+    },
+    "native": {
+      "command": "npm test",
+      "log": "native-attempt1.log",
+      "tests": 425,
+      "passed": 425,
+      "skipped": 0,
+      "exitCode": 0
+    },
+    "linux": {
+      "log": "linux-attempt1.log",
+      "tests": 120,
+      "passed": 120,
+      "skipped": 0,
+      "exitCode": 0,
+      "image": "sha256:5e95a1b7bdb5ddd279c4c18760a007a98f94c6fb24236433c19b61831bc4e4f5",
+      "options": [
+        "--rm",
+        "--pull never",
+        "--network none",
+        "--read-only",
+        "--tmpfs /tmp:rw,nosuid,nodev,size=256m",
+        "source mounted read-only"
+      ],
+      "testFiles": [
+        "state-format",
+        "store-concurrency",
+        "workflow-resume",
+        "http-resume",
+        "http-resume-process",
+        "http-pending",
+        "http-continuation",
+        "transport-refusal",
+        "run-drift",
+        "outcomes",
+        "fan-out",
+        "execution-policy",
+        "command-input"
+      ]
+    },
+    "typecheck": {
+      "command": "npm run typecheck",
+      "log": "types-attempt2.log",
+      "exitCode": 0
+    },
+    "build": {
+      "command": "npm run build",
+      "log": "build-attempt1.log",
+      "bundles": 2,
+      "exitCode": 0
+    },
+    "proof": {
+      "command": "npm run proof",
+      "result": "proof-attempt1.json",
+      "checks": 28,
+      "passed": 28,
+      "exitCode": 0
+    },
+    "compatibility": {
+      "command": "node experiments/living/state-compatibility.ts docs/adaptive/evidence/state-compatibility/final",
+      "result": "final/results.json",
+      "readerStatePairs": 9,
+      "exitCode": 0
+    },
+    "protectedWorkflow": {
+      "command": "/Users/ross/src/actenon-audit/.venv/bin/python experiments/actenon/workflow.py --image sha256:5e95a1b7bdb5ddd279c4c18760a007a98f94c6fb24236433c19b61831bc4e4f5 --output docs/adaptive/evidence/state-compatibility/protected-regression",
+      "result": "protected-regression/result.json",
+      "checks": 30,
+      "passed": 30,
+      "exitCode": 0
+    }
+  },
+  "review": {
+    "independentAuthorReview": "NOT RUN",
+    "toolDiscoveryError": "unsupported call: tool_searchtool_search_tool",
+    "separateResultCheckers": "Same author; separate compatibility-result interpretation and native public-key artifact verification. Not an independent holdout."
+  },
+  "limitations": [
+    "Known frozen readers only; no arbitrary fork or already-running-process guarantee",
+    "KV and Durable Object tests use local doubles",
+    "No fresh live-model or public-service execution in this increment",
+    "Native hard-memory containment remains FAIL",
+    "No qualifying economic advantage; original holdout and human/commercial gates remain unmet"
+  ],
+  "release": "NO-GO"
+}

@@ -1,0 +1,27 @@
+✔ pending HTTP result resumes after restart through the same compact tool without resubmitting (22.774542ms)
+✔ resume cannot change inputs, checks or identity, and still applies the original predicate (2.439041ms)
+✔ retained state excludes original bodies and authority headers (1.234542ms)
+✔ Retry-After survives restart and cannot be reset by requesting resume (2.099209ms)
+✔ a failed checkpoint prevents the first poll after acceptance (0.698458ms)
+✖ persistent storage failure remains visible and cannot trigger background execution (52.991334ms)
+✔ lifetime budget, expiry, incompatible profile and withdrawn source cannot dispatch (4.960667ms)
+✔ overlapping resume requests cannot run the same retained read concurrently (1.537958ms)
+✔ persistence yielding cannot bypass a changed follow-up contract (1.67925ms)
+✔ live checkpoint capacity fails closed while expired entries retire without requests (3.694333ms)
+✔ restart does not renew authority or permit changed result contracts (2.216167ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 10
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 217.554875
+
+✖ failing tests:
+
+test at test/http-resume.test.ts:124:1
+✖ persistent storage failure remains visible and cannot trigger background execution (52.991334ms)
+  Error: persistent storage failure
+      at BrokenStore.save (file:///Users/ross/src/rightclick-x-adaptive/test/http-resume.test.ts:128:30)
+      at RightClick.flush (file:///Users/ross/src/rightclick-x-adaptive/src/runtime.ts:2718:22)

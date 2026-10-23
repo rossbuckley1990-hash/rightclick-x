@@ -10,12 +10,14 @@ import { resolve } from "node:path";
 export type Client = "claude" | "codex";
 
 export type McpTarget =
-  | { kind: "stdio"; stateFile: string; logFile: string; env?: Record<string, string> }
+  | { kind: "stdio"; stateFile: string; logFile: string; env?: Record<string, string>; rcx?: string }
   | { kind: "http"; url: string; token: string };
 
 export interface AgentRun {
   client: Client;
   output: string;
+  /** Claude Code's JSON result metadata (turns, usage), when available. */
+  meta?: { turns?: number; usage?: unknown; costUsd?: number };
   answer?: string;
   seconds: number;
   exit: number | null;
@@ -43,10 +45,11 @@ export async function runAgent(client: Client, target: McpTarget, prompt: string
   const t0 = performance.now();
   let output = "";
   let exit: number | null = null;
+  let meta: AgentRun["meta"];
   if (client === "claude") {
     const server =
       target.kind === "stdio"
-        ? { command: process.execPath, args: [RCX, "mcp"], env: { ...target.env, RCX_STATE_FILE: target.stateFile, RCX_MCP_LOG: target.logFile, RCX_WORKSPACE: dir } }
+        ? { command: process.execPath, args: [target.rcx ?? RCX, "mcp"], env: { ...target.env, RCX_STATE_FILE: target.stateFile, RCX_MCP_LOG: target.logFile, RCX_WORKSPACE: dir } }
         : { type: "http", url: `${target.url}/mcp`, headers: { Authorization: `Bearer ${target.token}` } };
     writeFileSync(`${dir}/mcp.json`, JSON.stringify({ mcpServers: { "rightclick-x": server } }));
     const r = await run(
@@ -57,7 +60,9 @@ export async function runAgent(client: Client, target: McpTarget, prompt: string
     );
     exit = r.code;
     try {
-      output = JSON.parse(r.stdout).result ?? "";
+      const j = JSON.parse(r.stdout);
+      output = j.result ?? "";
+      meta = { turns: j.num_turns, usage: j.usage, costUsd: j.total_cost_usd };
     } catch {
       output = (r.stdout + r.stderr).slice(-3000);
     }
@@ -66,7 +71,7 @@ export async function runAgent(client: Client, target: McpTarget, prompt: string
       target.kind === "stdio"
         ? [
             "-c", `mcp_servers.rightclick-x.command=${JSON.stringify(process.execPath)}`,
-            "-c", `mcp_servers.rightclick-x.args=${JSON.stringify([RCX, "mcp"])}`,
+            "-c", `mcp_servers.rightclick-x.args=${JSON.stringify([target.rcx ?? RCX, "mcp"])}`,
             "-c", `mcp_servers.rightclick-x.env={${[...Object.entries(target.env ?? {}), ["RCX_STATE_FILE", target.stateFile], ["RCX_MCP_LOG", target.logFile], ["RCX_WORKSPACE", dir]].map(([k, v]) => `${k}=${JSON.stringify(v)}`).join(",")}}`,
           ]
         : [
@@ -83,7 +88,7 @@ export async function runAgent(client: Client, target: McpTarget, prompt: string
     }
   }
   const answer = /ANSWER:\s*([^\n]+)/i.exec(output)?.[1]?.trim().replace(/[`*]/g, "");
-  return { client, output, answer, seconds: Math.round((performance.now() - t0) / 100) / 10, exit };
+  return { client, output, answer, seconds: Math.round((performance.now() - t0) / 100) / 10, exit, meta };
 }
 
 export function readJsonl(file: string): any[] {

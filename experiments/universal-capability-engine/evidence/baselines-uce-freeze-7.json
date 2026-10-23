@@ -1,0 +1,107 @@
+{
+  "tag": "uce-freeze-7",
+  "commit": "202bcafddac43441b8540c307dabe724da947e91",
+  "program": "tidy",
+  "model": "Claude Code default",
+  "budgets": {
+    "maxTurns": 40,
+    "timeoutSeconds": 900
+  },
+  "arms": {
+    "rightclick-x": {
+      "label": "RightClick X (13 context_* tools; capability learned once in Stage A)",
+      "tasks": [
+        {
+          "task": "first use",
+          "correct": true,
+          "toolCalls": 2,
+          "turns": 4,
+          "seconds": 24.8,
+          "tokens": 128780,
+          "answered": true
+        },
+        {
+          "task": "reuse (new input, fresh session)",
+          "correct": true,
+          "toolCalls": 2,
+          "turns": 4,
+          "seconds": 25.6,
+          "tokens": 128707,
+          "answered": true
+        }
+      ]
+    },
+    "direct": {
+      "label": "Baseline 1: direct surface only (run_program), no RightClick X",
+      "tasks": [
+        {
+          "task": "first use",
+          "correct": true,
+          "toolCalls": 2,
+          "turns": 4,
+          "seconds": 20.7,
+          "tokens": 111484,
+          "answered": true
+        },
+        {
+          "task": "reuse (new input, fresh session)",
+          "correct": true,
+          "toolCalls": 2,
+          "turns": 4,
+          "seconds": 22.2,
+          "tokens": 110998,
+          "answered": true
+        }
+      ]
+    },
+    "transcript": {
+      "label": "Baseline 2: direct surface + RightClick X's investigation transcript as text",
+      "tasks": [
+        {
+          "task": "first use",
+          "correct": true,
+          "toolCalls": 1,
+          "turns": 3,
+          "seconds": 12,
+          "tokens": 101362,
+          "answered": true
+        },
+        {
+          "task": "reuse (new input, fresh session)",
+          "correct": true,
+          "toolCalls": 1,
+          "turns": 3,
+          "seconds": 16.2,
+          "tokens": 101492,
+          "answered": true
+        }
+      ]
+    },
+    "docs": {
+      "label": "Baseline 3: direct surface + the generated capability card as structured text",
+      "tasks": [
+        {
+          "task": "first use",
+          "correct": true,
+          "toolCalls": 1,
+          "turns": 3,
+          "seconds": 12.9,
+          "tokens": 86834,
+          "answered": true
+        },
+        {
+          "task": "reuse (new input, fresh session)",
+          "correct": true,
+          "toolCalls": 1,
+          "turns": 3,
+          "seconds": 14.7,
+          "tokens": 86838,
+          "answered": true
+        }
+      ]
+    }
+  },
+  "notRun": {
+    "coding-agent": "Baseline 4 (an agent allowed to write and keep integration code) needs arbitrary code execution; the programme's safety rules exclude granting it, so it was not run."
+  }
+}

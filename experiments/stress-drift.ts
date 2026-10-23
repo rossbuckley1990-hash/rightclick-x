@@ -37,7 +37,7 @@ for (let n = 1; n <= CALLS; n++) {
   const t = performance.now();
   const c = await rc.compose({ have: { text: "Hello world", language: "es" }, want: "text", intent: "translate", run: true, verify: [{ op: "contains", value: "Hola mundo" }] });
   latencies.push(performance.now() - t);
-  if (c.executed?.status === "completed" && c.executed.verification.status === "verified") verified++;
+  if (c.executed?.status === "completed" && ["checked", "verified"].includes(c.executed.verification.status)) verified++; // its predicate passed (checked)
   if (c.executed?.attempts.some((a) => a.healing)) healedCalls++;
 }
 off();

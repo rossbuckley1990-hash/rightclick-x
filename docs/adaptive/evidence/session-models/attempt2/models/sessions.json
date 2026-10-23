@@ -1,0 +1,243 @@
+[
+  {
+    "task": {
+      "id": "sol61-positive",
+      "model": "gpt-6.1-sol",
+      "entryId": "2LYZ",
+      "expected": "publication"
+    },
+    "reply": "BEGIN\n{\"entry_id\":\"2LYZ\",\"doi\":\"10.1016/0022-2836(74)90598-1\",\"title\":[\"Real-space refinement of the structure of hen egg-white lysozyme\"],\"publisher\":\"Elsevier BV\"}\nEND",
+    "tokens": 116042,
+    "turns": 1,
+    "errors": [],
+    "exit": 0,
+    "timedOut": false,
+    "seconds": 24.5,
+    "evidenceDir": "/Users/ross/src/rightclick-x-adaptive/docs/adaptive/evidence/session-models/attempt2/models/sol61-positive",
+    "before": {
+      "totalRequests": 15,
+      "toolCalls": 8
+    },
+    "after": {
+      "totalRequests": 17,
+      "toolCalls": 11
+    },
+    "tools": [
+      {
+        "at": "2026-10-20T18:41:50.328Z",
+        "tool": "context_explain",
+        "args": {
+          "id": "goal:structure-primary-publication-metadata"
+        },
+        "ok": true,
+        "ms": 6
+      },
+      {
+        "at": "2026-10-20T18:42:01.241Z",
+        "tool": "context_run",
+        "args": {
+          "id": "goal:structure-primary-publication-metadata",
+          "args": {
+            "entry_id": "2LYZ"
+          }
+        },
+        "ok": true,
+        "ms": 8849,
+        "outcome": {
+          "status": "completed",
+          "verification": "checked"
+        }
+      },
+      {
+        "at": "2026-10-20T18:42:03.530Z",
+        "tool": "context_run_status",
+        "args": {
+          "runId": "run_mvh15exd_d_f2e37b89-3698-4f28-8b39-ee5a4dfcdf62"
+        },
+        "ok": true,
+        "ms": 1,
+        "outcome": {
+          "status": "completed",
+          "verification": "unverified"
+        }
+      }
+    ],
+    "publicRequests": [
+      {
+        "id": 7,
+        "url": "https://data.rcsb.org/graphql",
+        "method": "POST",
+        "body": "{\"query\":\"query RightClick($entry_id: String!) { entry(entry_id: $entry_id) { assemblies { rcsb_id rcsb_struct_symmetry_provenance_code } audit_author { identifier_ORCID name pdbx_ordinal } branched_entities { rcsb_id } cell { Z_PDB angle_alpha angle_beta angle_gamma formula_units_Z length_a length_b length_c } citation { book_id_ISBN book_publisher book_publisher_city book_title coordinate_linkage country id journal_abbrev } database_2 { database_code database_id pdbx_DOI pdbx_database_accession } diffrn { ambient_pressure ambient_temp ambient_temp_details crystal_id crystal_support details id pdbx_serial_crystal_experiment } diffrn_detector { details detector diffrn_id pdbx_collection_date pdbx_frequency type } diffrn_radiation { collimation diffrn_id monochromator pdbx_diffrn_protocol pdbx_monochromatic_or_laue_m_l pdbx_scattering_type pdbx_wavelength pdbx_wavelength_list } diffrn_source { details diffrn_id pdbx_synchrotron_beamline pdbx_synchrotron_site pdbx_wavelength pdbx_wavelength_list source type } em_2d_crystal_entity { angle_gamma c_sampling_length id image_processing_id length_a length_b length_c space_group_name_H_M } em_3d_crystal_entity { angle_alpha angle_beta angle_gamma id image_processing_id length_a length_b length_c } em_3d_fitting { details id method overall_b_value ref_protocol ref_space target_criteria } em_3d_fitting_list { _3d_fitting_id details id pdb_chain_id pdb_chain_residue_range pdb_entry_id } em_3d_reconstruction { actual_pixel_size algorithm details id image_processing_id magnification_calibration method nominal_pixel_size } em_ctf_correction { details em_image_processing_id id type } em_diffraction { camera_length id imaging_id tilt_angle_list } em_diffraction_shell { em_diffraction_stats_id fourier_space_coverage high_resolution id low_resolution multiplicity num_structure_factors phase_residual } em_diffraction_stats { details fourier_space_coverage high_resolution id image_processing_id num_intensities_measured num_structure_factors overall_phase_error } em_embedding { details id material specimen_id } em_entity_assembly { details entity_id_list id name oligomeric_details parent_id source synonym } em_experiment { aggregation_state entity_assembly_id id reconstruction_method } em_helical_entity { angular_rotation_per_subunit axial_rise_per_subunit axial_symmetry details id image_processing_id } em_image_recording { average_exposure_time avg_electron_dose_per_image details detector_mode film_or_detector_model id imaging_id num_diffraction_images } em_imaging { accelerating_voltage alignment_procedure astigmatism c2_aperture_diameter calibrated_defocus_max calibrated_defocus_min calibrated_magnification cryogen } pubmed { rcsb_pubmed_doi } } }\",\"variables\":{\"entry_id\":\"2LYZ\"}}",
+        "discovery": false,
+        "status": 200,
+        "bytes": 3988
+      },
+      {
+        "id": 8,
+        "url": "https://api.crossref.org/works/10.1016%2F0022-2836(74)90598-1",
+        "method": "GET",
+        "discovery": false,
+        "status": 200,
+        "bytes": 8867
+      }
+    ]
+  },
+  {
+    "task": {
+      "id": "sol6-positive",
+      "model": "gpt-6-sol",
+      "entryId": "1UBQ",
+      "expected": "publication"
+    },
+    "reply": "BEGIN\n{\"entry_id\":\"1UBQ\",\"doi\":\"10.1016/0022-2836(87)90679-6\",\"title\":[\"Structure of ubiquitin refined at 1.8 Å resolution\"],\"publisher\":\"Elsevier BV\"}\nEND",
+    "tokens": 102014,
+    "turns": 1,
+    "errors": [],
+    "exit": 0,
+    "timedOut": false,
+    "seconds": 21.5,
+    "evidenceDir": "/Users/ross/src/rightclick-x-adaptive/docs/adaptive/evidence/session-models/attempt2/models/sol6-positive",
+    "before": {
+      "totalRequests": 17,
+      "toolCalls": 11
+    },
+    "after": {
+      "totalRequests": 19,
+      "toolCalls": 14
+    },
+    "tools": [
+      {
+        "at": "2026-10-20T18:42:14.530Z",
+        "tool": "context_explain",
+        "args": {
+          "id": "goal:structure-primary-publication-metadata"
+        },
+        "ok": true,
+        "ms": 1.5
+      },
+      {
+        "at": "2026-10-20T18:42:24.976Z",
+        "tool": "context_run",
+        "args": {
+          "id": "goal:structure-primary-publication-metadata",
+          "args": {
+            "entry_id": "1UBQ"
+          }
+        },
+        "ok": true,
+        "ms": 8551.3,
+        "outcome": {
+          "status": "completed",
+          "verification": "checked"
+        }
+      },
+      {
+        "at": "2026-10-20T18:42:26.977Z",
+        "tool": "context_run_status",
+        "args": {
+          "runId": "run_mvh15x7u_h_b66f33ad-381c-47d8-8019-6906170febc8"
+        },
+        "ok": true,
+        "ms": 0.5,
+        "outcome": {
+          "status": "completed",
+          "verification": "unverified"
+        }
+      }
+    ],
+    "publicRequests": [
+      {
+        "id": 9,
+        "url": "https://data.rcsb.org/graphql",
+        "method": "POST",
+        "body": "{\"query\":\"query RightClick($entry_id: String!) { entry(entry_id: $entry_id) { assemblies { rcsb_id rcsb_struct_symmetry_provenance_code } audit_author { identifier_ORCID name pdbx_ordinal } branched_entities { rcsb_id } cell { Z_PDB angle_alpha angle_beta angle_gamma formula_units_Z length_a length_b length_c } citation { book_id_ISBN book_publisher book_publisher_city book_title coordinate_linkage country id journal_abbrev } database_2 { database_code database_id pdbx_DOI pdbx_database_accession } diffrn { ambient_pressure ambient_temp ambient_temp_details crystal_id crystal_support details id pdbx_serial_crystal_experiment } diffrn_detector { details detector diffrn_id pdbx_collection_date pdbx_frequency type } diffrn_radiation { collimation diffrn_id monochromator pdbx_diffrn_protocol pdbx_monochromatic_or_laue_m_l pdbx_scattering_type pdbx_wavelength pdbx_wavelength_list } diffrn_source { details diffrn_id pdbx_synchrotron_beamline pdbx_synchrotron_site pdbx_wavelength pdbx_wavelength_list source type } em_2d_crystal_entity { angle_gamma c_sampling_length id image_processing_id length_a length_b length_c space_group_name_H_M } em_3d_crystal_entity { angle_alpha angle_beta angle_gamma id image_processing_id length_a length_b length_c } em_3d_fitting { details id method overall_b_value ref_protocol ref_space target_criteria } em_3d_fitting_list { _3d_fitting_id details id pdb_chain_id pdb_chain_residue_range pdb_entry_id } em_3d_reconstruction { actual_pixel_size algorithm details id image_processing_id magnification_calibration method nominal_pixel_size } em_ctf_correction { details em_image_processing_id id type } em_diffraction { camera_length id imaging_id tilt_angle_list } em_diffraction_shell { em_diffraction_stats_id fourier_space_coverage high_resolution id low_resolution multiplicity num_structure_factors phase_residual } em_diffraction_stats { details fourier_space_coverage high_resolution id image_processing_id num_intensities_measured num_structure_factors overall_phase_error } em_embedding { details id material specimen_id } em_entity_assembly { details entity_id_list id name oligomeric_details parent_id source synonym } em_experiment { aggregation_state entity_assembly_id id reconstruction_method } em_helical_entity { angular_rotation_per_subunit axial_rise_per_subunit axial_symmetry details id image_processing_id } em_image_recording { average_exposure_time avg_electron_dose_per_image details detector_mode film_or_detector_model id imaging_id num_diffraction_images } em_imaging { accelerating_voltage alignment_procedure astigmatism c2_aperture_diameter calibrated_defocus_max calibrated_defocus_min calibrated_magnification cryogen } pubmed { rcsb_pubmed_doi } } }\",\"variables\":{\"entry_id\":\"1UBQ\"}}",
+        "discovery": false,
+        "status": 200,
+        "bytes": 2496
+      },
+      {
+        "id": 10,
+        "url": "https://api.crossref.org/works/10.1016%2F0022-2836(87)90679-6",
+        "method": "GET",
+        "discovery": false,
+        "status": 200,
+        "bytes": 11563
+      }
+    ]
+  },
+  {
+    "task": {
+      "id": "sol6-missing",
+      "model": "gpt-6-sol",
+      "entryId": "0000",
+      "expected": "unavailable"
+    },
+    "reply": "UNABLE: The configured structure service returned no entry for 0000, so the primary research publication and its DOI, title, and publisher could not be established.",
+    "tokens": 93218,
+    "turns": 1,
+    "errors": [],
+    "exit": 0,
+    "timedOut": false,
+    "seconds": 25.1,
+    "evidenceDir": "/Users/ross/src/rightclick-x-adaptive/docs/adaptive/evidence/session-models/attempt2/models/sol6-missing",
+    "before": {
+      "totalRequests": 19,
+      "toolCalls": 14
+    },
+    "after": {
+      "totalRequests": 20,
+      "toolCalls": 17
+    },
+    "tools": [
+      {
+        "at": "2026-10-20T18:42:38.482Z",
+        "tool": "context_explain",
+        "args": {
+          "id": "goal:structure-primary-publication-metadata"
+        },
+        "ok": true,
+        "ms": 1.5
+      },
+      {
+        "at": "2026-10-20T18:42:49.536Z",
+        "tool": "context_run",
+        "args": {
+          "id": "goal:structure-primary-publication-metadata",
+          "args": {
+            "entry_id": "0000"
+          }
+        },
+        "ok": true,
+        "ms": 7897.7,
+        "outcome": {
+          "status": "failed",
+          "verification": "refuted"
+        }
+      },
+      {
+        "at": "2026-10-20T18:42:51.951Z",
+        "tool": "context_run_status",
+        "args": {
+          "runId": "run_mvh16h0b_l_4a229fec-bc34-4a17-8776-62304da4d055"
+        },
+        "ok": true,
+        "ms": 0.5,
+        "outcome": {
+          "status": "completed",
+          "verification": "unverified"
+        }
+      }
+    ],
+    "publicRequests": [
+      {
+        "id": 11,
+        "url": "https://data.rcsb.org/graphql",
+        "method": "POST",
+        "body": "{\"query\":\"query RightClick($entry_id: String!) { entry(entry_id: $entry_id) { assemblies { rcsb_id rcsb_struct_symmetry_provenance_code } audit_author { identifier_ORCID name pdbx_ordinal } branched_entities { rcsb_id } cell { Z_PDB angle_alpha angle_beta angle_gamma formula_units_Z length_a length_b length_c } citation { book_id_ISBN book_publisher book_publisher_city book_title coordinate_linkage country id journal_abbrev } database_2 { database_code database_id pdbx_DOI pdbx_database_accession } diffrn { ambient_pressure ambient_temp ambient_temp_details crystal_id crystal_support details id pdbx_serial_crystal_experiment } diffrn_detector { details detector diffrn_id pdbx_collection_date pdbx_frequency type } diffrn_radiation { collimation diffrn_id monochromator pdbx_diffrn_protocol pdbx_monochromatic_or_laue_m_l pdbx_scattering_type pdbx_wavelength pdbx_wavelength_list } diffrn_source { details diffrn_id pdbx_synchrotron_beamline pdbx_synchrotron_site pdbx_wavelength pdbx_wavelength_list source type } em_2d_crystal_entity { angle_gamma c_sampling_length id image_processing_id length_a length_b length_c space_group_name_H_M } em_3d_crystal_entity { angle_alpha angle_beta angle_gamma id image_processing_id length_a length_b length_c } em_3d_fitting { details id method overall_b_value ref_protocol ref_space target_criteria } em_3d_fitting_list { _3d_fitting_id details id pdb_chain_id pdb_chain_residue_range pdb_entry_id } em_3d_reconstruction { actual_pixel_size algorithm details id image_processing_id magnification_calibration method nominal_pixel_size } em_ctf_correction { details em_image_processing_id id type } em_diffraction { camera_length id imaging_id tilt_angle_list } em_diffraction_shell { em_diffraction_stats_id fourier_space_coverage high_resolution id low_resolution multiplicity num_structure_factors phase_residual } em_diffraction_stats { details fourier_space_coverage high_resolution id image_processing_id num_intensities_measured num_structure_factors overall_phase_error } em_embedding { details id material specimen_id } em_entity_assembly { details entity_id_list id name oligomeric_details parent_id source synonym } em_experiment { aggregation_state entity_assembly_id id reconstruction_method } em_helical_entity { angular_rotation_per_subunit axial_rise_per_subunit axial_symmetry details id image_processing_id } em_image_recording { average_exposure_time avg_electron_dose_per_image details detector_mode film_or_detector_model id imaging_id num_diffraction_images } em_imaging { accelerating_voltage alignment_procedure astigmatism c2_aperture_diameter calibrated_defocus_max calibrated_defocus_min calibrated_magnification cryogen } pubmed { rcsb_pubmed_doi } } }\",\"variables\":{\"entry_id\":\"0000\"}}",
+        "discovery": false,
+        "status": 200,
+        "bytes": 23
+      }
+    ]
+  }
+]

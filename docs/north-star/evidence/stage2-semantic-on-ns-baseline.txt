@@ -1,0 +1,75 @@
+✔ S1 historical mandoc -> od: the octal dump is of the ORIGINAL text, never of a formatted intermediate (550.451584ms)
+✖ S1b a saved composite containing an unrequested transformation is not reused for a request that does not ask for it (565.843583ms)
+✖ S2 a two-input comparison never gets the same caller value twice (466.942292ms)
+✔ S3 an unrelated type-preserving transformer is never inserted (base64 of a text with tidy available) (390.673584ms)
+✖ S4 a trivial predicate is not verification: the result and the published goal are not labelled verified (2.455458ms)
+✔ S5 required information matched only by a field name that the result does not actually carry is incomplete, not success (7.288959ms)
+✔ S6 information reachable only through a generic join is unverified and nothing runs (1.350166ms)
+✔ S7 no learned capability can produce the outcome: unavailable, nothing runs (1.962333ms)
+✖ S8 a plan expected to preserve the input's content that loses it at run time fails its contract (516.100625ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 5
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2630.299208
+
+✖ failing tests:
+
+test at test/semantic-acceptance.test.ts:35:1
+✖ S1b a saved composite containing an unrequested transformation is not reused for a request that does not ask for it (565.843583ms)
+  AssertionError [ERR_ASSERTION]: no typesetting step, directly or inside a saved pipeline (Octal dump of the bytes of a text: pageset: Typeset text as formatted pages → octdump: Octal dump of the bytes of the input)
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-ross-src-rightclick-x/8a054b14-e675-4f83-9ea0-2f4758591153/scratchpad/ns/base/test/semantic-acceptance.test.ts:48:10)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'Octal dump of the bytes of a text: pageset: Typeset text as formatted pages → octdump: Octal dump of the bytes of the input',
+    expected: /pageset|Typeset/i,
+    operator: 'doesNotMatch',
+    diff: 'simple'
+  }
+
+test at test/semantic-acceptance.test.ts:52:1
+✖ S2 a two-input comparison never gets the same caller value twice (466.942292ms)
+  AssertionError [ERR_ASSERTION]: nothing comparable was supplied, so nothing is presented as a comparison
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-ross-src-rightclick-x/8a054b14-e675-4f83-9ea0-2f4758591153/scratchpad/ns/base/test/semantic-acceptance.test.ts:62:10)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'completed',
+    expected: 'completed',
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at test/semantic-acceptance.test.ts:74:1
+✖ S4 a trivial predicate is not verification: the result and the published goal are not labelled verified (2.455458ms)
+  AssertionError [ERR_ASSERTION]: a passed predicate is a check, not independent verification
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-ross-src-rightclick-x/8a054b14-e675-4f83-9ea0-2f4758591153/scratchpad/ns/base/test/semantic-acceptance.test.ts:78:10)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'verified',
+    expected: 'verified',
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at test/semantic-acceptance.test.ts:132:1
+✖ S8 a plan expected to preserve the input's content that loses it at run time fails its contract (516.100625ms)
+  AssertionError [ERR_ASSERTION]: content was lost but reported as success: {"status":"completed"}
+      at TestContext.<anonymous> (file:///private/tmp/claude-501/-Users-ross-src-rightclick-x/8a054b14-e675-4f83-9ea0-2f4758591153/scratchpad/ns/base/test/semantic-acceptance.test.ts:140:10)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

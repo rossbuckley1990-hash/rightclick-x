@@ -19,6 +19,16 @@ All on one laptop (Apple Silicon, Node 24). X1–X4 run against local synthetic 
 - **Acquisition triggered too rarely.** A builtin that merely echoed the input "satisfied" a Wikipedia goal. Acquisition now also fires when the best plan covers too little of the intent.
 - **Callers name entities, APIs name ids.** A caller's `province` now fills an `id.province` port; a goal asking for `json` gets the complete result rather than an intent-matching fragment.
 
+## Corrections (North Star Stage 0, 2026-10-17)
+
+- **X3's latency figures were measured on a collapsed graph.** All 50 drift-storm services describe themselves as the same API (`openapi:polyglot`). Before commit `d50a73a`, providers with the same name overwrote each other, so the run above had **one** translator in the graph, not 50. That commit fixed provider identity; the drift storm then plans across 50 equivalent providers.
+  - Re-measured on `ns-baseline`: 1,500/1,500 calls verified (availability 1.0); 365 breaking releases; 273 drifts detected; 246 calls healed. **p50 314 ms, p99 900 ms**, 556 s in total.
+  - The availability result stands. The 1 ms/2 ms latency figures do not.
+  - Bisected with `stress-drift.ts 60` on `git archive` exports: 127 ms at `97e131a`, 12.4 s at `d50a73a`.
+- **X4 was failing for a harness reason.** Since `8280576` the HTTP interface rate-limits each caller to 600 calls per minute by default. A 1,000-call burst from one caller therefore got 397 (`context_inspect`) and 999 (`context_compose`) refusals. The harness now raises the limit, since it measures throughput, not the limiter.
+  - Re-measured on `ns-baseline`: `context_inspect` 0 errors, p99 454 ms. `context_compose` 0 errors, p50 6.9 s, p99 8.3 s, 120/s.
+  - 2,996 receipts, intact. The original run recorded 3,000 receipts and the cause of the difference is not yet understood.
+
 ## Honest limits
 
 - X1 uses a synthetic vocabulary that is denser than real APIs, so typed links grow faster than in practice (real: 4.9 M links for 4,359 capabilities in E2).

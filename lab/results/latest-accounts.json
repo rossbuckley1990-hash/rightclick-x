@@ -1,8 +1,8 @@
 {
-  "seed": 542718488,
+  "seed": 293705969,
   "domain": "accounts",
   "gateway": false,
-  "startedAt": "2026-10-17T08:44:09.971Z",
+  "startedAt": "2026-10-17T10:22:39.620Z",
   "steps": [
     {
       "n": 1,
@@ -17,7 +17,7 @@
       "title": "Connect an MCP client to RightClick X (stdio)",
       "ok": true,
       "tools": 13,
-      "startupMs": 113.9
+      "startupMs": 121.2
     },
     {
       "n": 3,
@@ -42,92 +42,92 @@
       "title": "Discover contracts from root addresses only (no protocols, no schemas given)",
       "ok": true,
       "found": [
-        "openapi",
-        "openapi",
+        "graphql",
+        "graphql",
         "graphql"
       ],
       "newCapabilities": 3,
-      "ms": 32.5
+      "ms": 31.7
     },
     {
       "n": 5,
       "title": "Identify suitable capabilities",
       "ok": true,
-      "candidatePlans": 3,
+      "candidatePlans": 2,
       "best": [
-        "Account lookup",
-        "Holder lookup",
+        "Account Lookup",
+        "Customer Inquiry",
         "Get Vat Rate"
       ],
-      "planningMs": 3.2
+      "planningMs": 4
     },
     {
       "n": 6,
       "title": "Compose a multi-provider workflow",
       "ok": true,
       "steps": [
-        "Account lookup ← acctno=$in.account_id",
-        "Holder lookup ← cust_ref=0.cust_ref",
-        "Get Vat Rate ← jur=1.cc"
+        "Account Lookup ← a_ref=$in.account_id",
+        "Customer Inquiry ← cust_ref=0.cref",
+        "Get Vat Rate ← ctry=1.jur"
       ]
     },
     {
       "n": 7,
       "title": "Execute the workflow",
       "ok": true,
-      "input": "ACC-1004",
+      "input": "ACC-1002",
       "pipeline": [
-        "Account lookup",
-        "Holder lookup",
+        "Account Lookup",
+        "Customer Inquiry",
         "Get Vat Rate"
       ],
-      "ms": 5.1
+      "ms": 5.5
     },
     {
       "n": 8,
       "title": "Verify against independently held test data",
       "ok": true,
-      "expected": 26.4,
-      "got": 26.4
+      "expected": 8.4,
+      "got": 8.4
     },
     {
       "n": 9,
       "title": "Save the successful composition and reuse it",
       "ok": true,
-      "saved": "Vat rate account holder country: Account lookup → Holder lookup → Get Vat Rate",
+      "saved": "Vat rate account holder country: Account Lookup → Customer Inquiry → Get Vat Rate",
       "reusedAs": [
-        "Vat rate account holder country: Account lookup → Holder lookup → Get Vat Rate"
+        "Vat rate account holder country: Account Lookup → Customer Inquiry → Get Vat Rate"
       ],
-      "expected": 26.4,
-      "got": 26.4,
+      "expected": 7.7,
+      "got": 7.7,
       "ms": 3
     },
     {
       "n": 10,
-      "title": "Change the interface of the last provider in the chain (Mistral Depot)",
+      "title": "Change the interface of the last provider in the chain (Harbourly)",
       "ok": true,
-      "before": "graphql \"Get VAT rate\" jur → jur, txr",
-      "after": "mcp \"VAT rate inquiry\" ctry → result.{ctry, vatpct}"
+      "before": "graphql \"Get VAT rate\" ctry → ctry, txr",
+      "after": "openapi \"VAT rate lookup\" jur → result.{jur, vatpct}"
     },
     {
       "n": 11,
       "title": "Recover without changing integration code",
       "ok": true,
       "healing": [
-        "API drift at http://127.0.0.1:63482/: graphql:127-0-0-1-63482-graphql → mcp:mistral-depot; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+        "API drift at http://127.0.0.1:50517/: graphql:127-0-0-1-50517-graphql → openapi:harbourly; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
       ],
       "via": [
-        "openapi:fjordsoft",
-        "openapi:harbourly",
-        "mcp:mistral-depot"
+        "graphql:127-0-0-1-50515-graphql",
+        "graphql:127-0-0-1-50516-graphql",
+        "openapi:harbourly"
       ],
-      "expected": 6.6,
-      "got": 6.6,
-      "ms": 8.8
+      "expected": 10,
+      "got": 10,
+      "ms": 10.2
     },
     {
       "n": 12,
-      "title": "Remove that provider (Mistral Depot)",
+      "title": "Remove that provider (Harbourly)",
       "ok": true
     },
     {
@@ -136,38 +136,38 @@
       "ok": true,
       "status": "failed",
       "healing": [
-        "provider gone at http://127.0.0.1:63482/: withdrew mcp:mistral-depot (1 capabilities, 1 pipeline(s) retired)"
+        "provider gone at http://127.0.0.1:50517/: withdrew openapi:harbourly (1 capabilities, 1 pipeline(s) retired)"
       ],
       "withdrawn": [
-        "Mistral Depot"
+        "Harbourly"
       ],
       "capabilities": "27 → 25",
       "savedPipelines": "1 → 0"
     },
     {
       "n": 14,
-      "title": "Introduce a different provider (Duneworks, openapi): the objective works again",
+      "title": "Introduce a different provider (Cobaltix, mcp): the objective works again",
       "ok": true,
       "learned": [
-        "openapi: 1 operations"
+        "mcp: 1 tools"
       ],
       "via": [
-        "openapi:fjordsoft",
-        "openapi:harbourly",
-        "openapi:duneworks"
+        "graphql:127-0-0-1-50515-graphql",
+        "graphql:127-0-0-1-50516-graphql",
+        "mcp:cobaltix"
       ],
-      "expected": 6.6,
-      "got": 6.6,
-      "ms": 2
+      "expected": 7.7,
+      "got": 7.7,
+      "ms": 2.2
     }
   ],
   "benchmarks": {
-    "startupMs": 113.9,
+    "startupMs": 121.2,
     "mcpLatencyMs": {
       "p50": 0.04,
       "p95": 0.11
     },
-    "discoveryMs": 32.5,
+    "discoveryMs": 31.7,
     "graph": {
       "providers": 5,
       "capabilities": 26,
@@ -177,66 +177,66 @@
       "total": 132
     },
     "graphStatsMs": 0.1,
-    "planningMs": 3.2,
-    "executionMs": 5.1,
-    "recoveryAfterChangeMs": 8.8,
-    "recoveryAfterNewProviderMs": 2,
-    "memoryMB": 136
+    "planningMs": 4,
+    "executionMs": 5.5,
+    "recoveryAfterChangeMs": 10.2,
+    "recoveryAfterNewProviderMs": 2.2,
+    "memoryMB": 142
   },
   "freeze": {
-    "commit": "c27289e2570cc0a18512787082095ac32ba0eb80",
+    "commit": "02c96d4af5f4d92208321a0145ab31deb3572b35",
     "tag": "lab-freeze-9",
-    "productCodeChangedSinceTag": "src/core/graph.ts\nsrc/core/identities.ts\nsrc/core/planner.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/interface/http.ts\nsrc/interface/tools.ts\nsrc/reflectors/net.ts\nsrc/runtime.ts",
-    "uncommittedProductChanges": "M  bin/rcx.ts\nA  src/core/authority.ts\nM  src/entry/durable.ts\nM  src/entry/edge.ts\nM  src/interface/http.ts\nM  src/reflectors/mcp.ts\nM  src/reflectors/platform.ts\nM  src/runtime.ts",
+    "productCodeChangedSinceTag": "bin/rcx.ts\nsrc/core/authority.ts\nsrc/core/contract.ts\nsrc/core/fields.ts\nsrc/core/graph.ts\nsrc/core/identities.ts\nsrc/core/knowledge.ts\nsrc/core/ledger.ts\nsrc/core/planner.ts\nsrc/core/programs.ts\nsrc/core/sandbox.ts\nsrc/core/satisfaction.ts\nsrc/core/secrets.ts\nsrc/core/semantics.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/core/yaml.ts\nsrc/entry/durable.ts\nsrc/entry/edge.ts\nsrc/interface/http.ts\nsrc/interface/mcp-server.ts\nsrc/interface/tools.ts\nsrc/reflectors/cli.ts\nsrc/reflectors/discover.ts\nsrc/reflectors/graphql.ts\nsrc/reflectors/mcp.ts\nsrc/reflectors/net.ts\nsrc/reflectors/openapi.ts\nsrc/reflectors/platform.ts\nsrc/runtime.ts",
+    "uncommittedProductChanges": "",
     "frozen": false
   },
   "environment": [
     {
       "service": "ledger",
-      "brand": "Fjordsoft",
-      "protocol": "openapi",
+      "brand": "Northwind Billing",
+      "protocol": "graphql",
       "operation": "Account lookup",
-      "input": "acctno",
+      "input": "a_ref",
       "outputs": [
-        "acctno",
-        "cust_ref",
-        "amt"
+        "a_ref",
+        "cref",
+        "curbal"
       ]
     },
     {
       "service": "kyc",
-      "brand": "Harbourly",
-      "protocol": "openapi",
-      "operation": "Holder lookup",
+      "brand": "Fernway",
+      "protocol": "graphql",
+      "operation": "Customer inquiry",
       "input": "cust_ref",
       "outputs": [
         "cust_ref",
-        "lglnm",
-        "cc"
+        "nm",
+        "jur"
       ]
     },
     {
       "service": "vat",
-      "brand": "Mistral Depot",
+      "brand": "Harbourly",
       "protocol": "graphql",
       "operation": "Get VAT rate",
-      "input": "jur",
+      "input": "ctry",
       "outputs": [
-        "jur",
+        "ctry",
         "txr"
       ]
     }
   ],
   "firstRunProviders": [
-    "openapi:fjordsoft",
-    "openapi:harbourly",
-    "graphql:127-0-0-1-63482-graphql"
+    "graphql:127-0-0-1-50515-graphql",
+    "graphql:127-0-0-1-50516-graphql",
+    "graphql:127-0-0-1-50517-graphql"
   ],
   "receipts": {
     "count": 21,
     "intact": true,
     "brokenAt": null,
-    "head": "09d26e99f18f7e026a1a7e6d36cf68a70f513613b1e7cc983f77b7bc8728969d"
+    "head": "39f13a099d27881a5aed504e6c36d178bfd2d0b5a783167afec4936f4fa35944"
   },
   "passed": 14,
   "total": 14

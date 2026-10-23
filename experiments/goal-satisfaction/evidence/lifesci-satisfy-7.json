@@ -1,0 +1,2232 @@
+{
+  "build": "lifesci-satisfy-7",
+  "commit": "8849a5b860949b8b9389d510feab55b4d0e2a250",
+  "tasks": [
+    {
+      "args": {
+        "have": {
+          "accession": "P41159"
+        },
+        "want": "json",
+        "intent": "protein structure entries resolution",
+        "require": [
+          "resolution"
+        ],
+        "run": true,
+        "limit": 25,
+        "maxSteps": 3,
+        "view": {
+          "full": true
+        }
+      },
+      "ms": 20234,
+      "ranking": [
+        {
+          "summary": "Get UniParc longest sequence for entries. → Entry",
+          "satisfaction": {
+            "status": "established",
+            "covered": {
+              "resolution": "em_diffraction_shell.high_resolution"
+            },
+            "missing": [],
+            "joins": [
+              {
+                "step": 0,
+                "port": "accession",
+                "from": "$in.accession",
+                "kind": "caller"
+              },
+              {
+                "step": 1,
+                "port": "entry_id",
+                "from": "0.id",
+                "kind": "declared"
+              }
+            ],
+            "projection": []
+          }
+        },
+        {
+          "summary": "Get UniParc entry only by UniProt accession → Entry",
+          "satisfaction": {
+            "status": "established",
+            "covered": {
+              "resolution": "em_diffraction_shell.high_resolution"
+            },
+            "missing": [],
+            "joins": [
+              {
+                "step": 0,
+                "port": "accession",
+                "from": "$in.accession",
+                "kind": "caller"
+              },
+              {
+                "step": 1,
+                "port": "entry_id",
+                "from": "0.id",
+                "kind": "declared"
+              }
+            ],
+            "projection": []
+          }
+        },
+        {
+          "summary": "Get UniProt entry by accession → Entry (each)",
+          "satisfaction": {
+            "status": "established",
+            "covered": {
+              "resolution": "em_diffraction_shell.high_resolution"
+            },
+            "missing": [],
+            "joins": [
+              {
+                "step": 0,
+                "port": "accession",
+                "from": "$in.accession",
+                "kind": "caller"
+              },
+              {
+                "step": 1,
+                "port": "entry_id",
+                "from": "0.dbReferences.id",
+                "kind": "evidence"
+              }
+            ],
+            "projection": []
+          }
+        },
+        {
+          "summary": "Get UniProt entry by accession → Released data search API endpoint allows you to perform POST requests with textual and scientific searches against current RCSB PDB entries → Entries",
+          "satisfaction": {
+            "status": "unverified",
+            "covered": {
+              "resolution": "em_diffraction_shell.high_resolution"
+            },
+            "missing": [],
+            "joins": [
+              {
+                "step": 0,
+                "port": "accession",
+                "from": "$in.accession",
+                "kind": "caller"
+              },
+              {
+                "step": 1,
+                "port": "body",
+                "from": "0.name",
+                "kind": "generic"
+              },
+              {
+                "step": 2,
+                "port": "entry_ids",
+                "from": "1.result_set.identifier",
+                "kind": "evidence"
+              }
+            ],
+            "projection": []
+          }
+        },
+        {
+          "summary": "Get UniProtKB entry by a single accession. → Released data search API endpoint allows you to perform POST requests with textual and scientific searches against current RCSB PDB entries → Entries",
+          "satisfaction": {
+            "status": "unverified",
+            "covered": {
+              "resolution": "em_diffraction_shell.high_resolution"
+            },
+            "missing": [],
+            "joins": [
+              {
+                "step": 0,
+                "port": "accession",
+                "from": "$in.accession",
+                "kind": "caller"
+              },
+              {
+                "step": 1,
+                "port": "body",
+                "from": "0.proteinExistence",
+                "kind": "generic"
+              },
+              {
+                "step": 2,
+                "port": "entry_ids",
+                "from": "1.result_set.identifier",
+                "kind": "evidence"
+              }
+            ],
+            "projection": []
+          }
+        }
+      ],
+      "outcome": {
+        "status": "incomplete",
+        "require": [
+          "resolution"
+        ],
+        "covered": {},
+        "missing": [
+          "resolution"
+        ],
+        "joins": [
+          {
+            "step": 0,
+            "port": "accession",
+            "from": "$in.accession",
+            "kind": "caller"
+          },
+          {
+            "step": 1,
+            "port": "entry_id",
+            "from": "0.dbReferences.id",
+            "kind": "evidence"
+          }
+        ],
+        "reason": "the executed result lacks: resolution"
+      },
+      "executed": {
+        "status": "completed",
+        "titles": [
+          "Get UniProt entry by accession",
+          "Entry (each)"
+        ],
+        "runs": [
+          "run_mvbrmjzf_3",
+          "run_mvbrmk1f_4",
+          "run_mvbrmkbi_5",
+          "run_mvbrmkwo_6",
+          "run_mvbrmlr6_7",
+          "run_mvbrmmgu_8",
+          "run_mvbrmn94_9",
+          "run_mvbrmnzq_a",
+          "run_mvbrmorl_b",
+          "run_mvbrmpjf_c",
+          "run_mvbrmqbc_d",
+          "run_mvbrmr34_e",
+          "run_mvbrmruu_f"
+        ],
+        "attempts": [
+          {
+            "summary": "Get UniParc longest sequence for entries. → Entry",
+            "failed": "openapi:proteins-rest-api:getuniparcbestguest",
+            "error": "openapi:proteins-rest-api:getuniparcbestguest: its result has no value at id, which graphql:data-rcsb-org-graphql:query:entry.entry_id needs",
+            "healing": "re-reflected https://www.ebi.ac.uk/proteins/api/openapi.json: no contract change"
+          },
+          {
+            "summary": "Get UniParc entry only by UniProt accession → Entry",
+            "failed": "openapi:proteins-rest-api:getuniparcentrybyuniprotaccession",
+            "error": "openapi:proteins-rest-api:getuniparcentrybyuniprotaccession: its result has no value at id, which graphql:data-rcsb-org-graphql:query:entry.entry_id needs"
+          }
+        ],
+        "fanOuts": [
+          {
+            "step": 1,
+            "capability": "graphql:data-rcsb-org-graphql:query:entry",
+            "port": "entry_id",
+            "items": 161,
+            "ran": 12,
+            "skipped": 149,
+            "max": 20
+          }
+        ]
+      },
+      "output": [
+        {
+          "assemblies": [
+            {
+              "rcsb_id": "1AX8-1",
+              "rcsb_struct_symmetry_provenance_code": "biojava-7.2.2"
+            },
+            {
+              "rcsb_id": "1AX8-2",
+              "rcsb_struct_symmetry_provenance_code": "biojava-7.2.2"
+            }
+          ],
+          "audit_author": [
+            {
+              "identifier_ORCID": null,
+              "name": "Zhang, F.",
+              "pdbx_ordinal": 1
+            },
+            {
+              "identifier_ORCID": null,
+              "name": "Beals, J.M.",
+              "pdbx_ordinal": 2
+            },
+            {
+              "identifier_ORCID": null,
+              "name": "Briggs, S.L.",
+              "pdbx_ordinal": 3
+            },
+            {
+              "identifier_ORCID": null,
+              "name": "Clawson, D.K.",
+              "pdbx_ordinal": 4
+            },
+            {
+              "identifier_ORCID": null,
+              "name": "Wery, J.-P.",
+              "pdbx_ordinal": 5
+            },
+            {
+              "identifier_ORCID": null,
+              "name": "Schevitz, R.W.",
+              "pdbx_ordinal": 6
+            }
+          ],
+          "branched_entities": null,
+          "cell": {
+            "Z_PDB": 6,
+            "angle_alpha": 90,
+            "angle_beta": 90,
+            "angle_gamma": 120,
+            "formula_units_Z": null,
+            "length_a": 88.14,
+            "length_b": 88.14,
+            "length_c": 48.05
+          },
+          "citation": [
+            {
+              "book_id_ISBN": null,
+              "book_publisher": null,
+              "book_publisher_city": null,
+              "book_title": null,
+              "coordinate_linkage": null,
+              "country": "UK",
+              "id": "primary",
+              "journal_abbrev": "Nature"
+            },
+            {
+              "book_id_ISBN": null,
+              "book_publisher": null,
+              "book_publisher_city": null,
+              "book_title": null,
+              "coordinate_linkage": null,
+              "country": "UK",
+              "id": "1",
+              "journal_abbrev": "Nature"
+            },
+            {
+              "book_id_ISBN": null,
+              "book_publisher": null,
+              "book_publisher_city": null,
+              "book_title": null,
+              "coordinate_linkage": null,
+              "country": "UK",
+              "id": "2",
+              "journal_abbrev": "Nature"
+            }
+          ],
+          "database_2": [
+            {
+              "database_code": "1AX8",
+              "database_id": "PDB",
+              "pdbx_DOI": "10.2210/pdb1ax8/pdb",
+              "pdbx_database_accession": "pdb_00001ax8"
+            },
+            {
+              "database_code": "D_1000171366",
+              "database_id": "WWPDB",
+              "pdbx_DOI": null,
+              "pdbx_database_accession": null
+            }
+          ],
+          "diffrn": [
+            {
+              "ambient_pressure": null,
+              "ambient_temp": 100,
+              "ambient_temp_details": null,
+              "crystal_id": "1",
+              "crystal_support": null,
+              "details": null,
+              "id": "1",
+              "pdbx_serial_crystal_experiment": null
+            }
+          ],
+          "diffrn_detector": [
+            {
+              "details": "MIRRORS",
+              "detector": "IMAGE PLATE",
+              "diffrn_id": "1",
+              "pdbx_collection_date": "1996-09-10T00:00:00Z",
+              "pdbx_frequency": null,
+              "type": "RIGAKU"
+            }
+          ],
+          "diffrn_radiation": [
+            {
+              "collimation": null,
+              "diffrn_id": "1",
+              "monochromator": "NI FILTER",
+              "pdbx_diffrn_protocol": null,
+              "pdbx_monochromatic_or_laue_m_l": "M",
+              "pdbx_scattering_type": "x-ray",
+              "pdbx_wavelength": null,
+              "pdbx_wavelength_list": null
+            }
+          ],
+          "diffrn_source": [
+            {
+              "details": null,
+              "diffrn_id": "1",
+              "pdbx_synchrotron_beamline": null,
+              "pdbx_synchrotron_site": null,
+              "pdbx_wavelength": "1.5418",
+              "pdbx_wavelength_list": null,
+              "source": "ROTATING ANODE",
+              "type": "RIGAKU RUH2R"
+            }
+          ],
+          "em_2d_crystal_entity": null,
+          "em_3d_crystal_entity": null,
+          "em_3d_fitting": null,
+          "em_3d_fitting_list": null,
+          "em_3d_reconstruction": null,
+          "em_ctf_correction": null,
+          "em_diffraction": null,
+          "em_diffraction_shell": null,
+          "em_diffraction_stats": null,
+          "em_embedding": null,
+          "em_entity_assembly": null,
+          "em_experiment": null,
+          "em_helical_entity": null,
+          "em_image_recording": null,
+          "em_imaging": null
+        },
+        {
+          "assemblies": [
+            {
+              "rcsb_id": "7Z3Q-1",
+              "rcsb_struct_symmetry_provenance_code": "biojava-7.2.2"
+            },
+            {
+              "rcsb_id": "7Z3Q-2",
+              "rcsb_struct_symmetry_provenance_code": "biojava-7.2.2"
+            },
+            {
+              "rcsb_id": "7Z3Q-3",
+              "rcsb_struct_symmetry_provenance_code": "biojava-7.2.2"
+            }
+          ],
+          "audit_author": [
+            {
+              "identifier_ORCID": "0000-0001-6544-6458",
+              "name": "Verstraete, K.",
+              "pdbx_ordinal": 1
+            },
+            {
+              "identifier_ORCID": "0000-0002-3522-9169",
+              "name": "Verschueren, K.",
+              "pdbx_ordinal": 2
+            },
+            {
+              "identifier_ORCID": "0000-0003-2781-4234",
+              "name": "Alexandra, T.",
+              "pdbx_ordinal": 3
+            },
+            {
+              "identifier_ORCID": "0000-0003-3420-5947",
+              "name": "Savvides, S.N.",
+              "pdbx_ordinal": 4
+            }
+          ],
+          "branched_entities": null,
+          "cell": {
+            "Z_PDB": 24,
+            "angle_alpha": 90,
+            "angle_beta": 90,
+            "angle_gamma": 90,
+            "formula_units_Z": null,
+            "length_a": 156.197,
+            "length_b": 156.644,
+            "length_c": 95.55
+          },
+          "citation": [
+            {
+              "book_id_ISBN": null,
+              "book_publisher": null,
+              "book_publisher_city": null,
+              "book_title": null,
+              "coordinate_linkage": null,
+              "country": "US",
+              "id": "primary",
+              "journal_abbrev": "Nat.Struct.Mol.Biol."
+            }
+          ],
+          "database_2": [
+            {
+              "database_code": "7Z3Q",
+              "database_id": "PDB",
+              "pdbx_DOI": "10.2210/pdb7z3q/pdb",
+              "pdbx_database_accession": "pdb_00007z3q"
+            },
+            {
+              "database_code": "D_1292121440",
+              "database_id": "WWPDB",
+              "pdbx_DOI": null,
+              "pdbx_database_accession": null
+            }
+          ],
+          "diffrn": [
+            {
+              "ambient_pressure": null,
+              "ambient_temp": 100,
+              "ambient_temp_details": "Cold nitrogen stream",
+              "crystal_id": "1",
+              "crystal_support": null,
+              "details": null,
+              "id": "1",
+              "pdbx_serial_crystal_experiment": "N"
+            }
+          ],
+          "diffrn_detector": [
+            {
+              "details": null,
+              "detector": "PIXEL",
+              "diffrn_id": "1",
+              "pdbx_collection_date": "2020-06-06T00:00:00Z",
+              "pdbx_frequency": null,
+              "type": "DECTRIS EIGER2 X 16M"
+            }
+          ],
+          "diffrn_radiation": [
+            {
+              "collimation": null,
+              "diffrn_id": "1",
+              "monochromator": "Si(111) crystal",
+              "pdbx_diffrn_protocol": "SINGLE WAVELENGTH",
+              "pdbx_monochromatic_or_laue_m_l": "M",
+              "pdbx_scattering_type": "x-ray",
+              "pdbx_wavelength": null,
+              "pdbx_wavelength_list": null
+            }
+          ],
+          "diffrn_source": [
+            {
+              "details": null,
+              "diffrn_id": "1",
+              "pdbx_synchrotron_beamline": "P14 (MX2)",
+              "pdbx_synchrotron_site": "PETRA III, EMBL c/o DESY",
+              "pdbx_wavelength": null,
+              "pdbx_wavelength_list": "1.0332",
+              "source": "SYNCHROTRON",
+              "type": "PETRA III, EMBL c/o DESY BEAMLINE P14 (MX2)"
+            }
+          ],
+          "em_2d_crystal_entity": null,
+          "em_3d_crystal_entity": null,
+          "em_3d_fitting": null,
+          "em_3d_fitting_list": null,
+          "em_3d_reconstruction": null,
+          "em_ctf_correction": null,
+          "em_diffraction": null,
+          "em_diffraction_shell": null,
+          "em_diffraction_stats": null,
+          "em_embedding": null,
+          "em_entity_assembly": null,
+          "em_experiment": null,
+          "em_helical_entity": null,
+          "em_image_recording": null,
+          "em_imaging": null
+        },
+        {
+          "assemblies": [
+            {
+              "rcsb_id": "8AVE-1",
+              "rcsb_struct_symmetry_provenance_code": "biojava-7.2.2"
+            }
+          ],
+          "audit_author": [
+            {
+              "identifier_ORCID": "0000-0001-6544-6458",
+              "name": "Verstraete, K.",
+              "pdbx_ordinal": 1
+            },
+            {
+              "identifier_ORCID": "0000-0002-2971-0933",
+              "name": "Savvides, S.N.",
+              "pdbx_ordinal": 2
+            },
+            {
+              "identifier_ORCID": "0000-0002-3522-9169",
+              "name": "Verschueren, K.G.",
+              "pdbx_ordinal": 3
+            },
+            {
+              "identifier_ORCID": "0000-0003-2781-4234",
+              "name": "Tsirigotaki, A.",
+              "pdbx_ordinal": 4
+            }
+          ],
+          "branched_entities": null,
+          "cell": null,
+          "citation": [
+            {
+              "book_id_ISBN": null,
+              "book_publisher": null,
+              "book_publisher_city": null,
+              "book_title": null,
+              "coordinate_linkage": null,
+              "country": "US",
+              "id": "primary",
+              "journal_abbrev": "Nat.Struct.Mol.Biol."
+            }
+          ],
+          "database_2": [
+            {
+              "database_code": "8AVE",
+              "database_id": "PDB",
+              "pdbx_DOI": "10.2210/pdb8ave/pdb",
+              "pdbx_database_accession": "pdb_00008ave"
+            },
+            {
+              "database_code": "D_1292125158",
+              "database_id": "WWPDB",
+              "pdbx_DOI": null,
+              "pdbx_database_accession": null
+            },
+            {
+              "database_code": "EMD-15680",
+              "database_id": "EMDB",
+              "pdbx_DOI": null,
+              "pdbx_database_accession": null
+            }
+          ],
+          "diffrn": null,
+          "diffrn_detector": null,
+          "diffrn_radiation": null,
+          "diffrn_source": null,
+          "em_2d_crystal_entity": null,
+          "em_3d_crystal_entity": null,
+          "em_3d_fitting": [
+            {
+              "details": "Atomic models for the 2:2 and 3:3 hLeptin:hLEP-R complexes were created based on the Alphafold2 predictions for hLEP-R and hLeptin, and the mouse 3:3 Leptin:LEP-RIgCRH2 complex (pdb 7z3r) and the human Leptin:LEP-RCRH2 complex (pdb 7z3q)\nand fitted in the cryo-EM maps via Chimera. Atomic models were further refined via real space refinement in Phenix using rigid body refinement and coordinate refinement with reference restraints to the starting model and hydrogen-bonding restraints across the site II and site III hLeptin:hLEP-R interface regions.",
+              "id": "1",
+              "method": null,
+              "overall_b_value": null,
+              "ref_protocol": "FLEXIBLE FIT",
+              "ref_space": "REAL",
+              "target_criteria": null
+            }
+          ],
+          "em_3d_fitting_list": [
+            {
+              "_3d_fitting_id": "1",
+              "details": null,
+              "id": "1",
+              "pdb_chain_id": null,
+              "pdb_chain_residue_range": null,
+              "pdb_entry_id": "7Z3R"
+            },
+            {
+              "_3d_fitting_id": "1",
+              "details": null,
+              "id": "2",
+              "pdb_chain_id": null,
+              "pdb_chain_residue_range": null,
+              "pdb_entry_id": "7Z3Q"
+            }
+          ],
+          "em_3d_reconstruction": [
+            {
+              "actual_pixel_size": null,
+              "algorithm": null,
+              "details": "Non-uniform refinement in cryoSPARC",
+              "id": "1",
+              "image_processing_id": "1",
+              "magnification_calibration": null,
+              "method": null,
+              "nominal_pixel_size": null
+            }
+          ],
+          "em_ctf_correction": [
+            {
+              "details": null,
+              "em_image_processing_id": "1",
+              "id": "1",
+              "type": "PHASE FLIPPING AND AMPLITUDE CORRECTION"
+            }
+          ],
+          "em_diffraction": null,
+          "em_diffraction_shell": null,
+          "em_diffraction_stats": null,
+          "em_embedding": null,
+          "em_entity_assembly": [
+            {
+              "details": "Human leptin carrying an N-terminal His-tag and the human LEP-R ectodomain C-terminally fused to a trimeric GCN4 isoleucine zipper tag (without His-tag) were co-expressed in HEK293 FreeStyle cells in the presence of kifunensine. The resulting complex was purified from the conditioned medium by IMAC and SEC.",
+              "entity_id_list": [
+                "1",
+                "2"
+              ],
+              "id": "1",
+              "name": "Human leptin in complex with the human LEP-R ectodomain C-terminally fused to a trimeric GCN4 isoleucine zipper tag",
+              "oligomeric_details": null,
+              "parent_id": 0,
+              "source": "RECOMBINANT",
+              "synonym": null
+            }
+          ],
+          "em_experiment": {
+            "aggregation_state": "PARTICLE",
+            "entity_assembly_id": "1",
+            "id": "1",
+            "reconstruction_method": "SINGLE PARTICLE"
+          },
+          "em_helical_entity": null,
+          "em_image_recording": [
+            {
+              "average_exposure_time": null,
+              "avg_electron_dose_per_image": 62.4,
+              "details": null,
+              "detector_mode": null,
+              "film_or_detector_model": "GATAN K3 (6k x 4k)",
+              "id": "1",
+              "imaging_id": "1",
+              "num_diffraction_images": null
+            }
+          ],
+          "em_imaging": [
+            {
+              "accelerating_voltage": 300,
+              "alignment_procedure": null,
+              "astigmatism": null,
+              "c2_aperture_diameter": null,
+              "calibrated_defocus_max": null,
+              "calibrated_defocus_min": null,
+              "calibrated_magnification": null,
+              "cryogen": null
+            }
+          ]
+        },
+        {
+          "assemblies": [
+            {
+              "rcsb_id": "8AVF-1",
+              "rcsb_struct_symmetry_provenance_code": "biojava-7.2.2"
+            }
+          ],
+          "audit_author": [
+            {
+              "identifier_ORCID": "0000-0001-6544-6458",
+              "name": "Verstraete, K.",
+              "pdbx_ordinal": 1
+            },
+            {
+              "identifier_ORCID": "0000-0002-2971-0933",
+              "name": "Savvides, S.N.",
+              "pdbx_ordinal": 2
+            },
+            {
+              "identifier_ORCID": "0000-0002-3522-9169",
+              "name": "Verschueren, K.G.",
+              "pdbx_ordinal": 3
+            },
+            {
+              "identifier_ORCID": "0000-0003-2781-4234",
+              "name": "Tsirigotaki, A.",
+              "pdbx_ordinal": 4
+            }
+          ],
+          "branched_entities": null,
+          "cell": null,
+          "citation": [
+            {
+              "book_id_ISBN": null,
+              "book_publisher": null,
+              "book_publisher_city": null,
+              "book_title": null,
+              "coordinate_linkage": null,
+              "country": "US",
+              "id": "primary",
+              "journal_abbrev": "Nat.Struct.Mol.Biol."
+            }
+          ],
+          "database_2": [
+            {
+              "database_code": "8AVF",
+              "database_id": "PDB",
+              "pdbx_DOI": "10.2210/pdb8avf/pdb",
+              "pdbx_database_accession": "pdb_00008avf"
+            },
+            {
+              "database_code": "D_1292125163",
+              "database_id": "WWPDB",
+              "pdbx_DOI": null,
+              "pdbx_database_accession": null
+            },
+            {
+              "database_code": "EMD-15681",
+              "database_id": "EMDB",
+              "pdbx_DOI": null,
+              "pdbx_database_accession": null
+            }
+          ],
+          "diffrn": null,
+          "diffrn_detector": null,
+          "diffrn_radiation": null,
+          "diffrn_source": null,
+          "em_2d_crystal_entity": null,
+          "em_3d_crystal_entity": null,
+          "em_3d_fitting": [
+            {
+              "details": "Atomic models for the 2:2 and 3:3 hLeptin:hLEP-R complexes were created based on the Alphafold2 predictions for hLEP-R and hLeptin, and the crystal structures for the mouse 3:3 Leptin:LEP-RIgCRH2 complex (pdb 7z3r) and the human Leptin:LEP-RCRH2 complex (pdb 7z3q)\nand fitted in the cryo-EM maps via Chimera. Atomic models were further refined via real space refinement in Phenix using rigid body refinement and coordinate refinement with reference restraints to the starting model.",
+              "id": "1",
+              "method": null,
+              "overall_b_value": null,
+              "ref_protocol": "FLEXIBLE FIT",
+              "ref_space": "REAL",
+              "target_criteria": null
+            }
+          ],
+          "em_3d_fitting_list": [
+            {
+              "_3d_fitting_id": "1",
+              "details": null,
+              "id": "1",
+              "pdb_chain_id": null,
+              "pdb_chain_residue_range": null,
+              "pdb_entry_id": "7Z3R"
+            },
+            {
+              "_3d_fitting_id": "1",
+              "details": null,
+              "id": "2",
+              "pdb_chain_id": null,
+              "pdb_chain_residue_range": null,
+              "pdb_entry_id": "7Z3Q"
+            }
+          ],
+          "em_3d_reconstruction": [
+            {
+              "actual_pixel_size": null,
+              "algorithm": null,
+              "details": null,
+              "id": "1",
+              "image_processing_id": "1",
+              "magnification_calibration": null,
+              "method": null,
+              "nominal_pixel_size": null
+            }
+          ],
+          "em_ctf_correction": [
+            {
+              "details": null,
+              "em_image_processing_id": "1",
+              "id": "1",
+              "type": "PHASE FLIPPING AND AMPLITUDE CORRECTION"
+            }
+          ],
+          "em_diffraction": null,
+          "em_diffraction_shell": null,
+          "em_diffraction_stats": null,
+          "em_embedding": null,
+          "em_entity_assembly": [
+            {
+              "details": "Human leptin carrying an N-terminal His-tag and the human LEP-R ectodomain C-terminally fused to a trimeric GCN4 isoleucine zipper tag (without His-tag) were co-expressed in HEK293 FreeStyle cells in the presence of kifunensine. The resulting complex was purified from the conditioned medium by IMAC and SEC.",
+              "entity_id_list": [
+                "1",
+                "2"
+              ],
+              "id": "1",
+              "name": "Human leptin in complex with the human LEP-R ectodomain C-terminally fused to a trimeric GCN4 isoleucine zipper tag",
+              "oligomeric_details": null,
+              "parent_id": 0,
+              "source": "RECOMBINANT",
+              "synonym": null
+            }
+          ],
+          "em_experiment": {
+            "aggregation_state": "PARTICLE",
+            "entity_assembly_id": "1",
+            "id": "1",
+            "reconstruction_method": "SINGLE PARTICLE"
+          },
+          "em_helical_entity": null,
+          "em_image_recording": [
+            {
+              "average_exposure_time": null,
+              "avg_electron_dose_per_image": 62.4,
+              "details": null,
+              "detector_mode": null,
+              "film_or_detector_model": "GATAN K3 (6k x 4k)",
+              "id": "1",
+              "imaging_id": "1",
+              "num_diffraction_images": null
+            }
+          ],
+          "em_imaging": [
+            {
+              "accelerating_voltage": 300,
+              "alignment_procedure": null,
+              "astigmatism": null,
+              "c2_aperture_diameter": null,
+              "calibrated_defocus_max": null,
+              "calibrated_defocus_min": null,
+              "calibrated_magnification": null,
+              "cryogen": null
+            }
+          ]
+        },
+        {
+          "assemblies": [
+            {
+              "rcsb_id": "8AVO-1",
+              "rcsb_struct_symmetry_provenance_code": "biojava-7.2.2"
+            }
+          ],
+          "audit_author": [
+            {
+              "identifier_ORCID": "0000-0001-6544-6458",
+              "name": "Verstraete, K.",
+              "pdbx_ordinal": 1
+            },
+            {
+              "identifier_ORCID": "0000-0002-2971-0933",
+              "name": "Savvides, S.N.",
+              "pdbx_ordinal": 2
+            },
+            {
+              "identifier_ORCID": "0000-0002-3522-9169",
+              "name": "Verschueren, K.G.",
+              "pdbx_ordinal": 3
+            },
+            {
+              "identifier_ORCID": "0000-0003-2781-4234",
+              "name": "Tsirigotaki, A.",
+              "pdbx_ordinal": 4
+            }
+          ],
+          "branched_entities": null,
+          "cell": null,
+          "citation": [
+            {
+              "book_id_ISBN": null,
+              "book_publisher": null,
+              "book_publisher_city": null,
+              "book_title": null,
+              "coordinate_linkage": null,
+              "country": "US",
+              "id": "primary",
+              "journal_abbrev": "Nat.Struct.Mol.Biol."
+            }
+          ],
+          "database_2": [
+            {
+              "database_code": "8AVO",
+              "database_id": "PDB",
+              "pdbx_DOI": "10.2210/pdb8avo/pdb",
+              "pdbx_database_accession": "pdb_00008avo"
+            },
+            {
+              "database_code": "D_1292125164",
+              "database_id": "WWPDB",
+              "pdbx_DOI": null,
+              "pdbx_database_accession": null
+            },
+            {
+              "database_code": "EMD-15683",
+              "database_id": "EMDB",
+              "pdbx_DOI": null,
+              "pdbx_database_accession": null
+            }
+          ],
+          "diffrn": null,
+          "diffrn_detector": null,
+          "diffrn_radiation": null,
+          "diffrn_source": null,
+          "em_2d_crystal_entity": null,
+          "em_3d_crystal_entity": null,
+          "em_3d_fitting": [
+            {
+              "details": "Atomic models for the 2:2 and 3:3 hLeptin:hLEP-R complexes were created based on the Alphafold2 predictions for hLEP-R and hLeptin, and the crystal structures for the mouse 3:3 Leptin:LEP-RIgCRH2 complex (pdb 7z3r) and the human Leptin:LEP-RCRH2 complex (pdb 7z3q)\nand fitted in the cryo-EM maps via Chimera. Atomic models were further refined via real space refinement in Phenix using rigid body refinement and coordinate refinement with reference restraints to the starting model.",
+              "id": "1",
+              "method": null,
+              "overall_b_value": null,
+              "ref_protocol": "FLEXIBLE FIT",
+              "ref_space": "REAL",
+              "target_criteria": null
+            }
+          ],
+          "em_3d_fitting_list": [
+            {
+              "_3d_fitting_id": "1",
+              "details": null,
+              "id": "1",
+              "pdb_chain_id": null,
+              "pdb_chain_residue_range": null,
+              "pdb_entry_id": "7Z3R"
+            },
+            {
+              "_3d_fitting_id": "1",
+              "details": null,
+              "id": "2",
+              "pdb_chain_id": null,
+              "pdb_chain_residue_range": null,
+              "pdb_entry_id": "7Z3Q"
+            }
+          ],
+          "em_3d_reconstruction": [
+            {
+              "actual_pixel_size": null,
+              "algorithm": null,
+              "details": null,
+              "id": "1",
+              "image_processing_id": "1",
+              "magnification_calibration": null,
+              "method": null,
+              "nominal_pixel_size": null
+            }
+          ],
+          "em_ctf_correction": [
+            {
+              "details": null,
+              "em_image_processing_id": "1",
+              "id": "1",
+              "type": "PHASE FLIPPING AND AMPLITUDE CORRECTION"
+            }
+          ],
+          "em_diffraction": null,
+          "em_diffraction_shell": null,
+          "em_diffraction_stats": null,
+          "em_embedding": null,
+          "em_entity_assembly": [
+            {
+              "details": "Human leptin carrying an N-terminal His-tag and the human LEP-R ectodomain C-terminally fused to a trimeric GCN4 isoleucine zipper tag (without His-tag) were co-expressed in HEK293 FreeStyle cells in the presence of kifunensine. The resulting complex was purified from the conditioned medium by IMAC and SEC.",
+              "entity_id_list": [
+                "1",
+                "2"
+              ],
+              "id": "1",
+              "name": "Human leptin in complex with the human LEP-R ectodomain C-terminally fused to a trimeric GCN4 isoleucine zipper tag",
+              "oligomeric_details": null,
+              "parent_id": 0,
+              "source": "RECOMBINANT",
+              "synonym": null
+            }
+          ],
+          "em_experiment": {
+            "aggregation_state": "PARTICLE",
+            "entity_assembly_id": "1",
+            "id": "1",
+            "reconstruction_method": "SINGLE PARTICLE"
+          },
+          "em_helical_entity": null,
+          "em_image_recording": [
+            {
+              "average_exposure_time": null,
+              "avg_electron_dose_per_image": 62.4,
+              "details": null,
+              "detector_mode": null,
+              "film_or_detector_model": "GATAN K3 (6k x 4k)",
+              "id": "1",
+              "imaging_id": "1",
+              "num_diffraction_images": null
+            }
+          ],
+          "em_imaging": [
+            {
+              "accelerating_voltage": 300,
+              "alignment_procedure": null,
+              "astigmatism": null,
+              "c2_aperture_diameter": null,
+              "calibrated_defocus_max": null,
+              "calibrated_defocus_min": null,
+              "calibrated_magnification": null,
+              "cryogen": null
+            }
+          ]
+        },
+        {
+          "assemblies": [
+            {
+              "rcsb_id": "8K6Z-1",
+              "rcsb_struct_symmetry_provenance_code": "biojava-7.2.2"
+            }
+          ],
+          "audit_author": [
+            {
+              "identifier_ORCID": null,
+              "name": "Fan, X.",
+              "pdbx_ordinal": 1
+            },
+            {
+              "identifier_ORCID": null,
+              "name": "Qin, R.",
+              "pdbx_ordinal": 2
+            },
+            {
+              "identifier_ORCID": null,
+              "name": "Yuan, W.",
+              "pdbx_ordinal": 3
+            },
+            {
+              "identifier_ORCID": null,
+              "name": "Fan, J.",
+              "pdbx_ordinal": 4
+            },
+            {
+              "identifier_ORCID": null,
+              "name": "Huang, W.",
+              "pdbx_ordinal": 5
+            },
+            {
+              "identifier_ORCID": null,
+              "name": "Lin, Z.",
+              "pdbx_ordinal": 6
+            }
+          ],
+          "branched_entities": null,
+          "cell": null,
+          "citation": [
+            {
+              "book_id_ISBN": null,
+              "book_publisher": null,
+              "book_publisher_city": null,
+              "book_title": null,
+              "coordinate_linkage": null,
+              "country": "UK",
+              "id": "primary",
+              "journal_abbrev": "Structure"
+            }
+          ],
+          "database_2": [
+            {
+              "database_code": "8K6Z",
+              "database_id": "PDB",
+              "pdbx_DOI": "10.2210/pdb8k6z/pdb",
+              "pdbx_database_accession": "pdb_00008k6z"
+            },
+            {
+              "database_code": "D_1300038750",
+              "database_id": "WWPDB",
+              "pdbx_DOI": null,
+              "pdbx_database_accession": null
+            },
+            {
+              "database_code": "36585",
+              "database_id": "BMRB",
+              "pdbx_DOI": "10.13018/BMR36585",
+              "pdbx_database_accession": null
+            }
+          ],
+          "diffrn": null,
+          "diffrn_detector": null,
+          "diffrn_radiation": null,
+          "diffrn_source": null,
+          "em_2d_crystal_entity": null,
+          "em_3d_crystal_entity": null,
+          "em_3d_fitting": null,
+          "em_3d_fitting_list": null,
+          "em_3d_reconstruction": null,
+          "em_ctf_correction": null,
+          "em_diffraction": null,
+          "em_diffraction_shell": null,
+          "em_diffraction_stats": null,
+          "em_embedding": null,
+          "em_entity_assembly": null,
+          "em_experiment": null,
+          "em_helical_entity": null,
+          "em_image_recording": null,
+          "em_imaging": null
+        },
+        {
+          "assemblies": [
+            {
+              "rcsb_id": "8X80-1",
+              "rcsb_struct_symmetry_provenance_code": "biojava-7.2.2"
+            }
+          ],
+          "audit_author": [
+            {
+              "identifier_ORCID": null,
+              "name": "Xie, Y.F.",
+              "pdbx_ordinal": 1
+            },
+            {
+              "identifier_ORCID": null,
+              "name": "Gao, G.F.",
+              "pdbx_ordinal": 2
+            }
+          ],
+          "branched_entities": [
+            {
+              "rcsb_id": "8X80_3"
+            },
+            {
+              "rcsb_id": "8X80_4"
+            }
+          ],
+          "cell": null,
+          "citation": [
+            {
+              "book_id_ISBN": null,
+              "book_publisher": null,
+              "book_publisher_city": null,
+              "book_title": null,
+              "coordinate_linkage": null,
+              "country": "CN",
+              "id": "primary",
+              "journal_abbrev": "Hlife"
+            }
+          ],
+          "database_2": [
+            {
+              "database_code": "8X80",
+              "database_id": "PDB",
+              "pdbx_DOI": "10.2210/pdb8x80/pdb",
+              "pdbx_database_accession": "pdb_00008x80"
+            },
+            {
+              "database_code": "D_1300042859",
+              "database_id": "WWPDB",
+              "pdbx_DOI": null,
+              "pdbx_database_accession": null
+            },
+            {
+              "database_code": "EMD-38131",
+              "database_id": "EMDB",
+              "pdbx_DOI": null,
+              "pdbx_database_accession": null
+            }
+          ],
+          "diffrn": null,
+          "diffrn_detector": null,
+          "diffrn_radiation": null,
+          "diffrn_source": null,
+          "em_2d_crystal_entity": null,
+          "em_3d_crystal_entity": null,
+          "em_3d_fitting": [
+            {
+              "details": null,
+              "id": "1",
+              "method": null,
+              "overall_b_value": null,
+              "ref_protocol": null,
+              "ref_space": null,
+              "target_criteria": null
+            }
+          ],
+          "em_3d_fitting_list": null,
+          "em_3d_reconstruction": [
+            {
+              "actual_pixel_size": null,
+              "algorithm": null,
+              "details": null,
+              "id": "1",
+              "image_processing_id": "1",
+              "magnification_calibration": null,
+              "method": null,
+              "nominal_pixel_size": null
+            }
+          ],
+          "em_ctf_correction": [
+            {
+              "details": null,
+              "em_image_processing_id": "1",
+              "id": "1",
+              "type": "PHASE FLIPPING AND AMPLITUDE CORRECTION"
+            }
+          ],
+          "em_diffraction": null,
+          "em_diffraction_shell": null,
+          "em_diffraction_stats": null,
+          "em_embedding": null,
+          "em_entity_assembly": [
+            {
+              "details": null,
+              "entity_id_list": [
+                "1",
+                "2"
+              ],
+              "id": "1",
+              "name": "Leptin-LepR complex",
+              "oligomeric_details": null,
+              "parent_id": 0,
+              "source": "RECOMBINANT",
+              "synonym": null
+            }
+          ],
+          "em_experiment": {
+            "aggregation_state": "PARTICLE",
+            "entity_assembly_id": "1",
+            "id": "1",
+            "reconstruction_method": "SINGLE PARTICLE"
+          },
+          "em_helical_entity": null,
+          "em_image_recording": [
+            {
+              "average_exposure_time": null,
+              "avg_electron_dose_per_image": 50,
+              "details": null,
+              "detector_mode": null,
+              "film_or_detector_model": "GATAN K3 (6k x 4k)",
+              "id": "1",
+              "imaging_id": "1",
+              "num_diffraction_images": null
+            }
+          ],
+          "em_imaging": [
+            {
+              "accelerating_voltage": 300,
+              "alignment_procedure": null,
+              "astigmatism": null,
+              "c2_aperture_diameter": null,
+              "calibrated_defocus_max": null,
+              "calibrated_defocus_min": null,
+              "calibrated_magnification": null,
+              "cryogen": null
+            }
+          ]
+        },
+        {
+          "assemblies": [
+            {
+              "rcsb_id": "8X81-1",
+              "rcsb_struct_symmetry_provenance_code": "biojava-7.2.2"
+            }
+          ],
+          "audit_author": [
+            {
+              "identifier_ORCID": null,
+              "name": "Xie, Y.F.",
+              "pdbx_ordinal": 1
+            },
+            {
+              "identifier_ORCID": null,
+              "name": "Gao, G.F.",
+              "pdbx_ordinal": 2
+            }
+          ],
+          "branched_entities": [
+            {
+              "rcsb_id": "8X81_3"
+            }
+          ],
+          "cell": null,
+          "citation": [
+            {
+              "book_id_ISBN": null,
+              "book_publisher": null,
+              "book_publisher_city": null,
+              "book_title": null,
+              "coordinate_linkage": null,
+              "country": "CN",
+              "id": "primary",
+              "journal_abbrev": "Hlife"
+            }
+          ],
+          "database_2": [
+            {
+              "database_code": "8X81",
+              "database_id": "PDB",
+              "pdbx_DOI": "10.2210/pdb8x81/pdb",
+              "pdbx_database_accession": "pdb_00008x81"
+            },
+            {
+              "database_code": "D_1300042861",
+              "database_id": "WWPDB",
+              "pdbx_DOI": null,
+              "pdbx_database_accession": null
+            },
+            {
+              "database_code": "EMD-38132",
+              "database_id": "EMDB",
+              "pdbx_DOI": null,
+              "pdbx_database_accession": null
+            }
+          ],
+          "diffrn": null,
+          "diffrn_detector": null,
+          "diffrn_radiation": null,
+          "diffrn_source": null,
+          "em_2d_crystal_entity": null,
+          "em_3d_crystal_entity": null,
+          "em_3d_fitting": [
+            {
+              "details": null,
+              "id": "1",
+              "method": null,
+              "overall_b_value": null,
+              "ref_protocol": null,
+              "ref_space": null,
+              "target_criteria": null
+            }
+          ],
+          "em_3d_fitting_list": null,
+          "em_3d_reconstruction": [
+            {
+              "actual_pixel_size": null,
+              "algorithm": null,
+              "details": null,
+              "id": "1",
+              "image_processing_id": "1",
+              "magnification_calibration": null,
+              "method": null,
+              "nominal_pixel_size": null
+            }
+          ],
+          "em_ctf_correction": [
+            {
+              "details": null,
+              "em_image_processing_id": "1",
+              "id": "1",
+              "type": "PHASE FLIPPING AND AMPLITUDE CORRECTION"
+            }
+          ],
+          "em_diffraction": null,
+          "em_diffraction_shell": null,
+          "em_diffraction_stats": null,
+          "em_embedding": null,
+          "em_entity_assembly": [
+            {
+              "details": null,
+              "entity_id_list": [
+                "1",
+                "2"
+              ],
+              "id": "1",
+              "name": "Leptin-LepR complex",
+              "oligomeric_details": null,
+              "parent_id": 0,
+              "source": "RECOMBINANT",
+              "synonym": null
+            }
+          ],
+          "em_experiment": {
+            "aggregation_state": "PARTICLE",
+            "entity_assembly_id": "1",
+            "id": "1",
+            "reconstruction_method": "SINGLE PARTICLE"
+          },
+          "em_helical_entity": null,
+          "em_image_recording": [
+            {
+              "average_exposure_time": null,
+              "avg_electron_dose_per_image": 50,
+              "details": null,
+              "detector_mode": null,
+              "film_or_detector_model": "GATAN K3 (6k x 4k)",
+              "id": "1",
+              "imaging_id": "1",
+              "num_diffraction_images": null
+            }
+          ],
+          "em_imaging": [
+            {
+              "accelerating_voltage": 300,
+              "alignment_procedure": null,
+              "astigmatism": null,
+              "c2_aperture_diameter": null,
+              "calibrated_defocus_max": null,
+              "calibrated_defocus_min": null,
+              "calibrated_magnification": null,
+              "cryogen": null
+            }
+          ]
+        },
+        {
+          "assemblies": [
+            {
+              "rcsb_id": "8X85-1",
+              "rcsb_struct_symmetry_provenance_code": "biojava-7.2.2"
+            }
+          ],
+          "audit_author": [
+            {
+              "identifier_ORCID": null,
+              "name": "Xie, Y.F.",
+              "pdbx_ordinal": 1
+            },
+            {
+              "identifier_ORCID": null,
+              "name": "Shang, G.J.",
+              "pdbx_ordinal": 2
+            },
+            {
+              "identifier_ORCID": null,
+              "name": "Qi, J.X.",
+              "pdbx_ordinal": 3
+            },
+            {
+              "identifier_ORCID": null,
+              "name": "Gao, G.F.",
+              "pdbx_ordinal": 4
+            }
+          ],
+          "branched_entities": [
+            {
+              "rcsb_id": "8X85_3"
+            },
+            {
+              "rcsb_id": "8X85_4"
+            }
+          ],
+          "cell": null,
+          "citation": [
+            {
+              "book_id_ISBN": null,
+              "book_publisher": null,
+              "book_publisher_city": null,
+              "book_title": null,
+              "coordinate_linkage": null,
+              "country": "CN",
+              "id": "primary",
+              "journal_abbrev": "Hlife"
+            }
+          ],
+          "database_2": [
+            {
+              "database_code": "8X85",
+              "database_id": "PDB",
+              "pdbx_DOI": "10.2210/pdb8x85/pdb",
+              "pdbx_database_accession": "pdb_00008x85"
+            },
+            {
+              "database_code": "D_1300042863",
+              "database_id": "WWPDB",
+              "pdbx_DOI": null,
+              "pdbx_database_accession": null
+            },
+            {
+              "database_code": "EMD-38136",
+              "database_id": "EMDB",
+              "pdbx_DOI": null,
+              "pdbx_database_accession": null
+            }
+          ],
+          "diffrn": null,
+          "diffrn_detector": null,
+          "diffrn_radiation": null,
+          "diffrn_source": null,
+          "em_2d_crystal_entity": null,
+          "em_3d_crystal_entity": null,
+          "em_3d_fitting": [
+            {
+              "details": null,
+              "id": "1",
+              "method": null,
+              "overall_b_value": null,
+              "ref_protocol": null,
+              "ref_space": null,
+              "target_criteria": null
+            }
+          ],
+          "em_3d_fitting_list": null,
+          "em_3d_reconstruction": [
+            {
+              "actual_pixel_size": null,
+              "algorithm": null,
+              "details": null,
+              "id": "1",
+              "image_processing_id": "1",
+              "magnification_calibration": null,
+              "method": null,
+              "nominal_pixel_size": null
+            }
+          ],
+          "em_ctf_correction": [
+            {
+              "details": null,
+              "em_image_processing_id": "1",
+              "id": "1",
+              "type": "PHASE FLIPPING AND AMPLITUDE CORRECTION"
+            }
+          ],
+          "em_diffraction": null,
+          "em_diffraction_shell": null,
+          "em_diffraction_stats": null,
+          "em_embedding": null,
+          "em_entity_assembly": [
+            {
+              "details": null,
+              "entity_id_list": [
+                "1",
+                "2"
+              ],
+              "id": "1",
+              "name": "Leptin-LepR complex",
+              "oligomeric_details": null,
+              "parent_id": 0,
+              "source": "RECOMBINANT",
+              "synonym": null
+            }
+          ],
+          "em_experiment": {
+            "aggregation_state": "PARTICLE",
+            "entity_assembly_id": "1",
+            "id": "1",
+            "reconstruction_method": "SINGLE PARTICLE"
+          },
+          "em_helical_entity": null,
+          "em_image_recording": [
+            {
+              "average_exposure_time": null,
+              "avg_electron_dose_per_image": 50,
+              "details": null,
+              "detector_mode": null,
+              "film_or_detector_model": "GATAN K3 (6k x 4k)",
+              "id": "1",
+              "imaging_id": "1",
+              "num_diffraction_images": null
+            }
+          ],
+          "em_imaging": [
+            {
+              "accelerating_voltage": 300,
+              "alignment_procedure": null,
+              "astigmatism": null,
+              "c2_aperture_diameter": null,
+              "calibrated_defocus_max": null,
+              "calibrated_defocus_min": null,
+              "calibrated_magnification": null,
+              "cryogen": null
+            }
+          ]
+        },
+        {
+          "assemblies": [
+            {
+              "rcsb_id": "9PUO-1",
+              "rcsb_struct_symmetry_provenance_code": "biojava-7.2.2"
+            },
+            {
+              "rcsb_id": "9PUO-2",
+              "rcsb_struct_symmetry_provenance_code": "biojava-7.2.2"
+            }
+          ],
+          "audit_author": [
+            {
+              "identifier_ORCID": "0000-0002-7529-4643",
+              "name": "Tomchick, D.R.",
+              "pdbx_ordinal": 1
+            },
+            {
+              "identifier_ORCID": "0000-0002-1879-2136",
+              "name": "Wynn, R.M.",
+              "pdbx_ordinal": 2
+            },
+            {
+              "identifier_ORCID": "0000-0003-0680-3392",
+              "name": "Scherer, P.E.",
+              "pdbx_ordinal": 3
+            }
+          ],
+          "branched_entities": null,
+          "cell": {
+            "Z_PDB": 2,
+            "angle_alpha": 90.344,
+            "angle_beta": 85.206,
+            "angle_gamma": 70.418,
+            "formula_units_Z": null,
+            "length_a": 51.927,
+            "length_b": 48.534,
+            "length_c": 124.963
+          },
+          "citation": [
+            {
+              "book_id_ISBN": null,
+              "book_publisher": null,
+              "book_publisher_city": null,
+              "book_title": null,
+              "coordinate_linkage": null,
+              "country": "US",
+              "id": "primary",
+              "journal_abbrev": "Sci Adv"
+            }
+          ],
+          "database_2": [
+            {
+              "database_code": "9PUO",
+              "database_id": "PDB",
+              "pdbx_DOI": "10.2210/pdb9puo/pdb",
+              "pdbx_database_accession": "pdb_00009puo"
+            },
+            {
+              "database_code": "D_1000298478",
+              "database_id": "WWPDB",
+              "pdbx_DOI": null,
+              "pdbx_database_accession": null
+            }
+          ],
+          "diffrn": [
+            {
+              "ambient_pressure": null,
+              "ambient_temp": 100,
+              "ambient_temp_details": null,
+              "crystal_id": "1",
+              "crystal_support": null,
+              "details": null,
+              "id": "1",
+              "pdbx_serial_crystal_experiment": "N"
+            }
+          ],
+          "diffrn_detector": [
+            {
+              "details": null,
+              "detector": "PIXEL",
+              "diffrn_id": "1",
+              "pdbx_collection_date": "2023-02-17T00:00:00Z",
+              "pdbx_frequency": null,
+              "type": "DECTRIS PILATUS3 6M"
+            }
+          ],
+          "diffrn_radiation": [
+            {
+              "collimation": null,
+              "diffrn_id": "1",
+              "monochromator": null,
+              "pdbx_diffrn_protocol": "SINGLE WAVELENGTH",
+              "pdbx_monochromatic_or_laue_m_l": "M",
+              "pdbx_scattering_type": "x-ray",
+              "pdbx_wavelength": null,
+              "pdbx_wavelength_list": null
+            }
+          ],
+          "diffrn_source": [
+            {
+              "details": null,
+              "diffrn_id": "1",
+              "pdbx_synchrotron_beamline": "19-ID",
+              "pdbx_synchrotron_site": "APS",
+              "pdbx_wavelength": null,
+              "pdbx_wavelength_list": "0.97918",
+              "source": "SYNCHROTRON",
+              "type": "APS BEAMLINE 19-ID"
+            }
+          ],
+          "em_2d_crystal_entity": null,
+          "em_3d_crystal_entity": null,
+          "em_3d_fitting": null,
+          "em_3d_fitting_list": null,
+          "em_3d_reconstruction": null,
+          "em_ctf_correction": null,
+          "em_diffraction": null,
+          "em_diffraction_shell": null,
+          "em_diffraction_stats": null,
+          "em_embedding": null,
+          "em_entity_assembly": null,
+          "em_experiment": null,
+          "em_helical_entity": null,
+          "em_image_recording": null,
+          "em_imaging": null
+        },
+        null,
+        null
+      ],
+      "id": "Q03",
+      "seconds": 20.235,
+      "score": {
+        "pass": false,
+        "detail": "entries found 0/9; unrelated 19; lowest belongs to a winner false",
+        "truth": {
+          "accession": "P41159",
+          "entries": [
+            {
+              "id": "1AX8",
+              "res": 2.4,
+              "method": "X-RAY DIFFRACTION"
+            },
+            {
+              "id": "7Z3Q",
+              "res": 3.617,
+              "method": "X-RAY DIFFRACTION"
+            },
+            {
+              "id": "8AVE",
+              "res": 5.62,
+              "method": "ELECTRON MICROSCOPY"
+            },
+            {
+              "id": "8AVO",
+              "res": 6.84,
+              "method": "ELECTRON MICROSCOPY"
+            },
+            {
+              "id": "8X81",
+              "res": 3.77,
+              "method": "ELECTRON MICROSCOPY"
+            },
+            {
+              "id": "9PUO",
+              "res": 3.1,
+              "method": "X-RAY DIFFRACTION"
+            },
+            {
+              "id": "8X85",
+              "res": 3.58,
+              "method": "ELECTRON MICROSCOPY"
+            },
+            {
+              "id": "8X80",
+              "res": 3.88,
+              "method": "ELECTRON MICROSCOPY"
+            },
+            {
+              "id": "8AVF",
+              "res": 6.45,
+              "method": "ELECTRON MICROSCOPY"
+            }
+          ],
+          "uniprotResolutions": {
+            "1AX8": "2.40 A",
+            "7Z3Q": "3.62 A",
+            "8AVE": "5.62 A",
+            "8AVF": "6.45 A",
+            "8AVO": "6.84 A",
+            "8K6Z": "-",
+            "8X80": "3.88 A",
+            "8X81": "3.77 A",
+            "8X85": "3.58 A",
+            "9PUO": "3.10 A"
+          }
+        }
+      }
+    },
+    {
+      "args": {
+        "have": {
+          "entry_id": "4HHB"
+        },
+        "want": "json",
+        "intent": "gene name",
+        "require": [
+          "gene name"
+        ],
+        "run": true,
+        "limit": 25,
+        "maxSteps": 3,
+        "view": {
+          "full": true
+        }
+      },
+      "ms": 1048,
+      "ranking": [
+        {
+          "summary": "Entry → Scan Competitor AI Presence → Get gene centric proteins by proteome UPID is deprecated, please use new /genecentric?upid= endpoint",
+          "satisfaction": {
+            "status": "unverified",
+            "covered": {
+              "gene name": "canonicalGene.gene.geneName"
+            },
+            "missing": [],
+            "joins": [
+              {
+                "step": 0,
+                "port": "entry_id",
+                "from": "$in.entry_id",
+                "kind": "caller"
+              },
+              {
+                "step": 1,
+                "port": "entities",
+                "from": "0.audit_author.name",
+                "kind": "generic"
+              },
+              {
+                "step": 2,
+                "port": "upid",
+                "from": "1.",
+                "kind": "generic"
+              }
+            ],
+            "projection": []
+          }
+        },
+        {
+          "summary": "Entry → Get gene centric proteins by proteome UPID is deprecated, please use new /genecentric?upid= endpoint → Retrieve UniProtKB entries by a search query.",
+          "satisfaction": {
+            "status": "unverified",
+            "covered": {
+              "gene name": "results.genes.orderedLocusNames"
+            },
+            "missing": [],
+            "joins": [
+              {
+                "step": 0,
+                "port": "entry_id",
+                "from": "$in.entry_id",
+                "kind": "caller"
+              },
+              {
+                "step": 1,
+                "port": "upid",
+                "from": "0.em_experiment.aggregation_state",
+                "kind": "generic"
+              },
+              {
+                "step": 2,
+                "port": "query",
+                "from": "1.name",
+                "kind": "generic"
+              }
+            ],
+            "projection": []
+          }
+        },
+        {
+          "summary": "Entry → Get gene centric proteins by proteome UPID is deprecated, please use new /genecentric?upid= endpoint → Download UniProtKB entries retrieved by a search query. (Max. 10 million entries)",
+          "satisfaction": {
+            "status": "unverified",
+            "covered": {
+              "gene name": "results.genes.orderedLocusNames"
+            },
+            "missing": [],
+            "joins": [
+              {
+                "step": 0,
+                "port": "entry_id",
+                "from": "$in.entry_id",
+                "kind": "caller"
+              },
+              {
+                "step": 1,
+                "port": "upid",
+                "from": "0.em_experiment.aggregation_state",
+                "kind": "generic"
+              },
+              {
+                "step": 2,
+                "port": "query",
+                "from": "1.name",
+                "kind": "generic"
+              }
+            ],
+            "projection": []
+          }
+        },
+        {
+          "summary": "Entry → Get gene centric proteins by proteome UPID is deprecated, please use new /genecentric?upid= endpoint → Get proteome by proteome UPID",
+          "satisfaction": {
+            "status": "unverified",
+            "covered": {
+              "gene name": "canonicalGene.gene.geneName"
+            },
+            "missing": [],
+            "joins": [
+              {
+                "step": 0,
+                "port": "entry_id",
+                "from": "$in.entry_id",
+                "kind": "caller"
+              },
+              {
+                "step": 1,
+                "port": "upid",
+                "from": "0.em_experiment.aggregation_state",
+                "kind": "generic"
+              },
+              {
+                "step": 2,
+                "port": "upid",
+                "from": "1.name",
+                "kind": "generic"
+              }
+            ],
+            "projection": []
+          }
+        },
+        {
+          "summary": "Entry → Get gene centric proteins by proteome UPID is deprecated, please use new /genecentric?upid= endpoint → Get proteins by proteome UPID",
+          "satisfaction": {
+            "status": "unverified",
+            "covered": {
+              "gene name": "canonicalGene.gene.geneName"
+            },
+            "missing": [],
+            "joins": [
+              {
+                "step": 0,
+                "port": "entry_id",
+                "from": "$in.entry_id",
+                "kind": "caller"
+              },
+              {
+                "step": 1,
+                "port": "upid",
+                "from": "0.em_experiment.aggregation_state",
+                "kind": "generic"
+              },
+              {
+                "step": 2,
+                "port": "upid",
+                "from": "1.name",
+                "kind": "generic"
+              }
+            ],
+            "projection": []
+          }
+        }
+      ],
+      "outcome": {
+        "status": "unverified",
+        "require": [
+          "gene name"
+        ],
+        "covered": {
+          "gene name": "canonicalGene.gene.geneName"
+        },
+        "missing": [],
+        "joins": [
+          {
+            "step": 0,
+            "port": "entry_id",
+            "from": "$in.entry_id",
+            "kind": "caller"
+          },
+          {
+            "step": 1,
+            "port": "entities",
+            "from": "0.audit_author.name",
+            "kind": "generic"
+          },
+          {
+            "step": 2,
+            "port": "upid",
+            "from": "1.",
+            "kind": "generic"
+          }
+        ],
+        "reason": "the required information is reachable only through a generic join (no evidence that the values link)"
+      },
+      "executed": null,
+      "output": null,
+      "id": "Q04",
+      "seconds": 1.048,
+      "score": {
+        "pass": false,
+        "detail": "outcome unverified: the required information is reachable only through a generic join (no evidence that the values link)",
+        "truth": null
+      }
+    },
+    {
+      "args": {
+        "have": {
+          "entry_id": "6M0J"
+        },
+        "want": "json",
+        "intent": "organism scientific name",
+        "require": [
+          "organism scientific name"
+        ],
+        "run": true,
+        "limit": 25,
+        "maxSteps": 3,
+        "view": {
+          "full": true
+        }
+      },
+      "ms": 1054,
+      "ranking": [
+        {
+          "summary": "Entry → Polymer entities → Polymer entity instances",
+          "satisfaction": {
+            "status": "unverified",
+            "covered": {
+              "organism scientific name": "polymer_entity.rcsb_entity_host_organism.ncbi_parent_scientific_name"
+            },
+            "missing": [],
+            "joins": [
+              {
+                "step": 0,
+                "port": "entry_id",
+                "from": "$in.entry_id",
+                "kind": "caller"
+              },
+              {
+                "step": 1,
+                "port": "entity_ids",
+                "from": "0.audit_author.name",
+                "kind": "generic"
+              },
+              {
+                "step": 2,
+                "port": "instance_ids",
+                "from": "1.pdbx_entity_src_syn.organism_scientific",
+                "kind": "generic"
+              }
+            ],
+            "projection": [
+              {
+                "step": 2,
+                "fields": [
+                  "polymer_entity.rcsb_entity_host_organism.scientific_name",
+                  "polymer_entity.rcsb_entity_source_organism.scientific_name",
+                  "polymer_entity.rcsb_entity_host_organism.ncbi_scientific_name",
+                  "polymer_entity.rcsb_entity_source_organism.ncbi_scientific_name",
+                  "polymer_entity.rcsb_entity_host_organism.ncbi_parent_scientific_name",
+                  "polymer_entity.rcsb_entity_source_organism.ncbi_parent_scientific_name"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "summary": "Entry → Polymer entities",
+          "satisfaction": {
+            "status": "unverified",
+            "covered": {
+              "organism scientific name": "rcsb_entity_host_organism.ncbi_parent_scientific_name"
+            },
+            "missing": [],
+            "joins": [
+              {
+                "step": 0,
+                "port": "entry_id",
+                "from": "$in.entry_id",
+                "kind": "caller"
+              },
+              {
+                "step": 1,
+                "port": "entity_ids",
+                "from": "0.audit_author.name",
+                "kind": "generic"
+              }
+            ],
+            "projection": []
+          }
+        },
+        {
+          "summary": "Entry → Polymer entity instances",
+          "satisfaction": {
+            "status": "unverified",
+            "covered": {
+              "organism scientific name": "polymer_entity.rcsb_entity_host_organism.ncbi_parent_scientific_name"
+            },
+            "missing": [],
+            "joins": [
+              {
+                "step": 0,
+                "port": "entry_id",
+                "from": "$in.entry_id",
+                "kind": "caller"
+              },
+              {
+                "step": 1,
+                "port": "instance_ids",
+                "from": "0.audit_author.name",
+                "kind": "generic"
+              }
+            ],
+            "projection": [
+              {
+                "step": 1,
+                "fields": [
+                  "polymer_entity.rcsb_entity_host_organism.scientific_name",
+                  "polymer_entity.rcsb_entity_source_organism.scientific_name",
+                  "polymer_entity.rcsb_entity_host_organism.ncbi_scientific_name",
+                  "polymer_entity.rcsb_entity_source_organism.ncbi_scientific_name",
+                  "polymer_entity.rcsb_entity_host_organism.ncbi_parent_scientific_name",
+                  "polymer_entity.rcsb_entity_source_organism.ncbi_parent_scientific_name"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "summary": "Entry → Scan Competitor AI Presence → Retrieve UniProtKB entries by a search query.",
+          "satisfaction": {
+            "status": "unverified",
+            "covered": {
+              "organism scientific name": "results.organism.scientificName"
+            },
+            "missing": [],
+            "joins": [
+              {
+                "step": 0,
+                "port": "entry_id",
+                "from": "$in.entry_id",
+                "kind": "caller"
+              },
+              {
+                "step": 1,
+                "port": "entities",
+                "from": "0.audit_author.name",
+                "kind": "generic"
+              },
+              {
+                "step": 2,
+                "port": "query",
+                "from": "1.",
+                "kind": "generic"
+              }
+            ],
+            "projection": []
+          }
+        },
+        {
+          "summary": "Entry → Scan Competitor AI Presence → Download UniProtKB entries retrieved by a search query. (Max. 10 million entries)",
+          "satisfaction": {
+            "status": "unverified",
+            "covered": {
+              "organism scientific name": "results.organism.scientificName"
+            },
+            "missing": [],
+            "joins": [
+              {
+                "step": 0,
+                "port": "entry_id",
+                "from": "$in.entry_id",
+                "kind": "caller"
+              },
+              {
+                "step": 1,
+                "port": "entities",
+                "from": "0.audit_author.name",
+                "kind": "generic"
+              },
+              {
+                "step": 2,
+                "port": "query",
+                "from": "1.",
+                "kind": "generic"
+              }
+            ],
+            "projection": []
+          }
+        }
+      ],
+      "outcome": {
+        "status": "unverified",
+        "require": [
+          "organism scientific name"
+        ],
+        "covered": {
+          "organism scientific name": "polymer_entity.rcsb_entity_host_organism.ncbi_parent_scientific_name"
+        },
+        "missing": [],
+        "joins": [
+          {
+            "step": 0,
+            "port": "entry_id",
+            "from": "$in.entry_id",
+            "kind": "caller"
+          },
+          {
+            "step": 1,
+            "port": "entity_ids",
+            "from": "0.audit_author.name",
+            "kind": "generic"
+          },
+          {
+            "step": 2,
+            "port": "instance_ids",
+            "from": "1.pdbx_entity_src_syn.organism_scientific",
+            "kind": "generic"
+          }
+        ],
+        "reason": "the required information is reachable only through a generic join (no evidence that the values link)"
+      },
+      "executed": null,
+      "output": null,
+      "id": "Q05",
+      "seconds": 1.054,
+      "score": {
+        "pass": false,
+        "detail": "outcome unverified: the required information is reachable only through a generic join (no evidence that the values link)",
+        "truth": null
+      }
+    }
+  ],
+  "negatives": [],
+  "holdout": {}
+}

@@ -1,0 +1,26 @@
+{
+  "key": "A|json_xs|t3",
+  "attemptId": "2ba3cf81-a42f-477d-b362-16ec821279bd",
+  "commit": "c047f96fe4947f1d6ce6ca75fc0ff28a7b426613",
+  "holdoutSha256": "0f9e6af4f18ce4e587b5217e834a5868dd0efa66acbc757a92bf7ff1e7d07b7d",
+  "model": "gpt-6.1-sol",
+  "task": {
+    "id": "json_xs#3",
+    "program": "json_xs",
+    "kind": "feasible",
+    "request": "Show me this JSON array as a Perl data structure, the way Data::Dumper prints it.",
+    "input": {
+      "stdin": "[1, \"two\", null]\n"
+    },
+    "reference": {
+      "argv": [
+        "-t",
+        "dumper"
+      ]
+    },
+    "compare": "whitespace",
+    "expected": "[\n  1,\n  \"two\",\n  undef\n]\n",
+    "valid": true
+  },
+  "prompt": "You have one MCP tool, run_program, which runs the program /Users/ross/src/rightclick-x-adaptive/docs/adaptive/evidence/codex-development-c047f96/results.json.attempts/state/A/json_xs/bin/json_xs in a sandbox. Use only it.\n\nTask for the program /Users/ross/src/rightclick-x-adaptive/docs/adaptive/evidence/codex-development-c047f96/results.json.attempts/state/A/json_xs/bin/json_xs:\nShow me this JSON array as a Perl data structure, the way Data::Dumper prints it.\n\nStandard input (JSON string, exact content): \"[1, \\\"two\\\", null]\\n\"\n\nUse your tools to run the program and produce the result; do not compute or write the result yourself. Check that the result is correct for the request.\nIf it cannot be done correctly with this program, reply with a line 'UNABLE: <reason>' instead of a result.\nOtherwise reply with the exact result between a line containing only BEGIN and a line containing only END."
+}

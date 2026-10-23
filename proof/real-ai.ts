@@ -10,6 +10,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { jsonl, runClient, sourceIdentity, toolCalls, type AgentExecution, type ToolCall } from "./ai-clients.ts";
 import { fetchTruth, verifyBrief, negativeControls, type DestinationTruth } from "./real-truth.ts";
+import { decodeState } from "../src/core/state-format.ts";
 
 export interface RealDeployment {
   gatewayUrl: string;
@@ -234,7 +235,7 @@ async function runRealProof() {
     const builderAudit = jsonl(builder.audit);
     const builderCalls = toolCalls(builderAudit);
     const publication = builderCalls.findLast((call) => call.name === "context_compose" && call.value?.published?.id === "goal:destination-brief");
-    const builderState = existsSync(stateFile) ? JSON.parse(readFileSync(stateFile, "utf8")) : {};
+    const builderState = existsSync(stateFile) ? decodeState(JSON.parse(readFileSync(stateFile, "utf8"))) : {};
     const freshInitialTruth = await fetchTruth(initial);
     save(resolve(out, "truth-initial-after.json"), freshInitialTruth);
     const builderOutcome = outcomeChecks(publication, builderState, freshInitialTruth, deployment);
@@ -262,7 +263,7 @@ async function runRealProof() {
     const reuseCalls = toolCalls(reuseAudit);
     const invocations = reuseCalls.filter((call) => call.name === "context_run" && call.args.id === "goal:destination-brief");
     const invocation = invocations[0];
-    const reuseState = existsSync(stateFile) ? JSON.parse(readFileSync(stateFile, "utf8")) : {};
+    const reuseState = existsSync(stateFile) ? decodeState(JSON.parse(readFileSync(stateFile, "utf8"))) : {};
     const freshUnseenTruth = await fetchTruth(unseen);
     save(resolve(out, "truth-unseen-after.json"), freshUnseenTruth);
     const reuseOutcome = outcomeChecks(invocation, reuseState, freshUnseenTruth, deployment);

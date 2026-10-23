@@ -1,0 +1,277 @@
+{
+  "tag": "uce-freeze-1",
+  "commit": "99da4246367ad49da9030a91e87956cee6dca83f",
+  "at": "2026-10-16T21:55:52.366Z",
+  "A": "tidy",
+  "C": "sdiff",
+  "env": "/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-env-6Qpe1r",
+  "stages": {
+    "A": {
+      "learn": {
+        "ms": 327,
+        "probes": [
+          {
+            "url": "cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-env-6Qpe1r/bin/tidy",
+            "kind": "cli",
+            "ok": false,
+            "detail": "no input channel produced output for tidy (12 trials)"
+          }
+        ]
+      },
+      "capabilities": [],
+      "experimentallySupported": 0,
+      "compose": {
+        "ms": 9,
+        "plan": [],
+        "status": "failed",
+        "verification": "refuted"
+      },
+      "independentCheck": {
+        "pass": false,
+        "detail": "no HTML output"
+      },
+      "retainedAfterRestart": {
+        "goal": false,
+        "capability": false,
+        "hits": [
+          "builtin:html.markdown",
+          "builtin:markdown.html",
+          "builtin:html.links",
+          "builtin:html.text",
+          "builtin:web.fetch"
+        ]
+      },
+      "stateFile": "/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-env-6Qpe1r/stage-a/state.json",
+      "pass": false
+    },
+    "B": {
+      "client": "claude",
+      "seconds": 7.1,
+      "turns": 1,
+      "usage": {
+        "input_tokens": 2,
+        "cache_creation_input_tokens": 27448,
+        "cache_read_input_tokens": 0,
+        "output_tokens": 241,
+        "output_tokens_details": {
+          "thinking_tokens": 38
+        },
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 27448,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "inference_geo": "global",
+        "iterations": [
+          {
+            "input_tokens": 2,
+            "output_tokens": 241,
+            "cache_read_input_tokens": 0,
+            "cache_creation_input_tokens": 27448,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 27448
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard",
+        "fallback_credit": null
+      },
+      "toolCalls": 0,
+      "tools": [],
+      "relearnedProgram": false,
+      "executedThroughCapability": false,
+      "independentCheck": {
+        "pass": true,
+        "detail": "tags balanced; words missing none; unclosed p/li now closed true"
+      },
+      "pass": false,
+      "tail": "BEGIN\n<!DOCTYPE html>\n<html>\n  <head>\n    <title>Field notes</title>\n  </head>\n  <body>\n    <h3>Station seven</h3>\n    <p>Wind from the northwest</p>\n    <p>Rain overnight</p>\n    <ul>\n      <li>Tuesday</li>\n      <li>Wednesday</li>\n    </ul>\n  </body>\n</html>\nEND\n\nI closed both `<p>` elements and both `<li>` elements, added a doctype and indented the markup. The text is unchanged. This was a simple fix, so I didn't use any tools."
+    },
+    "F": {
+      "client": "codex",
+      "seconds": 3.1,
+      "toolCalls": 0,
+      "tools": [],
+      "relearnedProgram": false,
+      "executedThroughCapability": false,
+      "independentCheck": {
+        "pass": false,
+        "detail": "no HTML output"
+      },
+      "pass": false,
+      "tail": "uce the corrected document. Reply with the corrected document between a line containing only BEGIN and a line containing only END.\n\n<html><head><title>Field notes</title></head>\n<body><h3>Station seven</h3>\n<p>Wind from the northwest\n<p>Rain overnight\n<ul><li>Tuesday<li>Wednesday</ul>\n</body></html>\n\nERROR: You’ve hit your usage limit. Visit https://chatgpt.com/codex/settings/usage to purchase more credits or try again at Oct 22nd, 2026 10:55 PM.\nERROR: You’ve hit your usage limit. Visit https://chatgpt.com/codex/settings/usage to purchase more credits or try again at Oct 22nd, 2026 10:55 PM.\n",
+      "label": "different vendor (OpenAI Codex) from the session that built the capability (harness-driven Stage A); B is Anthropic Claude Code"
+    },
+    "C": {
+      "learn": [
+        {
+          "url": "cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-env-6Qpe1r/bin/sdiff",
+          "kind": "cli",
+          "ok": false,
+          "detail": "no input channel produced output for sdiff (2 trials)"
+        }
+      ],
+      "plan": [
+        "Extract readable text"
+      ],
+      "status": "completed",
+      "providers": [
+        "builtin:core"
+      ],
+      "usesBoth": false,
+      "independentCheck": {
+        "pass": false,
+        "detail": "original lines in order false; change markers false; corrected side has closing tags false; words missing 0"
+      },
+      "attempts": [],
+      "output": "Menu\nSoup of the day\nFresh bread\nCoffee Tea",
+      "pass": false
+    },
+    "D": {
+      "built": {
+        "status": "completed",
+        "trust": "verified",
+        "witness": "cli:casecheck:default"
+      },
+      "relearnAfterRestore": [
+        {
+          "url": "cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-env-6Qpe1r/bin/textkit",
+          "kind": "cli",
+          "ok": true,
+          "detail": "1 capability from 10 sandboxed runs (files; ok exit 0)"
+        }
+      ],
+      "steps": [
+        {
+          "label": "baseline v1",
+          "expectation": "adapt",
+          "status": "completed",
+          "output": "ABC DEF",
+          "correct": true,
+          "wrong": false,
+          "pass": true
+        },
+        {
+          "label": "renamed operation (-u -> -U)",
+          "expectation": "adapt",
+          "status": "completed",
+          "output": "GHI JKL",
+          "correct": true,
+          "wrong": false,
+          "pass": true
+        },
+        {
+          "label": "changed input (stdin -> file operand)",
+          "expectation": "adapt",
+          "status": "completed",
+          "output": "MNO PQR",
+          "correct": true,
+          "wrong": false,
+          "pass": true
+        },
+        {
+          "label": "nested output (JSON result.text)",
+          "expectation": "adapt",
+          "status": "failed",
+          "output": null,
+          "correct": false,
+          "wrong": false,
+          "pass": false,
+          "error": "composite:5d08f2bf2156: cli:textkit:u: program changed since it was investigated: /private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-env-6Qpe1r/bin/textkit (sha256 13773d1b2244, investigated 579783b1047b); not run (HTTP 409 equivalent)"
+        },
+        {
+          "label": "incompatible semantic change (now lower-cases)",
+          "expectation": "fail",
+          "status": "failed",
+          "output": null,
+          "correct": false,
+          "wrong": false,
+          "pass": true,
+          "error": "verification refuted by independent outcome witness: verification refuted: [{\"predicate\":{\"op\":\"equals\",\"path\":\"valid\",\"value\":true},\"ok\":false,\"actual\":false}]"
+        },
+        {
+          "label": "temporarily unavailable (exit 75)",
+          "expectation": "fail",
+          "status": "failed",
+          "output": null,
+          "correct": false,
+          "wrong": false,
+          "pass": true,
+          "error": "verification refuted by independent outcome witness: verification refuted: [{\"predicate\":{\"op\":\"equals\",\"path\":\"valid\",\"value\":true},\"ok\":false,\"actual\":false}]"
+        },
+        {
+          "label": "restored (operator re-investigates)",
+          "expectation": "adapt",
+          "status": "failed",
+          "output": null,
+          "correct": false,
+          "wrong": false,
+          "pass": false,
+          "error": "verification refuted by independent outcome witness: verification refuted: [{\"predicate\":{\"op\":\"equals\",\"path\":\"valid\",\"value\":true},\"ok\":false,\"actual\":false}]"
+        }
+      ],
+      "pass": false
+    },
+    "E": {
+      "afterRemoval": {
+        "programCapabilitiesInGraph": 0
+      },
+      "relearn": [
+        {
+          "url": "cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-env-6Qpe1r/bin/tidy",
+          "kind": "cli",
+          "ok": false,
+          "detail": "no input channel produced output for tidy (12 trials)"
+        }
+      ],
+      "afterRestore": {
+        "independentCheck": {
+          "pass": false,
+          "detail": "no HTML output"
+        }
+      },
+      "pass": false
+    }
+  },
+  "wrongOutcomes": [
+    "C: completed but failed independent check (original lines in order false; change markers false; corrected side has closing tags false; words missing 0)"
+  ],
+  "metrics": {
+    "timeToFirstCapabilityMs": 327,
+    "timeToFirstVerifiedCapabilityMs": 336,
+    "integrationCodeLines": 0
+  },
+  "controls": {
+    "N1": {
+      "capabilities": 0,
+      "probes": [
+        {
+          "url": "cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-env-6Qpe1r/bin/silent",
+          "kind": "cli",
+          "ok": false,
+          "detail": "no input channel produced output for silent (4 trials)"
+        }
+      ],
+      "pass": true
+    },
+    "N2": {
+      "error": "not authorised to investigate /usr/bin/sdiff: the operator has not registered it (authority.investigate / RCX_INVESTIGATE)",
+      "pass": true
+    }
+  },
+  "summary": {
+    "A": false,
+    "B": false,
+    "F": false,
+    "C": false,
+    "D": false,
+    "E": false,
+    "wrongOutcomes": 1
+  }
+}

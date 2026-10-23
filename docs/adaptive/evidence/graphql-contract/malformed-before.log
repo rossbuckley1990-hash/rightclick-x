@@ -1,0 +1,45 @@
+✔ known invalid selections stop locally without rediscovery, execution or provider penalty (32.411167ms)
+✔ aliases, recursive relationships, abstract typename and defaulted arguments stay usable (11.04175ms)
+✔ contract validation survives restart and changes only after fresh learned evidence (5.1ms)
+✔ missing legacy selection evidence does not invent a local rejection (1.173208ms)
+✔ partial GraphQL errors cannot become predicate-checked success or trigger repair (1.537375ms)
+✔ composed partial errors stop without discovery, replanning or publication (7.279708ms)
+✔ composed invalid selections stop locally, including the existing syntax boundary (3.01075ms)
+✔ legacy, truncated, over-budget and differently scoped evidence never proves an unknown field absent (2.174042ms)
+✔ conflicting aliases are rejected but valid aliases target the declared field (1.852917ms)
+✔ an effectful mutation with partial errors is not retried (0.979292ms)
+✔ fresh saved-goal, generated REST and GraphQL calls retain the terminal execution error (7.867667ms)
+✔ null execution-error data fails once; a request error can still expose genuine schema drift (5.169542ms)
+✔ a locally invalid verification query stops after the producer without retry or publication (2.564375ms)
+✔ fields whose required-looking arguments have defaults are discoverable result information (3.063375ms)
+✔ omitted root arguments use provider defaults while truly required arguments still refuse locally (2.071666ms)
+✖ malformed GraphQL error/data envelopes never become successful outcomes (1.448375ms)
+ℹ tests 16
+ℹ suites 0
+ℹ pass 15
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 294.918583
+
+✖ failing tests:
+
+test at test/graphql-contract.test.ts:254:1
+✖ malformed GraphQL error/data envelopes never become successful outcomes (1.448375ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'completed'
+  - 'failed'
+  
+      at TestContext.<anonymous> (file:///Users/ross/src/rightclick-x-adaptive/test/graphql-contract.test.ts:261:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'completed',
+    expected: 'failed',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

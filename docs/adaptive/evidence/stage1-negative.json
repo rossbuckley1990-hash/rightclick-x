@@ -1,0 +1,137 @@
+{
+  "build": "03d5bf76c428d3c9ce88caad2737a63ebc2f71cb",
+  "at": "2026-10-18T01:10:33.135Z",
+  "results": [
+    {
+      "control": "Identical primitive types, different entities",
+      "expectation": "An invoice id (string) is never accepted where an order id (string) is required; no plan is produced.",
+      "tests": [
+        [
+          "test/planning-rules.test.ts",
+          "identifiers of different entities never mix"
+        ]
+      ],
+      "runs": [
+        {
+          "file": "test/planning-rules.test.ts",
+          "test": "identifiers of different entities never mix",
+          "pass": 1,
+          "fail": 0,
+          "ok": true
+        }
+      ],
+      "verdict": "PASS"
+    },
+    {
+      "control": "A numerical field with ambiguous meaning",
+      "expectation": "When the tax-rate capability is gone, an order total (also a number) is not returned as the tax rate; the run fails instead.",
+      "tests": [
+        [
+          "test/drift.test.ts",
+          "healing preserves the meaning of the goal"
+        ]
+      ],
+      "runs": [
+        {
+          "file": "test/drift.test.ts",
+          "test": "healing preserves the meaning of the goal",
+          "pass": 1,
+          "fail": 0,
+          "ok": true
+        }
+      ],
+      "verdict": "PASS"
+    },
+    {
+      "control": "A seemingly compatible operation would change data during a read-only task",
+      "expectation": "With risks:[read], update/cancel capabilities never appear in plans; destructive capabilities do not run without confirm:true.",
+      "tests": [
+        [
+          "test/planning-rules.test.ts",
+          "read-only constraint"
+        ],
+        [
+          "test/runtime.test.ts",
+          "consent: writes run directly"
+        ]
+      ],
+      "runs": [
+        {
+          "file": "test/planning-rules.test.ts",
+          "test": "read-only constraint",
+          "pass": 1,
+          "fail": 0,
+          "ok": true
+        },
+        {
+          "file": "test/runtime.test.ts",
+          "test": "consent: writes run directly",
+          "pass": 1,
+          "fail": 0,
+          "ok": true
+        }
+      ],
+      "verdict": "PASS"
+    },
+    {
+      "control": "A provider returns a successful response containing an incorrect result",
+      "expectation": "Verification predicates mark the run refuted (not verified), and it counts as a failure in the ledger.",
+      "tests": [
+        [
+          "test/runtime.test.ts",
+          "verification: refuted predicates"
+        ]
+      ],
+      "runs": [
+        {
+          "file": "test/runtime.test.ts",
+          "test": "verification: refuted predicates",
+          "pass": 1,
+          "fail": 0,
+          "ok": true
+        }
+      ],
+      "verdict": "PASS"
+    },
+    {
+      "control": "A required provider disappears",
+      "expectation": "Its capabilities are withdrawn, dependent pipelines retired, an alternative used if one exists, otherwise the run fails.",
+      "tests": [
+        [
+          "test/drift.test.ts",
+          "a provider that disappears is withdrawn"
+        ]
+      ],
+      "runs": [
+        {
+          "file": "test/drift.test.ts",
+          "test": "a provider that disappears is withdrawn",
+          "pass": 1,
+          "fail": 0,
+          "ok": true
+        }
+      ],
+      "verdict": "PASS"
+    },
+    {
+      "control": "A contract changes but keeps the same operation name",
+      "expectation": "The saved pipeline built on the old contract is retired even though the operation id is unchanged.",
+      "tests": [
+        [
+          "test/drift.test.ts",
+          "a contract change under the same operation id"
+        ]
+      ],
+      "runs": [
+        {
+          "file": "test/drift.test.ts",
+          "test": "a contract change under the same operation id",
+          "pass": 1,
+          "fail": 0,
+          "ok": true
+        }
+      ],
+      "verdict": "PASS"
+    }
+  ]
+}

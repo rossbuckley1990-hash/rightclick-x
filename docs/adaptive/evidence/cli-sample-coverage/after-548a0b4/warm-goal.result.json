@@ -1,0 +1,209 @@
+{
+  "pid": 43754,
+  "sandbox": "macos-sandbox-exec",
+  "cfg": {
+    "route": "goal",
+    "input": "[\"warm\",2,null]",
+    "root": "/private/tmp/rcx-cli-samples-after",
+    "program": "/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/rcx-json-repair-d3U3GS/json_xs",
+    "state": "/Users/ross/src/rightclick-x-adaptive/docs/adaptive/evidence/cli-sample-coverage/after-548a0b4/warm-goal.state.json",
+    "result": "/Users/ross/src/rightclick-x-adaptive/docs/adaptive/evidence/cli-sample-coverage/after-548a0b4/warm-goal.result.json",
+    "inputStateSha256": "1121258bb607eb9368a6573b5690b32fb866a37833564a991430f3c95a4d77d1"
+  },
+  "authority": {
+    "investigate": [
+      "/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/rcx-json-repair-d3U3GS/json_xs"
+    ],
+    "execute": [
+      "/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/rcx-json-repair-d3U3GS/json_xs"
+    ]
+  },
+  "cap": {
+    "id": "cli:json-xs:stdout",
+    "title": "json_xs: exact standard output text",
+    "description": "Same authorised invocation as cli:json-xs:invoke, preserving standard output exactly as text. Use for exact formatting, large numbers or duplicate object keys. No JSON value conversion or inferred field projection.",
+    "provider": "cli:json-xs",
+    "source": "cli",
+    "inputs": [
+      {
+        "name": "json",
+        "type": "json",
+        "required": false,
+        "description": "Content given on standard input. Supply text to preserve its bytes; objects and arrays are serialized as JSON."
+      },
+      {
+        "name": "options",
+        "type": "list:text",
+        "required": false,
+        "description": "Documented options and their values, one item each: -v, -f <fromformat>, -t <toformat>, -e <code>"
+      },
+      {
+        "name": "files",
+        "type": "json",
+        "required": false,
+        "description": "Named input files {\"name.txt\": \"content\"}: staged with exact flat names (no paths or leading dash). Options can refer to these names. All are operands unless \"operands\" selects otherwise."
+      },
+      {
+        "name": "operands",
+        "type": "list:text",
+        "required": false,
+        "description": "Names from \"files\" to append as positional operands, in this order. Omit for all files; [] for none. Auxiliary files used by options need not also be operands."
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "text",
+        "required": true
+      }
+    ],
+    "risk": "read",
+    "tags": [
+      "json_xs",
+      "declared-interface",
+      "direct-only",
+      "json",
+      "json",
+      "commandline",
+      "utility",
+      "exact-stdout",
+      "json-text"
+    ],
+    "invoke": {
+      "kind": "cli",
+      "bin": "/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/rcx-json-repair-d3U3GS/json_xs",
+      "args": [],
+      "stdin": "json",
+      "okExit": [
+        0
+      ],
+      "output": "text",
+      "sha256": "c0903b27ef64f0f42952c12ce1367dcd0beebb0dad84cb70a6e6681cf4ec9c0b",
+      "behaviour": "9fbc6a077f90f3cf+options+stdout",
+      "examples": [
+        {
+          "stdin": "{\"name\":\"india\",\"count\":7,\"tags\":[\"juliet\",\"kilo\"]}\n",
+          "outputSha256": "1d22d2a378182cbe162ffde6d75e310092cc3e92c8d7818c1fd7ad293ef9d3f5",
+          "outputPreview": "{\n   \"count\" : 7,\n   \"name\" : \"india\",\n   \"tags\" : [\n      \"juliet\",\n      \"kilo\"\n   ]\n}\n"
+        },
+        {
+          "stdin": "{\"name\":\"juliet\",\"count\":8,\"tags\":[\"kilo\",\"lima\"]}\n",
+          "outputSha256": "d0e22591995161763911f8f04ff5ef4a6744ca2b3c18761378aadd243ac8d0d1",
+          "outputPreview": "{\n   \"count\" : 8,\n   \"name\" : \"juliet\",\n   \"tags\" : [\n      \"kilo\",\n      \"lima\"\n   ]\n}\n"
+        }
+      ],
+      "options": {
+        "port": "options",
+        "allowed": [
+          {
+            "flags": [
+              "-v"
+            ],
+            "arg": false
+          },
+          {
+            "flags": [
+              "-f"
+            ],
+            "arg": true
+          },
+          {
+            "flags": [
+              "-t"
+            ],
+            "arg": true
+          },
+          {
+            "flags": [
+              "-e"
+            ],
+            "arg": true
+          }
+        ],
+        "excluded": []
+      },
+      "filesPort": "files",
+      "operandsPort": "operands"
+    }
+  },
+  "response": {
+    "runId": "run_mvddg9ik_1",
+    "capability": "goal:repair-pretty-json",
+    "provider": "goal:published",
+    "title": "repair pretty json",
+    "status": "completed",
+    "output": "[\n   \"warm\",\n   2,\n   null\n]\n",
+    "startedAt": "2026-10-18T05:15:16.652Z",
+    "durationMs": 28.4,
+    "verification": {
+      "status": "checked",
+      "results": [
+        {
+          "predicate": {
+            "op": "matches",
+            "pattern": "\\n {2,}"
+          },
+          "ok": true,
+          "actual": "[\n   \"warm\",\n   2,\n   null\n]\n"
+        }
+      ]
+    },
+    "receipt": {
+      "runId": "run_mvddg9ik_1",
+      "capability": "goal:repair-pretty-json",
+      "provider": "goal:published",
+      "startedAt": "2026-10-18T05:15:16.652Z",
+      "durationMs": 28.4,
+      "status": "completed",
+      "verification": "checked",
+      "seq": 3,
+      "inputDigest": "52aa424721cb706ef22d725653cb16c4a647b31e9ab7f0c65a4a9e38d0b87ecc",
+      "outputDigest": "d99f7760ec9520d2b6eaaf463feb26b187d361625349e49072e173c69961da8e",
+      "prev": "80ba9897066f572e61c1d2a85222ed083a290a5eb826518c663a9b37dd7231f7",
+      "hash": "6e4ada90a1c32d6e4ce8597bf6f1c25f7597648a0208a85e44b71a52b27c12cd"
+    },
+    "steps": [
+      "run_mvddg9ir_2"
+    ],
+    "attempts": []
+  },
+  "operationMs": 46.196292000000014,
+  "investigations": [],
+  "wires": [
+    {
+      "program": "/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/rcx-json-repair-d3U3GS/json_xs",
+      "args": [],
+      "opts": {
+        "stdin": "[\"warm\",2,null]",
+        "files": {},
+        "purpose": "execution"
+      },
+      "before": {
+        "real": "/usr/bin/json_xs",
+        "sha256": "c0903b27ef64f0f42952c12ce1367dcd0beebb0dad84cb70a6e6681cf4ec9c0b"
+      },
+      "after": {
+        "real": "/usr/bin/json_xs",
+        "sha256": "c0903b27ef64f0f42952c12ce1367dcd0beebb0dad84cb70a6e6681cf4ec9c0b"
+      },
+      "result": {
+        "code": 0,
+        "stdout": "[\n   \"warm\",\n   2,\n   null\n]\n",
+        "stderr": "",
+        "timedOut": false,
+        "truncated": false,
+        "durationMs": 19,
+        "created": [],
+        "workDir": "/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/rcx-sbx-0psgtm"
+      }
+    }
+  ],
+  "network": [],
+  "finalCapabilities": [
+    "cli:json-xs:default",
+    "cli:json-xs:v",
+    "cli:json-xs:invoke",
+    "cli:json-xs:stdout"
+  ],
+  "stateSha256": "e0b722c26674ce31064c549399ff581f9e212d8e0a47c3976fa151929195fc98"
+}

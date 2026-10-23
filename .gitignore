@@ -1,11 +1,16 @@
 node_modules/
 dist/
+__pycache__/
+*.pyc
+integrations/actenon/authority-evidence.mjs
 .rcx-state/
 *.log
+!docs/adaptive/evidence/*.log
 .DS_Store
 *.bun-build
 .rcx-deploy/
 lab/results/seed-*.json
+demo/evidence/
 
 # Probe recipes write per-job credentials into auth.json on the runner; they must
 # never reach the repository, even accidentally.
@@ -14,3 +19,15 @@ experiments/**/.env
 
 # Retain successful and failed reconciliation checks with their exact commands.
 !docs/reconciliation/**/*.log
+
+# Preserve raw Actenon feasibility failures and test logs.
+!docs/north-star/evidence/actenon/*.log
+!docs/north-star/evidence/actenon/integration-*/*.log
+
+# Generated benchmark environments and scratch copies of third-party binaries.
+bench/env/
+experiments/competitive-cli-anything/env/bin/
+experiments/competitive-cli-anything/env/venv/
+experiments/competitive-cli-anything/work-smoke/
+experiments/competitive-cli-anything/harness/.pytest_cache/
+experiments/competitive-cli-anything/harness/*.egg-info/

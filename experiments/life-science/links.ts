@@ -104,6 +104,10 @@ const PROBES = [
   { hop: "accession → GO term → ontology parents (Q07)", have: { accession: "P68871" }, want: "json", intent: "ontology term parents" },
   { hop: "PDB entry → accession → gene (Q04)", have: { entry_id: "4HHB" }, want: "text", intent: "gene name" },
   { hop: "PDB entry → accession → organism (Q05)", have: { entry_id: "6M0J" }, want: "text", intent: "organism scientific name" },
+  // Added with list fan-out (lifesci-fanout-1): the same two hops asking for what they are, a list.
+  // An entry has several chains, so "the" gene is one answer per accession; `text` cannot hold that.
+  { hop: "PDB entry → accessions → genes, as a list (Q04)", have: { entry_id: "4HHB" }, want: "list:text", intent: "gene name", added: "fanout-1" },
+  { hop: "PDB entry → accessions → organisms, as a list (Q05)", have: { entry_id: "6M0J" }, want: "list:text", intent: "organism scientific name", added: "fanout-1" },
 ];
 // Each binding that carries a value from one source into another is classified: through a
 // learned scheme, through a specific id type, or as generic text/number plumbing.
@@ -124,12 +128,15 @@ async function probe(mcp: Mcp) {
           const o = a.outputs.find((q: any) => q.name === m[2]) ?? { type: "json" };
           const port = b.inputs.find((q: any) => q.name === bind.port);
           const kind = o.schemes?.some((sc: string) => port.schemes?.includes(sc)) ? "scheme" : /^(list:)?id\./.test(port.type) && accepts(port.name, port.type, o.type) ? "id-type" : "generic";
-          crossings.push(`${kind}: ${sourceOf(a.provider)} ${m[2] || "(whole)"} (${o.type}) → ${sourceOf(b.provider)} ${bind.port} (${port.type})`);
+          // A fan-out binding maps the step over the list's items (it says so in the plan).
+          const each = bind.each ? ` [each ≤${bind.each.max}${bind.each.shapes ? ` shapes ${bind.each.shapes.join(",")}` : ""}]` : "";
+          crossings.push(`${kind}: ${sourceOf(a.provider)} ${m[2] || "(whole)"} (${o.type}) → ${sourceOf(b.provider)} ${bind.port} (${port.type})${each}`);
         }
       }
-      return { summary: x.summary, providers: x.providers.map(sourceOf), crossings, meaningful: crossings.length > 0 && crossings.every((c) => !c.startsWith("generic")) };
+      const fanOut = x.steps.some((s: any) => s.bindings.some((b: any) => b.each));
+      return { summary: x.summary, providers: x.providers.map(sourceOf), crossings, fanOut, meaningful: crossings.length > 0 && crossings.every((c) => !c.startsWith("generic")) };
     });
-    out.push({ ...p, haveTypes: r.value?.goal?.have, plans, meaningfulCrossSourcePlans: plans.filter((x: any) => x.meaningful).length, genericCrossSourcePlans: plans.filter((x: any) => x.crossings.some((c: string) => c.startsWith("generic"))).length });
+    out.push({ ...p, haveTypes: r.value?.goal?.have, plans, meaningfulCrossSourcePlans: plans.filter((x: any) => x.meaningful).length, genericCrossSourcePlans: plans.filter((x: any) => x.crossings.some((c: string) => c.startsWith("generic"))).length, fanOutPlans: plans.filter((x: any) => x.fanOut).length, meaningfulFanOutPlans: plans.filter((x: any) => x.fanOut && x.meaningful).length });
   }
   return out;
 }
@@ -179,5 +186,6 @@ const evidence = {
 mkdirSync(`${HERE}/evidence`, { recursive: true });
 writeFileSync(`${HERE}/evidence/links-${TAG}.json`, JSON.stringify(evidence, null, 2));
 log(`probes, plans crossing sources only by scheme/id-type (meaningful) vs with generic crossings, before/after replay: ${probesBefore.map((p) => `${p.meaningfulCrossSourcePlans}|${p.genericCrossSourcePlans}`).join(" ")} / ${probesAfter.map((p) => `${p.meaningfulCrossSourcePlans}|${p.genericCrossSourcePlans}`).join(" ")}`);
+log(`probes, fan-out plans (meaningful/all), before/after replay: ${probesBefore.map((p) => `${p.meaningfulFanOutPlans}/${p.fanOutPlans}`).join(" ")} / ${probesAfter.map((p) => `${p.meaningfulFanOutPlans}/${p.fanOutPlans}`).join(" ")}`);
 log(`network: ${net.length} requests ${JSON.stringify(perHost)}`);
 log(`evidence: experiments/life-science/evidence/links-${TAG}.json`);

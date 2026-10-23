@@ -1,0 +1,57 @@
+✔ explicit external transport denial is not provider drift or negative behavioral evidence (18.491625ms)
+✔ a saved goal stops on external denial without repair or alternative execution (9.466041ms)
+✔ generated REST and GraphQL cannot replan around an external denial (5.2635ms)
+✔ a denied fan-out item stops the retained composite before later items (1.129834ms)
+✔ denied witness leaves an already executed effect unverified and never replays it (2.738ms)
+✔ a peer refusal stops execution but never acts as a local authority proof (0.471875ms)
+✔ boundary denial after HTTP acceptance remains pending without replay (1.920416ms)
+✖ HTTP 401 is an execution refusal across protocol families (4.2045ms)
+✖ HTTP 403 is an execution refusal across protocol families (1.232ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 7
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 152.581959
+
+✖ failing tests:
+
+test at test/transport-refusal.test.ts:163:34
+✖ HTTP 401 is an execution refusal across protocol families (4.2045ms)
+  AssertionError [ERR_ASSERTION]: openapi:http-denial:read
+  + actual - expected
+  
+  + 'refuted'
+  - 'unverified'
+  
+      at TestContext.<anonymous> (file:///Users/ross/src/rightclick-x-adaptive/test/transport-refusal.test.ts:185:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'refuted',
+    expected: 'unverified',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/transport-refusal.test.ts:163:34
+✖ HTTP 403 is an execution refusal across protocol families (1.232ms)
+  AssertionError [ERR_ASSERTION]: openapi:http-denial:read
+  + actual - expected
+  
+  + 'refuted'
+  - 'unverified'
+  
+      at TestContext.<anonymous> (file:///Users/ross/src/rightclick-x-adaptive/test/transport-refusal.test.ts:185:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'refuted',
+    expected: 'unverified',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

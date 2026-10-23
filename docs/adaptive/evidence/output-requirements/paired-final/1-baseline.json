@@ -1,0 +1,77 @@
+{
+  "runtimeRoot": "/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/rcx-output-requirements-f29iifln/baseline",
+  "node": "v26.12.0",
+  "sourceTreeSha256": "28165dee8a4f54b04f64bca93fef1e8eb6c6b024c6702eb46678a0c6b435f39c",
+  "stateSha256": "884b984ce881dd040ac2c43bf60ef33f8830f62e03d9f31289ea7753a9287d4a",
+  "request": {
+    "have": {
+      "entry_id": "1UBQ"
+    },
+    "want": "json",
+    "intent": "Retrieve primary research publication metadata via RCSB rcsb_primary_citation.pdbx_database_id_DOI then Crossref DOI lookup. Never use structure dataset DOI. Input entry_id is parameterized.",
+    "origins": [
+      "https://data.rcsb.org",
+      "https://api.crossref.org"
+    ],
+    "risks": [
+      "read"
+    ],
+    "require": [
+      "composite:b9028941c83d"
+    ],
+    "verify": [
+      {
+        "op": "equals",
+        "path": "message.type",
+        "value": "journal-article"
+      },
+      {
+        "op": "type",
+        "path": "message.title",
+        "value": "array"
+      },
+      {
+        "op": "length_gt",
+        "path": "message.title",
+        "value": 0
+      },
+      {
+        "op": "exists",
+        "path": "message.publisher"
+      },
+      {
+        "op": "exists",
+        "path": "message.DOI"
+      }
+    ],
+    "publish": "pdb-primary-research-publication",
+    "run": true
+  },
+  "milliseconds": 18004.114625000002,
+  "rss": 227482472,
+  "requests": 0,
+  "before": 69,
+  "after": 69,
+  "outcome": {
+    "status": "unavailable",
+    "require": [
+      "composite:b9028941c83d"
+    ],
+    "covered": {},
+    "missing": [
+      "composite:b9028941c83d"
+    ],
+    "joins": [
+      {
+        "step": 0,
+        "port": "entry_id",
+        "from": "$in.entry_id",
+        "kind": "caller"
+      }
+    ],
+    "reason": "no plan's result carries: composite:b9028941c83d"
+  },
+  "plans": 5,
+  "executed": false,
+  "published": false
+}

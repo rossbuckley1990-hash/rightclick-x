@@ -1,0 +1,185 @@
+{
+  "arm": "C",
+  "phase": "r1",
+  "startedAt": "2026-10-22T17:19:11.782Z",
+  "environment": {
+    "node": "v26.12.0",
+    "mlr": "/tmp/rcx-cli-anything-work/pristine/mlr",
+    "mlrSha256": "976a3ab9527a5f5e62382d2a5fc4b06b1d00733e93d2bb055572b89afaa8de97",
+    "harness": "/Users/ross/src/rightclick-x-competitive/experiments/competitive-cli-anything/env/venv/bin/cli-anything-mlr",
+    "harnessSha256": "4899855f44afd39c0d9f69ff85a3ae3123b126931f5b35d93cda8de45babd047",
+    "api": "http://127.0.0.1:18082",
+    "sandboxRead": "/Users/ross/src/rightclick-x-competitive/experiments/competitive-cli-anything/env:/Users/ross/src/rightclick-x-competitive/experiments/competitive-cli-anything/harness:/tmp/rcx-cli-anything-work:/opt/homebrew/Cellar/python@3.14/3.14.6:/opt/homebrew/Cellar/python@3.14/3.14.6/Frameworks/Python.framework/Versions/3.14",
+    "sandboxPath": "/tmp/rcx-cli-anything-work/bin:/Users/ross/src/rightclick-x-competitive/experiments/competitive-cli-anything/env/bin:/Users/ross/src/rightclick-x-competitive/experiments/competitive-cli-anything/env/venv/bin",
+    "network": "allow",
+    "product": {
+      "cli": "7d074334b16c0cc0ab8e2774eee61a0ac77eee3124439d2f7ad15bf9068c4d07",
+      "runtime": "92226d86a0eaf4a50efb41ebc0c5a899b24025730c72e6a324b887bf27ec007c",
+      "types": "6c07ee7c6daf7e0bdc14ac56503114c3cab571bf90321761b74d32d47b57f19a"
+    },
+    "sandbox": "macos-sandbox-exec"
+  },
+  "recovery": {
+    "reLearned": {
+      "retained": {
+        "runId": "run_mvjt2mz8_1_ebcaabde-1c49-4d74-b351-960061aacb82",
+        "capability": "cli:mlr:filter",
+        "provider": "cli:mlr",
+        "status": "failed",
+        "durationMs": 1,
+        "error": "program changed since it was investigated: /tmp/rcx-cli-anything-work/bin/mlr (sha256 c95963826cdf, investigated 976a3ab9527a); not run (HTTP 409 equivalent); program changed since it was investigated and cli:mlr:filter has no conformance examples to revalidate it; re-investigate to accept the new program (HTTP 409 equivalent)",
+        "verification": {
+          "status": "refuted",
+          "results": []
+        },
+        "receipt": "8e73b89536253ae0ebbd882563c7efc18fe65d29b471453d7ef6bb4c30caa3af",
+        "healing": {
+          "source": "cli:/tmp/rcx-cli-anything-work/bin/mlr",
+          "error": "program changed since it was investigated: /tmp/rcx-cli-anything-work/bin/mlr (sha256 c95963826cdf, investigated 976a3ab9527a); not run (HTTP 409 equivalent)",
+          "note": "program changed since it was investigated and cli:mlr:filter has no conformance examples to revalidate it; re-investigate to accept the new program (HTTP 409 equivalent)"
+        },
+        "wallMs": 4
+      },
+      "learning": {
+        "label": "r1-relearn",
+        "sources": [
+          "cli:/tmp/rcx-cli-anything-work/bin/mlr"
+        ],
+        "wallMs": 1848,
+        "totalNewCapabilities": 74,
+        "totalNewPowers": 0,
+        "graph": {
+          "providers": 3,
+          "capabilities": 100,
+          "edges": 495,
+          "chains2": 495,
+          "chains3": 1069,
+          "total": 1664
+        },
+        "results": [
+          {
+            "source": "cli:/tmp/rcx-cli-anything-work/bin/mlr",
+            "probes": [
+              {
+                "url": "cli:/tmp/rcx-cli-anything-work/bin/mlr",
+                "kind": "cli",
+                "ok": true,
+                "detail": "74 subcommand capabilities from 79 sandboxed runs (74 commands discovered)"
+              }
+            ],
+            "learned": [
+              {
+                "provider": "cli:mlr",
+                "capabilitiesAdded": 74,
+                "newPowers": 0
+              }
+            ]
+          }
+        ]
+      },
+      "after": {
+        "runId": "run_mvjt2oep_2_b6a1f384-b482-4d33-91b7-70fe222ce808",
+        "capability": "cli:mlr:filter",
+        "provider": "cli:mlr",
+        "status": "completed",
+        "durationMs": 23.1,
+        "verification": {
+          "status": "unverified",
+          "results": []
+        },
+        "receipt": "bc5d08fe0c4efc44a4ac12e5967ef9ad2815bf967b860aaa60c052d312b0c6ed",
+        "output": "[\n{\n  \"invoice_id\": \"INV-1001\",\n  \"supplier_id\": \"SUP-NW\",\n  \"supplier\": \"Northwind Logistics\",\n  \"region\": \"EMEA\",\n  \"currency\": \"EUR\",\n  \"amount\": 1250.00,\n  \"issued_on\": \"2026-07-02\"\n},\n{\n  \"invoice_id\": \"INV-1003\",\n  \"supplier_id\": \"SUP-KT\",\n  \"supplier\": \"Kite Systems\",\n  \"region\": \"EMEA\",\n  \"currency\": \"GBP\",\n  \"amount\": 780.00,\n  \"issued_on\": \"2026-07-03\"\n},\n{\n  \"invoice_id\": \"INV-1006\",\n  \"supplier_id\": \"SUP-KT\",\n  \"supplier\": \"Kite Systems\",\n  \"region\": \"EMEA\",\n  \"currency\": \"GBP\",\n  \"amount\": 640.00,\n  \"issued_on\": \"2026-07-07\"\n},\n{\n  \"invoice_id\": \"INV-1007\",\n  \"supplier_id\": \"SUP-HL\",\n  \"supplier\": \"Helios Energy\",\n  \"region\": \"EMEA\",\n  \"currency\": \"EUR\",\n  \"amount\": 980.00,\n  \"issued_on\": \"2026-07-08\"\n},\n{\n  \"invoice_id\": \"INV-1008\",\n  \"supplier_id\": \"SUP-AC\",\n  \"supplier\": \"Acme Components\",\n  \"region\": \"EMEA\",\n  \"currency\": \"USD\",\n  \"amount\": 510.00,\n  \"issued_on\": \"2026-07-02\"\n},\n{\n  \"invoice_id\": \"INV-1010\",\n  \"supplier_id\": \"SUP-KT\",\n  \"supplier\": \"Kite Systems\",\n  \"region\": \"EMEA\",\n  \"currency\": \"GBP\",\n  \"amount\": 1200.00,\n  \"issued_on\": \"2026-07-06\"\n},\n{\n  \"invoice_id\": \"INV-1012\",\n  \"supplier_id\": \"SUP-AC\",\n  \"supplier\": \"Acme Components\",\n  \"region\": \"EMEA\",\n  \"currency\": \"USD\",\n  \"amount\": 750.00,\n  \"issued_on\": \"2026-07-07\"\n}\n]\n",
+        "wallMs": 24
+      },
+      "autoHealed": true
+    }
+  },
+  "finishedAt": "2026-10-22T17:19:15.532Z",
+  "tasks": [
+    {
+      "task": "R1",
+      "status": "pass",
+      "runs": [
+        {
+          "runId": "run_mvjt2mz8_1_ebcaabde-1c49-4d74-b351-960061aacb82",
+          "capability": "cli:mlr:filter",
+          "provider": "cli:mlr",
+          "status": "failed",
+          "durationMs": 1,
+          "error": "program changed since it was investigated: /tmp/rcx-cli-anything-work/bin/mlr (sha256 c95963826cdf, investigated 976a3ab9527a); not run (HTTP 409 equivalent); program changed since it was investigated and cli:mlr:filter has no conformance examples to revalidate it; re-investigate to accept the new program (HTTP 409 equivalent)",
+          "verification": {
+            "status": "refuted",
+            "results": []
+          },
+          "receipt": "8e73b89536253ae0ebbd882563c7efc18fe65d29b471453d7ef6bb4c30caa3af",
+          "healing": {
+            "source": "cli:/tmp/rcx-cli-anything-work/bin/mlr",
+            "error": "program changed since it was investigated: /tmp/rcx-cli-anything-work/bin/mlr (sha256 c95963826cdf, investigated 976a3ab9527a); not run (HTTP 409 equivalent)",
+            "note": "program changed since it was investigated and cli:mlr:filter has no conformance examples to revalidate it; re-investigate to accept the new program (HTTP 409 equivalent)"
+          },
+          "wallMs": 4
+        },
+        {
+          "runId": "run_mvjt2oep_2_b6a1f384-b482-4d33-91b7-70fe222ce808",
+          "capability": "cli:mlr:filter",
+          "provider": "cli:mlr",
+          "status": "completed",
+          "durationMs": 23.1,
+          "verification": {
+            "status": "unverified",
+            "results": []
+          },
+          "receipt": "bc5d08fe0c4efc44a4ac12e5967ef9ad2815bf967b860aaa60c052d312b0c6ed",
+          "output": "[\n{\n  \"invoice_id\": \"INV-1001\",\n  \"supplier_id\": \"SUP-NW\",\n  \"supplier\": \"Northwind Logistics\",\n  \"region\": \"EMEA\",\n  \"currency\": \"EUR\",\n  \"amount\": 1250.00,\n  \"issued_on\": \"2026-07-02\"\n},\n{\n  \"invoice_id\": \"INV-1003\",\n  \"supplier_id\": \"SUP-KT\",\n  \"supplier\": \"Kite Systems\",\n  \"region\": \"EMEA\",\n  \"currency\": \"GBP\",\n  \"amount\": 780.00,\n  \"issued_on\": \"2026-07-03\"\n},\n{\n  \"invoice_id\": \"INV-1006\",\n  \"supplier_id\": \"SUP-KT\",\n  \"supplier\": \"Kite Systems\",\n  \"region\": \"EMEA\",\n  \"currency\": \"GBP\",\n  \"amount\": 640.00,\n  \"issued_on\": \"2026-07-07\"\n},\n{\n  \"invoice_id\": \"INV-1007\",\n  \"supplier_id\": \"SUP-HL\",\n  \"supplier\": \"Helios Energy\",\n  \"region\": \"EMEA\",\n  \"currency\": \"EUR\",\n  \"amount\": 980.00,\n  \"issued_on\": \"2026-07-08\"\n},\n{\n  \"invoice_id\": \"INV-1008\",\n  \"supplier_id\": \"SUP-AC\",\n  \"supplier\": \"Acme Components\",\n  \"region\": \"EMEA\",\n  \"currency\": \"USD\",\n  \"amount\": 510.00,\n  \"issued_on\": \"2026-07-02\"\n},\n{\n  \"invoice_id\": \"INV-1010\",\n  \"supplier_id\": \"SUP-KT\",\n  \"supplier\": \"Kite Systems\",\n  \"region\": \"EMEA\",\n  \"currency\": \"GBP\",\n  \"amount\": 1200.00,\n  \"issued_on\": \"2026-07-06\"\n},\n{\n  \"invoice_id\": \"INV-1012\",\n  \"supplier_id\": \"SUP-AC\",\n  \"supplier\": \"Acme Components\",\n  \"region\": \"EMEA\",\n  \"currency\": \"USD\",\n  \"amount\": 750.00,\n  \"issued_on\": \"2026-07-07\"\n}\n]\n",
+          "wallMs": 24
+        }
+      ],
+      "learning": {
+        "label": "r1-relearn",
+        "sources": [
+          "cli:/tmp/rcx-cli-anything-work/bin/mlr"
+        ],
+        "wallMs": 1848,
+        "totalNewCapabilities": 74,
+        "totalNewPowers": 0,
+        "graph": {
+          "providers": 3,
+          "capabilities": 100,
+          "edges": 495,
+          "chains2": 495,
+          "chains3": 1069,
+          "total": 1664
+        },
+        "results": [
+          {
+            "source": "cli:/tmp/rcx-cli-anything-work/bin/mlr",
+            "probes": [
+              {
+                "url": "cli:/tmp/rcx-cli-anything-work/bin/mlr",
+                "kind": "cli",
+                "ok": true,
+                "detail": "74 subcommand capabilities from 79 sandboxed runs (74 commands discovered)"
+              }
+            ],
+            "learned": [
+              {
+                "provider": "cli:mlr",
+                "capabilitiesAdded": 74,
+                "newPowers": 0
+              }
+            ]
+          }
+        ]
+      },
+      "note": "retained failed; explicit re-learn returned identical output"
+    }
+  ],
+  "log": [
+    "installed a same-behaviour wrapper at the investigated mlr path",
+    "  run cli:mlr:filter -> failed: program changed since it was investigated: /tmp/rcx-cli-anything-work/bin/mlr (sha256 c95963826cdf, investigated 976a3ab9527a); not run (HTTP 409 equivalent); program changed since",
+    "learn r1-relearn: 74 caps in 1848ms; providers 3; failures 0",
+    "  run cli:mlr:filter -> completed",
+    "R1: pass — retained failed; explicit re-learn returned identical output",
+    "learn r1-restore: 74 caps in 1818ms; providers 3; failures 0"
+  ]
+}

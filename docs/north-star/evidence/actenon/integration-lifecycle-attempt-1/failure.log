@@ -1,0 +1,18 @@
+Traceback (most recent call last):
+  File "/Users/ross/src/rightclick-x-adaptive/experiments/actenon/lifecycle.py", line 221, in <module>
+    run(args.output, args.image)
+  File "/Users/ross/src/rightclick-x-adaptive/experiments/actenon/lifecycle.py", line 131, in run
+    witness, errors, observer = start_observer(output, private)
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/ross/src/rightclick-x-adaptive/experiments/actenon/lifecycle.py", line 109, in start_observer
+    return process, errors, json.loads(line)["origin"]
+                            ^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/json/__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/json/decoder.py", line 338, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/json/decoder.py", line 356, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)

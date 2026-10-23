@@ -119,6 +119,19 @@ For an HTTP MCP client, run `node bin/rcx.ts serve` locally and connect to `http
 
 Public-directory discovery requires internet access, and third-party API availability can vary. Start with `npm run demo` for a deterministic local experience.
 
+## Run from the terminal
+
+Use `rcx explain <capability-id>` to see a discovered operation's inputs and restrictions. Simple `k=v` inputs stay strings. For arrays, objects, booleans or numbers, pass one JSON object:
+
+```bash
+node bin/rcx.ts run builtin:list.first-url --args '{"urls":["https://example.com/a","https://example.com/b"]}'
+node bin/rcx.ts run <capability-id> --args-file inputs.json
+cat inputs.json | node bin/rcx.ts run <capability-id> --args-file -
+node bin/rcx.ts compose --args '{"text":"hello"}' --want hash --run
+```
+
+Choose either `k=v`, `--args` or `--args-file`; mixed inputs are rejected. Files and stdin use UTF-8, up to 16 MiB. Duplicate keys and numbers that cannot survive JSON conversion are refused; keep exact numeric identifiers or raw documents as strings. Operator permissions still apply. Failed runs, refuted checks and unsuccessful executed compositions return a nonzero exit status with their JSON result. Once installed, use `rcx` in place of `node bin/rcx.ts`.
+
 ## Why this is different
 
 Most agent integrations expose **a fixed list of tools somebody already wrote**. RightClick X exposes a fixed *way to discover and use capabilities* — while the capabilities themselves change with the environment.
@@ -190,6 +203,10 @@ On one Apple Silicon laptop, synthetic stress tests recorded **20,014 capabiliti
 | `context_runtime` | Identify the runtime, region, and capability graph. |
 
 One powerful pattern is `context_compose` with `publish: "<name>"`: an outcome becomes `goal:<slug>`, exposed through MCP and as a generated HTTP API. Saved goals can be found and used by another agent after restart; they retain their declared checks and re-plan when compatible implementations change.
+
+For bounded recovery of flat compositions, start the host with `RCX_WORKFLOW_RECOVERY=1` (SDK: `workflowRecovery: true` plus a `Store`). Pending results expose a `resume:<run-id>` selector for the same chosen execution. Use it with `context_run`, without replacement inputs or checks; current authority still applies. This opt-in stores bounded business inputs/outputs locally. See [the recovery evidence and limits](docs/adaptive/COMPOSE-RESUME.md), including process-kill tests, unsupported shapes and same-revision scope.
+
+Persisted state now uses a versioned envelope. Built-in file/KV stores read known legacy snapshots and upgrade them on save; incompatible or unreadable state stops startup without a reset. The tested older readers refuse the new encoding. Custom state adapters and raw-file consumers should use the exported `encodeState` / `decodeState` helpers. See [compatibility results and scope](docs/adaptive/STATE-COMPATIBILITY.md).
 
 ## Show me the evidence
 

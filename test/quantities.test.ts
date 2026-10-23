@@ -84,7 +84,7 @@ test("unanchored composition inserts a currency-preserving conversion before cal
     verify: [{ op: "equals", value: 2 }] });
   assert.equal(result.executed?.status, "completed");
   assert.equal(result.executed?.output, 2);
-  assert.equal(result.executed?.verification.status, "verified");
+  assert.equal(result.executed?.verification.status, "checked"); // stored predicates passed: checked, not independently verified (North Star Stage 2)
   assert.ok(result.plans[0].steps.some((step) => step.capability === "builtin:quantity.money.usd.minor-to-major"));
   assert.ok(calls.includes("https://tax.test/tax?amount_dollars=10"));
   assert.ok(!calls.includes("https://tax.test/tax?amount_dollars=1000"));

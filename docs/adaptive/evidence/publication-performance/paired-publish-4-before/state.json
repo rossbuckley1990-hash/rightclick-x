@@ -1,0 +1,3846 @@
+{
+  "version": 1,
+  "reflections": [
+    {
+      "provider": {
+        "id": "openapi:polyglot",
+        "title": "Polyglot",
+        "source": "openapi",
+        "origin": "https://polyglot.test/openapi.json",
+        "learnedAt": "2026-10-18T09:34:13.248Z",
+        "capabilityIds": [
+          "openapi:polyglot:translatetext",
+          "openapi:polyglot:analyzesentiment"
+        ],
+        "meta": {
+          "base": "https://polyglot.test",
+          "version": "1.0.0",
+          "security": [],
+          "source": "https://polyglot.test/openapi.json"
+        }
+      },
+      "capabilities": [
+        {
+          "id": "openapi:polyglot:translatetext",
+          "title": "Translate text",
+          "description": "Translate text into a target language.",
+          "provider": "openapi:polyglot",
+          "source": "openapi",
+          "inputs": [
+            {
+              "name": "text",
+              "type": "text",
+              "required": true,
+              "description": "Text to translate",
+              "wire": "string"
+            },
+            {
+              "name": "target",
+              "type": "language",
+              "required": true,
+              "description": "Target ISO 639-1 language code",
+              "wire": "string"
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "json",
+              "required": true
+            },
+            {
+              "name": "translatedText",
+              "type": "text",
+              "required": true,
+              "wire": "string"
+            },
+            {
+              "name": "detectedLanguage",
+              "type": "language",
+              "required": true,
+              "wire": "string"
+            }
+          ],
+          "risk": "write",
+          "tags": [
+            "translation",
+            "language",
+            "Polyglot",
+            "post",
+            "translate"
+          ],
+          "fields": [
+            {
+              "path": "translatedText"
+            },
+            {
+              "path": "detectedLanguage"
+            }
+          ],
+          "invoke": {
+            "kind": "http",
+            "method": "POST",
+            "url": "https://polyglot.test/translate",
+            "pathParams": [],
+            "queryParams": [],
+            "headerParams": [],
+            "body": "json",
+            "bodyParams": [
+              "text",
+              "target"
+            ]
+          }
+        },
+        {
+          "id": "openapi:polyglot:analyzesentiment",
+          "title": "Analyze sentiment",
+          "description": "Analyze sentiment",
+          "provider": "openapi:polyglot",
+          "source": "openapi",
+          "inputs": [
+            {
+              "name": "text",
+              "type": "text",
+              "required": true,
+              "wire": "string"
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "json",
+              "required": true
+            },
+            {
+              "name": "score",
+              "type": "number",
+              "required": true,
+              "wire": "number"
+            },
+            {
+              "name": "label",
+              "type": "text",
+              "required": true,
+              "wire": "string"
+            }
+          ],
+          "risk": "read",
+          "tags": [
+            "sentiment",
+            "nlp",
+            "Polyglot",
+            "get",
+            "sentiment"
+          ],
+          "fields": [
+            {
+              "path": "score"
+            },
+            {
+              "path": "label"
+            }
+          ],
+          "invoke": {
+            "kind": "http",
+            "method": "GET",
+            "url": "https://polyglot.test/sentiment",
+            "pathParams": [],
+            "queryParams": [
+              "text"
+            ],
+            "headerParams": [],
+            "body": null,
+            "bodyParams": []
+          }
+        }
+      ]
+    },
+    {
+      "provider": {
+        "id": "graphql:atlas-test-graphql",
+        "title": "GraphQL atlas.test",
+        "source": "graphql",
+        "origin": "https://atlas.test/graphql",
+        "learnedAt": "2026-10-18T09:34:13.253Z",
+        "capabilityIds": [
+          "graphql:atlas-test-graphql:query:geocode",
+          "graphql:atlas-test-graphql:query:country"
+        ],
+        "meta": {
+          "source": "https://atlas.test/graphql"
+        }
+      },
+      "capabilities": [
+        {
+          "id": "graphql:atlas-test-graphql:query:geocode",
+          "fields": [
+            {
+              "path": "name",
+              "selected": true
+            },
+            {
+              "path": "latitude",
+              "selected": true
+            },
+            {
+              "path": "longitude",
+              "selected": true
+            },
+            {
+              "path": "countryCode",
+              "selected": true
+            }
+          ],
+          "title": "Geocode",
+          "description": "Find coordinates for a place name.",
+          "provider": "graphql:atlas-test-graphql",
+          "source": "graphql",
+          "inputs": [
+            {
+              "name": "place",
+              "type": "place",
+              "required": true,
+              "wire": "String!"
+            },
+            {
+              "name": "selection",
+              "type": "text",
+              "required": false,
+              "wire": "selection set",
+              "description": "Optional GraphQL selection set for the returned Location, e.g. \"{ id name nested { field } }\"; replaces the default selection."
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "json",
+              "required": true
+            },
+            {
+              "name": "name",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "latitude",
+              "type": "geo.lat",
+              "required": true
+            },
+            {
+              "name": "longitude",
+              "type": "geo.lon",
+              "required": true
+            },
+            {
+              "name": "countryCode",
+              "type": "country",
+              "required": true
+            }
+          ],
+          "risk": "read",
+          "tags": [
+            "query",
+            "graphql",
+            "atlas.test",
+            "Location"
+          ],
+          "invoke": {
+            "kind": "graphql",
+            "endpoint": "https://atlas.test/graphql",
+            "operation": "query",
+            "field": "geocode",
+            "args": {
+              "place": "String!"
+            },
+            "selection": "{ name latitude longitude countryCode }",
+            "selectPort": "selection"
+          }
+        },
+        {
+          "id": "graphql:atlas-test-graphql:query:country",
+          "fields": [
+            {
+              "path": "name",
+              "selected": true
+            },
+            {
+              "path": "capital",
+              "selected": true
+            },
+            {
+              "path": "currency",
+              "selected": true
+            }
+          ],
+          "title": "Country",
+          "description": "Facts about a country.",
+          "provider": "graphql:atlas-test-graphql",
+          "source": "graphql",
+          "inputs": [
+            {
+              "name": "code",
+              "type": "country",
+              "required": true,
+              "description": "ISO 3166 country code",
+              "wire": "String!"
+            },
+            {
+              "name": "selection",
+              "type": "text",
+              "required": false,
+              "wire": "selection set",
+              "description": "Optional GraphQL selection set for the returned Country, e.g. \"{ id name nested { field } }\"; replaces the default selection."
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "json",
+              "required": true
+            },
+            {
+              "name": "name",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "capital",
+              "type": "place",
+              "required": true
+            },
+            {
+              "name": "currency",
+              "type": "currency",
+              "required": true
+            }
+          ],
+          "risk": "read",
+          "tags": [
+            "query",
+            "graphql",
+            "atlas.test",
+            "Country"
+          ],
+          "invoke": {
+            "kind": "graphql",
+            "endpoint": "https://atlas.test/graphql",
+            "operation": "query",
+            "field": "country",
+            "args": {
+              "code": "String!"
+            },
+            "selection": "{ name capital currency }",
+            "selectPort": "selection"
+          }
+        }
+      ]
+    },
+    {
+      "provider": {
+        "id": "mcp:skycast",
+        "title": "Skycast",
+        "source": "mcp",
+        "origin": "https://skycast.test/mcp",
+        "learnedAt": "2026-10-18T09:34:13.256Z",
+        "capabilityIds": [
+          "mcp:skycast:forecast",
+          "mcp:skycast:air-quality"
+        ],
+        "meta": {
+          "source": "https://skycast.test/mcp"
+        }
+      },
+      "capabilities": [
+        {
+          "id": "mcp:skycast:forecast",
+          "title": "Weather forecast",
+          "description": "Weather forecast for coordinates.",
+          "provider": "mcp:skycast",
+          "source": "mcp",
+          "inputs": [
+            {
+              "name": "latitude",
+              "type": "geo.lat",
+              "required": true,
+              "wire": "number"
+            },
+            {
+              "name": "longitude",
+              "type": "geo.lon",
+              "required": true,
+              "wire": "number"
+            },
+            {
+              "name": "days",
+              "type": "number",
+              "required": false,
+              "wire": "number"
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "json",
+              "required": true
+            },
+            {
+              "name": "summary",
+              "type": "text",
+              "required": true,
+              "wire": "string"
+            },
+            {
+              "name": "temperatureC",
+              "type": "number",
+              "required": true,
+              "wire": "number"
+            },
+            {
+              "name": "conditions",
+              "type": "text",
+              "required": true,
+              "wire": "string"
+            }
+          ],
+          "risk": "read",
+          "tags": [
+            "mcp",
+            "skycast.test",
+            "forecast"
+          ],
+          "invoke": {
+            "kind": "mcp",
+            "endpoint": "https://skycast.test/mcp",
+            "tool": "forecast"
+          }
+        },
+        {
+          "id": "mcp:skycast:air-quality",
+          "title": "Air quality",
+          "description": "Air quality index for coordinates.",
+          "provider": "mcp:skycast",
+          "source": "mcp",
+          "inputs": [
+            {
+              "name": "lat",
+              "type": "geo.lat",
+              "required": true,
+              "wire": "number"
+            },
+            {
+              "name": "lon",
+              "type": "geo.lon",
+              "required": true,
+              "wire": "number"
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "json",
+              "required": true
+            },
+            {
+              "name": "aqi",
+              "type": "number",
+              "required": true,
+              "wire": "number"
+            },
+            {
+              "name": "category",
+              "type": "text",
+              "required": true,
+              "wire": "string"
+            }
+          ],
+          "risk": "read",
+          "tags": [
+            "mcp",
+            "skycast.test",
+            "air_quality"
+          ],
+          "invoke": {
+            "kind": "mcp",
+            "endpoint": "https://skycast.test/mcp",
+            "tool": "air_quality"
+          }
+        }
+      ]
+    },
+    {
+      "provider": {
+        "id": "web:news-test",
+        "title": "Newsroom",
+        "source": "web",
+        "origin": "https://news.test/",
+        "learnedAt": "2026-10-18T09:34:13.249Z",
+        "capabilityIds": [
+          "web:news-test:form-search-articles"
+        ],
+        "meta": {
+          "hints": [],
+          "source": "https://news.test/"
+        }
+      },
+      "capabilities": [
+        {
+          "id": "web:news-test:form-search-articles",
+          "title": "Newsroom: Search articles",
+          "description": "Submit the \"Search articles\" form on news.test/ (GET https://news.test/search).",
+          "provider": "web:news-test",
+          "source": "web",
+          "inputs": [
+            {
+              "name": "q",
+              "type": "text",
+              "required": true,
+              "description": "Search articles",
+              "wire": "search"
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "html",
+              "required": true
+            }
+          ],
+          "risk": "read",
+          "tags": [
+            "web",
+            "form",
+            "news.test",
+            "Search articles"
+          ],
+          "invoke": {
+            "kind": "http",
+            "method": "GET",
+            "url": "https://news.test/search",
+            "pathParams": [],
+            "queryParams": [
+              "q"
+            ],
+            "headerParams": [],
+            "body": null,
+            "bodyParams": [],
+            "constants": {
+              "src": "home"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "provider": {
+        "id": "composite:crystallized",
+        "title": "Crystallized pipelines",
+        "source": "composite",
+        "origin": "rightclick-x",
+        "learnedAt": "2026-10-18T09:34:13.320Z",
+        "capabilityIds": [
+          "composite:7bbf69e72100"
+        ]
+      },
+      "capabilities": [
+        {
+          "id": "composite:7bbf69e72100",
+          "title": "Weather translated: Geocode → Weather forecast → Translate text",
+          "description": "Saved pipeline across 3 providers. Every invocation repeats 1 result check(s) and 0 independent outcome witness(es). A successful sample is not a guarantee for every input.",
+          "provider": "composite:crystallized",
+          "source": "composite",
+          "inputs": [
+            {
+              "name": "place",
+              "type": "place",
+              "required": true
+            },
+            {
+              "name": "language",
+              "type": "language",
+              "required": true
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "risk": "write",
+          "tags": [
+            "weather",
+            "translated",
+            "composite",
+            "crystallized",
+            "query",
+            "graphql",
+            "atlas.test",
+            "Location",
+            "mcp",
+            "skycast.test",
+            "forecast",
+            "translation",
+            "language",
+            "Polyglot",
+            "post",
+            "translate"
+          ],
+          "invoke": {
+            "kind": "composite",
+            "steps": [
+              {
+                "capability": "graphql:atlas-test-graphql:query:geocode",
+                "bindings": [
+                  {
+                    "port": "place",
+                    "from": "$in.place"
+                  }
+                ]
+              },
+              {
+                "capability": "mcp:skycast:forecast",
+                "bindings": [
+                  {
+                    "port": "latitude",
+                    "from": "0.latitude"
+                  },
+                  {
+                    "port": "longitude",
+                    "from": "0.longitude"
+                  }
+                ]
+              },
+              {
+                "capability": "openapi:polyglot:translatetext",
+                "bindings": [
+                  {
+                    "port": "text",
+                    "from": "1.summary"
+                  },
+                  {
+                    "port": "target",
+                    "from": "$in.language"
+                  }
+                ]
+              }
+            ],
+            "result": "2.translatedText",
+            "signatures": [
+              "0729a008",
+              "1c89c9cd",
+              "430f2596"
+            ],
+            "verify": [
+              {
+                "op": "contains",
+                "value": "19°C"
+              }
+            ],
+            "witnesses": []
+          }
+        }
+      ]
+    },
+    {
+      "provider": {
+        "id": "goal:published",
+        "title": "Reusable environmental capabilities",
+        "source": "composite",
+        "origin": "rightclick-x",
+        "learnedAt": "2026-10-18T09:34:13.321Z",
+        "capabilityIds": [
+          "goal:weather-0",
+          "goal:weather-1",
+          "goal:weather-2",
+          "goal:weather-3",
+          "goal:weather-4",
+          "goal:weather-5",
+          "goal:weather-6",
+          "goal:weather-7",
+          "goal:weather-8",
+          "goal:weather-9",
+          "goal:weather-10",
+          "goal:weather-11",
+          "goal:weather-12",
+          "goal:weather-13",
+          "goal:weather-14",
+          "goal:weather-15",
+          "goal:weather-16",
+          "goal:weather-17",
+          "goal:weather-18",
+          "goal:weather-19",
+          "goal:weather-20",
+          "goal:weather-21",
+          "goal:weather-22",
+          "goal:weather-23",
+          "goal:weather-24"
+        ]
+      },
+      "capabilities": [
+        {
+          "id": "goal:weather-0",
+          "title": "weather-0",
+          "provider": "goal:published",
+          "source": "composite",
+          "description": "Checked (its stored predicates passed; not independently verified) reusable goal: weather translated. Finds a current implementation on every call, repairs changed APIs, and re-runs its stored checks. Invoke with context_run; no need to reconstruct the pipeline.",
+          "inputs": [
+            {
+              "name": "place",
+              "type": "place",
+              "required": true
+            },
+            {
+              "name": "language",
+              "type": "language",
+              "required": true
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "risk": "write",
+          "tags": [
+            "saved",
+            "goal",
+            "reusable",
+            "checked",
+            "weather",
+            "translated"
+          ],
+          "invoke": {
+            "kind": "goal",
+            "slug": "weather-0"
+          }
+        },
+        {
+          "id": "goal:weather-1",
+          "title": "weather-1",
+          "provider": "goal:published",
+          "source": "composite",
+          "description": "Checked (its stored predicates passed; not independently verified) reusable goal: weather translated. Finds a current implementation on every call, repairs changed APIs, and re-runs its stored checks. Invoke with context_run; no need to reconstruct the pipeline.",
+          "inputs": [
+            {
+              "name": "place",
+              "type": "place",
+              "required": true
+            },
+            {
+              "name": "language",
+              "type": "language",
+              "required": true
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "risk": "write",
+          "tags": [
+            "saved",
+            "goal",
+            "reusable",
+            "checked",
+            "weather",
+            "translated"
+          ],
+          "invoke": {
+            "kind": "goal",
+            "slug": "weather-1"
+          }
+        },
+        {
+          "id": "goal:weather-2",
+          "title": "weather-2",
+          "provider": "goal:published",
+          "source": "composite",
+          "description": "Checked (its stored predicates passed; not independently verified) reusable goal: weather translated. Finds a current implementation on every call, repairs changed APIs, and re-runs its stored checks. Invoke with context_run; no need to reconstruct the pipeline.",
+          "inputs": [
+            {
+              "name": "place",
+              "type": "place",
+              "required": true
+            },
+            {
+              "name": "language",
+              "type": "language",
+              "required": true
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "risk": "write",
+          "tags": [
+            "saved",
+            "goal",
+            "reusable",
+            "checked",
+            "weather",
+            "translated"
+          ],
+          "invoke": {
+            "kind": "goal",
+            "slug": "weather-2"
+          }
+        },
+        {
+          "id": "goal:weather-3",
+          "title": "weather-3",
+          "provider": "goal:published",
+          "source": "composite",
+          "description": "Checked (its stored predicates passed; not independently verified) reusable goal: weather translated. Finds a current implementation on every call, repairs changed APIs, and re-runs its stored checks. Invoke with context_run; no need to reconstruct the pipeline.",
+          "inputs": [
+            {
+              "name": "place",
+              "type": "place",
+              "required": true
+            },
+            {
+              "name": "language",
+              "type": "language",
+              "required": true
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "risk": "write",
+          "tags": [
+            "saved",
+            "goal",
+            "reusable",
+            "checked",
+            "weather",
+            "translated"
+          ],
+          "invoke": {
+            "kind": "goal",
+            "slug": "weather-3"
+          }
+        },
+        {
+          "id": "goal:weather-4",
+          "title": "weather-4",
+          "provider": "goal:published",
+          "source": "composite",
+          "description": "Checked (its stored predicates passed; not independently verified) reusable goal: weather translated. Finds a current implementation on every call, repairs changed APIs, and re-runs its stored checks. Invoke with context_run; no need to reconstruct the pipeline.",
+          "inputs": [
+            {
+              "name": "place",
+              "type": "place",
+              "required": true
+            },
+            {
+              "name": "language",
+              "type": "language",
+              "required": true
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "risk": "write",
+          "tags": [
+            "saved",
+            "goal",
+            "reusable",
+            "checked",
+            "weather",
+            "translated"
+          ],
+          "invoke": {
+            "kind": "goal",
+            "slug": "weather-4"
+          }
+        },
+        {
+          "id": "goal:weather-5",
+          "title": "weather-5",
+          "provider": "goal:published",
+          "source": "composite",
+          "description": "Checked (its stored predicates passed; not independently verified) reusable goal: weather translated. Finds a current implementation on every call, repairs changed APIs, and re-runs its stored checks. Invoke with context_run; no need to reconstruct the pipeline.",
+          "inputs": [
+            {
+              "name": "place",
+              "type": "place",
+              "required": true
+            },
+            {
+              "name": "language",
+              "type": "language",
+              "required": true
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "risk": "write",
+          "tags": [
+            "saved",
+            "goal",
+            "reusable",
+            "checked",
+            "weather",
+            "translated"
+          ],
+          "invoke": {
+            "kind": "goal",
+            "slug": "weather-5"
+          }
+        },
+        {
+          "id": "goal:weather-6",
+          "title": "weather-6",
+          "provider": "goal:published",
+          "source": "composite",
+          "description": "Checked (its stored predicates passed; not independently verified) reusable goal: weather translated. Finds a current implementation on every call, repairs changed APIs, and re-runs its stored checks. Invoke with context_run; no need to reconstruct the pipeline.",
+          "inputs": [
+            {
+              "name": "place",
+              "type": "place",
+              "required": true
+            },
+            {
+              "name": "language",
+              "type": "language",
+              "required": true
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "risk": "write",
+          "tags": [
+            "saved",
+            "goal",
+            "reusable",
+            "checked",
+            "weather",
+            "translated"
+          ],
+          "invoke": {
+            "kind": "goal",
+            "slug": "weather-6"
+          }
+        },
+        {
+          "id": "goal:weather-7",
+          "title": "weather-7",
+          "provider": "goal:published",
+          "source": "composite",
+          "description": "Checked (its stored predicates passed; not independently verified) reusable goal: weather translated. Finds a current implementation on every call, repairs changed APIs, and re-runs its stored checks. Invoke with context_run; no need to reconstruct the pipeline.",
+          "inputs": [
+            {
+              "name": "place",
+              "type": "place",
+              "required": true
+            },
+            {
+              "name": "language",
+              "type": "language",
+              "required": true
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "risk": "write",
+          "tags": [
+            "saved",
+            "goal",
+            "reusable",
+            "checked",
+            "weather",
+            "translated"
+          ],
+          "invoke": {
+            "kind": "goal",
+            "slug": "weather-7"
+          }
+        },
+        {
+          "id": "goal:weather-8",
+          "title": "weather-8",
+          "provider": "goal:published",
+          "source": "composite",
+          "description": "Checked (its stored predicates passed; not independently verified) reusable goal: weather translated. Finds a current implementation on every call, repairs changed APIs, and re-runs its stored checks. Invoke with context_run; no need to reconstruct the pipeline.",
+          "inputs": [
+            {
+              "name": "place",
+              "type": "place",
+              "required": true
+            },
+            {
+              "name": "language",
+              "type": "language",
+              "required": true
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "risk": "write",
+          "tags": [
+            "saved",
+            "goal",
+            "reusable",
+            "checked",
+            "weather",
+            "translated"
+          ],
+          "invoke": {
+            "kind": "goal",
+            "slug": "weather-8"
+          }
+        },
+        {
+          "id": "goal:weather-9",
+          "title": "weather-9",
+          "provider": "goal:published",
+          "source": "composite",
+          "description": "Checked (its stored predicates passed; not independently verified) reusable goal: weather translated. Finds a current implementation on every call, repairs changed APIs, and re-runs its stored checks. Invoke with context_run; no need to reconstruct the pipeline.",
+          "inputs": [
+            {
+              "name": "place",
+              "type": "place",
+              "required": true
+            },
+            {
+              "name": "language",
+              "type": "language",
+              "required": true
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "risk": "write",
+          "tags": [
+            "saved",
+            "goal",
+            "reusable",
+            "checked",
+            "weather",
+            "translated"
+          ],
+          "invoke": {
+            "kind": "goal",
+            "slug": "weather-9"
+          }
+        },
+        {
+          "id": "goal:weather-10",
+          "title": "weather-10",
+          "provider": "goal:published",
+          "source": "composite",
+          "description": "Checked (its stored predicates passed; not independently verified) reusable goal: weather translated. Finds a current implementation on every call, repairs changed APIs, and re-runs its stored checks. Invoke with context_run; no need to reconstruct the pipeline.",
+          "inputs": [
+            {
+              "name": "place",
+              "type": "place",
+              "required": true
+            },
+            {
+              "name": "language",
+              "type": "language",
+              "required": true
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "risk": "write",
+          "tags": [
+            "saved",
+            "goal",
+            "reusable",
+            "checked",
+            "weather",
+            "translated"
+          ],
+          "invoke": {
+            "kind": "goal",
+            "slug": "weather-10"
+          }
+        },
+        {
+          "id": "goal:weather-11",
+          "title": "weather-11",
+          "provider": "goal:published",
+          "source": "composite",
+          "description": "Checked (its stored predicates passed; not independently verified) reusable goal: weather translated. Finds a current implementation on every call, repairs changed APIs, and re-runs its stored checks. Invoke with context_run; no need to reconstruct the pipeline.",
+          "inputs": [
+            {
+              "name": "place",
+              "type": "place",
+              "required": true
+            },
+            {
+              "name": "language",
+              "type": "language",
+              "required": true
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "risk": "write",
+          "tags": [
+            "saved",
+            "goal",
+            "reusable",
+            "checked",
+            "weather",
+            "translated"
+          ],
+          "invoke": {
+            "kind": "goal",
+            "slug": "weather-11"
+          }
+        },
+        {
+          "id": "goal:weather-12",
+          "title": "weather-12",
+          "provider": "goal:published",
+          "source": "composite",
+          "description": "Checked (its stored predicates passed; not independently verified) reusable goal: weather translated. Finds a current implementation on every call, repairs changed APIs, and re-runs its stored checks. Invoke with context_run; no need to reconstruct the pipeline.",
+          "inputs": [
+            {
+              "name": "place",
+              "type": "place",
+              "required": true
+            },
+            {
+              "name": "language",
+              "type": "language",
+              "required": true
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "risk": "write",
+          "tags": [
+            "saved",
+            "goal",
+            "reusable",
+            "checked",
+            "weather",
+            "translated"
+          ],
+          "invoke": {
+            "kind": "goal",
+            "slug": "weather-12"
+          }
+        },
+        {
+          "id": "goal:weather-13",
+          "title": "weather-13",
+          "provider": "goal:published",
+          "source": "composite",
+          "description": "Checked (its stored predicates passed; not independently verified) reusable goal: weather translated. Finds a current implementation on every call, repairs changed APIs, and re-runs its stored checks. Invoke with context_run; no need to reconstruct the pipeline.",
+          "inputs": [
+            {
+              "name": "place",
+              "type": "place",
+              "required": true
+            },
+            {
+              "name": "language",
+              "type": "language",
+              "required": true
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "risk": "write",
+          "tags": [
+            "saved",
+            "goal",
+            "reusable",
+            "checked",
+            "weather",
+            "translated"
+          ],
+          "invoke": {
+            "kind": "goal",
+            "slug": "weather-13"
+          }
+        },
+        {
+          "id": "goal:weather-14",
+          "title": "weather-14",
+          "provider": "goal:published",
+          "source": "composite",
+          "description": "Checked (its stored predicates passed; not independently verified) reusable goal: weather translated. Finds a current implementation on every call, repairs changed APIs, and re-runs its stored checks. Invoke with context_run; no need to reconstruct the pipeline.",
+          "inputs": [
+            {
+              "name": "place",
+              "type": "place",
+              "required": true
+            },
+            {
+              "name": "language",
+              "type": "language",
+              "required": true
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "risk": "write",
+          "tags": [
+            "saved",
+            "goal",
+            "reusable",
+            "checked",
+            "weather",
+            "translated"
+          ],
+          "invoke": {
+            "kind": "goal",
+            "slug": "weather-14"
+          }
+        },
+        {
+          "id": "goal:weather-15",
+          "title": "weather-15",
+          "provider": "goal:published",
+          "source": "composite",
+          "description": "Checked (its stored predicates passed; not independently verified) reusable goal: weather translated. Finds a current implementation on every call, repairs changed APIs, and re-runs its stored checks. Invoke with context_run; no need to reconstruct the pipeline.",
+          "inputs": [
+            {
+              "name": "place",
+              "type": "place",
+              "required": true
+            },
+            {
+              "name": "language",
+              "type": "language",
+              "required": true
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "risk": "write",
+          "tags": [
+            "saved",
+            "goal",
+            "reusable",
+            "checked",
+            "weather",
+            "translated"
+          ],
+          "invoke": {
+            "kind": "goal",
+            "slug": "weather-15"
+          }
+        },
+        {
+          "id": "goal:weather-16",
+          "title": "weather-16",
+          "provider": "goal:published",
+          "source": "composite",
+          "description": "Checked (its stored predicates passed; not independently verified) reusable goal: weather translated. Finds a current implementation on every call, repairs changed APIs, and re-runs its stored checks. Invoke with context_run; no need to reconstruct the pipeline.",
+          "inputs": [
+            {
+              "name": "place",
+              "type": "place",
+              "required": true
+            },
+            {
+              "name": "language",
+              "type": "language",
+              "required": true
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "risk": "write",
+          "tags": [
+            "saved",
+            "goal",
+            "reusable",
+            "checked",
+            "weather",
+            "translated"
+          ],
+          "invoke": {
+            "kind": "goal",
+            "slug": "weather-16"
+          }
+        },
+        {
+          "id": "goal:weather-17",
+          "title": "weather-17",
+          "provider": "goal:published",
+          "source": "composite",
+          "description": "Checked (its stored predicates passed; not independently verified) reusable goal: weather translated. Finds a current implementation on every call, repairs changed APIs, and re-runs its stored checks. Invoke with context_run; no need to reconstruct the pipeline.",
+          "inputs": [
+            {
+              "name": "place",
+              "type": "place",
+              "required": true
+            },
+            {
+              "name": "language",
+              "type": "language",
+              "required": true
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "risk": "write",
+          "tags": [
+            "saved",
+            "goal",
+            "reusable",
+            "checked",
+            "weather",
+            "translated"
+          ],
+          "invoke": {
+            "kind": "goal",
+            "slug": "weather-17"
+          }
+        },
+        {
+          "id": "goal:weather-18",
+          "title": "weather-18",
+          "provider": "goal:published",
+          "source": "composite",
+          "description": "Checked (its stored predicates passed; not independently verified) reusable goal: weather translated. Finds a current implementation on every call, repairs changed APIs, and re-runs its stored checks. Invoke with context_run; no need to reconstruct the pipeline.",
+          "inputs": [
+            {
+              "name": "place",
+              "type": "place",
+              "required": true
+            },
+            {
+              "name": "language",
+              "type": "language",
+              "required": true
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "risk": "write",
+          "tags": [
+            "saved",
+            "goal",
+            "reusable",
+            "checked",
+            "weather",
+            "translated"
+          ],
+          "invoke": {
+            "kind": "goal",
+            "slug": "weather-18"
+          }
+        },
+        {
+          "id": "goal:weather-19",
+          "title": "weather-19",
+          "provider": "goal:published",
+          "source": "composite",
+          "description": "Checked (its stored predicates passed; not independently verified) reusable goal: weather translated. Finds a current implementation on every call, repairs changed APIs, and re-runs its stored checks. Invoke with context_run; no need to reconstruct the pipeline.",
+          "inputs": [
+            {
+              "name": "place",
+              "type": "place",
+              "required": true
+            },
+            {
+              "name": "language",
+              "type": "language",
+              "required": true
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "risk": "write",
+          "tags": [
+            "saved",
+            "goal",
+            "reusable",
+            "checked",
+            "weather",
+            "translated"
+          ],
+          "invoke": {
+            "kind": "goal",
+            "slug": "weather-19"
+          }
+        },
+        {
+          "id": "goal:weather-20",
+          "title": "weather-20",
+          "provider": "goal:published",
+          "source": "composite",
+          "description": "Checked (its stored predicates passed; not independently verified) reusable goal: weather translated. Finds a current implementation on every call, repairs changed APIs, and re-runs its stored checks. Invoke with context_run; no need to reconstruct the pipeline.",
+          "inputs": [
+            {
+              "name": "place",
+              "type": "place",
+              "required": true
+            },
+            {
+              "name": "language",
+              "type": "language",
+              "required": true
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "risk": "write",
+          "tags": [
+            "saved",
+            "goal",
+            "reusable",
+            "checked",
+            "weather",
+            "translated"
+          ],
+          "invoke": {
+            "kind": "goal",
+            "slug": "weather-20"
+          }
+        },
+        {
+          "id": "goal:weather-21",
+          "title": "weather-21",
+          "provider": "goal:published",
+          "source": "composite",
+          "description": "Checked (its stored predicates passed; not independently verified) reusable goal: weather translated. Finds a current implementation on every call, repairs changed APIs, and re-runs its stored checks. Invoke with context_run; no need to reconstruct the pipeline.",
+          "inputs": [
+            {
+              "name": "place",
+              "type": "place",
+              "required": true
+            },
+            {
+              "name": "language",
+              "type": "language",
+              "required": true
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "risk": "write",
+          "tags": [
+            "saved",
+            "goal",
+            "reusable",
+            "checked",
+            "weather",
+            "translated"
+          ],
+          "invoke": {
+            "kind": "goal",
+            "slug": "weather-21"
+          }
+        },
+        {
+          "id": "goal:weather-22",
+          "title": "weather-22",
+          "provider": "goal:published",
+          "source": "composite",
+          "description": "Checked (its stored predicates passed; not independently verified) reusable goal: weather translated. Finds a current implementation on every call, repairs changed APIs, and re-runs its stored checks. Invoke with context_run; no need to reconstruct the pipeline.",
+          "inputs": [
+            {
+              "name": "place",
+              "type": "place",
+              "required": true
+            },
+            {
+              "name": "language",
+              "type": "language",
+              "required": true
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "risk": "write",
+          "tags": [
+            "saved",
+            "goal",
+            "reusable",
+            "checked",
+            "weather",
+            "translated"
+          ],
+          "invoke": {
+            "kind": "goal",
+            "slug": "weather-22"
+          }
+        },
+        {
+          "id": "goal:weather-23",
+          "title": "weather-23",
+          "provider": "goal:published",
+          "source": "composite",
+          "description": "Checked (its stored predicates passed; not independently verified) reusable goal: weather translated. Finds a current implementation on every call, repairs changed APIs, and re-runs its stored checks. Invoke with context_run; no need to reconstruct the pipeline.",
+          "inputs": [
+            {
+              "name": "place",
+              "type": "place",
+              "required": true
+            },
+            {
+              "name": "language",
+              "type": "language",
+              "required": true
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "risk": "write",
+          "tags": [
+            "saved",
+            "goal",
+            "reusable",
+            "checked",
+            "weather",
+            "translated"
+          ],
+          "invoke": {
+            "kind": "goal",
+            "slug": "weather-23"
+          }
+        },
+        {
+          "id": "goal:weather-24",
+          "title": "weather-24",
+          "provider": "goal:published",
+          "source": "composite",
+          "description": "Checked (its stored predicates passed; not independently verified) reusable goal: weather translated. Finds a current implementation on every call, repairs changed APIs, and re-runs its stored checks. Invoke with context_run; no need to reconstruct the pipeline.",
+          "inputs": [
+            {
+              "name": "place",
+              "type": "place",
+              "required": true
+            },
+            {
+              "name": "language",
+              "type": "language",
+              "required": true
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "risk": "write",
+          "tags": [
+            "saved",
+            "goal",
+            "reusable",
+            "checked",
+            "weather",
+            "translated"
+          ],
+          "invoke": {
+            "kind": "goal",
+            "slug": "weather-24"
+          }
+        }
+      ]
+    }
+  ],
+  "ledger": {
+    "graphql:atlas-test-graphql:query:geocode": {
+      "runs": 25,
+      "ok": 25,
+      "failed": 0,
+      "latencyMs": 0.5401437871562106,
+      "recent": 1,
+      "lastRunAt": "2026-10-18T09:34:16.100Z"
+    },
+    "mcp:skycast:forecast": {
+      "runs": 25,
+      "ok": 25,
+      "failed": 0,
+      "latencyMs": 0.4781840005017858,
+      "recent": 1,
+      "lastRunAt": "2026-10-18T09:34:16.101Z"
+    },
+    "openapi:polyglot:translatetext": {
+      "runs": 25,
+      "ok": 25,
+      "failed": 0,
+      "latencyMs": 0.262837934783844,
+      "recent": 1,
+      "lastRunAt": "2026-10-18T09:34:16.102Z"
+    },
+    "composite:7bbf69e72100": {
+      "runs": 25,
+      "ok": 25,
+      "failed": 0,
+      "latencyMs": 3.418817241538185,
+      "recent": 1,
+      "lastRunAt": "2026-10-18T09:34:16.102Z"
+    }
+  },
+  "receipts": [
+    {
+      "runId": "run_mvdmp9og_1",
+      "capability": "graphql:atlas-test-graphql:query:geocode",
+      "provider": "graphql:atlas-test-graphql",
+      "startedAt": "2026-10-18T09:34:13.312Z",
+      "durationMs": 1.2,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 1,
+      "inputDigest": "339b0b4a6e31d567191d1ca5f8dec6243ffaf15fae2b20d6ba5749d4cdd3924e",
+      "outputDigest": "ab5f5a98b17f904f88f20e6064a323f8ff69916ceb3dca7bf4461f4c3690beaf",
+      "prev": "0000000000000000000000000000000000000000000000000000000000000000",
+      "hash": "9a5c79543835d9cd2366083410f58fc5cd9de806c60f3981dcd98964bc7a73b5"
+    },
+    {
+      "runId": "run_mvdmp9om_2",
+      "capability": "mcp:skycast:forecast",
+      "provider": "mcp:skycast",
+      "startedAt": "2026-10-18T09:34:13.318Z",
+      "durationMs": 0.4,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 2,
+      "inputDigest": "3b0d820a040072bb6810cbc7ca6cee3f0b8c53486cc63d63eb17e29b8df4326c",
+      "outputDigest": "b12f2930008261b5b7b3af6f46e1fabdf23935f4a8b590ad0dd2de2094a4475a",
+      "prev": "9a5c79543835d9cd2366083410f58fc5cd9de806c60f3981dcd98964bc7a73b5",
+      "hash": "d68919f924ef6841c677139cb513ff88b6e56eb3a751b7d96b078cf6c4c355a1"
+    },
+    {
+      "runId": "run_mvdmp9on_3",
+      "capability": "openapi:polyglot:translatetext",
+      "provider": "openapi:polyglot",
+      "startedAt": "2026-10-18T09:34:13.319Z",
+      "durationMs": 0.5,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 3,
+      "inputDigest": "345b8e79aa838ef8cf7cbc78455936786c15f14cae0ec8311ffe4a6052e55a34",
+      "outputDigest": "9c453d31dfd62819882093a2b1fd470cf9a0181d8a23ef91c7fdd676acfcf34e",
+      "prev": "d68919f924ef6841c677139cb513ff88b6e56eb3a751b7d96b078cf6c4c355a1",
+      "hash": "32a2368079c459bae8673fc92143abbe4d84bbdc8cc5f4eac5583c862e710136"
+    },
+    {
+      "runId": "run_mvdmp9q4_5",
+      "capability": "graphql:atlas-test-graphql:query:geocode",
+      "provider": "graphql:atlas-test-graphql",
+      "startedAt": "2026-10-18T09:34:13.372Z",
+      "durationMs": 0.4,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 4,
+      "inputDigest": "339b0b4a6e31d567191d1ca5f8dec6243ffaf15fae2b20d6ba5749d4cdd3924e",
+      "outputDigest": "ab5f5a98b17f904f88f20e6064a323f8ff69916ceb3dca7bf4461f4c3690beaf",
+      "prev": "32a2368079c459bae8673fc92143abbe4d84bbdc8cc5f4eac5583c862e710136",
+      "hash": "38bee88d348fc4573199cbb8afde36608606c519beae671ec82badec2334b1c6"
+    },
+    {
+      "runId": "run_mvdmp9q5_6",
+      "capability": "mcp:skycast:forecast",
+      "provider": "mcp:skycast",
+      "startedAt": "2026-10-18T09:34:13.373Z",
+      "durationMs": 0.3,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 5,
+      "inputDigest": "3b0d820a040072bb6810cbc7ca6cee3f0b8c53486cc63d63eb17e29b8df4326c",
+      "outputDigest": "b12f2930008261b5b7b3af6f46e1fabdf23935f4a8b590ad0dd2de2094a4475a",
+      "prev": "38bee88d348fc4573199cbb8afde36608606c519beae671ec82badec2334b1c6",
+      "hash": "41cb79894188516c7c49bedf16ae3288f0030ce0cbcc4647c58b553e98187147"
+    },
+    {
+      "runId": "run_mvdmp9q6_7",
+      "capability": "openapi:polyglot:translatetext",
+      "provider": "openapi:polyglot",
+      "startedAt": "2026-10-18T09:34:13.374Z",
+      "durationMs": 0.2,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 6,
+      "inputDigest": "345b8e79aa838ef8cf7cbc78455936786c15f14cae0ec8311ffe4a6052e55a34",
+      "outputDigest": "9c453d31dfd62819882093a2b1fd470cf9a0181d8a23ef91c7fdd676acfcf34e",
+      "prev": "41cb79894188516c7c49bedf16ae3288f0030ce0cbcc4647c58b553e98187147",
+      "hash": "6deb18326526fbdf303b9b7e4acc287a4051ce7ca9ccd4f5696114fb6afecf8e"
+    },
+    {
+      "runId": "run_mvdmp9q4_4",
+      "capability": "composite:7bbf69e72100",
+      "provider": "composite:crystallized",
+      "startedAt": "2026-10-18T09:34:13.372Z",
+      "durationMs": 2.3,
+      "status": "completed",
+      "verification": "checked",
+      "seq": 7,
+      "inputDigest": "776232c64b4756d10e8e4151f9261b17c9d60499fe784fb1ede15f24abf4fd7b",
+      "outputDigest": "b4192b3474881d06084e9aabeab7d4d6e7eb7a417d2833b95119b6ae37dfd92d",
+      "prev": "6deb18326526fbdf303b9b7e4acc287a4051ce7ca9ccd4f5696114fb6afecf8e",
+      "hash": "31c70598492bf411a41e20353a5d6bc0ac17104e7dff8100a7d07085dc06ce28"
+    },
+    {
+      "runId": "run_mvdmp9rp_9",
+      "capability": "graphql:atlas-test-graphql:query:geocode",
+      "provider": "graphql:atlas-test-graphql",
+      "startedAt": "2026-10-18T09:34:13.429Z",
+      "durationMs": 0.4,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 8,
+      "inputDigest": "339b0b4a6e31d567191d1ca5f8dec6243ffaf15fae2b20d6ba5749d4cdd3924e",
+      "outputDigest": "ab5f5a98b17f904f88f20e6064a323f8ff69916ceb3dca7bf4461f4c3690beaf",
+      "prev": "31c70598492bf411a41e20353a5d6bc0ac17104e7dff8100a7d07085dc06ce28",
+      "hash": "743487d7ac77df3da2b5bc89fc36f371a0cf8e328695d30e02b406830d6262dc"
+    },
+    {
+      "runId": "run_mvdmp9rr_a",
+      "capability": "mcp:skycast:forecast",
+      "provider": "mcp:skycast",
+      "startedAt": "2026-10-18T09:34:13.431Z",
+      "durationMs": 0.3,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 9,
+      "inputDigest": "3b0d820a040072bb6810cbc7ca6cee3f0b8c53486cc63d63eb17e29b8df4326c",
+      "outputDigest": "b12f2930008261b5b7b3af6f46e1fabdf23935f4a8b590ad0dd2de2094a4475a",
+      "prev": "743487d7ac77df3da2b5bc89fc36f371a0cf8e328695d30e02b406830d6262dc",
+      "hash": "51b39a74db1ff10bd8bc187ac3c122881625f84bb55d501eb78aec9b2edc825d"
+    },
+    {
+      "runId": "run_mvdmp9rr_b",
+      "capability": "openapi:polyglot:translatetext",
+      "provider": "openapi:polyglot",
+      "startedAt": "2026-10-18T09:34:13.431Z",
+      "durationMs": 0.2,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 10,
+      "inputDigest": "345b8e79aa838ef8cf7cbc78455936786c15f14cae0ec8311ffe4a6052e55a34",
+      "outputDigest": "9c453d31dfd62819882093a2b1fd470cf9a0181d8a23ef91c7fdd676acfcf34e",
+      "prev": "51b39a74db1ff10bd8bc187ac3c122881625f84bb55d501eb78aec9b2edc825d",
+      "hash": "b7c085495f9f93846298e62334fbdd456510d910bf7e6b65929dbc59a3210bcf"
+    },
+    {
+      "runId": "run_mvdmp9rp_8",
+      "capability": "composite:7bbf69e72100",
+      "provider": "composite:crystallized",
+      "startedAt": "2026-10-18T09:34:13.429Z",
+      "durationMs": 2.1,
+      "status": "completed",
+      "verification": "checked",
+      "seq": 11,
+      "inputDigest": "776232c64b4756d10e8e4151f9261b17c9d60499fe784fb1ede15f24abf4fd7b",
+      "outputDigest": "b4192b3474881d06084e9aabeab7d4d6e7eb7a417d2833b95119b6ae37dfd92d",
+      "prev": "b7c085495f9f93846298e62334fbdd456510d910bf7e6b65929dbc59a3210bcf",
+      "hash": "1f1e8c3e37443c0d2f6b74c9ef3b19b43bd0600c92ba9bb760ffbc0540a399e9"
+    },
+    {
+      "runId": "run_mvdmp9to_d",
+      "capability": "graphql:atlas-test-graphql:query:geocode",
+      "provider": "graphql:atlas-test-graphql",
+      "startedAt": "2026-10-18T09:34:13.500Z",
+      "durationMs": 0.3,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 12,
+      "inputDigest": "339b0b4a6e31d567191d1ca5f8dec6243ffaf15fae2b20d6ba5749d4cdd3924e",
+      "outputDigest": "ab5f5a98b17f904f88f20e6064a323f8ff69916ceb3dca7bf4461f4c3690beaf",
+      "prev": "1f1e8c3e37443c0d2f6b74c9ef3b19b43bd0600c92ba9bb760ffbc0540a399e9",
+      "hash": "d06c8a569294c1630f6839b3089a2405e48a1ce20f1a392b775e3f1e981ee4f8"
+    },
+    {
+      "runId": "run_mvdmp9to_e",
+      "capability": "mcp:skycast:forecast",
+      "provider": "mcp:skycast",
+      "startedAt": "2026-10-18T09:34:13.500Z",
+      "durationMs": 0.3,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 13,
+      "inputDigest": "3b0d820a040072bb6810cbc7ca6cee3f0b8c53486cc63d63eb17e29b8df4326c",
+      "outputDigest": "b12f2930008261b5b7b3af6f46e1fabdf23935f4a8b590ad0dd2de2094a4475a",
+      "prev": "d06c8a569294c1630f6839b3089a2405e48a1ce20f1a392b775e3f1e981ee4f8",
+      "hash": "e21eb4e4f46a33a556dac690c79b428361eff2430511e3dd5d610f5b01dd0658"
+    },
+    {
+      "runId": "run_mvdmp9tp_f",
+      "capability": "openapi:polyglot:translatetext",
+      "provider": "openapi:polyglot",
+      "startedAt": "2026-10-18T09:34:13.501Z",
+      "durationMs": 0.2,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 14,
+      "inputDigest": "345b8e79aa838ef8cf7cbc78455936786c15f14cae0ec8311ffe4a6052e55a34",
+      "outputDigest": "9c453d31dfd62819882093a2b1fd470cf9a0181d8a23ef91c7fdd676acfcf34e",
+      "prev": "e21eb4e4f46a33a556dac690c79b428361eff2430511e3dd5d610f5b01dd0658",
+      "hash": "c2debac5beb414ef815f3e34588259d5061abdf5799b554e09985240f318f44b"
+    },
+    {
+      "runId": "run_mvdmp9to_c",
+      "capability": "composite:7bbf69e72100",
+      "provider": "composite:crystallized",
+      "startedAt": "2026-10-18T09:34:13.500Z",
+      "durationMs": 1.6,
+      "status": "completed",
+      "verification": "checked",
+      "seq": 15,
+      "inputDigest": "776232c64b4756d10e8e4151f9261b17c9d60499fe784fb1ede15f24abf4fd7b",
+      "outputDigest": "b4192b3474881d06084e9aabeab7d4d6e7eb7a417d2833b95119b6ae37dfd92d",
+      "prev": "c2debac5beb414ef815f3e34588259d5061abdf5799b554e09985240f318f44b",
+      "hash": "83ed3f7de2648afa4c6cf08c7c76c6b5fe3a15c11b147b9746652f84959f683c"
+    },
+    {
+      "runId": "run_mvdmp9v3_h",
+      "capability": "graphql:atlas-test-graphql:query:geocode",
+      "provider": "graphql:atlas-test-graphql",
+      "startedAt": "2026-10-18T09:34:13.551Z",
+      "durationMs": 0.4,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 16,
+      "inputDigest": "339b0b4a6e31d567191d1ca5f8dec6243ffaf15fae2b20d6ba5749d4cdd3924e",
+      "outputDigest": "ab5f5a98b17f904f88f20e6064a323f8ff69916ceb3dca7bf4461f4c3690beaf",
+      "prev": "83ed3f7de2648afa4c6cf08c7c76c6b5fe3a15c11b147b9746652f84959f683c",
+      "hash": "7ea5222dc8913317c5a02a207ce0f7697bf552d63eedd9cfdb0717785f8044e7"
+    },
+    {
+      "runId": "run_mvdmp9v4_i",
+      "capability": "mcp:skycast:forecast",
+      "provider": "mcp:skycast",
+      "startedAt": "2026-10-18T09:34:13.552Z",
+      "durationMs": 0.3,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 17,
+      "inputDigest": "3b0d820a040072bb6810cbc7ca6cee3f0b8c53486cc63d63eb17e29b8df4326c",
+      "outputDigest": "b12f2930008261b5b7b3af6f46e1fabdf23935f4a8b590ad0dd2de2094a4475a",
+      "prev": "7ea5222dc8913317c5a02a207ce0f7697bf552d63eedd9cfdb0717785f8044e7",
+      "hash": "7fb0f481163277848fd365c8343100e3c1c3a2cdbcd940aeed6257ad640162bc"
+    },
+    {
+      "runId": "run_mvdmp9v4_j",
+      "capability": "openapi:polyglot:translatetext",
+      "provider": "openapi:polyglot",
+      "startedAt": "2026-10-18T09:34:13.552Z",
+      "durationMs": 0.3,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 18,
+      "inputDigest": "345b8e79aa838ef8cf7cbc78455936786c15f14cae0ec8311ffe4a6052e55a34",
+      "outputDigest": "9c453d31dfd62819882093a2b1fd470cf9a0181d8a23ef91c7fdd676acfcf34e",
+      "prev": "7fb0f481163277848fd365c8343100e3c1c3a2cdbcd940aeed6257ad640162bc",
+      "hash": "1d4a7c009409548e91f16608d4248d886202c560028d1dcfcbe141bfb051837d"
+    },
+    {
+      "runId": "run_mvdmp9v3_g",
+      "capability": "composite:7bbf69e72100",
+      "provider": "composite:crystallized",
+      "startedAt": "2026-10-18T09:34:13.551Z",
+      "durationMs": 2,
+      "status": "completed",
+      "verification": "checked",
+      "seq": 19,
+      "inputDigest": "776232c64b4756d10e8e4151f9261b17c9d60499fe784fb1ede15f24abf4fd7b",
+      "outputDigest": "b4192b3474881d06084e9aabeab7d4d6e7eb7a417d2833b95119b6ae37dfd92d",
+      "prev": "1d4a7c009409548e91f16608d4248d886202c560028d1dcfcbe141bfb051837d",
+      "hash": "1f9847907f5e21807cf346604d046d1a7dc897a29a51b81277061d06fff862ce"
+    },
+    {
+      "runId": "run_mvdmp9wh_l",
+      "capability": "graphql:atlas-test-graphql:query:geocode",
+      "provider": "graphql:atlas-test-graphql",
+      "startedAt": "2026-10-18T09:34:13.601Z",
+      "durationMs": 0.2,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 20,
+      "inputDigest": "339b0b4a6e31d567191d1ca5f8dec6243ffaf15fae2b20d6ba5749d4cdd3924e",
+      "outputDigest": "ab5f5a98b17f904f88f20e6064a323f8ff69916ceb3dca7bf4461f4c3690beaf",
+      "prev": "1f9847907f5e21807cf346604d046d1a7dc897a29a51b81277061d06fff862ce",
+      "hash": "9ac4dd79dd2ea67571e9dd7d17af460c8995964ab017f47144b8a0112fe9c4e7"
+    },
+    {
+      "runId": "run_mvdmp9wi_m",
+      "capability": "mcp:skycast:forecast",
+      "provider": "mcp:skycast",
+      "startedAt": "2026-10-18T09:34:13.602Z",
+      "durationMs": 0.2,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 21,
+      "inputDigest": "3b0d820a040072bb6810cbc7ca6cee3f0b8c53486cc63d63eb17e29b8df4326c",
+      "outputDigest": "b12f2930008261b5b7b3af6f46e1fabdf23935f4a8b590ad0dd2de2094a4475a",
+      "prev": "9ac4dd79dd2ea67571e9dd7d17af460c8995964ab017f47144b8a0112fe9c4e7",
+      "hash": "cb1a7cf28fd7e028de9af7ae27e6952c6e3c652e83cb594da70d2de9d81813d1"
+    },
+    {
+      "runId": "run_mvdmp9wi_n",
+      "capability": "openapi:polyglot:translatetext",
+      "provider": "openapi:polyglot",
+      "startedAt": "2026-10-18T09:34:13.602Z",
+      "durationMs": 0.2,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 22,
+      "inputDigest": "345b8e79aa838ef8cf7cbc78455936786c15f14cae0ec8311ffe4a6052e55a34",
+      "outputDigest": "9c453d31dfd62819882093a2b1fd470cf9a0181d8a23ef91c7fdd676acfcf34e",
+      "prev": "cb1a7cf28fd7e028de9af7ae27e6952c6e3c652e83cb594da70d2de9d81813d1",
+      "hash": "a8b9e0d1de8a5d42f27131e8e126382277db523ff8a69d615b2bbc163710f76c"
+    },
+    {
+      "runId": "run_mvdmp9wh_k",
+      "capability": "composite:7bbf69e72100",
+      "provider": "composite:crystallized",
+      "startedAt": "2026-10-18T09:34:13.601Z",
+      "durationMs": 1.8,
+      "status": "completed",
+      "verification": "checked",
+      "seq": 23,
+      "inputDigest": "776232c64b4756d10e8e4151f9261b17c9d60499fe784fb1ede15f24abf4fd7b",
+      "outputDigest": "b4192b3474881d06084e9aabeab7d4d6e7eb7a417d2833b95119b6ae37dfd92d",
+      "prev": "a8b9e0d1de8a5d42f27131e8e126382277db523ff8a69d615b2bbc163710f76c",
+      "hash": "07886e319435a0781610964a2162f05de4967d9858677af091e9e9b1ddfa1e70"
+    },
+    {
+      "runId": "run_mvdmp9xw_p",
+      "capability": "graphql:atlas-test-graphql:query:geocode",
+      "provider": "graphql:atlas-test-graphql",
+      "startedAt": "2026-10-18T09:34:13.652Z",
+      "durationMs": 0.3,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 24,
+      "inputDigest": "339b0b4a6e31d567191d1ca5f8dec6243ffaf15fae2b20d6ba5749d4cdd3924e",
+      "outputDigest": "ab5f5a98b17f904f88f20e6064a323f8ff69916ceb3dca7bf4461f4c3690beaf",
+      "prev": "07886e319435a0781610964a2162f05de4967d9858677af091e9e9b1ddfa1e70",
+      "hash": "9bdaa1f8fa222ab535037044b0d91a7addc8263e473092cbf4d7a942eae9ccca"
+    },
+    {
+      "runId": "run_mvdmp9xx_q",
+      "capability": "mcp:skycast:forecast",
+      "provider": "mcp:skycast",
+      "startedAt": "2026-10-18T09:34:13.653Z",
+      "durationMs": 0.2,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 25,
+      "inputDigest": "3b0d820a040072bb6810cbc7ca6cee3f0b8c53486cc63d63eb17e29b8df4326c",
+      "outputDigest": "b12f2930008261b5b7b3af6f46e1fabdf23935f4a8b590ad0dd2de2094a4475a",
+      "prev": "9bdaa1f8fa222ab535037044b0d91a7addc8263e473092cbf4d7a942eae9ccca",
+      "hash": "e41803c7ac87054209fb5e213e9d51cc7e54b9d2c7774f0cc03b273d8357b5dc"
+    },
+    {
+      "runId": "run_mvdmp9xx_r",
+      "capability": "openapi:polyglot:translatetext",
+      "provider": "openapi:polyglot",
+      "startedAt": "2026-10-18T09:34:13.653Z",
+      "durationMs": 0.2,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 26,
+      "inputDigest": "345b8e79aa838ef8cf7cbc78455936786c15f14cae0ec8311ffe4a6052e55a34",
+      "outputDigest": "9c453d31dfd62819882093a2b1fd470cf9a0181d8a23ef91c7fdd676acfcf34e",
+      "prev": "e41803c7ac87054209fb5e213e9d51cc7e54b9d2c7774f0cc03b273d8357b5dc",
+      "hash": "cba398519ca850eeb173e2224617732d536843cde0f0e328ee827d2f28119723"
+    },
+    {
+      "runId": "run_mvdmp9xw_o",
+      "capability": "composite:7bbf69e72100",
+      "provider": "composite:crystallized",
+      "startedAt": "2026-10-18T09:34:13.652Z",
+      "durationMs": 1.4,
+      "status": "completed",
+      "verification": "checked",
+      "seq": 27,
+      "inputDigest": "776232c64b4756d10e8e4151f9261b17c9d60499fe784fb1ede15f24abf4fd7b",
+      "outputDigest": "b4192b3474881d06084e9aabeab7d4d6e7eb7a417d2833b95119b6ae37dfd92d",
+      "prev": "cba398519ca850eeb173e2224617732d536843cde0f0e328ee827d2f28119723",
+      "hash": "acc18475afd8f85da1c5d018388826df5fbfabe4334c6206c67e1bb1502d7500"
+    },
+    {
+      "runId": "run_mvdmp9zg_t",
+      "capability": "graphql:atlas-test-graphql:query:geocode",
+      "provider": "graphql:atlas-test-graphql",
+      "startedAt": "2026-10-18T09:34:13.708Z",
+      "durationMs": 0.2,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 28,
+      "inputDigest": "339b0b4a6e31d567191d1ca5f8dec6243ffaf15fae2b20d6ba5749d4cdd3924e",
+      "outputDigest": "ab5f5a98b17f904f88f20e6064a323f8ff69916ceb3dca7bf4461f4c3690beaf",
+      "prev": "acc18475afd8f85da1c5d018388826df5fbfabe4334c6206c67e1bb1502d7500",
+      "hash": "04321964a9466b9bc3cf3b43c998722b15e61311550a26b04daf26464e80d5f8"
+    },
+    {
+      "runId": "run_mvdmp9zh_u",
+      "capability": "mcp:skycast:forecast",
+      "provider": "mcp:skycast",
+      "startedAt": "2026-10-18T09:34:13.709Z",
+      "durationMs": 0.2,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 29,
+      "inputDigest": "3b0d820a040072bb6810cbc7ca6cee3f0b8c53486cc63d63eb17e29b8df4326c",
+      "outputDigest": "b12f2930008261b5b7b3af6f46e1fabdf23935f4a8b590ad0dd2de2094a4475a",
+      "prev": "04321964a9466b9bc3cf3b43c998722b15e61311550a26b04daf26464e80d5f8",
+      "hash": "549380bc3c7de1b2fe1b38177184e0ccd60c464ac96fb3c1c5749e00d57b3e40"
+    },
+    {
+      "runId": "run_mvdmp9zi_v",
+      "capability": "openapi:polyglot:translatetext",
+      "provider": "openapi:polyglot",
+      "startedAt": "2026-10-18T09:34:13.710Z",
+      "durationMs": 0.2,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 30,
+      "inputDigest": "345b8e79aa838ef8cf7cbc78455936786c15f14cae0ec8311ffe4a6052e55a34",
+      "outputDigest": "9c453d31dfd62819882093a2b1fd470cf9a0181d8a23ef91c7fdd676acfcf34e",
+      "prev": "549380bc3c7de1b2fe1b38177184e0ccd60c464ac96fb3c1c5749e00d57b3e40",
+      "hash": "29867aa64fc8bcdcbe12b0dca075cbe93bff0ceabe734bce41260b8fab2938a4"
+    },
+    {
+      "runId": "run_mvdmp9zg_s",
+      "capability": "composite:7bbf69e72100",
+      "provider": "composite:crystallized",
+      "startedAt": "2026-10-18T09:34:13.708Z",
+      "durationMs": 2.5,
+      "status": "completed",
+      "verification": "checked",
+      "seq": 31,
+      "inputDigest": "776232c64b4756d10e8e4151f9261b17c9d60499fe784fb1ede15f24abf4fd7b",
+      "outputDigest": "b4192b3474881d06084e9aabeab7d4d6e7eb7a417d2833b95119b6ae37dfd92d",
+      "prev": "29867aa64fc8bcdcbe12b0dca075cbe93bff0ceabe734bce41260b8fab2938a4",
+      "hash": "d94aaa19dda283a7271fa0c3275bda0e9b47950b47ffa6bfe34ff455a43acc18"
+    },
+    {
+      "runId": "run_mvdmpa37_x",
+      "capability": "graphql:atlas-test-graphql:query:geocode",
+      "provider": "graphql:atlas-test-graphql",
+      "startedAt": "2026-10-18T09:34:13.843Z",
+      "durationMs": 0.4,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 32,
+      "inputDigest": "339b0b4a6e31d567191d1ca5f8dec6243ffaf15fae2b20d6ba5749d4cdd3924e",
+      "outputDigest": "ab5f5a98b17f904f88f20e6064a323f8ff69916ceb3dca7bf4461f4c3690beaf",
+      "prev": "d94aaa19dda283a7271fa0c3275bda0e9b47950b47ffa6bfe34ff455a43acc18",
+      "hash": "06643f39786376f4b70e228bffeafb5638df8564ee4172dff85613caec9c51a4"
+    },
+    {
+      "runId": "run_mvdmpa39_y",
+      "capability": "mcp:skycast:forecast",
+      "provider": "mcp:skycast",
+      "startedAt": "2026-10-18T09:34:13.845Z",
+      "durationMs": 0.4,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 33,
+      "inputDigest": "3b0d820a040072bb6810cbc7ca6cee3f0b8c53486cc63d63eb17e29b8df4326c",
+      "outputDigest": "b12f2930008261b5b7b3af6f46e1fabdf23935f4a8b590ad0dd2de2094a4475a",
+      "prev": "06643f39786376f4b70e228bffeafb5638df8564ee4172dff85613caec9c51a4",
+      "hash": "98025913602043167a9351718c54352ff130636ac94504cba500534c1ca90ecf"
+    },
+    {
+      "runId": "run_mvdmpa39_z",
+      "capability": "openapi:polyglot:translatetext",
+      "provider": "openapi:polyglot",
+      "startedAt": "2026-10-18T09:34:13.845Z",
+      "durationMs": 0.4,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 34,
+      "inputDigest": "345b8e79aa838ef8cf7cbc78455936786c15f14cae0ec8311ffe4a6052e55a34",
+      "outputDigest": "9c453d31dfd62819882093a2b1fd470cf9a0181d8a23ef91c7fdd676acfcf34e",
+      "prev": "98025913602043167a9351718c54352ff130636ac94504cba500534c1ca90ecf",
+      "hash": "4ee9dcb0a281f9081f7733ac24768deba3e4ededa6d83f28e3e99b62f87ee8ad"
+    },
+    {
+      "runId": "run_mvdmpa37_w",
+      "capability": "composite:7bbf69e72100",
+      "provider": "composite:crystallized",
+      "startedAt": "2026-10-18T09:34:13.843Z",
+      "durationMs": 2.9,
+      "status": "completed",
+      "verification": "checked",
+      "seq": 35,
+      "inputDigest": "776232c64b4756d10e8e4151f9261b17c9d60499fe784fb1ede15f24abf4fd7b",
+      "outputDigest": "b4192b3474881d06084e9aabeab7d4d6e7eb7a417d2833b95119b6ae37dfd92d",
+      "prev": "4ee9dcb0a281f9081f7733ac24768deba3e4ededa6d83f28e3e99b62f87ee8ad",
+      "hash": "e7bb255fb7efa74580ae41c512d438b66233e56827dac583bf1d55a64960239f"
+    },
+    {
+      "runId": "run_mvdmpa5h_11",
+      "capability": "graphql:atlas-test-graphql:query:geocode",
+      "provider": "graphql:atlas-test-graphql",
+      "startedAt": "2026-10-18T09:34:13.925Z",
+      "durationMs": 6.7,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 36,
+      "inputDigest": "339b0b4a6e31d567191d1ca5f8dec6243ffaf15fae2b20d6ba5749d4cdd3924e",
+      "outputDigest": "ab5f5a98b17f904f88f20e6064a323f8ff69916ceb3dca7bf4461f4c3690beaf",
+      "prev": "e7bb255fb7efa74580ae41c512d438b66233e56827dac583bf1d55a64960239f",
+      "hash": "ed0fa9f6a7b5042323f66b9e50c4deda1235d2e4f57386099a800a2de1c1f237"
+    },
+    {
+      "runId": "run_mvdmpa5r_12",
+      "capability": "mcp:skycast:forecast",
+      "provider": "mcp:skycast",
+      "startedAt": "2026-10-18T09:34:13.935Z",
+      "durationMs": 0.6,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 37,
+      "inputDigest": "3b0d820a040072bb6810cbc7ca6cee3f0b8c53486cc63d63eb17e29b8df4326c",
+      "outputDigest": "b12f2930008261b5b7b3af6f46e1fabdf23935f4a8b590ad0dd2de2094a4475a",
+      "prev": "ed0fa9f6a7b5042323f66b9e50c4deda1235d2e4f57386099a800a2de1c1f237",
+      "hash": "fb0a58a47c5f8514c27256cb628b3b7c2d35b156de7a620c7551630303536eab"
+    },
+    {
+      "runId": "run_mvdmpa5t_13",
+      "capability": "openapi:polyglot:translatetext",
+      "provider": "openapi:polyglot",
+      "startedAt": "2026-10-18T09:34:13.937Z",
+      "durationMs": 0.3,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 38,
+      "inputDigest": "345b8e79aa838ef8cf7cbc78455936786c15f14cae0ec8311ffe4a6052e55a34",
+      "outputDigest": "9c453d31dfd62819882093a2b1fd470cf9a0181d8a23ef91c7fdd676acfcf34e",
+      "prev": "fb0a58a47c5f8514c27256cb628b3b7c2d35b156de7a620c7551630303536eab",
+      "hash": "27d9b155ab31516f5025a29081965f3b13de3fee8ab727a9b89e255855b192d0"
+    },
+    {
+      "runId": "run_mvdmpa5h_10",
+      "capability": "composite:7bbf69e72100",
+      "provider": "composite:crystallized",
+      "startedAt": "2026-10-18T09:34:13.925Z",
+      "durationMs": 12.4,
+      "status": "completed",
+      "verification": "checked",
+      "seq": 39,
+      "inputDigest": "776232c64b4756d10e8e4151f9261b17c9d60499fe784fb1ede15f24abf4fd7b",
+      "outputDigest": "b4192b3474881d06084e9aabeab7d4d6e7eb7a417d2833b95119b6ae37dfd92d",
+      "prev": "27d9b155ab31516f5025a29081965f3b13de3fee8ab727a9b89e255855b192d0",
+      "hash": "fb8848f5e204a6f35a89c821053c7da1d083c96ef0b27af002740e0548af1d78"
+    },
+    {
+      "runId": "run_mvdmpacw_15",
+      "capability": "graphql:atlas-test-graphql:query:geocode",
+      "provider": "graphql:atlas-test-graphql",
+      "startedAt": "2026-10-18T09:34:14.192Z",
+      "durationMs": 0.6,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 40,
+      "inputDigest": "339b0b4a6e31d567191d1ca5f8dec6243ffaf15fae2b20d6ba5749d4cdd3924e",
+      "outputDigest": "ab5f5a98b17f904f88f20e6064a323f8ff69916ceb3dca7bf4461f4c3690beaf",
+      "prev": "fb8848f5e204a6f35a89c821053c7da1d083c96ef0b27af002740e0548af1d78",
+      "hash": "d6795d08d75a1e3550ffead29a746751ff29f6031a60fa027855185b8dc09d75"
+    },
+    {
+      "runId": "run_mvdmpacy_16",
+      "capability": "mcp:skycast:forecast",
+      "provider": "mcp:skycast",
+      "startedAt": "2026-10-18T09:34:14.194Z",
+      "durationMs": 0.4,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 41,
+      "inputDigest": "3b0d820a040072bb6810cbc7ca6cee3f0b8c53486cc63d63eb17e29b8df4326c",
+      "outputDigest": "b12f2930008261b5b7b3af6f46e1fabdf23935f4a8b590ad0dd2de2094a4475a",
+      "prev": "d6795d08d75a1e3550ffead29a746751ff29f6031a60fa027855185b8dc09d75",
+      "hash": "dffd0f457ae9ff3c38ba2c5c7a367b261d5f583c875b3aac11a5a6e1efec66ec"
+    },
+    {
+      "runId": "run_mvdmpacy_17",
+      "capability": "openapi:polyglot:translatetext",
+      "provider": "openapi:polyglot",
+      "startedAt": "2026-10-18T09:34:14.194Z",
+      "durationMs": 0.3,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 42,
+      "inputDigest": "345b8e79aa838ef8cf7cbc78455936786c15f14cae0ec8311ffe4a6052e55a34",
+      "outputDigest": "9c453d31dfd62819882093a2b1fd470cf9a0181d8a23ef91c7fdd676acfcf34e",
+      "prev": "dffd0f457ae9ff3c38ba2c5c7a367b261d5f583c875b3aac11a5a6e1efec66ec",
+      "hash": "a4836fc3e76837fdec6d9e435a24d28e4c4e0b0505f0347f1bdd9e5a9b89407d"
+    },
+    {
+      "runId": "run_mvdmpacw_14",
+      "capability": "composite:7bbf69e72100",
+      "provider": "composite:crystallized",
+      "startedAt": "2026-10-18T09:34:14.192Z",
+      "durationMs": 2.8,
+      "status": "completed",
+      "verification": "checked",
+      "seq": 43,
+      "inputDigest": "776232c64b4756d10e8e4151f9261b17c9d60499fe784fb1ede15f24abf4fd7b",
+      "outputDigest": "b4192b3474881d06084e9aabeab7d4d6e7eb7a417d2833b95119b6ae37dfd92d",
+      "prev": "a4836fc3e76837fdec6d9e435a24d28e4c4e0b0505f0347f1bdd9e5a9b89407d",
+      "hash": "00de8c1beacc6a222f57e5e9c8d2dc4317c672824d82f17eead24d5eab0ee19e"
+    },
+    {
+      "runId": "run_mvdmpah2_19",
+      "capability": "graphql:atlas-test-graphql:query:geocode",
+      "provider": "graphql:atlas-test-graphql",
+      "startedAt": "2026-10-18T09:34:14.342Z",
+      "durationMs": 0.3,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 44,
+      "inputDigest": "339b0b4a6e31d567191d1ca5f8dec6243ffaf15fae2b20d6ba5749d4cdd3924e",
+      "outputDigest": "ab5f5a98b17f904f88f20e6064a323f8ff69916ceb3dca7bf4461f4c3690beaf",
+      "prev": "00de8c1beacc6a222f57e5e9c8d2dc4317c672824d82f17eead24d5eab0ee19e",
+      "hash": "251c6083e7662068ec4381e52a6069d38996fbcef25e3f19ff6e4d3880a9cdfc"
+    },
+    {
+      "runId": "run_mvdmpah4_1a",
+      "capability": "mcp:skycast:forecast",
+      "provider": "mcp:skycast",
+      "startedAt": "2026-10-18T09:34:14.344Z",
+      "durationMs": 0.2,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 45,
+      "inputDigest": "3b0d820a040072bb6810cbc7ca6cee3f0b8c53486cc63d63eb17e29b8df4326c",
+      "outputDigest": "b12f2930008261b5b7b3af6f46e1fabdf23935f4a8b590ad0dd2de2094a4475a",
+      "prev": "251c6083e7662068ec4381e52a6069d38996fbcef25e3f19ff6e4d3880a9cdfc",
+      "hash": "7da2f5cc5a1b0917a7ab517d5977218151025f935318c89b848108aa6c071b2a"
+    },
+    {
+      "runId": "run_mvdmpah4_1b",
+      "capability": "openapi:polyglot:translatetext",
+      "provider": "openapi:polyglot",
+      "startedAt": "2026-10-18T09:34:14.344Z",
+      "durationMs": 0.2,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 46,
+      "inputDigest": "345b8e79aa838ef8cf7cbc78455936786c15f14cae0ec8311ffe4a6052e55a34",
+      "outputDigest": "9c453d31dfd62819882093a2b1fd470cf9a0181d8a23ef91c7fdd676acfcf34e",
+      "prev": "7da2f5cc5a1b0917a7ab517d5977218151025f935318c89b848108aa6c071b2a",
+      "hash": "dfdb7f4e439f5088cd1c015c7440ef9eaad81a0caa8e069e7476b5dbc6ad61c8"
+    },
+    {
+      "runId": "run_mvdmpah2_18",
+      "capability": "composite:7bbf69e72100",
+      "provider": "composite:crystallized",
+      "startedAt": "2026-10-18T09:34:14.342Z",
+      "durationMs": 2.1,
+      "status": "completed",
+      "verification": "checked",
+      "seq": 47,
+      "inputDigest": "776232c64b4756d10e8e4151f9261b17c9d60499fe784fb1ede15f24abf4fd7b",
+      "outputDigest": "b4192b3474881d06084e9aabeab7d4d6e7eb7a417d2833b95119b6ae37dfd92d",
+      "prev": "dfdb7f4e439f5088cd1c015c7440ef9eaad81a0caa8e069e7476b5dbc6ad61c8",
+      "hash": "2de789f277fd527be20c1bcc3d995888f907b229f78eca22e9d079ef863dbdbd"
+    },
+    {
+      "runId": "run_mvdmpaj4_1d",
+      "capability": "graphql:atlas-test-graphql:query:geocode",
+      "provider": "graphql:atlas-test-graphql",
+      "startedAt": "2026-10-18T09:34:14.416Z",
+      "durationMs": 0.7,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 48,
+      "inputDigest": "339b0b4a6e31d567191d1ca5f8dec6243ffaf15fae2b20d6ba5749d4cdd3924e",
+      "outputDigest": "ab5f5a98b17f904f88f20e6064a323f8ff69916ceb3dca7bf4461f4c3690beaf",
+      "prev": "2de789f277fd527be20c1bcc3d995888f907b229f78eca22e9d079ef863dbdbd",
+      "hash": "565cc99af7049c33bd0adad916239086d24060171c16e525e8be4432998fb3be"
+    },
+    {
+      "runId": "run_mvdmpaj5_1e",
+      "capability": "mcp:skycast:forecast",
+      "provider": "mcp:skycast",
+      "startedAt": "2026-10-18T09:34:14.418Z",
+      "durationMs": 0.3,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 49,
+      "inputDigest": "3b0d820a040072bb6810cbc7ca6cee3f0b8c53486cc63d63eb17e29b8df4326c",
+      "outputDigest": "b12f2930008261b5b7b3af6f46e1fabdf23935f4a8b590ad0dd2de2094a4475a",
+      "prev": "565cc99af7049c33bd0adad916239086d24060171c16e525e8be4432998fb3be",
+      "hash": "3eba5c181f1e7fb386c6ab33e8f01fd6064901348fc729ef9868a476628ebd43"
+    },
+    {
+      "runId": "run_mvdmpaj6_1f",
+      "capability": "openapi:polyglot:translatetext",
+      "provider": "openapi:polyglot",
+      "startedAt": "2026-10-18T09:34:14.418Z",
+      "durationMs": 0.1,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 50,
+      "inputDigest": "345b8e79aa838ef8cf7cbc78455936786c15f14cae0ec8311ffe4a6052e55a34",
+      "outputDigest": "9c453d31dfd62819882093a2b1fd470cf9a0181d8a23ef91c7fdd676acfcf34e",
+      "prev": "3eba5c181f1e7fb386c6ab33e8f01fd6064901348fc729ef9868a476628ebd43",
+      "hash": "93079ee04ab901f2d3766c2cd1053ef77a6ced60fcdff9320823944111496bc3"
+    },
+    {
+      "runId": "run_mvdmpaj4_1c",
+      "capability": "composite:7bbf69e72100",
+      "provider": "composite:crystallized",
+      "startedAt": "2026-10-18T09:34:14.416Z",
+      "durationMs": 2.6,
+      "status": "completed",
+      "verification": "checked",
+      "seq": 51,
+      "inputDigest": "776232c64b4756d10e8e4151f9261b17c9d60499fe784fb1ede15f24abf4fd7b",
+      "outputDigest": "b4192b3474881d06084e9aabeab7d4d6e7eb7a417d2833b95119b6ae37dfd92d",
+      "prev": "93079ee04ab901f2d3766c2cd1053ef77a6ced60fcdff9320823944111496bc3",
+      "hash": "28addad047e2bbf33f8d17dc747e0b69f3128784500e987b1c95ac3e005832b6"
+    },
+    {
+      "runId": "run_mvdmpamc_1h",
+      "capability": "graphql:atlas-test-graphql:query:geocode",
+      "provider": "graphql:atlas-test-graphql",
+      "startedAt": "2026-10-18T09:34:14.532Z",
+      "durationMs": 0.3,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 52,
+      "inputDigest": "339b0b4a6e31d567191d1ca5f8dec6243ffaf15fae2b20d6ba5749d4cdd3924e",
+      "outputDigest": "ab5f5a98b17f904f88f20e6064a323f8ff69916ceb3dca7bf4461f4c3690beaf",
+      "prev": "28addad047e2bbf33f8d17dc747e0b69f3128784500e987b1c95ac3e005832b6",
+      "hash": "127b944147f27463fe79bb2eba167bcce03972ec35b44c2a5cd9cf03494a30f9"
+    },
+    {
+      "runId": "run_mvdmpamd_1i",
+      "capability": "mcp:skycast:forecast",
+      "provider": "mcp:skycast",
+      "startedAt": "2026-10-18T09:34:14.533Z",
+      "durationMs": 0.2,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 53,
+      "inputDigest": "3b0d820a040072bb6810cbc7ca6cee3f0b8c53486cc63d63eb17e29b8df4326c",
+      "outputDigest": "b12f2930008261b5b7b3af6f46e1fabdf23935f4a8b590ad0dd2de2094a4475a",
+      "prev": "127b944147f27463fe79bb2eba167bcce03972ec35b44c2a5cd9cf03494a30f9",
+      "hash": "0674022e316f678ad688bf8246b431e830c52e3d9cd22822181f70c1031d0e7c"
+    },
+    {
+      "runId": "run_mvdmpamd_1j",
+      "capability": "openapi:polyglot:translatetext",
+      "provider": "openapi:polyglot",
+      "startedAt": "2026-10-18T09:34:14.533Z",
+      "durationMs": 0.2,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 54,
+      "inputDigest": "345b8e79aa838ef8cf7cbc78455936786c15f14cae0ec8311ffe4a6052e55a34",
+      "outputDigest": "9c453d31dfd62819882093a2b1fd470cf9a0181d8a23ef91c7fdd676acfcf34e",
+      "prev": "0674022e316f678ad688bf8246b431e830c52e3d9cd22822181f70c1031d0e7c",
+      "hash": "9878fd7a1c2badb30453e514fddf5f65ae5623341e2bfa65b5f8bbb14026b428"
+    },
+    {
+      "runId": "run_mvdmpamc_1g",
+      "capability": "composite:7bbf69e72100",
+      "provider": "composite:crystallized",
+      "startedAt": "2026-10-18T09:34:14.532Z",
+      "durationMs": 2,
+      "status": "completed",
+      "verification": "checked",
+      "seq": 55,
+      "inputDigest": "776232c64b4756d10e8e4151f9261b17c9d60499fe784fb1ede15f24abf4fd7b",
+      "outputDigest": "b4192b3474881d06084e9aabeab7d4d6e7eb7a417d2833b95119b6ae37dfd92d",
+      "prev": "9878fd7a1c2badb30453e514fddf5f65ae5623341e2bfa65b5f8bbb14026b428",
+      "hash": "cd00151ead50706d39a584e507ba27097558d1293415dc78cea625400df216ea"
+    },
+    {
+      "runId": "run_mvdmpapo_1l",
+      "capability": "graphql:atlas-test-graphql:query:geocode",
+      "provider": "graphql:atlas-test-graphql",
+      "startedAt": "2026-10-18T09:34:14.652Z",
+      "durationMs": 0.3,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 56,
+      "inputDigest": "339b0b4a6e31d567191d1ca5f8dec6243ffaf15fae2b20d6ba5749d4cdd3924e",
+      "outputDigest": "ab5f5a98b17f904f88f20e6064a323f8ff69916ceb3dca7bf4461f4c3690beaf",
+      "prev": "cd00151ead50706d39a584e507ba27097558d1293415dc78cea625400df216ea",
+      "hash": "3267c8d23a879203244ce9b57925f67df1ab6a6efa701227b420ad2c4009b4c9"
+    },
+    {
+      "runId": "run_mvdmpapp_1m",
+      "capability": "mcp:skycast:forecast",
+      "provider": "mcp:skycast",
+      "startedAt": "2026-10-18T09:34:14.653Z",
+      "durationMs": 0.6,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 57,
+      "inputDigest": "3b0d820a040072bb6810cbc7ca6cee3f0b8c53486cc63d63eb17e29b8df4326c",
+      "outputDigest": "b12f2930008261b5b7b3af6f46e1fabdf23935f4a8b590ad0dd2de2094a4475a",
+      "prev": "3267c8d23a879203244ce9b57925f67df1ab6a6efa701227b420ad2c4009b4c9",
+      "hash": "f9a47d8f823eaf2711e02cf54382d2a3b4bb487907ad86a9c5fca91dff945f33"
+    },
+    {
+      "runId": "run_mvdmpapq_1n",
+      "capability": "openapi:polyglot:translatetext",
+      "provider": "openapi:polyglot",
+      "startedAt": "2026-10-18T09:34:14.654Z",
+      "durationMs": 0.2,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 58,
+      "inputDigest": "345b8e79aa838ef8cf7cbc78455936786c15f14cae0ec8311ffe4a6052e55a34",
+      "outputDigest": "9c453d31dfd62819882093a2b1fd470cf9a0181d8a23ef91c7fdd676acfcf34e",
+      "prev": "f9a47d8f823eaf2711e02cf54382d2a3b4bb487907ad86a9c5fca91dff945f33",
+      "hash": "5f0e30000ed43794e351054c000fafd1a32a73670df4be1dec391a4db5cff9a6"
+    },
+    {
+      "runId": "run_mvdmpapo_1k",
+      "capability": "composite:7bbf69e72100",
+      "provider": "composite:crystallized",
+      "startedAt": "2026-10-18T09:34:14.652Z",
+      "durationMs": 2.4,
+      "status": "completed",
+      "verification": "checked",
+      "seq": 59,
+      "inputDigest": "776232c64b4756d10e8e4151f9261b17c9d60499fe784fb1ede15f24abf4fd7b",
+      "outputDigest": "b4192b3474881d06084e9aabeab7d4d6e7eb7a417d2833b95119b6ae37dfd92d",
+      "prev": "5f0e30000ed43794e351054c000fafd1a32a73670df4be1dec391a4db5cff9a6",
+      "hash": "4fe243ad16afccc52f3106f28d8299e9b0f6fa937d34c27251a6de7647b61e5d"
+    },
+    {
+      "runId": "run_mvdmpasq_1p",
+      "capability": "graphql:atlas-test-graphql:query:geocode",
+      "provider": "graphql:atlas-test-graphql",
+      "startedAt": "2026-10-18T09:34:14.762Z",
+      "durationMs": 0.3,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 60,
+      "inputDigest": "339b0b4a6e31d567191d1ca5f8dec6243ffaf15fae2b20d6ba5749d4cdd3924e",
+      "outputDigest": "ab5f5a98b17f904f88f20e6064a323f8ff69916ceb3dca7bf4461f4c3690beaf",
+      "prev": "4fe243ad16afccc52f3106f28d8299e9b0f6fa937d34c27251a6de7647b61e5d",
+      "hash": "a6eb748fafc300cb4b6f215f4bb5d5df02c6c12bc3c3e3fca88a53ca1f1aff8a"
+    },
+    {
+      "runId": "run_mvdmpass_1q",
+      "capability": "mcp:skycast:forecast",
+      "provider": "mcp:skycast",
+      "startedAt": "2026-10-18T09:34:14.764Z",
+      "durationMs": 0.2,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 61,
+      "inputDigest": "3b0d820a040072bb6810cbc7ca6cee3f0b8c53486cc63d63eb17e29b8df4326c",
+      "outputDigest": "b12f2930008261b5b7b3af6f46e1fabdf23935f4a8b590ad0dd2de2094a4475a",
+      "prev": "a6eb748fafc300cb4b6f215f4bb5d5df02c6c12bc3c3e3fca88a53ca1f1aff8a",
+      "hash": "d8a204f100d602f74f5ee8dc04913b59fdf3878604e3ed53f06c5faf047a2ef0"
+    },
+    {
+      "runId": "run_mvdmpass_1r",
+      "capability": "openapi:polyglot:translatetext",
+      "provider": "openapi:polyglot",
+      "startedAt": "2026-10-18T09:34:14.764Z",
+      "durationMs": 0.2,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 62,
+      "inputDigest": "345b8e79aa838ef8cf7cbc78455936786c15f14cae0ec8311ffe4a6052e55a34",
+      "outputDigest": "9c453d31dfd62819882093a2b1fd470cf9a0181d8a23ef91c7fdd676acfcf34e",
+      "prev": "d8a204f100d602f74f5ee8dc04913b59fdf3878604e3ed53f06c5faf047a2ef0",
+      "hash": "f23d6c9744a945a61c662bda98f9c3dbd154bf1b5e174baddce3b16012d6b8f6"
+    },
+    {
+      "runId": "run_mvdmpasq_1o",
+      "capability": "composite:7bbf69e72100",
+      "provider": "composite:crystallized",
+      "startedAt": "2026-10-18T09:34:14.762Z",
+      "durationMs": 2.9,
+      "status": "completed",
+      "verification": "checked",
+      "seq": 63,
+      "inputDigest": "776232c64b4756d10e8e4151f9261b17c9d60499fe784fb1ede15f24abf4fd7b",
+      "outputDigest": "b4192b3474881d06084e9aabeab7d4d6e7eb7a417d2833b95119b6ae37dfd92d",
+      "prev": "f23d6c9744a945a61c662bda98f9c3dbd154bf1b5e174baddce3b16012d6b8f6",
+      "hash": "875b7ebacf311b38c67bca0fad439ef51547302dc397d45558fce45e4f6b8247"
+    },
+    {
+      "runId": "run_mvdmpav8_1t",
+      "capability": "graphql:atlas-test-graphql:query:geocode",
+      "provider": "graphql:atlas-test-graphql",
+      "startedAt": "2026-10-18T09:34:14.852Z",
+      "durationMs": 0.3,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 64,
+      "inputDigest": "339b0b4a6e31d567191d1ca5f8dec6243ffaf15fae2b20d6ba5749d4cdd3924e",
+      "outputDigest": "ab5f5a98b17f904f88f20e6064a323f8ff69916ceb3dca7bf4461f4c3690beaf",
+      "prev": "875b7ebacf311b38c67bca0fad439ef51547302dc397d45558fce45e4f6b8247",
+      "hash": "21e3a7250154f8ff368dab237893e20635de237f3b8519012f8640c7278658dd"
+    },
+    {
+      "runId": "run_mvdmpav9_1u",
+      "capability": "mcp:skycast:forecast",
+      "provider": "mcp:skycast",
+      "startedAt": "2026-10-18T09:34:14.853Z",
+      "durationMs": 0.1,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 65,
+      "inputDigest": "3b0d820a040072bb6810cbc7ca6cee3f0b8c53486cc63d63eb17e29b8df4326c",
+      "outputDigest": "b12f2930008261b5b7b3af6f46e1fabdf23935f4a8b590ad0dd2de2094a4475a",
+      "prev": "21e3a7250154f8ff368dab237893e20635de237f3b8519012f8640c7278658dd",
+      "hash": "8ee8306797b7059c79459f65c98692cee39236774f9e58605ae6f33b9aeeba03"
+    },
+    {
+      "runId": "run_mvdmpav9_1v",
+      "capability": "openapi:polyglot:translatetext",
+      "provider": "openapi:polyglot",
+      "startedAt": "2026-10-18T09:34:14.853Z",
+      "durationMs": 0.2,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 66,
+      "inputDigest": "345b8e79aa838ef8cf7cbc78455936786c15f14cae0ec8311ffe4a6052e55a34",
+      "outputDigest": "9c453d31dfd62819882093a2b1fd470cf9a0181d8a23ef91c7fdd676acfcf34e",
+      "prev": "8ee8306797b7059c79459f65c98692cee39236774f9e58605ae6f33b9aeeba03",
+      "hash": "da061e4c9f813fa31d471929c7a9ac6cae8c58b9c314d8009b1eec9ef70cdf79"
+    },
+    {
+      "runId": "run_mvdmpav8_1s",
+      "capability": "composite:7bbf69e72100",
+      "provider": "composite:crystallized",
+      "startedAt": "2026-10-18T09:34:14.852Z",
+      "durationMs": 1.4,
+      "status": "completed",
+      "verification": "checked",
+      "seq": 67,
+      "inputDigest": "776232c64b4756d10e8e4151f9261b17c9d60499fe784fb1ede15f24abf4fd7b",
+      "outputDigest": "b4192b3474881d06084e9aabeab7d4d6e7eb7a417d2833b95119b6ae37dfd92d",
+      "prev": "da061e4c9f813fa31d471929c7a9ac6cae8c58b9c314d8009b1eec9ef70cdf79",
+      "hash": "bbd3b086e9668a1a93f1b1ae4f33305f83a43fcf8a032d52519a00e63f597055"
+    },
+    {
+      "runId": "run_mvdmpaxy_1x",
+      "capability": "graphql:atlas-test-graphql:query:geocode",
+      "provider": "graphql:atlas-test-graphql",
+      "startedAt": "2026-10-18T09:34:14.950Z",
+      "durationMs": 0.3,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 68,
+      "inputDigest": "339b0b4a6e31d567191d1ca5f8dec6243ffaf15fae2b20d6ba5749d4cdd3924e",
+      "outputDigest": "ab5f5a98b17f904f88f20e6064a323f8ff69916ceb3dca7bf4461f4c3690beaf",
+      "prev": "bbd3b086e9668a1a93f1b1ae4f33305f83a43fcf8a032d52519a00e63f597055",
+      "hash": "800d37d3e1e370714e4bee96905837761ebea39a4742b8eb9c8878ed325613cc"
+    },
+    {
+      "runId": "run_mvdmpaxz_1y",
+      "capability": "mcp:skycast:forecast",
+      "provider": "mcp:skycast",
+      "startedAt": "2026-10-18T09:34:14.951Z",
+      "durationMs": 0.2,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 69,
+      "inputDigest": "3b0d820a040072bb6810cbc7ca6cee3f0b8c53486cc63d63eb17e29b8df4326c",
+      "outputDigest": "b12f2930008261b5b7b3af6f46e1fabdf23935f4a8b590ad0dd2de2094a4475a",
+      "prev": "800d37d3e1e370714e4bee96905837761ebea39a4742b8eb9c8878ed325613cc",
+      "hash": "d699f1d271f165915c4471c5bc9fcff8e35151127ddfba51aa2208febc2a741e"
+    },
+    {
+      "runId": "run_mvdmpay0_1z",
+      "capability": "openapi:polyglot:translatetext",
+      "provider": "openapi:polyglot",
+      "startedAt": "2026-10-18T09:34:14.952Z",
+      "durationMs": 0.2,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 70,
+      "inputDigest": "345b8e79aa838ef8cf7cbc78455936786c15f14cae0ec8311ffe4a6052e55a34",
+      "outputDigest": "9c453d31dfd62819882093a2b1fd470cf9a0181d8a23ef91c7fdd676acfcf34e",
+      "prev": "d699f1d271f165915c4471c5bc9fcff8e35151127ddfba51aa2208febc2a741e",
+      "hash": "bf76422f1070ea0f57ec5ec3332ef8d0deb248d507eefe52280c78cc293c776f"
+    },
+    {
+      "runId": "run_mvdmpaxy_1w",
+      "capability": "composite:7bbf69e72100",
+      "provider": "composite:crystallized",
+      "startedAt": "2026-10-18T09:34:14.950Z",
+      "durationMs": 2,
+      "status": "completed",
+      "verification": "checked",
+      "seq": 71,
+      "inputDigest": "776232c64b4756d10e8e4151f9261b17c9d60499fe784fb1ede15f24abf4fd7b",
+      "outputDigest": "b4192b3474881d06084e9aabeab7d4d6e7eb7a417d2833b95119b6ae37dfd92d",
+      "prev": "bf76422f1070ea0f57ec5ec3332ef8d0deb248d507eefe52280c78cc293c776f",
+      "hash": "5e3d759aa4d2db5812d531bfcb6a6bc50b10d53e937c71c0ddb81fc0b02ea244"
+    },
+    {
+      "runId": "run_mvdmpb0k_21",
+      "capability": "graphql:atlas-test-graphql:query:geocode",
+      "provider": "graphql:atlas-test-graphql",
+      "startedAt": "2026-10-18T09:34:15.044Z",
+      "durationMs": 0.3,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 72,
+      "inputDigest": "339b0b4a6e31d567191d1ca5f8dec6243ffaf15fae2b20d6ba5749d4cdd3924e",
+      "outputDigest": "ab5f5a98b17f904f88f20e6064a323f8ff69916ceb3dca7bf4461f4c3690beaf",
+      "prev": "5e3d759aa4d2db5812d531bfcb6a6bc50b10d53e937c71c0ddb81fc0b02ea244",
+      "hash": "38ee3a05e3f85c89fb8ec69748fd27fd6f1de463dc28858ba5e58c5ec3972bd0"
+    },
+    {
+      "runId": "run_mvdmpb0l_22",
+      "capability": "mcp:skycast:forecast",
+      "provider": "mcp:skycast",
+      "startedAt": "2026-10-18T09:34:15.045Z",
+      "durationMs": 0.5,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 73,
+      "inputDigest": "3b0d820a040072bb6810cbc7ca6cee3f0b8c53486cc63d63eb17e29b8df4326c",
+      "outputDigest": "b12f2930008261b5b7b3af6f46e1fabdf23935f4a8b590ad0dd2de2094a4475a",
+      "prev": "38ee3a05e3f85c89fb8ec69748fd27fd6f1de463dc28858ba5e58c5ec3972bd0",
+      "hash": "69b91a67b7422cb71f9ad72aac1af042ecb29ccf1becb18e7d606c9f51a3b272"
+    },
+    {
+      "runId": "run_mvdmpb0m_23",
+      "capability": "openapi:polyglot:translatetext",
+      "provider": "openapi:polyglot",
+      "startedAt": "2026-10-18T09:34:15.046Z",
+      "durationMs": 0.3,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 74,
+      "inputDigest": "345b8e79aa838ef8cf7cbc78455936786c15f14cae0ec8311ffe4a6052e55a34",
+      "outputDigest": "9c453d31dfd62819882093a2b1fd470cf9a0181d8a23ef91c7fdd676acfcf34e",
+      "prev": "69b91a67b7422cb71f9ad72aac1af042ecb29ccf1becb18e7d606c9f51a3b272",
+      "hash": "1e00ab189d648c6d08334e1d3bb23466594d22440469de9a40c52d3f5edec8be"
+    },
+    {
+      "runId": "run_mvdmpb0k_20",
+      "capability": "composite:7bbf69e72100",
+      "provider": "composite:crystallized",
+      "startedAt": "2026-10-18T09:34:15.044Z",
+      "durationMs": 2.4,
+      "status": "completed",
+      "verification": "checked",
+      "seq": 75,
+      "inputDigest": "776232c64b4756d10e8e4151f9261b17c9d60499fe784fb1ede15f24abf4fd7b",
+      "outputDigest": "b4192b3474881d06084e9aabeab7d4d6e7eb7a417d2833b95119b6ae37dfd92d",
+      "prev": "1e00ab189d648c6d08334e1d3bb23466594d22440469de9a40c52d3f5edec8be",
+      "hash": "8d72ea4a296013516d620b9ccbb335426477edb6795a299e7756b728fa64e81a"
+    },
+    {
+      "runId": "run_mvdmpb4q_25",
+      "capability": "graphql:atlas-test-graphql:query:geocode",
+      "provider": "graphql:atlas-test-graphql",
+      "startedAt": "2026-10-18T09:34:15.194Z",
+      "durationMs": 0.4,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 76,
+      "inputDigest": "339b0b4a6e31d567191d1ca5f8dec6243ffaf15fae2b20d6ba5749d4cdd3924e",
+      "outputDigest": "ab5f5a98b17f904f88f20e6064a323f8ff69916ceb3dca7bf4461f4c3690beaf",
+      "prev": "8d72ea4a296013516d620b9ccbb335426477edb6795a299e7756b728fa64e81a",
+      "hash": "891eee1748e591b8ca4f4f00bc74d9a47be5c7caab061b3d64e08a992247c415"
+    },
+    {
+      "runId": "run_mvdmpb4s_26",
+      "capability": "mcp:skycast:forecast",
+      "provider": "mcp:skycast",
+      "startedAt": "2026-10-18T09:34:15.196Z",
+      "durationMs": 0.3,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 77,
+      "inputDigest": "3b0d820a040072bb6810cbc7ca6cee3f0b8c53486cc63d63eb17e29b8df4326c",
+      "outputDigest": "b12f2930008261b5b7b3af6f46e1fabdf23935f4a8b590ad0dd2de2094a4475a",
+      "prev": "891eee1748e591b8ca4f4f00bc74d9a47be5c7caab061b3d64e08a992247c415",
+      "hash": "7e958f070d60942f71c0f9229a2080372cbfdf8610c2e58db94a16e9b69ffb51"
+    },
+    {
+      "runId": "run_mvdmpb4t_27",
+      "capability": "openapi:polyglot:translatetext",
+      "provider": "openapi:polyglot",
+      "startedAt": "2026-10-18T09:34:15.197Z",
+      "durationMs": 0.2,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 78,
+      "inputDigest": "345b8e79aa838ef8cf7cbc78455936786c15f14cae0ec8311ffe4a6052e55a34",
+      "outputDigest": "9c453d31dfd62819882093a2b1fd470cf9a0181d8a23ef91c7fdd676acfcf34e",
+      "prev": "7e958f070d60942f71c0f9229a2080372cbfdf8610c2e58db94a16e9b69ffb51",
+      "hash": "e66f8d5169e363f6f7b35387ee74e0505543dbd5183667e380747f89af8b8d3e"
+    },
+    {
+      "runId": "run_mvdmpb4q_24",
+      "capability": "composite:7bbf69e72100",
+      "provider": "composite:crystallized",
+      "startedAt": "2026-10-18T09:34:15.194Z",
+      "durationMs": 2.7,
+      "status": "completed",
+      "verification": "checked",
+      "seq": 79,
+      "inputDigest": "776232c64b4756d10e8e4151f9261b17c9d60499fe784fb1ede15f24abf4fd7b",
+      "outputDigest": "b4192b3474881d06084e9aabeab7d4d6e7eb7a417d2833b95119b6ae37dfd92d",
+      "prev": "e66f8d5169e363f6f7b35387ee74e0505543dbd5183667e380747f89af8b8d3e",
+      "hash": "c62a67101495210ccf0b20d8013ed6eeef0360bec55a8dd127e0a7e7d61562d2"
+    },
+    {
+      "runId": "run_mvdmpb7s_29",
+      "capability": "graphql:atlas-test-graphql:query:geocode",
+      "provider": "graphql:atlas-test-graphql",
+      "startedAt": "2026-10-18T09:34:15.304Z",
+      "durationMs": 0.4,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 80,
+      "inputDigest": "339b0b4a6e31d567191d1ca5f8dec6243ffaf15fae2b20d6ba5749d4cdd3924e",
+      "outputDigest": "ab5f5a98b17f904f88f20e6064a323f8ff69916ceb3dca7bf4461f4c3690beaf",
+      "prev": "c62a67101495210ccf0b20d8013ed6eeef0360bec55a8dd127e0a7e7d61562d2",
+      "hash": "c9b4e33a1ab3c81a8e5f61ee7bed74d9627e1b10e4152e6085ca9495d522301a"
+    },
+    {
+      "runId": "run_mvdmpb7u_2a",
+      "capability": "mcp:skycast:forecast",
+      "provider": "mcp:skycast",
+      "startedAt": "2026-10-18T09:34:15.306Z",
+      "durationMs": 0.3,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 81,
+      "inputDigest": "3b0d820a040072bb6810cbc7ca6cee3f0b8c53486cc63d63eb17e29b8df4326c",
+      "outputDigest": "b12f2930008261b5b7b3af6f46e1fabdf23935f4a8b590ad0dd2de2094a4475a",
+      "prev": "c9b4e33a1ab3c81a8e5f61ee7bed74d9627e1b10e4152e6085ca9495d522301a",
+      "hash": "00c31b1e003af90488bcc1ea8a117c74386b58b21a71c3bc625f9274299eab2c"
+    },
+    {
+      "runId": "run_mvdmpb7u_2b",
+      "capability": "openapi:polyglot:translatetext",
+      "provider": "openapi:polyglot",
+      "startedAt": "2026-10-18T09:34:15.306Z",
+      "durationMs": 0.1,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 82,
+      "inputDigest": "345b8e79aa838ef8cf7cbc78455936786c15f14cae0ec8311ffe4a6052e55a34",
+      "outputDigest": "9c453d31dfd62819882093a2b1fd470cf9a0181d8a23ef91c7fdd676acfcf34e",
+      "prev": "00c31b1e003af90488bcc1ea8a117c74386b58b21a71c3bc625f9274299eab2c",
+      "hash": "4c0d989ed0cfa9f6f72e06a6d304665f816a811e3d0665ca854b99c377849085"
+    },
+    {
+      "runId": "run_mvdmpb7s_28",
+      "capability": "composite:7bbf69e72100",
+      "provider": "composite:crystallized",
+      "startedAt": "2026-10-18T09:34:15.304Z",
+      "durationMs": 2.1,
+      "status": "completed",
+      "verification": "checked",
+      "seq": 83,
+      "inputDigest": "776232c64b4756d10e8e4151f9261b17c9d60499fe784fb1ede15f24abf4fd7b",
+      "outputDigest": "b4192b3474881d06084e9aabeab7d4d6e7eb7a417d2833b95119b6ae37dfd92d",
+      "prev": "4c0d989ed0cfa9f6f72e06a6d304665f816a811e3d0665ca854b99c377849085",
+      "hash": "1b122d0153ad0b0c6397a681c7f46e29e3db7a8a833e18790555fb009b866cb7"
+    },
+    {
+      "runId": "run_mvdmpbal_2d",
+      "capability": "graphql:atlas-test-graphql:query:geocode",
+      "provider": "graphql:atlas-test-graphql",
+      "startedAt": "2026-10-18T09:34:15.405Z",
+      "durationMs": 0.3,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 84,
+      "inputDigest": "339b0b4a6e31d567191d1ca5f8dec6243ffaf15fae2b20d6ba5749d4cdd3924e",
+      "outputDigest": "ab5f5a98b17f904f88f20e6064a323f8ff69916ceb3dca7bf4461f4c3690beaf",
+      "prev": "1b122d0153ad0b0c6397a681c7f46e29e3db7a8a833e18790555fb009b866cb7",
+      "hash": "d63a326c12f60b02e4a591943d7a570b7ac780bf58521de30d30ca68e9b0b224"
+    },
+    {
+      "runId": "run_mvdmpban_2e",
+      "capability": "mcp:skycast:forecast",
+      "provider": "mcp:skycast",
+      "startedAt": "2026-10-18T09:34:15.407Z",
+      "durationMs": 0.2,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 85,
+      "inputDigest": "3b0d820a040072bb6810cbc7ca6cee3f0b8c53486cc63d63eb17e29b8df4326c",
+      "outputDigest": "b12f2930008261b5b7b3af6f46e1fabdf23935f4a8b590ad0dd2de2094a4475a",
+      "prev": "d63a326c12f60b02e4a591943d7a570b7ac780bf58521de30d30ca68e9b0b224",
+      "hash": "060c976e1b63ee8e6f9167b76e3ef548956d96fe98c67d9ec31fd93b604ece03"
+    },
+    {
+      "runId": "run_mvdmpban_2f",
+      "capability": "openapi:polyglot:translatetext",
+      "provider": "openapi:polyglot",
+      "startedAt": "2026-10-18T09:34:15.407Z",
+      "durationMs": 0.2,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 86,
+      "inputDigest": "345b8e79aa838ef8cf7cbc78455936786c15f14cae0ec8311ffe4a6052e55a34",
+      "outputDigest": "9c453d31dfd62819882093a2b1fd470cf9a0181d8a23ef91c7fdd676acfcf34e",
+      "prev": "060c976e1b63ee8e6f9167b76e3ef548956d96fe98c67d9ec31fd93b604ece03",
+      "hash": "ce9e4ba9cc954873dcbf71f16434a011fa0aeed487ebaa5435588a1a9e12ba6a"
+    },
+    {
+      "runId": "run_mvdmpbal_2c",
+      "capability": "composite:7bbf69e72100",
+      "provider": "composite:crystallized",
+      "startedAt": "2026-10-18T09:34:15.405Z",
+      "durationMs": 2,
+      "status": "completed",
+      "verification": "checked",
+      "seq": 87,
+      "inputDigest": "776232c64b4756d10e8e4151f9261b17c9d60499fe784fb1ede15f24abf4fd7b",
+      "outputDigest": "b4192b3474881d06084e9aabeab7d4d6e7eb7a417d2833b95119b6ae37dfd92d",
+      "prev": "ce9e4ba9cc954873dcbf71f16434a011fa0aeed487ebaa5435588a1a9e12ba6a",
+      "hash": "95ef11ddccb2137987763283d639b115c0bfa63ed1bf420aa80d2d999bd90f1d"
+    },
+    {
+      "runId": "run_mvdmpbd0_2h",
+      "capability": "graphql:atlas-test-graphql:query:geocode",
+      "provider": "graphql:atlas-test-graphql",
+      "startedAt": "2026-10-18T09:34:15.492Z",
+      "durationMs": 0.2,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 88,
+      "inputDigest": "339b0b4a6e31d567191d1ca5f8dec6243ffaf15fae2b20d6ba5749d4cdd3924e",
+      "outputDigest": "ab5f5a98b17f904f88f20e6064a323f8ff69916ceb3dca7bf4461f4c3690beaf",
+      "prev": "95ef11ddccb2137987763283d639b115c0bfa63ed1bf420aa80d2d999bd90f1d",
+      "hash": "87d957eb770c61b07c3db743e2603ee0f5326742e2ab73b180e082b59e209938"
+    },
+    {
+      "runId": "run_mvdmpbd2_2i",
+      "capability": "mcp:skycast:forecast",
+      "provider": "mcp:skycast",
+      "startedAt": "2026-10-18T09:34:15.494Z",
+      "durationMs": 0.2,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 89,
+      "inputDigest": "3b0d820a040072bb6810cbc7ca6cee3f0b8c53486cc63d63eb17e29b8df4326c",
+      "outputDigest": "b12f2930008261b5b7b3af6f46e1fabdf23935f4a8b590ad0dd2de2094a4475a",
+      "prev": "87d957eb770c61b07c3db743e2603ee0f5326742e2ab73b180e082b59e209938",
+      "hash": "cbc69cbcdb1a4afe721110e70293a951fe5947ddecd1ac776f6debf57583e74e"
+    },
+    {
+      "runId": "run_mvdmpbd2_2j",
+      "capability": "openapi:polyglot:translatetext",
+      "provider": "openapi:polyglot",
+      "startedAt": "2026-10-18T09:34:15.494Z",
+      "durationMs": 0.1,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 90,
+      "inputDigest": "345b8e79aa838ef8cf7cbc78455936786c15f14cae0ec8311ffe4a6052e55a34",
+      "outputDigest": "9c453d31dfd62819882093a2b1fd470cf9a0181d8a23ef91c7fdd676acfcf34e",
+      "prev": "cbc69cbcdb1a4afe721110e70293a951fe5947ddecd1ac776f6debf57583e74e",
+      "hash": "6f326b33087e9de83036eae2b8024665a447f0ef7f5e225919115b97fbbc06f7"
+    },
+    {
+      "runId": "run_mvdmpbd0_2g",
+      "capability": "composite:7bbf69e72100",
+      "provider": "composite:crystallized",
+      "startedAt": "2026-10-18T09:34:15.492Z",
+      "durationMs": 1.8,
+      "status": "completed",
+      "verification": "checked",
+      "seq": 91,
+      "inputDigest": "776232c64b4756d10e8e4151f9261b17c9d60499fe784fb1ede15f24abf4fd7b",
+      "outputDigest": "b4192b3474881d06084e9aabeab7d4d6e7eb7a417d2833b95119b6ae37dfd92d",
+      "prev": "6f326b33087e9de83036eae2b8024665a447f0ef7f5e225919115b97fbbc06f7",
+      "hash": "dd48e0fd31019d688b31dab66a7fe701a47a59478076b4e5b28bcf4831f62393"
+    },
+    {
+      "runId": "run_mvdmpboj_2l",
+      "capability": "graphql:atlas-test-graphql:query:geocode",
+      "provider": "graphql:atlas-test-graphql",
+      "startedAt": "2026-10-18T09:34:15.907Z",
+      "durationMs": 1.4,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 92,
+      "inputDigest": "339b0b4a6e31d567191d1ca5f8dec6243ffaf15fae2b20d6ba5749d4cdd3924e",
+      "outputDigest": "ab5f5a98b17f904f88f20e6064a323f8ff69916ceb3dca7bf4461f4c3690beaf",
+      "prev": "dd48e0fd31019d688b31dab66a7fe701a47a59478076b4e5b28bcf4831f62393",
+      "hash": "f5d75f54cb1b303703d90874a009b7bf3b66ba17204d6f2aab9bc94b28076bbf"
+    },
+    {
+      "runId": "run_mvdmpbon_2m",
+      "capability": "mcp:skycast:forecast",
+      "provider": "mcp:skycast",
+      "startedAt": "2026-10-18T09:34:15.911Z",
+      "durationMs": 1.4,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 93,
+      "inputDigest": "3b0d820a040072bb6810cbc7ca6cee3f0b8c53486cc63d63eb17e29b8df4326c",
+      "outputDigest": "b12f2930008261b5b7b3af6f46e1fabdf23935f4a8b590ad0dd2de2094a4475a",
+      "prev": "f5d75f54cb1b303703d90874a009b7bf3b66ba17204d6f2aab9bc94b28076bbf",
+      "hash": "5c7904528cce9562d71b3a67fa55ad18c80a21807220fca68bae5de9e5d815f3"
+    },
+    {
+      "runId": "run_mvdmpbop_2n",
+      "capability": "openapi:polyglot:translatetext",
+      "provider": "openapi:polyglot",
+      "startedAt": "2026-10-18T09:34:15.913Z",
+      "durationMs": 0.3,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 94,
+      "inputDigest": "345b8e79aa838ef8cf7cbc78455936786c15f14cae0ec8311ffe4a6052e55a34",
+      "outputDigest": "9c453d31dfd62819882093a2b1fd470cf9a0181d8a23ef91c7fdd676acfcf34e",
+      "prev": "5c7904528cce9562d71b3a67fa55ad18c80a21807220fca68bae5de9e5d815f3",
+      "hash": "80b4b7b5db02c51962576ce0bb83d45aae4ac59c7d316c3191d0917537e5d160"
+    },
+    {
+      "runId": "run_mvdmpboi_2k",
+      "capability": "composite:7bbf69e72100",
+      "provider": "composite:crystallized",
+      "startedAt": "2026-10-18T09:34:15.906Z",
+      "durationMs": 7.8,
+      "status": "completed",
+      "verification": "checked",
+      "seq": 95,
+      "inputDigest": "776232c64b4756d10e8e4151f9261b17c9d60499fe784fb1ede15f24abf4fd7b",
+      "outputDigest": "b4192b3474881d06084e9aabeab7d4d6e7eb7a417d2833b95119b6ae37dfd92d",
+      "prev": "80b4b7b5db02c51962576ce0bb83d45aae4ac59c7d316c3191d0917537e5d160",
+      "hash": "a57dc73d2afaee0843ec32a22f3e2958c69b14c6cf7b7da9594d5383faf6c639"
+    },
+    {
+      "runId": "run_mvdmpbtv_2p",
+      "capability": "graphql:atlas-test-graphql:query:geocode",
+      "provider": "graphql:atlas-test-graphql",
+      "startedAt": "2026-10-18T09:34:16.099Z",
+      "durationMs": 0.3,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 96,
+      "inputDigest": "339b0b4a6e31d567191d1ca5f8dec6243ffaf15fae2b20d6ba5749d4cdd3924e",
+      "outputDigest": "ab5f5a98b17f904f88f20e6064a323f8ff69916ceb3dca7bf4461f4c3690beaf",
+      "prev": "a57dc73d2afaee0843ec32a22f3e2958c69b14c6cf7b7da9594d5383faf6c639",
+      "hash": "db55c80e051b02959b917f8bd43d216d371eb11fa911022d6036728df76a83cb"
+    },
+    {
+      "runId": "run_mvdmpbtx_2q",
+      "capability": "mcp:skycast:forecast",
+      "provider": "mcp:skycast",
+      "startedAt": "2026-10-18T09:34:16.101Z",
+      "durationMs": 0.2,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 97,
+      "inputDigest": "3b0d820a040072bb6810cbc7ca6cee3f0b8c53486cc63d63eb17e29b8df4326c",
+      "outputDigest": "b12f2930008261b5b7b3af6f46e1fabdf23935f4a8b590ad0dd2de2094a4475a",
+      "prev": "db55c80e051b02959b917f8bd43d216d371eb11fa911022d6036728df76a83cb",
+      "hash": "776a5944efb82df310d4454d1818bd87c8cc4ac6e50b3a4864bf7533e3384153"
+    },
+    {
+      "runId": "run_mvdmpbtx_2r",
+      "capability": "openapi:polyglot:translatetext",
+      "provider": "openapi:polyglot",
+      "startedAt": "2026-10-18T09:34:16.101Z",
+      "durationMs": 0.4,
+      "status": "completed",
+      "verification": "unverified",
+      "seq": 98,
+      "inputDigest": "345b8e79aa838ef8cf7cbc78455936786c15f14cae0ec8311ffe4a6052e55a34",
+      "outputDigest": "9c453d31dfd62819882093a2b1fd470cf9a0181d8a23ef91c7fdd676acfcf34e",
+      "prev": "776a5944efb82df310d4454d1818bd87c8cc4ac6e50b3a4864bf7533e3384153",
+      "hash": "861f0cf2a20f53698d6d1badca40834787de419dcac4a12097b70b77a10111ac"
+    },
+    {
+      "runId": "run_mvdmpbtv_2o",
+      "capability": "composite:7bbf69e72100",
+      "provider": "composite:crystallized",
+      "startedAt": "2026-10-18T09:34:16.099Z",
+      "durationMs": 2.5,
+      "status": "completed",
+      "verification": "checked",
+      "seq": 99,
+      "inputDigest": "776232c64b4756d10e8e4151f9261b17c9d60499fe784fb1ede15f24abf4fd7b",
+      "outputDigest": "b4192b3474881d06084e9aabeab7d4d6e7eb7a417d2833b95119b6ae37dfd92d",
+      "prev": "861f0cf2a20f53698d6d1badca40834787de419dcac4a12097b70b77a10111ac",
+      "hash": "90fe0101695e17489433f09c68ee56a7dd0e9ce443d7c70282f105d1fee0b0ea"
+    }
+  ],
+  "published": [
+    {
+      "trust": "checked",
+      "slug": "weather-0",
+      "title": "weather-0",
+      "have": {
+        "place": "place",
+        "language": "language"
+      },
+      "want": "text",
+      "intent": "weather translated",
+      "verify": [
+        {
+          "op": "contains",
+          "value": "19°C"
+        }
+      ],
+      "witnesses": [],
+      "risks": [
+        "read",
+        "write"
+      ],
+      "anchors": [],
+      "publishedAt": "2026-10-18T09:34:13.321Z",
+      "calls": 0,
+      "lastPipeline": [
+        "Geocode",
+        "Weather forecast",
+        "Translate text"
+      ],
+      "providers": [
+        "graphql:atlas-test-graphql",
+        "mcp:skycast",
+        "openapi:polyglot"
+      ]
+    },
+    {
+      "trust": "checked",
+      "slug": "weather-1",
+      "title": "weather-1",
+      "have": {
+        "place": "place",
+        "language": "language"
+      },
+      "want": "text",
+      "intent": "weather translated",
+      "verify": [
+        {
+          "op": "contains",
+          "value": "19°C"
+        }
+      ],
+      "witnesses": [],
+      "risks": [
+        "write"
+      ],
+      "anchors": [],
+      "publishedAt": "2026-10-18T09:34:13.374Z",
+      "calls": 0,
+      "lastPipeline": [
+        "Weather translated: Geocode → Weather forecast → Translate text"
+      ],
+      "providers": [
+        "composite:crystallized"
+      ]
+    },
+    {
+      "trust": "checked",
+      "slug": "weather-2",
+      "title": "weather-2",
+      "have": {
+        "place": "place",
+        "language": "language"
+      },
+      "want": "text",
+      "intent": "weather translated",
+      "verify": [
+        {
+          "op": "contains",
+          "value": "19°C"
+        }
+      ],
+      "witnesses": [],
+      "risks": [
+        "write"
+      ],
+      "anchors": [],
+      "publishedAt": "2026-10-18T09:34:13.432Z",
+      "calls": 0,
+      "lastPipeline": [
+        "Weather translated: Geocode → Weather forecast → Translate text"
+      ],
+      "providers": [
+        "composite:crystallized"
+      ]
+    },
+    {
+      "trust": "checked",
+      "slug": "weather-3",
+      "title": "weather-3",
+      "have": {
+        "place": "place",
+        "language": "language"
+      },
+      "want": "text",
+      "intent": "weather translated",
+      "verify": [
+        {
+          "op": "contains",
+          "value": "19°C"
+        }
+      ],
+      "witnesses": [],
+      "risks": [
+        "write"
+      ],
+      "anchors": [],
+      "publishedAt": "2026-10-18T09:34:13.501Z",
+      "calls": 0,
+      "lastPipeline": [
+        "Weather translated: Geocode → Weather forecast → Translate text"
+      ],
+      "providers": [
+        "composite:crystallized"
+      ]
+    },
+    {
+      "trust": "checked",
+      "slug": "weather-4",
+      "title": "weather-4",
+      "have": {
+        "place": "place",
+        "language": "language"
+      },
+      "want": "text",
+      "intent": "weather translated",
+      "verify": [
+        {
+          "op": "contains",
+          "value": "19°C"
+        }
+      ],
+      "witnesses": [],
+      "risks": [
+        "write"
+      ],
+      "anchors": [],
+      "publishedAt": "2026-10-18T09:34:13.553Z",
+      "calls": 0,
+      "lastPipeline": [
+        "Weather translated: Geocode → Weather forecast → Translate text"
+      ],
+      "providers": [
+        "composite:crystallized"
+      ]
+    },
+    {
+      "trust": "checked",
+      "slug": "weather-5",
+      "title": "weather-5",
+      "have": {
+        "place": "place",
+        "language": "language"
+      },
+      "want": "text",
+      "intent": "weather translated",
+      "verify": [
+        {
+          "op": "contains",
+          "value": "19°C"
+        }
+      ],
+      "witnesses": [],
+      "risks": [
+        "write"
+      ],
+      "anchors": [],
+      "publishedAt": "2026-10-18T09:34:13.603Z",
+      "calls": 0,
+      "lastPipeline": [
+        "Weather translated: Geocode → Weather forecast → Translate text"
+      ],
+      "providers": [
+        "composite:crystallized"
+      ]
+    },
+    {
+      "trust": "checked",
+      "slug": "weather-6",
+      "title": "weather-6",
+      "have": {
+        "place": "place",
+        "language": "language"
+      },
+      "want": "text",
+      "intent": "weather translated",
+      "verify": [
+        {
+          "op": "contains",
+          "value": "19°C"
+        }
+      ],
+      "witnesses": [],
+      "risks": [
+        "write"
+      ],
+      "anchors": [],
+      "publishedAt": "2026-10-18T09:34:13.654Z",
+      "calls": 0,
+      "lastPipeline": [
+        "Weather translated: Geocode → Weather forecast → Translate text"
+      ],
+      "providers": [
+        "composite:crystallized"
+      ]
+    },
+    {
+      "trust": "checked",
+      "slug": "weather-7",
+      "title": "weather-7",
+      "have": {
+        "place": "place",
+        "language": "language"
+      },
+      "want": "text",
+      "intent": "weather translated",
+      "verify": [
+        {
+          "op": "contains",
+          "value": "19°C"
+        }
+      ],
+      "witnesses": [],
+      "risks": [
+        "write"
+      ],
+      "anchors": [],
+      "publishedAt": "2026-10-18T09:34:13.711Z",
+      "calls": 0,
+      "lastPipeline": [
+        "Weather translated: Geocode → Weather forecast → Translate text"
+      ],
+      "providers": [
+        "composite:crystallized"
+      ]
+    },
+    {
+      "trust": "checked",
+      "slug": "weather-8",
+      "title": "weather-8",
+      "have": {
+        "place": "place",
+        "language": "language"
+      },
+      "want": "text",
+      "intent": "weather translated",
+      "verify": [
+        {
+          "op": "contains",
+          "value": "19°C"
+        }
+      ],
+      "witnesses": [],
+      "risks": [
+        "write"
+      ],
+      "anchors": [],
+      "publishedAt": "2026-10-18T09:34:13.846Z",
+      "calls": 0,
+      "lastPipeline": [
+        "Weather translated: Geocode → Weather forecast → Translate text"
+      ],
+      "providers": [
+        "composite:crystallized"
+      ]
+    },
+    {
+      "trust": "checked",
+      "slug": "weather-9",
+      "title": "weather-9",
+      "have": {
+        "place": "place",
+        "language": "language"
+      },
+      "want": "text",
+      "intent": "weather translated",
+      "verify": [
+        {
+          "op": "contains",
+          "value": "19°C"
+        }
+      ],
+      "witnesses": [],
+      "risks": [
+        "write"
+      ],
+      "anchors": [],
+      "publishedAt": "2026-10-18T09:34:13.939Z",
+      "calls": 0,
+      "lastPipeline": [
+        "Weather translated: Geocode → Weather forecast → Translate text"
+      ],
+      "providers": [
+        "composite:crystallized"
+      ]
+    },
+    {
+      "trust": "checked",
+      "slug": "weather-10",
+      "title": "weather-10",
+      "have": {
+        "place": "place",
+        "language": "language"
+      },
+      "want": "text",
+      "intent": "weather translated",
+      "verify": [
+        {
+          "op": "contains",
+          "value": "19°C"
+        }
+      ],
+      "witnesses": [],
+      "risks": [
+        "write"
+      ],
+      "anchors": [],
+      "publishedAt": "2026-10-18T09:34:14.196Z",
+      "calls": 0,
+      "lastPipeline": [
+        "Weather translated: Geocode → Weather forecast → Translate text"
+      ],
+      "providers": [
+        "composite:crystallized"
+      ]
+    },
+    {
+      "trust": "checked",
+      "slug": "weather-11",
+      "title": "weather-11",
+      "have": {
+        "place": "place",
+        "language": "language"
+      },
+      "want": "text",
+      "intent": "weather translated",
+      "verify": [
+        {
+          "op": "contains",
+          "value": "19°C"
+        }
+      ],
+      "witnesses": [],
+      "risks": [
+        "write"
+      ],
+      "anchors": [],
+      "publishedAt": "2026-10-18T09:34:14.345Z",
+      "calls": 0,
+      "lastPipeline": [
+        "Weather translated: Geocode → Weather forecast → Translate text"
+      ],
+      "providers": [
+        "composite:crystallized"
+      ]
+    },
+    {
+      "trust": "checked",
+      "slug": "weather-12",
+      "title": "weather-12",
+      "have": {
+        "place": "place",
+        "language": "language"
+      },
+      "want": "text",
+      "intent": "weather translated",
+      "verify": [
+        {
+          "op": "contains",
+          "value": "19°C"
+        }
+      ],
+      "witnesses": [],
+      "risks": [
+        "write"
+      ],
+      "anchors": [],
+      "publishedAt": "2026-10-18T09:34:14.418Z",
+      "calls": 0,
+      "lastPipeline": [
+        "Weather translated: Geocode → Weather forecast → Translate text"
+      ],
+      "providers": [
+        "composite:crystallized"
+      ]
+    },
+    {
+      "trust": "checked",
+      "slug": "weather-13",
+      "title": "weather-13",
+      "have": {
+        "place": "place",
+        "language": "language"
+      },
+      "want": "text",
+      "intent": "weather translated",
+      "verify": [
+        {
+          "op": "contains",
+          "value": "19°C"
+        }
+      ],
+      "witnesses": [],
+      "risks": [
+        "write"
+      ],
+      "anchors": [],
+      "publishedAt": "2026-10-18T09:34:14.534Z",
+      "calls": 0,
+      "lastPipeline": [
+        "Weather translated: Geocode → Weather forecast → Translate text"
+      ],
+      "providers": [
+        "composite:crystallized"
+      ]
+    },
+    {
+      "trust": "checked",
+      "slug": "weather-14",
+      "title": "weather-14",
+      "have": {
+        "place": "place",
+        "language": "language"
+      },
+      "want": "text",
+      "intent": "weather translated",
+      "verify": [
+        {
+          "op": "contains",
+          "value": "19°C"
+        }
+      ],
+      "witnesses": [],
+      "risks": [
+        "write"
+      ],
+      "anchors": [],
+      "publishedAt": "2026-10-18T09:34:14.655Z",
+      "calls": 0,
+      "lastPipeline": [
+        "Weather translated: Geocode → Weather forecast → Translate text"
+      ],
+      "providers": [
+        "composite:crystallized"
+      ]
+    },
+    {
+      "trust": "checked",
+      "slug": "weather-15",
+      "title": "weather-15",
+      "have": {
+        "place": "place",
+        "language": "language"
+      },
+      "want": "text",
+      "intent": "weather translated",
+      "verify": [
+        {
+          "op": "contains",
+          "value": "19°C"
+        }
+      ],
+      "witnesses": [],
+      "risks": [
+        "write"
+      ],
+      "anchors": [],
+      "publishedAt": "2026-10-18T09:34:14.765Z",
+      "calls": 0,
+      "lastPipeline": [
+        "Weather translated: Geocode → Weather forecast → Translate text"
+      ],
+      "providers": [
+        "composite:crystallized"
+      ]
+    },
+    {
+      "trust": "checked",
+      "slug": "weather-16",
+      "title": "weather-16",
+      "have": {
+        "place": "place",
+        "language": "language"
+      },
+      "want": "text",
+      "intent": "weather translated",
+      "verify": [
+        {
+          "op": "contains",
+          "value": "19°C"
+        }
+      ],
+      "witnesses": [],
+      "risks": [
+        "write"
+      ],
+      "anchors": [],
+      "publishedAt": "2026-10-18T09:34:14.853Z",
+      "calls": 0,
+      "lastPipeline": [
+        "Weather translated: Geocode → Weather forecast → Translate text"
+      ],
+      "providers": [
+        "composite:crystallized"
+      ]
+    },
+    {
+      "trust": "checked",
+      "slug": "weather-17",
+      "title": "weather-17",
+      "have": {
+        "place": "place",
+        "language": "language"
+      },
+      "want": "text",
+      "intent": "weather translated",
+      "verify": [
+        {
+          "op": "contains",
+          "value": "19°C"
+        }
+      ],
+      "witnesses": [],
+      "risks": [
+        "write"
+      ],
+      "anchors": [],
+      "publishedAt": "2026-10-18T09:34:14.952Z",
+      "calls": 0,
+      "lastPipeline": [
+        "Weather translated: Geocode → Weather forecast → Translate text"
+      ],
+      "providers": [
+        "composite:crystallized"
+      ]
+    },
+    {
+      "trust": "checked",
+      "slug": "weather-18",
+      "title": "weather-18",
+      "have": {
+        "place": "place",
+        "language": "language"
+      },
+      "want": "text",
+      "intent": "weather translated",
+      "verify": [
+        {
+          "op": "contains",
+          "value": "19°C"
+        }
+      ],
+      "witnesses": [],
+      "risks": [
+        "write"
+      ],
+      "anchors": [],
+      "publishedAt": "2026-10-18T09:34:15.046Z",
+      "calls": 0,
+      "lastPipeline": [
+        "Weather translated: Geocode → Weather forecast → Translate text"
+      ],
+      "providers": [
+        "composite:crystallized"
+      ]
+    },
+    {
+      "trust": "checked",
+      "slug": "weather-19",
+      "title": "weather-19",
+      "have": {
+        "place": "place",
+        "language": "language"
+      },
+      "want": "text",
+      "intent": "weather translated",
+      "verify": [
+        {
+          "op": "contains",
+          "value": "19°C"
+        }
+      ],
+      "witnesses": [],
+      "risks": [
+        "write"
+      ],
+      "anchors": [],
+      "publishedAt": "2026-10-18T09:34:15.197Z",
+      "calls": 0,
+      "lastPipeline": [
+        "Weather translated: Geocode → Weather forecast → Translate text"
+      ],
+      "providers": [
+        "composite:crystallized"
+      ]
+    },
+    {
+      "trust": "checked",
+      "slug": "weather-20",
+      "title": "weather-20",
+      "have": {
+        "place": "place",
+        "language": "language"
+      },
+      "want": "text",
+      "intent": "weather translated",
+      "verify": [
+        {
+          "op": "contains",
+          "value": "19°C"
+        }
+      ],
+      "witnesses": [],
+      "risks": [
+        "write"
+      ],
+      "anchors": [],
+      "publishedAt": "2026-10-18T09:34:15.307Z",
+      "calls": 0,
+      "lastPipeline": [
+        "Weather translated: Geocode → Weather forecast → Translate text"
+      ],
+      "providers": [
+        "composite:crystallized"
+      ]
+    },
+    {
+      "trust": "checked",
+      "slug": "weather-21",
+      "title": "weather-21",
+      "have": {
+        "place": "place",
+        "language": "language"
+      },
+      "want": "text",
+      "intent": "weather translated",
+      "verify": [
+        {
+          "op": "contains",
+          "value": "19°C"
+        }
+      ],
+      "witnesses": [],
+      "risks": [
+        "write"
+      ],
+      "anchors": [],
+      "publishedAt": "2026-10-18T09:34:15.408Z",
+      "calls": 0,
+      "lastPipeline": [
+        "Weather translated: Geocode → Weather forecast → Translate text"
+      ],
+      "providers": [
+        "composite:crystallized"
+      ]
+    },
+    {
+      "trust": "checked",
+      "slug": "weather-22",
+      "title": "weather-22",
+      "have": {
+        "place": "place",
+        "language": "language"
+      },
+      "want": "text",
+      "intent": "weather translated",
+      "verify": [
+        {
+          "op": "contains",
+          "value": "19°C"
+        }
+      ],
+      "witnesses": [],
+      "risks": [
+        "write"
+      ],
+      "anchors": [],
+      "publishedAt": "2026-10-18T09:34:15.494Z",
+      "calls": 0,
+      "lastPipeline": [
+        "Weather translated: Geocode → Weather forecast → Translate text"
+      ],
+      "providers": [
+        "composite:crystallized"
+      ]
+    },
+    {
+      "trust": "checked",
+      "slug": "weather-23",
+      "title": "weather-23",
+      "have": {
+        "place": "place",
+        "language": "language"
+      },
+      "want": "text",
+      "intent": "weather translated",
+      "verify": [
+        {
+          "op": "contains",
+          "value": "19°C"
+        }
+      ],
+      "witnesses": [],
+      "risks": [
+        "write"
+      ],
+      "anchors": [],
+      "publishedAt": "2026-10-18T09:34:15.915Z",
+      "calls": 0,
+      "lastPipeline": [
+        "Weather translated: Geocode → Weather forecast → Translate text"
+      ],
+      "providers": [
+        "composite:crystallized"
+      ]
+    },
+    {
+      "trust": "checked",
+      "slug": "weather-24",
+      "title": "weather-24",
+      "have": {
+        "place": "place",
+        "language": "language"
+      },
+      "want": "text",
+      "intent": "weather translated",
+      "verify": [
+        {
+          "op": "contains",
+          "value": "19°C"
+        }
+      ],
+      "witnesses": [],
+      "risks": [
+        "write"
+      ],
+      "anchors": [],
+      "publishedAt": "2026-10-18T09:34:16.102Z",
+      "calls": 0,
+      "lastPipeline": [
+        "Weather translated: Geocode → Weather forecast → Translate text"
+      ],
+      "providers": [
+        "composite:crystallized"
+      ]
+    }
+  ],
+  "meaningChanges": [],
+  "authFingerprints": {},
+  "semantics": 25,
+  "identities": {
+    "links": [],
+    "accepted": {},
+    "observed": {}
+  }
+}

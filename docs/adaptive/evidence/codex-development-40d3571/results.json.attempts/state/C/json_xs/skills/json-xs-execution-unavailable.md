@@ -1,0 +1,3 @@
+# Handle unavailable json_xs executable
+
+When using run_program for json_xs, inspect exit, stdout, and stderr before returning a conversion. An observed run with args ["-t", "dumper"] and stdin "[1, \"two\", null]\n" failed with exit 126, empty stdout, and stderr reporting that the configured executable could not execute: No such file or directory. This is an environment failure, not a conversion result. If it recurs, do not fabricate output from saved examples; report UNABLE with the execution failure. If the program runs in a later session, use and verify its actual stdout.

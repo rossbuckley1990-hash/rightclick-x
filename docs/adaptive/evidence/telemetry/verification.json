@@ -1,0 +1,241 @@
+{
+  "schema": 1,
+  "sourceCommit": "b8b460bb5b023a7f8249239ea381e5a76a3e6c2e",
+  "sourceExport": "/private/tmp/rcx-measurement-b8b460b",
+  "verifiedAt": "2026-10-18T02:33:35.214677+00:00",
+  "scope": "development measurement and package regression; no live model or economics claim",
+  "checks": {
+    "regression": {
+      "passed": 236,
+      "failed": 0,
+      "skipped": 0,
+      "artifact": "regression-frozen-b8b460b.tap"
+    },
+    "productTypecheck": {
+      "exit": 0,
+      "command": "npm run typecheck"
+    },
+    "experimentalHostTypecheck": {
+      "exit": 0,
+      "files": [
+        "run.ts",
+        "measured-candidate.ts",
+        "surface.ts",
+        "measurement-smoke.ts"
+      ]
+    },
+    "processSmoke": {
+      "schema": 1,
+      "scope": "development measurement smoke; no model or economic evidence",
+      "targetSha256": "39ba5f62b10a28d867bed9f32c28ab85b3477e79e6cd9d6778af14c044f560dc",
+      "observations": {
+        "baseline": {
+          "complete": true,
+          "sha256": "b551389273f206170830d3d61542eef9ba0abb97de4539bef60c8f124662a011",
+          "investigationsStarted": null,
+          "invocations": {
+            "execution": 0,
+            "investigation": 0,
+            "revalidation": 0,
+            "agent-run": 1,
+            "unclassified": 0
+          },
+          "targetExecuted": true,
+          "taskExecutionObserved": true
+        },
+        "cold": {
+          "complete": true,
+          "sha256": "f22be4099126ade72a1b63561dfcf0aab0364ca025c0b2448f0ed8de018c5015",
+          "investigationsStarted": 1,
+          "invocations": {
+            "execution": 1,
+            "investigation": 28,
+            "revalidation": 0,
+            "agent-run": 0,
+            "unclassified": 0
+          },
+          "targetExecuted": true,
+          "taskExecutionObserved": true
+        },
+        "warm": {
+          "complete": true,
+          "sha256": "d2f1f91f5d438ed86679f491cbac77308f8850f7517b68ed914d955caa894001",
+          "investigationsStarted": 0,
+          "invocations": {
+            "execution": 1,
+            "investigation": 0,
+            "revalidation": 0,
+            "agent-run": 0,
+            "unclassified": 0
+          },
+          "targetExecuted": true,
+          "taskExecutionObserved": true
+        },
+        "builtin": {
+          "complete": true,
+          "sha256": "e19932f04babe180df03abfe83516aab71158eb12cd89737b30aa3fb9b494e38",
+          "investigationsStarted": 0,
+          "invocations": {
+            "execution": 0,
+            "investigation": 0,
+            "revalidation": 0,
+            "agent-run": 0,
+            "unclassified": 0
+          },
+          "targetExecuted": false,
+          "taskExecutionObserved": false
+        }
+      }
+    },
+    "separateChecker": {
+      "scope": "separate raw-fixture recheck; not independent-author review or model economics",
+      "checks": [
+        {
+          "session": "baseline",
+          "investigations": 0,
+          "executions": 1,
+          "pass": true
+        },
+        {
+          "session": "cold",
+          "investigations": 1,
+          "executions": 1,
+          "pass": true
+        },
+        {
+          "session": "warm",
+          "investigations": 0,
+          "executions": 1,
+          "pass": true
+        },
+        {
+          "session": "builtin",
+          "investigations": 0,
+          "executions": 0,
+          "pass": true
+        }
+      ]
+    },
+    "separateCheckerNegativeControl": {
+      "wrongOutputWithRecomputedDigest": "REFUSED"
+    },
+    "resumePreflight": {
+      "passed": 6,
+      "scope": "synthetic no-model fixtures"
+    },
+    "build": {
+      "exit": 0,
+      "nodeModulesBundled": 39,
+      "edgeModulesBundled": 35
+    },
+    "offlinePackage": {
+      "stage": "/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/rcx-stage1-package-gJrnrr",
+      "version": "0.1.0",
+      "packageBytes": 395278,
+      "unpackedBytes": 1325402,
+      "tools": [
+        "context_runtime",
+        "context_research",
+        "context_learn",
+        "context_forget",
+        "context_inspect",
+        "context_actions",
+        "context_explain",
+        "context_run",
+        "context_run_status",
+        "context_compose",
+        "context_graph",
+        "context_providers",
+        "context_watch"
+      ],
+      "auditCounts": {
+        "total": 23,
+        "allowed": 20,
+        "denied": 3
+      },
+      "policy": {
+        "allowedRisks": [
+          "read"
+        ]
+      },
+      "uninstall": "PASS",
+      "limitations": [
+        "Clean package directory under the current user; not an independent developer usability test.",
+        "No live AI model was invoked."
+      ]
+    }
+  },
+  "preservedFailure": {
+    "artifact": "harness-types-attempt-2.log",
+    "reason": "experimental host omitted required NetworkPolicy.blockPrivate",
+    "fix": "explicit blockPrivate: true",
+    "reconstruction": "source/measured-candidate-type-failure.ts.txt"
+  },
+  "limitations": [
+    "Same author, separate stdlib checker; independent-author review remains open.",
+    "Disposable known program, no unfamiliar holdout or model session.",
+    "Host sandbox invocation evidence, not OS attestation or universal visibility.",
+    "No new economic or cross-vendor evidence.",
+    "No zero-charge subscription route or managed/personal-context isolation established for future live sessions.",
+    "Retries retained but lifecycle cost reconciliation required before acceptance."
+  ],
+  "releaseReadiness": "NO-GO",
+  "filesSha256": {
+    "docs/adaptive/evidence/telemetry/harness-types-attempt-1.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "docs/adaptive/evidence/telemetry/harness-types-attempt-2.log": "78f8e08aeef2d2370d53462d66b5111f0e7838943f933f158cd3d7816d2f3b47",
+    "docs/adaptive/evidence/telemetry/harness-types-attempt-3.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "docs/adaptive/evidence/telemetry/measurement-tests-attempt-2.tap": "273776f624e5843d3676c18be7629f3a881b17d5ff79651a5a31a426b27e86d0",
+    "docs/adaptive/evidence/telemetry/package-frozen-b8b460b.json": "72fd69e6326e25d7bbbfa70418c941727455f44a6a23bbc2a1115e9e0ce9bf06",
+    "docs/adaptive/evidence/telemetry/preflight-frozen-b8b460b.json": "7ff39130a006222b404266bf601d82d1f132699edde3b65375a3fa31b53af79a",
+    "docs/adaptive/evidence/telemetry/process-attempt-1/baseline.calls.jsonl": "a892ddf80982b17a214022b99b058094f9e585de00f621207b277ec02d5111c8",
+    "docs/adaptive/evidence/telemetry/process-attempt-1/baseline.jsonl": "09473fc839112d4f8e08c66e62fd1fff50a91efdf847b1195188f41704d1a625",
+    "docs/adaptive/evidence/telemetry/process-attempt-1/baseline.mcp.jsonl": "fa33a011678255abbad72d01f9226d805a59841c518a603dc72c7444602701ce",
+    "docs/adaptive/evidence/telemetry/process-attempt-1/baseline.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "docs/adaptive/evidence/telemetry/process-attempt-1/builtin.calls.jsonl": "e8d1cf8e1d975d09d9fb6596b441af55a57e08753e8cd3d9189eab0567dd64de",
+    "docs/adaptive/evidence/telemetry/process-attempt-1/builtin.jsonl": "e6be80b65e60025b2b755d51dbda5a7372e897dcc1d766cfae1797b0a5b436d0",
+    "docs/adaptive/evidence/telemetry/process-attempt-1/builtin.mcp.jsonl": "78e08a4a8fc2b562b1317ec95c4e66839d5af0a09a43fe4cfa48ac1678f72e34",
+    "docs/adaptive/evidence/telemetry/process-attempt-1/builtin.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "docs/adaptive/evidence/telemetry/process-attempt-1/cold.calls.jsonl": "35ef7d6d4fbd397ab944b119728d31bcb8d426240dc12facfbfa195cc4a5903a",
+    "docs/adaptive/evidence/telemetry/process-attempt-1/cold.jsonl": "51218a603c45561f625e17316277ad9ff3d619bb0d7ff7abdaecf551d6b3c9e3",
+    "docs/adaptive/evidence/telemetry/process-attempt-1/cold.mcp.jsonl": "45be8b4f4d53ae014bcc901b66c17ec4da505b4fcc1edd830fc27dbb97889052",
+    "docs/adaptive/evidence/telemetry/process-attempt-1/cold.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "docs/adaptive/evidence/telemetry/process-attempt-1/state.json": "238b5162aa0a36dc1b3e9ef6e5eb62566468b6f2fc2513db736b38f4cbede778",
+    "docs/adaptive/evidence/telemetry/process-attempt-1/summary.json": "1f3e3e3ef864eff171a3802c558ca570f9ac6834869657c1007d6d72831520f6",
+    "docs/adaptive/evidence/telemetry/process-attempt-1/warm.calls.jsonl": "1ed2317bdb6fbbf6ff78f0500c3e9ccf0a56e4df540c8f9e0f37a70857a1598d",
+    "docs/adaptive/evidence/telemetry/process-attempt-1/warm.jsonl": "998643d80756e4d8dc1a0934f9889223126849c9e57c0a5a05358149dc2ea863",
+    "docs/adaptive/evidence/telemetry/process-attempt-1/warm.mcp.jsonl": "173f4a36a00a027d0ab8996ce7776be6fc31bf70e8200c1bee61d7ba58bce8ad",
+    "docs/adaptive/evidence/telemetry/process-attempt-1/warm.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "docs/adaptive/evidence/telemetry/process-attempt-1.log": "2dab2408d13fa58b55f94e1993fd3630e842598a7b7f78d82c29b4a062d998e3",
+    "docs/adaptive/evidence/telemetry/process-frozen-b8b460b/baseline.calls.jsonl": "0948d37a408e85ddd997cd530215c1d20a9d9ecaf2245ca1e327077cc545cf23",
+    "docs/adaptive/evidence/telemetry/process-frozen-b8b460b/baseline.jsonl": "b551389273f206170830d3d61542eef9ba0abb97de4539bef60c8f124662a011",
+    "docs/adaptive/evidence/telemetry/process-frozen-b8b460b/baseline.mcp.jsonl": "fa33a011678255abbad72d01f9226d805a59841c518a603dc72c7444602701ce",
+    "docs/adaptive/evidence/telemetry/process-frozen-b8b460b/baseline.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "docs/adaptive/evidence/telemetry/process-frozen-b8b460b/builtin.calls.jsonl": "40d4f3e77694588e8081f4b407b3c2186a926caff0ae1739aff53c14af94333d",
+    "docs/adaptive/evidence/telemetry/process-frozen-b8b460b/builtin.jsonl": "e19932f04babe180df03abfe83516aab71158eb12cd89737b30aa3fb9b494e38",
+    "docs/adaptive/evidence/telemetry/process-frozen-b8b460b/builtin.mcp.jsonl": "3cac96bcf177c930366be6853d7783227ffef8d12babe9dae914fb0e873b199f",
+    "docs/adaptive/evidence/telemetry/process-frozen-b8b460b/builtin.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "docs/adaptive/evidence/telemetry/process-frozen-b8b460b/cold.calls.jsonl": "12e0ea10400b7a499e49d348292c4aa888e57c2b4b3944c3af27ba28d97944a0",
+    "docs/adaptive/evidence/telemetry/process-frozen-b8b460b/cold.jsonl": "f22be4099126ade72a1b63561dfcf0aab0364ca025c0b2448f0ed8de018c5015",
+    "docs/adaptive/evidence/telemetry/process-frozen-b8b460b/cold.mcp.jsonl": "342dab5a6384dab6fe8827ee9c41b3fff8c7b12a25c3d0284f0d83f86ef2dc4c",
+    "docs/adaptive/evidence/telemetry/process-frozen-b8b460b/cold.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "docs/adaptive/evidence/telemetry/process-frozen-b8b460b/state.json": "bf8e227eb81c22866eafa13d5e0015a4f7f3fdf87da060546dfc235626af8f6b",
+    "docs/adaptive/evidence/telemetry/process-frozen-b8b460b/summary.json": "b4b6ca04b298399d81a03a73d1ba1d9724c9e0bb23b6c3d3b22a5a35023495de",
+    "docs/adaptive/evidence/telemetry/process-frozen-b8b460b/warm.calls.jsonl": "afea12b76a43f30102f35a630afe05c059a682b5608f37431c63af2e6abaa7e1",
+    "docs/adaptive/evidence/telemetry/process-frozen-b8b460b/warm.jsonl": "d2f1f91f5d438ed86679f491cbac77308f8850f7517b68ed914d955caa894001",
+    "docs/adaptive/evidence/telemetry/process-frozen-b8b460b/warm.mcp.jsonl": "4a8e9fbd0729d0261dbfe9c2408fd4ee8fc512fd956e81a15833037ae704b20e",
+    "docs/adaptive/evidence/telemetry/process-frozen-b8b460b/warm.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "docs/adaptive/evidence/telemetry/process-frozen-b8b460b.log": "6415fd28eb9c74e42857c9709da9974a04f74e67b43ac23a674cf04f42429f1d",
+    "docs/adaptive/evidence/telemetry/regression-attempt-1.tap": "3cd023ae43659c6ba64465c61f30affcb0c51ea4cd8c486741709d80fb6226f5",
+    "docs/adaptive/evidence/telemetry/regression-frozen-b8b460b.tap": "1861cb3791edee3634663aa3f2c2d01dc1cb34b5f62d006759c05e3687cd55be",
+    "docs/adaptive/evidence/telemetry/sandbox-attempt-1.tap": "673fc8c85dd41d688fd55e74b9fcbdb99eee472abcfe436e8d567970c2dff5d5",
+    "docs/adaptive/evidence/telemetry/separate-check-frozen-b8b460b.json": "16a80454ab766f954ea6aa649c48002560d4f0c6fb1b3494a00ec7495f1932c5",
+    "docs/adaptive/evidence/telemetry/separate-check-negative-control.json": "edb13e88bb7530016eb3903cacbd3317bd0c0ae3daea6e1123c7dd1d76bde471",
+    "docs/adaptive/evidence/telemetry/source/README.md": "3817aea2512395cef42e1e6d045c178a3a63db1f98dc233ed685c384c294e5b1",
+    "docs/adaptive/evidence/telemetry/source/measured-candidate-fixed.ts.txt": "dedf1055b54218e10d9092f468d3fb577373ad46962036ba7047739c2dbc3311",
+    "docs/adaptive/evidence/telemetry/source/measured-candidate-type-failure.ts.txt": "3d4ede35efbc3a8d5c9e948ef69603cd696660f8c06ff7c62420273ca1179afc",
+    "docs/adaptive/evidence/telemetry/types-attempt-1.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "docs/adaptive/evidence/telemetry/types-attempt-2.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "docs/adaptive/evidence/telemetry/types-attempt-3.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "docs/adaptive/evidence/telemetry/unit-attempt-1.tap": "7897e37a62ba78a380084d896eb3495a3aba61430f51f6986eb2e59ceedaa9e4"
+  }
+}

@@ -1,0 +1,78 @@
+✔ operator read-only policy applies to direct, MCP and HTTP calls despite caller confirmation (31.088333ms)
+✔ denied ids survive persistence and agent calls cannot relax operator policy (2.124541ms)
+✔ a stale read label on a POST cannot bypass read-only policy (1.053208ms)
+✔ composite preflight refuses all steps before an allowed effect preceding a denied step (0.953875ms)
+✔ caller origin constraints cannot widen operator network restrictions (8.833917ms)
+✔ invalid execution policy is rejected instead of silently permitting operations (1.085958ms)
+✖ a denied saved goal cannot bypass authority through generated REST or GraphQL (16.154583ms)
+✖ repair checks a newly discovered successor against the operator denylist (1.533417ms)
+✖ allowlists intersect, deny takes precedence, and audit is read-only (0.512167ms)
+✔ operator environment policy is parsed and invalid settings fail closed (0.200875ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 7
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 239.592667
+
+✖ failing tests:
+
+test at test/execution-policy.test.ts:87:1
+✖ a denied saved goal cannot bypass authority through generated REST or GraphQL (16.154583ms)
+  AssertionError [ERR_ASSERTION]: generated APIs cannot skip goal-level denial
+  + actual - expected
+  
+  + [
+  +   'GET https://policy.test/read',
+  +   'GET https://policy.test/read'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///Users/ross/src/rightclick-x-adaptive/test/execution-policy.test.ts:100:10)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'GET https://policy.test/read', 'GET https://policy.test/read' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at test/execution-policy.test.ts:103:1
+✖ repair checks a newly discovered successor against the operator denylist (1.533417ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'completed'
+  - 'failed'
+  
+      at TestContext.<anonymous> (file:///Users/ross/src/rightclick-x-adaptive/test/execution-policy.test.ts:116:10)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'completed',
+    expected: 'failed',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/execution-policy.test.ts:120:1
+✖ allowlists intersect, deny takes precedence, and audit is read-only (0.512167ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (file:///Users/ross/src/rightclick-x-adaptive/test/execution-policy.test.ts:125:10)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

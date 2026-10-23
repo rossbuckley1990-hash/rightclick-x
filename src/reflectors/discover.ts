@@ -6,9 +6,9 @@
 
 import { parseYaml } from "../core/yaml.ts";
 import type { Capability, Reflection } from "../core/types.ts";
-import { INTROSPECTION_QUERIES, isIntrospection, reflectGraphQL } from "./graphql.ts";
+import { completeTypeReferences, INTROSPECTION_QUERIES, isIntrospection, reflectGraphQL } from "./graphql.ts";
 import { McpClient, reflectMcpTools } from "./mcp.ts";
-import { cancelBody, DISCOVERY_BODY_LIMIT, isEventStream, readBody, request, slug, type Net } from "./net.ts";
+import { cancelBody, DISCOVERY_BODY_LIMIT, isEventStream, readBody, refuseDeniedResponse, request, slug, type Net } from "./net.ts";
 import { isOpenAPI, reflectOpenAPI, settleUnstatedBase } from "./openapi.ts";
 import { reflectWeb } from "./web.ts";
 
@@ -44,6 +44,16 @@ function catalogLinks(body: unknown, base: string): string[] | null {
 }
 
 const CATALOG_LIMIT = 50;
+
+async function graphqlReflection(net: Net, body: unknown, url: string, probes: Discovery["probes"]): Promise<Reflection> {
+  await completeTypeReferences(body, async query => {
+    const response = await request(net, url, { method: "POST", headers: { "content-type": "application/json", accept: "application/json" }, body: JSON.stringify({ query }) });
+    refuseDeniedResponse(response);
+    const result = await readBody(response, DISCOVERY_BODY_LIMIT);
+    return response.ok ? result : null;
+  }, (ok, detail) => probes.push({ url, kind: "graphql-type-references", ok, detail }));
+  return reflectGraphQL(body, url);
+}
 
 /** A contract published as YAML (OpenAPI / Swagger) is read as the same document. */
 function yamlContract(body: unknown): unknown {
@@ -134,7 +144,7 @@ async function probeKind(net: Net, url: string, kind: SourceKind, probes: Discov
         const res = await request(net, url, { method: "POST", headers: { "content-type": "application/json", accept: "application/json" }, body: JSON.stringify({ query }) });
         const body = await readBody(res, DISCOVERY_BODY_LIMIT);
         if (res.ok && isIntrospection(body)) {
-          const r = reflectGraphQL(body, url);
+          const r = await graphqlReflection(net, body, url, probes);
           probes.push({ url, kind, ok: true, detail: `${r.capabilities.length} fields` });
           return [r];
         }
@@ -226,7 +236,7 @@ async function probeUrl(
       });
       const body = await readBody(res, DISCOVERY_BODY_LIMIT);
       if (res.ok && isIntrospection(body)) {
-        const r = reflectGraphQL(body, url);
+        const r = await graphqlReflection(net, body, url, probes);
         probes.push({ url, kind: "graphql", ok: true, detail: `${r.capabilities.length} fields` });
         return { reflections: [r], hints, definitive: true };
       }

@@ -1,0 +1,20 @@
+Traceback (most recent call last):
+  File "/Users/ross/src/rightclick-x-adaptive/experiments/living/check-adaptation.py", line 193, in <module>
+    result = check(root)
+             ^^^^^^^^^^^
+  File "/Users/ross/src/rightclick-x-adaptive/experiments/living/check-adaptation.py", line 61, in check
+    assert len(phases) == 24 + len(extra_stops)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError
+Traceback (most recent call last):
+  File "/Users/ross/src/rightclick-x-adaptive/experiments/living/check-session-models.py", line 175, in <module>
+    main()
+  File "/Users/ross/src/rightclick-x-adaptive/experiments/living/check-session-models.py", line 164, in main
+    adaptation = json.loads(subprocess.check_output([sys.executable, "-B", str(Path(__file__).with_name("check-adaptation.py")), str(root)]))
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/subprocess.py", line 466, in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['/Users/ross/src/actenon-audit/.venv/bin/python', '-B', '/Users/ross/src/rightclick-x-adaptive/experiments/living/check-adaptation.py', 'docs/adaptive/evidence/session-models/attempt1']' returned non-zero exit status 1.

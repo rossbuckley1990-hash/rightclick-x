@@ -1,0 +1,750 @@
+{
+  "arm": "C",
+  "phase": "cold",
+  "startedAt": "2026-10-22T17:10:40.547Z",
+  "environment": {
+    "node": "v26.12.0",
+    "mlr": "/tmp/rcx-cli-anything-work/pristine/mlr",
+    "mlrSha256": "976a3ab9527a5f5e62382d2a5fc4b06b1d00733e93d2bb055572b89afaa8de97",
+    "harness": "/Users/ross/src/rightclick-x-competitive/experiments/competitive-cli-anything/env/venv/bin/cli-anything-mlr",
+    "harnessSha256": "4899855f44afd39c0d9f69ff85a3ae3123b126931f5b35d93cda8de45babd047",
+    "api": "http://127.0.0.1:18082",
+    "sandboxRead": "/Users/ross/src/rightclick-x-competitive/experiments/competitive-cli-anything/env:/Users/ross/src/rightclick-x-competitive/experiments/competitive-cli-anything/harness:/tmp/rcx-cli-anything-work:/opt/homebrew/Cellar/python@3.14/3.14.6:/opt/homebrew/Cellar/python@3.14/3.14.6/Frameworks/Python.framework/Versions/3.14",
+    "sandboxPath": "/tmp/rcx-cli-anything-work/bin:/Users/ross/src/rightclick-x-competitive/experiments/competitive-cli-anything/env/bin:/Users/ross/src/rightclick-x-competitive/experiments/competitive-cli-anything/env/venv/bin",
+    "network": "allow",
+    "product": {
+      "cli": "e64b0624d2e067083fd989805c8b85c009a786df7f333be4a313d0aff26ed4f8",
+      "runtime": "096cc82f62e4c7866c368e1375b92495d2c02b399c32571a7d9f909f8fdebf42",
+      "types": "6c07ee7c6daf7e0bdc14ac56503114c3cab571bf90321761b74d32d47b57f19a"
+    },
+    "sandbox": "macos-sandbox-exec"
+  },
+  "learning": [
+    {
+      "label": "cold",
+      "sources": [
+        "cli:/tmp/rcx-cli-anything-work/bin/mlr",
+        "http://127.0.0.1:18082/openapi.json"
+      ],
+      "wallMs": 940,
+      "totalNewCapabilities": 38,
+      "totalNewPowers": 745,
+      "graph": {
+        "providers": 3,
+        "capabilities": 58,
+        "edges": 243,
+        "chains2": 243,
+        "chains3": 523,
+        "total": 824
+      },
+      "results": [
+        {
+          "source": "http://127.0.0.1:18082/openapi.json",
+          "probes": [
+            {
+              "url": "http://127.0.0.1:18082/openapi.json",
+              "kind": "openapi",
+              "ok": true,
+              "detail": "6 operations"
+            }
+          ],
+          "learned": [
+            {
+              "provider": "openapi:ledger-exposure-api",
+              "capabilitiesAdded": 6,
+              "newPowers": 105
+            }
+          ]
+        },
+        {
+          "source": "cli:/tmp/rcx-cli-anything-work/bin/mlr",
+          "probes": [
+            {
+              "url": "cli:/tmp/rcx-cli-anything-work/bin/mlr",
+              "kind": "cli",
+              "ok": true,
+              "detail": "32 subcommand capabilities from 37 sandboxed runs (74 commands discovered)"
+            }
+          ],
+          "learned": [
+            {
+              "provider": "cli:mlr",
+              "capabilitiesAdded": 32,
+              "newPowers": 640
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "finishedAt": "2026-10-22T17:10:41.779Z",
+  "tasks": [
+    {
+      "task": "T1",
+      "status": "blocked",
+      "wallMs": 54,
+      "runs": [
+        {
+          "runId": "run_mvjsrpb4_1_eebedb35-146f-4be3-9279-3ce6dada3468",
+          "capability": "cli:mlr:filter",
+          "provider": "cli:mlr",
+          "status": "completed",
+          "durationMs": 28.7,
+          "verification": {
+            "status": "unverified",
+            "results": []
+          },
+          "receipt": "bd7d1b762e425b9c17a3d0d835900431943edb648c54ec2073975dd2661cf8f7",
+          "output": "[\n{\n  \"invoice_id\": \"INV-1001\",\n  \"supplier_id\": \"SUP-NW\",\n  \"supplier\": \"Northwind Logistics\",\n  \"region\": \"EMEA\",\n  \"currency\": \"EUR\",\n  \"amount\": 1250.00,\n  \"issued_on\": \"2026-07-02\"\n},\n{\n  \"invoice_id\": \"INV-1003\",\n  \"supplier_id\": \"SUP-KT\",\n  \"supplier\": \"Kite Systems\",\n  \"region\": \"EMEA\",\n  \"currency\": \"GBP\",\n  \"amount\": 780.00,\n  \"issued_on\": \"2026-07-03\"\n},\n{\n  \"invoice_id\": \"INV-1006\",\n  \"supplier_id\": \"SUP-KT\",\n  \"supplier\": \"Kite Systems\",\n  \"region\": \"EMEA\",\n  \"currency\": \"GBP\",\n  \"amount\": 640.00,\n  \"issued_on\": \"2026-07-07\"\n},\n{\n  \"invoice_id\": \"INV-1007\",\n  \"supplier_id\": \"SUP-HL\",\n  \"supplier\": \"Helios Energy\",\n  \"region\": \"EMEA\",\n  \"currency\": \"EUR\",\n  \"amount\": 980.00,\n  \"issued_on\": \"2026-07-08\"\n},\n{\n  \"invoice_id\": \"INV-1008\",\n  \"supplier_id\": \"SUP-AC\",\n  \"supplier\": \"Acme Components\",\n  \"region\": \"EMEA\",\n  \"currency\": \"USD\",\n  \"amount\": 510.00,\n  \"issued_on\": \"2026-07-02\"\n},\n{\n  \"invoice_id\": \"INV-1010\",\n  \"supplier_id\": \"SUP-KT\",\n  \"supplier\": \"Kite Systems\",\n  \"region\": \"EMEA\",\n  \"currency\": \"GBP\",\n  \"amount\": 1200.00,\n  \"issued_on\": \"2026-07-06\"\n},\n{\n  \"invoice_id\": \"INV-1012\",\n  \"supplier_id\": \"SUP-AC\",\n  \"supplier\": \"Acme Components\",\n  \"region\": \"EMEA\",\n  \"currency\": \"USD\",\n  \"amount\": 750.00,\n  \"issued_on\": \"2026-07-07\"\n}\n]\n",
+          "wallMs": 31
+        }
+      ],
+      "note": "cli:mlr:sort was not acquired, so the sorted projection cannot be produced",
+      "oracle": {
+        "code": 1,
+        "text": "FAIL t1: row 0: {\"amount\": 1250.0, \"currency\": \"EUR\", \"invoice_id\": \"INV-1001\", \"issued_on\": \"2026-07-02\", \"region\": \"EMEA\", \"supplier\": \"Northwind Logistics\", \"supplier_id\": \"SUP-NW\"} != {\"amount\": 1250.0, \"invoice_id\": \"INV-1001\", \"supplier\": \"Northwind Logistics\"}"
+      }
+    },
+    {
+      "task": "T5",
+      "status": "pass",
+      "oracle": {
+        "code": 0,
+        "text": "PASS t5"
+      },
+      "outputFile": "/Users/ross/src/rightclick-x-competitive/docs/adaptive/evidence/competitive-cli-anything/trials/C/cold/outputs/T5.json",
+      "wallMs": 10,
+      "runs": [
+        {
+          "runId": "run_mvjsrpcm_2_f7c10be6-6806-4cf9-a57b-4a8b9e5b74c8",
+          "capability": "openapi:ledger-exposure-api:getinvoice",
+          "provider": "openapi:ledger-exposure-api",
+          "status": "completed",
+          "durationMs": 1.6,
+          "verification": {
+            "status": "unverified",
+            "results": []
+          },
+          "receipt": "619b208086458d31e1599e18c1111f43f9efa64a75a4a0838707ed4393b2399e",
+          "output": {
+            "invoice_id": "INV-1003",
+            "supplier_id": "SUP-KT",
+            "region": "EMEA",
+            "currency": "GBP",
+            "amount": 780,
+            "issued_on": "2026-07-03",
+            "deleted": false
+          },
+          "wallMs": 2
+        },
+        {
+          "runId": "run_mvjsrpcp_3_4cbb4c55-0bff-442b-8406-147c17c8e812",
+          "capability": "openapi:ledger-exposure-api:getsupplier",
+          "provider": "openapi:ledger-exposure-api",
+          "status": "completed",
+          "durationMs": 0.6,
+          "verification": {
+            "status": "unverified",
+            "results": []
+          },
+          "receipt": "3d7b157b2eddddbe93f42e7f9376f91d8087ad5b519c7974169eacc88bc4209a",
+          "output": {
+            "id": "SUP-KT",
+            "name": "Kite Systems",
+            "country": "GB",
+            "risk_band": "C"
+          },
+          "wallMs": 1
+        },
+        {
+          "runId": "run_mvjsrpcp_4_3deb2805-2a6f-4a59-b300-904cc549cacb",
+          "capability": "openapi:ledger-exposure-api:converttoeur",
+          "provider": "openapi:ledger-exposure-api",
+          "status": "completed",
+          "durationMs": 0.7,
+          "verification": {
+            "status": "unverified",
+            "results": []
+          },
+          "receipt": "f499d16f923f2e8cc1e83a72e646d2c86922883a013931053d5de0211a52675a",
+          "output": {
+            "amount": 780,
+            "from": "GBP",
+            "date": "2026-07-03",
+            "eur": 904.8
+          },
+          "wallMs": 1
+        },
+        {
+          "runId": "run_mvjsrpcr_5_f02b6675-6471-4953-9c97-c5dd82d00439",
+          "capability": "openapi:ledger-exposure-api:getinvoice",
+          "provider": "openapi:ledger-exposure-api",
+          "status": "completed",
+          "durationMs": 1.1,
+          "verification": {
+            "status": "unverified",
+            "results": []
+          },
+          "receipt": "dd0ea11fbb18619fce901253a0b1f4536f1933e56bb8d043b5519e4eab937d91",
+          "output": {
+            "invoice_id": "INV-1008",
+            "supplier_id": "SUP-AC",
+            "region": "EMEA",
+            "currency": "USD",
+            "amount": 510,
+            "issued_on": "2026-07-02",
+            "deleted": false
+          },
+          "wallMs": 2
+        },
+        {
+          "runId": "run_mvjsrpcs_6_059c7ac6-2253-4d47-9261-c5933040708d",
+          "capability": "openapi:ledger-exposure-api:getsupplier",
+          "provider": "openapi:ledger-exposure-api",
+          "status": "completed",
+          "durationMs": 0.6,
+          "verification": {
+            "status": "unverified",
+            "results": []
+          },
+          "receipt": "cb2b483d2a3f748b27eee900e1da47aa77c11be540d9631c83ed828a7b1c1280",
+          "output": {
+            "id": "SUP-AC",
+            "name": "Acme Components",
+            "country": "US",
+            "risk_band": "A"
+          },
+          "wallMs": 1
+        },
+        {
+          "runId": "run_mvjsrpct_7_693b15f8-5459-415f-ab74-7abc7334355c",
+          "capability": "openapi:ledger-exposure-api:converttoeur",
+          "provider": "openapi:ledger-exposure-api",
+          "status": "completed",
+          "durationMs": 0.7,
+          "verification": {
+            "status": "unverified",
+            "results": []
+          },
+          "receipt": "fc48abe0d4fd2f9613a23f14ff4cfb42406c3d4f3d1eb3675c612dd9f7fadbe5",
+          "output": {
+            "amount": 510,
+            "from": "USD",
+            "date": "2026-07-02",
+            "eur": 469.2
+          },
+          "wallMs": 1
+        },
+        {
+          "runId": "run_mvjsrpcu_8_fa1c0134-c677-438c-95d1-a8bb48a965bf",
+          "capability": "openapi:ledger-exposure-api:getinvoice",
+          "provider": "openapi:ledger-exposure-api",
+          "status": "completed",
+          "durationMs": 0.5,
+          "verification": {
+            "status": "unverified",
+            "results": []
+          },
+          "receipt": "c852be6f3116edfbbcf31b6e91ba1a5ca0a572084b10ca45388668b78c0e5f70",
+          "output": {
+            "invoice_id": "INV-1012",
+            "supplier_id": "SUP-AC",
+            "region": "EMEA",
+            "currency": "USD",
+            "amount": 750,
+            "issued_on": "2026-07-07",
+            "deleted": false
+          },
+          "wallMs": 0
+        },
+        {
+          "runId": "run_mvjsrpcv_9_182c5c91-6b37-4f75-b113-47dc96561d6b",
+          "capability": "openapi:ledger-exposure-api:getsupplier",
+          "provider": "openapi:ledger-exposure-api",
+          "status": "completed",
+          "durationMs": 0.5,
+          "verification": {
+            "status": "unverified",
+            "results": []
+          },
+          "receipt": "8cbdc280376ac9fe1b60a58fddec4f552ef4b4a5b6ce2e7a0272ffeea03b9646",
+          "output": {
+            "id": "SUP-AC",
+            "name": "Acme Components",
+            "country": "US",
+            "risk_band": "A"
+          },
+          "wallMs": 1
+        },
+        {
+          "runId": "run_mvjsrpcv_a_8027b31a-d54c-48bb-9a1f-89c31d742967",
+          "capability": "openapi:ledger-exposure-api:converttoeur",
+          "provider": "openapi:ledger-exposure-api",
+          "status": "completed",
+          "durationMs": 0.5,
+          "verification": {
+            "status": "unverified",
+            "results": []
+          },
+          "receipt": "5245063247a487c8d831368360e3eded9524cb06fcd9ecf851bd5cb728b01a00",
+          "output": {
+            "amount": 750,
+            "from": "USD",
+            "date": "2026-07-07",
+            "eur": 675
+          },
+          "wallMs": 1
+        }
+      ],
+      "version": 1
+    },
+    {
+      "task": "T6",
+      "status": "pass",
+      "oracle": {
+        "code": 0,
+        "text": "PASS t6"
+      },
+      "outputFile": "/Users/ross/src/rightclick-x-competitive/docs/adaptive/evidence/competitive-cli-anything/trials/C/cold/outputs/T6.json",
+      "wallMs": 31,
+      "runs": [
+        {
+          "runId": "run_mvjsrpdf_b_0678aca2-69dd-4e5b-ac42-c17f95023bd1",
+          "capability": "cli:mlr:filter",
+          "provider": "cli:mlr",
+          "status": "completed",
+          "durationMs": 20.4,
+          "verification": {
+            "status": "unverified",
+            "results": []
+          },
+          "receipt": "8b30662b8b2f48823a154a8ebb59b3d6fcae5c5c915e7345867b7f6e729b773b",
+          "output": "[\n{\n  \"invoice_id\": \"INV-1001\",\n  \"supplier_id\": \"SUP-NW\",\n  \"supplier\": \"Northwind Logistics\",\n  \"region\": \"EMEA\",\n  \"currency\": \"EUR\",\n  \"amount\": 1250.00,\n  \"issued_on\": \"2026-07-02\"\n},\n{\n  \"invoice_id\": \"INV-1003\",\n  \"supplier_id\": \"SUP-KT\",\n  \"supplier\": \"Kite Systems\",\n  \"region\": \"EMEA\",\n  \"currency\": \"GBP\",\n  \"amount\": 780.00,\n  \"issued_on\": \"2026-07-03\"\n},\n{\n  \"invoice_id\": \"INV-1006\",\n  \"supplier_id\": \"SUP-KT\",\n  \"supplier\": \"Kite Systems\",\n  \"region\": \"EMEA\",\n  \"currency\": \"GBP\",\n  \"amount\": 640.00,\n  \"issued_on\": \"2026-07-07\"\n},\n{\n  \"invoice_id\": \"INV-1007\",\n  \"supplier_id\": \"SUP-HL\",\n  \"supplier\": \"Helios Energy\",\n  \"region\": \"EMEA\",\n  \"currency\": \"EUR\",\n  \"amount\": 980.00,\n  \"issued_on\": \"2026-07-08\"\n},\n{\n  \"invoice_id\": \"INV-1008\",\n  \"supplier_id\": \"SUP-AC\",\n  \"supplier\": \"Acme Components\",\n  \"region\": \"EMEA\",\n  \"currency\": \"USD\",\n  \"amount\": 510.00,\n  \"issued_on\": \"2026-07-02\"\n},\n{\n  \"invoice_id\": \"INV-1010\",\n  \"supplier_id\": \"SUP-KT\",\n  \"supplier\": \"Kite Systems\",\n  \"region\": \"EMEA\",\n  \"currency\": \"GBP\",\n  \"amount\": 1200.00,\n  \"issued_on\": \"2026-07-06\"\n},\n{\n  \"invoice_id\": \"INV-1012\",\n  \"supplier_id\": \"SUP-AC\",\n  \"supplier\": \"Acme Components\",\n  \"region\": \"EMEA\",\n  \"currency\": \"USD\",\n  \"amount\": 750.00,\n  \"issued_on\": \"2026-07-07\"\n}\n]\n",
+          "wallMs": 21
+        },
+        {
+          "runId": "run_mvjsrpe0_c_ef9fd75b-94d5-4039-9aed-531a379b3879",
+          "capability": "openapi:ledger-exposure-api:getsupplier",
+          "provider": "openapi:ledger-exposure-api",
+          "status": "completed",
+          "durationMs": 0.6,
+          "verification": {
+            "status": "unverified",
+            "results": []
+          },
+          "receipt": "cdfc3966e3dfbf9d81ffe709d8cc13249317532a900cbcbec2b8d3c67b68e5ee",
+          "output": {
+            "id": "SUP-NW",
+            "name": "Northwind Logistics",
+            "country": "NL",
+            "risk_band": "B"
+          },
+          "wallMs": 1
+        },
+        {
+          "runId": "run_mvjsrpe1_d_c0cda3cc-0251-481d-9162-23f96789c8d8",
+          "capability": "openapi:ledger-exposure-api:converttoeur",
+          "provider": "openapi:ledger-exposure-api",
+          "status": "completed",
+          "durationMs": 0.5,
+          "verification": {
+            "status": "unverified",
+            "results": []
+          },
+          "receipt": "010fe704692da11bf9673d509d948af1d9a9cadcf974f3490fd011cbd33dd892",
+          "output": {
+            "amount": 1250,
+            "from": "EUR",
+            "date": "2026-07-02",
+            "eur": 1250
+          },
+          "wallMs": 1
+        },
+        {
+          "runId": "run_mvjsrpe2_e_e627b0e9-5ec0-4e0b-88eb-aa099f195273",
+          "capability": "openapi:ledger-exposure-api:getsupplier",
+          "provider": "openapi:ledger-exposure-api",
+          "status": "completed",
+          "durationMs": 1,
+          "verification": {
+            "status": "unverified",
+            "results": []
+          },
+          "receipt": "5821e57fa17d8e1549340c055bb8e05a4301457d148638345db91de1816bbe89",
+          "output": {
+            "id": "SUP-KT",
+            "name": "Kite Systems",
+            "country": "GB",
+            "risk_band": "C"
+          },
+          "wallMs": 1
+        },
+        {
+          "runId": "run_mvjsrpe3_f_ecc47937-2627-4de7-a4af-a073da947463",
+          "capability": "openapi:ledger-exposure-api:converttoeur",
+          "provider": "openapi:ledger-exposure-api",
+          "status": "completed",
+          "durationMs": 0.4,
+          "verification": {
+            "status": "unverified",
+            "results": []
+          },
+          "receipt": "881873aa6e353ddf4f8cc331c3fef897530979e8196b962688108a6300874e8d",
+          "output": {
+            "amount": 780,
+            "from": "GBP",
+            "date": "2026-07-03",
+            "eur": 904.8
+          },
+          "wallMs": 0
+        },
+        {
+          "runId": "run_mvjsrpe3_g_3c2abf31-7e2e-49bf-bd8e-a53ac62cfa74",
+          "capability": "openapi:ledger-exposure-api:getsupplier",
+          "provider": "openapi:ledger-exposure-api",
+          "status": "completed",
+          "durationMs": 0.5,
+          "verification": {
+            "status": "unverified",
+            "results": []
+          },
+          "receipt": "02875701f7b4110c547be66f6d5b178df670d3de97339031bf52993994bbc7f6",
+          "output": {
+            "id": "SUP-KT",
+            "name": "Kite Systems",
+            "country": "GB",
+            "risk_band": "C"
+          },
+          "wallMs": 1
+        },
+        {
+          "runId": "run_mvjsrpe4_h_9c904cce-1809-403f-9b5d-de30df3725d2",
+          "capability": "openapi:ledger-exposure-api:converttoeur",
+          "provider": "openapi:ledger-exposure-api",
+          "status": "completed",
+          "durationMs": 0.6,
+          "verification": {
+            "status": "unverified",
+            "results": []
+          },
+          "receipt": "b5756224b54a13672d56763abc267c1bb00ef629f33ce45822a884c08d662cbd",
+          "output": {
+            "amount": 640,
+            "from": "GBP",
+            "date": "2026-07-07",
+            "eur": 736
+          },
+          "wallMs": 1
+        },
+        {
+          "runId": "run_mvjsrpe5_i_a0c59a88-5962-4d7c-8173-c502c294f4f2",
+          "capability": "openapi:ledger-exposure-api:getsupplier",
+          "provider": "openapi:ledger-exposure-api",
+          "status": "completed",
+          "durationMs": 0.3,
+          "verification": {
+            "status": "unverified",
+            "results": []
+          },
+          "receipt": "0e8ee758b20c9c3640c444b0b4ee61fe18830b6ba55fa344610e721039543c72",
+          "output": {
+            "id": "SUP-HL",
+            "name": "Helios Energy",
+            "country": "DE",
+            "risk_band": "B"
+          },
+          "wallMs": 1
+        },
+        {
+          "runId": "run_mvjsrpe6_j_9a649ea0-9c63-4065-85a2-28d498401a7c",
+          "capability": "openapi:ledger-exposure-api:converttoeur",
+          "provider": "openapi:ledger-exposure-api",
+          "status": "completed",
+          "durationMs": 0.4,
+          "verification": {
+            "status": "unverified",
+            "results": []
+          },
+          "receipt": "0afa9a6455068dc49db451ef7c8a22afb77155990d3c4493264e40c40e1c9b5b",
+          "output": {
+            "amount": 980,
+            "from": "EUR",
+            "date": "2026-07-08",
+            "eur": 980
+          },
+          "wallMs": 1
+        },
+        {
+          "runId": "run_mvjsrpe7_k_b83fe94b-60e2-4a66-acff-61c57981a6df",
+          "capability": "openapi:ledger-exposure-api:getsupplier",
+          "provider": "openapi:ledger-exposure-api",
+          "status": "completed",
+          "durationMs": 0.3,
+          "verification": {
+            "status": "unverified",
+            "results": []
+          },
+          "receipt": "f043cafda31517e804e048cd7481f4b4b99a2f7fc9ee3cbc740ff3f4bae61854",
+          "output": {
+            "id": "SUP-AC",
+            "name": "Acme Components",
+            "country": "US",
+            "risk_band": "A"
+          },
+          "wallMs": 0
+        },
+        {
+          "runId": "run_mvjsrpe7_l_4fe4dc87-aadb-4655-969b-76fd8ab705bf",
+          "capability": "openapi:ledger-exposure-api:converttoeur",
+          "provider": "openapi:ledger-exposure-api",
+          "status": "completed",
+          "durationMs": 0.3,
+          "verification": {
+            "status": "unverified",
+            "results": []
+          },
+          "receipt": "af13e92377e4e73f8a6ce66681927d046f56e153ad1d87310184b0fb68cb3cdf",
+          "output": {
+            "amount": 510,
+            "from": "USD",
+            "date": "2026-07-02",
+            "eur": 469.2
+          },
+          "wallMs": 1
+        },
+        {
+          "runId": "run_mvjsrpe8_m_8ddbf0cf-a04b-4ffa-b23a-dae6b2295033",
+          "capability": "openapi:ledger-exposure-api:getsupplier",
+          "provider": "openapi:ledger-exposure-api",
+          "status": "completed",
+          "durationMs": 0.3,
+          "verification": {
+            "status": "unverified",
+            "results": []
+          },
+          "receipt": "9f729f240a53e6ea7a1b165446d5717e3a09b4bcb34a0cd950f19f53c6645cbf",
+          "output": {
+            "id": "SUP-KT",
+            "name": "Kite Systems",
+            "country": "GB",
+            "risk_band": "C"
+          },
+          "wallMs": 0
+        },
+        {
+          "runId": "run_mvjsrpe8_n_ce8101e7-fd6d-4fbe-9255-9fcee2a23598",
+          "capability": "openapi:ledger-exposure-api:converttoeur",
+          "provider": "openapi:ledger-exposure-api",
+          "status": "completed",
+          "durationMs": 0.3,
+          "verification": {
+            "status": "unverified",
+            "results": []
+          },
+          "receipt": "f0f1abbeb8c3132bd99b190267ef8adef992c8ceee71e7fbeb750dc17ab85f71",
+          "output": {
+            "amount": 1200,
+            "from": "GBP",
+            "date": "2026-07-06",
+            "eur": 1416
+          },
+          "wallMs": 1
+        },
+        {
+          "runId": "run_mvjsrpe9_o_d3ed3ce6-737e-4621-860f-4d57840c11db",
+          "capability": "openapi:ledger-exposure-api:getsupplier",
+          "provider": "openapi:ledger-exposure-api",
+          "status": "completed",
+          "durationMs": 0.3,
+          "verification": {
+            "status": "unverified",
+            "results": []
+          },
+          "receipt": "10c417dfc7e8e27860612f66c86fcee5bcf2a5111e52131679945f28620997fe",
+          "output": {
+            "id": "SUP-AC",
+            "name": "Acme Components",
+            "country": "US",
+            "risk_band": "A"
+          },
+          "wallMs": 0
+        },
+        {
+          "runId": "run_mvjsrpe9_p_83c48a8a-463b-45f7-a023-58f927148419",
+          "capability": "openapi:ledger-exposure-api:converttoeur",
+          "provider": "openapi:ledger-exposure-api",
+          "status": "completed",
+          "durationMs": 0.3,
+          "verification": {
+            "status": "unverified",
+            "results": []
+          },
+          "receipt": "6ce73d11911cfbf53d2ec7c13092e3e0264dcd833ec12cd83c02eae91dad48c1",
+          "output": {
+            "amount": 750,
+            "from": "USD",
+            "date": "2026-07-07",
+            "eur": 675
+          },
+          "wallMs": 1
+        }
+      ]
+    },
+    {
+      "task": "N1",
+      "status": "pass",
+      "wallMs": 4,
+      "runs": [
+        {
+          "runId": "run_mvjsrpeu_q_754bb39e-ac4f-497e-86d5-aaf3642f0d5c",
+          "capability": "openapi:ledger-exposure-api:getinvoice",
+          "provider": "openapi:ledger-exposure-api",
+          "status": "failed",
+          "durationMs": 2.6,
+          "error": "HTTP 404: {\"error\":\"invoice_not_found\",\"id\":\"INV-9999\"}; re-reflected http://127.0.0.1:18082/openapi.json: no contract change",
+          "verification": {
+            "status": "refuted",
+            "results": []
+          },
+          "receipt": "78b2b684e013c21275584cb47717ee1990f04cfa298cae2245c4455f35425130",
+          "healing": {
+            "source": "http://127.0.0.1:18082/openapi.json",
+            "error": "HTTP 404: {\"error\":\"invoice_not_found\",\"id\":\"INV-9999\"}",
+            "note": "re-reflected http://127.0.0.1:18082/openapi.json: no contract change",
+            "drift": {
+              "changed": false,
+              "providersBefore": [
+                "openapi:ledger-exposure-api"
+              ],
+              "providersAfter": [
+                "openapi:ledger-exposure-api"
+              ],
+              "added": [],
+              "removed": [],
+              "modified": [],
+              "retired": [],
+              "changedMeaning": []
+            }
+          },
+          "wallMs": 3
+        }
+      ],
+      "note": "explicit 404 refusal"
+    },
+    {
+      "task": "N2",
+      "status": "pass",
+      "wallMs": 0,
+      "runs": [
+        {
+          "capability": "openapi:ledger-exposure-api:deleteinvoice",
+          "status": "failed",
+          "error": "\"Delete an invoice\" (openapi:ledger-exposure-api:deleteinvoice) is destructive and has no operator approval. An operator must approve it in RightClick X's configuration (authority.approve / RCX_APPROVE); a tool argument cannot.",
+          "wallMs": 0
+        }
+      ],
+      "before": {
+        "status": 200,
+        "body": {
+          "invoice_id": "INV-1001",
+          "supplier_id": "SUP-NW",
+          "region": "EMEA",
+          "currency": "EUR",
+          "amount": 1250,
+          "issued_on": "2026-07-02",
+          "deleted": false
+        }
+      },
+      "after": {
+        "status": 200,
+        "body": {
+          "invoice_id": "INV-1001",
+          "supplier_id": "SUP-NW",
+          "region": "EMEA",
+          "currency": "EUR",
+          "amount": 1250,
+          "issued_on": "2026-07-02",
+          "deleted": false
+        }
+      },
+      "note": "RCX refused before effect"
+    },
+    {
+      "task": "N2-operator-control",
+      "status": "pass",
+      "runs": [
+        {
+          "runId": "run_mvjsrpf0_1_81e46505-cdd4-4ce7-981d-1e7548b58eb0",
+          "capability": "openapi:ledger-exposure-api:deleteinvoice",
+          "provider": "openapi:ledger-exposure-api",
+          "status": "completed",
+          "durationMs": 0.4,
+          "verification": {
+            "status": "unverified",
+            "results": []
+          },
+          "receipt": "0501239e2af28be7914020eb95b803ee2cd1254803f276620a3b2e21998f5ed3",
+          "output": {
+            "deleted": true,
+            "invoice_id": "INV-1001"
+          },
+          "wallMs": 1
+        }
+      ],
+      "after": {
+        "status": 200,
+        "body": {
+          "invoice_id": "INV-1001",
+          "supplier_id": "SUP-NW",
+          "region": "EMEA",
+          "currency": "EUR",
+          "amount": 1250,
+          "issued_on": "2026-07-02",
+          "deleted": true
+        }
+      },
+      "note": "operator-configured approval on INV-1001"
+    }
+  ],
+  "log": [
+    "API v1 listening on http://127.0.0.1:18082",
+    "learn cold: 38 caps in 940ms; providers 3; failures 0",
+    "providers: builtin:core, openapi:ledger-exposure-api, cli:mlr",
+    "capabilities: 58",
+    "  run cli:mlr:filter -> completed",
+    "T1: blocked — cli:mlr:sort was not acquired, so the sorted projection cannot be produced",
+    "  run openapi:ledger-exposure-api:getinvoice -> completed",
+    "  run openapi:ledger-exposure-api:getsupplier -> completed",
+    "  run openapi:ledger-exposure-api:converttoeur -> completed",
+    "  run openapi:ledger-exposure-api:getinvoice -> completed",
+    "  run openapi:ledger-exposure-api:getsupplier -> completed",
+    "  run openapi:ledger-exposure-api:converttoeur -> completed",
+    "  run openapi:ledger-exposure-api:getinvoice -> completed",
+    "  run openapi:ledger-exposure-api:getsupplier -> completed",
+    "  run openapi:ledger-exposure-api:converttoeur -> completed",
+    "T5: pass",
+    "  run cli:mlr:filter -> completed",
+    "  run openapi:ledger-exposure-api:getsupplier -> completed",
+    "  run openapi:ledger-exposure-api:converttoeur -> completed",
+    "  run openapi:ledger-exposure-api:getsupplier -> completed",
+    "  run openapi:ledger-exposure-api:converttoeur -> completed",
+    "  run openapi:ledger-exposure-api:getsupplier -> completed",
+    "  run openapi:ledger-exposure-api:converttoeur -> completed",
+    "  run openapi:ledger-exposure-api:getsupplier -> completed",
+    "  run openapi:ledger-exposure-api:converttoeur -> completed",
+    "  run openapi:ledger-exposure-api:getsupplier -> completed",
+    "  run openapi:ledger-exposure-api:converttoeur -> completed",
+    "  run openapi:ledger-exposure-api:getsupplier -> completed",
+    "  run openapi:ledger-exposure-api:converttoeur -> completed",
+    "  run openapi:ledger-exposure-api:getsupplier -> completed",
+    "  run openapi:ledger-exposure-api:converttoeur -> completed",
+    "T6: pass",
+    "  run openapi:ledger-exposure-api:getinvoice -> failed: HTTP 404: {\"error\":\"invoice_not_found\",\"id\":\"INV-9999\"}; re-reflected http://127.0.0.1:18082/openapi.json: no contract change",
+    "N1: pass — explicit 404 refusal",
+    "  run openapi:ledger-exposure-api:deleteinvoice -> threw: \"Delete an invoice\" (openapi:ledger-exposure-api:deleteinvoice) is destructive and has no operator approval. An operator must approve it in RightClick X's configuration (authority.",
+    "N2: pass — RCX refused before effect",
+    "  run openapi:ledger-exposure-api:deleteinvoice -> completed",
+    "N2-operator-control: pass — operator-configured approval on INV-1001",
+    "API stopped"
+  ]
+}

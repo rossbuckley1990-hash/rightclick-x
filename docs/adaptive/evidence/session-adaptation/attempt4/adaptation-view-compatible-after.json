@@ -1,0 +1,1542 @@
+{
+  "goal": {
+    "id": "goal:compressed-document-digest",
+    "title": "Compressed document digest",
+    "provider": "goal:published",
+    "source": "composite",
+    "invocation": "goal",
+    "inputs": [
+      {
+        "name": "label",
+        "type": "text",
+        "required": true
+      },
+      {
+        "name": "document",
+        "type": "text",
+        "required": true
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "hash"
+      }
+    ],
+    "states": {
+      "discovery": {
+        "state": "known-descriptor",
+        "source": "Current runtime graph",
+        "limitation": "A descriptor is not proof that its provider is reachable or truthful.",
+        "evidence": []
+      },
+      "executability": {
+        "state": "requires-plan",
+        "source": "Current local execution policy and destructive-approval configuration",
+        "limitation": "Passing local policy does not establish credentials, program authority, sandbox availability, valid inputs or service reachability. No operation is executed by this view.",
+        "evidence": []
+      },
+      "authority": {
+        "state": "unknown",
+        "source": "No independent exact-action boundary decision attached to this observation",
+        "limitation": "Discovery, composition and publication grant no authority. A principal, exact action, parameters and protected boundary must be authorised separately. Other shells, tools and credentials are outside this view.",
+        "evidence": []
+      },
+      "assurance": {
+        "state": "predicates-passed-on-run",
+        "source": "Latest retained execution/composition observation, not a publication trust label",
+        "limitation": "Applies only to that historical run. Predicates are local checks. A separate read-only witness provider is not necessarily an independent organisation or a complete business-outcome oracle; receipt hashes are not external attestations.",
+        "evidence": [
+          "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:60"
+        ]
+      },
+      "reusability": {
+        "state": "retained-contract",
+        "source": "Matching current graph descriptor and retained goal/pipeline",
+        "limitation": "Retention does not establish usefulness, current validity, authority or actual fresh-agent reuse.",
+        "evidence": []
+      },
+      "validity": {
+        "state": "descriptor-matches-observation",
+        "source": "Current contract change detectors compared with the latest completed observation's dependency references",
+        "limitation": "A later failure cannot erase previously observed dependencies. This historical, non-cryptographic comparison proves neither unchanged behaviour nor current success. Missing/truncated history stays unassessed; remote behaviour may change without a descriptor change.",
+        "evidence": [
+          "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:60"
+        ]
+      }
+    },
+    "lastObservation": {
+      "kind": "execution.finished",
+      "status": "completed",
+      "subjects": [
+        "goal:compressed-document-digest"
+      ],
+      "providers": [
+        "goal:published"
+      ],
+      "runs": [
+        "run_mvh0ihqm_e_4c506715-4b9e-400f-9a52-4a01e3e1edd5"
+      ],
+      "witnessRuns": [],
+      "related": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:52",
+      "verification": "checked",
+      "receipt": "1346634dfa1478c764592d8f391d95bc4128bf92a26a86215fcc3a98876401da",
+      "durationMs": 1062.1,
+      "predicates": 1,
+      "predicatesPassed": 1,
+      "witnessesPassed": 0,
+      "attempts": 0,
+      "contracts": [
+        {
+          "capability": "goal:compressed-document-digest",
+          "provider": "goal:published",
+          "contract": "8a0e4890:goal:published:write:composite"
+        },
+        {
+          "capability": "openapi:protected-compression:compressdocument",
+          "provider": "openapi:protected-compression",
+          "contract": "5bdaba8e:openapi:protected-compression:write:openapi"
+        }
+      ],
+      "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:60",
+      "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+      "seq": 60,
+      "at": "2026-10-20T18:24:11.381Z"
+    },
+    "changedDependencies": [],
+    "localPolicy": {
+      "allowed": true,
+      "requiresPlan": true,
+      "declaredRisk": "write",
+      "consequentialRisks": [
+        "write"
+      ],
+      "reasonCount": 0
+    }
+  },
+  "original": {
+    "id": "openapi:protected-compression:compress",
+    "title": "openapi:protected-compression:compress",
+    "provider": null,
+    "source": null,
+    "invocation": null,
+    "inputs": [],
+    "outputs": [],
+    "states": {
+      "discovery": {
+        "state": "absent",
+        "source": "Current runtime graph",
+        "limitation": "A descriptor is not proof that its provider is reachable or truthful.",
+        "evidence": []
+      },
+      "executability": {
+        "state": "unavailable",
+        "source": "Current local execution policy and destructive-approval configuration",
+        "limitation": "Passing local policy does not establish credentials, program authority, sandbox availability, valid inputs or service reachability. No operation is executed by this view.",
+        "evidence": []
+      },
+      "authority": {
+        "state": "unknown",
+        "source": "No independent exact-action boundary decision attached to this observation",
+        "limitation": "Discovery, composition and publication grant no authority. A principal, exact action, parameters and protected boundary must be authorised separately. Other shells, tools and credentials are outside this view.",
+        "evidence": []
+      },
+      "assurance": {
+        "state": "last-failed",
+        "source": "Latest retained execution/composition observation, not a publication trust label",
+        "limitation": "Applies only to that historical run. Predicates are local checks. A separate read-only witness provider is not necessarily an independent organisation or a complete business-outcome oracle; receipt hashes are not external attestations.",
+        "evidence": [
+          "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:35"
+        ]
+      },
+      "reusability": {
+        "state": "unavailable",
+        "source": "Matching current graph descriptor and retained goal/pipeline",
+        "limitation": "Retention does not establish usefulness, current validity, authority or actual fresh-agent reuse.",
+        "evidence": []
+      },
+      "validity": {
+        "state": "unavailable",
+        "source": "Current contract change detectors compared with the latest completed observation's dependency references",
+        "limitation": "A later failure cannot erase previously observed dependencies. This historical, non-cryptographic comparison proves neither unchanged behaviour nor current success. Missing/truncated history stays unassessed; remote behaviour may change without a descriptor change.",
+        "evidence": [
+          "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:27"
+        ]
+      }
+    },
+    "lastObservation": {
+      "kind": "execution.finished",
+      "status": "failed",
+      "subjects": [
+        "openapi:protected-compression:compress"
+      ],
+      "providers": [
+        "openapi:protected-compression"
+      ],
+      "runs": [
+        "run_mvh0ih6e_a_e5af42fa-632c-4457-b35e-bcd9181eb8ee"
+      ],
+      "witnessRuns": [],
+      "related": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:34",
+      "verification": "unverified",
+      "receipt": "18c81670a4bae56741c1f42d4026b1a1a7867e5954dafe81739e1f2ece6a2f8a",
+      "durationMs": 2.4,
+      "predicates": 0,
+      "predicatesPassed": 0,
+      "witnessesPassed": 0,
+      "attempts": 0,
+      "contracts": [
+        {
+          "capability": "openapi:protected-compression:compress",
+          "provider": "openapi:protected-compression",
+          "contract": "5c6a2b16:openapi:protected-compression:write:openapi"
+        }
+      ],
+      "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:35",
+      "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+      "seq": 35,
+      "at": "2026-10-20T18:24:09.593Z"
+    },
+    "changedDependencies": [
+      "openapi:protected-compression:compress"
+    ],
+    "localPolicy": null
+  },
+  "activity": {
+    "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+    "cursor": 60,
+    "oldest": 1,
+    "discarded": 0,
+    "reset": null,
+    "hasMore": false,
+    "entries": [
+      {
+        "kind": "runtime.started",
+        "status": "observed",
+        "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:1",
+        "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+        "seq": 1,
+        "at": "2026-10-20T18:23:51.855Z"
+      },
+      {
+        "kind": "provider.learned",
+        "status": "observed",
+        "subjects": [],
+        "providers": [
+          "openapi:crossref-rest-api"
+        ],
+        "contracts": [],
+        "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:2",
+        "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+        "seq": 2,
+        "at": "2026-10-20T18:23:52.411Z"
+      },
+      {
+        "kind": "environment.source",
+        "status": "learned",
+        "subjects": [
+          "https://api.crossref.org/swagger-docs"
+        ],
+        "providers": [
+          "openapi:crossref-rest-api"
+        ],
+        "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:3",
+        "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+        "seq": 3,
+        "at": "2026-10-20T18:23:52.411Z"
+      },
+      {
+        "kind": "provider.learned",
+        "status": "observed",
+        "subjects": [],
+        "providers": [
+          "graphql:data-rcsb-org-graphql"
+        ],
+        "contracts": [],
+        "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:4",
+        "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+        "seq": 4,
+        "at": "2026-10-20T18:23:54.694Z"
+      },
+      {
+        "kind": "composition.requested",
+        "status": "requested",
+        "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:5",
+        "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+        "seq": 5,
+        "at": "2026-10-20T18:23:54.819Z"
+      },
+      {
+        "kind": "execution.requested",
+        "status": "requested",
+        "subjects": [
+          "execution:composition:c55ca4cb-160d-47aa-9ab6-37f0f75bd357"
+        ],
+        "contracts": [
+          {
+            "capability": "execution:composition:c55ca4cb-160d-47aa-9ab6-37f0f75bd357",
+            "provider": "execution:composition",
+            "contract": "1baca88d:execution:composition:read:composite"
+          }
+        ],
+        "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:6",
+        "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+        "seq": 6,
+        "at": "2026-10-20T18:24:04.459Z"
+      },
+      {
+        "kind": "execution.requested",
+        "status": "requested",
+        "subjects": [
+          "graphql:data-rcsb-org-graphql:query:entry"
+        ],
+        "contracts": [
+          {
+            "capability": "graphql:data-rcsb-org-graphql:query:entry",
+            "provider": "graphql:data-rcsb-org-graphql",
+            "contract": "938ddbef:graphql:data-rcsb-org-graphql:read:graphql"
+          }
+        ],
+        "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:7",
+        "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+        "seq": 7,
+        "at": "2026-10-20T18:24:04.471Z"
+      },
+      {
+        "kind": "execution.finished",
+        "status": "completed",
+        "subjects": [
+          "graphql:data-rcsb-org-graphql:query:entry"
+        ],
+        "providers": [
+          "graphql:data-rcsb-org-graphql"
+        ],
+        "runs": [
+          "run_mvh0id85_2_989460e7-11e4-466f-bf8f-dc6f6e244044"
+        ],
+        "witnessRuns": [],
+        "related": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:7",
+        "verification": "unverified",
+        "receipt": "87c5e3e50b42d731c30be1b5d13a50280e764a784da7b18bef1e998acbc80e53",
+        "durationMs": 378.1,
+        "predicates": 0,
+        "predicatesPassed": 0,
+        "witnessesPassed": 0,
+        "attempts": 0,
+        "contracts": [
+          {
+            "capability": "graphql:data-rcsb-org-graphql:query:entry",
+            "provider": "graphql:data-rcsb-org-graphql",
+            "contract": "938ddbef:graphql:data-rcsb-org-graphql:read:graphql"
+          }
+        ],
+        "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:8",
+        "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+        "seq": 8,
+        "at": "2026-10-20T18:24:04.856Z"
+      },
+      {
+        "kind": "execution.requested",
+        "status": "requested",
+        "subjects": [
+          "openapi:crossref-rest-api:get-works-doi"
+        ],
+        "contracts": [
+          {
+            "capability": "openapi:crossref-rest-api:get-works-doi",
+            "provider": "openapi:crossref-rest-api",
+            "contract": "e62f074e:openapi:crossref-rest-api:read:openapi"
+          }
+        ],
+        "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:9",
+        "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+        "seq": 9,
+        "at": "2026-10-20T18:24:04.860Z"
+      },
+      {
+        "kind": "execution.finished",
+        "status": "completed",
+        "subjects": [
+          "openapi:crossref-rest-api:get-works-doi"
+        ],
+        "providers": [
+          "openapi:crossref-rest-api"
+        ],
+        "runs": [
+          "run_mvh0idiy_3_cf51b2dc-7b06-48f0-a427-50a06549bd7f"
+        ],
+        "witnessRuns": [],
+        "related": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:9",
+        "verification": "unverified",
+        "receipt": "31aab40b4e90460b8557c1839465d1a6b8487b4f2886bf6c01907fd61a9f76aa",
+        "durationMs": 1091.7,
+        "predicates": 0,
+        "predicatesPassed": 0,
+        "witnessesPassed": 0,
+        "attempts": 0,
+        "contracts": [
+          {
+            "capability": "openapi:crossref-rest-api:get-works-doi",
+            "provider": "openapi:crossref-rest-api",
+            "contract": "e62f074e:openapi:crossref-rest-api:read:openapi"
+          }
+        ],
+        "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:10",
+        "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+        "seq": 10,
+        "at": "2026-10-20T18:24:05.955Z"
+      },
+      {
+        "kind": "capability.crystallized",
+        "status": "observed",
+        "subjects": [
+          "composite:46631fa80db7"
+        ],
+        "providers": [],
+        "contracts": [
+          {
+            "capability": "composite:46631fa80db7",
+            "provider": "composite:crystallized",
+            "contract": "f2898307:composite:crystallized:read:composite"
+          }
+        ],
+        "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:11",
+        "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+        "seq": 11,
+        "at": "2026-10-20T18:24:05.970Z"
+      },
+      {
+        "kind": "goal.published",
+        "status": "observed",
+        "subjects": [
+          "goal:structure-primary-publication-metadata"
+        ],
+        "providers": [],
+        "contracts": [
+          {
+            "capability": "goal:structure-primary-publication-metadata",
+            "provider": "goal:published",
+            "contract": "0c3ea063:goal:published:read:composite"
+          }
+        ],
+        "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:12",
+        "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+        "seq": 12,
+        "at": "2026-10-20T18:24:05.975Z"
+      },
+      {
+        "kind": "execution.finished",
+        "status": "completed",
+        "subjects": [
+          "execution:composition:c55ca4cb-160d-47aa-9ab6-37f0f75bd357"
+        ],
+        "providers": [
+          "execution:composition"
+        ],
+        "runs": [
+          "run_mvh0id7w_1_b5a296b5-f239-4b5f-8e79-272d86119f0b"
+        ],
+        "witnessRuns": [],
+        "related": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:6",
+        "verification": "checked",
+        "receipt": "ed71883bfb4f46fbd8c20d1727bd7797257abe7cdb06d414c577b4cb4c2e9157",
+        "durationMs": 1515.2,
+        "predicates": 3,
+        "predicatesPassed": 3,
+        "witnessesPassed": 0,
+        "attempts": 0,
+        "contracts": [
+          {
+            "capability": "execution:composition:c55ca4cb-160d-47aa-9ab6-37f0f75bd357",
+            "provider": "execution:composition",
+            "contract": "1baca88d:execution:composition:read:composite"
+          },
+          {
+            "capability": "graphql:data-rcsb-org-graphql:query:entry",
+            "provider": "graphql:data-rcsb-org-graphql",
+            "contract": "938ddbef:graphql:data-rcsb-org-graphql:read:graphql"
+          },
+          {
+            "capability": "openapi:crossref-rest-api:get-works-doi",
+            "provider": "openapi:crossref-rest-api",
+            "contract": "e62f074e:openapi:crossref-rest-api:read:openapi"
+          }
+        ],
+        "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:13",
+        "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+        "seq": 13,
+        "at": "2026-10-20T18:24:05.976Z"
+      },
+      {
+        "kind": "composition.finished",
+        "status": "completed",
+        "subjects": [
+          "goal:structure-primary-publication-metadata",
+          "composite:46631fa80db7"
+        ],
+        "providers": [
+          "graphql:data-rcsb-org-graphql",
+          "openapi:crossref-rest-api"
+        ],
+        "runs": [
+          "run_mvh0id85_2_989460e7-11e4-466f-bf8f-dc6f6e244044",
+          "run_mvh0idiy_3_cf51b2dc-7b06-48f0-a427-50a06549bd7f"
+        ],
+        "witnessRuns": [],
+        "related": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:5",
+        "verification": "checked",
+        "durationMs": 1515.2,
+        "predicates": 3,
+        "predicatesPassed": 3,
+        "witnessesPassed": 0,
+        "attempts": 0,
+        "plans": 5,
+        "contracts": [
+          {
+            "capability": "goal:structure-primary-publication-metadata",
+            "provider": "goal:published",
+            "contract": "0c3ea063:goal:published:read:composite"
+          },
+          {
+            "capability": "composite:46631fa80db7",
+            "provider": "composite:crystallized",
+            "contract": "f2898307:composite:crystallized:read:composite"
+          },
+          {
+            "capability": "graphql:data-rcsb-org-graphql:query:entry",
+            "provider": "graphql:data-rcsb-org-graphql",
+            "contract": "938ddbef:graphql:data-rcsb-org-graphql:read:graphql"
+          },
+          {
+            "capability": "openapi:crossref-rest-api:get-works-doi",
+            "provider": "openapi:crossref-rest-api",
+            "contract": "e62f074e:openapi:crossref-rest-api:read:openapi"
+          }
+        ],
+        "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:14",
+        "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+        "seq": 14,
+        "at": "2026-10-20T18:24:05.976Z"
+      },
+      {
+        "kind": "provider.learned",
+        "status": "observed",
+        "subjects": [],
+        "providers": [
+          "openapi:crossref-rest-api"
+        ],
+        "contracts": [],
+        "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:15",
+        "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+        "seq": 15,
+        "at": "2026-10-20T18:24:06.920Z"
+      },
+      {
+        "kind": "environment.source",
+        "status": "learned",
+        "subjects": [
+          "https://api.crossref.org/swagger-docs"
+        ],
+        "providers": [
+          "openapi:crossref-rest-api"
+        ],
+        "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:16",
+        "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+        "seq": 16,
+        "at": "2026-10-20T18:24:06.920Z"
+      },
+      {
+        "kind": "provider.learned",
+        "status": "observed",
+        "subjects": [],
+        "providers": [
+          "openapi:protected-compression"
+        ],
+        "contracts": [],
+        "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:17",
+        "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+        "seq": 17,
+        "at": "2026-10-20T18:24:06.936Z"
+      },
+      {
+        "kind": "environment.source",
+        "status": "learned",
+        "subjects": [
+          "http://127.0.0.1:62803/openapi.json"
+        ],
+        "providers": [
+          "openapi:protected-compression"
+        ],
+        "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:18",
+        "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+        "seq": 18,
+        "at": "2026-10-20T18:24:06.936Z"
+      },
+      {
+        "kind": "execution.requested",
+        "status": "requested",
+        "subjects": [
+          "openapi:protected-compression:compress"
+        ],
+        "contracts": [
+          {
+            "capability": "openapi:protected-compression:compress",
+            "provider": "openapi:protected-compression",
+            "contract": "5c6a2b16:openapi:protected-compression:write:openapi"
+          }
+        ],
+        "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:19",
+        "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+        "seq": 19,
+        "at": "2026-10-20T18:24:07.195Z"
+      },
+      {
+        "kind": "execution.finished",
+        "status": "failed",
+        "subjects": [
+          "openapi:protected-compression:compress"
+        ],
+        "providers": [
+          "openapi:protected-compression"
+        ],
+        "runs": [
+          "run_mvh0ifbv_4_d868e8a5-6879-449c-85cf-18da83d8e19c"
+        ],
+        "witnessRuns": [],
+        "related": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:19",
+        "verification": "unverified",
+        "receipt": "9d14f9eab8e8bd0dfe480ed4e0d8aa319f8e9f3fda2685e893a411218f1051c6",
+        "durationMs": 5.8,
+        "predicates": 0,
+        "predicatesPassed": 0,
+        "witnessesPassed": 0,
+        "attempts": 0,
+        "contracts": [
+          {
+            "capability": "openapi:protected-compression:compress",
+            "provider": "openapi:protected-compression",
+            "contract": "5c6a2b16:openapi:protected-compression:write:openapi"
+          }
+        ],
+        "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:20",
+        "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+        "seq": 20,
+        "at": "2026-10-20T18:24:07.202Z"
+      },
+      {
+        "kind": "execution.requested",
+        "status": "requested",
+        "subjects": [
+          "openapi:protected-compression:compress"
+        ],
+        "contracts": [
+          {
+            "capability": "openapi:protected-compression:compress",
+            "provider": "openapi:protected-compression",
+            "contract": "5c6a2b16:openapi:protected-compression:write:openapi"
+          }
+        ],
+        "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:21",
+        "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+        "seq": 21,
+        "at": "2026-10-20T18:24:07.231Z"
+      },
+      {
+        "kind": "execution.finished",
+        "status": "failed",
+        "subjects": [
+          "openapi:protected-compression:compress"
+        ],
+        "providers": [
+          "openapi:protected-compression"
+        ],
+        "runs": [
+          "run_mvh0ifcv_5_77498480-56a6-4d6b-9ed2-15edcf55d8a4"
+        ],
+        "witnessRuns": [],
+        "related": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:21",
+        "verification": "unverified",
+        "receipt": "9e9838a9965566feb20d6b87ff57d4daadb39159795fa2c0c13a66d68bd2cb3d",
+        "durationMs": 5.2,
+        "predicates": 0,
+        "predicatesPassed": 0,
+        "witnessesPassed": 0,
+        "attempts": 0,
+        "contracts": [
+          {
+            "capability": "openapi:protected-compression:compress",
+            "provider": "openapi:protected-compression",
+            "contract": "5c6a2b16:openapi:protected-compression:write:openapi"
+          }
+        ],
+        "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:22",
+        "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+        "seq": 22,
+        "at": "2026-10-20T18:24:07.237Z"
+      },
+      {
+        "kind": "composition.requested",
+        "status": "requested",
+        "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:23",
+        "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+        "seq": 23,
+        "at": "2026-10-20T18:24:07.241Z"
+      },
+      {
+        "kind": "execution.requested",
+        "status": "requested",
+        "subjects": [
+          "execution:composition:f6425d83-e4be-40c4-a5fe-ad790eb51c73"
+        ],
+        "contracts": [
+          {
+            "capability": "execution:composition:f6425d83-e4be-40c4-a5fe-ad790eb51c73",
+            "provider": "execution:composition",
+            "contract": "089014c9:execution:composition:write:composite"
+          }
+        ],
+        "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:24",
+        "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+        "seq": 24,
+        "at": "2026-10-20T18:24:08.143Z"
+      },
+      {
+        "kind": "execution.requested",
+        "status": "requested",
+        "subjects": [
+          "openapi:protected-compression:compress"
+        ],
+        "contracts": [
+          {
+            "capability": "openapi:protected-compression:compress",
+            "provider": "openapi:protected-compression",
+            "contract": "5c6a2b16:openapi:protected-compression:write:openapi"
+          }
+        ],
+        "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:25",
+        "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+        "seq": 25,
+        "at": "2026-10-20T18:24:08.145Z"
+      },
+      {
+        "kind": "execution.continuation",
+        "status": "result",
+        "subjects": [
+          "openapi:protected-compression:monitor",
+          "openapi:protected-compression:monitor",
+          "openapi:protected-compression:artifact"
+        ],
+        "runs": [
+          "run_mvh0ig28_7_98cac6d9-ca81-40e0-996f-36bdc94ea6b5"
+        ],
+        "reason": "http-202-303",
+        "receipt": "880ce5ca98d7f969e463bbaf378710ad44b80eacaa872f29fcf32fb0c734b2d8",
+        "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:26",
+        "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+        "seq": 26,
+        "at": "2026-10-20T18:24:09.254Z"
+      },
+      {
+        "kind": "execution.finished",
+        "status": "completed",
+        "subjects": [
+          "openapi:protected-compression:compress"
+        ],
+        "providers": [
+          "openapi:protected-compression"
+        ],
+        "runs": [
+          "run_mvh0ig28_7_98cac6d9-ca81-40e0-996f-36bdc94ea6b5"
+        ],
+        "witnessRuns": [],
+        "related": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:25",
+        "verification": "unverified",
+        "receipt": "880ce5ca98d7f969e463bbaf378710ad44b80eacaa872f29fcf32fb0c734b2d8",
+        "durationMs": 1108.4,
+        "predicates": 0,
+        "predicatesPassed": 0,
+        "witnessesPassed": 0,
+        "attempts": 0,
+        "contracts": [
+          {
+            "capability": "openapi:protected-compression:compress",
+            "provider": "openapi:protected-compression",
+            "contract": "5c6a2b16:openapi:protected-compression:write:openapi"
+          }
+        ],
+        "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:27",
+        "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+        "seq": 27,
+        "at": "2026-10-20T18:24:09.254Z"
+      },
+      {
+        "kind": "goal.published",
+        "status": "observed",
+        "subjects": [
+          "goal:compressed-document-digest"
+        ],
+        "providers": [],
+        "contracts": [
+          {
+            "capability": "goal:compressed-document-digest",
+            "provider": "goal:published",
+            "contract": "8a0e4890:goal:published:write:composite"
+          }
+        ],
+        "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:28",
+        "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+        "seq": 28,
+        "at": "2026-10-20T18:24:09.262Z"
+      },
+      {
+        "kind": "execution.finished",
+        "status": "completed",
+        "subjects": [
+          "execution:composition:f6425d83-e4be-40c4-a5fe-ad790eb51c73"
+        ],
+        "providers": [
+          "execution:composition"
+        ],
+        "runs": [
+          "run_mvh0ig27_6_a0446024-38e4-43ca-8cea-3858c5233ea4"
+        ],
+        "witnessRuns": [],
+        "related": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:24",
+        "verification": "checked",
+        "receipt": "f6563ba531d3a06e1d876c01cfd3048677ee383cb0a3ca293a361830a4a551e1",
+        "durationMs": 1119,
+        "predicates": 1,
+        "predicatesPassed": 1,
+        "witnessesPassed": 0,
+        "attempts": 0,
+        "contracts": [
+          {
+            "capability": "execution:composition:f6425d83-e4be-40c4-a5fe-ad790eb51c73",
+            "provider": "execution:composition",
+            "contract": "089014c9:execution:composition:write:composite"
+          },
+          {
+            "capability": "openapi:protected-compression:compress",
+            "provider": "openapi:protected-compression",
+            "contract": "5c6a2b16:openapi:protected-compression:write:openapi"
+          }
+        ],
+        "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:29",
+        "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+        "seq": 29,
+        "at": "2026-10-20T18:24:09.263Z"
+      },
+      {
+        "kind": "composition.finished",
+        "status": "completed",
+        "subjects": [
+          "goal:compressed-document-digest"
+        ],
+        "providers": [
+          "openapi:protected-compression"
+        ],
+        "runs": [
+          "run_mvh0ig28_7_98cac6d9-ca81-40e0-996f-36bdc94ea6b5"
+        ],
+        "witnessRuns": [],
+        "related": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:23",
+        "verification": "checked",
+        "durationMs": 1119,
+        "predicates": 1,
+        "predicatesPassed": 1,
+        "witnessesPassed": 0,
+        "attempts": 0,
+        "plans": 1,
+        "contracts": [
+          {
+            "capability": "goal:compressed-document-digest",
+            "provider": "goal:published",
+            "contract": "8a0e4890:goal:published:write:composite"
+          },
+          {
+            "capability": "openapi:protected-compression:compress",
+            "provider": "openapi:protected-compression",
+            "contract": "5c6a2b16:openapi:protected-compression:write:openapi"
+          }
+        ],
+        "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:30",
+        "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+        "seq": 30,
+        "at": "2026-10-20T18:24:09.263Z"
+      },
+      {
+        "kind": "execution.requested",
+        "status": "requested",
+        "subjects": [
+          "goal:compressed-document-digest"
+        ],
+        "contracts": [
+          {
+            "capability": "goal:compressed-document-digest",
+            "provider": "goal:published",
+            "contract": "8a0e4890:goal:published:write:composite"
+          }
+        ],
+        "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:31",
+        "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+        "seq": 31,
+        "at": "2026-10-20T18:24:09.585Z"
+      },
+      {
+        "kind": "composition.requested",
+        "status": "requested",
+        "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:32",
+        "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+        "seq": 32,
+        "at": "2026-10-20T18:24:09.586Z"
+      },
+      {
+        "kind": "execution.requested",
+        "status": "requested",
+        "subjects": [
+          "execution:composition:2a50108f-ec21-458c-b59d-08b16d86b841"
+        ],
+        "contracts": [
+          {
+            "capability": "execution:composition:2a50108f-ec21-458c-b59d-08b16d86b841",
+            "provider": "execution:composition",
+            "contract": "089014c9:execution:composition:write:composite"
+          }
+        ],
+        "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:33",
+        "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+        "seq": 33,
+        "at": "2026-10-20T18:24:09.587Z"
+      },
+      {
+        "kind": "execution.requested",
+        "status": "requested",
+        "subjects": [
+          "openapi:protected-compression:compress"
+        ],
+        "contracts": [
+          {
+            "capability": "openapi:protected-compression:compress",
+            "provider": "openapi:protected-compression",
+            "contract": "5c6a2b16:openapi:protected-compression:write:openapi"
+          }
+        ],
+        "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:34",
+        "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+        "seq": 34,
+        "at": "2026-10-20T18:24:09.590Z"
+      },
+      {
+        "kind": "execution.finished",
+        "status": "failed",
+        "subjects": [
+          "openapi:protected-compression:compress"
+        ],
+        "providers": [
+          "openapi:protected-compression"
+        ],
+        "runs": [
+          "run_mvh0ih6e_a_e5af42fa-632c-4457-b35e-bcd9181eb8ee"
+        ],
+        "witnessRuns": [],
+        "related": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:34",
+        "verification": "unverified",
+        "receipt": "18c81670a4bae56741c1f42d4026b1a1a7867e5954dafe81739e1f2ece6a2f8a",
+        "durationMs": 2.4,
+        "predicates": 0,
+        "predicatesPassed": 0,
+        "witnessesPassed": 0,
+        "attempts": 0,
+        "contracts": [
+          {
+            "capability": "openapi:protected-compression:compress",
+            "provider": "openapi:protected-compression",
+            "contract": "5c6a2b16:openapi:protected-compression:write:openapi"
+          }
+        ],
+        "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:35",
+        "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+        "seq": 35,
+        "at": "2026-10-20T18:24:09.593Z"
+      },
+      {
+        "kind": "execution.finished",
+        "status": "failed",
+        "subjects": [
+          "execution:composition:2a50108f-ec21-458c-b59d-08b16d86b841"
+        ],
+        "providers": [
+          "execution:composition"
+        ],
+        "runs": [
+          "run_mvh0ih6b_9_96455854-5216-4157-96de-603a957b3401"
+        ],
+        "witnessRuns": [],
+        "related": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:33",
+        "verification": "unverified",
+        "receipt": "fb227ef8640c23963647dc535ba7e2fd10a681400bfb42c51f7d94ae934a17e9",
+        "durationMs": 5.9,
+        "predicates": 0,
+        "predicatesPassed": 0,
+        "witnessesPassed": 0,
+        "attempts": 0,
+        "contracts": [
+          {
+            "capability": "execution:composition:2a50108f-ec21-458c-b59d-08b16d86b841",
+            "provider": "execution:composition",
+            "contract": "089014c9:execution:composition:write:composite"
+          }
+        ],
+        "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:36",
+        "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+        "seq": 36,
+        "at": "2026-10-20T18:24:09.594Z"
+      },
+      {
+        "kind": "composition.finished",
+        "status": "failed",
+        "subjects": [],
+        "providers": [],
+        "runs": [],
+        "witnessRuns": [],
+        "related": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:32",
+        "verification": "unverified",
+        "durationMs": 5.9,
+        "predicates": 0,
+        "predicatesPassed": 0,
+        "witnessesPassed": 0,
+        "attempts": 1,
+        "plans": 1,
+        "contracts": [],
+        "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:37",
+        "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+        "seq": 37,
+        "at": "2026-10-20T18:24:09.594Z"
+      },
+      {
+        "kind": "execution.finished",
+        "status": "failed",
+        "subjects": [
+          "goal:compressed-document-digest"
+        ],
+        "providers": [
+          "goal:published"
+        ],
+        "runs": [
+          "run_mvh0ih69_8_8b5829ae-8a36-4c97-ae4e-765ccd7d1876"
+        ],
+        "witnessRuns": [],
+        "related": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:31",
+        "verification": "unverified",
+        "receipt": "68a8f4e5ac5c31865e1d9c9c3922d5fe1dcb55cad5b29fe4ca9102a57ef8f450",
+        "durationMs": 8.7,
+        "predicates": 0,
+        "predicatesPassed": 0,
+        "witnessesPassed": 0,
+        "attempts": 1,
+        "contracts": [
+          {
+            "capability": "goal:compressed-document-digest",
+            "provider": "goal:published",
+            "contract": "8a0e4890:goal:published:write:composite"
+          }
+        ],
+        "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:38",
+        "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+        "seq": 38,
+        "at": "2026-10-20T18:24:09.594Z"
+      },
+      {
+        "kind": "provider.learned",
+        "status": "observed",
+        "subjects": [],
+        "providers": [
+          "openapi:crossref-rest-api"
+        ],
+        "contracts": [],
+        "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:39",
+        "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+        "seq": 39,
+        "at": "2026-10-20T18:24:10.283Z"
+      },
+      {
+        "kind": "environment.source",
+        "status": "learned",
+        "subjects": [
+          "https://api.crossref.org/swagger-docs"
+        ],
+        "providers": [
+          "openapi:crossref-rest-api"
+        ],
+        "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:40",
+        "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+        "seq": 40,
+        "at": "2026-10-20T18:24:10.284Z"
+      },
+      {
+        "kind": "provider.learned",
+        "status": "observed",
+        "subjects": [],
+        "providers": [
+          "openapi:protected-compression"
+        ],
+        "contracts": [],
+        "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:41",
+        "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+        "seq": 41,
+        "at": "2026-10-20T18:24:10.292Z"
+      },
+      {
+        "kind": "provider.drifted",
+        "status": "observed",
+        "subjects": [
+          "openapi:protected-compression:compress",
+          "openapi:protected-compression:artifact",
+          "openapi:protected-compression:movedartifact",
+          "openapi:protected-compression:publish"
+        ],
+        "providers": [
+          "openapi:protected-compression"
+        ],
+        "contracts": [
+          {
+            "capability": "openapi:protected-compression:artifact",
+            "provider": "openapi:protected-compression",
+            "contract": "486c2cfc:openapi:protected-compression:read:openapi"
+          },
+          {
+            "capability": "openapi:protected-compression:movedartifact",
+            "provider": "openapi:protected-compression",
+            "contract": "40894772:openapi:protected-compression:read:openapi"
+          },
+          {
+            "capability": "openapi:protected-compression:publish",
+            "provider": "openapi:protected-compression",
+            "contract": "c99ce895:openapi:protected-compression:write:openapi"
+          }
+        ],
+        "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:42",
+        "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+        "seq": 42,
+        "at": "2026-10-20T18:24:10.292Z"
+      },
+      {
+        "kind": "environment.source",
+        "status": "learned",
+        "subjects": [
+          "http://127.0.0.1:62803/openapi.json"
+        ],
+        "providers": [
+          "openapi:protected-compression"
+        ],
+        "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:43",
+        "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+        "seq": 43,
+        "at": "2026-10-20T18:24:10.292Z"
+      },
+      {
+        "kind": "execution.requested",
+        "status": "requested",
+        "subjects": [
+          "goal:compressed-document-digest"
+        ],
+        "contracts": [
+          {
+            "capability": "goal:compressed-document-digest",
+            "provider": "goal:published",
+            "contract": "8a0e4890:goal:published:write:composite"
+          }
+        ],
+        "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:44",
+        "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+        "seq": 44,
+        "at": "2026-10-20T18:24:10.298Z"
+      },
+      {
+        "kind": "composition.requested",
+        "status": "requested",
+        "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:45",
+        "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+        "seq": 45,
+        "at": "2026-10-20T18:24:10.298Z"
+      },
+      {
+        "kind": "execution.requested",
+        "status": "requested",
+        "subjects": [
+          "execution:composition:c3317b1c-b997-4400-a650-e35691792726"
+        ],
+        "contracts": [
+          {
+            "capability": "execution:composition:c3317b1c-b997-4400-a650-e35691792726",
+            "provider": "execution:composition",
+            "contract": "193ecde6:execution:composition:write:composite"
+          }
+        ],
+        "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:46",
+        "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+        "seq": 46,
+        "at": "2026-10-20T18:24:10.311Z"
+      },
+      {
+        "kind": "execution.requested",
+        "status": "requested",
+        "subjects": [
+          "openapi:protected-compression:compressdocument"
+        ],
+        "contracts": [
+          {
+            "capability": "openapi:protected-compression:compressdocument",
+            "provider": "openapi:protected-compression",
+            "contract": "5bdaba8e:openapi:protected-compression:write:openapi"
+          }
+        ],
+        "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:47",
+        "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+        "seq": 47,
+        "at": "2026-10-20T18:24:10.312Z"
+      },
+      {
+        "kind": "execution.finished",
+        "status": "failed",
+        "subjects": [
+          "openapi:protected-compression:compressdocument"
+        ],
+        "providers": [
+          "openapi:protected-compression"
+        ],
+        "runs": [
+          "run_mvh0ihqg_d_4f163baa-4012-4593-8d93-abc9e230a10d"
+        ],
+        "witnessRuns": [],
+        "related": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:47",
+        "verification": "unverified",
+        "receipt": "e9010fa4f41890be4d04eab3d6fc1866aa90f549286361e789badefe7c94ccb7",
+        "durationMs": 2,
+        "predicates": 0,
+        "predicatesPassed": 0,
+        "witnessesPassed": 0,
+        "attempts": 0,
+        "contracts": [
+          {
+            "capability": "openapi:protected-compression:compressdocument",
+            "provider": "openapi:protected-compression",
+            "contract": "5bdaba8e:openapi:protected-compression:write:openapi"
+          }
+        ],
+        "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:48",
+        "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+        "seq": 48,
+        "at": "2026-10-20T18:24:10.315Z"
+      },
+      {
+        "kind": "execution.finished",
+        "status": "failed",
+        "subjects": [
+          "execution:composition:c3317b1c-b997-4400-a650-e35691792726"
+        ],
+        "providers": [
+          "execution:composition"
+        ],
+        "runs": [
+          "run_mvh0ihqf_c_d5211070-3c94-4e71-8202-e5d51da1c52e"
+        ],
+        "witnessRuns": [],
+        "related": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:46",
+        "verification": "unverified",
+        "receipt": "ca0abe7d2a10d3eee6491353450fec3f6f77a8951fa0efa191ed37cead0ddec4",
+        "durationMs": 4.1,
+        "predicates": 0,
+        "predicatesPassed": 0,
+        "witnessesPassed": 0,
+        "attempts": 0,
+        "contracts": [
+          {
+            "capability": "execution:composition:c3317b1c-b997-4400-a650-e35691792726",
+            "provider": "execution:composition",
+            "contract": "193ecde6:execution:composition:write:composite"
+          }
+        ],
+        "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:49",
+        "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+        "seq": 49,
+        "at": "2026-10-20T18:24:10.316Z"
+      },
+      {
+        "kind": "composition.finished",
+        "status": "failed",
+        "subjects": [],
+        "providers": [],
+        "runs": [],
+        "witnessRuns": [],
+        "related": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:45",
+        "verification": "unverified",
+        "durationMs": 4.1,
+        "predicates": 0,
+        "predicatesPassed": 0,
+        "witnessesPassed": 0,
+        "attempts": 1,
+        "plans": 1,
+        "contracts": [],
+        "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:50",
+        "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+        "seq": 50,
+        "at": "2026-10-20T18:24:10.316Z"
+      },
+      {
+        "kind": "execution.finished",
+        "status": "failed",
+        "subjects": [
+          "goal:compressed-document-digest"
+        ],
+        "providers": [
+          "goal:published"
+        ],
+        "runs": [
+          "run_mvh0ihq2_b_6d29583f-7d4a-4931-972d-4edc30095587"
+        ],
+        "witnessRuns": [],
+        "related": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:44",
+        "verification": "unverified",
+        "receipt": "926e3de60b41f73ea8706ae241da8709d001a5b30cbc702dd5d6bc308eb17a59",
+        "durationMs": 17.2,
+        "predicates": 0,
+        "predicatesPassed": 0,
+        "witnessesPassed": 0,
+        "attempts": 1,
+        "contracts": [
+          {
+            "capability": "goal:compressed-document-digest",
+            "provider": "goal:published",
+            "contract": "8a0e4890:goal:published:write:composite"
+          }
+        ],
+        "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:51",
+        "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+        "seq": 51,
+        "at": "2026-10-20T18:24:10.316Z"
+      },
+      {
+        "kind": "execution.requested",
+        "status": "requested",
+        "subjects": [
+          "goal:compressed-document-digest"
+        ],
+        "contracts": [
+          {
+            "capability": "goal:compressed-document-digest",
+            "provider": "goal:published",
+            "contract": "8a0e4890:goal:published:write:composite"
+          }
+        ],
+        "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:52",
+        "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+        "seq": 52,
+        "at": "2026-10-20T18:24:10.318Z"
+      },
+      {
+        "kind": "composition.requested",
+        "status": "requested",
+        "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:53",
+        "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+        "seq": 53,
+        "at": "2026-10-20T18:24:10.318Z"
+      },
+      {
+        "kind": "execution.requested",
+        "status": "requested",
+        "subjects": [
+          "execution:composition:1cc5bce1-fc08-4384-9834-0381067de2c4"
+        ],
+        "contracts": [
+          {
+            "capability": "execution:composition:1cc5bce1-fc08-4384-9834-0381067de2c4",
+            "provider": "execution:composition",
+            "contract": "193ecde6:execution:composition:write:composite"
+          }
+        ],
+        "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:54",
+        "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+        "seq": 54,
+        "at": "2026-10-20T18:24:10.331Z"
+      },
+      {
+        "kind": "execution.requested",
+        "status": "requested",
+        "subjects": [
+          "openapi:protected-compression:compressdocument"
+        ],
+        "contracts": [
+          {
+            "capability": "openapi:protected-compression:compressdocument",
+            "provider": "openapi:protected-compression",
+            "contract": "5bdaba8e:openapi:protected-compression:write:openapi"
+          }
+        ],
+        "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:55",
+        "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+        "seq": 55,
+        "at": "2026-10-20T18:24:10.332Z"
+      },
+      {
+        "kind": "execution.continuation",
+        "status": "result",
+        "subjects": [
+          "openapi:protected-compression:monitor",
+          "openapi:protected-compression:monitor",
+          "openapi:protected-compression:artifact"
+        ],
+        "runs": [
+          "run_mvh0ihr0_g_f28b2d55-1ee2-4f19-86b7-9eafd951c428"
+        ],
+        "reason": "http-202-303",
+        "receipt": "19227a47782165b74eb24cd795c43bdc169fe607460389badb565ca3d8db79e2",
+        "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:56",
+        "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+        "seq": 56,
+        "at": "2026-10-20T18:24:11.379Z"
+      },
+      {
+        "kind": "execution.finished",
+        "status": "completed",
+        "subjects": [
+          "openapi:protected-compression:compressdocument"
+        ],
+        "providers": [
+          "openapi:protected-compression"
+        ],
+        "runs": [
+          "run_mvh0ihr0_g_f28b2d55-1ee2-4f19-86b7-9eafd951c428"
+        ],
+        "witnessRuns": [],
+        "related": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:55",
+        "verification": "unverified",
+        "receipt": "19227a47782165b74eb24cd795c43bdc169fe607460389badb565ca3d8db79e2",
+        "durationMs": 1045.3,
+        "predicates": 0,
+        "predicatesPassed": 0,
+        "witnessesPassed": 0,
+        "attempts": 0,
+        "contracts": [
+          {
+            "capability": "openapi:protected-compression:compressdocument",
+            "provider": "openapi:protected-compression",
+            "contract": "5bdaba8e:openapi:protected-compression:write:openapi"
+          }
+        ],
+        "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:57",
+        "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+        "seq": 57,
+        "at": "2026-10-20T18:24:11.379Z"
+      },
+      {
+        "kind": "execution.finished",
+        "status": "completed",
+        "subjects": [
+          "execution:composition:1cc5bce1-fc08-4384-9834-0381067de2c4"
+        ],
+        "providers": [
+          "execution:composition"
+        ],
+        "runs": [
+          "run_mvh0ihqz_f_b5df2d7e-ccd8-4d73-8f0f-36c84f6f5f28"
+        ],
+        "witnessRuns": [],
+        "related": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:54",
+        "verification": "checked",
+        "receipt": "1faa63f21eca400a5437e499edf4a03672ba5ba5b206f650fe8fd28951032a65",
+        "durationMs": 1048.3,
+        "predicates": 1,
+        "predicatesPassed": 1,
+        "witnessesPassed": 0,
+        "attempts": 0,
+        "contracts": [
+          {
+            "capability": "execution:composition:1cc5bce1-fc08-4384-9834-0381067de2c4",
+            "provider": "execution:composition",
+            "contract": "193ecde6:execution:composition:write:composite"
+          },
+          {
+            "capability": "openapi:protected-compression:compressdocument",
+            "provider": "openapi:protected-compression",
+            "contract": "5bdaba8e:openapi:protected-compression:write:openapi"
+          }
+        ],
+        "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:58",
+        "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+        "seq": 58,
+        "at": "2026-10-20T18:24:11.380Z"
+      },
+      {
+        "kind": "composition.finished",
+        "status": "completed",
+        "subjects": [],
+        "providers": [
+          "openapi:protected-compression"
+        ],
+        "runs": [
+          "run_mvh0ihr0_g_f28b2d55-1ee2-4f19-86b7-9eafd951c428"
+        ],
+        "witnessRuns": [],
+        "related": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:53",
+        "verification": "checked",
+        "durationMs": 1048.3,
+        "predicates": 1,
+        "predicatesPassed": 1,
+        "witnessesPassed": 0,
+        "attempts": 0,
+        "plans": 1,
+        "contracts": [
+          {
+            "capability": "openapi:protected-compression:compressdocument",
+            "provider": "openapi:protected-compression",
+            "contract": "5bdaba8e:openapi:protected-compression:write:openapi"
+          }
+        ],
+        "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:59",
+        "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+        "seq": 59,
+        "at": "2026-10-20T18:24:11.380Z"
+      },
+      {
+        "kind": "execution.finished",
+        "status": "completed",
+        "subjects": [
+          "goal:compressed-document-digest"
+        ],
+        "providers": [
+          "goal:published"
+        ],
+        "runs": [
+          "run_mvh0ihqm_e_4c506715-4b9e-400f-9a52-4a01e3e1edd5"
+        ],
+        "witnessRuns": [],
+        "related": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:52",
+        "verification": "checked",
+        "receipt": "1346634dfa1478c764592d8f391d95bc4128bf92a26a86215fcc3a98876401da",
+        "durationMs": 1062.1,
+        "predicates": 1,
+        "predicatesPassed": 1,
+        "witnessesPassed": 0,
+        "attempts": 0,
+        "contracts": [
+          {
+            "capability": "goal:compressed-document-digest",
+            "provider": "goal:published",
+            "contract": "8a0e4890:goal:published:write:composite"
+          },
+          {
+            "capability": "openapi:protected-compression:compressdocument",
+            "provider": "openapi:protected-compression",
+            "contract": "5bdaba8e:openapi:protected-compression:write:openapi"
+          }
+        ],
+        "id": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff:60",
+        "epoch": "2d57f70d-55ea-42e6-80b8-6b964cf6c5ff",
+        "seq": 60,
+        "at": "2026-10-20T18:24:11.381Z"
+      }
+    ],
+    "scope": "Local runtime observations, not independent attestations. Arguments, responses and raw errors are omitted; identifiers and receipt references remain. History is bounded to 500 records."
+  }
+}

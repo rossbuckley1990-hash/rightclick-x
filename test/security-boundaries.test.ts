@@ -1,6 +1,6 @@
-// Adversarial tests for security boundaries. Each one reproduces a named risk class. Run against
-// unmodified main (c27289e) first, where all five fail, then kept as regressions.
-// Record: experiments/security-boundaries/RECORD.md
+// Adversarial tests for the security prerequisites of the Universal Capability Engine.
+// Each one reproduces a risk class named in the programme brief. Written and run against the
+// baseline (3f1fbcc) first, to establish which risks were present, then kept as regressions.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { mkdtempSync, mkdirSync, readFileSync, symlinkSync, writeFileSync, existsSync } from "node:fs";

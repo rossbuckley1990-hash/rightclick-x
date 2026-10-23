@@ -1,0 +1,288 @@
+[
+  {
+    "task": "T5",
+    "status": "fail",
+    "wallMs": 8,
+    "runs": [
+      {
+        "runId": "run_mvjw4rpf_1_dc5877f8-3605-4347-add7-8cbb7e87ddd5",
+        "capability": "openapi:ledger-exposure-api:getinvoice",
+        "provider": "openapi:ledger-exposure-api",
+        "status": "completed",
+        "durationMs": 3.2,
+        "verification": {
+          "status": "unverified",
+          "results": []
+        },
+        "receipt": "87a0ac8553ecb0fec0b5d82559faa74902538096bf453b9c3f1384755b6d3d37",
+        "output": {
+          "invoice_id": "INV-1003",
+          "supplier_id": "SUP-KT",
+          "region": "EMEA",
+          "currency": "GBP",
+          "amount": 780,
+          "issued_on": "2026-07-03",
+          "deleted": false
+        },
+        "wallMs": 6
+      },
+      {
+        "runId": "run_mvjw4rpl_2_4f9417b0-15c6-42e9-b5e6-9c7896db2692",
+        "capability": "openapi:ledger-exposure-api:getsupplier",
+        "provider": "openapi:ledger-exposure-api",
+        "status": "completed",
+        "durationMs": 0.8,
+        "verification": {
+          "status": "unverified",
+          "results": []
+        },
+        "receipt": "85a40bc63f91ff23ba1c93a4477d93e5e936ba5d575e5de97a41786abcc14927",
+        "output": {
+          "id": "SUP-KT",
+          "name": "Kite Systems",
+          "country": "GB",
+          "risk": "C"
+        },
+        "wallMs": 1
+      }
+    ],
+    "note": "supplier response lacks risk_band",
+    "version": 1
+  },
+  {
+    "task": "T5",
+    "status": "pass",
+    "oracle": {
+      "code": 0,
+      "text": "PASS t5"
+    },
+    "outputFile": "/Users/ross/src/rightclick-x-competitive/docs/adaptive/evidence/competitive-cli-anything/validity-reviewed/C/r3/outputs/T5.json",
+    "wallMs": 7,
+    "runs": [
+      {
+        "runId": "run_mvjw4rps_3_6349700a-5839-4b13-abfc-daf77981068c",
+        "capability": "openapi:ledger-exposure-api:getinvoice",
+        "provider": "openapi:ledger-exposure-api",
+        "status": "completed",
+        "durationMs": 0.9,
+        "verification": {
+          "status": "unverified",
+          "results": []
+        },
+        "receipt": "2e450ceff9489184565f07de78a325a3cdcba0b87191555621b15e4ebf6281f4",
+        "output": {
+          "invoice_id": "INV-1003",
+          "supplier_id": "SUP-KT",
+          "region": "EMEA",
+          "currency": "GBP",
+          "amount": 780,
+          "issued_on": "2026-07-03",
+          "deleted": false
+        },
+        "wallMs": 1
+      },
+      {
+        "runId": "run_mvjw4rpt_4_d919fc61-fefd-40c8-a45f-d3f5183a23bf",
+        "capability": "openapi:ledger-exposure-api:getsupplier",
+        "provider": "openapi:ledger-exposure-api",
+        "status": "completed",
+        "durationMs": 0.5,
+        "verification": {
+          "status": "unverified",
+          "results": []
+        },
+        "receipt": "399065b001a53409c8176fa8521a05efe79422742a5bb7b554453d602e9a1421",
+        "output": {
+          "id": "SUP-KT",
+          "name": "Kite Systems",
+          "country": "GB",
+          "risk": "C"
+        },
+        "wallMs": 1
+      },
+      {
+        "runId": "run_mvjw4rpu_5_544205d4-43be-4f4d-9dbc-d9921f07a909",
+        "capability": "openapi:ledger-exposure-api:converttoeur",
+        "provider": "openapi:ledger-exposure-api",
+        "status": "completed",
+        "durationMs": 0.6,
+        "verification": {
+          "status": "unverified",
+          "results": []
+        },
+        "receipt": "cc189f6459cd8312bed6359696dfe0c050650aab8dc5e5d7e19e3f8b53f4bc8b",
+        "output": {
+          "amount": 780,
+          "from": "GBP",
+          "date": "2026-07-03",
+          "eur_amount": 904.8
+        },
+        "wallMs": 1
+      },
+      {
+        "runId": "run_mvjw4rpv_6_ab03a062-55ce-425b-936a-4b5e151b23c9",
+        "capability": "openapi:ledger-exposure-api:getinvoice",
+        "provider": "openapi:ledger-exposure-api",
+        "status": "completed",
+        "durationMs": 0.5,
+        "verification": {
+          "status": "unverified",
+          "results": []
+        },
+        "receipt": "f2419a8c0933c8ec116114d3f376ce1fa0305e59f45c6aa2dabe395d7570fef0",
+        "output": {
+          "invoice_id": "INV-1008",
+          "supplier_id": "SUP-AC",
+          "region": "EMEA",
+          "currency": "USD",
+          "amount": 510,
+          "issued_on": "2026-07-02",
+          "deleted": false
+        },
+        "wallMs": 1
+      },
+      {
+        "runId": "run_mvjw4rpw_7_a213ff0e-3261-4712-9595-17d7a9a84c41",
+        "capability": "openapi:ledger-exposure-api:getsupplier",
+        "provider": "openapi:ledger-exposure-api",
+        "status": "completed",
+        "durationMs": 0.5,
+        "verification": {
+          "status": "unverified",
+          "results": []
+        },
+        "receipt": "5d6274a767fdd14b1a7a18185389eac514e1db4e3ecb610a4f70c92956ff2aae",
+        "output": {
+          "id": "SUP-AC",
+          "name": "Acme Components",
+          "country": "US",
+          "risk": "A"
+        },
+        "wallMs": 0
+      },
+      {
+        "runId": "run_mvjw4rpw_8_5efb86db-36ef-4273-aec4-90eaf36dd905",
+        "capability": "openapi:ledger-exposure-api:converttoeur",
+        "provider": "openapi:ledger-exposure-api",
+        "status": "completed",
+        "durationMs": 0.5,
+        "verification": {
+          "status": "unverified",
+          "results": []
+        },
+        "receipt": "261d40b2a811f1ba8455ea84fc2c2d76add1258e911ac3e49675bb3acebca956",
+        "output": {
+          "amount": 510,
+          "from": "USD",
+          "date": "2026-07-02",
+          "eur_amount": 469.2
+        },
+        "wallMs": 1
+      },
+      {
+        "runId": "run_mvjw4rpx_9_f14ef0fb-105c-4582-a26e-84b8ae47fd5e",
+        "capability": "openapi:ledger-exposure-api:getinvoice",
+        "provider": "openapi:ledger-exposure-api",
+        "status": "completed",
+        "durationMs": 0.4,
+        "verification": {
+          "status": "unverified",
+          "results": []
+        },
+        "receipt": "3a5f3f447acbfed4bd1afdf6c65a3883cf9778fd80acf36735ee760898c52833",
+        "output": {
+          "invoice_id": "INV-1012",
+          "supplier_id": "SUP-AC",
+          "region": "EMEA",
+          "currency": "USD",
+          "amount": 750,
+          "issued_on": "2026-07-07",
+          "deleted": false
+        },
+        "wallMs": 1
+      },
+      {
+        "runId": "run_mvjw4rpy_a_bec7036b-4cf6-4056-af30-2ccc425399be",
+        "capability": "openapi:ledger-exposure-api:getsupplier",
+        "provider": "openapi:ledger-exposure-api",
+        "status": "completed",
+        "durationMs": 0.4,
+        "verification": {
+          "status": "unverified",
+          "results": []
+        },
+        "receipt": "f6df8b54c2f8660a7622ca453d3f871738dcf62deffb8b87139149561b343119",
+        "output": {
+          "id": "SUP-AC",
+          "name": "Acme Components",
+          "country": "US",
+          "risk": "A"
+        },
+        "wallMs": 0
+      },
+      {
+        "runId": "run_mvjw4rpy_b_53a5caa5-dec6-4c23-85ac-693c8f65672f",
+        "capability": "openapi:ledger-exposure-api:converttoeur",
+        "provider": "openapi:ledger-exposure-api",
+        "status": "completed",
+        "durationMs": 0.4,
+        "verification": {
+          "status": "unverified",
+          "results": []
+        },
+        "receipt": "e1e11ade26de90f6e3e0c405f92561905d7e5de94f38516bc6e562620bf09636",
+        "output": {
+          "amount": 750,
+          "from": "USD",
+          "date": "2026-07-07",
+          "eur_amount": 675
+        },
+        "wallMs": 1
+      }
+    ],
+    "version": 2
+  },
+  {
+    "task": "R3",
+    "status": "pass",
+    "runs": [],
+    "learning": {
+      "label": "r3-relearn",
+      "sources": [
+        "http://127.0.0.1:18088/openapi.json"
+      ],
+      "wallMs": 5,
+      "totalNewCapabilities": 6,
+      "totalNewPowers": 0,
+      "graph": {
+        "providers": 3,
+        "capabilities": 100,
+        "edges": 495,
+        "chains2": 495,
+        "chains3": 1069,
+        "total": 1664
+      },
+      "results": [
+        {
+          "source": "http://127.0.0.1:18088/openapi.json",
+          "probes": [
+            {
+              "url": "http://127.0.0.1:18088/openapi.json",
+              "kind": "openapi",
+              "ok": true,
+              "detail": "6 operations"
+            }
+          ],
+          "learned": [
+            {
+              "provider": "openapi:ledger-exposure-api",
+              "capabilitiesAdded": 6,
+              "newPowers": 0
+            }
+          ]
+        }
+      ]
+    },
+    "note": "v1-shaped workflow fail; re-learn 5ms; v2-shaped rerun pass"
+  }
+]

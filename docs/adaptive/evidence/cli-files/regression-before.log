@@ -1,0 +1,82 @@
+✖ explicit file operands separate auxiliary files and survive fresh runtime reuse (913.189416ms)
+✖ file names, content and explicit operand order are preserved without sanitization (550.58675ms)
+✖ malformed files and operands refuse before execution or healing (548.98125ms)
+✖ host sandbox itself rejects unsafe staged names rather than rewriting them (8.747834ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 0
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2200.598625
+
+✖ failing tests:
+
+test at test/cli-files.test.ts:46:1
+✖ explicit file operands separate auxiliary files and survive fresh runtime reuse (913.189416ms)
+  AssertionError [ERR_ASSERTION]: unknown input(s) "operands" for cli:fixture:invoke; its inputs are: input (optional): Content given on standard input. Supply text to preserve its bytes; objects and arrays are serialized as JSON. | options (optional): Documented options and their values, one item each: --dictionary <MAP> | files (optional): Named input files {"name.txt": "content"}: written into the sandbox and passed as operands in this order (refer to them by name in options that take a file) (HTTP 400 equivalent: nothing was run)
+  + actual - expected
+  
+  + 'failed'
+  - 'completed'
+  
+      at TestContext.<anonymous> (file:///Users/ross/src/rightclick-x-adaptive/test/cli-files.test.ts:52:10)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'failed',
+    expected: 'completed',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/cli-files.test.ts:65:1
+✖ file names, content and explicit operand order are preserved without sanitization (550.58675ms)
+  AssertionError [ERR_ASSERTION]: /private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/rcx-file-roles-AoKB1K/fixture exited 66: cat: __proto__: No such file or directory
+  ; re-reflected cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/rcx-file-roles-AoKB1K/fixture: no contract change
+  + actual - expected
+  
+  + undefined
+  - 'a b.txt:space\na_b.txt:underscore\né.txt:unicode\n__proto__:prototype\n'
+  
+      at TestContext.<anonymous> (file:///Users/ross/src/rightclick-x-adaptive/test/cli-files.test.ts:69:10)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: 'a b.txt:space\na_b.txt:underscore\né.txt:unicode\n__proto__:prototype\n',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/cli-files.test.ts:76:1
+✖ malformed files and operands refuse before execution or healing (548.98125ms)
+  AssertionError [ERR_ASSERTION]: {"files":{"-x":"flag smuggling"}}
+      at TestContext.<anonymous> (file:///Users/ross/src/rightclick-x-adaptive/test/cli-files.test.ts:96:12)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: '/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/rcx-file-roles-8pEaRD/fixture exited 64 without output: unsupported option\n; re-reflected cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/rcx-file-roles-8pEaRD/fixture: no contract change',
+    expected: /HTTP 400 equivalent/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at test/cli-files.test.ts:102:1
+✖ host sandbox itself rejects unsafe staged names rather than rewriting them (8.747834ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async TestContext.<anonymous> (file:///Users/ross/src/rightclick-x-adaptive/test/cli-files.test.ts:104:5)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /HTTP 400 equivalent/,
+    operator: 'rejects',
+    diff: 'simple'
+  }

@@ -1,0 +1,224 @@
+{
+  "tag": "uce-freeze-2",
+  "commit": "899a7b9e2774eb91b6921fdae6794276e81b1e39",
+  "seedFrom": "frozen build 899a7b9e2774eb91b6921fdae6794276e81b1e39",
+  "attempts": [
+    {
+      "program": "pidpersec.d",
+      "description": "pidpersec.d - print new PIDs per sec. Uses DTrace.",
+      "ms": 271,
+      "probes": [
+        {
+          "url": "cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-holdout-PujUCu/bin/pidpersec.d",
+          "kind": "cli",
+          "ok": false,
+          "detail": "no input channel produced output for pidpersec.d (2 trials)"
+        }
+      ],
+      "capabilities": [],
+      "investigable": false,
+      "supported": false
+    },
+    {
+      "program": "syscallbysysc.d",
+      "description": "syscallbysysc.d - syscalls by syscall. Uses DTrace.",
+      "ms": 124,
+      "probes": [
+        {
+          "url": "cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-holdout-PujUCu/bin/syscallbysysc.d",
+          "kind": "cli",
+          "ok": false,
+          "detail": "no input channel produced output for syscallbysysc.d (2 trials)"
+        }
+      ],
+      "capabilities": [],
+      "investigable": false,
+      "supported": false
+    },
+    {
+      "program": "xmlcatalog",
+      "description": "xmlcatalog - Command line tool to parse and manipulate XML or SGML catalog files.",
+      "ms": 158,
+      "probes": [
+        {
+          "url": "cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-holdout-PujUCu/bin/xmlcatalog",
+          "kind": "cli",
+          "ok": false,
+          "detail": "no input channel produced output for xmlcatalog (6 trials)"
+        }
+      ],
+      "capabilities": [],
+      "investigable": false,
+      "supported": false
+    },
+    {
+      "program": "cvmkdir",
+      "description": "cvmkdir - Create an Xsan Directory with an Affinity",
+      "ms": 159,
+      "probes": [
+        {
+          "url": "cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-holdout-PujUCu/bin/cvmkdir",
+          "kind": "cli",
+          "ok": false,
+          "detail": "no input channel produced output for cvmkdir (2 trials)"
+        }
+      ],
+      "capabilities": [],
+      "investigable": false,
+      "supported": false
+    },
+    {
+      "program": "sigdist.d",
+      "description": "sigdist.d - signal distribution by process. Uses DTrace.",
+      "ms": 133,
+      "probes": [
+        {
+          "url": "cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-holdout-PujUCu/bin/sigdist.d",
+          "kind": "cli",
+          "ok": false,
+          "detail": "no input channel produced output for sigdist.d (2 trials)"
+        }
+      ],
+      "capabilities": [],
+      "investigable": false,
+      "supported": false
+    },
+    {
+      "program": "dyld_usage",
+      "description": "dyld_usage - report dynamic linker activity in real-time",
+      "ms": 197,
+      "probes": [
+        {
+          "url": "cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-holdout-PujUCu/bin/dyld_usage",
+          "kind": "cli",
+          "ok": false,
+          "detail": "no input channel produced output for dyld_usage (8 trials)"
+        }
+      ],
+      "capabilities": [],
+      "investigable": false,
+      "supported": false
+    },
+    {
+      "program": "expand",
+      "description": "expand, unexpand - expand tabs to spaces, and vice versa",
+      "ms": 153,
+      "probes": [
+        {
+          "url": "cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-holdout-PujUCu/bin/expand",
+          "kind": "cli",
+          "ok": true,
+          "detail": "1 capability from 9 sandboxed runs (stdin, files; ok exit 0)"
+        }
+      ],
+      "capabilities": [
+        {
+          "id": "cli:expand:default",
+          "title": "expand: expand tabs to spaces, and vice versa",
+          "inputs": [
+            {
+              "name": "input",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "outputs": [
+            {
+              "name": "(result)",
+              "type": "text"
+            }
+          ],
+          "evidence": [
+            "documents its usage [declared]",
+            "purpose: expand, unexpand - expand tabs to spaces, and vice versa [declared]",
+            "options: 2 declared [declared]",
+            "operands: required [], optional [file], variadic [inferred]",
+            "accepts text input via stdin and prints text [experimentally-supported]",
+            "deterministic for identical input [experimentally-supported]",
+            "output keeps every word of the input [experimentally-supported]",
+            "output equals the input (no transformation) [observed]",
+            "side effects outside the sandbox [unknown]",
+            "on empty input exits 0 without output [observed]"
+          ],
+          "limitations": [
+            "side effects outside the sandbox [unknown]",
+            "runs only inside the host sandbox: no network, inputs passed as content"
+          ]
+        }
+      ],
+      "investigable": true,
+      "supported": true
+    },
+    {
+      "program": "db_checkpoint",
+      "description": "db_checkpoint",
+      "ms": 135,
+      "probes": [
+        {
+          "url": "cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-holdout-PujUCu/bin/db_checkpoint",
+          "kind": "cli",
+          "ok": false,
+          "detail": "no input channel produced output for db_checkpoint (4 trials)"
+        }
+      ],
+      "capabilities": [],
+      "investigable": false,
+      "supported": false
+    },
+    {
+      "program": "cups-config",
+      "description": "cups-config - get cups api, compiler, directory, and link information.",
+      "ms": 157,
+      "probes": [
+        {
+          "url": "cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-holdout-PujUCu/bin/cups-config",
+          "kind": "cli",
+          "ok": true,
+          "detail": "1 capability from 6 sandboxed runs (files; ok exit 1)"
+        }
+      ],
+      "capabilities": [
+        {
+          "id": "cli:cups-config:default",
+          "title": "cups-config: config - get cups api, compiler, directory, and link information.",
+          "inputs": [
+            {
+              "name": "file1",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "outputs": [
+            {
+              "name": "(result)",
+              "type": "text"
+            }
+          ],
+          "evidence": [
+            "documents its usage [declared]",
+            "purpose: cups-config - get cups api, compiler, directory, and link information. [declared]",
+            "options: 0 declared [unknown]",
+            "operands: required [api-version], optional [] [inferred]",
+            "accepts text input via files and prints text [experimentally-supported]",
+            "deterministic for identical input [experimentally-supported]",
+            "side effects outside the sandbox [unknown]",
+            "on empty input exits 1 with output [observed]"
+          ],
+          "limitations": [
+            "options: 0 declared [unknown]",
+            "side effects outside the sandbox [unknown]",
+            "runs only inside the host sandbox: no network, inputs passed as content"
+          ]
+        }
+      ],
+      "investigable": true,
+      "supported": true
+    }
+  ],
+  "chosen": [
+    "expand",
+    "cups-config"
+  ],
+  "state": "/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-holdout-PujUCu/server/state.json",
+  "bin": "/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/uce-holdout-PujUCu/bin"
+}

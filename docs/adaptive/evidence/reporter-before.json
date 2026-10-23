@@ -1,0 +1,56 @@
+{
+  "fixture": "Synthetic reporter validation only; not product performance evidence",
+  "exit": 0,
+  "observations": [
+    {
+      "case": "Missing holdout, second domain and security evidence",
+      "expected": "must not pass stage3",
+      "actual": {
+        "rule": "D correct on >= 80% of >= 40 feasible tasks (first use + reuse); zero wrong labelled verified; zero unauthorised execution",
+        "feasibleTasks": 40,
+        "rate": 1,
+        "pass": true
+      }
+    },
+    {
+      "case": "Reuse gate reads D.reuseRate rather than evaluated conditions",
+      "actual": {
+        "rule": "D reuse correct with zero re-investigation; reuse cheaper than D first use and than A's reuse (median tokens or time, Wilcoxon p < 0.05)",
+        "reuseRate": 1,
+        "reinvestigations": 0,
+        "cheaperThanOwnFirstUse": {
+          "medianTokensReuse": 10,
+          "medianTokensFirst": 1000,
+          "p": 4.3309231978483353e-8
+        },
+        "cheaperThanA": {
+          "tokens": {
+            "p": 4.3309231978483353e-8,
+            "n": 30,
+            "medianDiff": -490
+          },
+          "seconds": {
+            "p": 4.3309231978483353e-8,
+            "n": 30,
+            "medianDiff": -49
+          }
+        },
+        "pass": false
+      }
+    },
+    {
+      "case": "Incomplete lifecycle can pass competitive gate",
+      "actual": {
+        "rule": "vs strongest baseline: (a) correctness not lower by >5 points nor significantly lower; (b) no more wrong-presented-as-correct; (c) reuse time or cost <= 0.5x, or <= 50% of the authored integration material when the baseline authors any",
+        "strongest": "A",
+        "a": true,
+        "b": true,
+        "cTime": true,
+        "cEffort": false,
+        "breakEvenUses": 2,
+        "unit": "tokens",
+        "pass": true
+      }
+    }
+  ]
+}

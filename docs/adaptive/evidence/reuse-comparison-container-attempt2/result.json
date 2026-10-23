@@ -1,0 +1,35 @@
+{
+  "status": "PASS",
+  "checks": [
+    "first-saved-code",
+    "origin-refused",
+    "mutation-refused",
+    "credentials-refused",
+    "direct-network-blocked",
+    "host-custody-absent",
+    "restart-saved-code"
+  ],
+  "observations": [
+    {
+      "id": 1,
+      "url": "https://unit.invalid/data",
+      "method": "GET",
+      "discovery": false,
+      "status": 200,
+      "bytes": 11
+    },
+    {
+      "id": 2,
+      "url": "https://unit.invalid/data",
+      "method": "GET",
+      "discovery": false,
+      "status": 200,
+      "bytes": 11
+    }
+  ],
+  "denied": [
+    "TransportRefused: blocked by execution boundary: evaluation permits configured public HTTPS origins only",
+    "TransportRefused: blocked by execution boundary: evaluation permits explicit GraphQL queries only",
+    "TransportRefused: blocked by execution boundary: evaluation does not accept credentials"
+  ]
+}

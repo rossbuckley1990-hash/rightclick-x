@@ -14,9 +14,11 @@
 
 import { VERSION, type RightClick } from "../runtime.ts";
 import { DASHBOARD_HTML } from "./dashboard.ts";
+import { dashboardMetrics, capabilityPage, capabilityState } from "./dashboard-state.ts";
 import { executeGraphQL } from "./graphql-server.ts";
 import { handle, type JsonRpc } from "./mcp-server.ts";
 import { TOOLS, dispatch } from "./tools.ts";
+import { authorityEvidenceReader, type AuthorityEvidenceSource } from "./authority-evidence.ts";
 
 export interface HttpOptions {
   /** Bearer token required for every non-public route. */
@@ -27,6 +29,8 @@ export interface HttpOptions {
   maxBodyBytes?: number;
   /** Requests per minute per caller (bearer token, else client address); default 600, 0 disables. */
   ratePerMinute?: number;
+  /** Optional host-owned native verifier. Read-only evidence, never execution permission. */
+  authorityEvidence?: AuthorityEvidenceSource;
 }
 
 /** Token-bucket rate limiter, keyed per caller. */
@@ -70,6 +74,9 @@ function authorized(req: Request, opts: HttpOptions): boolean {
 export function createHandler(rc: RightClick, opts: HttpOptions = {}): (req: Request) => Promise<Response> {
   const limiter = new RateLimiter(opts.ratePerMinute ?? 600);
   const maxBody = opts.maxBodyBytes ?? 1024 * 1024;
+  const authorityEvidence = authorityEvidenceReader(opts.authorityEvidence, link =>
+    link.runtimeId === rc.activity.epoch &&
+    !!rc.activity.forRun(link.runId)?.subjects?.includes(link.capabilityId));
   return async (req: Request) => {
     const url = new URL(req.url);
     const path = url.pathname.replace(/\/+$/, "") || "/";
@@ -126,9 +133,23 @@ export function createHandler(rc: RightClick, opts: HttpOptions = {}): (req: Req
         if (req.method === "GET" && risk && risk !== "read") return new Response(JSON.stringify({ error: `goal ${x[1]} can change state (${risk}); use POST` }), { status: 405, headers: { "content-type": "application/json", allow: "POST" } });
         const args = req.method === "GET" ? Object.fromEntries(url.searchParams) : ((await req.json().catch(() => ({}))) as Record<string, unknown>);
         const out = await rc.callPublished(x[1], args);
-        return json(out, out.ok ? 200 : 502);
+        return json(out, out.status === "pending" ? 202 : out.ok ? 200 : 502);
       }
       if (req.method === "GET" && path === "/api/viz") return json(viz(rc));
+      if (req.method === "GET" && path === "/api/authority-evidence") return json(await authorityEvidence());
+      if (req.method === "GET" && path === "/api/overview") return json({
+        metrics: dashboardMetrics(rc), runtime: rc.runtime(), providers: rc.providers().slice(0, 200).map(p => ({ id: p.id, title: p.title, source: p.source, capabilities: p.capabilities })),
+        providerCount: rc.graph.providers.size, providersOmitted: Math.max(0, rc.graph.providers.size - 200),
+      });
+      if (req.method === "GET" && path === "/api/activity") return json(rc.activity.read({
+        after: url.searchParams.has("after") ? Number(url.searchParams.get("after")) : undefined,
+        epoch: url.searchParams.get("epoch") ?? undefined, limit: url.searchParams.has("limit") ? Number(url.searchParams.get("limit")) : undefined,
+      }));
+      if (req.method === "GET" && path === "/api/capability") return json(capabilityState(rc, url.searchParams.get("id") ?? ""));
+      if (req.method === "GET" && path === "/api/capabilities") return json(capabilityPage(rc, {
+        search: url.searchParams.get("search") ?? undefined, provider: url.searchParams.get("provider") ?? undefined,
+        offset: Number(url.searchParams.get("offset") ?? 0), limit: Number(url.searchParams.get("limit") ?? 25),
+      }));
       if (req.method === "GET" && path === "/events") return events(rc, Number(url.searchParams.get("since") ?? rc.graph.cursor));
       if (req.method === "GET" && path === "/api/tools") return json(TOOLS);
       if (req.method === "POST" && path === "/api/run") {
@@ -152,7 +173,7 @@ export function createHandler(rc: RightClick, opts: HttpOptions = {}): (req: Req
 function viz(rc: RightClick) {
   const nodes = rc.graph.list().map((c) => ({ id: c.id, title: c.title, provider: c.provider, source: c.source }));
   const links = rc.graph.sampleEdges(4000);
-  return { nodes, links, powers: rc.graph.powers(), providers: rc.providers(), runtime: rc.runtime(), recent: rc.runStatus({ limit: 15 }) };
+  return { nodes, links, powers: rc.graph.powers(), metrics: dashboardMetrics(rc), providers: rc.providers(), runtime: rc.runtime(), recent: rc.runStatus({ limit: 15 }) };
 }
 
 function events(rc: RightClick, since: number): Response {

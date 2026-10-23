@@ -1,0 +1,40 @@
+✔ known GET resources carry a bounded 202 -> 202 -> 303 -> result execution (22.857333ms)
+✔ a 200 status document is unresolved, even when a weak object predicate passes (1.244875ms)
+✔ a retained asynchronous goal uses new inputs after restart without rediscovery (16.276375ms)
+✔ denial of a monitor or result is enforced at that exact follow-up (3.2805ms)
+✔ unknown, credential-bearing, cross-origin, ambiguous and unsafe targets are not contacted (7.745625ms)
+✔ contract change during polling refuses the successor without rediscovery or write replay (0.650083ms)
+✖ request budget, Retry-After and unsupported statuses stop without replay or negotiation retry (2.611625ms)
+✔ cancellation after acceptance and a hanging terminal body remain unresolved (103.029208ms)
+✔ host can disable continuation and invalid budgets fail before any dispatch (0.838792ms)
+✔ risk escalation during polling and revoked network policy cannot bypass follow-up checks (1.1295ms)
+✔ follow-ups use origin-pinned credentials and never the original action's headers (0.923083ms)
+✔ an oversized result cannot exhaust the continuation body budget or produce checked output (4.295542ms)
+✔ unrelated rendering routes and URI-encoded identifiers use the same protocol mechanism (1.117875ms)
+ℹ tests 13
+ℹ suites 0
+ℹ pass 12
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 282.936125
+
+✖ failing tests:
+
+test at test/http-continuation.test.ts:123:1
+✖ request budget, Retry-After and unsupported statuses stop without replay or negotiation retry (2.611625ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  3 !== 2
+  
+      at TestContext.<anonymous> (file:///Users/ross/src/rightclick-x-adaptive/test/http-continuation.test.ts:139:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 3,
+    expected: 2,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

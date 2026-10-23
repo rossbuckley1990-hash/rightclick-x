@@ -1,0 +1,48 @@
+{
+  "sourceCommit": "b8b460bb5b023a7f8249239ea381e5a76a3e6c2e",
+  "scope": "synthetic runner preflight only; no model session",
+  "checks": [
+    {
+      "case": "new",
+      "exit": 0,
+      "expectedExit": 0,
+      "stdout": "{\n  \"commit\": \"b8b460bb5b023a7f8249239ea381e5a76a3e6c2e\",\n  \"model\": \"sonnet\",\n  \"holdoutSha256\": \"4578a1d4144e2ada1751ee96566d9b8960f67fa9c44c803902bf3e6ccf3bffa9\",\n  \"build\": \"/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/ns-measured-b8b460bb5b023a7f8249239ea381e5a76a3e6c2e/build-qO0wsr\",\n  \"sessions\": 0,\n  \"mode\": \"preflight only; no model call\"\n}\n",
+      "stderr": ""
+    },
+    {
+      "case": "matching",
+      "exit": 0,
+      "expectedExit": 0,
+      "stdout": "{\n  \"commit\": \"b8b460bb5b023a7f8249239ea381e5a76a3e6c2e\",\n  \"model\": \"sonnet\",\n  \"holdoutSha256\": \"4578a1d4144e2ada1751ee96566d9b8960f67fa9c44c803902bf3e6ccf3bffa9\",\n  \"build\": \"/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/ns-measured-b8b460bb5b023a7f8249239ea381e5a76a3e6c2e/build-PiZb8j\",\n  \"sessions\": 0,\n  \"mode\": \"preflight only; no model call\"\n}\n",
+      "stderr": ""
+    },
+    {
+      "case": "wrong_commit",
+      "exit": 1,
+      "expectedExit": 1,
+      "stdout": "",
+      "stderr": "file:///private/tmp/rcx-measurement-b8b460b/experiments/north-star/run.ts:44\nif (results.schema !== 3 || results.commit !== COMMIT || results.model !== MODEL || results.holdoutSha256 !== holdoutSha256 || !Array.isArray(results.sessions) || !Array.isArray(results.previousAttempts)) throw new Error(\"resume provenance mismatch; use a new result file, preserve prior evidence\");\n                                                                                                                                                                                                                   ^\n\nError: resume provenance mismatch; use a new result file, preserve prior evidence\n    at file:///private/tmp/rcx-measurement-b8b460b/experiments/north-star/run.ts:44:212\n    at ModuleJob.run (node:internal/modules/esm/module_job:439:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:633:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)\n\nNode.js v24.16.0\n"
+    },
+    {
+      "case": "wrong_model",
+      "exit": 1,
+      "expectedExit": 1,
+      "stdout": "",
+      "stderr": "file:///private/tmp/rcx-measurement-b8b460b/experiments/north-star/run.ts:44\nif (results.schema !== 3 || results.commit !== COMMIT || results.model !== MODEL || results.holdoutSha256 !== holdoutSha256 || !Array.isArray(results.sessions) || !Array.isArray(results.previousAttempts)) throw new Error(\"resume provenance mismatch; use a new result file, preserve prior evidence\");\n                                                                                                                                                                                                                   ^\n\nError: resume provenance mismatch; use a new result file, preserve prior evidence\n    at file:///private/tmp/rcx-measurement-b8b460b/experiments/north-star/run.ts:44:212\n    at ModuleJob.run (node:internal/modules/esm/module_job:439:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:633:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)\n\nNode.js v24.16.0\n"
+    },
+    {
+      "case": "wrong_holdout",
+      "exit": 1,
+      "expectedExit": 1,
+      "stdout": "",
+      "stderr": "file:///private/tmp/rcx-measurement-b8b460b/experiments/north-star/run.ts:44\nif (results.schema !== 3 || results.commit !== COMMIT || results.model !== MODEL || results.holdoutSha256 !== holdoutSha256 || !Array.isArray(results.sessions) || !Array.isArray(results.previousAttempts)) throw new Error(\"resume provenance mismatch; use a new result file, preserve prior evidence\");\n                                                                                                                                                                                                                   ^\n\nError: resume provenance mismatch; use a new result file, preserve prior evidence\n    at file:///private/tmp/rcx-measurement-b8b460b/experiments/north-star/run.ts:44:212\n    at ModuleJob.run (node:internal/modules/esm/module_job:439:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:633:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)\n\nNode.js v24.16.0\n"
+    },
+    {
+      "case": "old_schema",
+      "exit": 1,
+      "expectedExit": 1,
+      "stdout": "",
+      "stderr": "file:///private/tmp/rcx-measurement-b8b460b/experiments/north-star/run.ts:44\nif (results.schema !== 3 || results.commit !== COMMIT || results.model !== MODEL || results.holdoutSha256 !== holdoutSha256 || !Array.isArray(results.sessions) || !Array.isArray(results.previousAttempts)) throw new Error(\"resume provenance mismatch; use a new result file, preserve prior evidence\");\n                                                                                                                                                                                                                   ^\n\nError: resume provenance mismatch; use a new result file, preserve prior evidence\n    at file:///private/tmp/rcx-measurement-b8b460b/experiments/north-star/run.ts:44:212\n    at ModuleJob.run (node:internal/modules/esm/module_job:439:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:633:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)\n\nNode.js v24.16.0\n"
+    }
+  ]
+}

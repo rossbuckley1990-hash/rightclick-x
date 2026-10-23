@@ -1,0 +1,60 @@
+{
+  "tag": "uce-freeze-6",
+  "commit": "8849a5b860949b8b9389d510feab55b4d0e2a250",
+  "programs": {
+    "net-snmp-create-v3-user": {
+      "runs": [
+        {
+          "status": "completed",
+          "plan": [
+            "net-snmp-create-v3-user: snmp-create-v3-user - create a SNMPv3 user in net-snmp configuration file"
+          ],
+          "attempts": []
+        }
+      ],
+      "outputs": [
+        "Enter a SNMPv3 user name to create: \nEnter authentication pass-phrase: \nYou must specify an authentication pass-phrase\n"
+      ],
+      "check": {
+        "pass": false,
+        "detail": "output shows the user being created: false"
+      },
+      "supported": true,
+      "retained": true,
+      "executed": true,
+      "wrongOutcome": true,
+      "pass": false
+    },
+    "tab2space": {
+      "runs": [
+        {
+          "status": "completed",
+          "plan": [
+            "tab2space: Utility to expand tabs and ensure consistent line endings"
+          ],
+          "attempts": []
+        },
+        {
+          "status": "completed",
+          "plan": [
+            "tab2space: Utility to expand tabs and ensure consistent line endings"
+          ],
+          "attempts": []
+        }
+      ],
+      "outputs": [
+        "name qty price\r\napple   3   0.5\r\n",
+        "a    bc  defghijkl   m\r\n"
+      ],
+      "check": {
+        "pass": false,
+        "detail": "exact match with the harness's own 4-column expansion: false, false"
+      },
+      "supported": true,
+      "retained": true,
+      "executed": true,
+      "wrongOutcome": true,
+      "pass": false
+    }
+  }
+}

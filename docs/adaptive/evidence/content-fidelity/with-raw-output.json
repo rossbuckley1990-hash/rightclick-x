@@ -1,0 +1,480 @@
+{
+  "freshReuse": {
+    "investigations": 0,
+    "input": "{\"account\":9007199254740995}\n",
+    "response": {
+      "runId": "run_mvd81hpu_1",
+      "capability": "cli:json-xs:stdout",
+      "provider": "cli:json-xs",
+      "title": "json_xs: exact JSON output text",
+      "status": "completed",
+      "output": "{\n   \"account\" : 9007199254740995\n}\n",
+      "startedAt": "2026-10-18T02:43:49.362Z",
+      "durationMs": 23.2,
+      "verification": {
+        "status": "unverified",
+        "results": []
+      },
+      "receipt": {
+        "runId": "run_mvd81hpu_1",
+        "capability": "cli:json-xs:stdout",
+        "provider": "cli:json-xs",
+        "startedAt": "2026-10-18T02:43:49.362Z",
+        "durationMs": 23.2,
+        "status": "completed",
+        "verification": "unverified",
+        "seq": 9,
+        "inputDigest": "79d224e886c74a82bcbb797ca421906b9f0a7ad6c30f9756624302c36160c5aa",
+        "outputDigest": "48ef45183b65101b37d0b5539b87ac53ab0e8b2e71acdae9db267d2ea496182a",
+        "prev": "57ba89adb204d173dc17a053797b59893c6c9ee16bb8b64528e5526db02ceeee",
+        "hash": "83400770c426ab46c7f103955790e5383fb8fb37451624ee1de59ee3e19ab8e2"
+      }
+    },
+    "wire": {
+      "program": "/usr/bin/json_xs",
+      "args": [],
+      "stdin": "{\"account\":9007199254740995}\n",
+      "stdout": "{\n   \"account\" : 9007199254740995\n}\n",
+      "code": 0
+    },
+    "correct": true
+  },
+  "scope": "known development target, no model or competitive result",
+  "sourceCommit": "832b10e68f7de503a50ac9c39659e7b4d5ca6ebd",
+  "capability": {
+    "id": "cli:json-xs:default",
+    "title": "json_xs: JSON::XS commandline utility",
+    "description": "json_xs - JSON::XS commandline utility. Default behaviour. Learned by sandboxed investigation of /usr/bin/json_xs (sha256 c0903b27ef64), not from a contract; runs only in the sandbox. Equivalent to -v: Be slightly more verbose.",
+    "provider": "cli:json-xs",
+    "source": "cli",
+    "inputs": [
+      {
+        "name": "json",
+        "type": "json",
+        "required": true,
+        "description": "Content given on standard input"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "json",
+        "required": true
+      },
+      {
+        "name": "count",
+        "type": "number",
+        "required": true,
+        "observed": true
+      },
+      {
+        "name": "name",
+        "type": "text",
+        "required": true,
+        "observed": true
+      },
+      {
+        "name": "tags",
+        "type": "list:json",
+        "required": true,
+        "observed": true
+      }
+    ],
+    "risk": "read",
+    "tags": [
+      "json_xs",
+      "json",
+      "commandline",
+      "utility",
+      "unsupported",
+      "slightly",
+      "more",
+      "verbose"
+    ],
+    "invoke": {
+      "kind": "cli",
+      "bin": "/usr/bin/json_xs",
+      "args": [],
+      "stdin": "json",
+      "okExit": [
+        0
+      ],
+      "output": "json",
+      "sha256": "c0903b27ef64f0f42952c12ce1367dcd0beebb0dad84cb70a6e6681cf4ec9c0b",
+      "behaviour": "8a71a27dc170a3c7",
+      "examples": [
+        {
+          "stdin": "{\"name\":\"india\",\"count\":7,\"tags\":[\"juliet\",\"kilo\"]}\n",
+          "outputSha256": "1d22d2a378182cbe162ffde6d75e310092cc3e92c8d7818c1fd7ad293ef9d3f5",
+          "outputPreview": "{\n   \"count\" : 7,\n   \"name\" : \"india\",\n   \"tags\" : [\n      \"juliet\",\n      \"kilo\"\n   ]\n}\n"
+        },
+        {
+          "stdin": "{\"name\":\"india\",\"count\":7,\"tags\":[\"juliet\",\"kilo\"]}\n",
+          "outputSha256": "1d22d2a378182cbe162ffde6d75e310092cc3e92c8d7818c1fd7ad293ef9d3f5",
+          "outputPreview": "{\n   \"count\" : 7,\n   \"name\" : \"india\",\n   \"tags\" : [\n      \"juliet\",\n      \"kilo\"\n   ]\n}\n"
+        }
+      ]
+    }
+  },
+  "observations": [
+    {
+      "name": "whitespace",
+      "input": " { \"name\" : \"same\", \"count\" : 2 }\n",
+      "direct": {
+        "code": 0,
+        "stdout": "{\n   \"count\" : 2,\n   \"name\" : \"same\"\n}\n",
+        "stderr": "",
+        "timedOut": false,
+        "truncated": false,
+        "durationMs": 28,
+        "created": [],
+        "workDir": "/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/rcx-sbx-PLfhEp"
+      },
+      "response": {
+        "runId": "run_mvd81hhe_1",
+        "capability": "cli:json-xs:default",
+        "provider": "cli:json-xs",
+        "title": "json_xs: JSON::XS commandline utility",
+        "status": "completed",
+        "output": {
+          "count": 2,
+          "name": "same"
+        },
+        "startedAt": "2026-10-18T02:43:49.058Z",
+        "durationMs": 43.7,
+        "verification": {
+          "status": "unverified",
+          "results": []
+        },
+        "receipt": {
+          "runId": "run_mvd81hhe_1",
+          "capability": "cli:json-xs:default",
+          "provider": "cli:json-xs",
+          "startedAt": "2026-10-18T02:43:49.058Z",
+          "durationMs": 43.7,
+          "status": "completed",
+          "verification": "unverified",
+          "seq": 1,
+          "inputDigest": "f75d3d1b7d4b638a5e187167e1d38b594a34ed0457744fedfb174243b29b36f8",
+          "outputDigest": "4975bd221c302b2e6eb6b17a056a2039ca8c03b6819dbf16863a7ddf09f349e9",
+          "prev": "0000000000000000000000000000000000000000000000000000000000000000",
+          "hash": "d551ce9b79c3c5cbaa696d19f9dbca9dfa20fb519572a718937ea4d010440ee7"
+        }
+      },
+      "wire": {
+        "program": "/usr/bin/json_xs",
+        "args": [],
+        "stdin": " { \"name\" : \"same\", \"count\" : 2 }\n",
+        "stdout": "{\n   \"count\" : 2,\n   \"name\" : \"same\"\n}\n",
+        "code": 0
+      },
+      "suppliedInputPreserved": true,
+      "rawResponse": {
+        "runId": "run_mvd81hit_2",
+        "capability": "cli:json-xs:stdout",
+        "provider": "cli:json-xs",
+        "title": "json_xs: exact JSON output text",
+        "status": "completed",
+        "output": "{\n   \"count\" : 2,\n   \"name\" : \"same\"\n}\n",
+        "startedAt": "2026-10-18T02:43:49.109Z",
+        "durationMs": 46.4,
+        "verification": {
+          "status": "unverified",
+          "results": []
+        },
+        "receipt": {
+          "runId": "run_mvd81hit_2",
+          "capability": "cli:json-xs:stdout",
+          "provider": "cli:json-xs",
+          "startedAt": "2026-10-18T02:43:49.109Z",
+          "durationMs": 46.4,
+          "status": "completed",
+          "verification": "unverified",
+          "seq": 2,
+          "inputDigest": "f75d3d1b7d4b638a5e187167e1d38b594a34ed0457744fedfb174243b29b36f8",
+          "outputDigest": "367f88de7eef0acb845292dead4e7c081e7c8979c04889ed52bc140d6f3c436b",
+          "prev": "d551ce9b79c3c5cbaa696d19f9dbca9dfa20fb519572a718937ea4d010440ee7",
+          "hash": "51a7908ee6d7e28d0a6597d29ac72d6c25dd1fc4d482f2b74dce16af64e24679"
+        }
+      },
+      "rawWire": {
+        "program": "/usr/bin/json_xs",
+        "args": [],
+        "stdin": " { \"name\" : \"same\", \"count\" : 2 }\n",
+        "stdout": "{\n   \"count\" : 2,\n   \"name\" : \"same\"\n}\n",
+        "code": 0
+      },
+      "rawOutputPreserved": true,
+      "rawMatchesDirect": true
+    },
+    {
+      "name": "integer-precision",
+      "input": "{\"account\":9007199254740993}\n",
+      "direct": {
+        "code": 0,
+        "stdout": "{\n   \"account\" : 9007199254740993\n}\n",
+        "stderr": "",
+        "timedOut": false,
+        "truncated": false,
+        "durationMs": 29,
+        "created": [],
+        "workDir": "/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/rcx-sbx-4AFx3z"
+      },
+      "response": {
+        "runId": "run_mvd81hkx_3",
+        "capability": "cli:json-xs:default",
+        "provider": "cli:json-xs",
+        "title": "json_xs: JSON::XS commandline utility",
+        "status": "failed",
+        "error": "JSON number cannot be represented without changing its value; use cli:json-xs:stdout for exact output text",
+        "startedAt": "2026-10-18T02:43:49.185Z",
+        "durationMs": 21.6,
+        "verification": {
+          "status": "refuted",
+          "results": []
+        },
+        "receipt": {
+          "runId": "run_mvd81hkx_3",
+          "capability": "cli:json-xs:default",
+          "provider": "cli:json-xs",
+          "startedAt": "2026-10-18T02:43:49.185Z",
+          "durationMs": 21.6,
+          "status": "failed",
+          "verification": "refuted",
+          "seq": 3,
+          "inputDigest": "bdebf96123b2c080bd8fb18909fd5f23219e8303ec051b5d1075c282e94fe1ae",
+          "outputDigest": "f1c52a6098770b8cf6aa838592ac9154c02ca5e6f76879ea5afa7d97c0699add",
+          "prev": "51a7908ee6d7e28d0a6597d29ac72d6c25dd1fc4d482f2b74dce16af64e24679",
+          "hash": "f6cc0b4d75bfa34271cd571d45b096bc87cbf866250d9ed65118d00d7ad35145"
+        }
+      },
+      "wire": {
+        "program": "/usr/bin/json_xs",
+        "args": [],
+        "stdin": "{\"account\":9007199254740993}\n",
+        "stdout": "{\n   \"account\" : 9007199254740993\n}\n",
+        "code": 0
+      },
+      "suppliedInputPreserved": true,
+      "rawResponse": {
+        "runId": "run_mvd81hlj_4",
+        "capability": "cli:json-xs:stdout",
+        "provider": "cli:json-xs",
+        "title": "json_xs: exact JSON output text",
+        "status": "completed",
+        "output": "{\n   \"account\" : 9007199254740993\n}\n",
+        "startedAt": "2026-10-18T02:43:49.207Z",
+        "durationMs": 22.9,
+        "verification": {
+          "status": "unverified",
+          "results": []
+        },
+        "receipt": {
+          "runId": "run_mvd81hlj_4",
+          "capability": "cli:json-xs:stdout",
+          "provider": "cli:json-xs",
+          "startedAt": "2026-10-18T02:43:49.207Z",
+          "durationMs": 22.9,
+          "status": "completed",
+          "verification": "unverified",
+          "seq": 4,
+          "inputDigest": "bdebf96123b2c080bd8fb18909fd5f23219e8303ec051b5d1075c282e94fe1ae",
+          "outputDigest": "dced54dd982ef14b310a0f784b8728c7669bda8fb5349722cff9f3be2b787ba3",
+          "prev": "f6cc0b4d75bfa34271cd571d45b096bc87cbf866250d9ed65118d00d7ad35145",
+          "hash": "bf78ed7d23fb50e03bd381f404fd9c16dca101257c702f23d6ee3489f0795e74"
+        }
+      },
+      "rawWire": {
+        "program": "/usr/bin/json_xs",
+        "args": [],
+        "stdin": "{\"account\":9007199254740993}\n",
+        "stdout": "{\n   \"account\" : 9007199254740993\n}\n",
+        "code": 0
+      },
+      "rawOutputPreserved": true,
+      "rawMatchesDirect": true
+    },
+    {
+      "name": "duplicate-key",
+      "input": "{\"value\":1,\"value\":2}\n",
+      "direct": {
+        "code": 0,
+        "stdout": "{\n   \"value\" : 2\n}\n",
+        "stderr": "",
+        "timedOut": false,
+        "truncated": false,
+        "durationMs": 22,
+        "created": [],
+        "workDir": "/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/rcx-sbx-ljWSVX"
+      },
+      "response": {
+        "runId": "run_mvd81hms_5",
+        "capability": "cli:json-xs:default",
+        "provider": "cli:json-xs",
+        "title": "json_xs: JSON::XS commandline utility",
+        "status": "completed",
+        "output": {
+          "value": 2
+        },
+        "startedAt": "2026-10-18T02:43:49.252Z",
+        "durationMs": 20.8,
+        "verification": {
+          "status": "unverified",
+          "results": []
+        },
+        "receipt": {
+          "runId": "run_mvd81hms_5",
+          "capability": "cli:json-xs:default",
+          "provider": "cli:json-xs",
+          "startedAt": "2026-10-18T02:43:49.252Z",
+          "durationMs": 20.8,
+          "status": "completed",
+          "verification": "unverified",
+          "seq": 5,
+          "inputDigest": "8bb13a2758a02d2192a9d5d634f4a94e16d3b3d7ed81a576d68ded43d391aa9e",
+          "outputDigest": "49c987621f206f09e5fbe23b516b55a36f838cb14867961f1d84a554d3a35b6b",
+          "prev": "bf78ed7d23fb50e03bd381f404fd9c16dca101257c702f23d6ee3489f0795e74",
+          "hash": "1f6d2b56796b4b8fbc9b3037e2a97bbb0c304cd6e8e8b8cac4e7d594ca4ae340"
+        }
+      },
+      "wire": {
+        "program": "/usr/bin/json_xs",
+        "args": [],
+        "stdin": "{\"value\":1,\"value\":2}\n",
+        "stdout": "{\n   \"value\" : 2\n}\n",
+        "code": 0
+      },
+      "suppliedInputPreserved": true,
+      "rawResponse": {
+        "runId": "run_mvd81hnd_6",
+        "capability": "cli:json-xs:stdout",
+        "provider": "cli:json-xs",
+        "title": "json_xs: exact JSON output text",
+        "status": "completed",
+        "output": "{\n   \"value\" : 2\n}\n",
+        "startedAt": "2026-10-18T02:43:49.273Z",
+        "durationMs": 20.1,
+        "verification": {
+          "status": "unverified",
+          "results": []
+        },
+        "receipt": {
+          "runId": "run_mvd81hnd_6",
+          "capability": "cli:json-xs:stdout",
+          "provider": "cli:json-xs",
+          "startedAt": "2026-10-18T02:43:49.273Z",
+          "durationMs": 20.1,
+          "status": "completed",
+          "verification": "unverified",
+          "seq": 6,
+          "inputDigest": "8bb13a2758a02d2192a9d5d634f4a94e16d3b3d7ed81a576d68ded43d391aa9e",
+          "outputDigest": "92825b9ba16e73a825b73662f3fb8f687ed69e109e8baa9a6fbd8d2ff3c960e2",
+          "prev": "1f6d2b56796b4b8fbc9b3037e2a97bbb0c304cd6e8e8b8cac4e7d594ca4ae340",
+          "hash": "590087dae46529fbade799ba018ed2f06dd04aa49b9adbd51033dcac411121f3"
+        }
+      },
+      "rawWire": {
+        "program": "/usr/bin/json_xs",
+        "args": [],
+        "stdin": "{\"value\":1,\"value\":2}\n",
+        "stdout": "{\n   \"value\" : 2\n}\n",
+        "code": 0
+      },
+      "rawOutputPreserved": true,
+      "rawMatchesDirect": true
+    },
+    {
+      "name": "structured-object",
+      "input": {
+        "name": "structured",
+        "count": 2
+      },
+      "direct": {
+        "code": 0,
+        "stdout": "{\n   \"count\" : 2,\n   \"name\" : \"structured\"\n}\n",
+        "stderr": "",
+        "timedOut": false,
+        "truncated": false,
+        "durationMs": 24,
+        "created": [],
+        "workDir": "/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/rcx-sbx-ecNVc7"
+      },
+      "response": {
+        "runId": "run_mvd81hol_7",
+        "capability": "cli:json-xs:default",
+        "provider": "cli:json-xs",
+        "title": "json_xs: JSON::XS commandline utility",
+        "status": "completed",
+        "output": {
+          "count": 2,
+          "name": "structured"
+        },
+        "startedAt": "2026-10-18T02:43:49.317Z",
+        "durationMs": 19.8,
+        "verification": {
+          "status": "unverified",
+          "results": []
+        },
+        "receipt": {
+          "runId": "run_mvd81hol_7",
+          "capability": "cli:json-xs:default",
+          "provider": "cli:json-xs",
+          "startedAt": "2026-10-18T02:43:49.317Z",
+          "durationMs": 19.8,
+          "status": "completed",
+          "verification": "unverified",
+          "seq": 7,
+          "inputDigest": "5e332eb5e3c1dfe1ca78e30474cd161ead8c19cf5d68131f6f86654e91736c5e",
+          "outputDigest": "ec4a3b1372fe66edbd0000c7c41ac141261f56ccb39fdc6d867d9b06d45ee6cc",
+          "prev": "590087dae46529fbade799ba018ed2f06dd04aa49b9adbd51033dcac411121f3",
+          "hash": "93704dd205e5690132ab17d7d70c28e4022f928b72348677caf60cdc6913de5c"
+        }
+      },
+      "wire": {
+        "program": "/usr/bin/json_xs",
+        "args": [],
+        "stdin": "{\"name\":\"structured\",\"count\":2}",
+        "stdout": "{\n   \"count\" : 2,\n   \"name\" : \"structured\"\n}\n",
+        "code": 0
+      },
+      "suppliedInputPreserved": true,
+      "rawResponse": {
+        "runId": "run_mvd81hp5_8",
+        "capability": "cli:json-xs:stdout",
+        "provider": "cli:json-xs",
+        "title": "json_xs: exact JSON output text",
+        "status": "completed",
+        "output": "{\n   \"count\" : 2,\n   \"name\" : \"structured\"\n}\n",
+        "startedAt": "2026-10-18T02:43:49.337Z",
+        "durationMs": 23.5,
+        "verification": {
+          "status": "unverified",
+          "results": []
+        },
+        "receipt": {
+          "runId": "run_mvd81hp5_8",
+          "capability": "cli:json-xs:stdout",
+          "provider": "cli:json-xs",
+          "startedAt": "2026-10-18T02:43:49.337Z",
+          "durationMs": 23.5,
+          "status": "completed",
+          "verification": "unverified",
+          "seq": 8,
+          "inputDigest": "5e332eb5e3c1dfe1ca78e30474cd161ead8c19cf5d68131f6f86654e91736c5e",
+          "outputDigest": "c6bd94c7e00df9639afe6efc0e7ba0145ea7277bfe13879191f8c49aaa746b9f",
+          "prev": "93704dd205e5690132ab17d7d70c28e4022f928b72348677caf60cdc6913de5c",
+          "hash": "57ba89adb204d173dc17a053797b59893c6c9ee16bb8b64528e5526db02ceeee"
+        }
+      },
+      "rawWire": {
+        "program": "/usr/bin/json_xs",
+        "args": [],
+        "stdin": "{\"name\":\"structured\",\"count\":2}",
+        "stdout": "{\n   \"count\" : 2,\n   \"name\" : \"structured\"\n}\n",
+        "code": 0
+      },
+      "rawOutputPreserved": true,
+      "rawMatchesDirect": true
+    }
+  ]
+}
