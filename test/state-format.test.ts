@@ -144,13 +144,17 @@ test("built-in KV and chunked adapters use the same legacy-refusing state encodi
       if (typeof key === "string") chunks.set(key, value);
       else for (const [k, v] of Object.entries(key)) chunks.set(k, v);
     },
+    delete: async (keys: string[]) => { for (const k of keys) chunks.delete(k); },
+    list: async ({ prefix }: { prefix: string }) => new Map([...chunks].filter(([k]) => k.startsWith(prefix))),
   });
   await durable.save(memory.state!);
   assert.ok(chunks.get("state:meta").chunks > 1);
   assert.deepEqual(await durable.load(), memory.state);
-  const envelope = JSON.parse(Array.from({ length: chunks.get("state:meta").chunks }, (_, i) => chunks.get(`state:${i}`)).join(""));
+  // Chunks belong to the manifest's generation (see test/durable-store.test.ts for the layout).
+  const { chunks: count, generation } = chunks.get("state:meta");
+  const envelope = JSON.parse(Array.from({ length: count }, (_, i) => chunks.get(`state:${generation}:${i}`)).join(""));
   assert.equal(envelope.format, STATE_FORMAT);
-  chunks.delete("state:1");
+  chunks.delete(`state:${generation}:1`);
   await assert.rejects(durable.load());
 });
 
