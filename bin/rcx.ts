@@ -273,7 +273,7 @@ async function doctor(stateFile: string) {
       const state = decodeState(value);
       const caps = state.reflections.reduce((n, r) => n + r.capabilities.length, 0);
       const retained = `${state.reflections.length} providers, ${caps} capabilities, ${state.published?.length ?? 0} saved goals retained`;
-      const deferred = state.deferredInference?.length ? `; ${state.deferredInference.length} program reflections awaiting re-derivation (they need program authority and a sandbox; not executable until then)` : "";
+      const deferred = state.deferredInference?.length ? `; ${state.deferredInference.length} deferred reflections awaiting re-derivation (a source unreachable or not authorised here, or a pipeline waiting on one; not executable until then)` : "";
       if (isLegacyState(value)) {
         line(true, "state", `${stateFile}: legacy format (version 1), ${retained}. The next command that saves state upgrades it to ${STATE_FORMAT} and first keeps the original as ${path.basename(stateFile)}.v1-backup-<time>; doctor changes nothing`);
       } else {
