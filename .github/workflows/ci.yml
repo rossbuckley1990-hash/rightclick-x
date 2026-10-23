@@ -1,5 +1,5 @@
-# Continuous integration. Written in the North Star programme; not yet run on GitHub (the branch
-# has not been pushed). Every job runs only the project's own commands.
+# Continuous integration. Written in the North Star programme and first run on GitHub with the
+# adaptive reconciliation (PR #6). Every job runs only the project's own commands.
 name: ci
 on:
   push:
@@ -29,7 +29,18 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+      # Ubuntu 24.04 restricts unprivileged user namespaces through AppArmor, and the restriction
+      # reaches the non-root test user even in a privileged container. Without this the sandbox is
+      # unavailable and every sandbox test skips, which is the linux-no-sandbox job, not this one.
+      - run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
       - run: docker build -f ci/linux.Dockerfile -t rightclick-x-linux-test .
+      - name: the bubblewrap sandbox is actually available, so its tests run rather than skip
+        run: |
+          docker run --rm --privileged rightclick-x-linux-test node --input-type=module -e '
+            const { hostSandbox } = await import("./src/core/sandbox.ts");
+            const sb = await hostSandbox();
+            if (!sb) { console.error("bubblewrap sandbox unavailable"); process.exit(1); }
+            console.log(sb.kind + ": " + sb.enforces.join("; "));'
       - run: docker run --rm --privileged rightclick-x-linux-test
   linux-no-sandbox:
     # Without user namespaces there is no sandbox: programs must be reported unavailable, never run.

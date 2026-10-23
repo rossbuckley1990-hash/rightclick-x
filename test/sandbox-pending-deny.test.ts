@@ -55,15 +55,17 @@ const SANDBOX = fileURLToPath(new URL("../src/core/sandbox.ts", import.meta.url)
 
 function declare(env: Record<string, string>) {
   const script = `
-    const { sandboxPolicy, hostSandbox } = await import(${JSON.stringify(SANDBOX)});
+    const { sandboxPolicy, makeSandbox } = await import(${JSON.stringify(SANDBOX)});
     try {
       const p = await sandboxPolicy();
-      const sb = await hostSandbox();
+      // The statement is derived from the declared policy alone, so it is checked on every
+      // platform, including hosts with no working sandbox to run it.
+      const sb = makeSandbox(process.platform === "darwin" ? "macos-sandbox-exec" : "linux-bwrap", p);
       console.log(JSON.stringify({
         ok: true,
         readDenyRoots: p.readDenyRoots,
         readDenyPending: p.readDenyPending ?? [],
-        enforces: sb ? sb.enforces : [],
+        enforces: sb.enforces,
       }));
     } catch (e) {
       console.log(JSON.stringify({ ok: false, error: String(e.message) }));
