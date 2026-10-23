@@ -97,7 +97,8 @@ export function migrationReplaces(loaded: unknown, saving: PersistedState): stri
   return before !== saving.semantics ? `semantics-${before ?? "none"}` : undefined;
 }
 
-/** Built-in adapters use this on disk/KV; custom adapters should do likewise. */
+/** The built-in writable adapters (file, Durable Object) use this; Workers KV is read-only. Custom
+ *  adapters should do likewise. */
 export function encodeState(state: PersistedState): string {
   decodeState(state);
   if (state.version !== 2) throw new Error("legacy runtime state is read-only; upgrade through the runtime before saving");
