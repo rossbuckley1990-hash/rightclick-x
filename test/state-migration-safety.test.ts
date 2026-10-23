@@ -221,7 +221,7 @@ test("an inference migration without program authority keeps the program's capab
     assert.equal(readFileSync(join(dir, kept[0]), "utf8"), original);
     // doctor reports the deferral without changing anything.
     const before = sha(file);
-    assert.match(doctor(file).stdout, /1 program reflections awaiting re-derivation/);
+    assert.match(doctor(file).stdout, /1 deferred reflections awaiting re-derivation/);
     assert.equal(sha(file), before);
     // A later process that may investigate the program re-derives it and clears the deferral.
     const later = await RightClick.create({ directories: [], store: new FileStore(file), authority: { investigate: [PROGRAM] } });
