@@ -11,6 +11,7 @@ jobs:
   macos:
     # The macOS sandbox (sandbox-exec) and the programs the semantic suite uses are present here.
     runs-on: macos-15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -27,6 +28,7 @@ jobs:
   linux-bubblewrap:
     # The Linux sandbox (bubblewrap) needs unprivileged user namespaces; the container runs privileged.
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       # Ubuntu 24.04 restricts unprivileged user namespaces through AppArmor, and the restriction
@@ -45,12 +47,14 @@ jobs:
   linux-no-sandbox:
     # Without user namespaces there is no sandbox: programs must be reported unavailable, never run.
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - run: docker build -f ci/linux.Dockerfile -t rightclick-x-linux-test .
       - run: docker run --rm rightclick-x-linux-test
   package:
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
