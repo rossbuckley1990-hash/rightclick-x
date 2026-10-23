@@ -103,7 +103,7 @@ test("new credentials for an origin forgive its past auth and rate-limit failure
   assert.equal(same.ledger.get(id)?.failed, 3, "without a credential change, history stands");
 });
 
-test("persisted reflections typed by older inference rules are re-derived on boot", async () => {
+test("persisted reflections typed by older inference rules are never used as typed, and are re-derived", async () => {
   const store = new MemoryStore();
   const { rc } = await world({}, { store });
   await rc.learn({ source: URLS.polyglot });
@@ -114,7 +114,13 @@ test("persisted reflections typed by older inference rules are re-derived on boo
   for (const r of old.reflections) for (const c of r.capabilities) for (const p of c.inputs) if (p.name === "target") p.type = "text";
   store.state = old;
   const { routerFetch, SERVICES } = await import("../demo/services.ts");
-  const again = await RightClick.create({ store, fetch: routerFetch({ "https://polyglot.test": SERVICES.polyglot }), directories: [] });
+  let requests = 0;
+  const route = routerFetch({ "https://polyglot.test": SERVICES.polyglot });
+  const again = await RightClick.create({ store, fetch: (input, init) => { requests++; return route(input, init); }, directories: [] });
+  // Boot contacts nothing (#12): the stale-typed capability is deferred, not exposed with old types.
+  assert.equal(requests, 0, "boot contacted a network source");
+  assert.equal(again.graph.list().find((c) => c.id.endsWith("translatetext")), undefined, "a capability was exposed with its stale typing");
+  await again.learn({ source: URLS.polyglot });
   const t = again.graph.list().find((c) => c.id.endsWith("translatetext"))!.inputs.find((p) => p.name === "target")!;
   assert.equal(t.type, "language");
 });

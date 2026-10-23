@@ -161,7 +161,9 @@ export class RightClickInstance {
       authority: authorityFromEnv(this.env as Record<string, unknown>),
     });
     try {
-      const trace = await (await fetch("https://cloudflare.com/cdn-cgi/trace")).text();
+      // The one request this entry makes on purpose at startup; bounded, so a silent endpoint
+      // cannot hold the object's first request. On failure the configured location is reported.
+      const trace = await (await fetch("https://cloudflare.com/cdn-cgi/trace", { signal: AbortSignal.timeout(2000) })).text();
       const field = (k: string) => new RegExp(`^${k}=(.*)$`, "m").exec(trace)?.[1];
       rc.observeLocation(`${field("colo")} (${this.env.RCX_LOCATION ?? "auto"})`, field("loc"));
     } catch {
