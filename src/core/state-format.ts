@@ -50,7 +50,8 @@ export function decodeState(value: unknown): PersistedState {
   if (state.deferredInference !== undefined) {
     if (!state.requirements?.includes(DEFERRED_INFERENCE_REQUIREMENT)) throw new Error("runtime state is missing the deferred inference requirement");
     if (!Array.isArray(state.deferredInference) || state.deferredInference.some((d: unknown) =>
-        !object(d) || !Number.isSafeInteger(d.semantics) || !object(d.reflection))) {
+        !object(d) || !Number.isSafeInteger(d.semantics) || !object(d.reflection) ||
+        (d.reason !== undefined && (typeof d.reason !== "string" || d.reason.length > 1000)))) {
       throw new Error("invalid deferred inference record");
     }
   }

@@ -26,7 +26,7 @@ import { KNOWLEDGE_FORMAT, type ImportReport, type KnowledgeBundle } from "./cor
 import { assessExecution, consequentialRisks, ExecutionDenied, intersectOrigins, parseExecutionPolicy, type ExecutionAssessment, type ExecutionPolicy } from "./core/execution-policy.ts";
 import { distance, inferType, inspectValue, type Inspection } from "./core/semantics.ts";
 import { describeResult, resultDescription, type ResultDescription } from "./core/result-description.ts";
-import type { Capability, CapabilityAnchor, FetchLike, GraphQLFailureEvidence, PlanStep, Reflection, SemType, TransportRefusal } from "./core/types.ts";
+import type { Capability, CapabilityAnchor, FetchLike, GraphQLFailureEvidence, PlanStep, Provider, Reflection, SemType, TransportRefusal } from "./core/types.ts";
 import { check, pick, type Predicate, type PredicateResult, type OutcomeWitness, type WitnessResult } from "./core/verify.ts";
 import { builtinReflection, type BuiltinFn } from "./reflectors/builtins.ts";
 import { DEFAULT_DIRECTORIES, type Candidate, type Directory } from "./reflectors/directories.ts";
@@ -47,6 +47,15 @@ export interface Store {
   save(state: PersistedState): Promise<void>;
   /** Set when the store is only ever read; the reason is reported instead of a save. */
   readonly readOnly?: string;
+}
+
+/** Knowledge kept while it cannot be re-derived here; see PersistedState.deferredInference. */
+export interface Deferral {
+  /** Inference version the reflection was typed with. */
+  semantics: number;
+  reflection: Reflection;
+  /** Why it could not be re-derived when it was last tried (unreachable, outside policy, ...). */
+  reason?: string;
 }
 
 export interface PersistedState {
@@ -72,10 +81,11 @@ export interface PersistedState {
   /** Explicit resumable HTTP reads; never original bodies, credentials or grants. */
   httpContinuations?: HttpRunContinuation[];
   workflowContinuations?: WorkflowContinuation[];
-  /** CLI reflections typed by an older inference version that could not be re-derived when the
-   *  state was loaded (no program authority or sandbox there). Retained, never executed, and
-   *  re-derived on a later load that can investigate them. */
-  deferredInference?: Array<{ semantics: number; reflection: Reflection }>;
+  /** Reflections typed by an older inference version that could not be re-derived when the state
+   *  was loaded: a source unreachable or outside the egress policy then, a program without
+   *  authority or a sandbox there, or a pipeline waiting on one of those. Retained, never
+   *  executed, and re-derived on a later load that can. */
+  deferredInference?: Deferral[];
 }
 
 export interface HttpRunContinuation {
@@ -506,6 +516,9 @@ const HEAL_REREAD_MS = 60_000;
 
 const RUN_BUFFER = 500;
 
+/** Provider sources learned over the network; see rederive(). */
+const NETWORK_SOURCES: readonly string[] = ["openapi", "graphql", "mcp", "web", "peer"];
+
 export class RightClick {
   readonly graph = new CapabilityGraph();
   readonly ledger = new Ledger();
@@ -647,58 +660,144 @@ export class RightClick {
         };
         rc.ledger.forgive((id, e) => changed.has(originOf(id)) && /\b(401|403|429)\b|rate limit/i.test(e.lastError ?? ""));
       }
-      // Reflections typed by older inference rules are re-derived from their sources.
-      // CLI evidence needs fresh bounded investigation, not the unchanged-byte cache. A program
-      // this process cannot investigate (no program authority or sandbox here) is not dropped:
-      // its old reflection is kept as deferred, never executable, and retried on a later load.
       const deferred = saved.deferredInference ?? [];
-      if (stale || deferred.length) {
-        const kinds: Record<string, SourceKind> = {};
-        const programs: string[] = [];
-        const operations = new Map<string, Map<string, string | undefined>>();
-        const oldCli = new Map<string, Capability>();
-        const retired = new Map<string, { semantics: number; reflection: Reflection }>();
-        const retire = (reflection: Reflection, semantics: number) => {
-          const source = `cli:${reflection.provider.origin}`;
-          programs.push(source);
-          operations.set(source, new Map(reflection.capabilities.map(c => [c.id, operationOf(c)] as const)));
-          for (const c of reflection.capabilities) oldCli.set(c.id, c);
-          retired.set(source, { semantics, reflection: structuredClone(reflection) });
-        };
-        if (stale) for (const p of [...rc.graph.providers.values()]) {
-          if (["openapi", "graphql", "mcp", "web", "peer"].includes(p.source)) kinds[(p.meta?.source as string | undefined) ?? p.origin] = p.source as SourceKind;
-          if (p.source === "cli") {
-            retire({ provider: p, capabilities: p.capabilityIds.map(id => rc.graph.get(id)).filter((c): c is Capability => !!c) }, saved.semantics ?? 0);
-            // Retire stale invocations before a possibly refused/failed migration.
-            // Published anchors remain pinned; migration never silently rebinds them.
-            rc.graph.forget(p.id);
-          }
-        }
-        for (const d of deferred) retire(d.reflection, d.semantics);
-        if (Object.keys(kinds).length) await rc.learn({ sources: Object.keys(kinds), kinds });
-        const relearned = programs.length ? (await rc.learn({ sources: programs })).results : [];
-        for (const [source, before] of operations) {
-          // Could not be investigated here: keep it. A program that is gone is withdrawn as before.
-          if (relearned.find(r => r.source === source)?.error &&
-              ![...rc.graph.providers.values()].some(p => p.source === "cli" && `cli:${p.origin}` === source)) {
-            rc.deferredInference.push(retired.get(source)!);
-            continue;
-          }
-          const present = [...before.keys()].filter(id => {
-            const cap = rc.graph.get(id);
-            return cap && rc.graph.providers.get(cap.provider)?.meta?.source === source;
-          });
-          for (const id of present) {
-            const cap = rc.graph.get(id)!;
-            Object.assign(cap, carryCliContinuity(oldCli.get(id), cap, true));
-          }
-          await rc.noteMeaningChanges(source, present, before);
-        }
-        rc.persist();
-      }
+      if (stale || deferred.length) await rc.rederive(stale ? saved.semantics ?? 0 : undefined, deferred);
     }
     rc.observeActivity();
     return rc;
+  }
+
+  /**
+   * Re-derive reflections typed by an older inference version, and retry what an earlier load had
+   * to defer. A provider this process cannot re-derive (a source unreachable or outside the egress
+   * policy now, a program without authority or a sandbox here) is not dropped: its reflection,
+   * and any pipeline that loses a step with it, are kept as deferred knowledge, never executable,
+   * and retried on a later load. Withdrawal is left to ordinary operation (repair after a failed
+   * call, or the operator's context_forget), where the evidence is about the provider rather than
+   * about this process. A reachable provider whose contract changed goes through drift as before.
+   */
+  private async rederive(staleSemantics: number | undefined, earlier: Deferral[]): Promise<void> {
+    type Kept = { semantics: number; reflection: Reflection };
+    const network = new Map<string, { kind: SourceKind; kept: Kept[] }>();
+    const pipelines = new Map<string, Kept>();
+    const programs: string[] = [];
+    const operations = new Map<string, Map<string, string | undefined>>();
+    const oldCli = new Map<string, Capability>();
+    const cli = new Map<string, Kept>();
+    const keepPipeline = (cap: Capability, provider: Provider, semantics: number) => {
+      if (cap.invoke.kind === "composite") pipelines.set(cap.id, { semantics, reflection: { provider: structuredClone({ ...provider, capabilityIds: [cap.id] }), capabilities: [structuredClone(cap)] } });
+    };
+    const take = (reflection: Reflection, semantics: number) => {
+      const p = reflection.provider;
+      if (p.source === "cli") {
+        const source = `cli:${p.origin}`;
+        programs.push(source);
+        operations.set(source, new Map(reflection.capabilities.map(c => [c.id, operationOf(c)] as const)));
+        for (const c of reflection.capabilities) oldCli.set(c.id, c);
+        cli.set(source, { semantics, reflection: structuredClone(reflection) });
+      } else if (NETWORK_SOURCES.includes(p.source)) {
+        const source = (p.meta?.source as string | undefined) ?? p.origin;
+        const entry = network.get(source) ?? { kind: p.source as SourceKind, kept: [] };
+        entry.kept.push({ semantics, reflection: structuredClone(reflection) });
+        network.set(source, entry);
+      } else {
+        for (const c of reflection.capabilities) keepPipeline(c, p, semantics);
+      }
+    };
+    if (staleSemantics !== undefined) {
+      // Pipelines first: retiring a stale program below would otherwise delete the ones built on it.
+      for (const c of this.graph.list()) keepPipeline(c, this.graph.providers.get(c.provider)!, staleSemantics);
+      for (const p of [...this.graph.providers.values()]) {
+        if (p.source !== "cli" && !NETWORK_SOURCES.includes(p.source)) continue;
+        take({ provider: p, capabilities: p.capabilityIds.map(id => this.graph.get(id)).filter((c): c is Capability => !!c) }, staleSemantics);
+        // Retire stale program invocations before a possibly refused/failed migration.
+        // Published anchors remain pinned; migration never silently rebinds them.
+        if (p.source === "cli") this.graph.forget(p.id);
+      }
+    }
+    for (const d of earlier) {
+      // A network provider deferred earlier re-enters the graph only for the re-learn below, so the
+      // existing drift and meaning-change checks compare against it.
+      if (NETWORK_SOURCES.includes(d.reflection.provider.source)) this.graph.add(structuredClone(d.reflection));
+      take(d.reflection, d.semantics);
+    }
+
+    if (network.size) {
+      const results = (await this.learnSources({ sources: [...network.keys()], kinds: Object.fromEntries([...network].map(([s, e]) => [s, e.kind])) }, undefined, true)).results;
+      for (const [source, entry] of network) {
+        const error = results.find(r => r.source === source)?.error;
+        if (!error) continue;
+        for (const k of entry.kept) {
+          this.graph.forget(k.reflection.provider.id);
+          this.deferredInference.push({ ...k, reason: error });
+        }
+      }
+    }
+
+    // Programs: fresh bounded investigation, not the unchanged-byte cache.
+    const relearned = programs.length ? (await this.learn({ sources: programs })).results : [];
+    for (const [source, before] of operations) {
+      // Could not be investigated here: keep it. A program that is gone is withdrawn as before.
+      const error = relearned.find(r => r.source === source)?.error;
+      if (error && ![...this.graph.providers.values()].some(p => p.source === "cli" && `cli:${p.origin}` === source)) {
+        this.deferredInference.push({ ...cli.get(source)!, reason: error });
+        continue;
+      }
+      const present = [...before.keys()].filter(id => {
+        const cap = this.graph.get(id);
+        return cap && this.graph.providers.get(cap.provider)?.meta?.source === source;
+      });
+      for (const id of present) {
+        const cap = this.graph.get(id)!;
+        Object.assign(cap, carryCliContinuity(oldCli.get(id), cap, true));
+      }
+      await this.noteMeaningChanges(source, present, before);
+    }
+
+    // A pipeline whose steps are all back returns; retireBroken then retires it if a step's contract
+    // changed, as before. One waiting on a deferred step is deferred with it. One whose step is
+    // gone for good stays retired.
+    const waiting = new Set(this.deferredInference.flatMap(d => d.reflection.capabilities.map(c => c.id)));
+    for (let restored = true; restored;) {
+      restored = false;
+      for (const [id, k] of pipelines) {
+        if (this.graph.get(id)) continue;
+        const cap = k.reflection.capabilities[0];
+        if (cap.invoke.kind !== "composite" || !cap.invoke.steps.every(s => this.graph.get(s.capability))) continue;
+        const { capabilityIds: _, ...provider } = k.reflection.provider;
+        this.graph.addCapability(cap, provider);
+        restored = true;
+      }
+    }
+    for (const [id, k] of pipelines) {
+      const cap = k.reflection.capabilities[0];
+      if (!this.graph.get(id) && cap.invoke.kind === "composite" && cap.invoke.steps.some(s => waiting.has(s.capability) || pipelines.has(s.capability) && !this.graph.get(s.capability)))
+        this.deferredInference.push({ ...k, reason: "a step it needs is deferred" });
+    }
+    this.graph.retireBroken();
+    this.persist();
+  }
+
+  /** A source learned successfully is no longer deferred: drop its stale copies, and bring back
+   *  deferred pipelines whose steps are all present again (retireBroken still applies). */
+  private resolveDeferred(source: string): void {
+    const of = (p: Provider) => p.source === "cli" ? `cli:${p.origin}` : (p.meta?.source as string | undefined) ?? p.origin;
+    const before = this.deferredInference.length;
+    this.deferredInference = this.deferredInference.filter(d => of(d.reflection.provider) !== source || d.reflection.provider.source === "composite");
+    if (this.deferredInference.length === before) return;
+    for (let restored = true; restored;) {
+      restored = false;
+      for (const d of [...this.deferredInference]) {
+        const cap = d.reflection.capabilities[0];
+        if (d.reflection.provider.source !== "composite" || cap?.invoke.kind !== "composite" || this.graph.get(cap.id)) continue;
+        if (!cap.invoke.steps.every(st => this.graph.get(st.capability))) continue;
+        const { capabilityIds: _, ...provider } = d.reflection.provider;
+        this.graph.addCapability(cap, provider);
+        this.deferredInference = this.deferredInference.filter(x => x !== d);
+        restored = true;
+      }
+    }
+    this.graph.retireBroken();
   }
 
   /** Tell the runtime where it is (e.g. Cloudflare's request.cf.colo). */
@@ -842,7 +941,7 @@ export class RightClick {
     return this.learnSources(opts);
   }
 
-  private async learnSources(opts: Parameters<RightClick["learn"]>[0], retainedCli?: { capability: Capability; execution: HttpExecution }) {
+  private async learnSources(opts: Parameters<RightClick["learn"]>[0], retainedCli?: { capability: Capability; execution: HttpExecution }, migrating = false) {
     const sources = [...(opts.source ? [opts.source] : []), ...(opts.sources ?? [])];
     // Batch learning measures powers once for the whole batch, not per provider.
     const batchBefore = this.graph.powers().total;
@@ -871,6 +970,13 @@ export class RightClick {
           const previous = [...this.graph.providers.values()].filter((p) => p.meta?.source === source);
           const before = new Map(previous.flatMap((p) => p.capabilityIds.map((id) => [id, this.graph.get(id) ? signature(this.graph.get(id)!) : ""] as const)));
           const operationsBefore = new Map(previous.flatMap((p) => p.capabilityIds.map((id) => [id, this.graph.get(id) ? operationOf(this.graph.get(id)!) : undefined] as const)));
+          if (!d.reflections.length && previous.length && migrating) {
+            // During a migration an empty read is evidence about this process's reach, not about the
+            // provider: report it and let rederive() keep the provider deferred.
+            const detail = d.probes.find(p => !p.ok)?.detail;
+            results.push({ source, probes: d.probes, learned: [], error: `no contract could be read from ${source} now${detail ? ` (${String(detail).slice(0, 160)})` : ""}` });
+            return;
+          }
           if (!d.reflections.length && previous.length) {
             // The provider is gone: withdraw what it offered and retire anything built on it.
             const compositesBefore = this.graph.list().filter((c) => c.source === "composite").map((c) => c.id);
@@ -899,6 +1005,7 @@ export class RightClick {
           const compositesBefore = this.graph.list().filter((c) => c.source === "composite").map((c) => c.id);
           for (const p of previous) if (!ids.has(p.id)) this.graph.forget(p.id);
           const learned = d.reflections.map((r) => this.graph.add({ ...r, provider: { ...r.provider, meta: { ...r.provider.meta, source } } }));
+          this.resolveDeferred(source);
           let drift: SourceDrift | undefined;
           if (previous.length) {
             const after = new Map(learned.flatMap((l) => (this.graph.providers.get(l.provider)?.capabilityIds ?? []).map((id) => [id, signature(this.graph.get(id)!)] as const)));
@@ -1012,9 +1119,14 @@ export class RightClick {
   }
 
   forget(providerId: string) {
-    const ok = this.graph.forget(providerId);
+    const live = this.graph.forget(providerId);
+    // A deferred provider is removed too, with any deferred pipeline that could then never return.
+    const removed = new Set(this.deferredInference.filter(d => d.reflection.provider.id === providerId).flatMap(d => d.reflection.capabilities.map(c => c.id)));
+    const before = this.deferredInference.length;
+    this.deferredInference = this.deferredInference.filter(d => d.reflection.provider.id !== providerId &&
+      !d.reflection.capabilities.some(c => c.invoke.kind === "composite" && c.invoke.steps.some(s => removed.has(s.capability))));
     this.persist();
-    return { forgotten: ok, graph: this.graph.powers() };
+    return { forgotten: live || this.deferredInference.length < before, graph: this.graph.powers() };
   }
 
   // ================================================================ context_inspect / actions / explain
