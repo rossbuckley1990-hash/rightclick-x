@@ -9,6 +9,7 @@ import { FileStore, serve, serveStdio } from "../src/entry/node-host.ts";
 import { Authority } from "../src/reflectors/net.ts";
 import { environmentOptions } from "../src/reflectors/environment.ts";
 import { RightClick, VERSION } from "../src/runtime.ts";
+import { decodeState, isLegacyState, STATE_FORMAT } from "../src/core/state-format.ts";
 import { commandInput } from "./command-input.ts";
 
 const proc = (globalThis as any).process;
@@ -91,6 +92,8 @@ async function main() {
   auth.loadEnv(env.RCX_AUTH);
   const home = env.HOME ?? env.USERPROFILE ?? ".";
   const stateFile = env.RCX_STATE_FILE ?? `${home}/.rightclick-x/state.json`;
+  // Before any runtime exists: a diagnostic must not load, migrate or create the operator's state.
+  if (cmd === "doctor") return doctor(stateFile);
   const demoMode = cmd === "serve" && !!flag("demo");
   // `rcx investigate <paths>` is typed by the operator: the paths it names are authorised for this run.
   const investigateNow = cmd === "investigate" ? argv.filter((a) => !a.startsWith("--")).map((a) => (a.startsWith("/") ? a : `${proc.cwd()}/${a}`)) : [];
@@ -101,7 +104,7 @@ async function main() {
     region: env.RCX_REGION,
     auth,
     workspace: env.RCX_WORKSPACE ?? proc.cwd(),
-    store: demoMode ? undefined : new FileStore(stateFile),
+    store: demoMode ? undefined : new FileStore(stateFile, { onBackup: (p) => console.error(`RightClick X: upgraded ${stateFile} to the current state format; the original is kept at ${p}`) }),
     workflowRecovery: env.RCX_WORKFLOW_RECOVERY === "1",
     authority,
     environment: environmentOptions(env.RCX_ENVIRONMENT),
@@ -148,7 +151,6 @@ async function main() {
     return new Promise(() => {});
   }
 
-  if (cmd === "doctor") return doctor(rc, stateFile);
   if (cmd === "investigate") return investigateCommand(rc, investigateNow);
   if (cmd === "capabilities") return capabilitiesCommand(rc, !!flag("json"));
   if (cmd === "knowledge") return knowledgeCommand(rc, argv);
@@ -245,7 +247,7 @@ async function connectInstructions(client?: string, authorise?: string): Promise
 
 // ---------------------------------------------------------------- operator commands
 
-async function doctor(rc: RightClick, stateFile: string) {
+async function doctor(stateFile: string) {
   const { hostSandbox } = await import("../src/core/sandbox.ts");
   const fs = await import("node:fs");
   const path = await import("node:path");
@@ -258,19 +260,33 @@ async function doctor(rc: RightClick, stateFile: string) {
     const r = await sb.run("/bin/echo", ["sandbox ok"]);
     line(r.stdout.trim() === "sandbox ok", "sandbox", `${sb.kind}; ${sb.enforces.join("; ")}`);
   }
-  try {
-    fs.mkdirSync(path.dirname(stateFile), { recursive: true });
-    fs.accessSync(path.dirname(stateFile), fs.constants.W_OK);
-    line(true, "state", `${stateFile}${fs.existsSync(stateFile) ? "" : " (created on first use)"}`);
-  } catch (e) {
-    line(false, "state", `${stateFile}: ${(e as Error).message}`);
+  // Read-only: the state is decoded in memory, never loaded into a runtime that could save it.
+  if (!fs.existsSync(stateFile)) {
+    let dir = path.dirname(stateFile);
+    while (!fs.existsSync(dir) && path.dirname(dir) !== dir) dir = path.dirname(dir);
+    let writable = true;
+    try { fs.accessSync(dir, fs.constants.W_OK); } catch { writable = false; }
+    line(writable, "state", `${stateFile} (created on first use${writable ? "" : `; ${dir} is not writable`})`);
+  } else {
+    try {
+      const value = JSON.parse(fs.readFileSync(stateFile, "utf8"));
+      const state = decodeState(value);
+      const caps = state.reflections.reduce((n, r) => n + r.capabilities.length, 0);
+      const retained = `${state.reflections.length} providers, ${caps} capabilities, ${state.published?.length ?? 0} saved goals retained`;
+      const deferred = state.deferredInference?.length ? `; ${state.deferredInference.length} program reflections awaiting re-derivation (they need program authority and a sandbox; not executable until then)` : "";
+      if (isLegacyState(value)) {
+        line(true, "state", `${stateFile}: legacy format (version 1), ${retained}. The next command that saves state upgrades it to ${STATE_FORMAT} and first keeps the original as ${path.basename(stateFile)}.v1-backup-<time>; doctor changes nothing`);
+      } else {
+        line(true, "state", `${stateFile}: ${STATE_FORMAT}, ${retained}${deferred}`);
+      }
+    } catch (e) {
+      line(false, "state", `${stateFile} is unreadable: ${(e as Error).message}. RightClick X refuses to start on it and never overwrites it`);
+    }
   }
   const auth = authorityFromEnv(env);
   line(null, "programs agents may investigate", auth.investigate?.length ? auth.investigate.join(", ") : "none (set RCX_INVESTIGATE, or rcx connect <client> --authorise <paths>)");
   line(null, "destructive operations", auth.destructive === "operator" ? "only with operator approval (RCX_APPROVE) plus the caller's confirm" : auth.destructive ?? "operator");
   line(null, "evidence export", auth.shareEvidence ? "allowed (RCX_SHARE_EVIDENCE=1)" : "not allowed (default)");
-  const caps = rc.graph.list();
-  line(null, "learned", `${rc.graph.providers.size} providers, ${caps.length} capabilities`);
   console.log(`\nNext: rcx connect claude-code --authorise /path/to/program   then ask your agent to use it.`);
 }
 
