@@ -155,16 +155,15 @@ test("an unsupported future format is refused by the runtime and never overwritt
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
-test("the KV adapter keeps the legacy value under a backup key before migrating it", async () => {
+test("the KV adapter never replaces a legacy value: it is read-only", async () => {
+  // Workers KV cannot give state one writer (test/kv-read-only.test.ts), so there is nothing to back up.
   const original = JSON.stringify(await legacyState());
   const values = new Map<string, string>([["rcx-state", original]]);
   const kv = { get: async (k: string) => values.get(k) ?? null, put: async (k: string, v: string) => { values.set(k, v); } };
   const rc = await RightClick.create({ store: new KvStore(kv), sandbox: null, directories: [] });
   await rc.flush();
-  const backups = [...values.keys()].filter((k) => k.startsWith("rcx-state.v1-backup-"));
-  assert.equal(backups.length, 1);
-  assert.equal(values.get(backups[0]), original);
-  assert.equal(JSON.parse(values.get("rcx-state")!).format, STATE_FORMAT);
+  assert.deepEqual([...values.keys()], ["rcx-state"]);
+  assert.equal(values.get("rcx-state"), original);
 });
 
 test("an ordinary command that migrates legacy state says so and names the backup", async () => {

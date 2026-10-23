@@ -94,7 +94,9 @@ test("edge entry: default export fetch handler with env bindings and token", asy
   const tools: any = await (await edge.fetch(new Request("https://edge.test/api/providers", { method: "POST", headers: { authorization: "Bearer edge-token" } }), env)).json();
   assert.ok(tools.some((p: any) => p.id.startsWith("platform:") && p.capabilities >= 2), "KV binding became capabilities");
   await Promise.all(waits);
-  assert.ok(kv.has("rcx-state"), "graph state persisted to the KV binding");
+  // Workers KV is a read-only state source (test/kv-read-only.test.ts); persistence is the Durable Object entry's.
+  assert.equal(kv.has("rcx-state"), false, "the edge entry wrote state to the KV binding");
+  assert.equal(body.storage.status, "read-only");
   assert.equal((await edge.fetch(new Request("https://edge.test/api/runtime", { method: "POST" }), env)).status, 401);
 });
 

@@ -11,7 +11,10 @@ RCX_NAME = "rightclick-x-edge"
 # Required: `npx wrangler secret put RCX_TOKEN`
 # Optional: `npx wrangler secret put RCX_AUTH`  (JSON: {"https://api.x.com": "Bearer ..."})
 
-# Persist the learned graph, ledger and receipts across isolates:
+# This Worker does not persist state. Workers KV is eventually consistent, allows one write per
+# second per key and has no atomic operations, so its many isolates cannot share it as one writer.
+# For persistent state deploy the Durable Object entry (src/entry/durable.ts; see deploy/cloud.ts),
+# which has one writer per object. RCX_STATE may hold a state to load read-only:
 # [[kv_namespaces]]
 # binding = "RCX_STATE"
 # id = "<kv namespace id>"

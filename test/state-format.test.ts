@@ -129,11 +129,12 @@ test("built-in KV and chunked adapters use the same legacy-refusing state encodi
   const memory = new MemoryStore(); const rc = await RightClick.create({ store: memory, sandbox: null, directories: [] });
   await rc.flush();
   memory.state!.ledger.large = { text: "retained".repeat(40_000) };
-  const kv = new Map<string, string>();
+  // KV is read-only (test/kv-read-only.test.ts): it decodes a seeded value and refuses to save.
+  const kv = new Map<string, string>([["rcx-state", encodeState(memory.state!)]]);
   const keyValue = new KvStore({ get: async (key: string) => kv.get(key) ?? null,
     put: async (key: string, value: string) => { kv.set(key, value); } });
-  await keyValue.save(memory.state!);
   assert.deepEqual(await keyValue.load(), memory.state);
+  await assert.rejects(keyValue.save(memory.state!), /read-only/);
   assert.equal(JSON.parse(kv.get("rcx-state")!).format, STATE_FORMAT);
   kv.set("rcx-state", "null");
   await assert.rejects(keyValue.load(), /invalid runtime state/);
