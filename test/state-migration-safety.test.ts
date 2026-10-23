@@ -246,3 +246,25 @@ test("state with deferred reflections declares its requirement, so a reader with
     assert.throws(() => decodeState(envelope), /missing the deferred inference requirement/);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
+
+// ------------------------------------------------- a saved goal never claims storage it lacks
+
+test("publishing a goal reports durable only once it is stored, and says why when it is not", async () => {
+  const goal = { have: { text: { type: "text" as const, value: "x" } }, want: "hash" as const, through: ["builtin:text.sha256"], run: true };
+  const failing = { load: async () => null, save: async () => { throw new Error("storage unavailable"); } };
+  const broken = await RightClick.create({ store: failing, sandbox: null, directories: [] });
+  const notStored = await broken.compose({ ...goal, publish: "Not stored" });
+  assert.equal(notStored.published?.durable, false, "a goal that was not stored was reported as saved");
+  assert.match(notStored.published?.persistence ?? "", /storage unavailable/);
+  assert.equal((broken.runtime() as any).storage.status, "failed");
+
+  const memoryOnly = await RightClick.create({ sandbox: null, directories: [] });
+  const inProcess = await memoryOnly.compose({ ...goal, publish: "In process" });
+  assert.equal(inProcess.published?.durable, false);
+  assert.match(inProcess.published?.persistence ?? "", /no store/);
+
+  const store = new MemoryStore();
+  const stored = await (await RightClick.create({ store, sandbox: null, directories: [] })).compose({ ...goal, publish: "Stored" });
+  assert.equal(stored.published?.durable, true);
+  assert.ok(store.state?.published?.some((g) => g.slug === "stored"), "durable was claimed before the goal reached the store");
+});
