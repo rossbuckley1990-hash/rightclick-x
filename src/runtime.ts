@@ -45,6 +45,8 @@ export const SEMANTICS = 27;
 export interface Store {
   load(): Promise<PersistedState | null>;
   save(state: PersistedState): Promise<void>;
+  /** Set when the store is only ever read; the reason is reported instead of a save. */
+  readonly readOnly?: string;
 }
 
 /** Knowledge kept while it cannot be re-derived here; see PersistedState.deferredInference. */
@@ -551,7 +553,7 @@ export class RightClick {
   private mcpClients = new Map<string, McpClient>();
   private store?: Store;
   private saveTimer: ReturnType<typeof setTimeout> | null = null;
-  private saveState: "not-observed" | "saved" | "failed" = "not-observed";
+  private saveState: "not-observed" | "saved" | "failed" | "read-only" = "not-observed";
   private runCounter = 0;
   private destructivePolicy: "operator" | "agent-confirm" | "allow" = "operator";
   private approvals: string[] = [];
@@ -817,7 +819,7 @@ export class RightClick {
       graph: { providers: this.graph.providers.size, ...powers },
       runs: this.runs.size,
       receipts: { count: this.chain.receipts.length, head: this.chain.headHash },
-      storage: { status: this.store ? this.saveState : "not-configured", workflowRecovery: this.workflowRecovery, format: STATE_FORMAT },
+      storage: { status: !this.store ? "not-configured" : this.store.readOnly ? "read-only" : this.saveState, ...(this.store?.readOnly ? { detail: this.store.readOnly } : {}), workflowRecovery: this.workflowRecovery, format: STATE_FORMAT },
       eventCursor: this.graph.cursor,
       memoryMB: typeof (globalThis as any).process?.memoryUsage === "function" ? Math.round((globalThis as any).process.memoryUsage().rss / 1e6) : undefined,
     };
@@ -2749,6 +2751,7 @@ export class RightClick {
       this.graph.emit("goal.published", { slug, title: opts.publish, pipeline: titles(p) });
       // Reported durable only once stored: a failed or absent store must not read as a saved goal.
       if (!this.store) result.published.persistence = "no store configured: available in this process only";
+      else if (this.store.readOnly) result.published.persistence = `state is read-only (${this.store.readOnly}): available in this process only`;
       else {
         try { await this.flush(); result.published.durable = true; }
         catch (e) { result.published.persistence = `not persisted: ${String((e as Error)?.message ?? e).slice(0, 300)}`; }
@@ -3579,7 +3582,7 @@ export class RightClick {
   // ================================================================ persistence
 
   persist(): void {
-    if (!this.store || this.saveTimer) return;
+    if (!this.store || this.store.readOnly || this.saveTimer) return;
     this.saveTimer = setTimeout(() => {
       this.saveTimer = null;
       // flush records failure for context_runtime. The explicit API still
@@ -3590,6 +3593,8 @@ export class RightClick {
 
   async flush(): Promise<void> {
     if (!this.store) return;
+    // Like no store, but said so: nothing here is persisted.
+    if (this.store.readOnly) { this.saveState = "read-only"; return; }
     if (this.saveTimer) {
       clearTimeout(this.saveTimer);
       this.saveTimer = null;
