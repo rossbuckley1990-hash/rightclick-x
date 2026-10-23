@@ -11,7 +11,7 @@
 //   any other KV / AI bindings become platform capabilities automatically
 
 import { authorityFromEnv } from "../core/authority.ts";
-import { decodeState, encodeState } from "../core/state-format.ts";
+import { backupSuffix, decodeState, encodeState, migrationReplaces } from "../core/state-format.ts";
 import { createHandler } from "../interface/http.ts";
 import { Authority } from "../reflectors/net.ts";
 import { environmentOptions } from "../reflectors/environment.ts";
@@ -26,12 +26,23 @@ export class KvStore implements Store {
   constructor(kv: any) {
     this.kv = kv;
   }
+  /** The value as loaded, kept under its own key before a save that changes its format or
+   *  inference version replaces it. */
+  private loaded?: { value: unknown; text: string };
   async load(): Promise<PersistedState | null> {
     const text = await this.kv.get("rcx-state", "text");
-    return text == null ? null : decodeState(JSON.parse(text));
+    if (text == null) return null;
+    const value = JSON.parse(text);
+    const state = decodeState(value);
+    this.loaded = { value, text };
+    return state;
   }
   async save(state: PersistedState): Promise<void> {
-    await this.kv.put("rcx-state", encodeState(state));
+    const content = encodeState(state);
+    const replaced = this.loaded && migrationReplaces(this.loaded.value, state);
+    if (replaced) await this.kv.put(`rcx-state${backupSuffix(replaced)}`, this.loaded!.text);
+    await this.kv.put("rcx-state", content);
+    this.loaded = undefined;
   }
 }
 

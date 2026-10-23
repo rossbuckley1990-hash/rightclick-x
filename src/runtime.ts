@@ -3,7 +3,7 @@
 // federation) is a thin shell around this class.
 
 import { checkpointValue, validWorkflow, type WorkflowContinuation, type CompositionContinuation } from "./core/workflow-continuation.ts";
-import { CONTRACT_LINK_REQUIREMENT, decodeState, STATE_FORMAT, STATE_REQUIREMENTS, usesContractLinks } from "./core/state-format.ts";
+import { CONTRACT_LINK_REQUIREMENT, decodeState, DEFERRED_INFERENCE_REQUIREMENT, STATE_FORMAT, STATE_REQUIREMENTS, usesContractLinks } from "./core/state-format.ts";
 import { pointerValue, validLinkBinding, validLinkGroup, validLinkValue } from "./core/links.ts";
 import { ActivityLog, reference, type ActivityState, type ContractReference } from "./core/activity.ts";
 import { CapabilityGraph, signature, tokenize, type GraphEvent, type LearnDelta } from "./core/graph.ts";
@@ -70,6 +70,10 @@ export interface PersistedState {
   /** Explicit resumable HTTP reads; never original bodies, credentials or grants. */
   httpContinuations?: HttpRunContinuation[];
   workflowContinuations?: WorkflowContinuation[];
+  /** CLI reflections typed by an older inference version that could not be re-derived when the
+   *  state was loaded (no program authority or sandbox there). Retained, never executed, and
+   *  re-derived on a later load that can investigate them. */
+  deferredInference?: Array<{ semantics: number; reflection: Reflection }>;
 }
 
 export interface HttpRunContinuation {
@@ -412,7 +416,13 @@ export interface ComposeResult {
   };
   crystallized?: { id: string; title: string; newPowers: number };
   /** Present when the goal was published as an endpoint. */
-  published?: { id: string; slug: string; path: string; trust?: "verified" | "checked" | "unverified" };
+  published?: {
+    id: string; slug: string; path: string; trust?: "verified" | "checked" | "unverified";
+    /** True only once the goal reached the configured store; a saved goal is for later sessions and other agents. */
+    durable: boolean;
+    /** Why it is not durable: no store configured, or the error the store returned. */
+    persistence?: string;
+  };
   /** Present when publication was refused by the operator's publication authority. */
   publishRefused?: string;
   /** With `require`: whether the requested information was established, before and after running. */
@@ -501,6 +511,8 @@ export class RightClick {
   readonly runs = new Map<string, RunRecord>();
   private httpContinuations = new Map<string, HttpRunContinuation>();
   private workflowContinuations = new Map<string, WorkflowContinuation>();
+  /** Persisted, never executable: see PersistedState.deferredInference. */
+  private deferredInference: NonNullable<PersistedState["deferredInference"]> = [];
   private workflowRecovery = false;
   private activeContinuations = new Set<string>();
   readonly activity = new ActivityLog();
@@ -634,30 +646,42 @@ export class RightClick {
         rc.ledger.forgive((id, e) => changed.has(originOf(id)) && /\b(401|403|429)\b|rate limit/i.test(e.lastError ?? ""));
       }
       // Reflections typed by older inference rules are re-derived from their sources.
-      // CLI evidence needs fresh bounded investigation, not the unchanged-byte cache.
-      if (stale) {
+      // CLI evidence needs fresh bounded investigation, not the unchanged-byte cache. A program
+      // this process cannot investigate (no program authority or sandbox here) is not dropped:
+      // its old reflection is kept as deferred, never executable, and retried on a later load.
+      const deferred = saved.deferredInference ?? [];
+      if (stale || deferred.length) {
         const kinds: Record<string, SourceKind> = {};
         const programs: string[] = [];
         const operations = new Map<string, Map<string, string | undefined>>();
         const oldCli = new Map<string, Capability>();
-        for (const p of rc.graph.providers.values()) {
+        const retired = new Map<string, { semantics: number; reflection: Reflection }>();
+        const retire = (reflection: Reflection, semantics: number) => {
+          const source = `cli:${reflection.provider.origin}`;
+          programs.push(source);
+          operations.set(source, new Map(reflection.capabilities.map(c => [c.id, operationOf(c)] as const)));
+          for (const c of reflection.capabilities) oldCli.set(c.id, c);
+          retired.set(source, { semantics, reflection: structuredClone(reflection) });
+        };
+        if (stale) for (const p of [...rc.graph.providers.values()]) {
           if (["openapi", "graphql", "mcp", "web", "peer"].includes(p.source)) kinds[(p.meta?.source as string | undefined) ?? p.origin] = p.source as SourceKind;
           if (p.source === "cli") {
-            const source = `cli:${p.origin}`;
-            programs.push(source);
-            operations.set(source, new Map(p.capabilityIds.map(id => [id, rc.graph.get(id) ? operationOf(rc.graph.get(id)!) : undefined] as const)));
-            for (const id of p.capabilityIds) {
-              const cap = rc.graph.get(id);
-              if (cap) oldCli.set(id, cap);
-            }
+            retire({ provider: p, capabilities: p.capabilityIds.map(id => rc.graph.get(id)).filter((c): c is Capability => !!c) }, saved.semantics ?? 0);
             // Retire stale invocations before a possibly refused/failed migration.
             // Published anchors remain pinned; migration never silently rebinds them.
             rc.graph.forget(p.id);
           }
         }
+        for (const d of deferred) retire(d.reflection, d.semantics);
         if (Object.keys(kinds).length) await rc.learn({ sources: Object.keys(kinds), kinds });
-        if (programs.length) await rc.learn({ sources: programs });
+        const relearned = programs.length ? (await rc.learn({ sources: programs })).results : [];
         for (const [source, before] of operations) {
+          // Could not be investigated here: keep it. A program that is gone is withdrawn as before.
+          if (relearned.find(r => r.source === source)?.error &&
+              ![...rc.graph.providers.values()].some(p => p.source === "cli" && `cli:${p.origin}` === source)) {
+            rc.deferredInference.push(retired.get(source)!);
+            continue;
+          }
           const present = [...before.keys()].filter(id => {
             const cap = rc.graph.get(id);
             return cap && rc.graph.providers.get(cap.provider)?.meta?.source === source;
@@ -2609,9 +2633,14 @@ export class RightClick {
         lastResult,
       });
       this.registerGoal(this.published.get(slug)!);
-      result.published = { id: `goal:${slug}`, slug, path: `/x/${slug}`, trust };
+      result.published = { id: `goal:${slug}`, slug, path: `/x/${slug}`, trust, durable: false };
       this.graph.emit("goal.published", { slug, title: opts.publish, pipeline: titles(p) });
-      this.persist();
+      // Reported durable only once stored: a failed or absent store must not read as a saved goal.
+      if (!this.store) result.published.persistence = "no store configured: available in this process only";
+      else {
+        try { await this.flush(); result.published.durable = true; }
+        catch (e) { result.published.persistence = `not persisted: ${String((e as Error)?.message ?? e).slice(0, 300)}`; }
+      }
     }
     return result;
   }
@@ -3457,7 +3486,7 @@ export class RightClick {
       .filter((p) => p.source !== "builtin" && p.source !== "platform")
       .map((p) => ({ provider: p, capabilities: p.capabilityIds.map((id) => this.graph.get(id)!).filter(Boolean) }));
     try {
-      await this.store.save({ version: 2, requirements: [...STATE_REQUIREMENTS, ...(usesContractLinks(reflections) ? [CONTRACT_LINK_REQUIREMENT] : [])], reflections, ledger: this.ledger.toJSON(), receipts: this.chain.receipts.slice(-300), published: [...this.published.values()], meaningChanges: [...this.meaningChanges.values()], activity: this.activity.snapshot(), environment: this.environmentReport, httpContinuations: [...this.httpContinuations.values()], workflowContinuations: [...this.workflowContinuations.values()], authFingerprints: await this.net.auth.fingerprints(), semantics: SEMANTICS, identities: this.graph.identities.toJSON() });
+      await this.store.save({ version: 2, requirements: [...STATE_REQUIREMENTS, ...(usesContractLinks(reflections) ? [CONTRACT_LINK_REQUIREMENT] : []), ...(this.deferredInference.length ? [DEFERRED_INFERENCE_REQUIREMENT] : [])], reflections, ...(this.deferredInference.length ? { deferredInference: this.deferredInference } : {}), ledger: this.ledger.toJSON(), receipts: this.chain.receipts.slice(-300), published: [...this.published.values()], meaningChanges: [...this.meaningChanges.values()], activity: this.activity.snapshot(), environment: this.environmentReport, httpContinuations: [...this.httpContinuations.values()], workflowContinuations: [...this.workflowContinuations.values()], authFingerprints: await this.net.auth.fingerprints(), semantics: SEMANTICS, identities: this.graph.identities.toJSON() });
       this.saveState = "saved";
     } catch (error) {
       this.saveState = "failed";
