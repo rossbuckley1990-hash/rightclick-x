@@ -1,0 +1,13 @@
+# Local-only harness for test/durable-workerd.test.ts: never deployed.
+name = "rcx-durable-store-harness"
+main = "worker.ts"
+compatibility_date = "2026-09-01"
+compatibility_flags = ["nodejs_compat"]
+
+[[durable_objects.bindings]]
+name = "HARNESS"
+class_name = "Harness"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Harness"]

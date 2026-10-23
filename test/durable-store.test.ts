@@ -117,3 +117,29 @@ test("an older reader refuses the new layout instead of reading a partial or mix
   await new DurableStore(s.api).save(await state("current", 250_000));
   await assert.rejects(frozenReader(s.api), /missing or invalid runtime state chunk/);
 });
+
+test("written chunks stay within the smallest documented value limit whatever the text contains", async () => {
+  const s = storage();
+  const wide = await state("wide", 0);
+  wide.ledger.large = { text: "—".repeat(250_000) }; // two bytes per unit when serialised
+  await new DurableStore(s.api).save(wide);
+  const { generation, chunks } = s.data.get("state:meta");
+  for (let i = 0; i < chunks; i++) assert.ok(s.data.get(`state:${generation}:${i}`).length * 2 <= 128 * 1024, `chunk ${i} could exceed 128 KiB`);
+  assert.deepEqual(await new DurableStore(s.api).load(), wide);
+});
+
+test("two interrupted saves in a row leak no chunks once a save completes, without listing storage", async () => {
+  const s = storage();
+  const { list: _, ...api } = s.api; // nothing may depend on loading every value to find stale ones
+  const fresh = () => new DurableStore(api);
+  await fresh().save(await state("one", 150_000));
+  s.fail((key) => key === "state:meta");
+  await assert.rejects(fresh().save(await state("orphan-1", 150_000)));
+  await assert.rejects(fresh().save(await state("orphan-2", 150_000)));
+  s.fail(undefined);
+  const latest = await state("two", 150_000);
+  await fresh().save(latest);
+  const meta = s.data.get("state:meta");
+  assert.deepEqual([...s.data.keys()].filter((k) => k !== "state:meta").sort(), Array.from({ length: meta.chunks }, (_, i) => `state:${meta.generation}:${i}`).sort());
+  assert.deepEqual(await fresh().load(), latest);
+});
