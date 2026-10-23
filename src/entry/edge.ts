@@ -7,11 +7,11 @@
 //   RCX_SOURCES  comma-separated URLs to learn at cold start
 //   RCX_AUTH     JSON {origin: "Bearer ..."} credentials, origin-pinned
 //   RCX_NAME     instance name shown to peers
-//   RCX_STATE    (binding) KV namespace to persist the graph across isolates
+//   RCX_STATE    (binding) KV namespace holding a state to load, read-only (persist via the Durable Object entry)
 //   any other KV / AI bindings become platform capabilities automatically
 
 import { authorityFromEnv } from "../core/authority.ts";
-import { backupSuffix, decodeState, encodeState, migrationReplaces } from "../core/state-format.ts";
+import { decodeState } from "../core/state-format.ts";
 import { createHandler } from "../interface/http.ts";
 import { Authority } from "../reflectors/net.ts";
 import { environmentOptions } from "../reflectors/environment.ts";
@@ -21,28 +21,26 @@ type Env = Record<string, any>;
 
 let instance: Promise<{ rc: RightClick; handler: (r: Request) => Promise<Response> }> | null = null;
 
+/** Why Workers KV is read and never written. */
+const KV_READ_ONLY = "Workers KV is eventually consistent, allows one write per second per key and has no atomic operations, so this Worker's many isolates cannot share it as one writer; persist state through the Durable Object entry (src/entry/durable.ts)";
+
+/**
+ * A state read from Workers KV, never written. Cloudflare's documented pattern is to route a key's
+ * writes through one Durable Object and read it from KV elsewhere; the KV value can be seeded from
+ * that deployment or by the operator. A legacy value loads and is migrated in memory only.
+ */
 export class KvStore implements Store {
+  readonly readOnly = KV_READ_ONLY;
   private kv: any;
   constructor(kv: any) {
     this.kv = kv;
   }
-  /** The value as loaded, kept under its own key before a save that changes its format or
-   *  inference version replaces it. */
-  private loaded?: { value: unknown; text: string };
   async load(): Promise<PersistedState | null> {
     const text = await this.kv.get("rcx-state", "text");
-    if (text == null) return null;
-    const value = JSON.parse(text);
-    const state = decodeState(value);
-    this.loaded = { value, text };
-    return state;
+    return text == null ? null : decodeState(JSON.parse(text));
   }
-  async save(state: PersistedState): Promise<void> {
-    const content = encodeState(state);
-    const replaced = this.loaded && migrationReplaces(this.loaded.value, state);
-    if (replaced) await this.kv.put(`rcx-state${backupSuffix(replaced)}`, this.loaded!.text);
-    await this.kv.put("rcx-state", content);
-    this.loaded = undefined;
+  async save(_state: PersistedState): Promise<void> {
+    throw new Error(`KV state is read-only: ${KV_READ_ONLY}`);
   }
 }
 
