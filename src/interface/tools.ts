@@ -173,7 +173,7 @@ export async function dispatch(rc: RightClick, name: string, a: Record<string, a
       return rc.actions({ value: a.value, type: a.type, limit: a.limit });
     case "context_explain":
       if (a.detail !== undefined && !["run", "full"].includes(a.detail)) throw new Error("detail must be run or full");
-      return a.detail === "full" ? rc.explain(a.id) : rc.explainForRun(a.id);
+      return rc.explainDeferred(a.id) ?? (a.detail === "full" ? rc.explain(a.id) : rc.explainForRun(a.id));
     case "context_run": {
       if ("acknowledgeChange" in a) throw new Error("acknowledgeChange is no longer supported: caller acknowledgement cannot authorise a changed operation");
       if ("resumeRunId" in a) throw new Error("resume uses the explicit resume:<run-id> selector");

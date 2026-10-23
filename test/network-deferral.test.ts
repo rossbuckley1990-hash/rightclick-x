@@ -3,8 +3,11 @@
 // provider, loaded while its service was down, was re-learned during startup, treated as gone,
 // withdrawn and persisted: 1 provider became 0, and the composite built on it was deleted.
 //
+// Startup never contacts the network (#12 part 2): network providers from an older inference stay
+// deferred until a call that needs one, or context_learn, re-derives it under that call's policy.
+//
 // The four cases are kept apart:
-// - unreachable at load: kept as deferred knowledge, never executable, re-derived when reachable;
+// - unreachable when needed: kept as deferred knowledge, never executable, re-derived when reachable;
 // - contract genuinely changed: re-derived through the existing drift path, not deferred;
 // - authority revoked (origin outside the egress policy): deferred, and never contacted;
 // - removed by the operator (context_forget): gone, including any deferred copy.
@@ -93,13 +96,16 @@ test("an upgrade while a provider is unreachable keeps its capabilities, pipelin
     assert.ok(deferredIds(f.file).includes(f.capability));
     assert.equal(readdirSync(f.dir).filter((n) => n.includes("-backup-")).length, 1);
 
-    // Reachable again: re-derived with the same identity, the pipeline returns, the goal runs.
+    // Reachable again: startup still contacts nothing; the goal's first use re-derives the
+    // provider with the same identity, the pipeline returns and the goal runs.
     const service = await notes(f.port);
     try {
       const up = await RightClick.create({ directories: [], sandbox: null, store: new FileStore(f.file) });
-      assert.ok(up.graph.get(f.capability), "the capability was not re-derived");
-      for (const id of f.composites) assert.ok(up.graph.get(id), `the pipeline ${id} did not return`);
+      assert.equal(service.requests(), 0, "startup contacted a network source");
+      assert.equal(up.graph.get(f.capability), undefined);
       const run = await up.run("goal:note-digest", { id: "n1" });
+      assert.ok(up.graph.get(f.capability), "the capability was not re-derived on use");
+      for (const id of f.composites) assert.ok(up.graph.get(id), `the pipeline ${id} did not return`);
       assert.equal(run.status, "completed", JSON.stringify(run.error ?? run));
       assert.deepEqual(run.output, f.expected);
       await up.flush();
@@ -113,8 +119,10 @@ test("a provider whose contract genuinely changed is re-derived through drift, n
   const service = await notes(f.port, "v2");
   try {
     const rc = await RightClick.create({ directories: [], sandbox: null, store: new FileStore(f.file) });
+    const learned = await rc.learn({ source: service.source });
+    assert.ok(learned.results[0].drift?.removed.includes(f.capability), "the change was not reported as drift against what was known");
     await rc.flush();
-    assert.equal(saved(f.file).deferredInference, undefined, "a reachable, changed provider was deferred");
+    assert.equal(saved(f.file).deferredInference, undefined, "a reachable, changed provider stayed deferred");
     assert.ok(rc.graph.list().some((c) => c.invoke.kind === "http" && /fetch the body of a note/i.test(c.title)), "the changed contract was not learned");
     // A pipeline is a proof about the old contract: it retires, as before, rather than returning.
     for (const id of f.composites) assert.equal(rc.graph.get(id), undefined);
@@ -127,7 +135,7 @@ test("a provider whose origin is no longer authorised is deferred and never cont
   const service = await notes(f.port);
   try {
     const rc = await RightClick.create({ directories: [], sandbox: null, store: new FileStore(f.file), network: { blockPrivate: true } });
-    assert.equal(service.requests(), 0, "a revoked origin was contacted during startup");
+    assert.equal(service.requests(), 0, "startup contacted a network source");
     assert.equal(rc.graph.get(f.capability), undefined);
     assert.equal((await rc.run("goal:note-digest", { id: "n1" })).status, "failed");
     assert.equal(service.requests(), 0, "a revoked origin was contacted by a saved goal");
@@ -202,4 +210,33 @@ test("learning a deferred source again during a session resolves its deferral", 
     await next.flush();
     assert.equal(saved(f.file).deferredInference, undefined);
   } finally { rmSync(f.dir, { recursive: true, force: true }); }
+});
+
+test("startup contacts no network source, so a source that never answers cannot delay it", async () => {
+  const f = await upgradeFixture();
+  let connections = 0;
+  const { createServer } = await import("node:net");
+  const silent = createServer(() => { connections++; }); // accepts and never answers
+  await new Promise<void>((done) => silent.listen(f.port, "127.0.0.1", done));
+  try {
+    const t0 = performance.now();
+    const rc = await RightClick.create({ directories: [], sandbox: null, store: new FileStore(f.file) });
+    const elapsed = performance.now() - t0;
+    assert.equal(connections, 0, "startup connected to a network source");
+    assert.ok(elapsed < 5000, `startup waited ${Math.round(elapsed)} ms`);
+    const deferred = (rc.runtime() as any).deferred as Array<{ provider: string; source: string; reason?: string }>;
+    assert.ok(deferred.some((d) => d.provider === f.provider && /context_learn/.test(d.reason ?? "")), "context_runtime does not say what is deferred or how to restore it");
+  } finally { await new Promise((done) => silent.close(done)); rmSync(f.dir, { recursive: true, force: true }); }
+});
+
+test("a capability's first direct use re-derives its deferred provider", async () => {
+  const f = await upgradeFixture();
+  const service = await notes(f.port);
+  try {
+    const rc = await RightClick.create({ directories: [], sandbox: null, store: new FileStore(f.file) });
+    assert.equal(service.requests(), 0);
+    const run = await rc.run(f.capability, { id: "n1" });
+    assert.equal(run.status, "completed", JSON.stringify(run.error ?? run));
+    assert.equal(run.output, "hello note");
+  } finally { await service.close(); rmSync(f.dir, { recursive: true, force: true }); }
 });
