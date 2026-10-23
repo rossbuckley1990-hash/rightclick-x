@@ -13,7 +13,7 @@
 // secrets:  RCX_TOKEN (required), RCX_AUTH (origin-pinned credentials for peers/APIs)
 
 import { authorityFromEnv } from "../core/authority.ts";
-import { decodeState, encodeState } from "../core/state-format.ts";
+import { decodeState, encodeState, migrationReplaces } from "../core/state-format.ts";
 import { createHandler } from "../interface/http.ts";
 import { Authority } from "../reflectors/net.ts";
 import { RightClick, type PersistedState, type Store } from "../runtime.ts";
@@ -22,19 +22,55 @@ type Env = Record<string, any>;
 
 const CHUNK = 100_000;
 
-/** Durable Object storage values are size-limited; store state as numbered chunks. */
+/** Which chunks hold a state: a generation's `state:<generation>:<i>`, or legacy `state:<i>`. */
+interface Manifest {
+  chunks: number;
+  /** Absent in the legacy layout. */
+  generation?: string;
+  /** The generation a migrating save replaced, kept until a later migration replaces it. */
+  backup?: { chunks: number; generation: string | null; replaced: string; at: string };
+}
+
+const chunkKey = (generation: string | null | undefined, i: number) => generation ? `state:${generation}:${i}` : `state:${i}`;
+
+function validManifest(meta: unknown): meta is Manifest {
+  const m = meta as Manifest;
+  const chunks = (n: unknown) => Number.isSafeInteger(n) && (n as number) > 0;
+  const generation = (g: unknown) => typeof g === "string" && /^[a-f0-9-]{36}$/.test(g);
+  return !!m && typeof m === "object" && chunks(m.chunks) && (m.generation === undefined || generation(m.generation)) &&
+    (m.backup === undefined || (chunks(m.backup.chunks) && (m.backup.generation === null || generation(m.backup.generation)) && typeof m.backup.replaced === "string"));
+}
+
+/**
+ * Durable Object storage values are size-limited, so state is stored in chunks. Each save writes a
+ * new generation of chunk keys and only then switches the manifest, one key written last, so a
+ * save interrupted at any point leaves the previous state loadable. A save that changes the
+ * loaded state's format or inference version keeps the generation it replaced as the backup.
+ * Superseded generations, and orphans of an interrupted save, are removed after a switch.
+ */
 export class DurableStore implements Store {
   private storage: any;
+  private tail: Promise<void> = Promise.resolve();
+  /** The state as loaded and its manifest, until a save has replaced it. */
+  private loaded?: { value: unknown; manifest: Manifest };
+  /** The manifest this store last wrote. */
+  private current?: Manifest;
   constructor(storage: any) {
     this.storage = storage;
   }
   async load(): Promise<PersistedState | null> {
-    const meta = (await this.storage.get("state:meta")) as { chunks: number } | undefined;
+    const meta = await this.storage.get("state:meta");
     if (!meta) return null;
-    if (!Number.isSafeInteger(meta.chunks) || meta.chunks <= 0) throw new Error("invalid runtime state chunk manifest");
+    if (!validManifest(meta)) throw new Error("invalid runtime state chunk manifest");
+    const value = JSON.parse(await this.read(meta.generation, meta.chunks));
+    const state = decodeState(value);
+    this.loaded = { value, manifest: meta };
+    return state;
+  }
+  private async read(generation: string | null | undefined, chunks: number): Promise<string> {
     let text = "";
-    for (let i = 0; i < meta.chunks; i += 100) {
-      const keys = Array.from({ length: Math.min(100, meta.chunks - i) }, (_, k) => `state:${i + k}`);
+    for (let i = 0; i < chunks; i += 100) {
+      const keys = Array.from({ length: Math.min(100, chunks - i) }, (_, k) => chunkKey(generation, i + k));
       const got: Map<string, string> = await this.storage.get(keys);
       for (const k of keys) {
         const part = got.get(k);
@@ -42,16 +78,40 @@ export class DurableStore implements Store {
         text += part;
       }
     }
-    return decodeState(JSON.parse(text));
+    return text;
   }
   async save(state: PersistedState): Promise<void> {
     const text = encodeState(state);
+    const next = this.tail.then(() => this.write(text, state));
+    this.tail = next.catch(() => {});
+    return next;
+  }
+  private async write(text: string, state: PersistedState): Promise<void> {
+    const generation = crypto.randomUUID();
     const chunks = Math.ceil(text.length / CHUNK);
-    const entries: Record<string, string> = {};
-    for (let i = 0; i < chunks; i++) entries[`state:${i}`] = text.slice(i * CHUNK, (i + 1) * CHUNK);
-    const keys = Object.keys(entries);
-    for (let i = 0; i < keys.length; i += 100) await this.storage.put(Object.fromEntries(keys.slice(i, i + 100).map((k) => [k, entries[k]])));
-    await this.storage.put("state:meta", { chunks });
+    const keys = Array.from({ length: chunks }, (_, i) => chunkKey(generation, i));
+    for (let i = 0; i < keys.length; i += 100) {
+      await this.storage.put(Object.fromEntries(keys.slice(i, i + 100).map((k, j) => [k, text.slice((i + j) * CHUNK, (i + j + 1) * CHUNK)])));
+    }
+    const stored = this.loaded?.manifest ?? this.current ?? await this.storage.get("state:meta");
+    const current = validManifest(stored) ? stored : undefined;
+    const replaced = this.loaded && migrationReplaces(this.loaded.value, state);
+    const backup = replaced && current
+      ? { chunks: current.chunks, generation: current.generation ?? null, replaced, at: new Date().toISOString() }
+      : current?.backup;
+    const manifest: Manifest = { chunks, generation, ...(backup ? { backup } : {}) };
+    await this.storage.put("state:meta", manifest);
+    this.loaded = undefined;
+    this.current = manifest;
+    await this.sweep(manifest).catch(() => { /* stale chunks are removed by a later save */ });
+  }
+  /** Delete chunks no manifest refers to: superseded generations and interrupted saves. */
+  private async sweep(manifest: Manifest): Promise<void> {
+    const keep = new Set<string>(["state:meta"]);
+    for (const [g, n] of [[manifest.generation, manifest.chunks], [manifest.backup?.generation, manifest.backup?.chunks ?? 0]] as const)
+      for (let i = 0; i < n; i++) keep.add(chunkKey(g, i));
+    const stale = [...(await this.storage.list({ prefix: "state:" })).keys()].filter((k: string) => !keep.has(k));
+    for (let i = 0; i < stale.length; i += 128) await this.storage.delete(stale.slice(i, i + 128));
   }
 }
 
