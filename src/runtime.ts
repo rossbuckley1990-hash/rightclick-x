@@ -416,7 +416,13 @@ export interface ComposeResult {
   };
   crystallized?: { id: string; title: string; newPowers: number };
   /** Present when the goal was published as an endpoint. */
-  published?: { id: string; slug: string; path: string; trust?: "verified" | "checked" | "unverified" };
+  published?: {
+    id: string; slug: string; path: string; trust?: "verified" | "checked" | "unverified";
+    /** True only once the goal reached the configured store; a saved goal is for later sessions and other agents. */
+    durable: boolean;
+    /** Why it is not durable: no store configured, or the error the store returned. */
+    persistence?: string;
+  };
   /** Present when publication was refused by the operator's publication authority. */
   publishRefused?: string;
   /** With `require`: whether the requested information was established, before and after running. */
@@ -2627,9 +2633,14 @@ export class RightClick {
         lastResult,
       });
       this.registerGoal(this.published.get(slug)!);
-      result.published = { id: `goal:${slug}`, slug, path: `/x/${slug}`, trust };
+      result.published = { id: `goal:${slug}`, slug, path: `/x/${slug}`, trust, durable: false };
       this.graph.emit("goal.published", { slug, title: opts.publish, pipeline: titles(p) });
-      this.persist();
+      // Reported durable only once stored: a failed or absent store must not read as a saved goal.
+      if (!this.store) result.published.persistence = "no store configured: available in this process only";
+      else {
+        try { await this.flush(); result.published.durable = true; }
+        catch (e) { result.published.persistence = `not persisted: ${String((e as Error)?.message ?? e).slice(0, 300)}`; }
+      }
     }
     return result;
   }
