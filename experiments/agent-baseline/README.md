@@ -62,3 +62,20 @@ This used `main` at `c27a52f`, Claude Code 2.1.301 and `claude-opus-5-5`: 33 ses
 - **Reuse of the unfamiliar services:** RightClick X's later sessions are the fastest and use the fewest turns, but cost about 47% more than the stateless shell. Its first session costs about 2.7× the shell's.
 - **Where the extra cost comes from:** it isn't the work. RightClick X's own tool time is about 70 ms per session. The cost is per-session context: about 6k more uncached input tokens (13 tool definitions of about 4.3k tokens, plus instructions and explanations), and turns spent inspecting a goal before running it. The audit logs show `context_explain` → `context_run` in every reuse session.
 - **What this doesn't measure:** what RightClick X adds beyond the outcome. That covers sandboxed and authorised execution, stored checks and witnesses enforced on every reuse whatever the agent remembers, refusal of incompatible changes, and drift and outage handling. It also doesn't measure tasks large enough for rediscovery to be expensive.
+
+### Follow-up: announcing goal signatures at startup (refuted)
+
+**Hypothesis:** if a new session's startup instructions carried each retained goal's call signature, for example `goal:order-tax-rate(order_id:text)->number verified`, the agent would skip `context_explain` and reuse would get cheaper.
+
+**Run:** the two RightClick X reuse arms, with `results/2026-10-25-goal-signatures/startup-goal-signatures.patch` applied (9 sessions, $1.62).
+
+**Result:** no change. Every reuse session still ran `context_explain` → `context_run`.
+
+| | Median turns | Median cost |
+|---|---|---|
+| services reuse, without signatures | 4 | $0.140 |
+| services reuse, with signatures | 4 | $0.139 |
+| tidy saved goal, without signatures | 5 | $0.144 |
+| tidy saved goal, with signatures | 5 | $0.154 |
+
+The patch is kept here as evidence and is not proposed. The remaining gap is per-session context size: about 6k more uncached input tokens per session, written fresh each time, because each session's working directory differs and so its prefix is not shared. The number of calls isn't the problem. Smaller tool descriptions are the next lever to measure.
