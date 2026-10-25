@@ -3,7 +3,7 @@
 // federation) is a thin shell around this class.
 
 import { checkpointValue, validWorkflow, type WorkflowContinuation, type CompositionContinuation } from "./core/workflow-continuation.ts";
-import { CONTRACT_LINK_REQUIREMENT, decodeState, DEFERRED_INFERENCE_REQUIREMENT, STATE_FORMAT, STATE_REQUIREMENTS, usesContractLinks } from "./core/state-format.ts";
+import { CLI_CONFORMANCE_REQUIREMENT, CONTRACT_LINK_REQUIREMENT, decodeState, DEFERRED_INFERENCE_REQUIREMENT, STATE_FORMAT, STATE_REQUIREMENTS, usesContractLinks } from "./core/state-format.ts";
 import { pointerValue, validLinkBinding, validLinkGroup, validLinkValue } from "./core/links.ts";
 import { ActivityLog, reference, type ActivityState, type ContractReference } from "./core/activity.ts";
 import { CapabilityGraph, signature, tokenize, type GraphEvent, type LearnDelta } from "./core/graph.ts";
@@ -18,6 +18,7 @@ import { validateFileNames } from "./core/cli-files.ts";
 import { observeCliEnvironment } from "./core/cli-environment.ts";
 import { CliValidityError, reportsApplicationError, type CliValidity } from "./core/cli-outcome.ts";
 import { carryCliContinuity, withoutCliContinuity } from "./core/cli-continuity.ts";
+import { cliConformanceContract, parseCliConformance, type CliConformance, type CliConformancePin } from "./core/cli-conformance.ts";
 import { checkProgram, sameProgram } from "./core/programs.ts";
 import { isSensitiveName, scrub, sensitiveValues } from "./core/secrets.ts";
 import { investigateCli, replayExamples, validateOptions, type Investigation } from "./reflectors/cli.ts";
@@ -86,6 +87,8 @@ export interface PersistedState {
    *  authority or a sandbox there, or a pipeline waiting on one of those. Retained, never
    *  executed, and re-derived on a later load that can. */
   deferredInference?: Deferral[];
+  /** Evidence that a changed CLI still answers operator-authorized samples; never authority. */
+  cliConformance?: CliConformancePin[];
 }
 
 export interface HttpRunContinuation {
@@ -100,6 +103,7 @@ export interface HttpRunContinuation {
 interface HttpExecution {
   responseStatus?: number;
   cliValidity?: CliValidity;
+  strictCli?: boolean;
   signal?: AbortSignal;
   transportOwner?: Net["execution"];
   continuation?: HttpContinuationEvidence;
@@ -227,6 +231,8 @@ export interface OperatorAuthority {
    * never re-sent once it may have taken effect.
    */
   retry?: string[];
+  /** Authorizes only these bounded synthetic samples in a narrowed sandbox, never caller-input replay. */
+  cliConformance?: Record<string, CliConformance>;
 }
 
 export interface RunOptions {
@@ -240,6 +246,8 @@ export interface RunOptions {
   net?: Net;
   /** Internal: a plan step or pinned witness. Its caller chose it by current contract and does its own repair. */
   planned?: boolean;
+  /** A checker never inherits compatibility evidence for the operation it checks. */
+  strictCli?: boolean;
 }
 
 export interface RunRecord {
@@ -571,8 +579,11 @@ export class RightClick {
   private hashCache = new Map<string, { key: string; sha256: string }>();
   /** Changed CLI bytes that failed conformance revalidation, so repeat calls refuse without re-running examples. */
   private cliRefusals = new Map<string, string>();
+  private cliSamples: Record<string, CliConformance>;
+  private cliConformance = new Map<string, CliConformancePin>();
 
   private constructor(opts: RuntimeOptions) {
+    this.cliSamples = parseCliConformance(opts.authority?.cliConformance);
     this.executionPolicy = parseExecutionPolicy(opts.authority?.execution);
     const origins = intersectOrigins(opts.network?.origins, this.executionPolicy.allowedOrigins);
     this.net = {
@@ -628,6 +639,7 @@ export class RightClick {
       }
       rc.graph.identities.load(saved.identities);
       rc.graph.restore(saved.reflections);
+      if (!stale) for (const pin of saved.cliConformance ?? []) rc.cliConformance.set(pin.capability, structuredClone(pin));
       rc.ledger.load(saved.ledger);
       rc.chain.restore(saved.receipts ?? []);
       if (!stale && Array.isArray(saved.httpContinuations)) for (const c of saved.httpContinuations.slice(-64)) {
@@ -1037,6 +1049,8 @@ export class RightClick {
             return prior && previous.some(p => p.id === prior.provider) ? carryCliContinuity(prior, cap) : cap;
           }) }));
           d.reflections = await Promise.all(d.reflections.map(r => this.separateOperations(r, source, operationsBefore)));
+          if (source.startsWith("cli:")) for (const reflection of d.reflections)
+            for (const cap of reflection.capabilities) await this.revalidateCli(cap, {}, true);
           const ids = new Set(d.reflections.map((r) => r.provider.id));
           const compositesBefore = this.graph.list().filter((c) => c.source === "composite").map((c) => c.id);
           for (const p of previous) if (!ids.has(p.id)) this.graph.forget(p.id);
@@ -1680,7 +1694,7 @@ export class RightClick {
     let invalidDocument = false;
     const continuationId = resumed?.runId ?? runId;
     const original = structuredClone(cap);
-    const execution: HttpExecution = { signal: opts.signal,
+    const execution: HttpExecution = { signal: opts.signal, strictCli: opts.strictCli,
       transportOwner: { runtimeId: this.activity.epoch, runId, capabilityId: cap.id } };
     if (this.store && cap.invoke.kind === "http" && !cap.invoke.entry) execution.checkpoint = cursor =>
       this.checkpointHttp(continuationId, original, resumed?.verify ?? opts.verify ?? [], cursor, parent);
@@ -1907,6 +1921,69 @@ export class RightClick {
     return this.currentSandbox = await (this.sandboxCache ??= hostSandbox());
   }
 
+  private async revalidateCli(cap: Capability, execution: HttpExecution = {}, acquire = false): Promise<Capability> {
+    if (cap.invoke.kind !== "cli") return cap;
+    const inv = cap.invoke, spec = this.cliSamples[cap.id], retained = this.cliConformance.get(cap.id);
+    if (acquire ? !spec : !retained) return cap;
+    const refuse = (reason: string): never => {
+      execution.cliValidity ??= { coverage: "partial", environment: "unrecorded", observed: "not-observed",
+        application: "not-assessed", limitation: "Conformance prerequisites failed before observation; no sample or caller dispatch is authorized by retained evidence alone." };
+      if (execution.cliValidity.conformance) execution.cliValidity.conformance.status = "refused";
+      throw new CliValidityError(`CLI conformance refused: ${reason}; caller operation not dispatched or replayed`, execution.cliValidity, cap.id);
+    };
+    if (!spec || cap.risk !== "read") return refuse("no current exact-sample authority for a read-only contract");
+    this.assertExecution(cap);
+    const allowed = await checkProgram(inv.bin, this.executable);
+    const discovery = await checkProgram(inv.bin, this.investigable);
+    if (!allowed.ok || !discovery.ok) return refuse("current execution and investigation authority are both required");
+    const sb = await this.sandbox(), probe = sb?.forRevalidation?.();
+    if (!sb || !probe || probe.policy.network || probe.policy.writeRoots.length) return refuse("no narrowed native sample sandbox");
+    const contract = await cliConformanceContract(cap), samples = await sha256(stableStringify(spec));
+    const policy = await sha256(stableStringify({ execution: sb.policy, samples: probe.policy }));
+    if (!acquire && (retained!.contract !== contract || retained!.samples !== samples || retained!.policy !== policy))
+      return refuse("retained contract, sample authorization or sandbox policy changed; establish evidence explicitly");
+    const { readFileSync } = await import("node:fs");
+    const { createHash } = await import("node:crypto");
+    const primary = () => createHash("sha256").update(readFileSync(allowed.identity.real)).digest("hex");
+    const currentSha = primary(), environment = await observeCliEnvironment(inv.bin, sb.policy);
+    const expected = retained?.environment ?? inv.environment?.digest;
+    execution.cliValidity = {
+      coverage: "partial", environment: expected ? expected === environment.digest ? "unchanged" : "changed" : "unrecorded",
+      ...(expected ? { expected } : {}), observed: environment.digest, application: "not-assessed",
+      conformance: { status: "matched", contract, samples, checks: 0, sha256: currentSha },
+      limitation: "Operator-authorized synthetic samples only, not universal equivalence or outcome verification. Hidden dependencies and native sandbox limitations remain; independent witnesses are not repinned.",
+    };
+    const effective: Capability = { ...cap, invoke: { ...inv, sha256: currentSha,
+      environment: { version: 1, coverage: "partial", digest: environment.digest } } };
+    if (!acquire && retained!.sha256 === currentSha && retained!.environment === environment.digest) return effective;
+    if (acquire && (currentSha !== inv.sha256 || environment.digest !== inv.environment?.digest)) return refuse("program changed before acquisition samples");
+    const refusalKey = `samples\u0000${contract}\u0000${samples}\u0000${policy}\u0000${currentSha}\u0000${environment.digest}`;
+    const priorRefusal = this.cliRefusals.get(refusalKey);
+    if (priorRefusal) return refuse(priorRefusal);
+    try {
+      const probeEnvironment = await observeCliEnvironment(inv.bin, probe.policy);
+      const sampleCap: Capability = { ...cap, invoke: { ...inv, sha256: currentSha,
+        environment: { version: 1, coverage: "partial", digest: probeEnvironment.digest } } };
+      for (const sample of spec.samples) for (let repetition = 0; repetition < 2; repetition++) {
+        execution.cliValidity.conformance!.checks++;
+        const output = await this.execute(sampleCap, coerceArgs(sampleCap, sample.args), this.net, {}, probe);
+        const value = sample.format === "json" && typeof output === "string" ? parseJsonValue(output) : output;
+        if (stableStringify(value) !== stableStringify(sample.output)) throw new Error("independent expected sample output differs (changed meaning or insufficient evidence)");
+        if (!await sameProgram(inv.bin, allowed.identity) || primary() !== currentSha ||
+            (await observeCliEnvironment(inv.bin, sb.policy)).digest !== environment.digest)
+          throw new Error("executable or environment changed during conformance samples");
+      }
+    } catch (error) {
+      const reason = String((error as Error)?.message ?? error);
+      this.cliRefusals.set(refusalKey, reason);
+      return refuse(reason);
+    }
+    this.cliConformance.set(cap.id, { capability: cap.id, contract, samples, policy, sha256: currentSha,
+      environment: environment.digest, checks: execution.cliValidity.conformance!.checks });
+    this.persist();
+    return effective;
+  }
+
   private async checkCliEnvironment(cap: Capability, sb: Sandbox, execution: HttpExecution = {}) {
     if (cap.invoke.kind !== "cli") return;
     const current = await observeCliEnvironment(cap.invoke.bin, sb.policy);
@@ -1914,7 +1991,8 @@ export class RightClick {
     execution.cliValidity = {
       coverage: "partial", environment: expected ? expected === current.digest ? "unchanged" : "changed" : "unrecorded",
       ...(expected ? { expected } : {}), observed: current.digest, application: "not-assessed",
-      limitation: "Only bounded local environment candidates were observed, not complete execution dependencies. Hidden imports, configuration and services require independent outcome verification.",
+      ...(execution.cliValidity?.conformance ? { conformance: execution.cliValidity.conformance } : {}),
+      limitation: execution.cliValidity?.conformance ? execution.cliValidity.limitation : "Only bounded local environment candidates were observed, not complete execution dependencies. Hidden imports, configuration and services require independent outcome verification.",
     };
     if (execution.cliValidity.environment === "changed")
       throw new CliValidityError("CLI execution environment changed; retained evidence is insufficient; not run or automatically replayed. Explicit relearning does not replace outcome verification.", execution.cliValidity, cap.id);
@@ -2254,7 +2332,8 @@ export class RightClick {
           if (value === undefined) throw new Error(`unresolved witness argument: ${key}`);
           args[key] = value;
         }
-        const r = await this.run(w.capability, args, { verify: w.verify, net, planned: true });
+        await this.preflightCli(cap, true);
+        const r = await this.run(w.capability, args, { verify: w.verify, net, planned: true, strictCli: true });
         evidence.push({ capability: w.capability, runId: r.runId, status: r.status, verification: r.verification, output: r.output, ...(r.error ? { error: r.error } : {}), ...(r.refusal ? { refusal: r.refusal } : {}), ...(r.graphqlFailure ? { graphqlFailure: r.graphqlFailure } : {}), ...(r.cliValidity ? { cliValidity: r.cliValidity } : {}) });
         if (r.refusal || r.graphqlFailure || r.cliValidity?.environment === "changed" || r.cliValidity?.application === "reported-error") break;
       } catch (e) {
@@ -3041,7 +3120,7 @@ export class RightClick {
           if (digest !== c.invoke.sha256 || !await sameProgram(c.invoke.bin, allowed.identity))
             throw new CliValidityError(`witness program changed: ${c.id}; establish a new check explicitly`);
         }
-        await this.checkCliEnvironment(c, sb);
+        await this.checkCliEnvironment(witness ? c : await this.revalidateCli(c), sb);
       }
     }
   }
@@ -3408,9 +3487,10 @@ export class RightClick {
     return c;
   }
 
-  private async execute(cap: Capability, args: Record<string, unknown>, net: Net = this.net, execution: HttpExecution = {}): Promise<unknown> {
+  private async execute(cap: Capability, args: Record<string, unknown>, net: Net = this.net, execution: HttpExecution = {}, sampleSandbox?: Sandbox): Promise<unknown> {
     // Also guards internal repair, which calls execute directly after re-reflection.
     this.assertExecution(cap);
+    if (cap.invoke.kind === "cli" && !sampleSandbox && !execution.strictCli) cap = await this.revalidateCli(cap, execution);
     const origins = intersectOrigins(this.net.policy?.origins, net.policy?.origins);
     if (origins !== undefined) net = { ...net, policy: { blockPrivate: false, ...net.policy, origins } };
     // Keep session identity independent of per-call observation context. Re-learning
@@ -3552,7 +3632,7 @@ export class RightClick {
         const allowed = await checkProgram(inv.bin, this.executable);
         if (!allowed.ok && allowed.missing) throw new Error(`${allowed.reason} (HTTP 404 equivalent: nothing was run)`);
         if (!allowed.ok) throw new Error(`not authorised to run ${inv.bin}: ${allowed.reason.replace(/^(not authorised|refused): /, "")} (HTTP 403 equivalent: nothing was run)`);
-        const sb = await this.sandbox();
+        const sb = sampleSandbox ?? await this.sandbox();
         if (!sb) throw new Error(`unavailable: no sandbox on this host`);
         const fs = await import("node:fs");
         // The program must still be the one that was investigated.
@@ -3599,7 +3679,7 @@ export class RightClick {
         if (operands !== undefined && (!Array.isArray(operands) || !operands.every(n => typeof n === "string" && names.includes(n)))) throw new Error("operands must be a list of names present in files (HTTP 400 equivalent: nothing was run)");
         argv.push(...(operands === undefined ? names : operands as string[]));
         const before = await this.checkCliEnvironment(cap, sb, execution);
-        const r = await sb.run(inv.bin, argv, { stdin: inv.stdin ? asContent(args[inv.stdin]) : "", files, purpose: "execution" });
+        const r = await sb.run(inv.bin, argv, { stdin: inv.stdin ? asContent(args[inv.stdin]) : "", files, purpose: sampleSandbox ? "revalidation" : "execution" });
         execution.cliValidity!.processExit = r.code;
         const after = await observeCliEnvironment(inv.bin, sb.policy);
         if (after.digest !== before!.digest) {
@@ -3678,8 +3758,9 @@ export class RightClick {
     const reflections: Reflection[] = [...this.graph.providers.values()]
       .filter((p) => p.source !== "builtin" && p.source !== "platform")
       .map((p) => ({ provider: p, capabilities: p.capabilityIds.map((id) => this.graph.get(id)!).filter(Boolean) }));
+    const cliConformance = [...this.cliConformance.values()].filter(p => this.graph.get(p.capability));
     try {
-      await this.store.save({ version: 2, requirements: [...STATE_REQUIREMENTS, ...(usesContractLinks(reflections) ? [CONTRACT_LINK_REQUIREMENT] : []), ...(this.deferredInference.length ? [DEFERRED_INFERENCE_REQUIREMENT] : [])], reflections, ...(this.deferredInference.length ? { deferredInference: this.deferredInference } : {}), ledger: this.ledger.toJSON(), receipts: this.chain.receipts.slice(-300), published: [...this.published.values()], meaningChanges: [...this.meaningChanges.values()], activity: this.activity.snapshot(), environment: this.environmentReport, httpContinuations: [...this.httpContinuations.values()], workflowContinuations: [...this.workflowContinuations.values()], authFingerprints: await this.net.auth.fingerprints(), semantics: SEMANTICS, identities: this.graph.identities.toJSON() });
+      await this.store.save({ version: 2, requirements: [...STATE_REQUIREMENTS, ...(usesContractLinks(reflections) ? [CONTRACT_LINK_REQUIREMENT] : []), ...(this.deferredInference.length ? [DEFERRED_INFERENCE_REQUIREMENT] : []), ...(cliConformance.length ? [CLI_CONFORMANCE_REQUIREMENT] : [])], reflections, ...(this.deferredInference.length ? { deferredInference: this.deferredInference } : {}), ledger: this.ledger.toJSON(), receipts: this.chain.receipts.slice(-300), published: [...this.published.values()], meaningChanges: [...this.meaningChanges.values()], activity: this.activity.snapshot(), environment: this.environmentReport, httpContinuations: [...this.httpContinuations.values()], workflowContinuations: [...this.workflowContinuations.values()], ...(cliConformance.length ? { cliConformance } : {}), authFingerprints: await this.net.auth.fingerprints(), semantics: SEMANTICS, identities: this.graph.identities.toJSON() });
       this.saveState = "saved";
     } catch (error) {
       this.saveState = "failed";

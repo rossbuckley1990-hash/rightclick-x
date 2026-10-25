@@ -4,6 +4,7 @@
 import type { PersistedState } from "../runtime.ts";
 import type { Reflection } from "./types.ts";
 import { validCliEnvironment } from "./cli-environment.ts";
+import { validCliConformancePin } from "./cli-conformance.ts";
 
 export const STATE_FORMAT = "rightclick-x/runtime-state@2";
 export const STATE_REQUIREMENTS = [
@@ -17,7 +18,10 @@ export const CONTRACT_LINK_REQUIREMENT = "response-contract-links@1";
 /** Present only when state retains reflections an inference migration could not re-derive.
  *  A reader without it refuses the state instead of saving over what it cannot interpret. */
 export const DEFERRED_INFERENCE_REQUIREMENT = "deferred-inference@1";
-const supported = new Set<string>([...STATE_REQUIREMENTS, CONTRACT_LINK_REQUIREMENT, DEFERRED_INFERENCE_REQUIREMENT]);
+/** Present only when state retains CLI conformance pins, so states without them stay readable by
+ *  readers that predate conformance, and readers that predate it refuse states that carry pins. */
+export const CLI_CONFORMANCE_REQUIREMENT = "cli-conformance@1";
+const supported = new Set<string>([...STATE_REQUIREMENTS, CONTRACT_LINK_REQUIREMENT, DEFERRED_INFERENCE_REQUIREMENT, CLI_CONFORMANCE_REQUIREMENT]);
 export function usesContractLinks(reflections: Reflection[]): boolean {
   return reflections.some(r => r.capabilities.some(c => c.links?.length ||
     c.invoke.kind === "composite" && c.invoke.steps.some(s => s.bindings.some(b => b.link))));
@@ -73,6 +77,11 @@ export function decodeState(value: unknown): PersistedState {
     if (environment !== undefined && (!state.requirements?.includes("cli-validity@1") || !validCliEnvironment(environment)))
       throw new Error("unsupported retained CLI environment observation");
   }
+  if (state.cliConformance !== undefined && (!state.requirements?.includes(CLI_CONFORMANCE_REQUIREMENT) ||
+      !Array.isArray(state.cliConformance) || state.cliConformance.length > 1024 ||
+      state.cliConformance.some((p: unknown) => !validCliConformancePin(p)) ||
+      new Set(state.cliConformance.map((p: { capability: string }) => p.capability)).size !== state.cliConformance.length))
+    throw new Error("unsupported retained CLI conformance evidence");
   if (usesContractLinks(state.reflections) && !state.requirements?.includes(CONTRACT_LINK_REQUIREMENT))
     throw new Error("runtime state is missing the response contract link requirement");
   return state as PersistedState;
