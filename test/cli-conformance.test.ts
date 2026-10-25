@@ -141,7 +141,8 @@ function samples(calls: Call[], spec: CliConformance, bin: string) {
 function refused(run: RunRecord) {
   assert.equal(run.status, "failed", run.error);
   assert.equal(run.receipt.status, "failed");
-  assert.equal(run.output, undefined, "no unaccepted caller output may escape");
+  // A refused direct run has no output; a refused goal or composite run reports it as null.
+  assert.equal(run.output ?? undefined, undefined, "no unaccepted caller output may escape");
   assert.notEqual(run.verification.status, "verified");
   assert.equal(run.healing?.retried, undefined, "conformance does not authorize caller replay");
   assert.deepEqual(run.receipt.cliValidity, run.cliValidity);
@@ -602,12 +603,7 @@ test("saved goal preserves verify/witness obligations across source acceptance a
   executable(checker, rebuilt(checkerBody));
   f.calls.length = 0;
   const changed = await restarted.run(goalId, { input: workflows[0].caller }, { verify: [{ op: "type", value: "string" }] });
-  // A refused goal run reports no output as null; nothing ran, so nothing can escape.
-  assert.equal(changed.status, "failed", changed.error);
-  assert.equal(changed.receipt.status, "failed");
-  assert.equal(changed.output ?? undefined, undefined, "no unaccepted caller output may escape");
-  assert.notEqual(changed.verification.status, "verified");
-  assert.equal(changed.healing?.retried, undefined, "conformance does not authorize caller replay");
+  refused(changed);
   assert.match(`${changed.error} ${changed.witnesses?.[0]?.error}`, /witness program changed/i);
   assert.equal(f.calls.length, 0, "a changed independent witness blocks even producer samples");
   const after = await f.state(restarted);
