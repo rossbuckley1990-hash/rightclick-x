@@ -184,7 +184,7 @@ c.close();
 
 say("The MCP server is restarted. A new client that has never heard of the program connects.");
 c = await new Client().init();
-live(`the server tells the new session: ${(/Retained capabilities[\s\S]*?\n- ([^\n]+)/.exec(c.instructions)?.[1] ?? "(nothing)").slice(0, 110)}`);
+live(`the server tells the new session: ${(/Retained IDs[^:]*: (\[[^\n]*?\])/.exec(c.instructions)?.[1] ?? "(nothing)").slice(0, 110)}`);
 const reuse = await c.tool("context_run", { id: goalId, args: { [profile.port]: s2 }, view: { full: true } });
 results.reuse = profile.check(s2, reuse.output);
 live(`context_run ${goalId} on unseen input -> ${reuse.status}; independent check: ${results.reuse ? "PASS" : "FAIL"}`);
