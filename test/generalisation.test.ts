@@ -367,3 +367,27 @@ test("discovered JSON programs retain an exact stdout capability across stores a
   assert.equal(refused.status, "failed");
   assert.match(refused.error!, /blocked by execution policy/);
 });
+
+test("an option the description lists alone takes the argument its synopsis declares, nested repetition included", () => {
+  const page = [
+    "usage: convertkit [-v] [-f from_format] [-o opt1[,opt2[,...]]]",
+    "",
+    "OPTIONS",
+    "     -f",
+    "         Reads the input in the given format.",
+    "",
+    "     -o",
+    "         Options passed to the encoder.",
+    "",
+    "     -v",
+    "         Be verbose.",
+  ].join("\n");
+  const { options } = parseUsage(page);
+  const arg = (flag: string) => options.find((o) => o.flags.includes(flag))?.arg;
+  assert.equal(arg("-f"), "from_format");
+  assert.equal(arg("-o"), "opt1", "a value followed by nested repetition groups is still the option's argument");
+  assert.equal(arg("-v"), undefined, "a flag the synopsis declares without a value stays a flag");
+  const allowed = options.map((o) => ({ flags: o.flags, arg: !!o.arg }));
+  assert.deepEqual(validateOptions(["-o", "canonical", "-v"], allowed), ["-o", "canonical", "-v"]);
+  assert.throws(() => validateOptions(["-o"], allowed), /needs a value/);
+});

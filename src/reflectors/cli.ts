@@ -91,8 +91,13 @@ export function parseUsage(text: string): { options: Investigation["options"]; s
   // Options a synopsis or usage line declares only in brackets ("[-typemap typemap]",
   // "[-strip|s pattern]", "[-v]"): declared too, without descriptions, unless described elsewhere.
   const manSynopsis = /SYNOPSIS\s*\n([\s\S]*?)\n\s*\n/.exec(clean)?.[1] ?? "";
-  for (const g of `${synopsis.join(" ")} ${manSynopsis}`.matchAll(/\[\s*(-{1,2}[A-Za-z0-9][\w-]*(?:\|-{0,2}[A-Za-z0-9][\w-]*)*)(?:[ =]+([A-Za-z][\w.-]*))?\s*\]/g)) {
+  // An argument may be followed by nested repetition groups: "[-json_opt opt1[,opt2[,...]]]".
+  for (const g of `${synopsis.join(" ")} ${manSynopsis}`.matchAll(/\[\s*(-{1,2}[A-Za-z0-9][\w-]*(?:\|-{0,2}[A-Za-z0-9][\w-]*)*)(?:[ =]+([A-Za-z][\w.-]*)(?:\[(?:[^[\]]|\[(?:[^[\]]|\[[^[\]]*\])*\])*\])*)?\s*\]/g)) {
     const flags = g[1].split("|").map((f) => (f.startsWith("-") ? f : `-${f}`));
+    // A description that lists the flag alone ("-json_opt" on its own line) does not say it takes
+    // no argument; the synopsis does say it takes one.
+    const described = options.find((o) => o.flags.some((f) => flags.includes(f)));
+    if (described && g[2] && !described.arg && !described.optionalArg) described.arg = g[2];
     if (flags.some((f) => seen.has(f)) || options.length >= 120) continue;
     // A single-dash word can be one option or a compact bundle. Only the whole spelling is
     // declared here. Individual letters need their own declarations; do not invent flags.
