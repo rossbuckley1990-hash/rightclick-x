@@ -1,0 +1,766 @@
+{
+  "bytesPerToken": 2.386459802538787,
+  "report": {
+    "goal:order-tax-rate": {
+      "total": 3384,
+      "sections": {
+        "capability": 673,
+        "execution": 175,
+        "contract": 1547,
+        "evidence": 215,
+        "exampleArgs": 25,
+        "reuse": 584,
+        "details": 78
+      },
+      "removable": {
+        "search": 87,
+        "repeated": 61,
+        "fixedProse": 577,
+        "fixedProsePaths": [
+          "contract.outputSemantics.lastResult.note",
+          "reuse.note"
+        ]
+      },
+      "bound": {
+        "bytes": 725,
+        "share": 0.2142434988179669,
+        "tokens": 304
+      }
+    },
+    "openapi:levy:calculate": {
+      "total": 2086,
+      "sections": {
+        "capability": 630,
+        "execution": 195,
+        "contract": 884,
+        "evidence": 202,
+        "exampleArgs": 16,
+        "details": 81
+      },
+      "removable": {
+        "search": 29,
+        "repeated": 37,
+        "fixedProse": 0,
+        "fixedProsePaths": []
+      },
+      "bound": {
+        "bytes": 66,
+        "share": 0.031639501438159155,
+        "tokens": 28
+      }
+    },
+    "goal:html-cleanup": {
+      "total": 3199,
+      "sections": {
+        "capability": 654,
+        "execution": 173,
+        "contract": 1462,
+        "evidence": 215,
+        "exampleArgs": 17,
+        "reuse": 515,
+        "details": 76
+      },
+      "removable": {
+        "search": 103,
+        "repeated": 57,
+        "fixedProse": 577,
+        "fixedProsePaths": [
+          "contract.outputSemantics.lastResult.note",
+          "reuse.note"
+        ]
+      },
+      "bound": {
+        "bytes": 737,
+        "share": 0.23038449515473586,
+        "tokens": 309
+      }
+    },
+    "cli:tidy:i": {
+      "total": 5258,
+      "sections": {
+        "capability": 1222,
+        "execution": 159,
+        "contract": 2350,
+        "evidence": 1363,
+        "exampleArgs": 17,
+        "details": 69
+      },
+      "removable": {
+        "search": 136,
+        "repeated": 25,
+        "fixedProse": 0,
+        "fixedProsePaths": []
+      },
+      "bound": {
+        "bytes": 161,
+        "share": 0.030620007607455306,
+        "tokens": 67
+      }
+    }
+  },
+  "responses": {
+    "goal:order-tax-rate": {
+      "capability": {
+        "id": "goal:order-tax-rate",
+        "title": "order-tax-rate",
+        "provider": "goal:published",
+        "source": "composite",
+        "description": "Verified (an independent witness passed) reusable goal: sales tax rate for an order. Finds a current implementation on every call, repairs changed APIs, and re-runs its stored checks plus 1 independent outcome witness(es). Invoke with context_run; no need to reconstruct the pipeline.",
+        "inputs": [
+          {
+            "name": "order_id",
+            "type": "id.order",
+            "required": true
+          }
+        ],
+        "outputs": [
+          {
+            "name": "",
+            "type": "number",
+            "required": true
+          }
+        ],
+        "risk": "read",
+        "tags": [
+          "saved",
+          "goal",
+          "reusable",
+          "verified",
+          "sales",
+          "tax",
+          "rate",
+          "for",
+          "an",
+          "order"
+        ],
+        "invoke": {
+          "kind": "goal",
+          "slug": "order-tax-rate"
+        }
+      },
+      "execution": {
+        "capability": "goal:order-tax-rate",
+        "declaredRisk": "read",
+        "consequentialRisks": [
+          "read"
+        ],
+        "origins": "anywhere",
+        "allowed": true,
+        "requiresPlan": true,
+        "reasons": [],
+        "dependencies": []
+      },
+      "contract": {
+        "status": "verified",
+        "dependencies": [
+          "openapi:fulfilment",
+          "openapi:levy"
+        ],
+        "semanticAssumptions": [
+          "inputs typed {\"order_id\":\"id.order\"}, result typed number"
+        ],
+        "executionPlan": {
+          "replannedOnEveryCall": true,
+          "lastPipeline": [
+            "Look up where an order ships",
+            "Sales tax rate for a country"
+          ]
+        },
+        "sideEffects": {
+          "risk": "read"
+        },
+        "outputSemantics": {
+          "type": "number",
+          "preservesInputWords": "not established",
+          "lastResult": {
+            "type": "number",
+            "root": {
+              "capability": "openapi:levy:calculate",
+              "path": "tax_rate"
+            },
+            "references": [
+              {
+                "capability": "openapi:levy:calculate",
+                "signature": "570cd4ef"
+              }
+            ],
+            "fields": [],
+            "truncated": false,
+            "status": "matches-current-result-declaration",
+            "note": "Declarations from the last successful plan, not observed values or a future output guarantee. Comparison does not cover omitted fields. Matching declarations do not establish authority, semantic equivalence or current execution success."
+          },
+          "checkPaths": []
+        },
+        "authority": {
+          "egress": "any origin (target comes from inputs)",
+          "execution": "none beyond the operator's policy",
+          "evidenceSharing": "export not allowed (default)"
+        },
+        "preconditions": [],
+        "verification": {
+          "trust": "verified",
+          "predicates": [],
+          "witnesses": [
+            "openapi:inspection:validate"
+          ]
+        },
+        "verificationObligations": {
+          "predicates": [],
+          "witnesses": [
+            "openapi:inspection:validate"
+          ]
+        },
+        "limitations": [],
+        "invalidatedWhen": [
+          "the provider's contract no longer declares the operation",
+          "the operation's identity (method and path, or tool) changes"
+        ],
+        "counterexamples": [],
+        "reproduction": {
+          "procedure": "re-read the provider's contract and compare the operation's identity"
+        }
+      },
+      "evidence": {
+        "claims": [],
+        "sourceEnvironment": {
+          "origin": "rightclick-x"
+        },
+        "provenance": {
+          "providerText": "untrusted",
+          "source": "rightclick-x",
+          "learnedAt": "2026-10-26T20:27:04.748Z",
+          "publishedAt": "2026-10-26T20:27:04.748Z",
+          "calls": 0
+        }
+      },
+      "exampleArgs": {
+        "order_id": "<id.order>"
+      },
+      "reuse": {
+        "id": "goal:order-tax-rate",
+        "invoke": {
+          "tool": "context_run",
+          "args": {
+            "id": "goal:order-tax-rate"
+          }
+        },
+        "storage": "store-configured",
+        "restrictions": {
+          "risks": [
+            "read"
+          ],
+          "through": [
+            "openapi:fulfilment:lookup",
+            "openapi:levy:calculate"
+          ],
+          "require": []
+        },
+        "note": "This definition is already saved in runtime state. Supply its inputs to context_run; republish only to replace the definition. A configured store is not proof of a successful durable write. These saved restrictions supplement current operator policy; stored checks still apply. Retention does not imply authority or successful execution."
+      },
+      "details": {
+        "tool": "context_explain",
+        "args": {
+          "id": "goal:order-tax-rate",
+          "detail": "full"
+        }
+      }
+    },
+    "openapi:levy:calculate": {
+      "capability": {
+        "id": "openapi:levy:calculate",
+        "title": "Sales tax rate for a country",
+        "description": "Sales tax rate for a country",
+        "provider": "openapi:levy",
+        "source": "openapi",
+        "inputs": [
+          {
+            "name": "country",
+            "type": "country",
+            "required": true,
+            "description": "ISO country code",
+            "wire": "string"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "",
+            "type": "json",
+            "required": true
+          },
+          {
+            "name": "tax_rate",
+            "type": "number",
+            "required": true,
+            "wire": "number"
+          }
+        ],
+        "risk": "read",
+        "tags": [
+          "Levy",
+          "get",
+          "run"
+        ],
+        "fields": [
+          {
+            "path": "tax_rate"
+          }
+        ],
+        "invoke": {
+          "kind": "http",
+          "method": "GET",
+          "url": "http://127.0.0.1:53955/run",
+          "pathParams": [],
+          "queryParams": [
+            "country"
+          ],
+          "headerParams": [],
+          "body": null,
+          "bodyParams": []
+        }
+      },
+      "execution": {
+        "capability": "openapi:levy:calculate",
+        "declaredRisk": "read",
+        "consequentialRisks": [
+          "read"
+        ],
+        "origins": [
+          "http://127.0.0.1:53955"
+        ],
+        "allowed": true,
+        "requiresPlan": false,
+        "reasons": [],
+        "dependencies": []
+      },
+      "contract": {
+        "status": "declared",
+        "dependencies": [
+          "http://127.0.0.1:53955"
+        ],
+        "semanticAssumptions": [
+          "country is a country"
+        ],
+        "executionPlan": [
+          "http GET http://127.0.0.1:53955/run"
+        ],
+        "sideEffects": {
+          "risk": "read"
+        },
+        "outputSemantics": {
+          "type": "json",
+          "preservesInputWords": "not established"
+        },
+        "authority": {
+          "egress": [
+            "http://127.0.0.1:53955"
+          ],
+          "execution": "none beyond the operator's policy",
+          "evidenceSharing": "export not allowed (default)"
+        },
+        "preconditions": [],
+        "verification": {
+          "note": "declared by the provider's contract"
+        },
+        "verificationObligations": "none stored: results are reported unverified unless the caller supplies checks",
+        "limitations": [],
+        "invalidatedWhen": [
+          "the provider's contract no longer declares the operation",
+          "the operation's identity (method and path, or tool) changes"
+        ],
+        "counterexamples": [],
+        "reproduction": {
+          "procedure": "re-read the provider's contract and compare the operation's identity"
+        }
+      },
+      "evidence": {
+        "claims": [],
+        "sourceEnvironment": {
+          "origin": "http://127.0.0.1:53955/contract"
+        },
+        "provenance": {
+          "providerText": "untrusted",
+          "source": "http://127.0.0.1:53955/contract",
+          "learnedAt": "2026-10-26T20:27:04.734Z"
+        }
+      },
+      "exampleArgs": {
+        "country": "PT"
+      },
+      "details": {
+        "tool": "context_explain",
+        "args": {
+          "id": "openapi:levy:calculate",
+          "detail": "full"
+        }
+      }
+    },
+    "goal:html-cleanup": {
+      "capability": {
+        "id": "goal:html-cleanup",
+        "title": "HTML cleanup",
+        "provider": "goal:published",
+        "source": "composite",
+        "description": "Unverified (no check passed when it was saved) reusable goal: correct and pretty-print an html document. Finds a current implementation on every call, repairs changed APIs, and re-runs its stored checks. Invoke with context_run; no need to reconstruct the pipeline.",
+        "inputs": [
+          {
+            "name": "html",
+            "type": "html",
+            "required": true
+          }
+        ],
+        "outputs": [
+          {
+            "name": "",
+            "type": "html",
+            "required": true
+          }
+        ],
+        "risk": "read",
+        "tags": [
+          "saved",
+          "goal",
+          "reusable",
+          "unverified",
+          "correct",
+          "and",
+          "pretty-print",
+          "an",
+          "html",
+          "document"
+        ],
+        "invoke": {
+          "kind": "goal",
+          "slug": "html-cleanup"
+        }
+      },
+      "execution": {
+        "capability": "goal:html-cleanup",
+        "declaredRisk": "read",
+        "consequentialRisks": [
+          "read"
+        ],
+        "origins": "anywhere",
+        "allowed": true,
+        "requiresPlan": true,
+        "reasons": [],
+        "dependencies": []
+      },
+      "contract": {
+        "status": "unverified",
+        "dependencies": [
+          "cli:tidy"
+        ],
+        "semanticAssumptions": [
+          "inputs typed {\"html\":\"html\"}, result typed html"
+        ],
+        "executionPlan": {
+          "replannedOnEveryCall": true,
+          "lastPipeline": [
+            "tidy: validate, correct, and pretty-print HTML files"
+          ]
+        },
+        "sideEffects": {
+          "risk": "read"
+        },
+        "outputSemantics": {
+          "type": "html",
+          "preservesInputWords": "not established",
+          "lastResult": {
+            "type": "html",
+            "root": {
+              "capability": "cli:tidy:default",
+              "path": ""
+            },
+            "references": [
+              {
+                "capability": "cli:tidy:default",
+                "signature": "25ce76f8"
+              }
+            ],
+            "fields": [],
+            "truncated": false,
+            "status": "matches-current-result-declaration",
+            "note": "Declarations from the last successful plan, not observed values or a future output guarantee. Comparison does not cover omitted fields. Matching declarations do not establish authority, semantic equivalence or current execution success."
+          },
+          "checkPaths": []
+        },
+        "authority": {
+          "egress": "any origin (target comes from inputs)",
+          "execution": "none beyond the operator's policy",
+          "evidenceSharing": "export not allowed (default)"
+        },
+        "preconditions": [],
+        "verification": {
+          "trust": "unverified",
+          "predicates": [],
+          "witnesses": []
+        },
+        "verificationObligations": {
+          "predicates": [],
+          "witnesses": []
+        },
+        "limitations": [
+          "no check passed when it was saved"
+        ],
+        "invalidatedWhen": [
+          "the provider's contract no longer declares the operation",
+          "the operation's identity (method and path, or tool) changes"
+        ],
+        "counterexamples": [],
+        "reproduction": {
+          "procedure": "re-read the provider's contract and compare the operation's identity"
+        }
+      },
+      "evidence": {
+        "claims": [],
+        "sourceEnvironment": {
+          "origin": "rightclick-x"
+        },
+        "provenance": {
+          "providerText": "untrusted",
+          "source": "rightclick-x",
+          "learnedAt": "2026-10-26T20:27:05.733Z",
+          "publishedAt": "2026-10-26T20:27:05.733Z",
+          "calls": 0
+        }
+      },
+      "exampleArgs": {
+        "html": "<html>"
+      },
+      "reuse": {
+        "id": "goal:html-cleanup",
+        "invoke": {
+          "tool": "context_run",
+          "args": {
+            "id": "goal:html-cleanup"
+          }
+        },
+        "storage": "store-configured",
+        "restrictions": {
+          "risks": [
+            "read"
+          ],
+          "require": []
+        },
+        "note": "This definition is already saved in runtime state. Supply its inputs to context_run; republish only to replace the definition. A configured store is not proof of a successful durable write. These saved restrictions supplement current operator policy; stored checks still apply. Retention does not imply authority or successful execution."
+      },
+      "details": {
+        "tool": "context_explain",
+        "args": {
+          "id": "goal:html-cleanup",
+          "detail": "full"
+        }
+      }
+    },
+    "cli:tidy:i": {
+      "capability": {
+        "id": "cli:tidy:i",
+        "title": "tidy -i: to indent element content",
+        "description": "tidy - validate, correct, and pretty-print HTML files. With -i: to indent element content. Learned by sandboxed investigation of /private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/rcx-explain-tidy-YlU8WP/bin/tidy (sha256 d961355b7af0), not from a contract; runs only in the sandbox.",
+        "provider": "cli:tidy",
+        "source": "cli",
+        "inputs": [
+          {
+            "name": "html",
+            "type": "html",
+            "required": true,
+            "anyText": true,
+            "description": "Content given on standard input. Supply text to preserve its bytes; objects and arrays are serialized as JSON."
+          }
+        ],
+        "outputs": [
+          {
+            "name": "",
+            "type": "html",
+            "required": true
+          }
+        ],
+        "risk": "read",
+        "tags": [
+          "tidy",
+          "tidy",
+          "validate",
+          "correct",
+          "and",
+          "pretty",
+          "print",
+          "html",
+          "files",
+          "indent",
+          "element",
+          "content",
+          "preserves-input-words"
+        ],
+        "invoke": {
+          "kind": "cli",
+          "bin": "/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/rcx-explain-tidy-YlU8WP/bin/tidy",
+          "args": [
+            "-i"
+          ],
+          "stdin": "html",
+          "okExit": [
+            0,
+            1
+          ],
+          "output": "html",
+          "sha256": "d961355b7af036995d3ec1342061918453d0dfe8f2715cc5bcd447b56d6528d5",
+          "behaviour": "322ba7881ee99ebd",
+          "environment": {
+            "version": 1,
+            "coverage": "partial",
+            "digest": "6027992b537a159b17893f9d097277b93a61202efdcf6cb719ce590bc1b65c87"
+          }
+        }
+      },
+      "execution": {
+        "capability": "cli:tidy:i",
+        "declaredRisk": "read",
+        "consequentialRisks": [
+          "read"
+        ],
+        "origins": [],
+        "allowed": true,
+        "requiresPlan": false,
+        "reasons": [],
+        "dependencies": []
+      },
+      "contract": {
+        "status": "unverified",
+        "dependencies": [
+          "program /private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/rcx-explain-tidy-YlU8WP/bin/tidy (sha256 d961355b7af0)"
+        ],
+        "semanticAssumptions": [
+          "html is a html"
+        ],
+        "executionPlan": [
+          "/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/rcx-explain-tidy-YlU8WP/bin/tidy -i < html"
+        ],
+        "sideEffects": {
+          "risk": "read",
+          "sandboxed": true,
+          "observed": [
+            "side effects outside the sandbox [unknown]"
+          ]
+        },
+        "outputSemantics": {
+          "type": "html",
+          "preservesInputWords": "experimentally supported"
+        },
+        "authority": {
+          "egress": "none (local)",
+          "execution": "operator-registered program (authority.execute, default: authority.investigate), sandboxed",
+          "discovery": "operator-registered program (authority.investigate)",
+          "evidenceSharing": "export not allowed (default)"
+        },
+        "preconditions": [
+          "a host sandbox (macOS sandbox-exec or Linux bubblewrap)",
+          "operator authority to execute /private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/rcx-explain-tidy-YlU8WP/bin/tidy (RCX_EXECUTE or RCX_INVESTIGATE)"
+        ],
+        "verification": {
+          "evidence": [
+            "documents its usage [declared]",
+            "purpose: tidy - validate, correct, and pretty-print HTML files [declared]",
+            "options: 35 declared [declared]",
+            "operands: required [], optional [option, file], variadic [inferred]",
+            "accepts text input via stdin and prints html [experimentally-supported]",
+            "deterministic for identical input [experimentally-supported]",
+            "output keeps every word of the input [experimentally-supported]",
+            "side effects outside the sandbox [unknown]",
+            "on empty input exits 1 with output [observed]"
+          ],
+          "note": "investigation never marks anything verified; independent checks do"
+        },
+        "verificationObligations": "none stored: results are reported unverified unless the caller supplies checks",
+        "failureBehaviour": {
+          "successExitCodes": [
+            0,
+            1
+          ],
+          "emptyInput": "on empty input exits 1 with output"
+        },
+        "limitations": [
+          "side effects outside the sandbox [unknown]",
+          "runs only inside the host sandbox: no network, inputs passed as content"
+        ],
+        "invalidatedWhen": [
+          "the program file is removed (capability withdrawn)",
+          "the program's bytes change and its behaviour on the stored examples differs (refused as a different operation)",
+          "the operator revokes execution authority",
+          "no host sandbox is available"
+        ],
+        "counterexamples": [],
+        "reproduction": {
+          "examples": 2,
+          "procedure": "run each stored example in the sandbox and compare the output's SHA-256"
+        }
+      },
+      "evidence": {
+        "claims": [
+          {
+            "claim": "documents its usage",
+            "status": "declared"
+          },
+          {
+            "claim": "purpose: tidy - validate, correct, and pretty-print HTML files",
+            "status": "declared"
+          },
+          {
+            "claim": "options: 35 declared",
+            "status": "declared"
+          },
+          {
+            "claim": "operands: required [], optional [option, file], variadic",
+            "status": "inferred"
+          },
+          {
+            "claim": "accepts text input via stdin and prints html",
+            "status": "experimentally-supported"
+          },
+          {
+            "claim": "deterministic for identical input",
+            "status": "experimentally-supported"
+          },
+          {
+            "claim": "output keeps every word of the input",
+            "status": "experimentally-supported"
+          },
+          {
+            "claim": "side effects outside the sandbox",
+            "status": "unknown"
+          },
+          {
+            "claim": "on empty input exits 1 with output",
+            "status": "observed"
+          }
+        ],
+        "sourceEnvironment": {
+          "os": "darwin",
+          "arch": "arm64",
+          "program": "/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/rcx-explain-tidy-YlU8WP/bin/tidy",
+          "sha256": "d961355b7af036995d3ec1342061918453d0dfe8f2715cc5bcd447b56d6528d5",
+          "version": "HTML Tidy for Mac OS X released on 31 October 2006 - Apple Inc. build 8433",
+          "sandbox": "macos-sandbox-exec"
+        },
+        "provenance": {
+          "providerText": "untrusted",
+          "source": "cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/rcx-explain-tidy-YlU8WP/bin/tidy",
+          "learnedAt": "2026-10-26T20:27:05.713Z",
+          "investigation": "5 capabilities from 51 sandboxed runs (stdin, files; ok exit 1)",
+          "runs": 51
+        },
+        "storedExamples": 2,
+        "localContinuityRecords": 0
+      },
+      "exampleArgs": {
+        "html": "<html>"
+      },
+      "details": {
+        "tool": "context_explain",
+        "args": {
+          "id": "cli:tidy:i",
+          "detail": "full"
+        }
+      }
+    }
+  }
+}
