@@ -28,6 +28,28 @@ export interface OutcomeWitness {
   contract?: string;
   args: Record<string, { input: string } | { output: string } | { value: unknown }>;
   verify: Predicate[];
+  /** Agreement: the witness recomputes the outcome from the invocation's inputs alone, and its
+   *  result must agree with the candidate. Such a witness is never given the candidate. */
+  agree?: WitnessAgreement;
+}
+
+/** How an independently recomputed result must agree with the candidate. */
+export interface WitnessAgreement {
+  /** Path into the witness's own result; absent or empty: all of it. */
+  path?: string;
+  /** Path into the candidate result; absent or empty: all of it. */
+  candidate?: string;
+  /** exact (default): the same value; trimmed: the same text once surrounding whitespace is
+   *  removed; number: numbers no further apart than tolerance. */
+  mode?: "exact" | "trimmed" | "number";
+  tolerance?: number;
+}
+
+export interface AgreementResult {
+  mode: "exact" | "trimmed" | "number";
+  ok: boolean;
+  witness: unknown;
+  candidate: unknown;
 }
 
 export interface WitnessResult {
@@ -40,6 +62,37 @@ export interface WitnessResult {
   refusal?: TransportRefusal;
   graphqlFailure?: GraphQLFailureEvidence;
   cliValidity?: CliValidity;
+  agreement?: AgreementResult;
+}
+
+/** The agreement shape is checked before anything runs, so a malformed one never passes later. */
+export function assertAgreement(a: unknown): asserts a is WitnessAgreement {
+  if (!a || typeof a !== "object" || Array.isArray(a)) throw new Error("witness agreement must be an object");
+  const { path, candidate, mode, tolerance, ...rest } = a as Record<string, unknown>;
+  if (Object.keys(rest).length) throw new Error(`unknown witness agreement field: ${Object.keys(rest)[0]}`);
+  if (path !== undefined && typeof path !== "string" || candidate !== undefined && typeof candidate !== "string") throw new Error("witness agreement paths must be strings");
+  if (mode !== undefined && !["exact", "trimmed", "number"].includes(mode as string)) throw new Error("witness agreement mode must be exact, trimmed or number");
+  if (tolerance !== undefined && (mode !== "number" || typeof tolerance !== "number" || !Number.isFinite(tolerance) || tolerance < 0)) throw new Error("witness agreement tolerance must be a finite non-negative number, with mode number");
+}
+
+/** Whether an independently recomputed result agrees with the candidate. */
+export function agreement(a: WitnessAgreement, witnessOutput: unknown, candidateOutput: unknown): AgreementResult {
+  const mode = a.mode ?? "exact";
+  const witness = pick(witnessOutput, a.path), candidate = pick(candidateOutput, a.candidate);
+  let ok = false;
+  if (witness !== undefined && candidate !== undefined) {
+    if (mode === "number") {
+      const [w, c] = [witness, candidate].map((x) => typeof x === "number" ? x : typeof x === "string" && x.trim() !== "" ? Number(x) : NaN);
+      ok = Number.isFinite(w) && Number.isFinite(c) && Math.abs(w - c) <= (a.tolerance ?? 0);
+    } else if (mode === "trimmed") ok = typeof witness === "string" && typeof candidate === "string" ? witness.trim() === candidate.trim() : stable(witness) === stable(candidate);
+    else ok = stable(witness) === stable(candidate);
+  }
+  return { mode, ok, witness: summarize(witness), candidate: summarize(candidate) };
+}
+
+/** JSON with object keys sorted: equal values give equal text whatever their key order. */
+function stable(v: unknown): string {
+  return JSON.stringify(v, (_, x) => x && typeof x === "object" && !Array.isArray(x) ? Object.fromEntries(Object.entries(x).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))) : x);
 }
 
 export function pick(value: unknown, path?: string): unknown {

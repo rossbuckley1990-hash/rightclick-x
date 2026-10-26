@@ -27,7 +27,7 @@ import { assessExecution, consequentialRisks, ExecutionDenied, intersectOrigins,
 import { distance, inferType, inspectValue, type Inspection } from "./core/semantics.ts";
 import { describeResult, resultDescription, type ResultDescription } from "./core/result-description.ts";
 import type { Capability, CapabilityAnchor, FetchLike, GraphQLFailureEvidence, PlanStep, Provider, Reflection, SemType, TransportRefusal } from "./core/types.ts";
-import { check, pick, type Predicate, type PredicateResult, type OutcomeWitness, type WitnessResult } from "./core/verify.ts";
+import { agreement, assertAgreement, check, pick, type Predicate, type PredicateResult, type OutcomeWitness, type WitnessResult } from "./core/verify.ts";
 import { builtinReflection, type BuiltinFn } from "./reflectors/builtins.ts";
 import { DEFAULT_DIRECTORIES, type Candidate, type Directory } from "./reflectors/directories.ts";
 import { discover, type Discovery, type SourceKind } from "./reflectors/discover.ts";
@@ -2217,16 +2217,43 @@ export class RightClick {
     if (!Array.isArray(witnesses) || witnesses.length > 16) throw new Error("witnesses must be an array of at most 16 checks");
     return witnesses.map((w) => {
       const c = this.graph.get(w.capability);
-      if (!c || consequentialRisks(c).some((r) => r !== "read") || c.invoke.kind === "goal" || c.invoke.kind === "composite") throw new Error(`witness must be an available read-only provider capability: ${w.capability}`);
+      if (!c || c.invoke.kind === "goal") throw new Error(`witness must be an available read-only provider capability: ${w.capability}`);
+      // A crystallized pipeline may witness only when every step is itself a possible witness:
+      // an available, read-only, executable provider capability.
+      for (const step of this.witnessSteps(c)) {
+        if (consequentialRisks(step).some((r) => r !== "read") || step.invoke.kind === "goal") throw new Error(`witness must be an available read-only provider capability: ${w.capability}`);
+        this.assertExecution(step);
+      }
       this.assertExecution(c);
-      if (!Array.isArray(w.verify) || !w.verify.length) throw new Error(`witness needs nonempty verification predicates: ${w.capability}`);
+      if (w.agree !== undefined) assertAgreement(w.agree);
+      if (w.verify !== undefined && !Array.isArray(w.verify) || (!w.verify?.length && !w.agree)) throw new Error(`witness needs nonempty verification predicates or an agreement: ${w.capability}`);
       if (w.contract && w.contract !== signature(c)) throw new Error(`witness contract changed: ${w.capability}; establish a new check explicitly`);
       for (const binding of Object.values(w.args ?? {})) {
         if (!binding || typeof binding !== "object" || Object.keys(binding).length !== 1 || !("input" in binding || "output" in binding || "value" in binding)) throw new Error("witness arguments must use exactly one of input, output or value");
         if ("input" in binding && typeof binding.input !== "string" || "output" in binding && typeof binding.output !== "string") throw new Error("witness input/output paths must be strings");
+        // Shown the candidate, a recomputation could simply hand it back.
+        if (w.agree && "output" in binding) throw new Error(`an agreement witness recomputes from the inputs and is never given the candidate result: ${w.capability}`);
       }
-      return structuredClone({ ...w, args: w.args ?? {}, contract: signature(c) });
+      return structuredClone({ ...w, args: w.args ?? {}, verify: w.verify ?? [], contract: signature(c) });
     });
+  }
+
+  /** The provider capabilities a witness runs: itself, or every step of a crystallized pipeline. */
+  private witnessSteps(c: Capability): Capability[] {
+    const steps: Capability[] = [], pending = [c], seen = new Set<string>();
+    while (pending.length) {
+      const next = pending.pop()!;
+      if (seen.has(next.id)) continue;
+      seen.add(next.id);
+      if (seen.size > 64) throw new Error(`witness pipeline too large: ${c.id}`);
+      if (next.invoke.kind !== "composite") { steps.push(next); continue; }
+      for (const id of next.invoke.steps.map((s) => s.capability)) {
+        const child = this.graph.get(id);
+        if (!child) throw new Error(`witness must be an available read-only provider capability: ${c.id} (missing step ${id})`);
+        pending.push(child);
+      }
+    }
+    return steps;
   }
 
   private async checkWitnesses(witnesses: OutcomeWitness[], inputs: Record<string, unknown>, output: unknown, runIds: string[], net?: Net, retainedProviders: string[] = []): Promise<WitnessResult[]> {
@@ -2247,7 +2274,8 @@ export class RightClick {
       try {
         const w = this.pinWitnesses([original])[0];
         const cap = this.graph.get(w.capability)!;
-        if (providers.has(cap.provider)) throw new Error("outcome witness must be separate from the providers producing the result");
+        // A pipeline witness is independent only if none of its steps' providers produced the result.
+        if (this.witnessSteps(cap).some((step) => providers.has(step.provider))) throw new Error("outcome witness must be separate from the providers producing the result");
         const args: Record<string, unknown> = {};
         for (const [key, binding] of Object.entries(w.args)) {
           const value = "input" in binding ? pick(inputs, binding.input) : "output" in binding ? pick(output, binding.output) : binding.value;
@@ -2255,7 +2283,13 @@ export class RightClick {
           args[key] = value;
         }
         const r = await this.run(w.capability, args, { verify: w.verify, net, planned: true });
-        evidence.push({ capability: w.capability, runId: r.runId, status: r.status, verification: r.verification, output: r.output, ...(r.error ? { error: r.error } : {}), ...(r.refusal ? { refusal: r.refusal } : {}), ...(r.graphqlFailure ? { graphqlFailure: r.graphqlFailure } : {}), ...(r.cliValidity ? { cliValidity: r.cliValidity } : {}) });
+        const agreed = w.agree && r.status === "completed" ? agreement(w.agree, r.output, output) : undefined;
+        const disagrees = agreed && !agreed.ok;
+        evidence.push({ capability: w.capability, runId: r.runId, status: disagrees ? "failed" : r.status, output: r.output,
+          verification: disagrees ? { status: "refuted", results: r.verification.results } : agreed ? { ...r.verification, status: r.verification.status === "unverified" ? "checked" : r.verification.status } : r.verification,
+          ...(agreed ? { agreement: agreed } : {}),
+          ...(disagrees ? { error: `independent recomputation disagrees with the result (${agreed.mode}): ${JSON.stringify(agreed.witness)} vs ${JSON.stringify(agreed.candidate)}` } : r.error ? { error: r.error } : {}),
+          ...(r.refusal ? { refusal: r.refusal } : {}), ...(r.graphqlFailure ? { graphqlFailure: r.graphqlFailure } : {}), ...(r.cliValidity ? { cliValidity: r.cliValidity } : {}) });
         if (r.refusal || r.graphqlFailure || r.cliValidity?.environment === "changed" || r.cliValidity?.application === "reported-error") break;
       } catch (e) {
         evidence.push({ capability: original.capability, runId: "", status: "failed", verification: { status: "refuted", results: [] }, error: String((e as Error)?.message ?? e) });
