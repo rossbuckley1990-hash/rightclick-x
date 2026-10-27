@@ -43,6 +43,10 @@ test("protected references use an exact versioned shape and cannot masquerade as
   const bad = goal(); bad.fixed = { token: ref };
   assert.throws(() => makePortableGoal(bad, {}, { approveDefinition: true, portableFixedInputs: ["token"] }), /invalid/);
   assert.throws(() => makePortableGoal(goal(), { region: ref }, approval), /invalid/);
+  const retained = Object.assign(goal(), { protectedInputs: { token: ref } });
+  assert.throws(() => makePortableGoal(retained, {}, approval), /invalid/);
+  assert.throws(() => makePortableGoal(retained, { token: { ...ref, slot: "other" } }, approval), /invalid/);
+  assert.deepEqual(makePortableGoal(retained, { token: ref }, approval).protectedInputs.token, ref);
 });
 
 test("witness contracts and bindings reject unknown data and legacy hashes", () => {

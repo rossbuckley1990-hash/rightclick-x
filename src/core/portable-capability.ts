@@ -127,6 +127,15 @@ export function makePortableGoal(goal: PublishedGoal, protectedInputs: Record<st
   const approvedFixed = names(decision.portableFixedInputs);
   const g = object(goal);
   if (Object.keys(g).some(k => !DEFINITION_FIELDS.includes(k) && !OBSERVATIONS.includes(k))) fail();
+  if (g.protectedInputs !== undefined) {
+    const before = object(g.protectedInputs), after = object(protectedInputs);
+    if (Object.keys(before).length !== Object.keys(after).length) fail();
+    for (const name of Object.keys(before)) {
+      if (!Object.hasOwn(after, name)) fail();
+      const a = parseProtectedValueRef(before[name]), b = parseProtectedValueRef(after[name]);
+      if (a.slot !== b.slot || a.purpose !== b.purpose || a.requiredScope !== b.requiredScope) fail();
+    }
+  }
   const fixed = g.fixed ? Object.keys(object(g.fixed)) : [];
   if (fixed.length !== approvedFixed.length || fixed.some(k => !approvedFixed.includes(k))) fail();
   const out: Record<string, unknown> = {};
