@@ -99,6 +99,71 @@ export async function serveStdio(rc: RightClick): Promise<void> {
   await rc.flush();
 }
 
+/** A shared, volatile state backend for runtimes within this Node process only.
+ * Each runtime receives a private CAS view. Neither restarts, other processes,
+ * nor independent backend objects share state. Do not use for cross-process authority. */
+export class ProcessMemoryStore implements Store {
+  private state: PersistedState | null = null;
+  private version = 0;
+  private owner: object | undefined;
+  private readonly context = new AsyncLocalStorage<{ owner: object; active: boolean; pending: Set<Promise<unknown>> }>();
+
+  /** A store object itself is a factory; direct operations use an independent view. */
+  private readonly direct = this.session();
+  forRuntime(): Store { return this.session(); }
+  load(): Promise<PersistedState | null> { return this.direct.load(); }
+  save(state: PersistedState): Promise<void> { return this.direct.save(state); }
+  withGoalLease<T>(pins: Array<{ slug: string; digest: string }>, invoke: () => Promise<T>): Promise<T> {
+    return this.direct.withGoalLease!(pins, invoke);
+  }
+
+  private session(): Store {
+    const owner = {};
+    let seen: number | undefined;
+    const validate = async (pins: Array<{ slug: string; digest: string }>) => {
+      const state = this.state;
+      if (!state) throw new StateConflictError("authoritative process-local goal state is unavailable");
+      for (const pin of pins) {
+        const matches = (state.published ?? []).filter(g => g.slug === pin.slug);
+        if (matches.length !== 1 || !matches[0].revision || await goalDefinitionDigest(matches[0]) !== pin.digest)
+          throw new StateConflictError(`saved goal ${pin.slug} is stale, revoked, or inconsistent`);
+      }
+    };
+    return {
+      load: async () => { seen = this.version; return this.state && structuredClone(this.state); },
+      save: async state => {
+        const scope = this.context.getStore();
+        if (this.owner && !(scope?.active && scope.owner === owner && this.owner === owner))
+          throw new StateConflictError("another runtime holds the process-local goal lease");
+        if (seen !== this.version) throw new StateConflictError("process-local state changed; restart and reload before saving");
+        // Clone before publication; callers cannot mutate authoritative state by alias.
+        this.state = structuredClone(state);
+        seen = ++this.version;
+      },
+      withGoalLease: async <T>(pins: Array<{ slug: string; digest: string }>, invoke: () => Promise<T>): Promise<T> => {
+        const inherited = this.context.getStore();
+        if (inherited?.active && inherited.owner === owner && this.owner === owner) {
+          const task = (async () => { await validate(pins); return invoke(); })();
+          inherited.pending.add(task);
+          try { return await task; } finally { inherited.pending.delete(task); }
+        }
+        if (this.owner) throw new StateConflictError("another runtime holds the process-local goal lease");
+        this.owner = owner;
+        const scope = { owner, active: true, pending: new Set<Promise<unknown>>() };
+        try {
+          await validate(pins);
+          return await this.context.run(scope, invoke);
+        } finally {
+          // Never release while an admitted nested invocation can still dispatch.
+          scope.active = false;
+          while (scope.pending.size) await Promise.allSettled([...scope.pending]);
+          this.owner = undefined;
+        }
+      },
+    };
+  }
+}
+
 export class FileStore implements Store {
   private file: string;
   private tail: Promise<void> = Promise.resolve();
@@ -109,7 +174,7 @@ export class FileStore implements Store {
   private expected?: Uint8Array | null;
   /** Do not let a later queued save overwrite an uncertain committed snapshot. */
   private commitUnknown = false;
-  private readonly leaseContext = new AsyncLocalStorage<{ active: boolean }>();
+  private readonly leaseContext = new AsyncLocalStorage<{ active: boolean; pending: Set<Promise<unknown>> }>();
   private onBackup?: (path: string) => void;
   constructor(file: string, opts: { onBackup?: (path: string) => void } = {}) {
     this.file = file;
@@ -154,8 +219,11 @@ export class FileStore implements Store {
     const path = await import("node:path");
     const inherited = this.leaseContext.getStore();
     if (inherited?.active) {
-      await this.assertGoalPins(pins);
-      return invoke();
+      // Register synchronously before yielding, so an outer callback cannot
+      // release the lock while an admitted nested invocation still runs.
+      const task = (async () => { await this.assertGoalPins(pins); return invoke(); })();
+      inherited.pending.add(task);
+      try { return await task; } finally { inherited.pending.delete(task); }
     }
     await fs.mkdir(path.dirname(this.file), { recursive: true });
     const lock = `${this.file}.lock`;
@@ -164,7 +232,7 @@ export class FileStore implements Store {
       if ((error as NodeJS.ErrnoException).code === "EEXIST") throw new StateConflictError("goal execution or publication holds the file lock");
       throw error;
     }
-    const scope = { active: true };
+    const scope = { active: true, pending: new Set<Promise<unknown>>() };
     let invoked = false;
     try {
       await this.assertGoalPins(pins);
@@ -172,6 +240,7 @@ export class FileStore implements Store {
       return await this.leaseContext.run(scope, invoke);
     } finally {
       scope.active = false;
+      while (scope.pending.size) await Promise.allSettled([...scope.pending]);
       try { await fs.rmdir(lock); }
       catch (error) {
         if (invoked) throw new Error("goal execution outcome unknown after lease cleanup failure; do not replay; inspect retained evidence");

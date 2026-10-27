@@ -63,6 +63,8 @@ function retainableCliOptions(value: unknown, contract: { allowed: Array<{ flags
 export interface Store {
   load(): Promise<PersistedState | null>;
   save(state: PersistedState): Promise<void>;
+  /** Optional independent view for each runtime. Shared process-local stores use this to keep per-runtime CAS observations. */
+  forRuntime?(): Store;
   /** Set when the store is only ever read; the reason is reported instead of a save. */
   readonly readOnly?: string;
   /** Hold an authoritative exclusion lease through all effects of a goal invocation. */
@@ -635,7 +637,7 @@ export class RightClick {
     if (this.workflowRecovery && !opts.store) throw new Error("workflow recovery requires a Store");
     this.info = { ...detectRuntime(), region: opts.region };
     this.name = opts.name ?? "rightclick-x";
-    this.store = opts.store;
+    this.store = opts.store?.forRuntime?.() ?? opts.store;
     this.onInvestigationStart = opts.onInvestigationStart;
   }
 
@@ -656,7 +658,7 @@ export class RightClick {
     const p = await platformReflection(rc.info, { bindings: opts.bindings, workspace: opts.workspace });
     rc.platformFns = p.fns;
     if (p.reflection.capabilities.length) rc.graph.add(p.reflection);
-    const loaded = await opts.store?.load();
+    const loaded = await rc.store?.load();
     const saved = loaded == null ? null : decodeState(loaded);
     if (saved) {
       const stale = saved.semantics !== SEMANTICS;
@@ -3184,7 +3186,7 @@ export class RightClick {
     if (this.publishing.has(slug)) throw new Error(`saved goal publication is pending: ${slug}`);
     const g = this.published.get(slug);
     if (!g) throw new Error(`no published goal: ${slug}`);
-    if (!g.revision) throw new Error(`saved goal has no immutable revision: ${slug}`);
+    if (!g.revision) throw new Error(`saved goal ${slug} has no immutable revision; explicitly republish it with a new revision before execution`);
     const digest = await this.goalDigest(g);
     return this.withGoalLease([{ slug, digest }], async () => {
       const capability = this.graph.get(`goal:${slug}`);
@@ -3215,7 +3217,7 @@ export class RightClick {
       if (goals.length > 1024) throw new Error("saved-goal lease preflight bound exceeded");
       const all = new Map<string, string>();
       for (const [slug, goal] of goals) {
-        if (!goal.revision) throw new Error(`saved goal has no immutable revision: ${slug}`);
+        if (!goal.revision) throw new Error(`saved goal ${slug} has no immutable revision; explicitly republish it with a new revision before execution`);
         if ((goal.witnesses ?? []).some(w => !/^sha256:[a-f0-9]{64}$/.test(w.contract ?? "")))
           throw new Error(`saved goal has an unpinned or legacy witness: ${slug}; establish a new check explicitly`);
         const digest = await this.goalDigest(goal);
@@ -3228,7 +3230,7 @@ export class RightClick {
       }
       const allPins = [...all].map(([slug, digest]) => ({ slug, digest }));
       if (this.store) {
-        if (!this.store.withGoalLease) throw new Error("saved-goal execution requires an authoritative lease-capable store");
+        if (!this.store.withGoalLease) throw new Error(`saved-goal execution requires an authoritative lease-capable store; this adapter cannot guarantee freshness or coordinate replacement${this.store.readOnly ? ` (${this.store.readOnly})` : ""}. Use a coordinated store or an explicitly immutable authoritative snapshot`);
         return await this.store.withGoalLease(allPins, invoke);
       }
       return await invoke();
