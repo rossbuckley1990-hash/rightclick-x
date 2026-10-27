@@ -13,6 +13,9 @@ export const STATE_REQUIREMENTS = [
   "composition-goal-obligations@1",
   "declared-continuation-contracts@1",
   "cli-validity@1",
+  // Old runtimes must not execute newly persisted SHA-256 witness pins using
+  // their collision-prone, incompatible 32-bit graph signatures.
+  "witness-contract-sha256@1",
 ] as const;
 export const CONTRACT_LINK_REQUIREMENT = "response-contract-links@1";
 /** Present only when state retains reflections an inference migration could not re-derive.
