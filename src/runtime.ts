@@ -4056,7 +4056,7 @@ export class RightClick {
           if (followed.evidence.stopped !== "result") throw new PendingOutcomeError({ capability: cap.id, reason: "http-202", runs: [], continuation: followed.evidence });
           out = followed.output;
         } else {
-          out = await readBody(res);
+          out = await readBody(res, execution.protectedRead ? 8192 : Infinity);
           if (!res.ok) throw new Error(`HTTP ${res.status}: ${String(JSON.stringify(preview(out))).slice(0, 300)}`);
         }
         if (inv.entry) {

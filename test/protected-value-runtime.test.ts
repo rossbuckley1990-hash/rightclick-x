@@ -47,7 +47,7 @@ test("protected HTTP header is host scoped, no ambient credentials or value dige
 });
 
 test("provider echo, status errors and redirects never persist the protected value or retry", async () => {
-  for (const response of [() => Response.json({ harmless: "6543" }), () => Response.json({ error: "6543" }, { status: 500 }), () => new Response("6543", { status: 302, headers: { location: "https://other.test/" } }), () => new Response("6543", { status: 202 })]) {
+  for (const response of [() => Response.json({ harmless: "6543" }), () => Response.json({ error: "6543" }, { status: 500 }), () => new Response("6543", { status: 302, headers: { location: "https://other.test/" } }), () => new Response("6543", { status: 202 }), () => Response.json("x".repeat(9000))]) {
     const { rc, store, state } = await fixture(undefined, "6543", response);
     const r = await rc.run(capid, { "x-api-key": ref });
     assert.equal(r.status, "failed"); assert.equal(state.values.length, 1, "no retry, redirect or polling");
