@@ -69,7 +69,9 @@ export class Ledger {
   }
 
   toJSON(): Record<string, Experience> {
-    return Object.fromEntries(this.stats);
+    // Provider errors are untrusted and can echo arbitrary inputs. Name-based
+    // redaction cannot prove they do not contain a credential.
+    return Object.fromEntries([...this.stats].map(([id, { lastError: _lastError, ...experience }]) => [id, experience]));
   }
 
   load(data: Record<string, Experience>): void {
