@@ -37,7 +37,9 @@ test("a runtime on KV state loads it and never writes KV, whatever it does", asy
   const k = kv(encodeState(seeded));
   const rc = await RightClick.create({ store: new KvStore(k.api), sandbox: null, directories: [] });
   assert.ok(rc.graph.get("goal:digest-seeded"), "the seeded saved goal did not load");
-  assert.equal((await rc.run("goal:digest-seeded", { text: "again" })).status, "completed");
+  const result = await rc.run("goal:digest-seeded", { text: "again" });
+  assert.notEqual(result.status, "completed", "eventually consistent KV cannot authorize goal execution");
+  assert.match(JSON.stringify(result), /authoritative lease-capable store/);
   const pub = await rc.compose({ have: { text: { type: "text", value: "new" } }, want: "hash", through: ["builtin:text.sha256"], run: true, publish: "New digest" });
   await rc.flush().catch(() => {});
   await new Promise((done) => setTimeout(done, 100)); // any debounced save would have run by now

@@ -64,7 +64,7 @@ Recovery: RCX_WORKFLOW_RECOVERY=1 opts this host into retaining bounded workflow
 in its local state file. Resume pending compositions with rcx run resume:<run-id>; no new inputs.
 Restrictions and checks are retained, and current execution authority is required. Default: off.
 
-State: ${env.RCX_STATE_FILE ?? "~/.rightclick-x/state.json"} (RCX_STATE_FILE). Authority: RCX_DESTRUCTIVE=operator|agent-confirm|allow, RCX_APPROVE=<ids>, RCX_RETRY=<ids or origins>, RCX_INVESTIGATE / RCX_EXECUTE=<program paths>, RCX_SHARE_EVIDENCE=1. Credentials: RCX_AUTH='{"https://api.x.com":"Bearer …"}'.`;
+State: ${env.RCX_STATE_FILE ?? "~/.rightclick-x/state.json"} (RCX_STATE_FILE). Authority: RCX_DESTRUCTIVE=operator|agent-confirm|allow, RCX_APPROVE=<ids>, RCX_RETRY=<ids or origins>, RCX_INVESTIGATE / RCX_EXECUTE=<program paths>, RCX_CLI_CONFORMANCE='{"cli:<program>:<command>":{"samples":[…]}}', RCX_SHARE_EVIDENCE=1. Credentials: RCX_AUTH='{"https://api.x.com":"Bearer …"}'.`;
 
 async function main() {
   const cmd = argv.shift() ?? "help";

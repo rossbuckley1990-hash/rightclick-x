@@ -5,6 +5,7 @@ import { reflectOpenAPI } from "../src/reflectors/openapi.ts";
 import { MemoryStore } from "./helpers.ts";
 import { signature } from "../src/core/graph.ts";
 import { dispatch } from "../src/interface/tools.ts";
+import { decodeState, PUBLICATION_SNAPSHOT_REQUIREMENT } from "../src/core/state-format.ts";
 
 const response = (properties: object) => ({ "200": { content: { "application/json": { schema: { type: "object", properties } } } } });
 async function world(store: MemoryStore, options: RuntimeOptions = {}) {
@@ -61,6 +62,10 @@ test("context_compose retains its complete selected plan, checks and publication
   assert.equal(first.rc.graph.get("goal:stored-package"), undefined);
   assert.equal(first.rc.graph.list().some(c => c.id.startsWith("execution:composition:")), false);
   await first.rc.flush();
+  assert.ok(store.state!.requirements!.includes(PUBLICATION_SNAPSHOT_REQUIREMENT));
+  const unsafe = structuredClone(store.state!);
+  unsafe.requirements = unsafe.requirements!.filter(r => r !== PUBLICATION_SNAPSHOT_REQUIREMENT);
+  assert.throws(() => decodeState(unsafe), /missing the publication snapshot requirement/);
   const fresh = await world(store);
   const done: any = await dispatch(fresh.rc, "context_run", { id: initial.executed.pending.resumeId });
   assert.equal(done.status, "completed", done.error);
@@ -76,6 +81,23 @@ test("context_compose retains its complete selected plan, checks and publication
   assert.deepEqual(first.calls, ["POST /pack", "GET /tasks/t1"]);
   assert.deepEqual(fresh.calls, ["GET /results/t1", "POST /finish"]);
   await fresh.rc.flush();
+});
+
+test("a resumed composition does not replace a goal published while it was pending", async () => {
+  const store = new MemoryStore();
+  const first = await world(store);
+  const pending: any = await dispatch(first.rc, "context_compose", { ...composition, publish: "Stored package" });
+  assert.equal(pending.executed.status, "pending");
+  await first.rc.flush();
+  const fresh = await world(store);
+  const concurrent = await fresh.rc.compose({ have: {}, want: "text", run: true,
+    through: ["openapi:source:prepare"], publish: "Stored package" });
+  assert.ok(concurrent.published, JSON.stringify(concurrent));
+  const revision = fresh.rc.published.get("stored-package")!.revision;
+  const done: any = await dispatch(fresh.rc, "context_run", { id: pending.executed.pending.resumeId });
+  assert.equal(done.status, "completed", done.error);
+  assert.match(done.composition?.publishRefused ?? "", /changed since execution began/);
+  assert.equal(fresh.rc.published.get("stored-package")!.revision, revision);
 });
 
 test("composition recovery preserves input-word obligations and refuses lossy stored checks", async () => {
@@ -206,9 +228,14 @@ test("saved-goal recovery binds its full definition, current authority and calle
     await first.rc.flush();
     if (mode === "definition") store.state!.published![0].verify = [];
     const fresh = await world(store, mode === "denied" ? { authority: { execution: { deniedCapabilities: ["goal:stored-package"] } } } : {});
+    if (mode === "definition") {
+      await assert.rejects(fresh.rc.run(initial.pending.resumeId), /stale|revoked|inconsistent/);
+      assert.deepEqual(fresh.calls, [], "the stale definition is refused before any effect");
+      continue;
+    }
     const done = await fresh.rc.run(initial.pending.resumeId);
-    assert.equal(done.status, mode === "definition" || mode === "denied" ? "pending" : mode === "extra-check" ? "failed" : "completed", done.error);
-    if (mode === "definition" || mode === "denied") assert.deepEqual(fresh.calls, []);
+    assert.equal(done.status, mode === "denied" ? "pending" : mode === "extra-check" ? "failed" : "completed", done.error);
+    if (mode === "denied") assert.deepEqual(fresh.calls, []);
     else assert.deepEqual(fresh.calls, ["GET /results/t1", "POST /finish"]);
     if (mode !== "generated") assert.equal((fresh.rc.runStatus({ runId: initial.runId }) as any).status, done.status);
     await fresh.rc.flush();
@@ -408,8 +435,10 @@ test("witness independence includes pre-restart producers after their receipt bu
   const cap = first.rc.graph.get("composite:retained")!;
   if (cap.invoke.kind !== "composite") throw new Error("fixture");
   cap.invoke.steps[2].capability = "openapi:destination:finish";
-  cap.invoke.witnesses = [{ capability: "openapi:source:prepare", args: {},
-    verify: [{ op: "equals", path: "document", value: "prepared" }] }];
+  // A retained witness must carry the same contract pin that publication
+  // installs; this fixture still tests its independence from prior producers.
+  cap.invoke.witnesses = await (first.rc as any).pinWitnesses([{ capability: "openapi:source:prepare", args: {},
+    verify: [{ op: "equals", path: "document", value: "prepared" }] }]);
   const run = await first.rc.run(cap.id); await first.rc.flush();
   store.state!.receipts = []; // Simulate eviction from the bounded historical receipt buffer.
   const fresh = await world(store);

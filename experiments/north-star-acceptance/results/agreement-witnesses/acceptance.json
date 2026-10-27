@@ -1,0 +1,350 @@
+{
+  "at": "2026-10-26T23:57:38.058Z",
+  "label": "agreement-witnesses",
+  "commit": "f23aa44eae32e7cd2924629081330d1cad008fc3 Read option arguments a synopsis declares for flags listed alone",
+  "supportsAgreement": true,
+  "node": "v26.12.0",
+  "platform": "darwin arm64",
+  "steps": [
+    {
+      "step": 1,
+      "name": "Encounter unfamiliar supported software",
+      "ms": 32,
+      "pass": true,
+      "evidence": {
+        "programs": {
+          "jq": {
+            "path": "/opt/homebrew/Cellar/jq/1.8.2/bin/jq",
+            "version": "jq-1.8.2"
+          },
+          "json_pp": {
+            "path": "/usr/bin/json_pp",
+            "version": "4.06"
+          },
+          "shasum": {
+            "path": "/usr/bin/shasum",
+            "version": "6.02"
+          },
+          "sha1sum": {
+            "path": "/sbin/sha1sum",
+            "version": ""
+          },
+          "idn2": {
+            "path": "/opt/homebrew/Cellar/libidn2/2.3.8/bin/idn2",
+            "version": "idn2 (Libidn2) 2.3.8"
+          },
+          "idn": {
+            "path": "/opt/homebrew/Cellar/libidn/1.43/bin/idn",
+            "version": "idn (GNU Libidn) 1.43"
+          }
+        },
+        "inDevelopmentSetBeforeThisExperiment": [],
+        "addedToDevelopmentSetByThisExperiment": [],
+        "authorisedPaths": [
+          "/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/rcx-north-star-mIfZ5h/bin/jq",
+          "/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/rcx-north-star-mIfZ5h/bin/json_pp",
+          "/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/rcx-north-star-mIfZ5h/bin/shasum",
+          "/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/rcx-north-star-mIfZ5h/bin/sha1sum",
+          "/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/rcx-north-star-mIfZ5h/bin/idn2",
+          "/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/rcx-north-star-mIfZ5h/bin/idn"
+        ]
+      }
+    },
+    {
+      "step": 2,
+      "name": "Discover its real capabilities without a bespoke adapter",
+      "ms": 3554,
+      "pass": true,
+      "evidence": {
+        "capabilities": {
+          "jq": [
+            "cli:jq:color-output",
+            "cli:jq:stdout",
+            "cli:jq:compact-output",
+            "cli:jq:default",
+            "cli:jq:sort-keys",
+            "cli:jq:raw-output0",
+            "cli:jq:raw-input",
+            "cli:jq:join-output",
+            "cli:jq:invoke"
+          ],
+          "json_pp": [
+            "cli:json-pp:default",
+            "cli:json-pp:invoke",
+            "cli:json-pp:stdout",
+            "cli:json-pp:v"
+          ],
+          "shasum": [
+            "cli:shasum:default",
+            "cli:shasum:invoke"
+          ],
+          "sha1sum": [
+            "cli:sha1sum:tag",
+            "cli:sha1sum:default",
+            "cli:sha1sum:zero",
+            "cli:sha1sum:quiet",
+            "cli:sha1sum:invoke"
+          ],
+          "idn2": [
+            "cli:idn2:default",
+            "cli:idn2:invoke"
+          ],
+          "idn": [
+            "cli:idn:invoke",
+            "cli:idn:default",
+            "cli:idn:no-tld"
+          ]
+        },
+        "learnMs": {
+          "jq": 660,
+          "json_pp": 810,
+          "shasum": 582,
+          "sha1sum": 527,
+          "idn2": 532,
+          "idn": 438
+        }
+      }
+    },
+    {
+      "step": 3,
+      "name": "Represent them through the existing typed interface",
+      "ms": 1,
+      "pass": true,
+      "evidence": {
+        "tools": 13,
+        "cards": [
+          {
+            "id": "cli:jq:stdout",
+            "inputs": [
+              "json?:json",
+              "options?:list:text",
+              "files?:json",
+              "operands?:list:text"
+            ],
+            "outputs": [
+              "text"
+            ],
+            "risk": "read",
+            "allowed": true
+          },
+          {
+            "id": "cli:sha1sum:default",
+            "inputs": [
+              "input:text"
+            ],
+            "outputs": [
+              "text"
+            ],
+            "risk": "read",
+            "allowed": true
+          },
+          {
+            "id": "cli:json-pp:stdout",
+            "inputs": [
+              "json?:json",
+              "options?:list:text",
+              "files?:json",
+              "operands?:list:text"
+            ],
+            "outputs": [
+              "text"
+            ],
+            "risk": "read",
+            "allowed": true
+          },
+          {
+            "id": "cli:shasum:default",
+            "inputs": [
+              "input:text"
+            ],
+            "outputs": [
+              "text"
+            ],
+            "risk": "read",
+            "allowed": true
+          }
+        ]
+      }
+    },
+    {
+      "step": 4,
+      "name": "Compose multiple capabilities to solve a meaningful task",
+      "ms": 165,
+      "pass": true,
+      "evidence": {
+        "pipeline": [
+          "jq: exact standard output text",
+          "sha1sum: calculate a message-digest fingerprint (checksum) for a file"
+        ],
+        "output": "2910220347dbabacadd5c7015c8b2f63caf9f939  -\n",
+        "expected": "2910220347dbabacadd5c7015c8b2f63caf9f939  -\n",
+        "independentPipeline": {
+          "status": "completed",
+          "crystallized": "composite:2eff38a493ae",
+          "error": ""
+        }
+      }
+    },
+    {
+      "step": 5,
+      "name": "Execute with appropriate authority and confinement",
+      "ms": 160,
+      "pass": true,
+      "evidence": {
+        "unauthorisedProgram": "{\"results\":[{\"source\":\"cli:/bin/cp\",\"probes\":[],\"learned\":[],\"error\":\"not authorised: the operator has not registered /bin/cp (authority.investigate / RCX_INVESTIGATE)\"}],\"totalNewCapabilities\":0,\"totalNewPowers\":0,\"grap",
+        "fileOperandOutsideFiles": "{\"runId\":\"run_mvpx2dsb_8_a65eaeba-9266-44d0-8147-bef6bf4b2a4a\",\"capability\":\"cli:jq:invoke\",\"provider\":\"cli:jq\",\"title\":\"jq with documented options: Command-line JSON processor\",\"status\":\"failed\",\"error\":\"operands must b",
+        "sandbox": "✓ sandbox: macos-sandbox-exec; no network; writes only to a fresh temporary directory; no reads under home directories; PATH limited to /usr/bin:/bin; scrubbed environment; argv only; wall-time 5000ms, CPU-time, per-file 16MB, open-file and output limits; sampled resident-memory/process-count watchdog; not a hard kernel bound; observer loss refuses results; the run's whole process group is terminated when it ends"
+      }
+    },
+    {
+      "step": 6,
+      "name": "Independently verify the actual outcome",
+      "ms": 125,
+      "pass": true,
+      "evidence": {
+        "rightClickX": "verified",
+        "agreement": {
+          "mode": "exact",
+          "ok": true,
+          "witness": "2910220347dbabacadd5c7015c8b2f63caf9f939  -\n",
+          "candidate": "2910220347dbabacadd5c7015c8b2f63caf9f939  -\n"
+        },
+        "script": true,
+        "trailingNewlineProducer": {
+          "status": "failed",
+          "refutedByAgreement": true,
+          "error": "verification refuted by independent outcome witness: independent recomputation disagrees with the result (exact): \"2910220347dbabacadd5c7015c8b2f63caf9f939  -\\n\" vs \"aa5d4c86e9bb70b3262e911a73b5b55b0c092da2  -\\n\""
+        },
+        "idnObservation": {
+          "bücher.example": {
+            "status": "failed",
+            "verification": "refuted",
+            "output": null
+          },
+          "faß.de": {
+            "status": "failed",
+            "error": "cli:idn2:default: /private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/rcx-north-star-mIfZ5h/bin/idn2 exited 1 without output: idn2: toAscii: could not convert string to UTF-8\n"
+          }
+        }
+      }
+    },
+    {
+      "step": 7,
+      "name": "Save the successful workflow as a reusable goal",
+      "ms": 0,
+      "pass": true,
+      "evidence": {
+        "goal": "goal:manifest-fingerprint",
+        "trust": "verified",
+        "witnesses": [
+          "composite:2eff38a493ae"
+        ],
+        "predicates": 1
+      }
+    },
+    {
+      "step": 8,
+      "name": "Reuse the goal in a fresh session without rediscovery",
+      "ms": 254,
+      "pass": true,
+      "evidence": {
+        "label": "fresh process, unseen manifest",
+        "status": "completed",
+        "verification": "verified",
+        "correct": true,
+        "output": "0652ccb3f317c6577afdb111401ffeb7450c79cd  -\n",
+        "ms": 94,
+        "learnedAgain": false,
+        "announced": true
+      }
+    },
+    {
+      "step": 9,
+      "name": "Survive a compatible software change",
+      "ms": 369,
+      "pass": false,
+      "evidence": {
+        "withoutSamples": {
+          "label": "compatible wrapper, samples withdrawn from the configuration",
+          "status": "failed",
+          "verification": "unverified",
+          "correct": false,
+          "error": "CLI execution environment changed; retained evidence is insufficient; not run or automatically replayed. Explicit relearning does not replace outcome verification.",
+          "ms": 26,
+          "learnedAgain": false,
+          "announced": true
+        },
+        "withSamples": {
+          "label": "compatible wrapper, the operator's standing conformance samples",
+          "status": "failed",
+          "verification": "unverified",
+          "correct": false,
+          "error": "CLI execution environment changed; retained evidence is insufficient; not run or automatically replayed. Explicit relearning does not replace outcome verification.",
+          "ms": 26,
+          "learnedAgain": false,
+          "announced": true
+        }
+      }
+    },
+    {
+      "step": 10,
+      "name": "Refuse incompatible or unsafe changes",
+      "ms": 185,
+      "pass": true,
+      "evidence": {
+        "label": "incompatible wrapper",
+        "status": "failed",
+        "verification": "unverified",
+        "correct": false,
+        "error": "CLI execution environment changed; retained evidence is insufficient; not run or automatically replayed. Explicit relearning does not replace outcome verification.",
+        "ms": 26,
+        "learnedAgain": false,
+        "announced": true,
+        "presentedWrong": false
+      }
+    },
+    {
+      "step": 11,
+      "name": "Retain knowledge when a provider is unavailable, and recover",
+      "ms": 1524,
+      "pass": true,
+      "evidence": {
+        "removed": {
+          "label": "jq removed",
+          "status": "failed",
+          "verification": "refuted",
+          "correct": false,
+          "output": null,
+          "error": "cli:jq:stdout: program not installed: /private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/rcx-north-star-mIfZ5h/bin/jq (HTTP 404 equivalent: nothing was run); unresolved required anchor: cli:jq:stdout; expected one equivalent operation at cli:/private/var",
+          "ms": 27,
+          "learnedAgain": false,
+          "announced": true
+        },
+        "goalRetained": true,
+        "goalSearchable": true,
+        "restoredBeforeRelearn": {
+          "label": "jq restored, before anything is re-learned",
+          "status": "failed",
+          "verification": "refuted",
+          "correct": false,
+          "error": "unresolved required anchor: cli:jq:stdout; expected one equivalent operation at cli:/private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/rcx-north-star-mIfZ5h/bin/jq, found 0",
+          "ms": 4,
+          "learnedAgain": false,
+          "announced": true
+        },
+        "relearned": true,
+        "restored": {
+          "label": "jq restored and re-learned",
+          "status": "completed",
+          "verification": "verified",
+          "correct": true,
+          "output": "f3764edc84f75ea026e794539de103e69f02daea  -\n",
+          "ms": 94,
+          "learnedAgain": false,
+          "announced": true
+        }
+      }
+    }
+  ],
+  "passed": 10
+}

@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { RightClick } from "../src/runtime.ts";
+import { reflectOpenAPI } from "../src/reflectors/openapi.ts";
 
 // Shapes of a real, independently operated API's genuine v1 -> v2 redesign (Frankfurter):
 // v1 GET /v1/latest?base=  -> { amount, base, date, rates: { <currency>: number } }
@@ -93,6 +94,85 @@ test("genuine-change shape: v1 retired -> the published goal keeps working via v
   assert.equal(after.result, RATE.JPY);
   assert.ok(after.pipeline.some((t) => /single exchange rate pair/i.test(t)), `served by v2: ${after.pipeline}`);
   assert.ok(!state.calls.some((c) => c.startsWith("other.test")), "never left the approved origin");
+});
+
+test("same-call repair keeps its lease while concurrent witness relearning is refused", { timeout: 5000 }, async () => {
+  const { state, fetchMock } = world();
+  let entered!: () => void, release!: () => void;
+  const ready = new Promise<void>(resolve => { entered = resolve; });
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  let gateRoot = false;
+  const observer = { openapi: "3.0.0", info: { title: "Repair observer" }, servers: [{ url: "https://observer.test" }], paths: {
+    "/check": { get: { operationId: "check", summary: "Check rate", parameters: ["base", "rate"].map(name => ({ name, in: "query", required: true, schema: { type: "string" } })),
+      responses: { "200": { content: { "application/json": { schema: { type: "object", properties: { valid: { type: "boolean" } } } } } } } } },
+  } };
+  const fetcher: typeof fetch = async input => {
+    const url = new URL(input instanceof Request ? input.url : String(input));
+    if (url.host === "fx.test" && url.pathname === "/" && gateRoot) { entered(); await gate; }
+    if (url.host === "observer.test") {
+      if (url.pathname === "/openapi.json") return Response.json(observer);
+      if (url.pathname === "/check") return Response.json({ valid: Number(url.searchParams.get("rate")) === RATE[url.searchParams.get("base") ?? ""] });
+    }
+    return fetchMock(input);
+  };
+  const rc = await RightClick.create({ name: "repair-lease", fetch: fetcher, directories: [] });
+  await rc.learn({ sources: ["https://fx.test/v1/openapi.json", "https://observer.test/openapi.json"] });
+  const built = await rc.compose(requirement({ origins: ["https://fx.test", "https://observer.test"], witnesses: [{
+    capability: "openapi:repair-observer:check", args: { base: { input: "base" }, rate: { output: "" } }, verify: [{ op: "equals", path: "valid", value: true }],
+  }] }));
+  assert.equal(built.executed?.verification.status, "verified", JSON.stringify(built.executed));
+  state.v1Retired = true; gateRoot = true;
+  const invocation = rc.callPublished("euro-rate", { base: "JPY" });
+  try {
+    await ready;
+    await assert.rejects(rc.learn({ source: "https://observer.test/openapi.json" }), /blocked while a saved goal is executing/);
+  } finally { release(); }
+  const result = await invocation;
+  assert.equal(result.ok, true, result.error);
+  assert.equal(result.verification, "verified");
+  assert.equal(result.result, RATE.JPY);
+});
+
+test("same-call repair rejects a changed witness before any replacement producer call", async () => {
+  const { state, fetchMock } = world();
+  const observer = { openapi: "3.0.0", info: { title: "Repair observer" }, servers: [{ url: "https://observer.test" }], paths: {
+    "/check": { get: { operationId: "check", summary: "Check rate", parameters: ["base", "rate"].map(name => ({ name, in: "query", required: true, schema: { type: "string" } })),
+      responses: { "200": { content: { "application/json": { schema: { type: "object", properties: { valid: { type: "boolean" } } } } } } } } },
+  } };
+  const replacement = { ...structuredClone(observer), paths: { "/replacement": observer.paths["/check"] } };
+  let rc!: RightClick, replace = false;
+  const calls: string[] = [];
+  const fetcher: typeof fetch = async input => {
+    const url = new URL(input instanceof Request ? input.url : String(input));
+    calls.push(`${url.host}${url.pathname}`);
+    if (url.host === "observer.test") {
+      if (url.pathname === "/openapi.json") return Response.json(observer);
+      if (url.pathname === "/check") return Response.json({ valid: Number(url.searchParams.get("rate")) === RATE[url.searchParams.get("base") ?? ""] });
+    }
+    return fetchMock(input);
+  };
+  rc = await RightClick.create({ name: "repair-witness-change", fetch: fetcher, directories: [] });
+  await rc.learn({ sources: ["https://fx.test/v1/openapi.json", "https://observer.test/openapi.json"] });
+  const built = await rc.compose(requirement({ origins: ["https://fx.test", "https://observer.test"], witnesses: [{
+    capability: "openapi:repair-observer:check", args: { base: { input: "base" }, rate: { output: "" } }, verify: [{ op: "equals", path: "valid", value: true }],
+  }] }));
+  assert.equal(built.executed?.verification.status, "verified", JSON.stringify(built.executed));
+  // Interleave a changed checker into the owner's permitted learn before it
+  // returns, modelling a reflection that changes more than the producer.
+  const internal = rc as any;
+  const originalLearn = internal.learnSources.bind(rc);
+  internal.learnSources = async (options: unknown, retained: unknown, permit: unknown) => {
+    const result = await originalLearn(options, retained, permit);
+    if (replace && permit) {
+      replace = false;
+      await originalLearn({ spec: reflectOpenAPI(replacement, "https://observer.test/openapi.json") }, undefined, permit);
+    }
+    return result;
+  };
+  state.v1Retired = true; replace = true; calls.length = 0;
+  await assert.rejects(rc.callPublished("euro-rate", { base: "JPY" }), /witness contract changed|witness must be an available/);
+  assert.ok(!calls.some(call => call.startsWith("fx.test/v2/rate/")), `replacement producer was called: ${calls}`);
+  assert.ok(!calls.includes("observer.test/replacement"), "the changed witness was not executed");
 });
 
 test("egress policy: a repair never routes the customer's data to an origin they did not approve; it fails closed", async () => {

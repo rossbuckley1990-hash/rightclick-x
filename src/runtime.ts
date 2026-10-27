@@ -3,7 +3,9 @@
 // federation) is a thin shell around this class.
 
 import { checkpointValue, validWorkflow, type WorkflowContinuation, type CompositionContinuation } from "./core/workflow-continuation.ts";
-import { CONTRACT_LINK_REQUIREMENT, decodeState, DEFERRED_INFERENCE_REQUIREMENT, STATE_FORMAT, STATE_REQUIREMENTS, usesContractLinks } from "./core/state-format.ts";
+import { StateCommitUnknownError, StateConflictError } from "./core/state-conflict.ts";
+import { goalDefinitionDigest } from "./core/goal-identity.ts";
+import { CLI_CONFORMANCE_REQUIREMENT, CONTRACT_LINK_REQUIREMENT, decodeState, DEFERRED_INFERENCE_REQUIREMENT, PUBLICATION_SNAPSHOT_REQUIREMENT, STATE_FORMAT, STATE_REQUIREMENTS, STEP_INPUT_BINDINGS_REQUIREMENT, usesContractLinks, usesPublicationSnapshot, usesStepInputBindings } from "./core/state-format.ts";
 import { pointerValue, validLinkBinding, validLinkGroup, validLinkValue } from "./core/links.ts";
 import { ActivityLog, reference, type ActivityState, type ContractReference } from "./core/activity.ts";
 import { CapabilityGraph, signature, tokenize, type GraphEvent, type LearnDelta } from "./core/graph.ts";
@@ -18,6 +20,7 @@ import { validateFileNames } from "./core/cli-files.ts";
 import { observeCliEnvironment } from "./core/cli-environment.ts";
 import { CliValidityError, reportsApplicationError, type CliValidity } from "./core/cli-outcome.ts";
 import { carryCliContinuity, withoutCliContinuity } from "./core/cli-continuity.ts";
+import { cliConformanceContract, parseCliConformance, type CliConformance, type CliConformancePin } from "./core/cli-conformance.ts";
 import { checkProgram, sameProgram } from "./core/programs.ts";
 import { isSensitiveName, scrub, sensitiveValues } from "./core/secrets.ts";
 import { investigateCli, replayExamples, validateOptions, type Investigation } from "./reflectors/cli.ts";
@@ -27,7 +30,7 @@ import { assessExecution, consequentialRisks, ExecutionDenied, intersectOrigins,
 import { distance, inferType, inspectValue, type Inspection } from "./core/semantics.ts";
 import { describeResult, resultDescription, type ResultDescription } from "./core/result-description.ts";
 import type { Capability, CapabilityAnchor, FetchLike, GraphQLFailureEvidence, PlanStep, Provider, Reflection, SemType, TransportRefusal } from "./core/types.ts";
-import { check, pick, type Predicate, type PredicateResult, type OutcomeWitness, type WitnessResult } from "./core/verify.ts";
+import { agreement, assertAgreement, check, pick, type Predicate, type PredicateResult, type OutcomeWitness, type WitnessResult } from "./core/verify.ts";
 import { builtinReflection, type BuiltinFn } from "./reflectors/builtins.ts";
 import { DEFAULT_DIRECTORIES, type Candidate, type Directory } from "./reflectors/directories.ts";
 import { discover, type Discovery, type SourceKind } from "./reflectors/discover.ts";
@@ -39,14 +42,33 @@ import { Authority, cancelBody, readBody, refuseDeniedResponse, request, Transpo
 import { detectRuntime, platformReflection, type PlatformFn, type RuntimeInfo } from "./reflectors/platform.ts";
 
 export const VERSION = "0.1.0";
+// Only the lease-owning saved-goal entry point can request bounded deferred
+// re-derivation. Public learn/compose calls never receive this symbol.
+const GOAL_RESTORE_PERMIT = Symbol("goal-deferred-restore");
 /** Bump whenever semantic inference changes: persisted reflections are then re-derived from their sources. */
 export const SEMANTICS = 27;
+
+/** Only documented, value-free flags may be retained. An option argument can contain an
+ * opaque credential even when neither the option nor the input name looks sensitive. */
+function retainableCliOptions(value: unknown, contract: { allowed: Array<{ flags: string[]; arg: boolean; optionalArg?: boolean }>; excluded?: string[] }): boolean {
+  let argv: string[];
+  try { argv = validateOptions(value, contract.allowed, contract.excluded); } catch { return false; }
+  const flags = new Map(contract.allowed.flatMap(option => option.flags.map(flag => [flag, option] as const)));
+  return argv.every(flag => {
+    const option = flags.get(flag);
+    return !!option && !option.arg && !option.optionalArg && !option.flags.some(isSensitiveName);
+  });
+}
 
 export interface Store {
   load(): Promise<PersistedState | null>;
   save(state: PersistedState): Promise<void>;
+  /** Optional independent view for each runtime. Shared process-local stores use this to keep per-runtime CAS observations. */
+  forRuntime?(): Store;
   /** Set when the store is only ever read; the reason is reported instead of a save. */
   readonly readOnly?: string;
+  /** Hold an authoritative exclusion lease through all effects of a goal invocation. */
+  withGoalLease?<T>(pins: Array<{ slug: string; digest: string }>, invoke: () => Promise<T>): Promise<T>;
 }
 
 /** Knowledge kept while it cannot be re-derived here; see PersistedState.deferredInference. */
@@ -86,6 +108,8 @@ export interface PersistedState {
    *  authority or a sandbox there, or a pipeline waiting on one of those. Retained, never
    *  executed, and re-derived on a later load that can. */
   deferredInference?: Deferral[];
+  /** Evidence that a changed CLI still answers operator-authorized samples; never authority. */
+  cliConformance?: CliConformancePin[];
 }
 
 export interface HttpRunContinuation {
@@ -100,6 +124,7 @@ export interface HttpRunContinuation {
 interface HttpExecution {
   responseStatus?: number;
   cliValidity?: CliValidity;
+  strictCli?: boolean;
   signal?: AbortSignal;
   transportOwner?: Net["execution"];
   continuation?: HttpContinuationEvidence;
@@ -122,6 +147,8 @@ function validHttpRun(c: HttpRunContinuation): boolean {
  */
 export interface PublishedGoal {
   slug: string;
+  /** Distinguishes successive definitions even when their contents are identical. */
+  revision?: string;
   title: string;
   have: Record<string, SemType>;
   want: SemType;
@@ -132,6 +159,8 @@ export interface PublishedGoal {
   witnesses?: OutcomeWitness[];
   /** Inputs pinned when the goal was published; part of the goal, not parameters of its API. */
   fixed?: Record<string, unknown>;
+  /** Explicit named inputs for ports on anchored capabilities. */
+  inputBindings?: Record<string, Record<string, string>>;
   /** The customer's egress policy: origins this goal may send data to, in every run and repair. */
   origins?: string[];
   /**
@@ -227,6 +256,8 @@ export interface OperatorAuthority {
    * never re-sent once it may have taken effect.
    */
   retry?: string[];
+  /** Authorizes only these bounded synthetic samples in a narrowed sandbox, never caller-input replay. */
+  cliConformance?: Record<string, CliConformance>;
 }
 
 export interface RunOptions {
@@ -240,6 +271,8 @@ export interface RunOptions {
   net?: Net;
   /** Internal: a plan step or pinned witness. Its caller chose it by current contract and does its own repair. */
   planned?: boolean;
+  /** A checker never inherits compatibility evidence for the operation it checks. */
+  strictCli?: boolean;
 }
 
 export interface RunRecord {
@@ -381,6 +414,8 @@ export interface ComposeOptions {
   risks?: Capability["risk"][];
   /** Capability ids or search phrases the pipeline must pass through. */
   through?: string[];
+  /** Bind ports on anchored CLI capabilities to distinct named have inputs. */
+  inputBindings?: Record<string, Record<string, string>>;
   /** Internal persisted anchor contracts; callers specify through instead. */
   anchors?: CapabilityAnchor[];
   /** Egress policy: only use capabilities that send data to these origins, including during repair. */
@@ -391,6 +426,8 @@ export interface ComposeOptions {
   acquire?: boolean;
   /** After a verified run, publish this goal as an API endpoint under this name. */
   publish?: string;
+  /** Refuse publication if its slug already exists. Defaults to legacy replacement behavior. */
+  preserveExisting?: boolean;
   /** Required to run plans that contain destructive capabilities. */
   confirm?: boolean;
   /** Internal recursion guard, carried through nested saved goals. */
@@ -537,6 +574,11 @@ export class RightClick {
   readonly name: string;
   readonly startedAt = new Date();
   readonly published = new Map<string, PublishedGoal>();
+  /** A definition must not execute while its durable publication is unresolved. */
+  private readonly publishing = new Set<string>();
+  /** Runtime-local exclusion for unpersisted goals and in-flight graph revocation. */
+  private activeGoalLeases = 0;
+  private activeProviderMutations = 0;
   /** When a failed plain run last re-read each contract source, so repeated failures do not re-read it on every call. */
   private healReads = new Map<string, number>();
   /** Ids re-learning pointed at a different operation; caller acknowledgement cannot clear them. */
@@ -553,6 +595,10 @@ export class RightClick {
   private mcpClients = new Map<string, McpClient>();
   private store?: Store;
   private saveTimer: ReturnType<typeof setTimeout> | null = null;
+  /** Serialize snapshot construction as well as writes. Pending publications never
+   * enter unrelated snapshots and become visible only after their own save succeeds. */
+  private saveTail: Promise<void> = Promise.resolve();
+  private storeUncertain = false;
   private saveState: "not-observed" | "saved" | "failed" | "read-only" = "not-observed";
   private runCounter = 0;
   private destructivePolicy: "operator" | "agent-confirm" | "allow" = "operator";
@@ -571,8 +617,11 @@ export class RightClick {
   private hashCache = new Map<string, { key: string; sha256: string }>();
   /** Changed CLI bytes that failed conformance revalidation, so repeat calls refuse without re-running examples. */
   private cliRefusals = new Map<string, string>();
+  private cliSamples: Record<string, CliConformance>;
+  private cliConformance = new Map<string, CliConformancePin>();
 
   private constructor(opts: RuntimeOptions) {
+    this.cliSamples = parseCliConformance(opts.authority?.cliConformance);
     this.executionPolicy = parseExecutionPolicy(opts.authority?.execution);
     const origins = intersectOrigins(opts.network?.origins, this.executionPolicy.allowedOrigins);
     this.net = {
@@ -588,7 +637,7 @@ export class RightClick {
     if (this.workflowRecovery && !opts.store) throw new Error("workflow recovery requires a Store");
     this.info = { ...detectRuntime(), region: opts.region };
     this.name = opts.name ?? "rightclick-x";
-    this.store = opts.store;
+    this.store = opts.store?.forRuntime?.() ?? opts.store;
     this.onInvestigationStart = opts.onInvestigationStart;
   }
 
@@ -609,7 +658,7 @@ export class RightClick {
     const p = await platformReflection(rc.info, { bindings: opts.bindings, workspace: opts.workspace });
     rc.platformFns = p.fns;
     if (p.reflection.capabilities.length) rc.graph.add(p.reflection);
-    const loaded = await opts.store?.load();
+    const loaded = await rc.store?.load();
     const saved = loaded == null ? null : decodeState(loaded);
     if (saved) {
       const stale = saved.semantics !== SEMANTICS;
@@ -628,6 +677,7 @@ export class RightClick {
       }
       rc.graph.identities.load(saved.identities);
       rc.graph.restore(saved.reflections);
+      if (!stale) for (const pin of saved.cliConformance ?? []) rc.cliConformance.set(pin.capability, structuredClone(pin));
       rc.ledger.load(saved.ledger);
       rc.chain.restore(saved.receipts ?? []);
       if (!stale && Array.isArray(saved.httpContinuations)) for (const c of saved.httpContinuations.slice(-64)) {
@@ -770,7 +820,7 @@ export class RightClick {
 
   /** Re-derive the deferred network sources a call needs, within that call's egress policy.
    *  Startup never contacts them; the first call that uses one does, under its own authority. */
-  private async restoreDeferredFor(ids: string[], origins?: string[], net: Net = this.net): Promise<void> {
+  private async restoreDeferredFor(ids: string[], origins?: string[], net: Net = this.net, permit?: symbol): Promise<void> {
     if (!this.deferredInference.length) return;
     const wanted = new Set(ids.filter(id => !this.graph.get(id)));
     if (!wanted.size) return;
@@ -785,7 +835,7 @@ export class RightClick {
     }
     if (!sources.size) return;
     const allowed = intersectOrigins(intersectOrigins(this.net.policy?.origins, net.policy?.origins), origins);
-    await this.learnSources({ sources: [...sources.keys()], kinds: Object.fromEntries(sources), net: { ...net, policy: { blockPrivate: false, ...net.policy, origins: allowed } } });
+    await this.learnSources({ sources: [...sources.keys()], kinds: Object.fromEntries(sources), net: { ...net, policy: { blockPrivate: false, ...net.policy, origins: allowed } } }, undefined, permit);
   }
 
   /** A source learned successfully is no longer deferred: drop its stale copies, and bring back
@@ -899,6 +949,8 @@ export class RightClick {
    * planner and executor remain the single capability path. No grant is made. */
   private refreshEnvironment(): Promise<EnvironmentReport> {
     if (this.environmentRefresh) return this.environmentRefresh;
+    if (this.activeGoalLeases) return Promise.reject(new Error("environment refresh is blocked while a saved goal is executing"));
+    this.activeProviderMutations++;
     const work = async (): Promise<EnvironmentReport> => {
       const net = environmentNet(this.net, this.environment!);
       const report: EnvironmentReport = { catalogs: [], sources: [] };
@@ -951,7 +1003,7 @@ export class RightClick {
       this.persist();
       return structuredClone(report);
     };
-    this.environmentRefresh = work().finally(() => { this.environmentRefresh = undefined; });
+    this.environmentRefresh = work().finally(() => { this.environmentRefresh = undefined; this.activeProviderMutations--; });
     return this.environmentRefresh;
   }
 
@@ -961,7 +1013,14 @@ export class RightClick {
     return this.learnSources(opts);
   }
 
-  private async learnSources(opts: Parameters<RightClick["learn"]>[0], retainedCli?: { capability: Capability; execution: HttpExecution }) {
+  private async learnSources(opts: Parameters<RightClick["learn"]>[0], retainedCli?: { capability: Capability; execution: HttpExecution }, permit?: symbol) {
+    if (this.activeGoalLeases && (permit !== GOAL_RESTORE_PERMIT || this.activeGoalLeases !== 1)) throw new Error("provider changes are blocked while a saved goal is executing");
+    this.activeProviderMutations++;
+    try { return await this.learnSourcesUnlocked(opts, retainedCli); }
+    finally { this.activeProviderMutations--; }
+  }
+
+  private async learnSourcesUnlocked(opts: Parameters<RightClick["learn"]>[0], retainedCli?: { capability: Capability; execution: HttpExecution }) {
     const sources = [...(opts.source ? [opts.source] : []), ...(opts.sources ?? [])];
     // Batch learning measures powers once for the whole batch, not per provider.
     const batchBefore = this.graph.powers().total;
@@ -1037,6 +1096,8 @@ export class RightClick {
             return prior && previous.some(p => p.id === prior.provider) ? carryCliContinuity(prior, cap) : cap;
           }) }));
           d.reflections = await Promise.all(d.reflections.map(r => this.separateOperations(r, source, operationsBefore)));
+          if (source.startsWith("cli:")) for (const reflection of d.reflections)
+            for (const cap of reflection.capabilities) await this.revalidateCli(cap, {}, true);
           const ids = new Set(d.reflections.map((r) => r.provider.id));
           const compositesBefore = this.graph.list().filter((c) => c.source === "composite").map((c) => c.id);
           for (const p of previous) if (!ids.has(p.id)) this.graph.forget(p.id);
@@ -1156,6 +1217,7 @@ export class RightClick {
   }
 
   forget(providerId: string) {
+    if (this.activeGoalLeases) throw new Error("provider revocation is blocked while a saved goal is executing");
     const live = this.graph.forget(providerId);
     // A deferred provider is removed too, with any deferred pipeline that could then never return.
     const removed = new Set(this.deferredInference.filter(d => d.reflection.provider.id === providerId).flatMap(d => d.reflection.capabilities.map(c => c.id)));
@@ -1303,8 +1365,8 @@ export class RightClick {
     if (!goal) return;
     return { id: c.id, invoke: { tool: "context_run", args: { id: c.id } },
       storage: this.store ? "store-configured" : "session-only",
-      restrictions: structuredClone({ origins: goal.origins, risks: goal.risks, through: goal.through, require: goal.require, maxSteps: goal.maxSteps }),
-      note: "This definition is already saved in runtime state. Supply its inputs to context_run; republish only to replace the definition. A configured store is not proof of a successful durable write. These saved restrictions supplement current operator policy; stored checks still apply. Retention does not imply authority or successful execution." };
+      restrictions: structuredClone({ origins: goal.origins, risks: goal.risks, through: goal.through, inputBindings: goal.inputBindings, require: goal.require, maxSteps: goal.maxSteps }),
+      note: "This definition is already saved in runtime state. Supply its inputs to context_run; republishing replaces the definition unless preserveExisting:true is used. A configured store is not proof of a successful durable write. These saved restrictions supplement current operator policy; stored checks still apply. Retention does not imply authority or successful execution." };
   }
 
   /**
@@ -1487,8 +1549,7 @@ export class RightClick {
   }
 
   private goalDigest(g: PublishedGoal) {
-    const { calls, lastPipeline, providers, publishedAt, trust, lastResult, ...definition } = g;
-    return sha256(stableStringify(definition));
+    return goalDefinitionDigest(g);
   }
 
   private compositionCapability(c: CompositionContinuation): Capability {
@@ -1524,6 +1585,22 @@ export class RightClick {
 
   private async startWorkflow(runId: string, cap: Capability, inputs: Record<string, unknown>, verify: Predicate[], composition?: CompositionContinuation) {
     if (cap.invoke.kind !== "composite") throw new Error("workflow requires a retained composite");
+    // Recovery stores inputs before dispatch. Reject option arguments even under an innocuous
+    // flag or input name; a secret cannot be identified reliably from its string contents.
+    for (const step of cap.invoke.steps) {
+      const target = this.graph.get(step.capability);
+      if (target?.invoke.kind !== "cli") continue;
+      for (const option of [target.invoke.options, target.invoke.optionsAfterArgs]) {
+        if (!option) continue;
+        const binding = step.bindings.find(b => b.port === option.port);
+        if (!binding) continue;
+        let value: unknown;
+        if (binding.from.startsWith("$in.")) value = inputs[binding.from.slice(4)];
+        else if (binding.from === "$const") value = binding.value;
+        else throw new Error("workflow CLI options from prior outputs cannot be retained safely");
+        if (!retainableCliOptions(value, option)) throw new Error("workflow CLI option arguments cannot be retained safely");
+      }
+    }
     // Unresolved effects are never evicted to make room for a different action.
     if (this.workflowContinuations.size >= 64) throw new Error("workflow continuation storage is full");
     const createdAt = Date.now();
@@ -1594,6 +1671,9 @@ export class RightClick {
       throw new Error("resume the owning workflow; its child cannot be consumed separately");
     }
     if (!id.startsWith("resume:")) await this.restoreDeferredFor([id], undefined, opts.net);
+    const continuation = id.startsWith("resume:") ? this.workflowContinuations.get(id.slice(7)) : undefined;
+    const pins = continuation?.composition?.goals ?? [];
+    if (pins.length) return this.withGoalLease(pins, () => this.dispatchRun(id, args, opts));
     return this.dispatchRun(id, args, opts);
   }
 
@@ -1680,9 +1760,12 @@ export class RightClick {
     let invalidDocument = false;
     const continuationId = resumed?.runId ?? runId;
     const original = structuredClone(cap);
-    const execution: HttpExecution = { signal: opts.signal,
+    const execution: HttpExecution = { signal: opts.signal, strictCli: opts.strictCli,
       transportOwner: { runtimeId: this.activity.epoch, runId, capabilityId: cap.id } };
-    if (this.store && cap.invoke.kind === "http" && !cap.invoke.entry) execution.checkpoint = cursor =>
+    // A child of a saved goal may only be resumed through the retained owner
+    // workflow, whose definition pins are re-leased on resume. An orphan HTTP
+    // cursor could otherwise be invoked later without its saved-goal authority.
+    if (this.store && cap.invoke.kind === "http" && !cap.invoke.entry && (parent || !opts.activeGoals?.length)) execution.checkpoint = cursor =>
       this.checkpointHttp(continuationId, original, resumed?.verify ?? opts.verify ?? [], cursor, parent);
     try {
       if (resumedWorkflow) {
@@ -1907,6 +1990,69 @@ export class RightClick {
     return this.currentSandbox = await (this.sandboxCache ??= hostSandbox());
   }
 
+  private async revalidateCli(cap: Capability, execution: HttpExecution = {}, acquire = false): Promise<Capability> {
+    if (cap.invoke.kind !== "cli") return cap;
+    const inv = cap.invoke, spec = this.cliSamples[cap.id], retained = this.cliConformance.get(cap.id);
+    if (acquire ? !spec : !retained) return cap;
+    const refuse = (reason: string): never => {
+      execution.cliValidity ??= { coverage: "partial", environment: "unrecorded", observed: "not-observed",
+        application: "not-assessed", limitation: "Conformance prerequisites failed before observation; no sample or caller dispatch is authorized by retained evidence alone." };
+      if (execution.cliValidity.conformance) execution.cliValidity.conformance.status = "refused";
+      throw new CliValidityError(`CLI conformance refused: ${reason}; caller operation not dispatched or replayed`, execution.cliValidity, cap.id);
+    };
+    if (!spec || cap.risk !== "read") return refuse("no current exact-sample authority for a read-only contract");
+    this.assertExecution(cap);
+    const allowed = await checkProgram(inv.bin, this.executable);
+    const discovery = await checkProgram(inv.bin, this.investigable);
+    if (!allowed.ok || !discovery.ok) return refuse("current execution and investigation authority are both required");
+    const sb = await this.sandbox(), probe = sb?.forRevalidation?.();
+    if (!sb || !probe || probe.policy.network || probe.policy.writeRoots.length) return refuse("no narrowed native sample sandbox");
+    const contract = await cliConformanceContract(cap), samples = await sha256(stableStringify(spec));
+    const policy = await sha256(stableStringify({ execution: sb.policy, samples: probe.policy }));
+    if (!acquire && (retained!.contract !== contract || retained!.samples !== samples || retained!.policy !== policy))
+      return refuse("retained contract, sample authorization or sandbox policy changed; establish evidence explicitly");
+    const { readFileSync } = await import("node:fs");
+    const { createHash } = await import("node:crypto");
+    const primary = () => createHash("sha256").update(readFileSync(allowed.identity.real)).digest("hex");
+    const currentSha = primary(), environment = await observeCliEnvironment(inv.bin, sb.policy);
+    const expected = retained?.environment ?? inv.environment?.digest;
+    execution.cliValidity = {
+      coverage: "partial", environment: expected ? expected === environment.digest ? "unchanged" : "changed" : "unrecorded",
+      ...(expected ? { expected } : {}), observed: environment.digest, application: "not-assessed",
+      conformance: { status: "matched", contract, samples, checks: 0, sha256: currentSha },
+      limitation: "Operator-authorized synthetic samples only, not universal equivalence or outcome verification. Hidden dependencies and native sandbox limitations remain; independent witnesses are not repinned.",
+    };
+    const effective: Capability = { ...cap, invoke: { ...inv, sha256: currentSha,
+      environment: { version: 1, coverage: "partial", digest: environment.digest } } };
+    if (!acquire && retained!.sha256 === currentSha && retained!.environment === environment.digest) return effective;
+    if (acquire && (currentSha !== inv.sha256 || environment.digest !== inv.environment?.digest)) return refuse("program changed before acquisition samples");
+    const refusalKey = `samples\u0000${contract}\u0000${samples}\u0000${policy}\u0000${currentSha}\u0000${environment.digest}`;
+    const priorRefusal = this.cliRefusals.get(refusalKey);
+    if (priorRefusal) return refuse(priorRefusal);
+    try {
+      const probeEnvironment = await observeCliEnvironment(inv.bin, probe.policy);
+      const sampleCap: Capability = { ...cap, invoke: { ...inv, sha256: currentSha,
+        environment: { version: 1, coverage: "partial", digest: probeEnvironment.digest } } };
+      for (const sample of spec.samples) for (let repetition = 0; repetition < 2; repetition++) {
+        execution.cliValidity.conformance!.checks++;
+        const output = await this.execute(sampleCap, coerceArgs(sampleCap, sample.args), this.net, {}, probe);
+        const value = sample.format === "json" && typeof output === "string" ? parseJsonValue(output) : output;
+        if (stableStringify(value) !== stableStringify(sample.output)) throw new Error("independent expected sample output differs (changed meaning or insufficient evidence)");
+        if (!await sameProgram(inv.bin, allowed.identity) || primary() !== currentSha ||
+            (await observeCliEnvironment(inv.bin, sb.policy)).digest !== environment.digest)
+          throw new Error("executable or environment changed during conformance samples");
+      }
+    } catch (error) {
+      const reason = String((error as Error)?.message ?? error);
+      this.cliRefusals.set(refusalKey, reason);
+      return refuse(reason);
+    }
+    this.cliConformance.set(cap.id, { capability: cap.id, contract, samples, policy, sha256: currentSha,
+      environment: environment.digest, checks: execution.cliValidity.conformance!.checks });
+    this.persist();
+    return effective;
+  }
+
   private async checkCliEnvironment(cap: Capability, sb: Sandbox, execution: HttpExecution = {}) {
     if (cap.invoke.kind !== "cli") return;
     const current = await observeCliEnvironment(cap.invoke.bin, sb.policy);
@@ -1914,7 +2060,8 @@ export class RightClick {
     execution.cliValidity = {
       coverage: "partial", environment: expected ? expected === current.digest ? "unchanged" : "changed" : "unrecorded",
       ...(expected ? { expected } : {}), observed: current.digest, application: "not-assessed",
-      limitation: "Only bounded local environment candidates were observed, not complete execution dependencies. Hidden imports, configuration and services require independent outcome verification.",
+      ...(execution.cliValidity?.conformance ? { conformance: execution.cliValidity.conformance } : {}),
+      limitation: execution.cliValidity?.conformance ? execution.cliValidity.limitation : "Only bounded local environment candidates were observed, not complete execution dependencies. Hidden imports, configuration and services require independent outcome verification.",
     };
     if (execution.cliValidity.environment === "changed")
       throw new CliValidityError("CLI execution environment changed; retained evidence is insufficient; not run or automatically replayed. Explicit relearning does not replace outcome verification.", execution.cliValidity, cap.id);
@@ -2213,20 +2360,68 @@ export class RightClick {
   }
 
   /** Pin the checker contract so a saved proof cannot silently become a different test. */
-  private pinWitnesses(witnesses: OutcomeWitness[]): OutcomeWitness[] {
+  private async pinWitnesses(witnesses: OutcomeWitness[]): Promise<OutcomeWitness[]> {
     if (!Array.isArray(witnesses) || witnesses.length > 16) throw new Error("witnesses must be an array of at most 16 checks");
-    return witnesses.map((w) => {
+    return Promise.all(witnesses.map(async (w) => {
       const c = this.graph.get(w.capability);
-      if (!c || consequentialRisks(c).some((r) => r !== "read") || c.invoke.kind === "goal" || c.invoke.kind === "composite") throw new Error(`witness must be an available read-only provider capability: ${w.capability}`);
+      if (!c || c.invoke.kind === "goal") throw new Error(`witness must be an available read-only provider capability: ${w.capability}`);
+      // A crystallized pipeline may witness only when every step is itself a possible witness:
+      // an available, read-only, executable provider capability.
+      const steps = this.witnessSteps(c);
+      for (const step of steps) {
+        if (consequentialRisks(step).some((r) => r !== "read") || step.invoke.kind === "goal") throw new Error(`witness must be an available read-only provider capability: ${w.capability}`);
+        this.assertExecution(step);
+      }
       this.assertExecution(c);
-      if (!Array.isArray(w.verify) || !w.verify.length) throw new Error(`witness needs nonempty verification predicates: ${w.capability}`);
-      if (w.contract && w.contract !== signature(c)) throw new Error(`witness contract changed: ${w.capability}; establish a new check explicitly`);
+      if (w.agree !== undefined) assertAgreement(w.agree);
+      if (w.verify !== undefined && !Array.isArray(w.verify) || (!w.verify?.length && !w.agree)) throw new Error(`witness needs nonempty verification predicates or an agreement: ${w.capability}`);
+      // FNV graph signatures are useful for change detection but are not safe
+      // authorization/proof identities. Include every member of a composite witness.
+      const contractFields = (cap: Capability) => ({ id: cap.id, provider: cap.provider, source: cap.source,
+        risk: cap.risk, inputs: cap.inputs, outputs: cap.outputs.filter(p => !p.observed), invoke: cap.invoke, links: cap.links });
+      // Bind intermediate composites too: their step bindings and checks can
+      // change even if the leaf capabilities remain the same.
+      const pending = [c], members: Capability[] = [], seen = new Set<string>();
+      while (pending.length) {
+        const current = pending.pop()!;
+        if (seen.has(current.id)) continue;
+        seen.add(current.id);
+        if (seen.size > 64) throw new Error(`witness pipeline too large: ${c.id}`);
+        members.push(current);
+        if (current.invoke.kind === "composite") for (const step of current.invoke.steps) {
+          const child = this.graph.get(step.capability);
+          if (!child) throw new Error(`witness must be an available read-only provider capability: ${c.id} (missing step ${step.capability})`);
+          pending.push(child);
+        }
+      }
+      const contract = `sha256:${await sha256(stableStringify(members.map(contractFields).sort((a, b) => a.id.localeCompare(b.id))))}`;
+      if (w.contract && w.contract !== contract) throw new Error(`witness contract changed or uses a legacy pin: ${w.capability}; establish a new check explicitly`);
       for (const binding of Object.values(w.args ?? {})) {
         if (!binding || typeof binding !== "object" || Object.keys(binding).length !== 1 || !("input" in binding || "output" in binding || "value" in binding)) throw new Error("witness arguments must use exactly one of input, output or value");
         if ("input" in binding && typeof binding.input !== "string" || "output" in binding && typeof binding.output !== "string") throw new Error("witness input/output paths must be strings");
+        // Shown the candidate, a recomputation could simply hand it back.
+        if (w.agree && "output" in binding) throw new Error(`an agreement witness recomputes from the inputs and is never given the candidate result: ${w.capability}`);
       }
-      return structuredClone({ ...w, args: w.args ?? {}, contract: signature(c) });
-    });
+      return structuredClone({ ...w, args: w.args ?? {}, verify: w.verify ?? [], contract });
+    }));
+  }
+
+  /** The provider capabilities a witness runs: itself, or every step of a crystallized pipeline. */
+  private witnessSteps(c: Capability): Capability[] {
+    const steps: Capability[] = [], pending = [c], seen = new Set<string>();
+    while (pending.length) {
+      const next = pending.pop()!;
+      if (seen.has(next.id)) continue;
+      seen.add(next.id);
+      if (seen.size > 64) throw new Error(`witness pipeline too large: ${c.id}`);
+      if (next.invoke.kind !== "composite") { steps.push(next); continue; }
+      for (const id of next.invoke.steps.map((s) => s.capability)) {
+        const child = this.graph.get(id);
+        if (!child) throw new Error(`witness must be an available read-only provider capability: ${c.id} (missing step ${id})`);
+        pending.push(child);
+      }
+    }
+    return steps;
   }
 
   private async checkWitnesses(witnesses: OutcomeWitness[], inputs: Record<string, unknown>, output: unknown, runIds: string[], net?: Net, retainedProviders: string[] = []): Promise<WitnessResult[]> {
@@ -2245,17 +2440,25 @@ export class RightClick {
     const evidence: WitnessResult[] = [];
     for (const original of witnesses) {
       try {
-        const w = this.pinWitnesses([original])[0];
+        const w = (await this.pinWitnesses([original]))[0];
         const cap = this.graph.get(w.capability)!;
-        if (providers.has(cap.provider)) throw new Error("outcome witness must be separate from the providers producing the result");
+        // A pipeline witness is independent only if none of its steps' providers produced the result.
+        if (this.witnessSteps(cap).some((step) => providers.has(step.provider))) throw new Error("outcome witness must be separate from the providers producing the result");
         const args: Record<string, unknown> = {};
         for (const [key, binding] of Object.entries(w.args)) {
           const value = "input" in binding ? pick(inputs, binding.input) : "output" in binding ? pick(output, binding.output) : binding.value;
           if (value === undefined) throw new Error(`unresolved witness argument: ${key}`);
           args[key] = value;
         }
-        const r = await this.run(w.capability, args, { verify: w.verify, net, planned: true });
-        evidence.push({ capability: w.capability, runId: r.runId, status: r.status, verification: r.verification, output: r.output, ...(r.error ? { error: r.error } : {}), ...(r.refusal ? { refusal: r.refusal } : {}), ...(r.graphqlFailure ? { graphqlFailure: r.graphqlFailure } : {}), ...(r.cliValidity ? { cliValidity: r.cliValidity } : {}) });
+        await this.preflightCli(cap, true);
+        const r = await this.run(w.capability, args, { verify: w.verify, net, planned: true, strictCli: true });
+        const agreed = w.agree && r.status === "completed" ? agreement(w.agree, r.output, output) : undefined;
+        const disagrees = agreed && !agreed.ok;
+        evidence.push({ capability: w.capability, runId: r.runId, status: disagrees ? "failed" : r.status, output: r.output,
+          verification: disagrees ? { status: "refuted", results: r.verification.results } : agreed ? { ...r.verification, status: r.verification.status === "unverified" ? "checked" : r.verification.status } : r.verification,
+          ...(agreed ? { agreement: agreed } : {}),
+          ...(disagrees ? { error: `independent recomputation disagrees with the result (${agreed.mode}): ${JSON.stringify(agreed.witness)} vs ${JSON.stringify(agreed.candidate)}` } : r.error ? { error: r.error } : {}),
+          ...(r.refusal ? { refusal: r.refusal } : {}), ...(r.graphqlFailure ? { graphqlFailure: r.graphqlFailure } : {}), ...(r.cliValidity ? { cliValidity: r.cliValidity } : {}) });
         if (r.refusal || r.graphqlFailure || r.cliValidity?.environment === "changed" || r.cliValidity?.application === "reported-error") break;
       } catch (e) {
         evidence.push({ capability: original.capability, runId: "", status: "failed", verification: { status: "refuted", results: [] }, error: String((e as Error)?.message ?? e) });
@@ -2334,11 +2537,17 @@ export class RightClick {
   // ================================================================ context_compose
 
   async compose(opts: ComposeOptions): Promise<ComposeResult> {
+    return this.composeScoped(opts);
+  }
+
+  /** A permit is passed only by the leased saved-goal entry point; callers cannot
+   * provide it through the public compose options or an MCP request. */
+  private async composeScoped(opts: ComposeOptions, permit?: symbol): Promise<ComposeResult> {
     // Independent witnesses are part of the call: a deferred checker is restored like a step.
-    await this.restoreDeferredFor([...opts.through ?? [], ...(opts.anchors ?? []).map(a => a.id), ...(opts.witnesses ?? []).map(w => w.capability)], opts.origins);
+    await this.restoreDeferredFor([...opts.through ?? [], ...(opts.anchors ?? []).map(a => a.id), ...(opts.witnesses ?? []).map(w => w.capability)], opts.origins, this.net, permit);
     const request = this.activity.append({ kind: "composition.requested", status: "requested" });
     try {
-      const result = await this.composeNow(opts);
+      const result = await this.composeNow(opts, permit);
       const ex = result.executed;
       const subjects = [result.published?.id, result.crystallized?.id].filter((id): id is string => !!id);
       const observed = this.observedRuns([...(ex?.runs ?? []), ...(ex?.witnesses ?? []).map(w => w.runId)]);
@@ -2356,8 +2565,29 @@ export class RightClick {
     } finally { this.persist(); }
   }
 
-  private async composeNow(opts: ComposeOptions): Promise<ComposeResult> {
-    const witnesses = this.pinWitnesses(opts.witnesses ?? []);
+  private async composeNow(opts: ComposeOptions, permit?: symbol): Promise<ComposeResult> {
+    let publicationExpected: string | null = null;
+    if (opts.run && opts.publish) {
+      if (this.activeGoalLeases) throw new Error("goal publication is blocked while a saved goal is executing");
+      if (this.publishing.has(slugify(opts.publish))) throw new Error(`publication pending: goal:${slugify(opts.publish)}`);
+      const existing = this.published.get(slugify(opts.publish));
+      if (existing && opts.preserveExisting === true) throw new Error(`publication already exists: goal:${slugify(opts.publish)}; preserveExisting prevents replacement`);
+      if (existing) {
+        publicationExpected = await this.goalDigest(existing);
+        if (this.published.get(slugify(opts.publish)) !== existing) throw new Error("publication changed while preparing replacement; retry explicitly");
+      }
+    }
+    const witnesses = await this.pinWitnesses(opts.witnesses ?? []);
+    // Only the current lease holder may re-reflect a failed provider. After
+    // every such graph mutation, saved witness contracts must still match
+    // before another plan can dispatch a producer or checker.
+    const learnForRepair = async (request: Parameters<RightClick["learn"]>[0]) => {
+      const result = permit === GOAL_RESTORE_PERMIT
+        ? await this.learnSources(request, undefined, permit)
+        : await this.learn(request);
+      if (permit === GOAL_RESTORE_PERMIT && witnesses.length) await this.pinWitnesses(witnesses);
+      return result;
+    };
     const values: Record<string, unknown> = {};
     const types: Record<string, SemType> = {};
     const fixed: Record<string, unknown> = {};
@@ -2382,6 +2612,41 @@ export class RightClick {
     }
     const anchors = opts.anchors ?? this.pinAnchors(opts.through ?? []);
     const through = this.resolveAnchors(anchors);
+    // Bindings are only accepted on explicitly anchored CLI operations. Resolve each against the
+    // persisted anchor so identity changes cannot silently redirect a caller's choices.
+    const inputBindings: Record<string, Record<string, string>> = {};
+    if (opts.inputBindings !== undefined) {
+      if (!opts.inputBindings || typeof opts.inputBindings !== "object" || Array.isArray(opts.inputBindings)) throw new Error("inputBindings must be an object");
+      for (const [id, ports] of Object.entries(opts.inputBindings)) {
+        const index = anchors.findIndex(a => a.id === id);
+        if (index < 0) throw new Error(`inputBindings requires an explicitly anchored capability: ${id}`);
+        const cap = this.graph.get(through[index]);
+        if (!cap || cap.invoke.kind !== "cli") throw new Error(`inputBindings requires an anchored CLI capability: ${id}`);
+        if (!ports || typeof ports !== "object" || Array.isArray(ports) || !Object.keys(ports).length) throw new Error(`inputBindings for ${id} must name ports`);
+        for (const [port, input] of Object.entries(ports)) {
+          if (!cap.inputs.some(p => p.name === port)) throw new Error(`unknown inputBindings port ${id}.${port}`);
+          if (typeof input !== "string" || !/^[A-Za-z_][A-Za-z0-9_]*$/.test(input) || !Object.hasOwn(types, input)) throw new Error(`unknown or unsupported inputBindings input for ${id}.${port}`);
+          const optionContract = [cap.invoke.options, cap.invoke.optionsAfterArgs].find(o => o?.port === port);
+          if (optionContract && Object.hasOwn(fixed, input)) {
+            // Keep only documented value-free flags. A value for an innocuous option may
+            // itself be a credential, so name-based detection is insufficient here.
+            let argv: string[];
+            try { argv = validateOptions(fixed[input], optionContract.allowed, optionContract.excluded); }
+            catch { throw new Error(`invalid fixed CLI options for ${id}.${port}`); }
+            const byFlag = new Map(optionContract.allowed.flatMap(o => o.flags.map(flag => [flag, o] as const)));
+            for (let i = 0; i < argv.length; i++) {
+              const flag = argv[i].split("=", 1)[0];
+              const option = byFlag.get(flag);
+              if (!option) continue;
+              if (option.flags.some(isSensitiveName)) throw new Error(`refused fixed credential-like CLI option for ${id}.${port}; supply it at invocation`);
+              if (option.arg && !argv[i].includes("=")) i++;
+            }
+            if (!retainableCliOptions(fixed[input], optionContract)) throw new Error(`refused fixed value-bearing CLI option for ${id}.${port}; supply it at invocation`);
+          }
+        }
+        inputBindings[cap.id] = { ...ports };
+      }
+    }
     const activeGoalIds = new Set((opts.activeGoals ?? []).map((s) => `goal:${s}`));
     // Saved composites that include an active goal must not recurse through it either.
     const containsActive = (c: Capability, seen = new Set<string>()): boolean => {
@@ -2398,7 +2663,7 @@ export class RightClick {
     // A caller's value named and shaped like a learned identifier scheme's carries that scheme.
     const schemes = Object.fromEntries(Object.entries(values).map(([k, v]) => [k, this.graph.identities.schemesFor(this.graph.capabilities.values(), k, v)]).filter(([, s]) => s.length));
     const require = (opts.require ?? []).map((t) => String(t).trim()).filter(Boolean);
-    const goal = { have: types, want: opts.want, intent: opts.intent, maxSteps: opts.maxSteps, limit: opts.limit ?? 5, risks: opts.risks, through, exclude: blocked, origins, schemes, ...(require.length ? { require } : {}) };
+    const goal = { have: types, want: opts.want, intent: opts.intent, maxSteps: opts.maxSteps, limit: opts.limit ?? 5, risks: opts.risks, through, exclude: blocked, origins, schemes, inputBindings, ...(require.length ? { require } : {}) };
     let undeclared: string[] = [];
     const search = () => {
       undeclared = undeclaredRequirements(this.graph, require);
@@ -2475,7 +2740,7 @@ export class RightClick {
       }
       const batch = candidates.splice(0, 3);
       if (!batch.length) return false;
-      const l = await this.learn({ sources: batch.map((c) => c.source), kinds: Object.fromEntries(batch.map((c) => [c.source, c.kind])) });
+      const l = await learnForRepair({ sources: batch.map((c) => c.source), kinds: Object.fromEntries(batch.map((c) => [c.source, c.kind])) });
       for (const c of batch) {
         const res = l.results.find((x) => x.source === c.source);
         result.acquisition!.learned.push({ title: c.title, kind: c.kind, source: c.source, capabilities: res?.learned.reduce((n, d) => n + d.capabilitiesAdded, 0) ?? 0, error: res?.error });
@@ -2542,12 +2807,30 @@ export class RightClick {
           return { ...st, bindings: [...st.bindings.filter((b) => b.port !== gi.selectPort), { port: gi.selectPort, from: "$const", value: selectionWith(gi.selection, fields) }] };
         });
         const selected = steps.map(s => this.graph.get(s.capability)!);
+        // Explicit inputBindings are not the only way the planner can bind an
+        // option: a same-named fixed input binds implicitly. Check the actual
+        // selected steps before dispatch or publication, not just caller hints.
+        for (let i = 0; i < steps.length; i++) {
+          const target = selected[i];
+          if (target.invoke.kind !== "cli") continue;
+          for (const option of [target.invoke.options, target.invoke.optionsAfterArgs]) {
+            if (!option) continue;
+            const binding = steps[i].bindings.find(b => b.port === option.port);
+            const name = binding?.from.startsWith("$in.") ? binding.from.slice(4) : undefined;
+            if (name && Object.hasOwn(fixed, name) && !retainableCliOptions(fixed[name], option)) {
+              result.executed = { summary: p.summary, titles: titles(p), status: "failed", output: null,
+                verification: { status: "refuted", results: [] }, runs: [], attempts: [], durationMs: 0,
+                error: "fixed CLI option arguments cannot be retained safely" };
+              return result;
+            }
+          }
+        }
         const composition: CompositionContinuation = {
           id: `execution:composition:${crypto.randomUUID()}`, plan: { ...p, steps }, types,
           risk: selected.some(c => c.risk === "destructive") ? "destructive" : selected.some(c => c.risk === "write") ? "write" : selected.some(c => c.risk === "external") ? "external" : "read",
           options: { want: opts.want, intent: opts.intent, verify: opts.verify, crystallize: opts.crystallize,
-            publish: opts.publish, risks: opts.risks, through: opts.through, maxSteps: opts.maxSteps },
-          anchors, fixed, origins, witnesses, require, preservesInput: assessOf(p).preservesInput,
+            publish: opts.publish, risks: opts.risks, through: opts.through, maxSteps: opts.maxSteps, inputBindings: opts.inputBindings },
+          anchors, fixed, origins, witnesses, require, preservesInput: assessOf(p).preservesInput, publicationExpected,
           goals: await Promise.all((opts.activeGoals ?? []).map(async slug => {
             const g = this.published.get(slug);
             if (!g) throw new Error(`saved goal is unavailable: ${slug}`);
@@ -2658,7 +2941,7 @@ export class RightClick {
           gone = /HTTP (404|410)\b/.test(attempt.error);
         } else if (source && !refreshed.has(source) && !(e instanceof StepError && /verification refuted/.test(attempt.error))) {
           refreshed.add(source);
-          const r = await this.learn({ source, deep: true, net });
+          const r = await learnForRepair({ source, deep: true, net });
           const d = r.results[0]?.drift;
           drifted = !!d?.changed;
           attempt.healing = r.results[0]?.withdrawn
@@ -2681,7 +2964,7 @@ export class RightClick {
           for (const home of homes) {
             if (refreshed.has(home) || !allowedOrigin(home)) continue;
             refreshed.add(home);
-            const s = await this.learn({ source: home, net });
+            const s = await learnForRepair({ source: home, net });
             const found = s.results[0]?.learned?.length ?? 0;
             attempt.healing = `${attempt.healing ? attempt.healing + "; " : ""}looked for a successor at ${home}: ${found ? `learned ${found} provider(s)` : s.results[0]?.error ?? "nothing found"}`;
             if (found) drifted = true;
@@ -2800,7 +3083,16 @@ export class RightClick {
       result.publishRefused = `not published: the operator publishes only checked or verified goals, and no check passed on this run`;
     } else if (opts.publish) {
       const slug = slugify(opts.publish);
-      this.published.set(slug, {
+      const existing = this.published.get(slug);
+      const actual = existing ? await this.goalDigest(existing) : null;
+      // No await between this comparison and the map update. A resumed older
+      // continuation without a publication snapshot cannot replace a definition.
+      if (this.activeGoalLeases || this.publishing.has(slug) || c.publicationExpected === undefined || c.publicationExpected !== actual || this.published.get(slug) !== existing) {
+        result.publishRefused = `not published: goal:${slug} changed since execution began; inspect it and retry explicitly`;
+        return result;
+      }
+      const candidate: PublishedGoal = {
+        revision: crypto.randomUUID(),
         trust,
         slug,
         title: opts.publish,
@@ -2814,6 +3106,7 @@ export class RightClick {
         ...(origins ? { origins } : {}),
         risks: structuredClone(opts.risks ?? [...new Set(p.steps.map((s) => this.graph.get(s.capability)!.risk))]),
         through: structuredClone(opts.through),
+        inputBindings: structuredClone(opts.inputBindings),
         anchors: structuredClone(anchors),
         maxSteps: opts.maxSteps,
         publishedAt: new Date().toISOString(),
@@ -2821,16 +3114,40 @@ export class RightClick {
         lastPipeline: titles(p),
         providers: [...new Set(p.steps.map((st) => this.graph.get(st.capability)!.provider))],
         lastResult,
-      });
-      this.registerGoal(this.published.get(slug)!);
-      result.published = { id: `goal:${slug}`, slug, path: `/x/${slug}`, trust, durable: false };
-      this.graph.emit("goal.published", { slug, title: opts.publish, pipeline: titles(p) });
-      // Reported durable only once stored: a failed or absent store must not read as a saved goal.
-      if (!this.store) result.published.persistence = "no store configured: available in this process only";
-      else if (this.store.readOnly) result.published.persistence = `state is read-only (${this.store.readOnly}): available in this process only`;
-      else {
-        try { await this.flush(); result.published.durable = true; }
-        catch (e) { result.published.persistence = `not persisted: ${String((e as Error)?.message ?? e).slice(0, 300)}`; }
+      };
+      this.publishing.add(slug);
+      try {
+        await this.queueSave(async () => {
+          try {
+            if (this.published.get(slug) !== existing) throw new StateConflictError("in-memory publication changed");
+            if (this.store && !this.store.readOnly) await this.writeSnapshot(candidate);
+            this.published.set(slug, candidate);
+            this.registerGoal(candidate);
+            this.graph.emit("goal.published", { slug, title: opts.publish, pipeline: titles(p) });
+          } catch (e) {
+              if (!(e instanceof StateConflictError)) this.storeUncertain = true;
+              // A generic store error may occur after its write committed. Withdraw both
+              // candidate and prior definition, whose current status is now unknown.
+              if (this.published.get(slug) === existing || this.published.get(slug) === candidate) {
+                this.published.delete(slug);
+                this.graph.capabilities.delete(`goal:${slug}`);
+                const provider = this.graph.providers.get("goal:published");
+                if (provider) provider.capabilityIds = provider.capabilityIds.filter(id => id !== `goal:${slug}`);
+                this.graph.relink();
+                this.graph.retireBroken();
+              }
+            throw e;
+          }
+        });
+        result.published = { id: `goal:${slug}`, slug, path: `/x/${slug}`, trust, durable: !!this.store && !this.store.readOnly };
+        if (!this.store) result.published.persistence = "no store configured: available in this process only";
+        else if (this.store.readOnly) result.published.persistence = `state is read-only (${this.store.readOnly}): available in this process only`;
+      } catch (e) {
+        result.publishRefused = e instanceof StateConflictError
+          ? "not published: state conflict; reload the current state and retry explicitly"
+          : "publication outcome unknown; reload the current state before retrying";
+      } finally {
+        this.publishing.delete(slug);
       }
     }
     return result;
@@ -2866,8 +3183,64 @@ export class RightClick {
   }
 
   private async executeGoal(slug: string, args: Record<string, unknown>, confirm?: boolean, activeGoals: string[] = [], verify: Predicate[] = []): Promise<ComposeResult> {
+    if (this.publishing.has(slug)) throw new Error(`saved goal publication is pending: ${slug}`);
     const g = this.published.get(slug);
     if (!g) throw new Error(`no published goal: ${slug}`);
+    if (!g.revision) throw new Error(`saved goal ${slug} has no immutable revision; explicitly republish it with a new revision before execution`);
+    const digest = await this.goalDigest(g);
+    return this.withGoalLease([{ slug, digest }], async () => {
+      const capability = this.graph.get(`goal:${slug}`);
+      if (!capability) throw new Error(`saved goal is unavailable: ${slug}`);
+      this.checkExecutionAuthority(capability, confirm);
+      this.assertExecution(capability);
+      // This read-only re-derivation is scoped to known retained sources, only
+      // after authoritative goal revalidation and before any producer dispatch.
+      // Concurrent public learning remains blocked. Nested or concurrent leases
+      // refuse this mutation until a stronger owner-scoped protocol exists.
+      await this.restoreDeferredFor([
+        ...(g.through ?? []), ...(g.anchors ?? []).map(a => a.id), ...(g.witnesses ?? []).map(w => w.capability),
+      ], g.origins, this.net, GOAL_RESTORE_PERMIT);
+      return this.executeLeasedGoal(slug, g, args, confirm, activeGoals, verify);
+    });
+  }
+
+  private async withGoalLease<T>(pins: Array<{ slug: string; digest: string }>, invoke: () => Promise<T>): Promise<T> {
+    if (this.activeProviderMutations) throw new Error("saved-goal execution is blocked while provider changes are in progress");
+    if (this.publishing.size) throw new Error("saved-goal execution is blocked while a publication is pending");
+    this.activeGoalLeases++;
+    try {
+      // A goal is replanned dynamically, and may select another saved goal that
+      // was not visible in the outer static step list. Pin every locally visible
+      // definition before any effect. This deliberately fails closed if any
+      // unrelated cached definition is stale; the host must reload state.
+      const goals = [...this.published.entries()];
+      if (goals.length > 1024) throw new Error("saved-goal lease preflight bound exceeded");
+      const all = new Map<string, string>();
+      for (const [slug, goal] of goals) {
+        if (!goal.revision) throw new Error(`saved goal ${slug} has no immutable revision; explicitly republish it with a new revision before execution`);
+        if ((goal.witnesses ?? []).some(w => !/^sha256:[a-f0-9]{64}$/.test(w.contract ?? "")))
+          throw new Error(`saved goal has an unpinned or legacy witness: ${slug}; establish a new check explicitly`);
+        const digest = await this.goalDigest(goal);
+        if (this.published.get(slug) !== goal) throw new Error(`saved goal changed during lease preflight: ${slug}`);
+        all.set(slug, digest);
+      }
+      if (this.published.size !== goals.length) throw new Error("saved goals changed during lease preflight");
+      for (const pin of pins) {
+        if (all.get(pin.slug) !== pin.digest) throw new StateConflictError(`saved goal ${pin.slug} is stale, revoked, or inconsistent`);
+      }
+      const allPins = [...all].map(([slug, digest]) => ({ slug, digest }));
+      if (this.store) {
+        if (!this.store.withGoalLease) throw new Error(`saved-goal execution requires an authoritative lease-capable store; this adapter cannot guarantee freshness or coordinate replacement${this.store.readOnly ? ` (${this.store.readOnly})` : ""}. Use a coordinated store or an explicitly immutable authoritative snapshot`);
+        return await this.store.withGoalLease(allPins, invoke);
+      }
+      return await invoke();
+    } finally { this.activeGoalLeases--; }
+  }
+
+  private async executeLeasedGoal(slug: string, g: PublishedGoal, args: Record<string, unknown>, confirm?: boolean, activeGoals: string[] = [], verify: Predicate[] = []): Promise<ComposeResult> {
+    if (this.publishing.has(slug) || this.published.get(slug) !== g) throw new Error(`saved goal changed before execution: ${slug}`);
+    if ((g.witnesses ?? []).some(w => !/^sha256:[a-f0-9]{64}$/.test(w.contract ?? "")))
+      throw new Error(`saved goal has an unpinned or legacy witness: ${slug}; establish a new check explicitly`);
     const capability = this.graph.get(`goal:${slug}`);
     if (!capability) throw new Error(`saved goal is unavailable: ${slug}`);
     // Generated REST/GraphQL enter here directly rather than through run().
@@ -2888,7 +3261,7 @@ export class RightClick {
       const value = (t === "number" || t.startsWith("geo.")) && typeof raw === "string" ? Number(raw) : raw;
       have[k] = { type: t, value };
     }
-    const r = await this.compose({ have, want: g.want, intent: g.intent, verify: [...g.verify ?? [], ...verify], require: g.require, witnesses: g.witnesses, risks: g.risks, through: g.through, anchors: g.anchors, maxSteps: g.maxSteps, origins: g.origins, run: true, confirm, activeGoals: [...activeGoals, slug] });
+    const r = await this.composeScoped({ have, want: g.want, intent: g.intent, verify: [...g.verify ?? [], ...verify], require: g.require, witnesses: g.witnesses, risks: g.risks, through: g.through, anchors: g.anchors, inputBindings: g.inputBindings, maxSteps: g.maxSteps, origins: g.origins, run: true, confirm, activeGoals: [...activeGoals, slug] }, GOAL_RESTORE_PERMIT);
     g.calls++;
     if (r.executed?.status === "completed") {
       g.lastPipeline = r.executed.titles;
@@ -3007,7 +3380,9 @@ export class RightClick {
   private async preflightWitnesses(witnesses: OutcomeWitness[]) {
     for (const witness of witnesses) {
       try {
-        const w = this.pinWitnesses([witness])[0];
+        if (!/^sha256:[a-f0-9]{64}$/.test(witness.contract ?? ""))
+          throw new Error("retained witness has no supported contract pin; establish a new check explicitly");
+        const w = (await this.pinWitnesses([witness]))[0];
         await this.preflightCli(this.graph.get(w.capability)!, true);
       } catch (cause) { throw new WitnessPreflightError(witness.capability, cause); }
     }
@@ -3041,12 +3416,36 @@ export class RightClick {
           if (digest !== c.invoke.sha256 || !await sameProgram(c.invoke.bin, allowed.identity))
             throw new CliValidityError(`witness program changed: ${c.id}; establish a new check explicitly`);
         }
-        await this.checkCliEnvironment(c, sb);
+        await this.checkCliEnvironment(witness ? c : await this.revalidateCli(c), sb);
       }
     }
   }
 
   private async runSteps(steps: PlanStep[], resultRef: string, inputs: Record<string, unknown>, confirm?: boolean, activeGoals?: string[], net?: Net, workflow?: WorkflowContinuation) {
+    // A nested saved goal must be checked before *any* preceding effect in this
+    // composition, not only when that goal's own step is reached.
+    const pins: Array<{ slug: string; digest: string }> = [];
+    const visited = new Set<string>();
+    const scan = async (id: string): Promise<void> => {
+      if (visited.has(id)) return;
+      if (visited.size >= 1024) throw new Error("saved-goal dependency preflight bound exceeded");
+      visited.add(id);
+      const cap = this.graph.get(id);
+      if (!cap) throw new StepError(id, `missing capability ${id}`);
+      if (cap.invoke.kind === "goal") {
+        const goal = this.published.get(cap.invoke.slug);
+        if (!goal?.revision) throw new Error(`saved goal has no immutable revision: ${cap.invoke.slug}`);
+        pins.push({ slug: cap.invoke.slug, digest: await this.goalDigest(goal) });
+      } else if (cap.invoke.kind === "composite") {
+        for (const step of cap.invoke.steps) await scan(step.capability);
+      }
+    };
+    for (const step of steps) await scan(step.capability);
+    if (pins.length) return this.withGoalLease(pins, () => this.runLeasedSteps(steps, resultRef, inputs, confirm, activeGoals, net, workflow));
+    return this.runLeasedSteps(steps, resultRef, inputs, confirm, activeGoals, net, workflow);
+  }
+
+  private async runLeasedSteps(steps: PlanStep[], resultRef: string, inputs: Record<string, unknown>, confirm?: boolean, activeGoals?: string[], net?: Net, workflow?: WorkflowContinuation) {
     // Check every known dependency before the first effect, including nested composites.
     for (const [index, step] of steps.entries()) {
       const cap = this.graph.get(step.capability);
@@ -3229,6 +3628,13 @@ export class RightClick {
    * conformance example. Nothing imported is trusted on the exporter's word.
    */
   async importKnowledge(bundle: KnowledgeBundle): Promise<ImportReport> {
+    if (this.activeGoalLeases) throw new Error("knowledge import is blocked while a saved goal is executing");
+    this.activeProviderMutations++;
+    try { return await this.importKnowledgeUnlocked(bundle); }
+    finally { this.activeProviderMutations--; }
+  }
+
+  private async importKnowledgeUnlocked(bundle: KnowledgeBundle): Promise<ImportReport> {
     if (bundle?.format !== KNOWLEDGE_FORMAT) throw new Error(`not capability knowledge: expected format ${KNOWLEDGE_FORMAT}`);
     const report: ImportReport = { format: bundle.format, from: bundle.source, programs: [], goals: [] };
     if (bundle.source?.semantics !== SEMANTICS) {
@@ -3408,9 +3814,10 @@ export class RightClick {
     return c;
   }
 
-  private async execute(cap: Capability, args: Record<string, unknown>, net: Net = this.net, execution: HttpExecution = {}): Promise<unknown> {
+  private async execute(cap: Capability, args: Record<string, unknown>, net: Net = this.net, execution: HttpExecution = {}, sampleSandbox?: Sandbox): Promise<unknown> {
     // Also guards internal repair, which calls execute directly after re-reflection.
     this.assertExecution(cap);
+    if (cap.invoke.kind === "cli" && !sampleSandbox && !execution.strictCli) cap = await this.revalidateCli(cap, execution);
     const origins = intersectOrigins(this.net.policy?.origins, net.policy?.origins);
     if (origins !== undefined) net = { ...net, policy: { blockPrivate: false, ...net.policy, origins } };
     // Keep session identity independent of per-call observation context. Re-learning
@@ -3552,7 +3959,7 @@ export class RightClick {
         const allowed = await checkProgram(inv.bin, this.executable);
         if (!allowed.ok && allowed.missing) throw new Error(`${allowed.reason} (HTTP 404 equivalent: nothing was run)`);
         if (!allowed.ok) throw new Error(`not authorised to run ${inv.bin}: ${allowed.reason.replace(/^(not authorised|refused): /, "")} (HTTP 403 equivalent: nothing was run)`);
-        const sb = await this.sandbox();
+        const sb = sampleSandbox ?? await this.sandbox();
         if (!sb) throw new Error(`unavailable: no sandbox on this host`);
         const fs = await import("node:fs");
         // The program must still be the one that was investigated.
@@ -3599,7 +4006,7 @@ export class RightClick {
         if (operands !== undefined && (!Array.isArray(operands) || !operands.every(n => typeof n === "string" && names.includes(n)))) throw new Error("operands must be a list of names present in files (HTTP 400 equivalent: nothing was run)");
         argv.push(...(operands === undefined ? names : operands as string[]));
         const before = await this.checkCliEnvironment(cap, sb, execution);
-        const r = await sb.run(inv.bin, argv, { stdin: inv.stdin ? asContent(args[inv.stdin]) : "", files, purpose: "execution" });
+        const r = await sb.run(inv.bin, argv, { stdin: inv.stdin ? asContent(args[inv.stdin]) : "", files, purpose: sampleSandbox ? "revalidation" : "execution" });
         execution.cliValidity!.processExit = r.code;
         const after = await observeCliEnvironment(inv.bin, sb.policy);
         if (after.digest !== before!.digest) {
@@ -3675,11 +4082,27 @@ export class RightClick {
       clearTimeout(this.saveTimer);
       this.saveTimer = null;
     }
+    await this.queueSave(() => this.writeSnapshot());
+  }
+
+  private queueSave<T>(operation: () => Promise<T>): Promise<T> {
+    const next = this.saveTail.then(operation);
+    this.saveTail = next.then(() => {}, () => {});
+    return next;
+  }
+
+  private async writeSnapshot(candidate?: PublishedGoal): Promise<void> {
+    if (!this.store || this.store.readOnly) return;
+    if (this.storeUncertain) throw new StateCommitUnknownError("restart the runtime and reload before writing");
     const reflections: Reflection[] = [...this.graph.providers.values()]
       .filter((p) => p.source !== "builtin" && p.source !== "platform")
       .map((p) => ({ provider: p, capabilities: p.capabilityIds.map((id) => this.graph.get(id)!).filter(Boolean) }));
+    const cliConformance = [...this.cliConformance.values()].filter(p => this.graph.get(p.capability));
     try {
-      await this.store.save({ version: 2, requirements: [...STATE_REQUIREMENTS, ...(usesContractLinks(reflections) ? [CONTRACT_LINK_REQUIREMENT] : []), ...(this.deferredInference.length ? [DEFERRED_INFERENCE_REQUIREMENT] : [])], reflections, ...(this.deferredInference.length ? { deferredInference: this.deferredInference } : {}), ledger: this.ledger.toJSON(), receipts: this.chain.receipts.slice(-300), published: [...this.published.values()], meaningChanges: [...this.meaningChanges.values()], activity: this.activity.snapshot(), environment: this.environmentReport, httpContinuations: [...this.httpContinuations.values()], workflowContinuations: [...this.workflowContinuations.values()], authFingerprints: await this.net.auth.fingerprints(), semantics: SEMANTICS, identities: this.graph.identities.toJSON() });
+      const published = [...this.published.values()].filter(g => !candidate || g.slug !== candidate.slug);
+      if (candidate) published.push(candidate);
+      const workflowContinuations = [...this.workflowContinuations.values()];
+      await this.store.save({ version: 2, requirements: [...STATE_REQUIREMENTS, ...(usesContractLinks(reflections) ? [CONTRACT_LINK_REQUIREMENT] : []), ...(this.deferredInference.length ? [DEFERRED_INFERENCE_REQUIREMENT] : []), ...(cliConformance.length ? [CLI_CONFORMANCE_REQUIREMENT] : []), ...(usesStepInputBindings({ published, workflowContinuations }) ? [STEP_INPUT_BINDINGS_REQUIREMENT] : []), ...(usesPublicationSnapshot({ workflowContinuations }) ? [PUBLICATION_SNAPSHOT_REQUIREMENT] : [])], reflections, ...(this.deferredInference.length ? { deferredInference: this.deferredInference } : {}), ledger: this.ledger.toJSON(), receipts: this.chain.receipts.slice(-300), published, meaningChanges: [...this.meaningChanges.values()], activity: this.activity.snapshot(), environment: this.environmentReport, httpContinuations: [...this.httpContinuations.values()], workflowContinuations, ...(cliConformance.length ? { cliConformance } : {}), authFingerprints: await this.net.auth.fingerprints(), semantics: SEMANTICS, identities: this.graph.identities.toJSON() });
       this.saveState = "saved";
     } catch (error) {
       this.saveState = "failed";

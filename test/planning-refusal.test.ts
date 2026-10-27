@@ -175,7 +175,7 @@ test("peer-reported planning refusal stops execution but remote claims never bec
   assert.equal(calls, 1);
 });
 
-test("unchanged retained public GraphQL/OpenAPI state explains origin revocation without any network request", async () => {
+test("unchanged legacy retained state refuses missing revision without any network request", async () => {
   const store = new MemoryStore();
   // Retained state from docs/adaptive/evidence/living-public/attempt3/state.json at archive/pr4-e413876
   // (SHA-256 30b02ea9…62ea3 uncompressed, as listed in that directory's MANIFEST.sha256).
@@ -185,11 +185,13 @@ test("unchanged retained public GraphQL/OpenAPI state explains origin revocation
     authority: { execution: { allowedOrigins: [], allowedRisks: ["read"] } },
     fetch: async () => { calls++; throw new Error("no transport should run"); } });
   const run: any = await rc.run("goal:structure-primary-publication-metadata", { entry_id: "2LYZ" });
-  refused(run);
+  // This archived state predates immutable goal revisions. Its identity cannot
+  // be verified, so do not present the cached plan as authoritative policy
+  // evidence. The modern-revision test above separately exercises that policy.
+  assert.match(run.error, /no immutable revision/);
   assert.equal(run.status, "failed");
   assert.equal(run.output, undefined);
-  assert.ok(run.planningRefusal.blocked.some((b: any) => b.capability.startsWith("graphql:")));
-  assert.ok(run.planningRefusal.blocked.some((b: any) => b.capability.startsWith("openapi:")));
+  assert.equal(run.planningRefusal, undefined);
   assert.equal(calls, 0);
   await rc.flush();
 });

@@ -62,6 +62,9 @@ async function firstAgent(file: string) {
     witnesses: [{ capability: check, args: { id: { input: "id" }, text: { output: "text" } }, verify: [{ op: "equals", path: "valid", value: true }] }] });
   assert.equal(r.executed?.verification.status, "verified", JSON.stringify(r.executed?.error ?? r));
   assert.equal(r.published?.durable, true);
+  // Drain the first runtime's scheduled state save before simulating a
+  // disconnected process and editing the persisted version on disk.
+  await a.flush();
   const goal = definition(savedGoal(file));
   // Disconnect, then upgrade: the next process runs a newer inference version.
   const envelope = JSON.parse(readFileSync(file, "utf8"));

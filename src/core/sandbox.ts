@@ -283,6 +283,7 @@ export interface Sandbox {
   policy: SandboxPolicy;
   /** What this sandbox enforces, stated for evidence and capability cards. */
   enforces: string[];
+  forRevalidation?: () => Sandbox;
   /** purpose is host telemetry only; it grants no authority and changes no confinement. */
   run(bin: string, args: string[], opts?: { stdin?: string; files?: Record<string, string>; limits?: Partial<SandboxLimits>; purpose?: "execution" | "investigation" | "revalidation" | "agent-run" }): Promise<SandboxRun>;
 }
@@ -363,6 +364,20 @@ export function makeSandbox(kind: Sandbox["kind"], policy: SandboxPolicy, bwrap 
       "sampled resident-memory/process-count watchdog; not a hard kernel bound; observer loss refuses results",
       "the run's whole process group is terminated when it ends",
     ],
+    forRevalidation() {
+      return makeSandbox(kind, {
+        ...policy,
+        network: false,
+        writeRoots: [],
+        limits: {
+          timeoutMs: Math.min(policy.limits.timeoutMs, DEFAULT_LIMITS.timeoutMs),
+          maxOutputBytes: Math.min(policy.limits.maxOutputBytes, DEFAULT_LIMITS.maxOutputBytes),
+          maxMemoryBytes: Math.min(policy.limits.maxMemoryBytes, DEFAULT_LIMITS.maxMemoryBytes),
+          maxProcesses: Math.min(policy.limits.maxProcesses, DEFAULT_LIMITS.maxProcesses),
+          maxFileBytes: Math.min(policy.limits.maxFileBytes, DEFAULT_LIMITS.maxFileBytes),
+        },
+      }, bwrap);
+    },
     async run(bin, args, opts = {}) {
       const { spawn } = await import("node:child_process");
       const fs = await import("node:fs");

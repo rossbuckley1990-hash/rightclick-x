@@ -15,12 +15,28 @@ import { fileURLToPath } from "node:url";
 import { RightClick } from "../src/runtime.ts";
 import { FileStore } from "../src/entry/node-host.ts";
 import { KvStore } from "../src/entry/edge.ts";
-import { decodeState, STATE_FORMAT } from "../src/core/state-format.ts";
+import { decodeState, STATE_FORMAT, STEP_INPUT_BINDINGS_REQUIREMENT } from "../src/core/state-format.ts";
 import { MemoryStore } from "./helpers.ts";
 
 const RCX = fileURLToPath(new URL("../bin/rcx.ts", import.meta.url));
 const sha = (file: string) => createHash("sha256").update(readFileSync(file)).digest("hex");
 const root = process.getuid?.() === 0;
+
+test("saved step bindings require a compatible reader for goals and continuations", () => {
+  const legacy = { version: 2 as const, requirements: [], reflections: [], ledger: {}, receipts: [] };
+  assert.doesNotThrow(() => decodeState(legacy), "unbound old snapshots remain readable");
+  const bindings = { "cli:fixture:first": { options: "firstOptions" } };
+  for (const payload of [
+    { published: [{ inputBindings: bindings }] },
+    { workflowContinuations: [{ composition: { options: { inputBindings: bindings } } }] },
+  ]) {
+    const state = { ...legacy, ...payload };
+    assert.throws(() => decodeState(state), /missing the step input bindings requirement/);
+    assert.doesNotThrow(() => decodeState({ ...state, requirements: [STEP_INPUT_BINDINGS_REQUIREMENT] }));
+    const oldReaderRequirements = new Set(["scoped-composites@1", "http-workflow-continuations@1", "composition-goal-obligations@1", "declared-continuation-contracts@1", "cli-validity@1", "response-contract-links@1", "deferred-inference@1", "cli-conformance@1"]);
+    assert.equal(oldReaderRequirements.has(STEP_INPUT_BINDINGS_REQUIREMENT), false, "the previous reader rejects the new requirement");
+  }
+});
 
 /** A real legacy file: the state a version-1 runtime wrote, with a published goal and a receipt. */
 async function legacyState(): Promise<Record<string, any>> {
@@ -253,8 +269,9 @@ test("publishing a goal reports durable only once it is stored, and says why whe
   const failing = { load: async () => null, save: async () => { throw new Error("storage unavailable"); } };
   const broken = await RightClick.create({ store: failing, sandbox: null, directories: [] });
   const notStored = await broken.compose({ ...goal, publish: "Not stored" });
-  assert.equal(notStored.published?.durable, false, "a goal that was not stored was reported as saved");
-  assert.match(notStored.published?.persistence ?? "", /storage unavailable/);
+  assert.equal(notStored.published, undefined, "failed publication must not be available in the current process");
+  assert.match(notStored.publishRefused ?? "", /publication outcome unknown; reload/);
+  assert.equal(broken.graph.get("goal:not-stored"), undefined);
   assert.equal((broken.runtime() as any).storage.status, "failed");
 
   const memoryOnly = await RightClick.create({ sandbox: null, directories: [] });

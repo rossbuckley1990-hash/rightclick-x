@@ -2,7 +2,8 @@
 // The operator transports HTTP envelopes over stdio; all tools and dashboard
 // requests still go through the product's ordinary HTTP handler.
 import { createInterface } from "node:readline";
-import { RightClick, type PersistedState } from "../../src/runtime.ts";
+import { RightClick } from "../../src/runtime.ts";
+import { ProcessMemoryStore } from "../../src/entry/node-host.ts";
 import { createHandler } from "../../src/interface/http.ts";
 import { TransportRefused } from "../../src/reflectors/net.ts";
 import type { FetchLike } from "../../src/core/types.ts";
@@ -10,7 +11,7 @@ import type { FetchLike } from "../../src/core/types.ts";
 const send = (value: unknown) => process.stdout.write(JSON.stringify(value) + "\n");
 const pending = new Map<number, { resolve: (v: any) => void; reject: (e: Error) => void; timer: ReturnType<typeof setTimeout> }>();
 const streams = new Map<number, ReadableStreamDefaultReader<Uint8Array>>();
-let sequence = 0, state: PersistedState | null = null, runtime: RightClick | undefined;
+let sequence = 0, store: ProcessMemoryStore | undefined, runtime: RightClick | undefined;
 let handler: ReturnType<typeof createHandler> | undefined;
 let configured = false;
 const lines = createInterface({ input: process.stdin });
@@ -62,12 +63,14 @@ lines.on("line", line => {
         if (configured) throw new Error("session already configured");
         configured = true;
         const config = message.config;
-        state = config.state ?? null;
+        store = new ProcessMemoryStore();
+        await store.load();
+        if (config.state != null) await store.save(config.state);
         runtime = await RightClick.create({ name: "Living capability session", directories: [], sandbox: null,
           fetch: bridge, network: { blockPrivate: false, origins: config.origins },
           authority: { investigate: [], execute: [], execution: { allowedOrigins: config.origins, allowedRisks: ["read", "write"] }, publish: "checked" },
           environment: config.environment, workflowRecovery: true,
-          store: { load: async () => state, save: async next => { state = next; } } });
+          store });
         handler = createHandler(runtime, { open: true,
           ...(config.authorityEvidence ? { authorityEvidence: { ...config.authorityEvidence, read: authorityRead } } : {}) });
         runtime.toolCallSink = row => send({ op: "tool-observation", row });
@@ -98,7 +101,7 @@ lines.on("line", line => {
       } else if (message.op === "snapshot") {
         if (!runtime) throw new Error("session not configured");
         await runtime.flush();
-        send({ op: "reply", id: message.id, value: { state, activity: runtime.activity.snapshot(),
+        send({ op: "reply", id: message.id, value: { state: await store!.load(), activity: runtime.activity.snapshot(),
           graph: runtime.exportGraph(), summary: runtime.startupSummary(), rss: process.memoryUsage().rss } });
       } else if (message.op === "close") {
         for (const reader of streams.values()) await reader.cancel();

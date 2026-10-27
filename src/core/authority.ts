@@ -7,7 +7,11 @@
 //   RCX_EXECUTE     = the programs whose learned capabilities may run (same form); when unset,
 //                     the programs that may be investigated
 //   RCX_SHARE_EVIDENCE = "1" lets capability knowledge be exported from this installation
+//   RCX_CLI_CONFORMANCE = JSON {"cli:<program>:<command>": {"samples": [{"args": {...}, "output": ...}, ...]}}:
+//                     2-8 exact synthetic samples per read-only CLI capability, with independently
+//                     expected outputs, that may revalidate it after its program changes
 import type { OperatorAuthority } from "../runtime.ts";
+import { parseCliConformance } from "./cli-conformance.ts";
 import { parseExecutionPolicy } from "./execution-policy.ts";
 
 const list = (v: unknown) => String(v ?? "").split(",").map((x) => x.trim()).filter(Boolean);
@@ -22,6 +26,7 @@ export function authorityFromEnv(env: Record<string, unknown>): OperatorAuthorit
     retry: list(env.RCX_RETRY),
     investigate: list(env.RCX_INVESTIGATE),
     ...(env.RCX_EXECUTE !== undefined ? { execute: list(env.RCX_EXECUTE) } : {}),
+    ...(env.RCX_CLI_CONFORMANCE !== undefined ? { cliConformance: parseCliConformance(JSON.parse(String(env.RCX_CLI_CONFORMANCE))) } : {}),
     shareEvidence: env.RCX_SHARE_EVIDENCE === "1",
   };
 }

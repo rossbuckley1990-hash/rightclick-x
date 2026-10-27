@@ -16,8 +16,9 @@ const predicates = {
 };
 const witnesses = {
   type: "array",
-  description: 'Independent outcome checks, repeated for every saved invocation. Discover a read-only checker in the environment. Example: [{"capability":"<checker id>","args":{"order_id":{"input":"order_id"},"tax_amount":{"output":""}},"verify":[{"op":"equals","path":"valid","value":true}]}]. input paths read this invocation\'s have values; output paths read the candidate result (empty string = whole result); value supplies a literal. The checker must be a separate provider and must pass its predicates. Its contract is pinned on save; a changed checker fails closed.',
-  items: obj({ capability: str("Exact read-only checker capability id."), args: { type: "object", additionalProperties: { oneOf: [obj({ input: str("Path in the invocation inputs.") }, ["input"]), obj({ output: str("Path in the candidate output; empty string selects all of it.") }, ["output"]), obj({ value: {} }, ["value"])] } }, verify: predicates }, ["capability", "args", "verify"]),
+  description: 'Independent outcome checks, repeated for every saved invocation. Discover a read-only checker in the environment. Example: [{"capability":"<checker id>","args":{"order_id":{"input":"order_id"},"tax_amount":{"output":""}},"verify":[{"op":"equals","path":"valid","value":true}]}]. input paths read this invocation\'s have values; output paths read the candidate result (empty string = whole result); value supplies a literal. The checker must be a separate provider and must pass its predicates. Its contract is pinned on save; a changed checker fails closed. Or recompute: an independent implementation of the same outcome (a capability, or a saved pipeline none of whose providers produced the result) given only inputs and values, with agree, must reach the same result: [{"capability":"<other implementation>","args":{"text":{"input":"text"}},"agree":{"mode":"trimmed"}}].',
+  items: obj({ capability: str("Exact read-only checker capability id, or a crystallized pipeline of read-only steps."), args: { type: "object", additionalProperties: { oneOf: [obj({ input: str("Path in the invocation inputs.") }, ["input"]), obj({ output: str("Path in the candidate output; empty string selects all of it.") }, ["output"]), obj({ value: {} }, ["value"])] } }, verify: predicates,
+    agree: { ...obj({ path: str("Path in the witness result (default: all of it)."), candidate: str("Path in the candidate result (default: all of it)."), mode: { type: "string", enum: ["exact", "trimmed", "number"], description: "exact (default), trimmed (same text without surrounding whitespace) or number (within tolerance)." }, tolerance: num("Largest allowed difference, with mode number (default 0).") }), description: "The witness recomputes the outcome from inputs and values (never from the candidate) and must agree with it. Replaces verify." } }, ["capability", "args"]),
 };
 
 const view = {
@@ -95,8 +96,10 @@ export const TOOLS = [
         maxSteps: num("Max pipeline length (default 4)."),
         confirm: bool("Required to run plans containing destructive capabilities."),
         publish: str("After a successful run, save this goal as goal:<slug> in the graph AND as /x/<slug> in the synthesized API. Checks and witnesses are retained and re-run on every invocation. Stored predicates make a goal \"checked\"; an independent witness makes it \"verified\"."),
+        preserveExisting: bool("Refuse publication before execution if this slug already exists. Without this option a successful publication replaces the existing goal; publication is refused if the definition changes during execution."),
         acquire: bool("If nothing in the graph can do it: research public directories (APIs.guru, MCP Registry), learn the best candidates and re-plan."),
         through: { type: "array", items: { type: "string" }, description: "Anchors: capability ids or search phrases the pipeline must pass through; the planner wires the types between them." },
+        inputBindings: { type: "object", description: 'For anchored CLI capabilities, map capability id to port-to-have-input names, e.g. {"cli:jq:stdout":{"options":"jqOptions"},"cli:shasum:invoke":{"options":"hashOptions"}}. Each binding is mandatory and retained with a published goal. Use fixed have inputs to pin options.' },
         risks: { type: "array", items: { type: "string", enum: ["read", "write", "external", "destructive"] }, description: 'Optional constraint: plan only with these risk labels, e.g. ["read"].' },
         require: { type: "array", items: { type: "string" }, description: 'Required information the result must carry, e.g. ["resolution"] or ["gene name"]. Use through to constrain capability ids. Plans are judged by the fields their result declares and by how each join is supported; only an established plan runs, otherwise the outcome says unavailable/unverified and nothing runs. After running, the output is checked for every term.' },
         origins: { type: "array", items: { type: "string" }, description: 'Optional egress policy, e.g. ["https://api.example.com"]: use only capabilities that send data to these origins, now and in every automatic repair. Saved with publish.' },
@@ -189,7 +192,7 @@ export async function dispatch(rc: RightClick, name: string, a: Record<string, a
     }
     case "context_compose": {
       const v = parseView(a.view);
-      const r = await rc.compose({ have: a.have ?? {}, want: a.want, intent: a.intent, run: a.run, verify: a.verify, witnesses: a.witnesses, maxSteps: a.maxSteps, risks: a.risks, through: a.through, origins: a.origins, require: a.require, acquire: a.acquire, publish: a.publish, confirm: a.confirm });
+      const r = await rc.compose({ have: a.have ?? {}, want: a.want, intent: a.intent, run: a.run, verify: a.verify, witnesses: a.witnesses, maxSteps: a.maxSteps, risks: a.risks, through: a.through, inputBindings: a.inputBindings, origins: a.origins, require: a.require, acquire: a.acquire, publish: a.publish, preserveExisting: a.preserveExisting, confirm: a.confirm });
       if (!r.executed) return r;
       return { ...r, executed: viewed(r.executed, v, "To view a step's recorded output without re-running: context_run_status with a runId from executed.runs and a view.") };
     }

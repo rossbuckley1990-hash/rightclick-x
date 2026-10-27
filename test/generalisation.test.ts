@@ -265,7 +265,10 @@ test("synopsis spellings are retained without inventing constituent single-lette
 
 test("output that differs between identical runs only by date-times is deterministic apart from them; a behaviour-identical wrapper is still accepted", { skip, timeout: 120_000 }, async () => {
   const dir = tmp("rcx-gen-");
-  const body = `if [ "$1" = "--help" ]; then echo "usage: stamp [file]"; echo "  report a text with the time it was processed"; exit 0; fi; /usr/bin/tr a-z A-Z; r=$(/usr/bin/od -An -N2 -tu2 /dev/urandom | /usr/bin/tr -d ' '); printf "Processed: 2026-10-17T14:%02d:%02dZ\\n" $(( r % 60 )) $(( (r / 60) % 60 ))`;
+  // The sandbox creates a fresh TMPDIR for every invocation. Encode its unique six-character
+  // suffix injectively as decimal fractional seconds, so the date-time field changes on
+  // identical runs without the 1-in-3600 collision possible with random minute/second fields.
+  const body = `if [ "$1" = "--help" ]; then echo "usage: stamp [file]"; echo "  report a text with the time it was processed"; exit 0; fi; /usr/bin/tr a-z A-Z; suffix=$(printf '%s' "\${TMPDIR##*-}" | /usr/bin/od -An -v -tu1 | /usr/bin/awk '{for (i=1; i<=NF; i++) printf "%03d", $i}'); printf "Processed: 2026-10-17T14:00:00.%sZ\\n" "$suffix"`;
   const p = program(dir, "stamp", body);
   const rc = await RightClick.create({ directories: [], authority: { investigate: [`${dir}/`] } });
   await rc.learn({ source: `cli:${p}` });
@@ -280,7 +283,7 @@ test("output that differs between identical runs only by date-times is determini
   chmodSync(p, 0o755);
   const r = await rc.run(cap.id, { input: "abc\n" });
   assert.equal(r.status, "completed", String(r.error));
-  assert.match(String(r.output), /^ABC\nProcessed: /);
+  assert.match(String(r.output), /^ABC\nProcessed: 2026-10-17T14:00:00\.\d+Z\n$/);
 });
 
 test("content passed as a file operand is named by what it is (JSON as .json)", { skip, timeout: 60_000 }, async () => {
@@ -366,4 +369,28 @@ test("discovered JSON programs retain an exact stdout capability across stores a
   const refused = await restricted.run(raw.id, { [raw.invoke.stdin]: input });
   assert.equal(refused.status, "failed");
   assert.match(refused.error!, /blocked by execution policy/);
+});
+
+test("an option the description lists alone takes the argument its synopsis declares, nested repetition included", () => {
+  const page = [
+    "usage: convertkit [-v] [-f from_format] [-o opt1[,opt2[,...]]]",
+    "",
+    "OPTIONS",
+    "     -f",
+    "         Reads the input in the given format.",
+    "",
+    "     -o",
+    "         Options passed to the encoder.",
+    "",
+    "     -v",
+    "         Be verbose.",
+  ].join("\n");
+  const { options } = parseUsage(page);
+  const arg = (flag: string) => options.find((o) => o.flags.includes(flag))?.arg;
+  assert.equal(arg("-f"), "from_format");
+  assert.equal(arg("-o"), "opt1", "a value followed by nested repetition groups is still the option's argument");
+  assert.equal(arg("-v"), undefined, "a flag the synopsis declares without a value stays a flag");
+  const allowed = options.map((o) => ({ flags: o.flags, arg: !!o.arg }));
+  assert.deepEqual(validateOptions(["-o", "canonical", "-v"], allowed), ["-o", "canonical", "-v"]);
+  assert.throws(() => validateOptions(["-o"], allowed), /needs a value/);
 });

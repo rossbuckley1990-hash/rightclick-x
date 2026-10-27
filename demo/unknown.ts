@@ -16,12 +16,17 @@
 //
 //   npm run demo:unknown                       macOS: /usr/bin/tidy; Linux: /usr/bin/expand
 //   npm run demo:unknown -- --agent            also let a fresh Claude Code session reuse it
+//   npm run demo:unknown -- --conformance      the operator also authorises two exact samples whose
+//                                              expected outputs this script records from the original
+//                                              program (run directly, outside RightClick X), so a
+//                                              compatible change can be revalidated (RCX_CLI_CONFORMANCE)
 import { chmodSync, existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, unlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, join, resolve } from "node:path";
 import { spawn, spawnSync } from "node:child_process";
 
 const AGENT = process.argv.includes("--agent");
+const CONFORMANCE = process.argv.includes("--conformance");
 interface Profile { program: string; intent: string; want: string; port: string; samples: [string, string, string]; check: (input: string, out: unknown) => boolean }
 const PROFILES: Record<string, Profile> = {
   tidy: {
@@ -88,7 +93,17 @@ place();
 const state = `${env}/state.json`;
 const evidence: any = { at: new Date().toISOString(), platform: `${process.platform}/${process.arch}`, program: profile.program, intent: profile.intent, steps: [] };
 const record = (step: string, data: unknown) => evidence.steps.push({ step, at: new Date().toISOString(), data });
-const serverEnv = { ...process.env, RCX_STATE_FILE: state, RCX_INVESTIGATE: bin, RCX_WORKSPACE: env };
+const serverEnv: Record<string, string | undefined> = { ...process.env, RCX_STATE_FILE: state, RCX_INVESTIGATE: bin, RCX_WORKSPACE: env };
+if (CONFORMANCE) {
+  // Synthetic inputs, distinct from the task inputs. Expected outputs come from the original
+  // program run by this script, before any change: golden outputs, not RightClick X's own.
+  const inputs = profile.want === "html"
+    ? ["<html><head><title>Sample A</title></head><body><p>one\n<p>two</body></html>\n", "<html><head><title>Sample B</title></head><body><ul><li>x<li>y</ul></body></html>\n"]
+    : ["k\tv\n1\t2\n", "a\tbb\tccc\n"];
+  const samples = inputs.map((input) => ({ args: { [profile.port]: input }, output: spawnSync(profile.program, [], { input, encoding: "utf8" }).stdout }));
+  serverEnv.RCX_CLI_CONFORMANCE = JSON.stringify({ [`cli:${name}:default`]: { samples } });
+  evidence.conformance = { capability: `cli:${name}:default`, samples: samples.length, expectedOutputs: "recorded from the original program by this script" };
+}
 
 /** A minimal MCP stdio client: how any AI client talks to RightClick X. */
 class Client {
@@ -146,7 +161,7 @@ say("A fresh RightClick X with empty state. It has never seen this program and c
 let c = await new Client().init();
 const tools = (await c.req("tools/list")).result.tools.map((t: any) => t.name);
 live(`MCP tools offered to any AI client: ${tools.length}`);
-say(`The operator authorises exactly one program: ${bin}. That is the only setup.`);
+say(`The operator authorises exactly one program: ${bin}.${CONFORMANCE ? " It also authorises two exact samples with outputs recorded from the original program." : " That is the only setup."}`);
 let t0 = Date.now();
 const learned = await c.tool("context_learn", { source: `cli:${bin}` });
 live(`context_learn -> ${learned.results?.[0]?.probes?.[0]?.detail ?? learned.results?.[0]?.error} (${Date.now() - t0} ms)`);
@@ -169,7 +184,7 @@ c.close();
 
 say("The MCP server is restarted. A new client that has never heard of the program connects.");
 c = await new Client().init();
-live(`the server tells the new session: ${(/Retained capabilities[\s\S]*?\n- ([^\n]+)/.exec(c.instructions)?.[1] ?? "(nothing)").slice(0, 110)}`);
+live(`the server tells the new session: ${(/Retained IDs[^:]*: (\[[^\n]*?\])/.exec(c.instructions)?.[1] ?? "(nothing)").slice(0, 110)}`);
 const reuse = await c.tool("context_run", { id: goalId, args: { [profile.port]: s2 }, view: { full: true } });
 results.reuse = profile.check(s2, reuse.output);
 live(`context_run ${goalId} on unseen input -> ${reuse.status}; independent check: ${results.reuse ? "PASS" : "FAIL"}`);

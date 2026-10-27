@@ -284,3 +284,26 @@ Try the [demo](#get-started). Run a [proof](#show-me-the-evidence). Break someth
 If this is the layer you want AI agents to have, **star the repository** and help test it against software we've never seen.
 
 [Apache-2.0](LICENSE) · [Source](src/) · [Experiments](experiments/) · [Issues](https://github.com/rossbuckley1990-hash/rightclick-x/issues)
+
+### Saved goals and storage consistency
+
+Saved-goal execution requires an authoritative lease that covers the complete
+invocation and coordinates all publishers and revocations. A generic `Store`
+that only implements `load` and `save` can retain state, but cannot authorize a
+saved goal: execution refuses with a freshness error. The host implementing a
+custom lease is responsible for enforcing the contract across every writer.
+
+For Node applications, `ProcessMemoryStore` is available from
+`rightclick-x/node`. Sharing one instance across runtimes provides independent
+per-runtime compare-and-swap views and a shared execution lease, **within that
+single process and backend object only**. It is volatile and cannot coordinate
+other processes or survive restarts. `FileStore` in the same entry coordinates
+cooperating local processes through its file lock; its trusted-directory and
+cooperating-writer limitations still apply.
+
+Workers KV remains a read-only state source, but its eventual consistency means
+saved goals loaded from it cannot be executed under this contract. Remote and
+read-only stores without an authoritative lease also refuse; read-only alone
+is not evidence of immutability. Legacy saved goals without an immutable
+revision must be explicitly republished before execution; loading them does not
+silently mint an identity.

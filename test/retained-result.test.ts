@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { RightClick } from "../src/runtime.ts";
+import { ProcessMemoryStore } from "../src/entry/node-host.ts";
 import { dispatch } from "../src/interface/tools.ts";
 import type { Capability } from "../src/core/types.ts";
 import { describeResult, resultDescription } from "../src/core/result-description.ts";
@@ -13,8 +14,8 @@ function capability(): Capability {
     invoke: { kind: "http", method: "GET", url: "https://parcels.test/{code}", pathParams: ["code"], queryParams: [], headerParams: [], body: null, bodyParams: [] } };
 }
 async function lab() {
-  let state: any, fail = false, calls = 0;
-  const store = { load: async () => state, save: async (x: any) => { state = structuredClone(x); } };
+  let fail = false, calls = 0;
+  const store = new ProcessMemoryStore();
   const fetch = async () => { calls++; return Response.json(fail ? { error: "offline" } : { parcel: { label: "PRIVATE-VALUE", mass: 7 } }, { status: fail ? 503 : 200 }); };
   const options = { directories: [], sandbox: null, fetch, store };
   const rc = await RightClick.create(options);
@@ -23,7 +24,8 @@ async function lab() {
     maxSteps: 1, origins: ["https://parcels.test"], risks: ["read"], run: true, publish: "parcel summary", verify: [{ op: "exists", path: "parcel.mass" }] });
   assert.equal(made.executed?.status, "completed");
   await rc.flush();
-  return { rc, options, state: () => state, calls: () => calls, fail: () => { fail = true; } };
+  const snapshot = await store.load();
+  return { rc, options, state: () => snapshot!, calls: () => calls, fail: () => { fail = true; } };
 }
 
 test("saved goals retain bounded declared result guidance without retaining caller values or granting planning evidence", async () => {
@@ -66,7 +68,8 @@ test("fresh readers retain guidance while declaration changes, disappearance and
 
 test("legacy goals remain unknown and disclosure cannot clear execution restrictions", async () => {
   const { options, state, calls } = await lab();
-  delete state().published[0].lastResult;
+  delete state().published![0].lastResult;
+  await options.store.save(state());
   const rc = await RightClick.create({ ...options, authority: { execution: { allowedRisks: [] } } });
   const before = calls();
   const detail: any = rc.explainForRun("goal:parcel-summary");
@@ -79,7 +82,8 @@ test("legacy goals remain unknown and disclosure cannot clear execution restrict
 
 test("successful legacy reuse records declarations without replacing the saved definition or output", async () => {
   const { options, state } = await lab();
-  delete state().published[0].lastResult;
+  delete state().published![0].lastResult;
+  await options.store.save(state());
   const rc = await RightClick.create(options);
   const goal = rc.published.get("parcel-summary")!;
   const identity = await (rc as any).goalDigest(goal), created = goal.publishedAt;
