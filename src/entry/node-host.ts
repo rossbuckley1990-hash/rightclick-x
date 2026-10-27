@@ -2,7 +2,7 @@
 
 import type { RightClick, PersistedState, Store } from "../runtime.ts";
 import { backupSuffix, decodeState, encodeState, FILE_STORE_CAS_REQUIREMENT, migrationReplaces } from "../core/state-format.ts";
-import { StateConflictError } from "../core/state-conflict.ts";
+import { StateCommitUnknownError, StateConflictError } from "../core/state-conflict.ts";
 import { handle, type JsonRpc } from "../interface/mcp-server.ts";
 
 export type FetchHandler = (req: Request) => Promise<Response>;
@@ -105,12 +105,15 @@ export class FileStore implements Store {
   private loaded?: { value: unknown; bytes: Uint8Array };
   // Undefined means the file has never been observed, null means it was absent.
   private expected?: Uint8Array | null;
+  /** Do not let a later queued save overwrite an uncertain committed snapshot. */
+  private commitUnknown = false;
   private onBackup?: (path: string) => void;
   constructor(file: string, opts: { onBackup?: (path: string) => void } = {}) {
     this.file = file;
     this.onBackup = opts.onBackup;
   }
   async load(): Promise<PersistedState | null> {
+    if (this.commitUnknown) throw new StateCommitUnknownError("open a fresh store and reload");
     const fs = await import("node:fs/promises");
     let bytes: Uint8Array;
     try {
@@ -135,6 +138,7 @@ export class FileStore implements Store {
     return next;
   }
   private async write(content: string, state: PersistedState): Promise<void> {
+    if (this.commitUnknown) throw new StateCommitUnknownError("open a fresh store and reload");
     const fs = await import("node:fs/promises");
     const path = await import("node:path");
     await fs.mkdir(path.dirname(this.file), { recursive: true });
@@ -146,6 +150,8 @@ export class FileStore implements Store {
       if ((error as NodeJS.ErrnoException).code === "EEXIST") throw new StateConflictError("another writer holds the file lock");
       throw error;
     }
+    let renameAttempted = false;
+    try {
     try {
       let current: Uint8Array | null;
       try { current = await fs.readFile(this.file); }
@@ -173,6 +179,7 @@ export class FileStore implements Store {
       try {
         try { await handle.writeFile(content); }
         finally { await handle.close(); }
+        renameAttempted = true;
         await fs.rename(tmp, this.file);
         this.expected = new TextEncoder().encode(content);
         this.loaded = undefined;
@@ -181,5 +188,10 @@ export class FileStore implements Store {
         await fs.unlink(tmp).catch(error => { if (error.code !== "ENOENT") throw error; });
       }
     } finally { await fs.rmdir(lock); }
+    } catch (error) {
+      if (!renameAttempted) throw error;
+      this.commitUnknown = true;
+      throw new StateCommitUnknownError("commit was attempted; open a fresh store and reload");
+    }
   }
 }

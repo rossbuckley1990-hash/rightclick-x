@@ -15,3 +15,14 @@ RCX_OFFLINE_EVIDENCE=/path/to/new/evidence node --test experiments/inheritance-o
 ```
 
 The state includes synthetic inputs and local receipt chains; those receipts are kept by the same runtime process and are not independent attestation. The optional output is overwritten by a later run. The test creates no model sessions and consumes no model usage.
+
+## Known freshness failure
+
+`node experiments/inheritance-offline/stale-publication-repro.ts` checks a
+separate, model-free case: two runtimes load a saved goal, one durably replaces
+it, and the other tries to execute its already-loaded definition. On commit
+`d6d7a4a`, the old definition executed successfully, so the command reports
+`FAIL_STALE_DEFINITION_EXECUTED` and exits 1. The FileStore compare-and-swap
+protects cooperating writes; it does not refresh or refuse an invocation from
+an already-running process. This failure is not covered by the fresh-process
+acceptance test above.

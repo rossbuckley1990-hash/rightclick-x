@@ -3,7 +3,7 @@
 // federation) is a thin shell around this class.
 
 import { checkpointValue, validWorkflow, type WorkflowContinuation, type CompositionContinuation } from "./core/workflow-continuation.ts";
-import { StateConflictError } from "./core/state-conflict.ts";
+import { StateCommitUnknownError, StateConflictError } from "./core/state-conflict.ts";
 import { CLI_CONFORMANCE_REQUIREMENT, CONTRACT_LINK_REQUIREMENT, decodeState, DEFERRED_INFERENCE_REQUIREMENT, PUBLICATION_SNAPSHOT_REQUIREMENT, STATE_FORMAT, STATE_REQUIREMENTS, STEP_INPUT_BINDINGS_REQUIREMENT, usesContractLinks, usesPublicationSnapshot, usesStepInputBindings } from "./core/state-format.ts";
 import { pointerValue, validLinkBinding, validLinkGroup, validLinkValue } from "./core/links.ts";
 import { ActivityLog, reference, type ActivityState, type ContractReference } from "./core/activity.ts";
@@ -587,6 +587,7 @@ export class RightClick {
   /** Serialize snapshot construction as well as writes. Pending publications never
    * enter unrelated snapshots and become visible only after their own save succeeds. */
   private saveTail: Promise<void> = Promise.resolve();
+  private storeUncertain = false;
   private saveState: "not-observed" | "saved" | "failed" | "read-only" = "not-observed";
   private runCounter = 0;
   private destructivePolicy: "operator" | "agent-confirm" | "allow" = "operator";
@@ -3056,11 +3057,14 @@ export class RightClick {
           try {
             if (this.published.get(slug) !== existing) throw new StateConflictError("in-memory publication changed");
             if (this.store && !this.store.readOnly) await this.writeSnapshot(candidate);
+            this.published.set(slug, candidate);
+            this.registerGoal(candidate);
+            this.graph.emit("goal.published", { slug, title: opts.publish, pipeline: titles(p) });
           } catch (e) {
-            if (e instanceof StateConflictError) {
-              // The previous in-memory definition may be stale too. Withdraw it rather
-              // than restoring an authority or definition that storage no longer confirms.
-              if (this.published.get(slug) === existing) {
+              if (!(e instanceof StateConflictError)) this.storeUncertain = true;
+              // A generic store error may occur after its write committed. Withdraw both
+              // candidate and prior definition, whose current status is now unknown.
+              if (this.published.get(slug) === existing || this.published.get(slug) === candidate) {
                 this.published.delete(slug);
                 this.graph.capabilities.delete(`goal:${slug}`);
                 const provider = this.graph.providers.get("goal:published");
@@ -3068,12 +3072,8 @@ export class RightClick {
                 this.graph.relink();
                 this.graph.retireBroken();
               }
-            }
             throw e;
           }
-          this.published.set(slug, candidate);
-          this.registerGoal(candidate);
-          this.graph.emit("goal.published", { slug, title: opts.publish, pipeline: titles(p) });
         });
         result.published = { id: `goal:${slug}`, slug, path: `/x/${slug}`, trust, durable: !!this.store && !this.store.readOnly };
         if (!this.store) result.published.persistence = "no store configured: available in this process only";
@@ -3081,7 +3081,7 @@ export class RightClick {
       } catch (e) {
         result.publishRefused = e instanceof StateConflictError
           ? "not published: state conflict; reload the current state and retry explicitly"
-          : `not published: storage failure: ${String((e as Error)?.message ?? e).slice(0, 300)}`;
+          : "publication outcome unknown; reload the current state before retrying";
       } finally {
         this.publishing.delete(slug);
       }
@@ -3941,6 +3941,7 @@ export class RightClick {
 
   private async writeSnapshot(candidate?: PublishedGoal): Promise<void> {
     if (!this.store || this.store.readOnly) return;
+    if (this.storeUncertain) throw new StateCommitUnknownError("restart the runtime and reload before writing");
     const reflections: Reflection[] = [...this.graph.providers.values()]
       .filter((p) => p.source !== "builtin" && p.source !== "platform")
       .map((p) => ({ provider: p, capabilities: p.capabilityIds.map((id) => this.graph.get(id)!).filter(Boolean) }));

@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdir, mkdtemp, readdir, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fork } from "node:child_process";
@@ -84,5 +84,22 @@ test("an unobserved file or abandoned lock fails closed", async () => {
     await mkdir(`${file}.lock`);
     await assert.rejects(unobserved.save(snapshot(3)), /state conflict/);
     assert.equal((await new FileStore(file).load())?.ledger.marker.index, 1);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test("FileStore backup callback failure after rename is unknown and blocks later writes", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "rcx-store-commit-unknown-"));
+  const file = join(dir, "state.json");
+  try {
+    const legacy = { ...snapshot(0), version: 1 } as any;
+    delete legacy.requirements;
+    await writeFile(file, JSON.stringify(legacy));
+    const store = new FileStore(file, { onBackup: () => { throw new Error("callback failure after rename"); } });
+    await store.load();
+    await assert.rejects(store.save(snapshot(1)), /state commit outcome unknown/);
+    assert.equal((await new FileStore(file).load())?.ledger.marker.index, 1, "rename committed before the callback failed");
+    await assert.rejects(store.save(snapshot(2)), /state commit outcome unknown/);
+    await assert.rejects(store.load(), /state commit outcome unknown/);
+    assert.equal((await new FileStore(file).load())?.ledger.marker.index, 1, "the uncertain instance cannot overwrite the committed state");
   } finally { await rm(dir, { recursive: true, force: true }); }
 });

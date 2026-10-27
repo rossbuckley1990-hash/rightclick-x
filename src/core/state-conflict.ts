@@ -5,3 +5,11 @@ export class StateConflictError extends Error {
     this.name = "StateConflictError";
   }
 }
+
+/** A state commit was attempted, but its durable outcome cannot be established. */
+export class StateCommitUnknownError extends Error {
+  constructor(message: string) {
+    super(`state commit outcome unknown: ${message}`);
+    this.name = "StateCommitUnknownError";
+  }
+}

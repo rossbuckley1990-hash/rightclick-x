@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { RightClick } from "../src/runtime.ts";
-import { StateConflictError } from "../src/core/state-conflict.ts";
+import { StateCommitUnknownError, StateConflictError } from "../src/core/state-conflict.ts";
 import { MemoryStore } from "./helpers.ts";
 
 test("a conflicting replacement is not executable while pending or after refusal", async () => {
@@ -67,4 +67,30 @@ test("a failed publication cannot leak through another slug or a queued flush", 
   assert.equal(rc.published.has("beta"), true);
   assert.equal(snapshots.some(slugs => slugs.includes("alpha")), false, "no unrelated save persisted the rejected candidate");
   assert.equal(store.state?.published?.some(goal => goal.slug === "beta"), true);
+});
+
+test("write-then-error reports unknown, withdraws the goal, and blocks later overwrites", async () => {
+  const store = new MemoryStore();
+  const rc = await RightClick.create({ store, sandbox: null, directories: [] });
+  await rc.flush();
+  const normalSave = store.save.bind(store);
+  store.save = async state => {
+    await normalSave(state);
+    throw new StateCommitUnknownError("simulated failure after write");
+  };
+  const base = { have: { text: { type: "text" as const, value: "x" } }, want: "hash" as const,
+    through: ["builtin:text.sha256"], run: true };
+  const result = await rc.compose({ ...base, publish: "unknown result" });
+  assert.equal(result.published, undefined);
+  assert.match(result.publishRefused ?? "", /publication outcome unknown; reload/);
+  assert.equal(rc.graph.get("goal:unknown-result"), undefined);
+  assert.equal(store.state?.published?.some(goal => goal.slug === "unknown-result"), true, "the unknown write actually committed");
+  store.save = normalSave;
+  await assert.rejects(rc.flush(), /state commit outcome unknown/);
+  const retry = await rc.compose({ ...base, publish: "different goal" });
+  assert.match(retry.publishRefused ?? "", /publication outcome unknown; reload/);
+  assert.equal(store.state?.published?.some(goal => goal.slug === "unknown-result"), true, "retry did not erase the committed candidate");
+  assert.equal(store.state?.published?.some(goal => goal.slug === "different-goal"), false);
+  const fresh = await RightClick.create({ store, sandbox: null, directories: [] });
+  assert.equal((await fresh.run("goal:unknown-result", { text: "new" })).status, "completed");
 });
