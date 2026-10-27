@@ -472,10 +472,7 @@ test("graph and knowledge exports carry no local conformance authority, and impo
   assert.equal(f.calls.length, 0, "import is not explicit learn or sample authorization");
 });
 
-// The planner fills an optional port only from the caller's value of that name, and a CLI's stdin
-// port is optional, so two anchored stdin filters do not chain yet: a planner change, not conformance.
-test("saved goal and composite preserve verify/witness obligations across source acceptance and never repin a changed witness",
-  { ...local, todo: "needs the planner to chain anchored CLI steps through optional stdin ports" }, async t => {
+test("saved goal and composite preserve verify/witness obligations across source acceptance and never repin a changed witness", local, async t => {
   const f = await fixture(t);
   const spacing = `${f.dir}/line-spacing`, checker = `${f.dir}/independent-checker`;
   const spacingId = "cli:line-spacing:report", witnessId = "cli:independent-checker:report";

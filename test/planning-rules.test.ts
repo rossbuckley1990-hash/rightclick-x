@@ -101,3 +101,19 @@ test("parallel branches in a different order are the same plan", () => {
   const p = plan(g, new Ledger(), { have: { k: "id.k" }, want: "text", intent: "join", through: ["left", "right", "join"] });
   assert.equal(p.filter((x) => x.steps.length === 3).length, 1);
 });
+
+test("anchored CLI steps chain through optional stdin in the caller's order, and only then", () => {
+  const filter = (id: string) => cap(id, [port("input", "text", false), port("operands", "list:text", false)], [port("", "text")], id,
+    { source: "cli", invoke: { kind: "cli", bin: `/bin/${id}`, args: [], stdin: "input", okExit: [0], output: "text" } as any });
+  const g = graph(filter("sort"), filter("squeeze"));
+  const piped = plan(g, new Ledger(), { have: { input: "text" }, want: "text", through: ["cli:sort", "cli:squeeze"].map((x) => x.slice(4)) });
+  const chain = piped.find((p) => p.steps.length === 2);
+  assert.ok(chain, "two anchored stdin filters form one pipeline");
+  assert.deepEqual(steps(chain), ["sort", "squeeze"], "the caller's order is the pipeline's order");
+  assert.deepEqual(chain.steps[0].bindings, [{ port: "input", from: "$in.input" }]);
+  assert.deepEqual(chain.steps[1].bindings, [{ port: "input", from: "0." }], "the second filter reads the first one's output");
+  assert.ok(!piped.some((p) => steps(p).join() === "squeeze,sort"), "never against the caller's order");
+  // Without anchors an optional stdin port still takes only the caller's value of that name.
+  for (const p of plan(g, new Ledger(), { have: { input: "text" }, want: "text" }))
+    for (const s of p.steps) for (const b of s.bindings) if (b.port === "input") assert.equal(b.from, "$in.input");
+});

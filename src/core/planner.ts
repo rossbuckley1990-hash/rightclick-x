@@ -140,6 +140,7 @@ export function plan(graph: CapabilityGraph, ledger: Ledger, goal: Goal, expansi
   const intent = new Set(tokenize(goal.intent ?? "").filter((t) => !typeWords.has(t)));
   const excluded = goal.exclude ?? new Set<string>();
   const anchors = new Set(goal.through ?? []);
+  const anchorOrder = new Map((goal.through ?? []).map((id, i) => [id, i]));
   const risks = goal.risks === undefined ? null : new Set(goal.risks);
   const origins = goal.origins === undefined ? null : new Set(goal.origins.map((o) => new URL(o).origin));
   const withinPolicy = (c: Capability) => {
@@ -201,22 +202,28 @@ export function plan(graph: CapabilityGraph, ledger: Ledger, goal: Goal, expansi
         if (node.used.has(cap.id)) continue;
         const declared = linkTargets.has(cap.id) ? node.steps.flatMap((s, index) => s.bindings.some(b => b.each) ? [] :
           (graph.get(s.capability)?.links ?? []).filter(l => l.target === cap.id).map(link => ({ index, link }))) : [];
+        // An anchored program's optional stdin may read an earlier anchored step's output: the
+        // caller named both, so the order they named is the pipeline. Elsewhere optional ports
+        // still take only the caller's value of that name.
+        const stdin = cap.invoke.kind === "cli" && anchors.has(cap.id) ? cap.invoke.stdin : undefined;
+        const pipe = stdin === undefined ? undefined : { port: stdin,
+          from: (v: Value) => v.step >= 0 && (anchorOrder.get(node.steps[v.step].capability) ?? Infinity) < anchorOrder.get(cap.id)! };
         let bindings: Binding[] | null;
         if (declared.length) {
           // Never combine parameters from different relationships or choose
           // between ambiguous links. Explicit caller inputs still use normal binding.
           const named = new Set(node.values.filter(v => v.step === -1).map(v => v.ref.slice(4)));
           const explicit = declared.every(({ link }) => link.parameters.every(p => named.has(p.port)));
-          if (explicit) bindings = bind(cap, node.values, describeValue, consumed, shapes);
+          if (explicit) bindings = bind(cap, node.values, describeValue, consumed, shapes, pipe);
           else if (declared.length !== 1) bindings = null;
           else {
             const { index, link } = declared[0];
             const linked: Binding[] = link.parameters.map(p => ({ port: p.port, from: `${index}.`,
               link: { name: link.name, status: link.status, pointer: p.pointer, wire: p.wire, ...(p.format ? { format: p.format } : {}) } }));
-            const rest = bind({ ...cap, inputs: cap.inputs.filter(p => !linked.some(b => b.port === p.name)) }, node.values, describeValue, consumed, shapes);
+            const rest = bind({ ...cap, inputs: cap.inputs.filter(p => !linked.some(b => b.port === p.name)) }, node.values, describeValue, consumed, shapes, pipe);
             bindings = rest && validLinkGroup(graph.get(node.steps[index].capability), cap, [...linked, ...rest]) ? [...linked, ...rest] : null;
           }
-        } else bindings = bind(cap, node.values, describeValue, consumed, shapes);
+        } else bindings = bind(cap, node.values, describeValue, consumed, shapes, pipe);
         if (!bindings) continue;
         if (++expansions > depthBudget) break;
         // A step must consume something produced or supplied, not only constants,
@@ -353,7 +360,8 @@ function fanOut(cap: Capability, port: Port, v: Value, shapes: Map<string, strin
 }
 
 /** Bind every required input of `cap` to the best available value, or null. At most one port fans out. */
-function bind(cap: Capability, values: Value[], describeValue: (v: Value) => BindingValue, consumed: Set<number>, shapes: Map<string, string[]>): Binding[] | null {
+function bind(cap: Capability, values: Value[], describeValue: (v: Value) => BindingValue, consumed: Set<number>, shapes: Map<string, string[]>,
+  pipe?: { port: string; from: (v: Value) => boolean }): Binding[] | null {
   // Score every acceptable value for every port first, then bind the most
   // constrained ports first, preferring values from branches nobody has used
   // yet, so a join draws each input from a different upstream system.
@@ -375,7 +383,7 @@ function bind(cap: Capability, values: Value[], describeValue: (v: Value) => Bin
       if (!bridged && !linked && !accepts(port.name, port.type, v.type, port.anyText) && !(each = fanOut(cap, port, v, shapes))) continue;
       if (!linked && !each && v.step >= 0 && schemeOnly(port)) continue;
       // Optional ports are only filled when the caller supplied them by name.
-      if (!port.required && v.ref !== `$in.${port.name}`) continue;
+      if (!port.required && v.ref !== `$in.${port.name}` && !(pipe?.port === port.name && pipe.from(v))) continue;
       // A port with a fixed set of allowed values takes a caller's choice, never another step's output.
       if (port.enum && v.step >= 0) continue;
       // Name-like ports (title, name, q) take names, not prose fields like body/description.
