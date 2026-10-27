@@ -57,3 +57,40 @@ directory, not old or noncooperating processes, network filesystems or distribut
 This work does not establish hostile-code isolation, noncooperating-writer exclusion,
 exactly-once external effects, or protection for legacy snapshots. R1, R2, independent human
 security review and autonomous agent validation remain separate release gates.
+
+## Bounded development slice
+
+The host-only `exportPortableGoal` and `importPortableGoal` methods use
+`rightclick-x/portable-goal@1`. They copy an explicitly approved goal definition, not provider
+reflections or runtime receipts. A host must approve the complete definition and list each fixed
+input it classifies as portable; approving a secret or sensitive title is still an operator error.
+Imports do not transfer trust, create a fresh local revision, require a coordinated writable
+store, and revalidate saved witness contracts against the receiver's available graph. The source
+revision remains in the artifact; imported state does not currently retain provenance of it.
+Legacy `exportKnowledge` is a different, non-confidential interface.
+
+The protected execution slice supports only a single HTTP GET with one
+`Authorization` or `X-Api-Key` header supplied through a versioned symbolic slot. The
+embedding host supplies a per-runtime authenticated principal and a `ProtectedValueHost`
+adapter. The adapter is trusted to authorize the principal, capability contract, origin,
+header and scope, and to hold its revocation boundary through the supplied callback. The
+runtime cannot verify that a dishonest or incorrectly implemented host actually does so.
+Only an explicitly host-approved boolean may leave this boundary, which intentionally
+declassifies one bit. It excludes ambient credentials and refuses redirects, 202 continuations,
+protected durable recovery and automatic replay; this does not assert that GET is side-effect free.
+Provider errors and non-boolean results are returned as a generic failure. Symbolic slots and
+the approved boolean, not the resolved header value, enter the ordinary records for this path.
+
+Protected goals declare `protected-value-slots@1` in persistent state. New readers refuse
+missing or malformed markers, and a separate old-runtime control demonstrates that the
+pre-feature reader refuses this requirement before dispatch. The format is not an encrypted
+vault or migration of old data. Portable goal strings, literal checks, slots and fixed values
+remain explicitly host-classified, and their accidental or malicious declassification is out of
+scope. Secrets supplied through unrelated inputs, legacy endpoints, arbitrary metadata,
+encoded provider output, host logs, process memory, or a malicious provider are not covered
+by this bounded claim. Protected recovery with an approved checkpoint backend is not implemented.
+
+The model-free tests exercise separate creator and consumer processes with distinct synthetic
+principals and credentials, denial, revocation and a repeated independent fixture witness.
+They do not authenticate an actual user, establish a hardware/process boundary, demonstrate
+autonomous agent reasoning, or independently certify any provider or host adapter.
