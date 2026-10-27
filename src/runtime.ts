@@ -2535,11 +2535,17 @@ export class RightClick {
   // ================================================================ context_compose
 
   async compose(opts: ComposeOptions): Promise<ComposeResult> {
+    return this.composeScoped(opts);
+  }
+
+  /** A permit is passed only by the leased saved-goal entry point; callers cannot
+   * provide it through the public compose options or an MCP request. */
+  private async composeScoped(opts: ComposeOptions, permit?: symbol): Promise<ComposeResult> {
     // Independent witnesses are part of the call: a deferred checker is restored like a step.
-    await this.restoreDeferredFor([...opts.through ?? [], ...(opts.anchors ?? []).map(a => a.id), ...(opts.witnesses ?? []).map(w => w.capability)], opts.origins);
+    await this.restoreDeferredFor([...opts.through ?? [], ...(opts.anchors ?? []).map(a => a.id), ...(opts.witnesses ?? []).map(w => w.capability)], opts.origins, this.net, permit);
     const request = this.activity.append({ kind: "composition.requested", status: "requested" });
     try {
-      const result = await this.composeNow(opts);
+      const result = await this.composeNow(opts, permit);
       const ex = result.executed;
       const subjects = [result.published?.id, result.crystallized?.id].filter((id): id is string => !!id);
       const observed = this.observedRuns([...(ex?.runs ?? []), ...(ex?.witnesses ?? []).map(w => w.runId)]);
@@ -2557,7 +2563,7 @@ export class RightClick {
     } finally { this.persist(); }
   }
 
-  private async composeNow(opts: ComposeOptions): Promise<ComposeResult> {
+  private async composeNow(opts: ComposeOptions, permit?: symbol): Promise<ComposeResult> {
     let publicationExpected: string | null = null;
     if (opts.run && opts.publish) {
       if (this.activeGoalLeases) throw new Error("goal publication is blocked while a saved goal is executing");
@@ -2570,6 +2576,16 @@ export class RightClick {
       }
     }
     const witnesses = await this.pinWitnesses(opts.witnesses ?? []);
+    // Only the current lease holder may re-reflect a failed provider. After
+    // every such graph mutation, saved witness contracts must still match
+    // before another plan can dispatch a producer or checker.
+    const learnForRepair = async (request: Parameters<RightClick["learn"]>[0]) => {
+      const result = permit === GOAL_RESTORE_PERMIT
+        ? await this.learnSources(request, undefined, permit)
+        : await this.learn(request);
+      if (permit === GOAL_RESTORE_PERMIT && witnesses.length) await this.pinWitnesses(witnesses);
+      return result;
+    };
     const values: Record<string, unknown> = {};
     const types: Record<string, SemType> = {};
     const fixed: Record<string, unknown> = {};
@@ -2722,7 +2738,7 @@ export class RightClick {
       }
       const batch = candidates.splice(0, 3);
       if (!batch.length) return false;
-      const l = await this.learn({ sources: batch.map((c) => c.source), kinds: Object.fromEntries(batch.map((c) => [c.source, c.kind])) });
+      const l = await learnForRepair({ sources: batch.map((c) => c.source), kinds: Object.fromEntries(batch.map((c) => [c.source, c.kind])) });
       for (const c of batch) {
         const res = l.results.find((x) => x.source === c.source);
         result.acquisition!.learned.push({ title: c.title, kind: c.kind, source: c.source, capabilities: res?.learned.reduce((n, d) => n + d.capabilitiesAdded, 0) ?? 0, error: res?.error });
@@ -2923,7 +2939,7 @@ export class RightClick {
           gone = /HTTP (404|410)\b/.test(attempt.error);
         } else if (source && !refreshed.has(source) && !(e instanceof StepError && /verification refuted/.test(attempt.error))) {
           refreshed.add(source);
-          const r = await this.learn({ source, deep: true, net });
+          const r = await learnForRepair({ source, deep: true, net });
           const d = r.results[0]?.drift;
           drifted = !!d?.changed;
           attempt.healing = r.results[0]?.withdrawn
@@ -2946,7 +2962,7 @@ export class RightClick {
           for (const home of homes) {
             if (refreshed.has(home) || !allowedOrigin(home)) continue;
             refreshed.add(home);
-            const s = await this.learn({ source: home, net });
+            const s = await learnForRepair({ source: home, net });
             const found = s.results[0]?.learned?.length ?? 0;
             attempt.healing = `${attempt.healing ? attempt.healing + "; " : ""}looked for a successor at ${home}: ${found ? `learned ${found} provider(s)` : s.results[0]?.error ?? "nothing found"}`;
             if (found) drifted = true;
@@ -3243,7 +3259,7 @@ export class RightClick {
       const value = (t === "number" || t.startsWith("geo.")) && typeof raw === "string" ? Number(raw) : raw;
       have[k] = { type: t, value };
     }
-    const r = await this.compose({ have, want: g.want, intent: g.intent, verify: [...g.verify ?? [], ...verify], require: g.require, witnesses: g.witnesses, risks: g.risks, through: g.through, anchors: g.anchors, inputBindings: g.inputBindings, maxSteps: g.maxSteps, origins: g.origins, run: true, confirm, activeGoals: [...activeGoals, slug] });
+    const r = await this.composeScoped({ have, want: g.want, intent: g.intent, verify: [...g.verify ?? [], ...verify], require: g.require, witnesses: g.witnesses, risks: g.risks, through: g.through, anchors: g.anchors, inputBindings: g.inputBindings, maxSteps: g.maxSteps, origins: g.origins, run: true, confirm, activeGoals: [...activeGoals, slug] }, GOAL_RESTORE_PERMIT);
     g.calls++;
     if (r.executed?.status === "completed") {
       g.lastPipeline = r.executed.titles;
