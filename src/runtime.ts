@@ -2350,10 +2350,25 @@ export class RightClick {
       if (w.agree !== undefined) assertAgreement(w.agree);
       if (w.verify !== undefined && !Array.isArray(w.verify) || (!w.verify?.length && !w.agree)) throw new Error(`witness needs nonempty verification predicates or an agreement: ${w.capability}`);
       // FNV graph signatures are useful for change detection but are not safe
-      // authorization/proof identities. Include every leaf of a composite witness.
+      // authorization/proof identities. Include every member of a composite witness.
       const contractFields = (cap: Capability) => ({ id: cap.id, provider: cap.provider, source: cap.source,
         risk: cap.risk, inputs: cap.inputs, outputs: cap.outputs.filter(p => !p.observed), invoke: cap.invoke, links: cap.links });
-      const contract = `sha256:${await sha256(stableStringify([contractFields(c), ...steps.map(contractFields).sort((a, b) => a.id.localeCompare(b.id))]))}`;
+      // Bind intermediate composites too: their step bindings and checks can
+      // change even if the leaf capabilities remain the same.
+      const pending = [c], members: Capability[] = [], seen = new Set<string>();
+      while (pending.length) {
+        const current = pending.pop()!;
+        if (seen.has(current.id)) continue;
+        seen.add(current.id);
+        if (seen.size > 64) throw new Error(`witness pipeline too large: ${c.id}`);
+        members.push(current);
+        if (current.invoke.kind === "composite") for (const step of current.invoke.steps) {
+          const child = this.graph.get(step.capability);
+          if (!child) throw new Error(`witness must be an available read-only provider capability: ${c.id} (missing step ${step.capability})`);
+          pending.push(child);
+        }
+      }
+      const contract = `sha256:${await sha256(stableStringify(members.map(contractFields).sort((a, b) => a.id.localeCompare(b.id))))}`;
       if (w.contract && w.contract !== contract) throw new Error(`witness contract changed or uses a legacy pin: ${w.capability}; establish a new check explicitly`);
       for (const binding of Object.values(w.args ?? {})) {
         if (!binding || typeof binding !== "object" || Object.keys(binding).length !== 1 || !("input" in binding || "output" in binding || "value" in binding)) throw new Error("witness arguments must use exactly one of input, output or value");
@@ -3128,6 +3143,8 @@ export class RightClick {
     if (this.publishing.has(slug)) throw new Error(`saved goal publication is pending: ${slug}`);
     const g = this.published.get(slug);
     if (!g) throw new Error(`no published goal: ${slug}`);
+    if ((g.witnesses ?? []).some(w => !/^sha256:[a-f0-9]{64}$/.test(w.contract ?? "")))
+      throw new Error(`saved goal has an unpinned or legacy witness: ${slug}; establish a new check explicitly`);
     const capability = this.graph.get(`goal:${slug}`);
     if (!capability) throw new Error(`saved goal is unavailable: ${slug}`);
     // Generated REST/GraphQL enter here directly rather than through run().
@@ -3267,6 +3284,8 @@ export class RightClick {
   private async preflightWitnesses(witnesses: OutcomeWitness[]) {
     for (const witness of witnesses) {
       try {
+        if (!/^sha256:[a-f0-9]{64}$/.test(witness.contract ?? ""))
+          throw new Error("retained witness has no supported contract pin; establish a new check explicitly");
         const w = (await this.pinWitnesses([witness]))[0];
         await this.preflightCli(this.graph.get(w.capability)!, true);
       } catch (cause) { throw new WitnessPreflightError(witness.capability, cause); }
