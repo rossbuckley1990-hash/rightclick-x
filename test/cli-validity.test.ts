@@ -46,11 +46,14 @@ async function fixture(t: TestContext, name: string, writable = false) {
     calls.push(call);
     return call.result = await actual.run(program, args, options);
   } };
-  const instances: RightClick[] = [];
+  // A restart transfers ownership of this shared file to the newly created
+  // runtime. An older snapshot must not flush after the successor has written.
+  let current: RightClick | undefined;
   let discoveries = 0;
   const storePath = `${dir}/state.json`;
   const create = async (authority: OperatorAuthority = {}, sb: Sandbox | null = sandbox,
     network: { origins?: string[]; blockPrivate: boolean } = { origins: [], blockPrivate: true }) => {
+    if (current) await current.flush();
     const rc = await RightClick.create({
       directories: [], store: new FileStore(storePath), sandbox: sb,
       authority: { investigate: [bin], execute: [bin], ...authority },
@@ -58,11 +61,11 @@ async function fixture(t: TestContext, name: string, writable = false) {
       fetch: async () => { assert.fail("local validity must not fall back to network discovery"); },
       onInvestigationStart: () => { discoveries++; },
     });
-    instances.push(rc);
+    current = rc;
     return rc;
   };
   t.after(async () => {
-    try { for (const rc of instances) await rc.flush(); }
+    try { if (current) await current.flush(); }
     finally { rmSync(dir, { recursive: true, force: true }); }
   });
   const learn = async (rc: RightClick, program = bin) => {
