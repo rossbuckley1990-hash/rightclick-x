@@ -167,6 +167,8 @@ export class ProcessMemoryStore implements Store {
 export class FileStore implements Store {
   private file: string;
   private tail: Promise<void> = Promise.resolve();
+  private lastSave: Promise<void> = Promise.resolve();
+  private leaseReserved = false;
   /** The file as loaded, held until a save has replaced it: if that save changes its format or
    *  inference version, these exact bytes are kept on disk first. */
   private loaded?: { value: unknown; bytes: Uint8Array };
@@ -174,7 +176,7 @@ export class FileStore implements Store {
   private expected?: Uint8Array | null;
   /** Do not let a later queued save overwrite an uncertain committed snapshot. */
   private commitUnknown = false;
-  private readonly leaseContext = new AsyncLocalStorage<{ active: boolean; pending: Set<Promise<unknown>> }>();
+  private readonly leaseContext = new AsyncLocalStorage<{ active: boolean; held: boolean; pending: Set<Promise<unknown>> }>();
   private onBackup?: (path: string) => void;
   constructor(file: string, opts: { onBackup?: (path: string) => void } = {}) {
     this.file = file;
@@ -205,11 +207,23 @@ export class FileStore implements Store {
     return state;
   }
   async save(state: PersistedState): Promise<void> {
+    // Do not queue an unrelated save behind a lease: a later owner-scoped
+    // runtime flush may itself be queued behind that save, causing deadlock.
+    // The caller receives a conflict and can explicitly reconcile it.
+    const inherited = this.leaseContext.getStore();
+    const scope = inherited?.active ? inherited : undefined;
+    if (this.leaseReserved && !scope)
+      throw new StateConflictError("a local saved-goal lease is pending or active; retry the save explicitly after it completes");
     // Capture the caller's snapshot before yielding; later graph mutations must
     // not change an already requested save. A flush queues behind prior saves.
     const protectedState = state.version === 2 ? { ...state, requirements: [...new Set([...(state.requirements ?? []), FILE_STORE_CAS_REQUIREMENT, FILE_STORE_GOAL_LEASE_REQUIREMENT])] } : state;
     const content = encodeState(protectedState);
-    const next = this.tail.then(() => this.write(content, protectedState));
+    const next = this.tail.then(() => this.write(content, protectedState, scope));
+    if (scope) {
+      scope.pending.add(next);
+      void next.then(() => scope.pending.delete(next), () => scope.pending.delete(next));
+    }
+    this.lastSave = next;
     this.tail = next.catch(() => {});
     return next;
   }
@@ -225,28 +239,43 @@ export class FileStore implements Store {
       inherited.pending.add(task);
       try { return await task; } finally { inherited.pending.delete(task); }
     }
-    await fs.mkdir(path.dirname(this.file), { recursive: true });
-    const lock = `${this.file}.lock`;
-    try { await fs.mkdir(lock, { mode: 0o700 }); }
-    catch (error) {
-      if ((error as NodeJS.ErrnoException).code === "EEXIST") throw new StateConflictError("goal execution or publication holds the file lock");
-      throw error;
-    }
-    const scope = { active: true, pending: new Set<Promise<unknown>>() };
-    let invoked = false;
+    if (this.leaseReserved) throw new StateConflictError("another local saved-goal lease is pending or active");
+    // Reserve synchronously before waiting: a newly submitted save must not
+    // slip between the existing save and acquisition of the filesystem lock.
+    this.leaseReserved = true;
     try {
-      await this.assertGoalPins(pins);
-      invoked = true;
-      return await this.leaseContext.run(scope, invoke);
-    } finally {
-      scope.active = false;
-      while (scope.pending.size) await Promise.allSettled([...scope.pending]);
-      try { await fs.rmdir(lock); }
+      await this.lastSave;
+      if (this.commitUnknown) throw new StateCommitUnknownError("open a fresh store and reload");
+      await fs.mkdir(path.dirname(this.file), { recursive: true });
+      const lock = `${this.file}.lock`;
+      try { await fs.mkdir(lock, { mode: 0o700 }); }
       catch (error) {
-        if (invoked) throw new Error("goal execution outcome unknown after lease cleanup failure; do not replay; inspect retained evidence");
+        if ((error as NodeJS.ErrnoException).code === "EEXIST") throw new StateConflictError("goal execution or publication holds the file lock");
         throw error;
       }
-    }
+      const scope = { active: true, held: true, pending: new Set<Promise<unknown>>() };
+      let invoked = false;
+      try {
+        await this.assertGoalPins(pins);
+        invoked = true;
+        return await this.leaseContext.run(scope, invoke);
+      } finally {
+        scope.active = false;
+        while (scope.pending.size) await Promise.allSettled([...scope.pending]);
+        let saveFailure: unknown;
+        try { await this.lastSave; } catch (error) { saveFailure = error; }
+        scope.held = false;
+        try { await fs.rmdir(lock); }
+        catch (error) {
+          if (invoked) throw new Error("goal execution outcome unknown after lease cleanup failure; do not replay; inspect retained evidence");
+          throw error;
+        }
+        if (saveFailure) {
+          if (invoked) throw new Error("goal execution outcome unknown after persistence failure; do not replay; inspect retained evidence", { cause: saveFailure });
+          throw saveFailure;
+        }
+      }
+    } finally { this.leaseReserved = false; }
   }
   private async assertGoalPins(pins: Array<{ slug: string; digest: string }>): Promise<void> {
     let state: PersistedState;
@@ -258,7 +287,7 @@ export class FileStore implements Store {
         throw new StateConflictError(`saved goal ${pin.slug} is stale, revoked, or inconsistent`);
     }
   }
-  private async write(content: string, state: PersistedState): Promise<void> {
+  private async write(content: string, state: PersistedState, scope?: { held: boolean }): Promise<void> {
     if (this.commitUnknown) throw new StateCommitUnknownError("open a fresh store and reload");
     const fs = await import("node:fs/promises");
     const path = await import("node:path");
@@ -268,7 +297,7 @@ export class FileStore implements Store {
     const lock = `${this.file}.lock`;
     // A save initiated inside the active leased goal shares that exact lease;
     // unrelated concurrent calls, and timers after its release, do not.
-    const owned = this.leaseContext.getStore()?.active === true;
+    const owned = scope?.held === true;
     try { if (!owned) await fs.mkdir(lock, { mode: 0o700 }); }
     catch (error) {
       if ((error as NodeJS.ErrnoException).code === "EEXIST") throw new StateConflictError("another writer holds the file lock");
