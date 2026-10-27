@@ -42,6 +42,9 @@ import { Authority, cancelBody, readBody, refuseDeniedResponse, request, Transpo
 import { detectRuntime, platformReflection, type PlatformFn, type RuntimeInfo } from "./reflectors/platform.ts";
 
 export const VERSION = "0.1.0";
+// Only the lease-owning saved-goal entry point can request bounded deferred
+// re-derivation. Public learn/compose calls never receive this symbol.
+const GOAL_RESTORE_PERMIT = Symbol("goal-deferred-restore");
 /** Bump whenever semantic inference changes: persisted reflections are then re-derived from their sources. */
 export const SEMANTICS = 27;
 
@@ -815,7 +818,7 @@ export class RightClick {
 
   /** Re-derive the deferred network sources a call needs, within that call's egress policy.
    *  Startup never contacts them; the first call that uses one does, under its own authority. */
-  private async restoreDeferredFor(ids: string[], origins?: string[], net: Net = this.net): Promise<void> {
+  private async restoreDeferredFor(ids: string[], origins?: string[], net: Net = this.net, permit?: symbol): Promise<void> {
     if (!this.deferredInference.length) return;
     const wanted = new Set(ids.filter(id => !this.graph.get(id)));
     if (!wanted.size) return;
@@ -830,7 +833,7 @@ export class RightClick {
     }
     if (!sources.size) return;
     const allowed = intersectOrigins(intersectOrigins(this.net.policy?.origins, net.policy?.origins), origins);
-    await this.learnSources({ sources: [...sources.keys()], kinds: Object.fromEntries(sources), net: { ...net, policy: { blockPrivate: false, ...net.policy, origins: allowed } } });
+    await this.learnSources({ sources: [...sources.keys()], kinds: Object.fromEntries(sources), net: { ...net, policy: { blockPrivate: false, ...net.policy, origins: allowed } } }, undefined, permit);
   }
 
   /** A source learned successfully is no longer deferred: drop its stale copies, and bring back
@@ -1008,8 +1011,8 @@ export class RightClick {
     return this.learnSources(opts);
   }
 
-  private async learnSources(opts: Parameters<RightClick["learn"]>[0], retainedCli?: { capability: Capability; execution: HttpExecution }) {
-    if (this.activeGoalLeases) throw new Error("provider changes are blocked while a saved goal is executing");
+  private async learnSources(opts: Parameters<RightClick["learn"]>[0], retainedCli?: { capability: Capability; execution: HttpExecution }, permit?: symbol) {
+    if (this.activeGoalLeases && (permit !== GOAL_RESTORE_PERMIT || this.activeGoalLeases !== 1)) throw new Error("provider changes are blocked while a saved goal is executing");
     this.activeProviderMutations++;
     try { return await this.learnSourcesUnlocked(opts, retainedCli); }
     finally { this.activeProviderMutations--; }
@@ -3167,7 +3170,20 @@ export class RightClick {
     if (!g) throw new Error(`no published goal: ${slug}`);
     if (!g.revision) throw new Error(`saved goal has no immutable revision: ${slug}`);
     const digest = await this.goalDigest(g);
-    return this.withGoalLease([{ slug, digest }], () => this.executeLeasedGoal(slug, g, args, confirm, activeGoals, verify));
+    return this.withGoalLease([{ slug, digest }], async () => {
+      const capability = this.graph.get(`goal:${slug}`);
+      if (!capability) throw new Error(`saved goal is unavailable: ${slug}`);
+      this.checkExecutionAuthority(capability, confirm);
+      this.assertExecution(capability);
+      // This read-only re-derivation is scoped to known retained sources, only
+      // after authoritative goal revalidation and before any producer dispatch.
+      // Concurrent public learning remains blocked. Nested or concurrent leases
+      // refuse this mutation until a stronger owner-scoped protocol exists.
+      await this.restoreDeferredFor([
+        ...(g.through ?? []), ...(g.anchors ?? []).map(a => a.id), ...(g.witnesses ?? []).map(w => w.capability),
+      ], g.origins, this.net, GOAL_RESTORE_PERMIT);
+      return this.executeLeasedGoal(slug, g, args, confirm, activeGoals, verify);
+    });
   }
 
   private async withGoalLease<T>(pins: Array<{ slug: string; digest: string }>, invoke: () => Promise<T>): Promise<T> {
