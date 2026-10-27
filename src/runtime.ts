@@ -28,7 +28,7 @@ import { isSensitiveName, scrub, sensitiveValues } from "./core/secrets.ts";
 import { investigateCli, replayExamples, validateOptions, type Investigation } from "./reflectors/cli.ts";
 import { JsonRepresentationError, parseJsonValue } from "./core/json.ts";
 import { KNOWLEDGE_FORMAT, type ImportReport, type KnowledgeBundle } from "./core/knowledge.ts";
-import { makePortableGoal, parsePortableGoal, type PortableGoal, type PortableGoalApproval, type ProtectedValueRef } from "./core/portable-capability.ts";
+import { makePortableGoal, parsePortableGoal, type PortableGoal, type PortableGoalApproval } from "./core/portable-capability.ts";
 import { assessExecution, consequentialRisks, ExecutionDenied, intersectOrigins, parseExecutionPolicy, type ExecutionAssessment, type ExecutionPolicy } from "./core/execution-policy.ts";
 import { distance, inferType, inspectValue, type Inspection } from "./core/semantics.ts";
 import { describeResult, resultDescription, type ResultDescription } from "./core/result-description.ts";
