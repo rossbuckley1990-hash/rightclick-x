@@ -89,6 +89,9 @@ test("an upgrade while a provider is unreachable keeps its capabilities, pipelin
     for (const id of f.composites) assert.ok(kept.includes(id), `the pipeline ${id} was lost`);
     assert.ok(saved(f.file).published?.some((g) => g.slug === "note-digest"), "the saved goal's definition was lost");
     assert.equal((await down.run("goal:note-digest", { id: "n2" })).status, "failed", "a goal ran through a deferred provider");
+    // A failed run schedules a deferred save. Drain this instance before opening another
+    // FileStore on the same path, or its stale snapshot may win a cross-instance race.
+    await down.flush();
 
     // Still down across further restarts: nothing is lost and no further backup is made.
     const again = await RightClick.create({ directories: [], sandbox: null, store: new FileStore(f.file) });
