@@ -47,6 +47,11 @@ test("protected references use an exact versioned shape and cannot masquerade as
   assert.throws(() => makePortableGoal(retained, {}, approval), /invalid/);
   assert.throws(() => makePortableGoal(retained, { token: { ...ref, slot: "other" } }, approval), /invalid/);
   assert.deepEqual(makePortableGoal(retained, { token: ref }, approval).protectedInputs.token, ref);
+  const tooMany = makePortableGoal(goal(), {}, approval) as any;
+  tooMany.goal.have = Object.fromEntries(Array.from({ length: 17 }, (_, i) => [`port${i}`, "text"]));
+  delete tooMany.goal.fixed;
+  tooMany.protectedInputs = Object.fromEntries(Object.keys(tooMany.goal.have).map(k => [k, ref]));
+  assert.throws(() => parsePortableGoal(tooMany), /invalid/);
 });
 
 test("witness contracts and bindings reject unknown data and legacy hashes", () => {

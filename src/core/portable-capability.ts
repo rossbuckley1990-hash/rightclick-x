@@ -114,7 +114,9 @@ export function parsePortableGoal(value: unknown): PortableGoal {
   if (g.fixed !== undefined) { const f = object(g.fixed); for (const [k, v] of Object.entries(f)) { safeKey(k); if (!Object.hasOwn(have, k)) fail(); scalar(v); } }
   if (g.inputBindings !== undefined) { const m = object(g.inputBindings); if (Object.keys(m).length > 64) fail(); for (const [id, ports] of Object.entries(m)) { safeKey(id); const p = object(ports); if (Object.keys(p).length > 64) fail(); for (const [name, input] of Object.entries(p)) { safeKey(name); str(input, 512); if (!Object.hasOwn(have, input)) fail(); } } }
   if (g.anchors !== undefined) { list(g.anchors, 64); for (const item of g.anchors) { const a = keys(item, ["id", "source", "title", "risk", "inputTypes", "outputTypes", "operation"], ["id", "title", "risk", "inputTypes", "outputTypes"]); str(a.id, 512); str(a.title, 512); if (a.source !== undefined) str(a.source, 1024); if (a.operation !== undefined) str(a.operation, 1024); if (!["read", "write", "external", "destructive"].includes(a.risk)) fail(); strings(a.inputTypes); strings(a.outputTypes); } }
-  const slots = object(root.protectedInputs); if (Object.keys(slots).length > 64) fail();
+  // Match the persisted state decoder's limit so every accepted artifact can
+  // be safely reopened even when a custom Store does not validate on save.
+  const slots = object(root.protectedInputs); if (Object.keys(slots).length > 16) fail();
   for (const [input, ref] of Object.entries(slots)) { safeKey(input); if (!Object.hasOwn(have, input) || g.fixed && Object.hasOwn(g.fixed, input)) fail(); parseProtectedValueRef(ref); }
   // A JSON clone strips object aliases and prototypes, and only accepted keys cross the boundary.
   return JSON.parse(JSON.stringify(root)) as PortableGoal;
