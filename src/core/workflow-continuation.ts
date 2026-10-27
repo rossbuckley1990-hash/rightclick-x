@@ -14,6 +14,7 @@ export interface CompositionContinuation {
   options: {
     want: SemType; intent?: string; verify?: Predicate[]; crystallize?: boolean;
     publish?: string; risks?: Capability["risk"][]; through?: string[]; maxSteps?: number;
+    inputBindings?: Record<string, Record<string, string>>;
   };
   anchors: CapabilityAnchor[];
   fixed: Record<string, unknown>;
@@ -21,6 +22,8 @@ export interface CompositionContinuation {
   witnesses: OutcomeWitness[];
   require: string[];
   preservesInput: boolean;
+  /** Snapshot of the prior publication at dispatch; null means the slug was unused. */
+  publicationExpected?: string | null;
   goals: Array<{ slug: string; digest: string }>;
 }
 

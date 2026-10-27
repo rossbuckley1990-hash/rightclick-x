@@ -36,6 +36,8 @@ export interface Goal {
   require?: string[];
   /** Identifier schemes the caller's named inputs were recognised as (see core/identities.ts). */
   schemes?: Record<string, string[]>;
+  /** Explicit bindings of an anchored capability port to a named caller input. */
+  inputBindings?: Record<string, Record<string, string>>;
 }
 
 /**
@@ -205,6 +207,7 @@ export function plan(graph: CapabilityGraph, ledger: Ledger, goal: Goal, expansi
         // An anchored program's optional stdin may read an earlier anchored step's output: the
         // caller named both, so the order they named is the pipeline. Elsewhere optional ports
         // still take only the caller's value of that name.
+        const requestedBindings = goal.inputBindings?.[cap.id];
         const stdin = cap.invoke.kind === "cli" && anchors.has(cap.id) ? cap.invoke.stdin : undefined;
         const pipe = stdin === undefined ? undefined : { port: stdin,
           from: (v: Value) => v.step >= 0 && (anchorOrder.get(node.steps[v.step].capability) ?? Infinity) < anchorOrder.get(cap.id)! };
@@ -214,16 +217,18 @@ export function plan(graph: CapabilityGraph, ledger: Ledger, goal: Goal, expansi
           // between ambiguous links. Explicit caller inputs still use normal binding.
           const named = new Set(node.values.filter(v => v.step === -1).map(v => v.ref.slice(4)));
           const explicit = declared.every(({ link }) => link.parameters.every(p => named.has(p.port)));
-          if (explicit) bindings = bind(cap, node.values, describeValue, consumed, shapes, pipe);
+          if (explicit) bindings = bind(cap, node.values, describeValue, consumed, shapes, pipe, requestedBindings);
           else if (declared.length !== 1) bindings = null;
           else {
             const { index, link } = declared[0];
             const linked: Binding[] = link.parameters.map(p => ({ port: p.port, from: `${index}.`,
               link: { name: link.name, status: link.status, pointer: p.pointer, wire: p.wire, ...(p.format ? { format: p.format } : {}) } }));
-            const rest = bind({ ...cap, inputs: cap.inputs.filter(p => !linked.some(b => b.port === p.name)) }, node.values, describeValue, consumed, shapes, pipe);
+            // A declared relationship must not silently replace an explicit input binding.
+            const conflicts = linked.some(b => requestedBindings && Object.hasOwn(requestedBindings, b.port));
+            const rest = conflicts ? null : bind({ ...cap, inputs: cap.inputs.filter(p => !linked.some(b => b.port === p.name)) }, node.values, describeValue, consumed, shapes, pipe, requestedBindings);
             bindings = rest && validLinkGroup(graph.get(node.steps[index].capability), cap, [...linked, ...rest]) ? [...linked, ...rest] : null;
           }
-        } else bindings = bind(cap, node.values, describeValue, consumed, shapes, pipe);
+        } else bindings = bind(cap, node.values, describeValue, consumed, shapes, pipe, requestedBindings);
         if (!bindings) continue;
         if (++expansions > depthBudget) break;
         // A step must consume something produced or supplied, not only constants,
@@ -361,7 +366,7 @@ function fanOut(cap: Capability, port: Port, v: Value, shapes: Map<string, strin
 
 /** Bind every required input of `cap` to the best available value, or null. At most one port fans out. */
 function bind(cap: Capability, values: Value[], describeValue: (v: Value) => BindingValue, consumed: Set<number>, shapes: Map<string, string[]>,
-  pipe?: { port: string; from: (v: Value) => boolean }): Binding[] | null {
+  pipe?: { port: string; from: (v: Value) => boolean }, requested?: Record<string, string>): Binding[] | null {
   // Score every acceptable value for every port first, then bind the most
   // constrained ports first, preferring values from branches nobody has used
   // yet, so a join draws each input from a different upstream system.
@@ -373,17 +378,20 @@ function bind(cap: Capability, values: Value[], describeValue: (v: Value) => Bin
       // A caller input given under the port's own name is that value (a "purl" is a purl, even if the
       // contract types it url); and a caller input named after an entity identifies it (id.province).
       const { callerName, leaf, intentBonus } = describeValue(v);
+      // An explicit binding is a constraint, not a hint: no fallback if it cannot bind.
+      const explicitlyNamed = requested && Object.hasOwn(requested, port.name) ? requested[port.name] : undefined;
+      if (explicitlyNamed !== undefined && v.ref !== `$in.${explicitlyNamed}`) continue;
       const stringLike = (t: string) => !/^(number|boolean|json|list:|quantity:|geo\.)/.test(t);
       // ...and a caller value given under the port's exact name goes to that port even when it is a
       // list or JSON port (options, files): the caller named it.
-      const bridged = v.step === -1 && (port.type === `id.${callerName}` || (callerName === portName && ((stringLike(port.type) && stringLike(v.type)) || port.type.startsWith("list:") || port.type === "json")));
+      const bridged = v.step === -1 && (port.type === `id.${callerName}` || ((callerName === portName || explicitlyNamed !== undefined) && ((stringLike(port.type) && stringLike(v.type)) || port.type.startsWith("list:") || port.type === "json")));
       // Observed to carry the same identifiers, whatever each contract calls them.
       const linked = schemeFits(port, v.type, v.schemes);
       let each: Binding["each"] | undefined;
       if (!bridged && !linked && !accepts(port.name, port.type, v.type, port.anyText) && !(each = fanOut(cap, port, v, shapes))) continue;
       if (!linked && !each && v.step >= 0 && schemeOnly(port)) continue;
       // Optional ports are only filled when the caller supplied them by name.
-      if (!port.required && v.ref !== `$in.${port.name}` && !(pipe?.port === port.name && pipe.from(v))) continue;
+      if (!port.required && v.ref !== `$in.${port.name}` && explicitlyNamed === undefined && !(pipe?.port === port.name && pipe.from(v))) continue;
       // A port with a fixed set of allowed values takes a caller's choice, never another step's output.
       if (port.enum && v.step >= 0) continue;
       // Name-like ports (title, name, q) take names, not prose fields like body/description.
@@ -433,7 +441,7 @@ function bind(cap: Capability, values: Value[], describeValue: (v: Value) => Bin
       if (bestEach) fanned = true;
       boundRefs.add(best.ref);
       if (best.step >= 0) used.add(best.step);
-    } else if (port.required) return null;
+    } else if (port.required || (requested && Object.hasOwn(requested, port.name))) return null;
   }
   return cap.inputs
     .filter((p) => chosen.has(p.name))

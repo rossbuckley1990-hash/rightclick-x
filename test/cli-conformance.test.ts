@@ -89,9 +89,12 @@ async function fixture(t: TestContext, workflow: Workflow = workflows[0], helper
     limits: { ...CONFINED_POLICY.limits, timeoutMs: 10_000 },
   }));
   let discoveries = 0;
-  const instances: RightClick[] = [];
+  // Restart transfers ownership of each state file to the new runtime. An
+  // older snapshot must not be flushed after its successor changes the file.
+  const current = new Map<string, RightClick>();
   const storePath = `${dir}/state.json`;
   const create = async (authority: OperatorAuthority = {}, sb: Sandbox | null = sandbox, file = storePath) => {
+    if (current.has(file)) await current.get(file)!.flush();
     const rc = await RightClick.create({
       directories: [], store: new FileStore(file), sandbox: sb,
       authority: { investigate: [bin], execute: [bin], cliConformance: { [id]: spec }, ...authority },
@@ -100,11 +103,11 @@ async function fixture(t: TestContext, workflow: Workflow = workflows[0], helper
       fetch: async () => { assert.fail("local conformance must not trigger network discovery"); },
       onInvestigationStart: () => { discoveries++; },
     });
-    instances.push(rc);
+    current.set(file, rc);
     return rc;
   };
   t.after(async () => {
-    try { for (const rc of instances) await rc.flush(); }
+    try { for (const rc of current.values()) await rc.flush(); }
     finally { rmSync(dir, { recursive: true, force: true }); }
   });
   const learn = async (rc: RightClick, program = bin) => {
@@ -118,7 +121,10 @@ async function fixture(t: TestContext, workflow: Workflow = workflows[0], helper
     assert.ok(saved);
     return saved;
   };
-  return { dir, bin, id, body, dependency, effects, spec, calls, sandbox, observe, create, learn, state, storePath,
+  // Tests that intentionally corrupt the on-disk file retire the previous
+  // runtime first; teardown must not try to save its stale snapshot.
+  const retire = (file = storePath) => { current.delete(file); };
+  return { dir, bin, id, body, dependency, effects, spec, calls, sandbox, observe, create, learn, state, storePath, retire,
     discoveries: () => discoveries };
 }
 
@@ -425,6 +431,7 @@ test("FileStore rejects missing conformance requirements and malformed pins with
   await rc.flush();
   const original = JSON.parse(readFileSync(f.storePath, "utf8"));
   assert.equal(original.state.cliConformance.length, 1);
+  f.retire();
   for (const change of ["requirement", "hash", "checks", "duplicate"] as const) {
     const malformed = structuredClone(original);
     if (change === "requirement") malformed.state.requirements = malformed.state.requirements.filter((r: string) => r !== "cli-conformance@1");

@@ -1,7 +1,8 @@
 // Server-runtime glue (Node, Bun, Deno): HTTP serving, stdio MCP, file state.
 
 import type { RightClick, PersistedState, Store } from "../runtime.ts";
-import { backupSuffix, decodeState, encodeState, migrationReplaces } from "../core/state-format.ts";
+import { backupSuffix, decodeState, encodeState, FILE_STORE_CAS_REQUIREMENT, migrationReplaces } from "../core/state-format.ts";
+import { StateCommitUnknownError, StateConflictError } from "../core/state-conflict.ts";
 import { handle, type JsonRpc } from "../interface/mcp-server.ts";
 
 export type FetchHandler = (req: Request) => Promise<Response>;
@@ -102,62 +103,95 @@ export class FileStore implements Store {
   /** The file as loaded, held until a save has replaced it: if that save changes its format or
    *  inference version, these exact bytes are kept on disk first. */
   private loaded?: { value: unknown; bytes: Uint8Array };
+  // Undefined means the file has never been observed, null means it was absent.
+  private expected?: Uint8Array | null;
+  /** Do not let a later queued save overwrite an uncertain committed snapshot. */
+  private commitUnknown = false;
   private onBackup?: (path: string) => void;
   constructor(file: string, opts: { onBackup?: (path: string) => void } = {}) {
     this.file = file;
     this.onBackup = opts.onBackup;
   }
   async load(): Promise<PersistedState | null> {
+    if (this.commitUnknown) throw new StateCommitUnknownError("open a fresh store and reload");
     const fs = await import("node:fs/promises");
     let bytes: Uint8Array;
     try {
       bytes = await fs.readFile(this.file);
     } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") { this.expected = null; this.loaded = undefined; return null; }
       throw error;
     }
     const value = JSON.parse(new TextDecoder().decode(bytes));
     const state = decodeState(value);
     this.loaded = { value, bytes };
+    this.expected = bytes;
     return state;
   }
   async save(state: PersistedState): Promise<void> {
     // Capture the caller's snapshot before yielding; later graph mutations must
     // not change an already requested save. A flush queues behind prior saves.
-    const content = encodeState(state);
-    const next = this.tail.then(() => this.write(content, state));
+    const protectedState = state.version === 2 ? { ...state, requirements: [...new Set([...(state.requirements ?? []), FILE_STORE_CAS_REQUIREMENT])] } : state;
+    const content = encodeState(protectedState);
+    const next = this.tail.then(() => this.write(content, protectedState));
     this.tail = next.catch(() => {});
     return next;
   }
   private async write(content: string, state: PersistedState): Promise<void> {
+    if (this.commitUnknown) throw new StateCommitUnknownError("open a fresh store and reload");
     const fs = await import("node:fs/promises");
     const path = await import("node:path");
     await fs.mkdir(path.dirname(this.file), { recursive: true });
-    // A save that changes the loaded file's format or inference version keeps its original bytes
-    // first, under a name that is never reused. If they cannot be kept, nothing is replaced, and
-    // the next save tries again rather than proceeding without them.
-    const replaced = this.loaded && migrationReplaces(this.loaded.value, state);
-    let backup: string | undefined;
-    if (replaced) {
-      backup = `${this.file}${backupSuffix(replaced)}`;
-      const handle = await fs.open(backup, "wx", 0o600);
-      try {
-        await handle.writeFile(this.loaded!.bytes);
-        await handle.sync();
-      } finally { await handle.close(); }
+    // Cooperating writers serialize the read/compare/rename sequence. A lock left
+    // by a crash is intentionally not stolen: an operator must investigate it.
+    const lock = `${this.file}.lock`;
+    try { await fs.mkdir(lock, { mode: 0o700 }); }
+    catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "EEXIST") throw new StateConflictError("another writer holds the file lock");
+      throw error;
     }
-    // Distinct instances/processes also need distinct staging paths. This
-    // prevents collisions, not concurrent read-modify-write lost updates.
-    const tmp = `${this.file}.${process.pid}.${crypto.randomUUID()}.tmp`;
-    const handle = await fs.open(tmp, "wx");
+    let renameAttempted = false;
     try {
-      try { await handle.writeFile(content); }
-      finally { await handle.close(); }
-      await fs.rename(tmp, this.file);
-      this.loaded = undefined;
-      if (backup) this.onBackup?.(backup);
-    } finally {
-      await fs.unlink(tmp).catch(error => { if (error.code !== "ENOENT") throw error; });
+    try {
+      let current: Uint8Array | null;
+      try { current = await fs.readFile(this.file); }
+      catch (error) { if ((error as NodeJS.ErrnoException).code === "ENOENT") current = null; else throw error; }
+      // An uninitialized adapter may create a new file, but must not overwrite an
+      // existing snapshot it never observed. A stale snapshot must be reloaded.
+      const expected = this.expected === undefined ? null : this.expected;
+      const same = current === null ? expected === null : expected !== null && current.length === expected.length && current.every((b, i) => b === expected[i]);
+      if (!same) throw new StateConflictError("persisted snapshot changed; restart and reload before saving");
+      // Keep a byte-exact backup before replacing an older format.
+      const replaced = this.loaded && migrationReplaces(this.loaded.value, state);
+      let backup: string | undefined;
+      if (replaced) {
+        backup = `${this.file}${backupSuffix(replaced)}`;
+        const handle = await fs.open(backup, "wx", 0o600);
+        try {
+          await handle.writeFile(this.loaded!.bytes);
+          await handle.sync();
+        } finally { await handle.close(); }
+      }
+      // Distinct staging paths avoid collisions; the lock and snapshot check above
+      // provide the cooperating-writer protection.
+      const tmp = `${this.file}.${process.pid}.${crypto.randomUUID()}.tmp`;
+      const handle = await fs.open(tmp, "wx", 0o600);
+      try {
+        try { await handle.writeFile(content); }
+        finally { await handle.close(); }
+        renameAttempted = true;
+        await fs.rename(tmp, this.file);
+        this.expected = new TextEncoder().encode(content);
+        this.loaded = undefined;
+        if (backup) this.onBackup?.(backup);
+      } finally {
+        await fs.unlink(tmp).catch(error => { if (error.code !== "ENOENT") throw error; });
+      }
+    } finally { await fs.rmdir(lock); }
+    } catch (error) {
+      if (!renameAttempted) throw error;
+      this.commitUnknown = true;
+      throw new StateCommitUnknownError("commit was attempted; open a fresh store and reload");
     }
   }
 }

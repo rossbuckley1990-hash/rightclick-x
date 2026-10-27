@@ -96,8 +96,10 @@ export const TOOLS = [
         maxSteps: num("Max pipeline length (default 4)."),
         confirm: bool("Required to run plans containing destructive capabilities."),
         publish: str("After a successful run, save this goal as goal:<slug> in the graph AND as /x/<slug> in the synthesized API. Checks and witnesses are retained and re-run on every invocation. Stored predicates make a goal \"checked\"; an independent witness makes it \"verified\"."),
+        preserveExisting: bool("Refuse publication before execution if this slug already exists. Without this option a successful publication replaces the existing goal; publication is refused if the definition changes during execution."),
         acquire: bool("If nothing in the graph can do it: research public directories (APIs.guru, MCP Registry), learn the best candidates and re-plan."),
         through: { type: "array", items: { type: "string" }, description: "Anchors: capability ids or search phrases the pipeline must pass through; the planner wires the types between them." },
+        inputBindings: { type: "object", description: 'For anchored CLI capabilities, map capability id to port-to-have-input names, e.g. {"cli:jq:stdout":{"options":"jqOptions"},"cli:shasum:invoke":{"options":"hashOptions"}}. Each binding is mandatory and retained with a published goal. Use fixed have inputs to pin options.' },
         risks: { type: "array", items: { type: "string", enum: ["read", "write", "external", "destructive"] }, description: 'Optional constraint: plan only with these risk labels, e.g. ["read"].' },
         require: { type: "array", items: { type: "string" }, description: 'Required information the result must carry, e.g. ["resolution"] or ["gene name"]. Use through to constrain capability ids. Plans are judged by the fields their result declares and by how each join is supported; only an established plan runs, otherwise the outcome says unavailable/unverified and nothing runs. After running, the output is checked for every term.' },
         origins: { type: "array", items: { type: "string" }, description: 'Optional egress policy, e.g. ["https://api.example.com"]: use only capabilities that send data to these origins, now and in every automatic repair. Saved with publish.' },
@@ -190,7 +192,7 @@ export async function dispatch(rc: RightClick, name: string, a: Record<string, a
     }
     case "context_compose": {
       const v = parseView(a.view);
-      const r = await rc.compose({ have: a.have ?? {}, want: a.want, intent: a.intent, run: a.run, verify: a.verify, witnesses: a.witnesses, maxSteps: a.maxSteps, risks: a.risks, through: a.through, origins: a.origins, require: a.require, acquire: a.acquire, publish: a.publish, confirm: a.confirm });
+      const r = await rc.compose({ have: a.have ?? {}, want: a.want, intent: a.intent, run: a.run, verify: a.verify, witnesses: a.witnesses, maxSteps: a.maxSteps, risks: a.risks, through: a.through, inputBindings: a.inputBindings, origins: a.origins, require: a.require, acquire: a.acquire, publish: a.publish, preserveExisting: a.preserveExisting, confirm: a.confirm });
       if (!r.executed) return r;
       return { ...r, executed: viewed(r.executed, v, "To view a step's recorded output without re-running: context_run_status with a runId from executed.runs and a view.") };
     }

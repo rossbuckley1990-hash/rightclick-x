@@ -5,6 +5,7 @@ import { reflectOpenAPI } from "../src/reflectors/openapi.ts";
 import { MemoryStore } from "./helpers.ts";
 import { signature } from "../src/core/graph.ts";
 import { dispatch } from "../src/interface/tools.ts";
+import { decodeState, PUBLICATION_SNAPSHOT_REQUIREMENT } from "../src/core/state-format.ts";
 
 const response = (properties: object) => ({ "200": { content: { "application/json": { schema: { type: "object", properties } } } } });
 async function world(store: MemoryStore, options: RuntimeOptions = {}) {
@@ -61,6 +62,10 @@ test("context_compose retains its complete selected plan, checks and publication
   assert.equal(first.rc.graph.get("goal:stored-package"), undefined);
   assert.equal(first.rc.graph.list().some(c => c.id.startsWith("execution:composition:")), false);
   await first.rc.flush();
+  assert.ok(store.state!.requirements!.includes(PUBLICATION_SNAPSHOT_REQUIREMENT));
+  const unsafe = structuredClone(store.state!);
+  unsafe.requirements = unsafe.requirements!.filter(r => r !== PUBLICATION_SNAPSHOT_REQUIREMENT);
+  assert.throws(() => decodeState(unsafe), /missing the publication snapshot requirement/);
   const fresh = await world(store);
   const done: any = await dispatch(fresh.rc, "context_run", { id: initial.executed.pending.resumeId });
   assert.equal(done.status, "completed", done.error);
@@ -76,6 +81,23 @@ test("context_compose retains its complete selected plan, checks and publication
   assert.deepEqual(first.calls, ["POST /pack", "GET /tasks/t1"]);
   assert.deepEqual(fresh.calls, ["GET /results/t1", "POST /finish"]);
   await fresh.rc.flush();
+});
+
+test("a resumed composition does not replace a goal published while it was pending", async () => {
+  const store = new MemoryStore();
+  const first = await world(store);
+  const pending: any = await dispatch(first.rc, "context_compose", { ...composition, publish: "Stored package" });
+  assert.equal(pending.executed.status, "pending");
+  await first.rc.flush();
+  const fresh = await world(store);
+  const concurrent = await fresh.rc.compose({ have: {}, want: "text", run: true,
+    through: ["openapi:source:prepare"], publish: "Stored package" });
+  assert.ok(concurrent.published, JSON.stringify(concurrent));
+  const revision = fresh.rc.published.get("stored-package")!.revision;
+  const done: any = await dispatch(fresh.rc, "context_run", { id: pending.executed.pending.resumeId });
+  assert.equal(done.status, "completed", done.error);
+  assert.match(done.composition?.publishRefused ?? "", /changed since execution began/);
+  assert.equal(fresh.rc.published.get("stored-package")!.revision, revision);
 });
 
 test("composition recovery preserves input-word obligations and refuses lossy stored checks", async () => {
