@@ -4,6 +4,7 @@
 
 import { checkpointValue, validWorkflow, type WorkflowContinuation, type CompositionContinuation } from "./core/workflow-continuation.ts";
 import { StateCommitUnknownError, StateConflictError } from "./core/state-conflict.ts";
+import { goalDefinitionDigest } from "./core/goal-identity.ts";
 import { CLI_CONFORMANCE_REQUIREMENT, CONTRACT_LINK_REQUIREMENT, decodeState, DEFERRED_INFERENCE_REQUIREMENT, PUBLICATION_SNAPSHOT_REQUIREMENT, STATE_FORMAT, STATE_REQUIREMENTS, STEP_INPUT_BINDINGS_REQUIREMENT, usesContractLinks, usesPublicationSnapshot, usesStepInputBindings } from "./core/state-format.ts";
 import { pointerValue, validLinkBinding, validLinkGroup, validLinkValue } from "./core/links.ts";
 import { ActivityLog, reference, type ActivityState, type ContractReference } from "./core/activity.ts";
@@ -61,6 +62,8 @@ export interface Store {
   save(state: PersistedState): Promise<void>;
   /** Set when the store is only ever read; the reason is reported instead of a save. */
   readonly readOnly?: string;
+  /** Hold an authoritative exclusion lease through all effects of a goal invocation. */
+  withGoalLease?<T>(pins: Array<{ slug: string; digest: string }>, invoke: () => Promise<T>): Promise<T>;
 }
 
 /** Knowledge kept while it cannot be re-derived here; see PersistedState.deferredInference. */
@@ -568,6 +571,9 @@ export class RightClick {
   readonly published = new Map<string, PublishedGoal>();
   /** A definition must not execute while its durable publication is unresolved. */
   private readonly publishing = new Set<string>();
+  /** Runtime-local exclusion for unpersisted goals and in-flight graph revocation. */
+  private activeGoalLeases = 0;
+  private activeProviderMutations = 0;
   /** When a failed plain run last re-read each contract source, so repeated failures do not re-read it on every call. */
   private healReads = new Map<string, number>();
   /** Ids re-learning pointed at a different operation; caller acknowledgement cannot clear them. */
@@ -938,6 +944,8 @@ export class RightClick {
    * planner and executor remain the single capability path. No grant is made. */
   private refreshEnvironment(): Promise<EnvironmentReport> {
     if (this.environmentRefresh) return this.environmentRefresh;
+    if (this.activeGoalLeases) return Promise.reject(new Error("environment refresh is blocked while a saved goal is executing"));
+    this.activeProviderMutations++;
     const work = async (): Promise<EnvironmentReport> => {
       const net = environmentNet(this.net, this.environment!);
       const report: EnvironmentReport = { catalogs: [], sources: [] };
@@ -990,7 +998,7 @@ export class RightClick {
       this.persist();
       return structuredClone(report);
     };
-    this.environmentRefresh = work().finally(() => { this.environmentRefresh = undefined; });
+    this.environmentRefresh = work().finally(() => { this.environmentRefresh = undefined; this.activeProviderMutations--; });
     return this.environmentRefresh;
   }
 
@@ -1001,6 +1009,13 @@ export class RightClick {
   }
 
   private async learnSources(opts: Parameters<RightClick["learn"]>[0], retainedCli?: { capability: Capability; execution: HttpExecution }) {
+    if (this.activeGoalLeases) throw new Error("provider changes are blocked while a saved goal is executing");
+    this.activeProviderMutations++;
+    try { return await this.learnSourcesUnlocked(opts, retainedCli); }
+    finally { this.activeProviderMutations--; }
+  }
+
+  private async learnSourcesUnlocked(opts: Parameters<RightClick["learn"]>[0], retainedCli?: { capability: Capability; execution: HttpExecution }) {
     const sources = [...(opts.source ? [opts.source] : []), ...(opts.sources ?? [])];
     // Batch learning measures powers once for the whole batch, not per provider.
     const batchBefore = this.graph.powers().total;
@@ -1197,6 +1212,7 @@ export class RightClick {
   }
 
   forget(providerId: string) {
+    if (this.activeGoalLeases) throw new Error("provider revocation is blocked while a saved goal is executing");
     const live = this.graph.forget(providerId);
     // A deferred provider is removed too, with any deferred pipeline that could then never return.
     const removed = new Set(this.deferredInference.filter(d => d.reflection.provider.id === providerId).flatMap(d => d.reflection.capabilities.map(c => c.id)));
@@ -1528,8 +1544,7 @@ export class RightClick {
   }
 
   private goalDigest(g: PublishedGoal) {
-    const { calls, lastPipeline, providers, publishedAt, trust, lastResult, ...definition } = g;
-    return sha256(stableStringify(definition));
+    return goalDefinitionDigest(g);
   }
 
   private compositionCapability(c: CompositionContinuation): Capability {
@@ -1651,6 +1666,9 @@ export class RightClick {
       throw new Error("resume the owning workflow; its child cannot be consumed separately");
     }
     if (!id.startsWith("resume:")) await this.restoreDeferredFor([id], undefined, opts.net);
+    const continuation = id.startsWith("resume:") ? this.workflowContinuations.get(id.slice(7)) : undefined;
+    const pins = continuation?.composition?.goals ?? [];
+    if (pins.length) return this.withGoalLease(pins, () => this.dispatchRun(id, args, opts));
     return this.dispatchRun(id, args, opts);
   }
 
@@ -1739,7 +1757,10 @@ export class RightClick {
     const original = structuredClone(cap);
     const execution: HttpExecution = { signal: opts.signal, strictCli: opts.strictCli,
       transportOwner: { runtimeId: this.activity.epoch, runId, capabilityId: cap.id } };
-    if (this.store && cap.invoke.kind === "http" && !cap.invoke.entry) execution.checkpoint = cursor =>
+    // A child of a saved goal may only be resumed through the retained owner
+    // workflow, whose definition pins are re-leased on resume. An orphan HTTP
+    // cursor could otherwise be invoked later without its saved-goal authority.
+    if (this.store && cap.invoke.kind === "http" && !cap.invoke.entry && (parent || !opts.activeGoals?.length)) execution.checkpoint = cursor =>
       this.checkpointHttp(continuationId, original, resumed?.verify ?? opts.verify ?? [], cursor, parent);
     try {
       if (resumedWorkflow) {
@@ -2515,6 +2536,7 @@ export class RightClick {
   private async composeNow(opts: ComposeOptions): Promise<ComposeResult> {
     let publicationExpected: string | null = null;
     if (opts.run && opts.publish) {
+      if (this.activeGoalLeases) throw new Error("goal publication is blocked while a saved goal is executing");
       if (this.publishing.has(slugify(opts.publish))) throw new Error(`publication pending: goal:${slugify(opts.publish)}`);
       const existing = this.published.get(slugify(opts.publish));
       if (existing && opts.preserveExisting === true) throw new Error(`publication already exists: goal:${slugify(opts.publish)}; preserveExisting prevents replacement`);
@@ -3023,7 +3045,7 @@ export class RightClick {
       const actual = existing ? await this.goalDigest(existing) : null;
       // No await between this comparison and the map update. A resumed older
       // continuation without a publication snapshot cannot replace a definition.
-      if (this.publishing.has(slug) || c.publicationExpected === undefined || c.publicationExpected !== actual || this.published.get(slug) !== existing) {
+      if (this.activeGoalLeases || this.publishing.has(slug) || c.publicationExpected === undefined || c.publicationExpected !== actual || this.published.get(slug) !== existing) {
         result.publishRefused = `not published: goal:${slug} changed since execution began; inspect it and retry explicitly`;
         return result;
       }
@@ -3122,6 +3144,44 @@ export class RightClick {
     if (this.publishing.has(slug)) throw new Error(`saved goal publication is pending: ${slug}`);
     const g = this.published.get(slug);
     if (!g) throw new Error(`no published goal: ${slug}`);
+    if (!g.revision) throw new Error(`saved goal has no immutable revision: ${slug}`);
+    const digest = await this.goalDigest(g);
+    return this.withGoalLease([{ slug, digest }], () => this.executeLeasedGoal(slug, g, args, confirm, activeGoals, verify));
+  }
+
+  private async withGoalLease<T>(pins: Array<{ slug: string; digest: string }>, invoke: () => Promise<T>): Promise<T> {
+    if (this.activeProviderMutations) throw new Error("saved-goal execution is blocked while provider changes are in progress");
+    if (this.publishing.size) throw new Error("saved-goal execution is blocked while a publication is pending");
+    this.activeGoalLeases++;
+    try {
+      // A goal is replanned dynamically, and may select another saved goal that
+      // was not visible in the outer static step list. Pin every locally visible
+      // definition before any effect. This deliberately fails closed if any
+      // unrelated cached definition is stale; the host must reload state.
+      const goals = [...this.published.entries()];
+      if (goals.length > 1024) throw new Error("saved-goal lease preflight bound exceeded");
+      const all = new Map<string, string>();
+      for (const [slug, goal] of goals) {
+        if (!goal.revision) throw new Error(`saved goal has no immutable revision: ${slug}`);
+        const digest = await this.goalDigest(goal);
+        if (this.published.get(slug) !== goal) throw new Error(`saved goal changed during lease preflight: ${slug}`);
+        all.set(slug, digest);
+      }
+      if (this.published.size !== goals.length) throw new Error("saved goals changed during lease preflight");
+      for (const pin of pins) {
+        if (all.get(pin.slug) !== pin.digest) throw new StateConflictError(`saved goal ${pin.slug} is stale, revoked, or inconsistent`);
+      }
+      const allPins = [...all].map(([slug, digest]) => ({ slug, digest }));
+      if (this.store) {
+        if (!this.store.withGoalLease) throw new Error("saved-goal execution requires an authoritative lease-capable store");
+        return await this.store.withGoalLease(allPins, invoke);
+      }
+      return await invoke();
+    } finally { this.activeGoalLeases--; }
+  }
+
+  private async executeLeasedGoal(slug: string, g: PublishedGoal, args: Record<string, unknown>, confirm?: boolean, activeGoals: string[] = [], verify: Predicate[] = []): Promise<ComposeResult> {
+    if (this.publishing.has(slug) || this.published.get(slug) !== g) throw new Error(`saved goal changed before execution: ${slug}`);
     const capability = this.graph.get(`goal:${slug}`);
     if (!capability) throw new Error(`saved goal is unavailable: ${slug}`);
     // Generated REST/GraphQL enter here directly rather than through run().
@@ -3301,6 +3361,30 @@ export class RightClick {
   }
 
   private async runSteps(steps: PlanStep[], resultRef: string, inputs: Record<string, unknown>, confirm?: boolean, activeGoals?: string[], net?: Net, workflow?: WorkflowContinuation) {
+    // A nested saved goal must be checked before *any* preceding effect in this
+    // composition, not only when that goal's own step is reached.
+    const pins: Array<{ slug: string; digest: string }> = [];
+    const visited = new Set<string>();
+    const scan = async (id: string): Promise<void> => {
+      if (visited.has(id)) return;
+      if (visited.size >= 1024) throw new Error("saved-goal dependency preflight bound exceeded");
+      visited.add(id);
+      const cap = this.graph.get(id);
+      if (!cap) throw new StepError(id, `missing capability ${id}`);
+      if (cap.invoke.kind === "goal") {
+        const goal = this.published.get(cap.invoke.slug);
+        if (!goal?.revision) throw new Error(`saved goal has no immutable revision: ${cap.invoke.slug}`);
+        pins.push({ slug: cap.invoke.slug, digest: await this.goalDigest(goal) });
+      } else if (cap.invoke.kind === "composite") {
+        for (const step of cap.invoke.steps) await scan(step.capability);
+      }
+    };
+    for (const step of steps) await scan(step.capability);
+    if (pins.length) return this.withGoalLease(pins, () => this.runLeasedSteps(steps, resultRef, inputs, confirm, activeGoals, net, workflow));
+    return this.runLeasedSteps(steps, resultRef, inputs, confirm, activeGoals, net, workflow);
+  }
+
+  private async runLeasedSteps(steps: PlanStep[], resultRef: string, inputs: Record<string, unknown>, confirm?: boolean, activeGoals?: string[], net?: Net, workflow?: WorkflowContinuation) {
     // Check every known dependency before the first effect, including nested composites.
     for (const [index, step] of steps.entries()) {
       const cap = this.graph.get(step.capability);
@@ -3483,6 +3567,13 @@ export class RightClick {
    * conformance example. Nothing imported is trusted on the exporter's word.
    */
   async importKnowledge(bundle: KnowledgeBundle): Promise<ImportReport> {
+    if (this.activeGoalLeases) throw new Error("knowledge import is blocked while a saved goal is executing");
+    this.activeProviderMutations++;
+    try { return await this.importKnowledgeUnlocked(bundle); }
+    finally { this.activeProviderMutations--; }
+  }
+
+  private async importKnowledgeUnlocked(bundle: KnowledgeBundle): Promise<ImportReport> {
     if (bundle?.format !== KNOWLEDGE_FORMAT) throw new Error(`not capability knowledge: expected format ${KNOWLEDGE_FORMAT}`);
     const report: ImportReport = { format: bundle.format, from: bundle.source, programs: [], goals: [] };
     if (bundle.source?.semantics !== SEMANTICS) {

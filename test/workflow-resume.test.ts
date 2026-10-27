@@ -228,9 +228,14 @@ test("saved-goal recovery binds its full definition, current authority and calle
     await first.rc.flush();
     if (mode === "definition") store.state!.published![0].verify = [];
     const fresh = await world(store, mode === "denied" ? { authority: { execution: { deniedCapabilities: ["goal:stored-package"] } } } : {});
+    if (mode === "definition") {
+      await assert.rejects(fresh.rc.run(initial.pending.resumeId), /stale|revoked|inconsistent/);
+      assert.deepEqual(fresh.calls, [], "the stale definition is refused before any effect");
+      continue;
+    }
     const done = await fresh.rc.run(initial.pending.resumeId);
-    assert.equal(done.status, mode === "definition" || mode === "denied" ? "pending" : mode === "extra-check" ? "failed" : "completed", done.error);
-    if (mode === "definition" || mode === "denied") assert.deepEqual(fresh.calls, []);
+    assert.equal(done.status, mode === "denied" ? "pending" : mode === "extra-check" ? "failed" : "completed", done.error);
+    if (mode === "denied") assert.deepEqual(fresh.calls, []);
     else assert.deepEqual(fresh.calls, ["GET /results/t1", "POST /finish"]);
     if (mode !== "generated") assert.equal((fresh.rc.runStatus({ runId: initial.runId }) as any).status, done.status);
     await fresh.rc.flush();

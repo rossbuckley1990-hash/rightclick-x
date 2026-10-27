@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdir, mkdtemp, readdir, rm, writeFile } from "node:fs/promises";
+import { link, mkdir, mkdtemp, readFile, readdir, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fork } from "node:child_process";
@@ -101,5 +101,23 @@ test("FileStore backup callback failure after rename is unknown and blocks later
     await assert.rejects(store.save(snapshot(2)), /state commit outcome unknown/);
     await assert.rejects(store.load(), /state commit outcome unknown/);
     assert.equal((await new FileStore(file).load())?.ledger.marker.index, 1, "the uncertain instance cannot overwrite the committed state");
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test("symlinked or hard-linked state paths cannot split coordination across lock names", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "rcx-store-alias-"));
+  const file = join(dir, "state.json"), symbolic = join(dir, "symbolic.json"), hard = join(dir, "hard.json");
+  try {
+    await new FileStore(file).save(snapshot(1));
+    const before = await readFile(file, "utf8");
+    await symlink(file, symbolic);
+    await assert.rejects(new FileStore(symbolic).load(), /singly linked regular file/);
+    await assert.rejects(new FileStore(symbolic).save(snapshot(2)), /singly linked regular file/);
+    assert.equal(await readFile(file, "utf8"), before);
+    await link(file, hard);
+    await assert.rejects(new FileStore(hard).load(), /singly linked regular file/);
+    await assert.rejects(new FileStore(file).load(), /singly linked regular file/);
+    await assert.rejects(new FileStore(hard).save(snapshot(3)), /singly linked regular file/);
+    assert.equal(await readFile(file, "utf8"), before);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
