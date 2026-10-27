@@ -3,6 +3,7 @@
 // federation) is a thin shell around this class.
 
 import { checkpointValue, validWorkflow, type WorkflowContinuation, type CompositionContinuation } from "./core/workflow-continuation.ts";
+import { definitionRetentionError } from "./core/retention-policy.ts";
 import { StateCommitUnknownError, StateConflictError } from "./core/state-conflict.ts";
 import { CLI_CONFORMANCE_REQUIREMENT, CONTRACT_LINK_REQUIREMENT, decodeState, DEFERRED_INFERENCE_REQUIREMENT, PUBLICATION_SNAPSHOT_REQUIREMENT, STATE_FORMAT, STATE_REQUIREMENTS, STEP_INPUT_BINDINGS_REQUIREMENT, usesContractLinks, usesPublicationSnapshot, usesStepInputBindings } from "./core/state-format.ts";
 import { pointerValue, validLinkBinding, validLinkGroup, validLinkValue } from "./core/links.ts";
@@ -650,6 +651,16 @@ export class RightClick {
     const loaded = await opts.store?.load();
     const saved = loaded == null ? null : decodeState(loaded);
     if (saved) {
+      // Old checkpoints retain opaque request/result data and cannot be safely
+      // migrated or automatically resumed without an external reference vault.
+      if (saved.workflowContinuations?.length || saved.httpContinuations?.length)
+        throw new Error("retained execution checkpoints require a secure migration; state was not discarded");
+      if (saved.identities && (saved.identities.links?.length || Object.keys(saved.identities.accepted ?? {}).length))
+        throw new Error("retained identifier observations contain execution values; secure migration required");
+      for (const goal of saved.published ?? []) {
+        if (definitionRetentionError(goal.fixed ?? {}, goal.verify ?? [], goal.witnesses ?? []))
+          throw new Error("retained goal contains inline execution values; secure migration required");
+      }
       const stale = saved.semantics !== SEMANTICS;
       for (const [name, entries, valid] of [
         ["HTTP", saved.httpContinuations, validHttpRun],
@@ -1565,6 +1576,9 @@ export class RightClick {
 
   private async startWorkflow(runId: string, cap: Capability, inputs: Record<string, unknown>, verify: Predicate[], composition?: CompositionContinuation) {
     if (cap.invoke.kind !== "composite") throw new Error("workflow requires a retained composite");
+    // Recovery retains opaque inputs and future outputs. Refuse before dispatch
+    // until an external, invoker-authorized value vault can supply references.
+    if (this.store) throw new Error("durable workflow recovery requires an external value vault; no execution data was checkpointed");
     // Recovery stores inputs before dispatch. Reject option arguments even under an innocuous
     // flag or input name; a secret cannot be identified reliably from its string contents.
     for (const step of cap.invoke.steps) {
@@ -1713,6 +1727,14 @@ export class RightClick {
     // Destructive effects keep the user's authority. The agent may ask (confirm), but under the
     // default policy only an operator's approval, made in configuration, authorises the capability.
     this.checkExecutionAuthority(cap, opts.confirm);
+    // A state-changing HTTP operation can respond 202 even if its schema does
+    // not declare it. With continuation enabled we cannot retain the cursor
+    // safely. Refuse before dispatch instead of sending the write and losing
+    // evidence of its possibly completed effect.
+    if (this.store && this.httpContinuation.maxRequests > 0 && cap.invoke.kind === "http" &&
+        consequentialRisks(cap).some(risk => risk !== "read")) {
+      throw new Error("state-changing HTTP dispatch requires secure continuation storage or explicitly disabled continuation");
+    }
     // An id the caller chose for what it used to do must not quietly do something else.
     const change = this.meaningChanges.get(cap.id);
     const refused = this.changedMeaningRefusal(cap.id);
@@ -2286,6 +2308,9 @@ export class RightClick {
   }
 
   private async checkpointHttp(runId: string, cap: Capability, verify: Predicate[], cursor: HttpContinuationCursor | null, parent?: WorkflowContinuation) {
+    // A URL path/query can contain an opaque credential irrespective of its
+    // name. Do not persist a cursor until a secure value vault exists.
+    if (cursor) throw new Error("HTTP continuation requires an external value vault; no cursor was checkpointed");
     const parentPhase = parent?.phase;
     if (parent) parent.phase = cursor ? "waiting" : "dispatching";
     const previous = this.httpContinuations.get(runId);
@@ -2546,6 +2571,10 @@ export class RightClick {
       if (types[k] === "repo" && /^[\w.-]+\/[\w.-]+$/.test(String(v))) types[k] = "repo.full";
       values[k] = v;
     }
+    if (opts.run && opts.publish) {
+      const reason = definitionRetentionError(fixed, opts.verify ?? [], witnesses);
+      if (reason) throw new Error(`refused publication: ${reason}`);
+    }
     const anchors = opts.anchors ?? this.pinAnchors(opts.through ?? []);
     const through = this.resolveAnchors(anchors);
     // Bindings are only accepted on explicitly anchored CLI operations. Resolve each against the
@@ -2743,6 +2772,18 @@ export class RightClick {
           return { ...st, bindings: [...st.bindings.filter((b) => b.port !== gi.selectPort), { port: gi.selectPort, from: "$const", value: selectionWith(gi.selection, fields) }] };
         });
         const selected = steps.map(s => this.graph.get(s.capability)!);
+        if (opts.crystallize !== false && steps.length > 1) {
+          const constants = Object.fromEntries(steps.flatMap((step, index) => step.bindings
+            .filter(binding => binding.from === "$const")
+            .map((binding, position) => [`${index}:${position}`, binding.value])));
+          const reason = definitionRetentionError(constants, opts.verify ?? [], witnesses);
+          if (reason) {
+            result.executed = { summary: p.summary, titles: titles(p), status: "failed", output: null,
+              verification: { status: "refuted", results: [] }, runs: [], attempts: [], durationMs: 0,
+              error: `refused retained pipeline: ${reason}` };
+            return result;
+          }
+        }
         // Explicit inputBindings are not the only way the planner can bind an
         // option: a same-named fixed input binds implicitly. Check the actual
         // selected steps before dispatch or publication, not just caller hints.
@@ -3442,7 +3483,9 @@ export class RightClick {
 
   /**
    * Portable capability knowledge (core/knowledge.ts). Requires the operator's evidence-sharing
-   * authority. Contains no credentials, caller data, outputs or receipts.
+   * authority. Fixed execution values and receipts are omitted. Provider-supplied
+   * metadata remains untrusted and may itself contain sensitive data; authority
+   * to share is not a guarantee that metadata is clean.
    */
   exportKnowledge(): KnowledgeBundle {
     if (!this.shareEvidence) throw new Error("not authorised: exporting capability knowledge needs the operator's evidence-sharing authority (authority.shareEvidence / RCX_SHARE_EVIDENCE=1)");
@@ -3473,7 +3516,7 @@ export class RightClick {
       source: { os: g.process?.platform, arch: g.process?.arch, runtime: this.name, version: VERSION, semantics: SEMANTICS },
       programs,
       goals,
-      excluded: ["credentials", "caller inputs and outputs", "run records and receipts", "fixed goal values", "published goals' checks bound to caller data", "local operation continuity", "local CLI environment evidence"],
+      excluded: ["credential fields (provider metadata not classified)", "caller inputs and outputs", "run records and receipts", "fixed goal values", "published goals' checks bound to caller data", "local operation continuity", "local CLI environment evidence"],
     };
   }
 
@@ -3950,7 +3993,9 @@ export class RightClick {
       const published = [...this.published.values()].filter(g => !candidate || g.slug !== candidate.slug);
       if (candidate) published.push(candidate);
       const workflowContinuations = [...this.workflowContinuations.values()];
-      await this.store.save({ version: 2, requirements: [...STATE_REQUIREMENTS, ...(usesContractLinks(reflections) ? [CONTRACT_LINK_REQUIREMENT] : []), ...(this.deferredInference.length ? [DEFERRED_INFERENCE_REQUIREMENT] : []), ...(cliConformance.length ? [CLI_CONFORMANCE_REQUIREMENT] : []), ...(usesStepInputBindings({ published, workflowContinuations }) ? [STEP_INPUT_BINDINGS_REQUIREMENT] : []), ...(usesPublicationSnapshot({ workflowContinuations }) ? [PUBLICATION_SNAPSHOT_REQUIREMENT] : [])], reflections, ...(this.deferredInference.length ? { deferredInference: this.deferredInference } : {}), ledger: this.ledger.toJSON(), receipts: this.chain.receipts.slice(-300), published, meaningChanges: [...this.meaningChanges.values()], activity: this.activity.snapshot(), environment: this.environmentReport, httpContinuations: [...this.httpContinuations.values()], workflowContinuations, ...(cliConformance.length ? { cliConformance } : {}), authFingerprints: await this.net.auth.fingerprints(), semantics: SEMANTICS, identities: this.graph.identities.toJSON() });
+      // Identity observations include raw input/output identifiers. They remain
+      // process-local and are not part of a transferable saved snapshot.
+      await this.store.save({ version: 2, requirements: [...STATE_REQUIREMENTS, ...(usesContractLinks(reflections) ? [CONTRACT_LINK_REQUIREMENT] : []), ...(this.deferredInference.length ? [DEFERRED_INFERENCE_REQUIREMENT] : []), ...(cliConformance.length ? [CLI_CONFORMANCE_REQUIREMENT] : []), ...(usesStepInputBindings({ published, workflowContinuations }) ? [STEP_INPUT_BINDINGS_REQUIREMENT] : []), ...(usesPublicationSnapshot({ workflowContinuations }) ? [PUBLICATION_SNAPSHOT_REQUIREMENT] : [])], reflections, ...(this.deferredInference.length ? { deferredInference: this.deferredInference } : {}), ledger: this.ledger.toJSON(), receipts: this.chain.receipts.slice(-300), published, meaningChanges: [...this.meaningChanges.values()], activity: this.activity.snapshot(), environment: this.environmentReport, httpContinuations: [...this.httpContinuations.values()], workflowContinuations, ...(cliConformance.length ? { cliConformance } : {}), authFingerprints: await this.net.auth.fingerprints(), semantics: SEMANTICS });
       this.saveState = "saved";
     } catch (error) {
       this.saveState = "failed";

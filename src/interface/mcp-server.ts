@@ -1,7 +1,6 @@
 // MCP server: JSON-RPC message handling, transport-agnostic. The stdio and
 // Streamable HTTP transports both feed messages through handle().
 
-import { redact, redactText } from "../core/secrets.ts";
 import { VERSION, type RightClick } from "../runtime.ts";
 import { ANNOTATED_TOOLS, TOOLS, dispatch } from "./tools.ts";
 
@@ -24,6 +23,27 @@ function outcomeOf(out: any): Record<string, unknown> | undefined {
   const verification = ex?.verification?.status;
   if (!status && !verification && !out.outcome) return undefined;
   return { ...(status ? { status } : {}), ...(verification ? { verification } : {}), ...(out.outcome?.status ? { outcome: out.outcome.status } : {}), ...(ex?.contract?.status ? { contract: ex.contract.status } : {}) };
+}
+
+// Error text is untrusted: providers can echo opaque credentials even when
+// they do not use a credential-named field. Keep structured status, not text.
+function withoutErrorText(value: unknown, key?: string): unknown {
+  // The invocation result itself is intentionally returned to its caller.
+  if (key === "output" || key === "result") return value;
+  if (key === "actual") return "[details not retained]";
+  if (key === "agreement" && value && typeof value === "object" && !Array.isArray(value)) {
+    const { mode, ok } = value as Record<string, unknown>;
+    return { mode, ok };
+  }
+  if (key === "witnesses" && Array.isArray(value)) return value.map(witness => {
+    if (!witness || typeof witness !== "object" || Array.isArray(witness)) return null;
+    const { output: _output, ...rest } = witness as Record<string, unknown>;
+    return withoutErrorText(rest);
+  });
+  if ((key === "error" || key === "note") && typeof value === "string") return "[details not retained]";
+  if (Array.isArray(value)) return value.map(item => withoutErrorText(item));
+  if (!value || typeof value !== "object") return value;
+  return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, withoutErrorText(v, k)]));
 }
 
 export async function handle(rc: RightClick, msg: JsonRpc): Promise<JsonRpc | null> {
@@ -52,18 +72,20 @@ export async function handle(rc: RightClick, msg: JsonRpc): Promise<JsonRpc | nu
       if (!TOOLS.some((t) => t.name === name)) return fail(-32602, `unknown tool: ${name}`);
       const t0 = performance.now();
       const args = msg.params?.arguments ?? {};
-      // The audit log never holds credentials: values under credential names are redacted.
+      // An opaque credential may appear under any key or in any error. Audit
+      // only structural outcome data; do not retain caller args or error text.
       const audit = (ok: boolean, error?: string, out?: any) =>
-        rc.toolCallSink?.({ at: new Date().toISOString(), tool: name, args: redact(args), ok, ms: Math.round((performance.now() - t0) * 10) / 10, ...(error ? { error: redactText(error).slice(0, 300) } : {}), ...(outcomeOf(out) ? { outcome: outcomeOf(out) } : {}) });
+        rc.toolCallSink?.({ at: new Date().toISOString(), tool: name, args: "[not retained]", ok, ms: Math.round((performance.now() - t0) * 10) / 10, ...(error ? { error: "[not retained]" } : {}), ...(outcomeOf(out) ? { outcome: outcomeOf(out) } : {}) });
       try {
         const out = await dispatch(rc, name, args);
         audit(true, undefined, out);
-        const structured = out && typeof out === "object" && !Array.isArray(out) ? out : { result: out };
-        return reply({ content: [{ type: "text", text: JSON.stringify(out) }], structuredContent: structured, isError: false });
+        const response = withoutErrorText(out);
+        const structured = response && typeof response === "object" && !Array.isArray(response) ? response : { result: response };
+        return reply({ content: [{ type: "text", text: JSON.stringify(response) }], structuredContent: structured, isError: false });
       } catch (e) {
         const error = String((e as Error)?.message ?? e);
         audit(false, error);
-        return reply({ content: [{ type: "text", text: error }], isError: true });
+        return reply({ content: [{ type: "text", text: "Tool execution failed; details withheld." }], isError: true });
       }
     }
     default:
