@@ -1,0 +1,11 @@
+# Inheritance integration record
+
+PR [#35](https://github.com/rossbuckley1990-hash/rightclick-x/pull/35) was merged into main as `278d66c327ffe60b25805399b1f6d284840d1628`. Its parents are former main `29553a7f5fe3a9700eb69981ca0cdcbe155f4fcf` and PR head `2d52c7af7f083b50ace203fc9c03ead73a45cd57`. The latter is an empty child of `6610205c653307cf26c0e589642c4633008b86b7`; all three have tree `b63c34399e664b08726b6fe5e55698399b636561`. A separate actor performed the merge.
+
+The merge preserves the original inheritance ancestry and the commits represented by #20, #22, #27, #28, #30, #31, #33 and #34. GitHub reports #20, #27, #28 and #35 merged; #22, #30, #31, #33 and #34 remain open despite their commits being ancestors. #29 remains open and its equivalent guard implementation and five tests are included. The incomplete #32 prototype is not an ancestor and remains open.
+
+All six main-targeted GitHub checks passed on `2d52c7` before merging. Both macOS jobs passed 765 tests without skips; bubblewrap passed 731 with 34 skips; Linux no-sandbox and Ubuntu verification each passed 628 with 137 skips. The scripted lifecycle passed 11/11, CLI bindings 3/3 and model-free fresh-process inheritance 1/1 on the identical source tree. The workflow and witnesses were operator-authored; restored-provider recovery included explicit relearning. This is not autonomous discovery.
+
+Post-merge CI for the merge SHA is tracked in [ci](https://github.com/rossbuckley1990-hash/rightclick-x/actions/runs/40599282005) and [product-ci](https://github.com/rossbuckley1990-hash/rightclick-x/actions/runs/40599281995); consult their live conclusions. Skips are not passes.
+
+The owner authorized the merge despite no documented independent human security review or public-data sensitivity clearance. Historical experiment results and metadata remain unreviewed for sensitivity. Credential-safe persistence, R1 isolation and R2 resource containment remain unresolved production blockers. FileStore coordinates cooperating local processes only; no claim of distributed consensus, exactly-once external effects, safety against old/noncooperating writers, or settlement of unresolved effects is made. Workers KV lacks authoritative saved-goal coordination. No deployment, release or external model session was authorized by this merge.
