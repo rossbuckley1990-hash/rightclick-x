@@ -34,7 +34,9 @@ digest candidates in the captured process output, runtime views, state files and
 Durable protected recovery without a backend must refuse before resolution. One intentionally
 misbinding fixture host is supplied the creator's value to demonstrate that the mock provider
 detects the wrong consumer credential; that negative control intentionally violates the host
-contract. A separate control demonstrates guessing a known unkeyed low-entropy digest.
+contract. Another intentionally defective host ignores revocation and demonstrates a second
+dispatch; a trusted host must enforce the grant itself. A separate control demonstrates guessing
+a known unkeyed low-entropy digest.
 
 These checks cover particular synthetic canaries and candidate hashes, not all possible
 information channels or arbitrary secret encodings. The result is limited to the supported

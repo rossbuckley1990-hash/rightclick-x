@@ -16,8 +16,11 @@ function run(mode: string, dir: string, artifact: string, credential: string, pr
   const child = spawnSync(process.execPath, [worker, mode, join(dir, "state.json"), artifact], { encoding: "utf8", timeout: 20000,
     env: { PATH: process.env.PATH ?? "/usr/bin:/bin", TMPDIR: tmpdir(), RCX_FIXTURE_VALUE: credential, RCX_FIXTURE_PRINCIPAL: principal,
       ...(wrongCredential ? { RCX_FIXTURE_WRONG_VALUE: wrongCredential } : {}) } });
-  assert.equal(child.status, 0, `${mode}: ${child.error ?? ""} ${child.stderr}`);
-  return { value: JSON.parse(child.stdout), output: `${child.stdout}\n${child.stderr}` };
+  const safeError = [credential, wrongCredential].filter((v): v is string => !!v).reduce((s, value) => s.split(value).join("[fixture-value]"), `${child.error ?? ""} ${child.stderr}`);
+  assert.equal(child.status, 0, `${mode}: ${safeError}`);
+  let value: any;
+  try { value = JSON.parse(child.stdout); } catch { throw new Error(`${mode}: fixture returned invalid JSON`); }
+  return { value, output: `${child.stdout}\n${child.stderr}` };
 }
 function contents(dir: string): string {
   return readdirSync(dir).map(name => { const path = join(dir, name); return statSync(path).isDirectory() ? contents(path) : readFileSync(path, "utf8"); }).join("\n");
@@ -67,7 +70,8 @@ test("distinct fresh processes inherit a witnessed protected goal using only the
     const inherited = run("inherit", b, consumerArtifact, consumerSecret, "consumer");
     assert.notEqual(inherited.value.pid, created.value.pid);
     assert.equal(inherited.value.initialResolutions, 0, "import must not resolve a credential");
-    assert.equal(inherited.value.status, "completed", inherited.value.error);
+    const safeError = String(inherited.value.error ?? "").split(consumerSecret).join("[fixture-value]").split(creatorSecret).join("[fixture-value]");
+    assert.equal(inherited.value.status, "completed", safeError);
     assert.equal(inherited.value.output, true);
     assert.equal(inherited.value.verification, "verified");
     assert.equal(inherited.value.beforeRevoke.producerCalls, 1);
@@ -117,5 +121,19 @@ test("negative control detects a host that resolves the creator credential for t
     const unsafe = run("unsafe", join(dir, "consumer"), artifact, consumerSecret, "consumer", creatorSecret);
     assert.equal(unsafe.value.allHeadersAreOwn, false, "the fixture failed to detect cross-principal credential substitution");
     assert.notEqual(unsafe.value.verification, "verified", "incorrect credential must not produce the verified outcome");
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test("negative control detects a host that ignores grant revocation", { timeout: 30000 }, () => {
+  const dir = mkdtempSync(join(tmpdir(), "rcx-protected-wrong-revocation-"));
+  try {
+    const artifact = join(dir, "artifact.json");
+    run("create", join(dir, "creator"), artifact, creatorSecret, "creator");
+    // The intentionally defective host ignores the changed grant. A trusted
+    // embedding host must actually enforce revocation around consume().
+    const unsafe = run("unsafe-revocation", join(dir, "consumer"), artifact, consumerSecret, "consumer");
+    assert.equal(unsafe.value.beforeRevoke.producerCalls, 1);
+    assert.equal(unsafe.value.producerCalls, 2, "the fixture failed to detect dispatch after revocation");
+    assert.equal(unsafe.value.afterStatus, "completed");
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });

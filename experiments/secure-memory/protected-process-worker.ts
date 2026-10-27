@@ -27,7 +27,7 @@ let grant = mode !== "denied", resolutions = 0, producerCalls = 0, witnessCalls 
 const host = { principal, allowBooleanOutput: true, async withAuthorizedValue<T>(request: any, consume: (value: string) => Promise<T>): Promise<T> {
   resolutions++;
   if (request.principal !== principal || request.capability !== producerId || !/^[a-f0-9]{64}$/.test(request.contract ?? "") || request.origin !== producerOrigin ||
-      request.header.toLowerCase() !== "x-api-key" || request.ref?.slot !== ref.slot || request.ref?.requiredScope !== ref.requiredScope || !grant)
+      request.header.toLowerCase() !== "x-api-key" || request.ref?.slot !== ref.slot || request.ref?.requiredScope !== ref.requiredScope || (!grant && mode !== "unsafe-revocation"))
     throw new Error("fixture authority denied");
   return consume(mode === "unsafe" ? wrongCredential ?? "" : credential);
 } };
