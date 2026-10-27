@@ -38,6 +38,16 @@ contract. Another intentionally defective host ignores revocation and demonstrat
 dispatch; a trusted host must enforce the grant itself. A separate control demonstrates guessing
 a known unkeyed low-entropy digest.
 
+`node --test test/protected-concurrency.test.ts` adds an IPC-barrier concurrency control using
+two fresh OS processes, separate runtime stores and different trusted host principals. Both
+resolvers pause before dispatch, then both mocked provider calls pause in flight, allowing the
+test to check each received its own fixture credential. Grants are revoked while those calls
+are in flight; the fixture permits them to complete, but each subsequent resolution is denied
+and produces no second dispatch. A deliberately misbinding host is a negative control: the
+fake provider detects that its header belongs to the other principal. It is not evidence that
+the runtime can authenticate a compromised host. These barriers cover the chosen interleaving,
+not all possible schedules or cancellation of a provider's already accepted effect.
+
 These checks cover particular synthetic canaries and candidate hashes, not all possible
 information channels or arbitrary secret encodings. The result is limited to the supported
 single-header read-only HTTP GET, boolean-result path and the injected trusted host's stated
