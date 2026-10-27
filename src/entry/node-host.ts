@@ -106,7 +106,7 @@ export class ProcessMemoryStore implements Store {
   private state: PersistedState | null = null;
   private version = 0;
   private owner: object | undefined;
-  private readonly context = new AsyncLocalStorage<{ owner: object; active: boolean; pending: Set<Promise<unknown>> }>();
+  private readonly context = new AsyncLocalStorage<{ owner: object; active: boolean; pending: Set<Promise<unknown>>; failures: unknown[] }>();
 
   /** A store object itself is a factory; direct operations use an independent view. */
   private readonly direct = this.session();
@@ -143,21 +143,28 @@ export class ProcessMemoryStore implements Store {
       withGoalLease: async <T>(pins: Array<{ slug: string; digest: string }>, invoke: () => Promise<T>): Promise<T> => {
         const inherited = this.context.getStore();
         if (inherited?.active && inherited.owner === owner && this.owner === owner) {
-          const task = (async () => { await validate(pins); return invoke(); })();
+          // Each admitted nested call has its own lifetime; it remains an
+          // owner after its parent returns, but not after it has completed.
+          const child = { owner, active: true, pending: inherited.pending, failures: inherited.failures };
+          const task = (async () => { try { await validate(pins); return await this.context.run(child, invoke); } finally { child.active = false; } })();
           inherited.pending.add(task);
+          void task.then(() => {}, error => { inherited.failures.push(error); });
           try { return await task; } finally { inherited.pending.delete(task); }
         }
         if (this.owner) throw new StateConflictError("another runtime holds the process-local goal lease");
         this.owner = owner;
-        const scope = { owner, active: true, pending: new Set<Promise<unknown>>() };
+        const scope = { owner, active: true, pending: new Set<Promise<unknown>>(), failures: [] as unknown[] };
+        let invoked = false;
         try {
           await validate(pins);
+          invoked = true;
           return await this.context.run(scope, invoke);
         } finally {
           // Never release while an admitted nested invocation can still dispatch.
           scope.active = false;
           while (scope.pending.size) await Promise.allSettled([...scope.pending]);
           this.owner = undefined;
+          if (scope.failures.length && invoked) throw new Error("goal execution outcome unknown after an admitted nested failure; do not replay; inspect retained evidence", { cause: scope.failures[0] });
         }
       },
     };
@@ -176,7 +183,7 @@ export class FileStore implements Store {
   private expected?: Uint8Array | null;
   /** Do not let a later queued save overwrite an uncertain committed snapshot. */
   private commitUnknown = false;
-  private readonly leaseContext = new AsyncLocalStorage<{ active: boolean; held: boolean; pending: Set<Promise<unknown>> }>();
+  private readonly leaseContext = new AsyncLocalStorage<{ active: boolean; held: boolean; pending: Set<Promise<unknown>>; failures: unknown[] }>();
   private onBackup?: (path: string) => void;
   constructor(file: string, opts: { onBackup?: (path: string) => void } = {}) {
     this.file = file;
@@ -235,8 +242,10 @@ export class FileStore implements Store {
     if (inherited?.active) {
       // Register synchronously before yielding, so an outer callback cannot
       // release the lock while an admitted nested invocation still runs.
-      const task = (async () => { await this.assertGoalPins(pins); return invoke(); })();
+      const child = { active: true, held: inherited.held, pending: inherited.pending, failures: inherited.failures };
+      const task = (async () => { try { await this.assertGoalPins(pins); return await this.leaseContext.run(child, invoke); } finally { child.active = false; } })();
       inherited.pending.add(task);
+      void task.then(() => {}, error => { inherited.failures.push(error); });
       try { return await task; } finally { inherited.pending.delete(task); }
     }
     if (this.leaseReserved) throw new StateConflictError("another local saved-goal lease is pending or active");
@@ -253,7 +262,7 @@ export class FileStore implements Store {
         if ((error as NodeJS.ErrnoException).code === "EEXIST") throw new StateConflictError("goal execution or publication holds the file lock");
         throw error;
       }
-      const scope = { active: true, held: true, pending: new Set<Promise<unknown>>() };
+      const scope = { active: true, held: true, pending: new Set<Promise<unknown>>(), failures: [] as unknown[] };
       let invoked = false;
       try {
         await this.assertGoalPins(pins);
@@ -263,16 +272,18 @@ export class FileStore implements Store {
         scope.active = false;
         while (scope.pending.size) await Promise.allSettled([...scope.pending]);
         let saveFailure: unknown;
-        try { await this.lastSave; } catch (error) { saveFailure = error; }
+        let saveFailed = false;
+        try { await this.lastSave; } catch (error) { saveFailed = true; saveFailure = error; }
         scope.held = false;
         try { await fs.rmdir(lock); }
         catch (error) {
           if (invoked) throw new Error("goal execution outcome unknown after lease cleanup failure; do not replay; inspect retained evidence");
           throw error;
         }
-        if (saveFailure) {
-          if (invoked) throw new Error("goal execution outcome unknown after persistence failure; do not replay; inspect retained evidence", { cause: saveFailure });
-          throw saveFailure;
+        const failure = saveFailed ? saveFailure : scope.failures[0];
+        if (saveFailed || scope.failures.length) {
+          if (invoked) throw new Error(saveFailed ? "goal execution outcome unknown after persistence failure; do not replay; inspect retained evidence" : "goal execution outcome unknown after an admitted nested failure; do not replay; inspect retained evidence", { cause: failure });
+          throw failure;
         }
       }
     } finally { this.leaseReserved = false; }
