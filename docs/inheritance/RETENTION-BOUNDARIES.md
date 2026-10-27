@@ -27,8 +27,8 @@ fail-closed and is not a complete credential-persistence solution.
 - Titles, names, witness paths, paths within agreement checks, schema content,
   provider metadata, input names and graph exports can hold arbitrary untrusted
   text. `experiments/inheritance-offline/metadata-secret-repro.ts` preserves an
-  opaque fixture canary proving metadata currently reaches stored state and the
-  graph; it exits 1. There is no trustworthy shared-artifact boundary until
+  opaque fixture canary proving metadata currently reaches stored state, the
+  graph and knowledge exports; it exits 1. There is no trustworthy shared-artifact boundary until
   operator-controlled classification or another correct mechanism exists.
 - Existing saved states, test fixtures and users relying on opaque fixed inputs
   or workflow recovery are incompatible with this prototype. A representative
