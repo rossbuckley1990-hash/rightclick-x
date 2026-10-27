@@ -87,6 +87,45 @@ test("an independent pipeline that recomputes the outcome verifies it, and keeps
   assert.deepEqual(state.calls.slice(before).filter((h) => h === "registry.test" || h === "tariffs.test"), ["registry.test", "tariffs.test"], "the independent implementation recomputes on every reuse");
 });
 
+test("preserveExisting refuses a collision without removing retained witness obligations", async () => {
+  const { state, create } = world();
+  const rc = await create();
+  const witness = await independentPipeline(rc);
+  const first = await compose(rc, { publish: "order tax", witnesses: [{ capability: witness, args: { order_id: { input: "order_id" } }, agree: { mode: "number" } }] });
+  assert.equal(first.published?.trust, "verified");
+  const before = state.calls.length;
+  await assert.rejects(compose(rc, { publish: "Order Tax", preserveExisting: true }), /publication already exists.*preserveExisting/);
+  assert.equal(state.calls.length, before, "collision is refused before executing the route");
+  const fresh = await create();
+  state.rates.FR = 19;
+  const rejected = await fresh.run("goal:order-tax", { order_id: "A-2" });
+  assert.equal(rejected.status, "failed", "the retained witness still refutes incorrect results after restart");
+  state.rates.FR = 20;
+  const replacement = await compose(rc, { publish: "order tax" });
+  assert.equal(replacement.published?.trust, "unverified", "legacy replacement uses the new proof obligations");
+});
+
+test("simultaneous publication of one slug retains only the first completed definition", async () => {
+  const { create } = world();
+  const rc = await create();
+  const results = await Promise.all([
+    compose(rc, { publish: "race tax", verify: [{ op: "equals", value: 19 }] }),
+    compose(rc, { publish: "race tax" }),
+  ]);
+  assert.equal(results.filter(r => r.published).length, 1);
+  assert.equal(results.filter(r => /changed since execution began/.test(r.publishRefused ?? "")).length, 1);
+  const retained = rc.published.get("race-tax")!;
+  assert.equal(retained.trust, results.find(r => r.published)!.published!.trust);
+
+  const replacements = await Promise.all([
+    compose(rc, { publish: "race tax", verify: [{ op: "equals", value: 19 }] }),
+    compose(rc, { publish: "race tax" }),
+  ]);
+  assert.equal(replacements.filter(r => r.published).length, 1);
+  assert.equal(replacements.filter(r => /changed since execution began/.test(r.publishRefused ?? "")).length, 1);
+  assert.notEqual(rc.published.get("race-tax")!.revision, retained.revision);
+});
+
 test("when the producing provider drifts, the independent recomputation refutes the result instead of verifying it", async () => {
   const { state, create } = world();
   const rc = await create();

@@ -21,7 +21,19 @@ export const DEFERRED_INFERENCE_REQUIREMENT = "deferred-inference@1";
 /** Present only when state retains CLI conformance pins, so states without them stay readable by
  *  readers that predate conformance, and readers that predate it refuse states that carry pins. */
 export const CLI_CONFORMANCE_REQUIREMENT = "cli-conformance@1";
-const supported = new Set<string>([...STATE_REQUIREMENTS, CONTRACT_LINK_REQUIREMENT, DEFERRED_INFERENCE_REQUIREMENT, CLI_CONFORMANCE_REQUIREMENT]);
+/** Readers must understand these saved bindings before replanning a goal or publishing a resumed composition. */
+export const STEP_INPUT_BINDINGS_REQUIREMENT = "step-input-bindings@1";
+/** A resumed publication must respect its dispatch-time snapshot. */
+export const PUBLICATION_SNAPSHOT_REQUIREMENT = "publication-snapshot@1";
+const supported = new Set<string>([...STATE_REQUIREMENTS, CONTRACT_LINK_REQUIREMENT, DEFERRED_INFERENCE_REQUIREMENT, CLI_CONFORMANCE_REQUIREMENT, STEP_INPUT_BINDINGS_REQUIREMENT, PUBLICATION_SNAPSHOT_REQUIREMENT]);
+export function usesStepInputBindings(state: Pick<PersistedState, "published" | "workflowContinuations">): boolean {
+  return (Array.isArray(state.published) && state.published.some(g => g?.inputBindings !== undefined)) ||
+    (Array.isArray(state.workflowContinuations) && state.workflowContinuations.some(w => w?.composition?.options?.inputBindings !== undefined));
+}
+export function usesPublicationSnapshot(state: Pick<PersistedState, "workflowContinuations">): boolean {
+  return Array.isArray(state.workflowContinuations) && state.workflowContinuations.some(w =>
+    w?.composition?.options?.publish !== undefined && w.composition.publicationExpected !== undefined);
+}
 export function usesContractLinks(reflections: Reflection[]): boolean {
   return reflections.some(r => r.capabilities.some(c => c.links?.length ||
     c.invoke.kind === "composite" && c.invoke.steps.some(s => s.bindings.some(b => b.link))));
@@ -84,6 +96,10 @@ export function decodeState(value: unknown): PersistedState {
     throw new Error("unsupported retained CLI conformance evidence");
   if (usesContractLinks(state.reflections) && !state.requirements?.includes(CONTRACT_LINK_REQUIREMENT))
     throw new Error("runtime state is missing the response contract link requirement");
+  if (usesStepInputBindings(state as PersistedState) && !state.requirements?.includes(STEP_INPUT_BINDINGS_REQUIREMENT))
+    throw new Error("runtime state is missing the step input bindings requirement");
+  if (usesPublicationSnapshot(state as PersistedState) && !state.requirements?.includes(PUBLICATION_SNAPSHOT_REQUIREMENT))
+    throw new Error("runtime state is missing the publication snapshot requirement");
   return state as PersistedState;
 }
 

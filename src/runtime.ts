@@ -3,7 +3,7 @@
 // federation) is a thin shell around this class.
 
 import { checkpointValue, validWorkflow, type WorkflowContinuation, type CompositionContinuation } from "./core/workflow-continuation.ts";
-import { CLI_CONFORMANCE_REQUIREMENT, CONTRACT_LINK_REQUIREMENT, decodeState, DEFERRED_INFERENCE_REQUIREMENT, STATE_FORMAT, STATE_REQUIREMENTS, usesContractLinks } from "./core/state-format.ts";
+import { CLI_CONFORMANCE_REQUIREMENT, CONTRACT_LINK_REQUIREMENT, decodeState, DEFERRED_INFERENCE_REQUIREMENT, PUBLICATION_SNAPSHOT_REQUIREMENT, STATE_FORMAT, STATE_REQUIREMENTS, STEP_INPUT_BINDINGS_REQUIREMENT, usesContractLinks, usesPublicationSnapshot, usesStepInputBindings } from "./core/state-format.ts";
 import { pointerValue, validLinkBinding, validLinkGroup, validLinkValue } from "./core/links.ts";
 import { ActivityLog, reference, type ActivityState, type ContractReference } from "./core/activity.ts";
 import { CapabilityGraph, signature, tokenize, type GraphEvent, type LearnDelta } from "./core/graph.ts";
@@ -126,6 +126,8 @@ function validHttpRun(c: HttpRunContinuation): boolean {
  */
 export interface PublishedGoal {
   slug: string;
+  /** Distinguishes successive definitions even when their contents are identical. */
+  revision?: string;
   title: string;
   have: Record<string, SemType>;
   want: SemType;
@@ -136,6 +138,8 @@ export interface PublishedGoal {
   witnesses?: OutcomeWitness[];
   /** Inputs pinned when the goal was published; part of the goal, not parameters of its API. */
   fixed?: Record<string, unknown>;
+  /** Explicit named inputs for ports on anchored capabilities. */
+  inputBindings?: Record<string, Record<string, string>>;
   /** The customer's egress policy: origins this goal may send data to, in every run and repair. */
   origins?: string[];
   /**
@@ -389,6 +393,8 @@ export interface ComposeOptions {
   risks?: Capability["risk"][];
   /** Capability ids or search phrases the pipeline must pass through. */
   through?: string[];
+  /** Bind ports on anchored CLI capabilities to distinct named have inputs. */
+  inputBindings?: Record<string, Record<string, string>>;
   /** Internal persisted anchor contracts; callers specify through instead. */
   anchors?: CapabilityAnchor[];
   /** Egress policy: only use capabilities that send data to these origins, including during repair. */
@@ -399,6 +405,8 @@ export interface ComposeOptions {
   acquire?: boolean;
   /** After a verified run, publish this goal as an API endpoint under this name. */
   publish?: string;
+  /** Refuse publication if its slug already exists. Defaults to legacy replacement behavior. */
+  preserveExisting?: boolean;
   /** Required to run plans that contain destructive capabilities. */
   confirm?: boolean;
   /** Internal recursion guard, carried through nested saved goals. */
@@ -1317,8 +1325,8 @@ export class RightClick {
     if (!goal) return;
     return { id: c.id, invoke: { tool: "context_run", args: { id: c.id } },
       storage: this.store ? "store-configured" : "session-only",
-      restrictions: structuredClone({ origins: goal.origins, risks: goal.risks, through: goal.through, require: goal.require, maxSteps: goal.maxSteps }),
-      note: "This definition is already saved in runtime state. Supply its inputs to context_run; republish only to replace the definition. A configured store is not proof of a successful durable write. These saved restrictions supplement current operator policy; stored checks still apply. Retention does not imply authority or successful execution." };
+      restrictions: structuredClone({ origins: goal.origins, risks: goal.risks, through: goal.through, inputBindings: goal.inputBindings, require: goal.require, maxSteps: goal.maxSteps }),
+      note: "This definition is already saved in runtime state. Supply its inputs to context_run; republishing replaces the definition unless preserveExisting:true is used. A configured store is not proof of a successful durable write. These saved restrictions supplement current operator policy; stored checks still apply. Retention does not imply authority or successful execution." };
   }
 
   /**
@@ -2470,6 +2478,15 @@ export class RightClick {
   }
 
   private async composeNow(opts: ComposeOptions): Promise<ComposeResult> {
+    let publicationExpected: string | null = null;
+    if (opts.run && opts.publish) {
+      const existing = this.published.get(slugify(opts.publish));
+      if (existing && opts.preserveExisting === true) throw new Error(`publication already exists: goal:${slugify(opts.publish)}; preserveExisting prevents replacement`);
+      if (existing) {
+        publicationExpected = await this.goalDigest(existing);
+        if (this.published.get(slugify(opts.publish)) !== existing) throw new Error("publication changed while preparing replacement; retry explicitly");
+      }
+    }
     const witnesses = this.pinWitnesses(opts.witnesses ?? []);
     const values: Record<string, unknown> = {};
     const types: Record<string, SemType> = {};
@@ -2495,6 +2512,40 @@ export class RightClick {
     }
     const anchors = opts.anchors ?? this.pinAnchors(opts.through ?? []);
     const through = this.resolveAnchors(anchors);
+    // Bindings are only accepted on explicitly anchored CLI operations. Resolve each against the
+    // persisted anchor so identity changes cannot silently redirect a caller's choices.
+    const inputBindings: Record<string, Record<string, string>> = {};
+    if (opts.inputBindings !== undefined) {
+      if (!opts.inputBindings || typeof opts.inputBindings !== "object" || Array.isArray(opts.inputBindings)) throw new Error("inputBindings must be an object");
+      for (const [id, ports] of Object.entries(opts.inputBindings)) {
+        const index = anchors.findIndex(a => a.id === id);
+        if (index < 0) throw new Error(`inputBindings requires an explicitly anchored capability: ${id}`);
+        const cap = this.graph.get(through[index]);
+        if (!cap || cap.invoke.kind !== "cli") throw new Error(`inputBindings requires an anchored CLI capability: ${id}`);
+        if (!ports || typeof ports !== "object" || Array.isArray(ports) || !Object.keys(ports).length) throw new Error(`inputBindings for ${id} must name ports`);
+        for (const [port, input] of Object.entries(ports)) {
+          if (!cap.inputs.some(p => p.name === port)) throw new Error(`unknown inputBindings port ${id}.${port}`);
+          if (typeof input !== "string" || !/^[A-Za-z_][A-Za-z0-9_]*$/.test(input) || !Object.hasOwn(types, input)) throw new Error(`unknown or unsupported inputBindings input for ${id}.${port}`);
+          const optionContract = [cap.invoke.options, cap.invoke.optionsAfterArgs].find(o => o?.port === port);
+          if (optionContract && Object.hasOwn(fixed, input)) {
+            // Only reject recognizable credential flags. Opaque values still require
+            // operator care; the flag names and their documented aliases are not secrets.
+            let argv: string[];
+            try { argv = validateOptions(fixed[input], optionContract.allowed, optionContract.excluded); }
+            catch { throw new Error(`invalid fixed CLI options for ${id}.${port}`); }
+            const byFlag = new Map(optionContract.allowed.flatMap(o => o.flags.map(flag => [flag, o] as const)));
+            for (let i = 0; i < argv.length; i++) {
+              const flag = argv[i].split("=", 1)[0];
+              const option = byFlag.get(flag);
+              if (!option) continue;
+              if (option.flags.some(isSensitiveName)) throw new Error(`refused fixed credential-like CLI option for ${id}.${port}; supply it at invocation`);
+              if (option.arg && !argv[i].includes("=")) i++;
+            }
+          }
+        }
+        inputBindings[cap.id] = { ...ports };
+      }
+    }
     const activeGoalIds = new Set((opts.activeGoals ?? []).map((s) => `goal:${s}`));
     // Saved composites that include an active goal must not recurse through it either.
     const containsActive = (c: Capability, seen = new Set<string>()): boolean => {
@@ -2511,7 +2562,7 @@ export class RightClick {
     // A caller's value named and shaped like a learned identifier scheme's carries that scheme.
     const schemes = Object.fromEntries(Object.entries(values).map(([k, v]) => [k, this.graph.identities.schemesFor(this.graph.capabilities.values(), k, v)]).filter(([, s]) => s.length));
     const require = (opts.require ?? []).map((t) => String(t).trim()).filter(Boolean);
-    const goal = { have: types, want: opts.want, intent: opts.intent, maxSteps: opts.maxSteps, limit: opts.limit ?? 5, risks: opts.risks, through, exclude: blocked, origins, schemes, ...(require.length ? { require } : {}) };
+    const goal = { have: types, want: opts.want, intent: opts.intent, maxSteps: opts.maxSteps, limit: opts.limit ?? 5, risks: opts.risks, through, exclude: blocked, origins, schemes, inputBindings, ...(require.length ? { require } : {}) };
     let undeclared: string[] = [];
     const search = () => {
       undeclared = undeclaredRequirements(this.graph, require);
@@ -2659,8 +2710,8 @@ export class RightClick {
           id: `execution:composition:${crypto.randomUUID()}`, plan: { ...p, steps }, types,
           risk: selected.some(c => c.risk === "destructive") ? "destructive" : selected.some(c => c.risk === "write") ? "write" : selected.some(c => c.risk === "external") ? "external" : "read",
           options: { want: opts.want, intent: opts.intent, verify: opts.verify, crystallize: opts.crystallize,
-            publish: opts.publish, risks: opts.risks, through: opts.through, maxSteps: opts.maxSteps },
-          anchors, fixed, origins, witnesses, require, preservesInput: assessOf(p).preservesInput,
+            publish: opts.publish, risks: opts.risks, through: opts.through, maxSteps: opts.maxSteps, inputBindings: opts.inputBindings },
+          anchors, fixed, origins, witnesses, require, preservesInput: assessOf(p).preservesInput, publicationExpected,
           goals: await Promise.all((opts.activeGoals ?? []).map(async slug => {
             const g = this.published.get(slug);
             if (!g) throw new Error(`saved goal is unavailable: ${slug}`);
@@ -2913,7 +2964,16 @@ export class RightClick {
       result.publishRefused = `not published: the operator publishes only checked or verified goals, and no check passed on this run`;
     } else if (opts.publish) {
       const slug = slugify(opts.publish);
+      const existing = this.published.get(slug);
+      const actual = existing ? await this.goalDigest(existing) : null;
+      // No await between this comparison and the map update. A resumed older
+      // continuation without a publication snapshot cannot replace a definition.
+      if (c.publicationExpected === undefined || c.publicationExpected !== actual || this.published.get(slug) !== existing) {
+        result.publishRefused = `not published: goal:${slug} changed since execution began; inspect it and retry explicitly`;
+        return result;
+      }
       this.published.set(slug, {
+        revision: crypto.randomUUID(),
         trust,
         slug,
         title: opts.publish,
@@ -2927,6 +2987,7 @@ export class RightClick {
         ...(origins ? { origins } : {}),
         risks: structuredClone(opts.risks ?? [...new Set(p.steps.map((s) => this.graph.get(s.capability)!.risk))]),
         through: structuredClone(opts.through),
+        inputBindings: structuredClone(opts.inputBindings),
         anchors: structuredClone(anchors),
         maxSteps: opts.maxSteps,
         publishedAt: new Date().toISOString(),
@@ -3001,7 +3062,7 @@ export class RightClick {
       const value = (t === "number" || t.startsWith("geo.")) && typeof raw === "string" ? Number(raw) : raw;
       have[k] = { type: t, value };
     }
-    const r = await this.compose({ have, want: g.want, intent: g.intent, verify: [...g.verify ?? [], ...verify], require: g.require, witnesses: g.witnesses, risks: g.risks, through: g.through, anchors: g.anchors, maxSteps: g.maxSteps, origins: g.origins, run: true, confirm, activeGoals: [...activeGoals, slug] });
+    const r = await this.compose({ have, want: g.want, intent: g.intent, verify: [...g.verify ?? [], ...verify], require: g.require, witnesses: g.witnesses, risks: g.risks, through: g.through, anchors: g.anchors, inputBindings: g.inputBindings, maxSteps: g.maxSteps, origins: g.origins, run: true, confirm, activeGoals: [...activeGoals, slug] });
     g.calls++;
     if (r.executed?.status === "completed") {
       g.lastPipeline = r.executed.titles;
@@ -3794,7 +3855,8 @@ export class RightClick {
       .map((p) => ({ provider: p, capabilities: p.capabilityIds.map((id) => this.graph.get(id)!).filter(Boolean) }));
     const cliConformance = [...this.cliConformance.values()].filter(p => this.graph.get(p.capability));
     try {
-      await this.store.save({ version: 2, requirements: [...STATE_REQUIREMENTS, ...(usesContractLinks(reflections) ? [CONTRACT_LINK_REQUIREMENT] : []), ...(this.deferredInference.length ? [DEFERRED_INFERENCE_REQUIREMENT] : []), ...(cliConformance.length ? [CLI_CONFORMANCE_REQUIREMENT] : [])], reflections, ...(this.deferredInference.length ? { deferredInference: this.deferredInference } : {}), ledger: this.ledger.toJSON(), receipts: this.chain.receipts.slice(-300), published: [...this.published.values()], meaningChanges: [...this.meaningChanges.values()], activity: this.activity.snapshot(), environment: this.environmentReport, httpContinuations: [...this.httpContinuations.values()], workflowContinuations: [...this.workflowContinuations.values()], ...(cliConformance.length ? { cliConformance } : {}), authFingerprints: await this.net.auth.fingerprints(), semantics: SEMANTICS, identities: this.graph.identities.toJSON() });
+      const published = [...this.published.values()], workflowContinuations = [...this.workflowContinuations.values()];
+      await this.store.save({ version: 2, requirements: [...STATE_REQUIREMENTS, ...(usesContractLinks(reflections) ? [CONTRACT_LINK_REQUIREMENT] : []), ...(this.deferredInference.length ? [DEFERRED_INFERENCE_REQUIREMENT] : []), ...(cliConformance.length ? [CLI_CONFORMANCE_REQUIREMENT] : []), ...(usesStepInputBindings({ published, workflowContinuations }) ? [STEP_INPUT_BINDINGS_REQUIREMENT] : []), ...(usesPublicationSnapshot({ workflowContinuations }) ? [PUBLICATION_SNAPSHOT_REQUIREMENT] : [])], reflections, ...(this.deferredInference.length ? { deferredInference: this.deferredInference } : {}), ledger: this.ledger.toJSON(), receipts: this.chain.receipts.slice(-300), published, meaningChanges: [...this.meaningChanges.values()], activity: this.activity.snapshot(), environment: this.environmentReport, httpContinuations: [...this.httpContinuations.values()], workflowContinuations, ...(cliConformance.length ? { cliConformance } : {}), authFingerprints: await this.net.auth.fingerprints(), semantics: SEMANTICS, identities: this.graph.identities.toJSON() });
       this.saveState = "saved";
     } catch (error) {
       this.saveState = "failed";
