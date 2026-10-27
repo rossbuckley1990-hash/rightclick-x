@@ -3587,7 +3587,8 @@ export class RightClick {
 
   /**
    * Portable capability knowledge (core/knowledge.ts). Requires the operator's evidence-sharing
-   * authority. Contains no credentials, caller data, outputs or receipts.
+   * authority. The legacy format omits fixed goal values and run records, but can include
+   * arbitrary provider-controlled metadata; it must not be treated as secret-free.
    */
   exportKnowledge(): KnowledgeBundle {
     if (!this.shareEvidence) throw new Error("not authorised: exporting capability knowledge needs the operator's evidence-sharing authority (authority.shareEvidence / RCX_SHARE_EVIDENCE=1)");

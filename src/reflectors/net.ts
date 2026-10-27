@@ -45,7 +45,7 @@ export class Authority {
     return [...this.byOrigin.keys()];
   }
 
-  /** A non-reversible fingerprint per origin, to notice when credentials change. */
+  /** Legacy unkeyed fingerprint per origin. Low-entropy credentials can be guessed offline. */
   async fingerprints(): Promise<Record<string, string>> {
     const out: Record<string, string> = {};
     for (const [origin, headers] of this.byOrigin) {
