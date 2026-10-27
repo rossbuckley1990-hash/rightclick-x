@@ -435,8 +435,10 @@ test("witness independence includes pre-restart producers after their receipt bu
   const cap = first.rc.graph.get("composite:retained")!;
   if (cap.invoke.kind !== "composite") throw new Error("fixture");
   cap.invoke.steps[2].capability = "openapi:destination:finish";
-  cap.invoke.witnesses = [{ capability: "openapi:source:prepare", args: {},
-    verify: [{ op: "equals", path: "document", value: "prepared" }] }];
+  // A retained witness must carry the same contract pin that publication
+  // installs; this fixture still tests its independence from prior producers.
+  cap.invoke.witnesses = await (first.rc as any).pinWitnesses([{ capability: "openapi:source:prepare", args: {},
+    verify: [{ op: "equals", path: "document", value: "prepared" }] }]);
   const run = await first.rc.run(cap.id); await first.rc.flush();
   store.state!.receipts = []; // Simulate eviction from the bounded historical receipt buffer.
   const fresh = await world(store);

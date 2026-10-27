@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { RightClick } from '../src/runtime.ts';
+import { ProcessMemoryStore } from '../src/entry/node-host.ts';
 import { inferType } from '../src/core/semantics.ts';
 import { reflectGraphQL } from '../src/reflectors/graphql.ts';
 const json=(value:unknown)=>new Response(JSON.stringify(value),{headers:{'content-type':'application/json'}});
@@ -38,8 +39,8 @@ function fixture(list=false,needsArgument=false,early=false){
  return {fetcher,calls,omit:()=>{omitPublisher=true}};
 }
 for(const list of [false,true])test(`unselected GraphQL identifier joins a second provider (${list?'list':'scalar'}) and remains reusable`,async()=>{
- const {fetcher,calls}=fixture(list);let state:any=null;
- const options={fetch:fetcher,sandbox:null,authority:{execution:{allowedRisks:['read'] as ['read']},publish:'checked' as const},store:{load:async()=>state,save:async(s:unknown)=>{state=s}}};
+ const {fetcher,calls}=fixture(list);
+ const options={fetch:fetcher,sandbox:null,authority:{execution:{allowedRisks:['read'] as ['read']},publish:'checked' as const},store:new ProcessMemoryStore()};
  const rc=await RightClick.create(options);
  await rc.learn({sources:['https://records.test/graphql','https://facts.test/openapi.json'],kinds:{'https://records.test/graphql':'graphql','https://facts.test/openapi.json':'openapi'}});
  const cap=rc.graph.list().find(c=>c.invoke.kind==='graphql')!;

@@ -170,7 +170,7 @@ let client: StdioClient | undefined;
 let apiConsumer: PublishedApiConsumer | undefined;
 const check = (name: string, passed: boolean, detail: unknown = {}) => {
   checks.push({ name, passed, detail });
-  console.log(`${passed ? "PASS" : "FAIL"} ${name}`);
+  console.log(`${passed ? "PASS" : "FAIL"} ${name}${passed ? "" : ` ${JSON.stringify(detail).slice(0, 4000)}`}`);
 };
 
 try {
@@ -213,7 +213,8 @@ try {
     const truthMatched = typeof run.output === "number" && Math.abs(run.output - expected) < 0.000001;
     const passed = run.status === "completed" && run.verification?.status === "verified" && truthMatched && witnessVerified;
     phases.push({ name, orderId, expected, result, truthMatched, witnessVerified });
-    check(name, passed, { expected, output: run.output, status: run.status, witnessVerified });
+    check(name, passed, { expected, output: run.output, status: run.status, witnessVerified,
+      ...(!passed ? { error: run.error ?? result.toolError, attempts: run.attempts, witnesses } : {}) });
     return passed;
   };
   successful("initial complete pipeline and independent witness", env.orderIds[0], compose);

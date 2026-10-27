@@ -42,6 +42,9 @@ import { Authority, cancelBody, readBody, refuseDeniedResponse, request, Transpo
 import { detectRuntime, platformReflection, type PlatformFn, type RuntimeInfo } from "./reflectors/platform.ts";
 
 export const VERSION = "0.1.0";
+// Only the lease-owning saved-goal entry point can request bounded deferred
+// re-derivation. Public learn/compose calls never receive this symbol.
+const GOAL_RESTORE_PERMIT = Symbol("goal-deferred-restore");
 /** Bump whenever semantic inference changes: persisted reflections are then re-derived from their sources. */
 export const SEMANTICS = 27;
 
@@ -60,6 +63,8 @@ function retainableCliOptions(value: unknown, contract: { allowed: Array<{ flags
 export interface Store {
   load(): Promise<PersistedState | null>;
   save(state: PersistedState): Promise<void>;
+  /** Optional independent view for each runtime. Shared process-local stores use this to keep per-runtime CAS observations. */
+  forRuntime?(): Store;
   /** Set when the store is only ever read; the reason is reported instead of a save. */
   readonly readOnly?: string;
   /** Hold an authoritative exclusion lease through all effects of a goal invocation. */
@@ -632,7 +637,7 @@ export class RightClick {
     if (this.workflowRecovery && !opts.store) throw new Error("workflow recovery requires a Store");
     this.info = { ...detectRuntime(), region: opts.region };
     this.name = opts.name ?? "rightclick-x";
-    this.store = opts.store;
+    this.store = opts.store?.forRuntime?.() ?? opts.store;
     this.onInvestigationStart = opts.onInvestigationStart;
   }
 
@@ -653,7 +658,7 @@ export class RightClick {
     const p = await platformReflection(rc.info, { bindings: opts.bindings, workspace: opts.workspace });
     rc.platformFns = p.fns;
     if (p.reflection.capabilities.length) rc.graph.add(p.reflection);
-    const loaded = await opts.store?.load();
+    const loaded = await rc.store?.load();
     const saved = loaded == null ? null : decodeState(loaded);
     if (saved) {
       const stale = saved.semantics !== SEMANTICS;
@@ -815,7 +820,7 @@ export class RightClick {
 
   /** Re-derive the deferred network sources a call needs, within that call's egress policy.
    *  Startup never contacts them; the first call that uses one does, under its own authority. */
-  private async restoreDeferredFor(ids: string[], origins?: string[], net: Net = this.net): Promise<void> {
+  private async restoreDeferredFor(ids: string[], origins?: string[], net: Net = this.net, permit?: symbol): Promise<void> {
     if (!this.deferredInference.length) return;
     const wanted = new Set(ids.filter(id => !this.graph.get(id)));
     if (!wanted.size) return;
@@ -830,7 +835,7 @@ export class RightClick {
     }
     if (!sources.size) return;
     const allowed = intersectOrigins(intersectOrigins(this.net.policy?.origins, net.policy?.origins), origins);
-    await this.learnSources({ sources: [...sources.keys()], kinds: Object.fromEntries(sources), net: { ...net, policy: { blockPrivate: false, ...net.policy, origins: allowed } } });
+    await this.learnSources({ sources: [...sources.keys()], kinds: Object.fromEntries(sources), net: { ...net, policy: { blockPrivate: false, ...net.policy, origins: allowed } } }, undefined, permit);
   }
 
   /** A source learned successfully is no longer deferred: drop its stale copies, and bring back
@@ -1008,8 +1013,8 @@ export class RightClick {
     return this.learnSources(opts);
   }
 
-  private async learnSources(opts: Parameters<RightClick["learn"]>[0], retainedCli?: { capability: Capability; execution: HttpExecution }) {
-    if (this.activeGoalLeases) throw new Error("provider changes are blocked while a saved goal is executing");
+  private async learnSources(opts: Parameters<RightClick["learn"]>[0], retainedCli?: { capability: Capability; execution: HttpExecution }, permit?: symbol) {
+    if (this.activeGoalLeases && (permit !== GOAL_RESTORE_PERMIT || this.activeGoalLeases !== 1)) throw new Error("provider changes are blocked while a saved goal is executing");
     this.activeProviderMutations++;
     try { return await this.learnSourcesUnlocked(opts, retainedCli); }
     finally { this.activeProviderMutations--; }
@@ -2355,29 +2360,50 @@ export class RightClick {
   }
 
   /** Pin the checker contract so a saved proof cannot silently become a different test. */
-  private pinWitnesses(witnesses: OutcomeWitness[]): OutcomeWitness[] {
+  private async pinWitnesses(witnesses: OutcomeWitness[]): Promise<OutcomeWitness[]> {
     if (!Array.isArray(witnesses) || witnesses.length > 16) throw new Error("witnesses must be an array of at most 16 checks");
-    return witnesses.map((w) => {
+    return Promise.all(witnesses.map(async (w) => {
       const c = this.graph.get(w.capability);
       if (!c || c.invoke.kind === "goal") throw new Error(`witness must be an available read-only provider capability: ${w.capability}`);
       // A crystallized pipeline may witness only when every step is itself a possible witness:
       // an available, read-only, executable provider capability.
-      for (const step of this.witnessSteps(c)) {
+      const steps = this.witnessSteps(c);
+      for (const step of steps) {
         if (consequentialRisks(step).some((r) => r !== "read") || step.invoke.kind === "goal") throw new Error(`witness must be an available read-only provider capability: ${w.capability}`);
         this.assertExecution(step);
       }
       this.assertExecution(c);
       if (w.agree !== undefined) assertAgreement(w.agree);
       if (w.verify !== undefined && !Array.isArray(w.verify) || (!w.verify?.length && !w.agree)) throw new Error(`witness needs nonempty verification predicates or an agreement: ${w.capability}`);
-      if (w.contract && w.contract !== signature(c)) throw new Error(`witness contract changed: ${w.capability}; establish a new check explicitly`);
+      // FNV graph signatures are useful for change detection but are not safe
+      // authorization/proof identities. Include every member of a composite witness.
+      const contractFields = (cap: Capability) => ({ id: cap.id, provider: cap.provider, source: cap.source,
+        risk: cap.risk, inputs: cap.inputs, outputs: cap.outputs.filter(p => !p.observed), invoke: cap.invoke, links: cap.links });
+      // Bind intermediate composites too: their step bindings and checks can
+      // change even if the leaf capabilities remain the same.
+      const pending = [c], members: Capability[] = [], seen = new Set<string>();
+      while (pending.length) {
+        const current = pending.pop()!;
+        if (seen.has(current.id)) continue;
+        seen.add(current.id);
+        if (seen.size > 64) throw new Error(`witness pipeline too large: ${c.id}`);
+        members.push(current);
+        if (current.invoke.kind === "composite") for (const step of current.invoke.steps) {
+          const child = this.graph.get(step.capability);
+          if (!child) throw new Error(`witness must be an available read-only provider capability: ${c.id} (missing step ${step.capability})`);
+          pending.push(child);
+        }
+      }
+      const contract = `sha256:${await sha256(stableStringify(members.map(contractFields).sort((a, b) => a.id.localeCompare(b.id))))}`;
+      if (w.contract && w.contract !== contract) throw new Error(`witness contract changed or uses a legacy pin: ${w.capability}; establish a new check explicitly`);
       for (const binding of Object.values(w.args ?? {})) {
         if (!binding || typeof binding !== "object" || Object.keys(binding).length !== 1 || !("input" in binding || "output" in binding || "value" in binding)) throw new Error("witness arguments must use exactly one of input, output or value");
         if ("input" in binding && typeof binding.input !== "string" || "output" in binding && typeof binding.output !== "string") throw new Error("witness input/output paths must be strings");
         // Shown the candidate, a recomputation could simply hand it back.
         if (w.agree && "output" in binding) throw new Error(`an agreement witness recomputes from the inputs and is never given the candidate result: ${w.capability}`);
       }
-      return structuredClone({ ...w, args: w.args ?? {}, verify: w.verify ?? [], contract: signature(c) });
-    });
+      return structuredClone({ ...w, args: w.args ?? {}, verify: w.verify ?? [], contract });
+    }));
   }
 
   /** The provider capabilities a witness runs: itself, or every step of a crystallized pipeline. */
@@ -2414,7 +2440,7 @@ export class RightClick {
     const evidence: WitnessResult[] = [];
     for (const original of witnesses) {
       try {
-        const w = this.pinWitnesses([original])[0];
+        const w = (await this.pinWitnesses([original]))[0];
         const cap = this.graph.get(w.capability)!;
         // A pipeline witness is independent only if none of its steps' providers produced the result.
         if (this.witnessSteps(cap).some((step) => providers.has(step.provider))) throw new Error("outcome witness must be separate from the providers producing the result");
@@ -2511,11 +2537,17 @@ export class RightClick {
   // ================================================================ context_compose
 
   async compose(opts: ComposeOptions): Promise<ComposeResult> {
+    return this.composeScoped(opts);
+  }
+
+  /** A permit is passed only by the leased saved-goal entry point; callers cannot
+   * provide it through the public compose options or an MCP request. */
+  private async composeScoped(opts: ComposeOptions, permit?: symbol): Promise<ComposeResult> {
     // Independent witnesses are part of the call: a deferred checker is restored like a step.
-    await this.restoreDeferredFor([...opts.through ?? [], ...(opts.anchors ?? []).map(a => a.id), ...(opts.witnesses ?? []).map(w => w.capability)], opts.origins);
+    await this.restoreDeferredFor([...opts.through ?? [], ...(opts.anchors ?? []).map(a => a.id), ...(opts.witnesses ?? []).map(w => w.capability)], opts.origins, this.net, permit);
     const request = this.activity.append({ kind: "composition.requested", status: "requested" });
     try {
-      const result = await this.composeNow(opts);
+      const result = await this.composeNow(opts, permit);
       const ex = result.executed;
       const subjects = [result.published?.id, result.crystallized?.id].filter((id): id is string => !!id);
       const observed = this.observedRuns([...(ex?.runs ?? []), ...(ex?.witnesses ?? []).map(w => w.runId)]);
@@ -2533,7 +2565,7 @@ export class RightClick {
     } finally { this.persist(); }
   }
 
-  private async composeNow(opts: ComposeOptions): Promise<ComposeResult> {
+  private async composeNow(opts: ComposeOptions, permit?: symbol): Promise<ComposeResult> {
     let publicationExpected: string | null = null;
     if (opts.run && opts.publish) {
       if (this.activeGoalLeases) throw new Error("goal publication is blocked while a saved goal is executing");
@@ -2545,7 +2577,17 @@ export class RightClick {
         if (this.published.get(slugify(opts.publish)) !== existing) throw new Error("publication changed while preparing replacement; retry explicitly");
       }
     }
-    const witnesses = this.pinWitnesses(opts.witnesses ?? []);
+    const witnesses = await this.pinWitnesses(opts.witnesses ?? []);
+    // Only the current lease holder may re-reflect a failed provider. After
+    // every such graph mutation, saved witness contracts must still match
+    // before another plan can dispatch a producer or checker.
+    const learnForRepair = async (request: Parameters<RightClick["learn"]>[0]) => {
+      const result = permit === GOAL_RESTORE_PERMIT
+        ? await this.learnSources(request, undefined, permit)
+        : await this.learn(request);
+      if (permit === GOAL_RESTORE_PERMIT && witnesses.length) await this.pinWitnesses(witnesses);
+      return result;
+    };
     const values: Record<string, unknown> = {};
     const types: Record<string, SemType> = {};
     const fixed: Record<string, unknown> = {};
@@ -2698,7 +2740,7 @@ export class RightClick {
       }
       const batch = candidates.splice(0, 3);
       if (!batch.length) return false;
-      const l = await this.learn({ sources: batch.map((c) => c.source), kinds: Object.fromEntries(batch.map((c) => [c.source, c.kind])) });
+      const l = await learnForRepair({ sources: batch.map((c) => c.source), kinds: Object.fromEntries(batch.map((c) => [c.source, c.kind])) });
       for (const c of batch) {
         const res = l.results.find((x) => x.source === c.source);
         result.acquisition!.learned.push({ title: c.title, kind: c.kind, source: c.source, capabilities: res?.learned.reduce((n, d) => n + d.capabilitiesAdded, 0) ?? 0, error: res?.error });
@@ -2899,7 +2941,7 @@ export class RightClick {
           gone = /HTTP (404|410)\b/.test(attempt.error);
         } else if (source && !refreshed.has(source) && !(e instanceof StepError && /verification refuted/.test(attempt.error))) {
           refreshed.add(source);
-          const r = await this.learn({ source, deep: true, net });
+          const r = await learnForRepair({ source, deep: true, net });
           const d = r.results[0]?.drift;
           drifted = !!d?.changed;
           attempt.healing = r.results[0]?.withdrawn
@@ -2922,7 +2964,7 @@ export class RightClick {
           for (const home of homes) {
             if (refreshed.has(home) || !allowedOrigin(home)) continue;
             refreshed.add(home);
-            const s = await this.learn({ source: home, net });
+            const s = await learnForRepair({ source: home, net });
             const found = s.results[0]?.learned?.length ?? 0;
             attempt.healing = `${attempt.healing ? attempt.healing + "; " : ""}looked for a successor at ${home}: ${found ? `learned ${found} provider(s)` : s.results[0]?.error ?? "nothing found"}`;
             if (found) drifted = true;
@@ -3144,9 +3186,22 @@ export class RightClick {
     if (this.publishing.has(slug)) throw new Error(`saved goal publication is pending: ${slug}`);
     const g = this.published.get(slug);
     if (!g) throw new Error(`no published goal: ${slug}`);
-    if (!g.revision) throw new Error(`saved goal has no immutable revision: ${slug}`);
+    if (!g.revision) throw new Error(`saved goal ${slug} has no immutable revision; explicitly republish it with a new revision before execution`);
     const digest = await this.goalDigest(g);
-    return this.withGoalLease([{ slug, digest }], () => this.executeLeasedGoal(slug, g, args, confirm, activeGoals, verify));
+    return this.withGoalLease([{ slug, digest }], async () => {
+      const capability = this.graph.get(`goal:${slug}`);
+      if (!capability) throw new Error(`saved goal is unavailable: ${slug}`);
+      this.checkExecutionAuthority(capability, confirm);
+      this.assertExecution(capability);
+      // This read-only re-derivation is scoped to known retained sources, only
+      // after authoritative goal revalidation and before any producer dispatch.
+      // Concurrent public learning remains blocked. Nested or concurrent leases
+      // refuse this mutation until a stronger owner-scoped protocol exists.
+      await this.restoreDeferredFor([
+        ...(g.through ?? []), ...(g.anchors ?? []).map(a => a.id), ...(g.witnesses ?? []).map(w => w.capability),
+      ], g.origins, this.net, GOAL_RESTORE_PERMIT);
+      return this.executeLeasedGoal(slug, g, args, confirm, activeGoals, verify);
+    });
   }
 
   private async withGoalLease<T>(pins: Array<{ slug: string; digest: string }>, invoke: () => Promise<T>): Promise<T> {
@@ -3162,7 +3217,9 @@ export class RightClick {
       if (goals.length > 1024) throw new Error("saved-goal lease preflight bound exceeded");
       const all = new Map<string, string>();
       for (const [slug, goal] of goals) {
-        if (!goal.revision) throw new Error(`saved goal has no immutable revision: ${slug}`);
+        if (!goal.revision) throw new Error(`saved goal ${slug} has no immutable revision; explicitly republish it with a new revision before execution`);
+        if ((goal.witnesses ?? []).some(w => !/^sha256:[a-f0-9]{64}$/.test(w.contract ?? "")))
+          throw new Error(`saved goal has an unpinned or legacy witness: ${slug}; establish a new check explicitly`);
         const digest = await this.goalDigest(goal);
         if (this.published.get(slug) !== goal) throw new Error(`saved goal changed during lease preflight: ${slug}`);
         all.set(slug, digest);
@@ -3173,7 +3230,7 @@ export class RightClick {
       }
       const allPins = [...all].map(([slug, digest]) => ({ slug, digest }));
       if (this.store) {
-        if (!this.store.withGoalLease) throw new Error("saved-goal execution requires an authoritative lease-capable store");
+        if (!this.store.withGoalLease) throw new Error(`saved-goal execution requires an authoritative lease-capable store; this adapter cannot guarantee freshness or coordinate replacement${this.store.readOnly ? ` (${this.store.readOnly})` : ""}. Use a coordinated store or an explicitly immutable authoritative snapshot`);
         return await this.store.withGoalLease(allPins, invoke);
       }
       return await invoke();
@@ -3182,6 +3239,8 @@ export class RightClick {
 
   private async executeLeasedGoal(slug: string, g: PublishedGoal, args: Record<string, unknown>, confirm?: boolean, activeGoals: string[] = [], verify: Predicate[] = []): Promise<ComposeResult> {
     if (this.publishing.has(slug) || this.published.get(slug) !== g) throw new Error(`saved goal changed before execution: ${slug}`);
+    if ((g.witnesses ?? []).some(w => !/^sha256:[a-f0-9]{64}$/.test(w.contract ?? "")))
+      throw new Error(`saved goal has an unpinned or legacy witness: ${slug}; establish a new check explicitly`);
     const capability = this.graph.get(`goal:${slug}`);
     if (!capability) throw new Error(`saved goal is unavailable: ${slug}`);
     // Generated REST/GraphQL enter here directly rather than through run().
@@ -3202,7 +3261,7 @@ export class RightClick {
       const value = (t === "number" || t.startsWith("geo.")) && typeof raw === "string" ? Number(raw) : raw;
       have[k] = { type: t, value };
     }
-    const r = await this.compose({ have, want: g.want, intent: g.intent, verify: [...g.verify ?? [], ...verify], require: g.require, witnesses: g.witnesses, risks: g.risks, through: g.through, anchors: g.anchors, inputBindings: g.inputBindings, maxSteps: g.maxSteps, origins: g.origins, run: true, confirm, activeGoals: [...activeGoals, slug] });
+    const r = await this.composeScoped({ have, want: g.want, intent: g.intent, verify: [...g.verify ?? [], ...verify], require: g.require, witnesses: g.witnesses, risks: g.risks, through: g.through, anchors: g.anchors, inputBindings: g.inputBindings, maxSteps: g.maxSteps, origins: g.origins, run: true, confirm, activeGoals: [...activeGoals, slug] }, GOAL_RESTORE_PERMIT);
     g.calls++;
     if (r.executed?.status === "completed") {
       g.lastPipeline = r.executed.titles;
@@ -3321,7 +3380,9 @@ export class RightClick {
   private async preflightWitnesses(witnesses: OutcomeWitness[]) {
     for (const witness of witnesses) {
       try {
-        const w = this.pinWitnesses([witness])[0];
+        if (!/^sha256:[a-f0-9]{64}$/.test(witness.contract ?? ""))
+          throw new Error("retained witness has no supported contract pin; establish a new check explicitly");
+        const w = (await this.pinWitnesses([witness]))[0];
         await this.preflightCli(this.graph.get(w.capability)!, true);
       } catch (cause) { throw new WitnessPreflightError(witness.capability, cause); }
     }
