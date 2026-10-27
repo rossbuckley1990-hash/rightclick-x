@@ -5,7 +5,9 @@
 import { checkpointValue, validWorkflow, type WorkflowContinuation, type CompositionContinuation } from "./core/workflow-continuation.ts";
 import { StateCommitUnknownError, StateConflictError } from "./core/state-conflict.ts";
 import { goalDefinitionDigest } from "./core/goal-identity.ts";
-import { CLI_CONFORMANCE_REQUIREMENT, CONTRACT_LINK_REQUIREMENT, decodeState, DEFERRED_INFERENCE_REQUIREMENT, PUBLICATION_SNAPSHOT_REQUIREMENT, STATE_FORMAT, STATE_REQUIREMENTS, STEP_INPUT_BINDINGS_REQUIREMENT, usesContractLinks, usesPublicationSnapshot, usesStepInputBindings } from "./core/state-format.ts";
+import { CLI_CONFORMANCE_REQUIREMENT, CONTRACT_LINK_REQUIREMENT, decodeState, DEFERRED_INFERENCE_REQUIREMENT, PROTECTED_VALUE_SLOTS_REQUIREMENT, PUBLICATION_SNAPSHOT_REQUIREMENT, STATE_FORMAT, STATE_REQUIREMENTS, STEP_INPUT_BINDINGS_REQUIREMENT, usesContractLinks, usesProtectedValueSlots, usesPublicationSnapshot, usesStepInputBindings } from "./core/state-format.ts";
+import { parseProtectedValueRef, type ProtectedValueRef } from "./core/portable-capability.ts";
+import type { ProtectedValueHost } from "./core/protected-value-host.ts";
 import { pointerValue, validLinkBinding, validLinkGroup, validLinkValue } from "./core/links.ts";
 import { ActivityLog, reference, type ActivityState, type ContractReference } from "./core/activity.ts";
 import { CapabilityGraph, signature, tokenize, type GraphEvent, type LearnDelta } from "./core/graph.ts";
@@ -39,7 +41,7 @@ import { environmentNet, environmentOptions, observeCatalog, type EnvironmentOpt
 import { buildDocument, checkSelection, validateSelection, GraphQLFailure } from "./reflectors/graphql.ts";
 import { McpClient } from "./reflectors/mcp.ts";
 import { continuationPolicy, continuationTargets, followHttp202, httpContractDigest, validHttpCursor, type HttpContinuationCursor, type HttpContinuationOptions, type HttpContinuationEvidence, type ContinuationPolicy } from "./reflectors/http-continuation.ts";
-import { Authority, cancelBody, readBody, refuseDeniedResponse, request, TransportRefused, type Net, type NetworkPolicy } from "./reflectors/net.ts";
+import { Authority, cancelBody, checkUrl, readBody, refuseDeniedResponse, request, TransportRefused, type Net, type NetworkPolicy } from "./reflectors/net.ts";
 import { detectRuntime, platformReflection, type PlatformFn, type RuntimeInfo } from "./reflectors/platform.ts";
 
 export const VERSION = "0.1.0";
@@ -130,6 +132,8 @@ interface HttpExecution {
   transportOwner?: Net["execution"];
   continuation?: HttpContinuationEvidence;
   checkpoint?: (cursor: HttpContinuationCursor | null) => Promise<void>;
+  /** Protected calls refuse redirects and asynchronous continuations. */
+  protectedRead?: boolean;
 }
 function validHttpRun(c: HttpRunContinuation): boolean {
   try {
@@ -160,6 +164,8 @@ export interface PublishedGoal {
   witnesses?: OutcomeWitness[];
   /** Inputs pinned when the goal was published; part of the goal, not parameters of its API. */
   fixed?: Record<string, unknown>;
+  /** Symbolic, non-bearer slots; resolved under the current host principal only. */
+  protectedInputs?: Record<string, ProtectedValueRef>;
   /** Explicit named inputs for ports on anchored capabilities. */
   inputBindings?: Record<string, Record<string, string>>;
   /** The customer's egress policy: origins this goal may send data to, in every run and repair. */
@@ -203,6 +209,8 @@ export interface RuntimeOptions {
   httpContinuation?: HttpContinuationOptions | false;
   /** Opt in to retaining bounded inputs/outputs for flat composite recovery. Requires Store. */
   workflowRecovery?: boolean;
+  /** Trusted host adapter, never supplied through an agent tool. */
+  protectedValues?: ProtectedValueHost;
   bindings?: Record<string, unknown>;
   workspace?: string;
   store?: Store;
@@ -580,6 +588,9 @@ export class RightClick {
   /** Runtime-local exclusion for unpersisted goals and in-flight graph revocation. */
   private activeGoalLeases = 0;
   private activeProviderMutations = 0;
+  /** Protected provider calls exclude concurrent graph mutations until dispatch settles. */
+  private activeProtectedExecutions = 0;
+  private readonly protectedValues?: ProtectedValueHost;
   /** When a failed plain run last re-read each contract source, so repeated failures do not re-read it on every call. */
   private healReads = new Map<string, number>();
   /** Ids re-learning pointed at a different operation; caller acknowledgement cannot clear them. */
@@ -622,6 +633,8 @@ export class RightClick {
   private cliConformance = new Map<string, CliConformancePin>();
 
   private constructor(opts: RuntimeOptions) {
+    if (opts.protectedValues && (typeof opts.protectedValues.principal !== "string" || !opts.protectedValues.principal || opts.protectedValues.principal.length > 128 || typeof opts.protectedValues.withAuthorizedValue !== "function")) throw new Error("invalid protected value host");
+    this.protectedValues = opts.protectedValues;
     this.cliSamples = parseCliConformance(opts.authority?.cliConformance);
     this.executionPolicy = parseExecutionPolicy(opts.authority?.execution);
     const origins = intersectOrigins(opts.network?.origins, this.executionPolicy.allowedOrigins);
@@ -950,7 +963,7 @@ export class RightClick {
    * planner and executor remain the single capability path. No grant is made. */
   private refreshEnvironment(): Promise<EnvironmentReport> {
     if (this.environmentRefresh) return this.environmentRefresh;
-    if (this.activeGoalLeases) return Promise.reject(new Error("environment refresh is blocked while a saved goal is executing"));
+    if (this.activeGoalLeases || this.activeProtectedExecutions) return Promise.reject(new Error("environment refresh is blocked while a saved goal is executing"));
     this.activeProviderMutations++;
     const work = async (): Promise<EnvironmentReport> => {
       const net = environmentNet(this.net, this.environment!);
@@ -1015,7 +1028,7 @@ export class RightClick {
   }
 
   private async learnSources(opts: Parameters<RightClick["learn"]>[0], retainedCli?: { capability: Capability; execution: HttpExecution }, permit?: symbol) {
-    if (this.activeGoalLeases && (permit !== GOAL_RESTORE_PERMIT || this.activeGoalLeases !== 1)) throw new Error("provider changes are blocked while a saved goal is executing");
+    if (this.activeProtectedExecutions || this.activeGoalLeases && (permit !== GOAL_RESTORE_PERMIT || this.activeGoalLeases !== 1)) throw new Error("provider changes are blocked while a saved goal is executing");
     this.activeProviderMutations++;
     try { return await this.learnSourcesUnlocked(opts, retainedCli); }
     finally { this.activeProviderMutations--; }
@@ -1218,7 +1231,7 @@ export class RightClick {
   }
 
   forget(providerId: string) {
-    if (this.activeGoalLeases) throw new Error("provider revocation is blocked while a saved goal is executing");
+    if (this.activeGoalLeases || this.activeProtectedExecutions) throw new Error("provider revocation is blocked while a saved goal is executing");
     const live = this.graph.forget(providerId);
     // A deferred provider is removed too, with any deferred pipeline that could then never return.
     const removed = new Set(this.deferredInference.filter(d => d.reflection.provider.id === providerId).flatMap(d => d.reflection.capabilities.map(c => c.id)));
@@ -1848,11 +1861,15 @@ export class RightClick {
       } else {
         this.activeContinuations.add(continuationId);
         try {
-          output = resumed ? await this.resumeHttp(resumed, cap, opts.net, execution) : await this.execute(cap, coerced, opts.net, execution);
+          const refs = protectedArguments(coerced);
+          if (refs.length) {
+            if (resumed || this.workflowRecovery || parent || composition) throw new Error("protected recovery is unavailable");
+            output = await this.executeProtectedRead(cap, coerced, refs, opts, execution);
+          } else output = resumed ? await this.resumeHttp(resumed, cap, opts.net, execution) : await this.execute(cap, coerced, opts.net, execution);
         } catch (e) {
           // A caller's own mistake (an undocumented option, a literal that looks like an option)
           // says nothing about the provider: no repair, no re-investigation.
-          if (e instanceof PendingOutcomeError || e instanceof TransportRefused || e instanceof ExecutionDenied || e instanceof JsonRepresentationError || e instanceof GraphQLFailure || e instanceof CliValidityError || opts.planned || !HEALABLE.has(cap.invoke.kind) || /HTTP 400 equivalent|is not one this program documents|needs a value/.test(String((e as Error)?.message ?? e))) throw e;
+          if (protectedArguments(coerced).length || e instanceof PendingOutcomeError || e instanceof TransportRefused || e instanceof ExecutionDenied || e instanceof JsonRepresentationError || e instanceof GraphQLFailure || e instanceof CliValidityError || opts.planned || !HEALABLE.has(cap.invoke.kind) || /HTTP 400 equivalent|is not one this program documents|needs a value/.test(String((e as Error)?.message ?? e))) throw e;
           const h = await this.healRun(cap, args, String((e as Error)?.message ?? e), opts.net, execution, opts.confirm);
           healing = h.healing;
           if (!h.healed) throw new Error(`${healing.error}; ${healing.note}`);
@@ -2595,6 +2612,7 @@ export class RightClick {
     for (let [k, v] of Object.entries(opts.have)) {
       // {"value": "EUR", "fixed": true}: a constant of the goal rather than a parameter of a published API.
       if (v && typeof v === "object" && !Array.isArray(v) && (v as any).fixed === true && "value" in (v as any)) {
+        if (containsProtectedReference((v as any).value)) throw new Error("protected references cannot be fixed values");
         // A credential fixed into a goal would let every caller of the goal act with it.
         if (isSensitiveName(k)) throw new Error(`refused: "${k}" looks like a credential and cannot be fixed into a goal; leave it as an input each caller supplies`);
         fixed[k] = (v as any).value;
@@ -2611,6 +2629,9 @@ export class RightClick {
       if (types[k] === "repo" && /^[\w.-]+\/[\w.-]+$/.test(String(v))) types[k] = "repo.full";
       values[k] = v;
     }
+    const protectedRefs = protectedArguments(values);
+    if (opts.run && protectedRefs.length && this.workflowRecovery)
+      throw new Error("protected durable recovery is unavailable; no protected operation was dispatched");
     const anchors = opts.anchors ?? this.pinAnchors(opts.through ?? []);
     const through = this.resolveAnchors(anchors);
     // Bindings are only accepted on explicitly anchored CLI operations. Resolve each against the
@@ -2808,6 +2829,16 @@ export class RightClick {
           return { ...st, bindings: [...st.bindings.filter((b) => b.port !== gi.selectPort), { port: gi.selectPort, from: "$const", value: selectionWith(gi.selection, fields) }] };
         });
         const selected = steps.map(s => this.graph.get(s.capability)!);
+        // A protected slot may feed exactly one directly authorized header.
+        // Refuse before any step if the planner would ignore, duplicate, fan
+        // out or route it through another capability or a transformed value.
+        for (const [name] of protectedRefs) {
+          const uses = steps.flatMap((step, index) => step.bindings.filter(b => b.from === `$in.${name}`).map(binding => ({ binding, cap: selected[index] })));
+          if (uses.length !== 1 || uses[0].binding.each || uses[0].binding.value !== undefined ||
+              uses[0].cap.invoke.kind !== "http" || uses[0].cap.invoke.method !== "GET" || uses[0].cap.risk !== "read" ||
+              !uses[0].cap.invoke.headerParams.includes(uses[0].binding.port) || !/^(authorization|x-api-key)$/i.test(uses[0].binding.port))
+            throw new Error("unsupported protected input binding");
+        }
         // Explicit inputBindings are not the only way the planner can bind an
         // option: a same-named fixed input binds implicitly. Check the actual
         // selected steps before dispatch or publication, not just caller hints.
@@ -2866,6 +2897,15 @@ export class RightClick {
         const r = await this.runSteps(steps, p.result, values, opts.confirm, opts.activeGoals, net);
         return await this.finishComposition(composition, values, r, net, result, attempts, t0, ws => { lastWitnesses = ws; });
       } catch (e) {
+        if (protectedRefs.length) {
+          // A read-labelled provider can still have effects. Never replan or
+          // replay a protected attempt, including after a witness failure.
+          const error = "protected composition refused or outcome unknown; do not replay automatically";
+          attempts.push({ summary: p.summary, failed: p.steps[0].capability, error, healing: "no replay or repair" });
+          result.executed = { summary: p.summary, titles: titles(p), output: null, status: "failed",
+            verification: { status: "unverified", results: [] }, runs: [], attempts, witnesses: [], durationMs: Math.round(performance.now() - t0), error };
+          return result;
+        }
         if (e instanceof CliValidityError) {
           if (e instanceof WitnessPreflightError) lastWitnesses = [e.witness];
           attempts.push({ summary: p.summary, failed: e.capability ?? p.steps[0].capability, error: e.message,
@@ -3104,6 +3144,7 @@ export class RightClick {
         require: structuredClone(require),
         witnesses,
         ...(Object.keys(fixed).length ? { fixed: structuredClone(fixed) } : {}),
+        ...(protectedArguments(values).length ? { protectedInputs: Object.fromEntries(protectedArguments(values)) } : {}),
         ...(origins ? { origins } : {}),
         risks: structuredClone(opts.risks ?? [...new Set(p.steps.map((s) => this.graph.get(s.capability)!.risk))]),
         through: structuredClone(opts.through),
@@ -3245,6 +3286,8 @@ export class RightClick {
     const g = this.published.get(slug);
     if (!g) throw new Error(`no published goal: ${slug}`);
     if (!g.revision) throw new Error(`saved goal ${slug} has no immutable revision; explicitly republish it with a new revision before execution`);
+    if (g.protectedInputs && Object.keys(g.protectedInputs).some(k => Object.hasOwn(args, k))) throw new Error("protected goal slots cannot be overridden by a caller");
+    if (g.protectedInputs && this.workflowRecovery) throw new Error("protected durable recovery is unavailable; no protected operation was dispatched");
     const digest = await this.goalDigest(g);
     return this.withGoalLease([{ slug, digest }], async () => {
       const capability = this.graph.get(`goal:${slug}`);
@@ -3315,7 +3358,7 @@ export class RightClick {
     const have: Record<string, unknown> = {};
     for (const [k, t] of Object.entries(g.have)) {
       // Pinned inputs come from the goal itself; a caller cannot override them.
-      const raw = g.fixed && k in g.fixed ? g.fixed[k] : args[k];
+      const raw = g.protectedInputs && k in g.protectedInputs ? parseProtectedValueRef(g.protectedInputs[k]) : g.fixed && k in g.fixed ? g.fixed[k] : args[k];
       const value = (t === "number" || t.startsWith("geo.")) && typeof raw === "string" ? Number(raw) : raw;
       have[k] = { type: t, value };
     }
@@ -3687,7 +3730,7 @@ export class RightClick {
    * conformance example. Nothing imported is trusted on the exporter's word.
    */
   async importKnowledge(bundle: KnowledgeBundle): Promise<ImportReport> {
-    if (this.activeGoalLeases) throw new Error("knowledge import is blocked while a saved goal is executing");
+    if (this.activeGoalLeases || this.activeProtectedExecutions) throw new Error("knowledge import is blocked while a saved goal is executing");
     this.activeProviderMutations++;
     try { return await this.importKnowledgeUnlocked(bundle); }
     finally { this.activeProviderMutations--; }
@@ -3873,6 +3916,77 @@ export class RightClick {
     return c;
   }
 
+  private async executeProtectedRead(cap: Capability, args: Record<string, unknown>, refs: Array<[string, ProtectedValueRef]>, opts: RunOptions, execution: HttpExecution): Promise<boolean> {
+    // This is deliberately not a general confidential workflow. Only one
+    // protected HTTP GET header and one explicitly declassified boolean result
+    // are supported. The host's guarded callback is the authorization boundary.
+    const host = this.protectedValues;
+    const inv = cap.invoke;
+    if (!host || host.allowBooleanOutput !== true || refs.length !== 1 || inv.kind !== "http" || inv.method !== "GET" || cap.risk !== "read")
+      throw new Error("protected execution refused or outcome unknown; do not replay automatically");
+    const [port, ref] = refs[0];
+    if (!/^(authorization|x-api-key)$/i.test(port) || inv.headerParams.some(h => /^accept$/i.test(h)) || !inv.headerParams.includes(port) || inv.pathParams.includes(port) || inv.queryParams.includes(port) || inv.bodyParams.includes(port) || inv.body !== null || inv.entry)
+      throw new Error("protected execution refused or outcome unknown; do not replay automatically");
+    let origin: string;
+    try { const url = new URL(inv.url); if (url.username || url.password || url.search || url.hash) throw new Error(); origin = url.origin; }
+    catch { throw new Error("protected execution refused or outcome unknown; do not replay automatically"); }
+    // Only the host's transport is authoritative. Agent-selected Net handles
+    // may narrow policy but may not substitute fetch or inherited credentials.
+    const narrowed = opts.net ?? this.net;
+    if (narrowed.fetch !== this.net.fetch || narrowed.auth !== this.net.auth) throw new Error("protected execution refused or outcome unknown; do not replay automatically");
+    try { await checkUrl(this.net.policy, origin); await checkUrl(narrowed.policy, origin); }
+    catch { throw new Error("protected execution refused or outcome unknown; do not replay automatically"); }
+    const net: Net = { ...narrowed, auth: new Authority(), fetch: async (input, init, context) => {
+      const url = input instanceof Request ? input.url : String(input);
+      await checkUrl(this.net.policy, url);
+      await checkUrl(narrowed.policy, url);
+      return this.net.fetch(input, init, context);
+    } };
+    if (this.activeProviderMutations) throw new Error("protected execution refused or outcome unknown; do not replay automatically");
+    const snapshot = structuredClone(cap);
+    const contract = await sha256(stableStringify({ id: snapshot.id, provider: snapshot.provider, source: snapshot.source,
+      risk: snapshot.risk, inputs: snapshot.inputs, outputs: snapshot.outputs, invoke: snapshot.invoke }));
+    if (this.activeProviderMutations || this.graph.get(cap.id) !== cap) throw new Error("protected execution refused or outcome unknown; do not replay automatically");
+    this.activeProtectedExecutions++;
+    try {
+      let used = false, completed = false, accepting = true, result = false;
+      let pending: Promise<boolean> | undefined;
+      const request = Object.freeze({ principal: host.principal, capability: cap.id, contract, origin, header: port, ref: Object.freeze(structuredClone(ref)) });
+      const consume = (value: string): Promise<boolean> => {
+        if (!accepting || used || typeof value !== "string" || !value || value.length > 8192) return Promise.reject(new Error("invalid protected value use"));
+        used = true;
+        pending = (async () => {
+          this.checkExecutionAuthority(cap, opts.confirm);
+          this.assertExecution(cap);
+          if (this.graph.get(cap.id) !== cap) throw new Error("changed protected capability");
+          // `execute` receives the resolved value only inside this callback. Its
+          // response and errors never escape unless the result is a boolean.
+          const out = await this.execute(snapshot, { ...args, [port]: value }, net, { ...execution, checkpoint: undefined, protectedRead: true });
+          if (typeof out !== "boolean") throw new Error("protected result is not an approved boolean");
+          result = out;
+          completed = true;
+          return out;
+        })();
+        return pending;
+      };
+      try {
+        await host.withAuthorizedValue(request, consume);
+        if (used && !completed) throw new Error("protected host returned before the authorized use settled");
+      }
+      finally {
+        accepting = false;
+        // A buggy adapter cannot release the graph guard while a callback it
+        // started is still executing, or schedule another use after return.
+        if (pending) await pending;
+      }
+      if (!used || !completed) throw new Error("protected value was not consumed");
+      return result;
+    } catch {
+      // Neither provider nor resolver error text is safe to persist or return.
+      throw new Error("protected execution refused or outcome unknown; do not replay automatically");
+    } finally { this.activeProtectedExecutions--; }
+  }
+
   private async execute(cap: Capability, args: Record<string, unknown>, net: Net = this.net, execution: HttpExecution = {}, sampleSandbox?: Sandbox): Promise<unknown> {
     // Also guards internal repair, which calls execute directly after re-reflection.
     this.assertExecution(cap);
@@ -3911,7 +4025,7 @@ export class RightClick {
           else u.searchParams.set(q, typeof v === "object" ? JSON.stringify(v) : String(v));
         }
         if (inv.method === "GET") for (const [k, v] of Object.entries(constants)) u.searchParams.set(k, v);
-        const headers: Record<string, string> = { accept: "application/json, text/html;q=0.9, */*;q=0.5" };
+        const headers: Record<string, string> = { accept: execution.protectedRead ? "application/json" : "application/json, text/html;q=0.9, */*;q=0.5" };
         for (const h of inv.headerParams) if (args[h] != null) headers[h] = String(args[h]);
         let body: string | undefined;
         if (inv.body === "json") {
@@ -3927,11 +4041,12 @@ export class RightClick {
           body = f.toString();
         }
         const targets = continuationTargets(cap, this.graph.list());
-        const res = await request(net, u.toString(), { method: inv.method, headers, body, signal: execution.signal });
+        const res = await request(net, u.toString(), { method: inv.method, headers, body, signal: execution.signal, ...(execution.protectedRead ? { redirect: "manual" as const } : {}) });
         execution.responseStatus = res.status;
         refuseDeniedResponse(res);
         let out: unknown;
         if (res.status === 202) {
+          if (execution.protectedRead) { cancelBody(res); throw new Error("protected pending outcome"); }
           const followed = await followHttp202({ response: res, url: u.toString(), targets, net, policy: this.httpContinuation,
             checkpoint: execution.checkpoint,
             current: id => this.graph.get(id), signal: execution.signal, authorize: (target, values) => {
@@ -4161,7 +4276,7 @@ export class RightClick {
       const published = [...this.published.values()].filter(g => !candidate || g.slug !== candidate.slug);
       if (candidate) published.push(candidate);
       const workflowContinuations = [...this.workflowContinuations.values()];
-      await this.store.save({ version: 2, requirements: [...STATE_REQUIREMENTS, ...(usesContractLinks(reflections) ? [CONTRACT_LINK_REQUIREMENT] : []), ...(this.deferredInference.length ? [DEFERRED_INFERENCE_REQUIREMENT] : []), ...(cliConformance.length ? [CLI_CONFORMANCE_REQUIREMENT] : []), ...(usesStepInputBindings({ published, workflowContinuations }) ? [STEP_INPUT_BINDINGS_REQUIREMENT] : []), ...(usesPublicationSnapshot({ workflowContinuations }) ? [PUBLICATION_SNAPSHOT_REQUIREMENT] : [])], reflections, ...(this.deferredInference.length ? { deferredInference: this.deferredInference } : {}), ledger: this.ledger.toJSON(), receipts: this.chain.receipts.slice(-300), published, meaningChanges: [...this.meaningChanges.values()], activity: this.activity.snapshot(), environment: this.environmentReport, httpContinuations: [...this.httpContinuations.values()], workflowContinuations, ...(cliConformance.length ? { cliConformance } : {}), authFingerprints: await this.net.auth.fingerprints(), semantics: SEMANTICS, identities: this.graph.identities.toJSON() });
+      await this.store.save({ version: 2, requirements: [...STATE_REQUIREMENTS, ...(usesContractLinks(reflections) ? [CONTRACT_LINK_REQUIREMENT] : []), ...(this.deferredInference.length ? [DEFERRED_INFERENCE_REQUIREMENT] : []), ...(cliConformance.length ? [CLI_CONFORMANCE_REQUIREMENT] : []), ...(usesStepInputBindings({ published, workflowContinuations }) ? [STEP_INPUT_BINDINGS_REQUIREMENT] : []), ...(usesPublicationSnapshot({ workflowContinuations }) ? [PUBLICATION_SNAPSHOT_REQUIREMENT] : []), ...(usesProtectedValueSlots({ published }) ? [PROTECTED_VALUE_SLOTS_REQUIREMENT] : [])], reflections, ...(this.deferredInference.length ? { deferredInference: this.deferredInference } : {}), ledger: this.ledger.toJSON(), receipts: this.chain.receipts.slice(-300), published, meaningChanges: [...this.meaningChanges.values()], activity: this.activity.snapshot(), environment: this.environmentReport, httpContinuations: [...this.httpContinuations.values()], workflowContinuations, ...(cliConformance.length ? { cliConformance } : {}), authFingerprints: await this.net.auth.fingerprints(), semantics: SEMANTICS, identities: this.graph.identities.toJSON() });
       this.saveState = "saved";
     } catch (error) {
       this.saveState = "failed";
@@ -4186,7 +4301,7 @@ const EXAMPLES: Record<string, unknown> = {
 
 /** A published goal's caller-facing parameters: its inputs minus the ones pinned at publish time. */
 export function goalParams(g: PublishedGoal): Array<[string, SemType]> {
-  return Object.entries(g.have).filter(([k]) => !(g.fixed && k in g.fixed));
+  return Object.entries(g.have).filter(([k]) => !(g.fixed && k in g.fixed) && !(g.protectedInputs && k in g.protectedInputs));
 }
 
 /**
@@ -4213,6 +4328,29 @@ function contentExtension(content: string): string {
   if (/^<\?xml\b/i.test(t) && !/<html\b/i.test(t)) return "xml";
   if (/^<!doctype html|<html[\s>]/i.test(t.slice(0, 500))) return "html";
   return "txt";
+}
+
+/** Reserved references may only occur as a whole input, never inside arbitrary JSON. */
+function containsProtectedReference(value: unknown): boolean {
+  const pending: unknown[] = [value], seen = new Set<object>();
+  while (pending.length) {
+    const next = pending.pop();
+    if (!next || typeof next !== "object" || seen.has(next)) continue;
+    seen.add(next);
+    if (seen.size > 100_000) throw new Error("input structure exceeds protected-reference inspection bound");
+    if (!Array.isArray(next) && (next as { kind?: unknown }).kind === "protected-value-ref") return true;
+    pending.push(...Object.values(next));
+  }
+  return false;
+}
+function protectedArguments(args: Record<string, unknown>): Array<[string, ProtectedValueRef]> {
+  const refs: Array<[string, ProtectedValueRef]> = [];
+  for (const [name, value] of Object.entries(args)) {
+    if (!containsProtectedReference(value)) continue;
+    if (!value || typeof value !== "object" || Array.isArray(value) || (value as { kind?: unknown }).kind !== "protected-value-ref") throw new Error("protected references must occupy a complete input");
+    refs.push([name, parseProtectedValueRef(value)]);
+  }
+  return refs;
 }
 
 function coerceArgs(cap: Capability, args: Record<string, unknown>): Record<string, unknown> {
