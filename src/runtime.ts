@@ -3242,17 +3242,14 @@ export class RightClick {
     if (!approval || approval.approveDefinition !== true || Object.keys(approval).length !== 1) throw new Error("host approval is required for portable goal import");
     if (this.publishPolicy !== "any") throw new Error("portable goal import needs permission to publish an unverified goal");
     if (!this.store || this.store.readOnly || !this.store.withGoalLease) throw new Error("portable goal import requires a writable, authoritative coordinated store");
-    if (this.activeGoalLeases || this.activeProviderMutations) throw new Error("portable goal import is blocked while execution or provider changes are in progress");
+    if (this.activeGoalLeases || this.activeProviderMutations || this.activeProtectedExecutions) throw new Error("portable goal import is blocked while execution or provider changes are in progress");
     const artifact = parsePortableGoal(value);
     const { goal, protectedInputs } = artifact;
-    // The protected-input state marker and execution refusal must be wired
-    // before protected imports can safely be persisted or read by other versions.
-    if (Object.keys(protectedInputs).length) throw new Error("protected-input import is unavailable until the runtime state requirement and execution refusal are enabled");
     if (this.publishing.has(goal.slug) || this.published.has(goal.slug)) throw new StateConflictError("portable goal already exists; replacement requires explicit republication");
     // Recheck every imported witness in the receiving runtime, including its
     // contract and current authority. Never trust the sender's historical proof.
     if (goal.witnesses?.length) await this.pinWitnesses(goal.witnesses);
-    if (this.activeGoalLeases || this.activeProviderMutations || this.publishing.has(goal.slug) || this.published.has(goal.slug)) throw new StateConflictError("portable goal changed during import");
+    if (this.activeGoalLeases || this.activeProviderMutations || this.activeProtectedExecutions || this.publishing.has(goal.slug) || this.published.has(goal.slug)) throw new StateConflictError("portable goal changed during import");
     const candidate: PublishedGoal = { ...structuredClone(goal), revision: crypto.randomUUID(), trust: "unverified", publishedAt: new Date().toISOString(), calls: 0,
       ...(Object.keys(protectedInputs).length ? { protectedInputs: structuredClone(protectedInputs) } : {}) };
     this.publishing.add(goal.slug);

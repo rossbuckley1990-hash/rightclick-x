@@ -89,9 +89,14 @@ test("portable import refuses uncoordinated stores and reports uncertain writes 
   assert.equal(failing.graph.get("goal:lookup"), undefined);
 });
 
-test("protected-input import refuses until the runtime can persist and enforce its state requirement", async () => {
+test("protected-input import persists the requirement and refuses unsupported execution after restart", async () => {
   const artifact = makePortableGoal(goal(), { token: ref }, approval);
-  const receiving = await RightClick.create({ directories: [], sandbox: null, store: new ProcessMemoryStore() });
-  await assert.rejects(receiving.importPortableGoal(artifact, { approveDefinition: true }), /protected-input import is unavailable/);
-  assert.equal(receiving.graph.get("goal:lookup"), undefined);
+  const store = new ProcessMemoryStore();
+  const receiving = await RightClick.create({ directories: [], sandbox: null, store });
+  await receiving.importPortableGoal(artifact, { approveDefinition: true });
+  assert.ok((await store.load())?.requirements?.includes("protected-value-slots@1"));
+  const fresh = await RightClick.create({ directories: [], sandbox: null, store });
+  assert.ok(fresh.graph.get("goal:lookup"));
+  const rejected = await fresh.run("goal:lookup", {});
+  assert.notEqual(rejected.status, "completed");
 });
