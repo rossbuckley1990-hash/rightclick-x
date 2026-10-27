@@ -2334,29 +2334,50 @@ export class RightClick {
   }
 
   /** Pin the checker contract so a saved proof cannot silently become a different test. */
-  private pinWitnesses(witnesses: OutcomeWitness[]): OutcomeWitness[] {
+  private async pinWitnesses(witnesses: OutcomeWitness[]): Promise<OutcomeWitness[]> {
     if (!Array.isArray(witnesses) || witnesses.length > 16) throw new Error("witnesses must be an array of at most 16 checks");
-    return witnesses.map((w) => {
+    return Promise.all(witnesses.map(async (w) => {
       const c = this.graph.get(w.capability);
       if (!c || c.invoke.kind === "goal") throw new Error(`witness must be an available read-only provider capability: ${w.capability}`);
       // A crystallized pipeline may witness only when every step is itself a possible witness:
       // an available, read-only, executable provider capability.
-      for (const step of this.witnessSteps(c)) {
+      const steps = this.witnessSteps(c);
+      for (const step of steps) {
         if (consequentialRisks(step).some((r) => r !== "read") || step.invoke.kind === "goal") throw new Error(`witness must be an available read-only provider capability: ${w.capability}`);
         this.assertExecution(step);
       }
       this.assertExecution(c);
       if (w.agree !== undefined) assertAgreement(w.agree);
       if (w.verify !== undefined && !Array.isArray(w.verify) || (!w.verify?.length && !w.agree)) throw new Error(`witness needs nonempty verification predicates or an agreement: ${w.capability}`);
-      if (w.contract && w.contract !== signature(c)) throw new Error(`witness contract changed: ${w.capability}; establish a new check explicitly`);
+      // FNV graph signatures are useful for change detection but are not safe
+      // authorization/proof identities. Include every member of a composite witness.
+      const contractFields = (cap: Capability) => ({ id: cap.id, provider: cap.provider, source: cap.source,
+        risk: cap.risk, inputs: cap.inputs, outputs: cap.outputs.filter(p => !p.observed), invoke: cap.invoke, links: cap.links });
+      // Bind intermediate composites too: their step bindings and checks can
+      // change even if the leaf capabilities remain the same.
+      const pending = [c], members: Capability[] = [], seen = new Set<string>();
+      while (pending.length) {
+        const current = pending.pop()!;
+        if (seen.has(current.id)) continue;
+        seen.add(current.id);
+        if (seen.size > 64) throw new Error(`witness pipeline too large: ${c.id}`);
+        members.push(current);
+        if (current.invoke.kind === "composite") for (const step of current.invoke.steps) {
+          const child = this.graph.get(step.capability);
+          if (!child) throw new Error(`witness must be an available read-only provider capability: ${c.id} (missing step ${step.capability})`);
+          pending.push(child);
+        }
+      }
+      const contract = `sha256:${await sha256(stableStringify(members.map(contractFields).sort((a, b) => a.id.localeCompare(b.id))))}`;
+      if (w.contract && w.contract !== contract) throw new Error(`witness contract changed or uses a legacy pin: ${w.capability}; establish a new check explicitly`);
       for (const binding of Object.values(w.args ?? {})) {
         if (!binding || typeof binding !== "object" || Object.keys(binding).length !== 1 || !("input" in binding || "output" in binding || "value" in binding)) throw new Error("witness arguments must use exactly one of input, output or value");
         if ("input" in binding && typeof binding.input !== "string" || "output" in binding && typeof binding.output !== "string") throw new Error("witness input/output paths must be strings");
         // Shown the candidate, a recomputation could simply hand it back.
         if (w.agree && "output" in binding) throw new Error(`an agreement witness recomputes from the inputs and is never given the candidate result: ${w.capability}`);
       }
-      return structuredClone({ ...w, args: w.args ?? {}, verify: w.verify ?? [], contract: signature(c) });
-    });
+      return structuredClone({ ...w, args: w.args ?? {}, verify: w.verify ?? [], contract });
+    }));
   }
 
   /** The provider capabilities a witness runs: itself, or every step of a crystallized pipeline. */
@@ -2393,7 +2414,7 @@ export class RightClick {
     const evidence: WitnessResult[] = [];
     for (const original of witnesses) {
       try {
-        const w = this.pinWitnesses([original])[0];
+        const w = (await this.pinWitnesses([original]))[0];
         const cap = this.graph.get(w.capability)!;
         // A pipeline witness is independent only if none of its steps' providers produced the result.
         if (this.witnessSteps(cap).some((step) => providers.has(step.provider))) throw new Error("outcome witness must be separate from the providers producing the result");
@@ -2523,7 +2544,7 @@ export class RightClick {
         if (this.published.get(slugify(opts.publish)) !== existing) throw new Error("publication changed while preparing replacement; retry explicitly");
       }
     }
-    const witnesses = this.pinWitnesses(opts.witnesses ?? []);
+    const witnesses = await this.pinWitnesses(opts.witnesses ?? []);
     const values: Record<string, unknown> = {};
     const types: Record<string, SemType> = {};
     const fixed: Record<string, unknown> = {};
@@ -3122,6 +3143,8 @@ export class RightClick {
     if (this.publishing.has(slug)) throw new Error(`saved goal publication is pending: ${slug}`);
     const g = this.published.get(slug);
     if (!g) throw new Error(`no published goal: ${slug}`);
+    if ((g.witnesses ?? []).some(w => !/^sha256:[a-f0-9]{64}$/.test(w.contract ?? "")))
+      throw new Error(`saved goal has an unpinned or legacy witness: ${slug}; establish a new check explicitly`);
     const capability = this.graph.get(`goal:${slug}`);
     if (!capability) throw new Error(`saved goal is unavailable: ${slug}`);
     // Generated REST/GraphQL enter here directly rather than through run().
@@ -3261,7 +3284,9 @@ export class RightClick {
   private async preflightWitnesses(witnesses: OutcomeWitness[]) {
     for (const witness of witnesses) {
       try {
-        const w = this.pinWitnesses([witness])[0];
+        if (!/^sha256:[a-f0-9]{64}$/.test(witness.contract ?? ""))
+          throw new Error("retained witness has no supported contract pin; establish a new check explicitly");
+        const w = (await this.pinWitnesses([witness]))[0];
         await this.preflightCli(this.graph.get(w.capability)!, true);
       } catch (cause) { throw new WitnessPreflightError(witness.capability, cause); }
     }
