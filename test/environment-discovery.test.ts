@@ -193,3 +193,82 @@ test("environment discovery coalesces concurrent refreshes and respects existing
   assert.deepEqual(first.environment.discovery, second.environment.discovery);
   assert.equal(first.environment.discovery.sources[0].status, "blocked");
 });
+
+test("new catalog members compose an unrelated order outcome and repeat independent checks after restart", async () => {
+  const store = new MemoryStore();
+  const origins = ["https://fulfilment.test", "https://levy.test", "https://inspection.test"];
+  const countries: Record<string, string> = { "A-1": "DE", "A-2": "FR" };
+  const rates: Record<string, number> = { DE: 19, FR: 20 };
+  const truth: Record<string, number> = { "A-1": 19, "A-2": 20 };
+  const calls: string[] = [];
+  let advertised = false;
+  const parameter = (name: string, type = "string") => ({ name, in: "query", required: true, schema: { type } });
+  const operation = (title: string, origin: string, id: string, inputs: object[], properties: object) => ({
+    openapi: "3.1.0", info: { title }, servers: [{ url: origin }], paths: {
+      "/run": { get: { operationId: id, parameters: inputs, responses: json({ type: "object", properties }) } },
+    },
+  });
+  const contracts = [
+    operation("Fulfilment", origins[0], "lookup", [parameter("order_id")], { country: { type: "string" } }),
+    operation("Levy", origins[1], "calculate", [parameter("country")], { tax_rate: { type: "number" } }),
+    operation("Inspection", origins[2], "validate", [parameter("order_id"), parameter("candidate", "number")], { valid: { type: "boolean" } }),
+  ];
+  const options = { store, directories: [], environment: { catalogs: [catalog], origins },
+    fetch: async (input: RequestInfo | URL, init?: RequestInit) => {
+      const req = new Request(input, init); calls.push(req.url);
+      assert.equal(req.method, "GET");
+      const url = new URL(req.url);
+      if (req.url === catalog) return Response.json({ linkset: [{ anchor: catalog, "service-desc": advertised ? origins.map(o => ({ href: o + "/contract" })) : [] }] });
+      if (url.pathname === "/contract") return Response.json(contracts[origins.indexOf(url.origin)]);
+      if (url.origin === origins[0]) return Response.json({ country: countries[url.searchParams.get("order_id")!] });
+      if (url.origin === origins[1]) return Response.json({ tax_rate: rates[url.searchParams.get("country")!] });
+      if (url.origin === origins[2]) return Response.json({ valid: Number(url.searchParams.get("candidate")) === truth[url.searchParams.get("order_id")!] });
+      throw new Error("unconfigured test route");
+    },
+  };
+  const rc = await RightClick.create(options);
+  await dispatch(rc, "context_research", {});
+  assert.equal(rc.graph.list().filter(c => c.source === "openapi").length, 0);
+  advertised = true;
+  await dispatch(rc, "context_research", {});
+  assert.equal(rc.graph.list().filter(c => c.source === "openapi").length, 3);
+  const checker = rc.graph.list().find(c => c.title.toLowerCase().includes("validate"))!;
+  assert.ok(checker);
+  const first: any = await dispatch(rc, "context_compose", {
+    have: { order_id: "A-1" }, want: "number", intent: "tax rate order country", run: true, publish: "Order levy",
+    witnesses: [{ capability: checker.id, args: { order_id: { input: "order_id" }, candidate: { output: "" } },
+      verify: [{ op: "equals", path: "valid", value: true }] }],
+  });
+  assert.equal(first.executed?.status, "completed", JSON.stringify(first));
+  assert.equal(first.executed?.output, 19);
+  assert.equal(first.executed?.verification.status, "verified");
+  assert.equal(first.executed?.witnesses?.[0].status, "completed");
+  await rc.flush();
+  const count = calls.length;
+  const fresh = await RightClick.create(options);
+  const second = await fresh.run("goal:order-levy", { order_id: "A-2" });
+  assert.equal(second.status, "completed", second.error);
+  assert.equal(second.output, 20);
+  assert.equal(second.witnesses?.[0].status, "completed");
+  assert.ok(!calls.slice(count).some(url => url === catalog || url.endsWith("/contract")), "reuse needs no discovery");
+  rates.FR = 19;
+  const incorrect = await fresh.run("goal:order-levy", { order_id: "A-2" });
+  assert.equal(incorrect.status, "failed");
+  assert.equal(incorrect.verification.status, "refuted");
+  await fresh.flush();
+});
+
+test("discovery configuration is not restored from state and a narrowed host policy still refuses execution", async () => {
+  const { state, create } = fixture(); const store = new MemoryStore();
+  state.links = [{ href: a + "/spec" }];
+  const rc = await create(store); await rc.research(); await rc.flush();
+  const capability = rc.graph.list().find(c => c.title === "Local forecast")!;
+  const fresh = await create(store, { environment: undefined, network: { blockPrivate: false, origins: [] } });
+  const before = state.calls.length;
+  const report = await fresh.research();
+  assert.equal(report.environment.discovery, undefined);
+  const denied = await fresh.run(capability.id, { place: "Oslo" });
+  assert.equal(denied.status, "failed");
+  assert.equal(state.calls.length, before, "stored observations cannot restore host network authority");
+  await fresh.flush();
+});
