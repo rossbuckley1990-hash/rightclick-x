@@ -60,12 +60,12 @@ test("named step bindings reach the corresponding CLI calls and survive goal per
     return { code: 0, stdout: bin === programs[0] ? `transformed:${opts?.stdin}` : `hashed:${opts?.stdin}`, stderr: "", timedOut: false, truncated: false, durationMs: 0, created: [], workDir: "/tmp" };
   } };
   const store = new MemoryStore();
-  const create = async (execute = programs) => {
-    const rc = await RightClick.create({ directories: [], store, sandbox: fake, authority: { investigate: programs, execute }, network: { origins: [], blockPrivate: true } });
+  const create = async (execute = programs, workflowRecovery = false) => {
+    const rc = await RightClick.create({ directories: [], store, sandbox: fake, workflowRecovery, authority: { investigate: programs, execute }, network: { origins: [], blockPrivate: true } });
     for (let i = 0; i < 2; i++) {
       const cap: any = { id: ids[i], title: `test command ${i}`, description: "", provider: `cli:fixture-${i}`, source: "cli", risk: "read", tags: [],
         inputs: [{ name: "input", type: "text", required: false }, { name: "options", type: "list:text", required: false }], outputs: [{ name: "", type: "text", required: true }],
-        invoke: { kind: "cli", bin: programs[i], args: [], stdin: "input", options: { port: "options", allowed: [{ flags: [i ? "-b" : "-a"], arg: false }, { flags: ["-t", "--token"], arg: true }] },
+        invoke: { kind: "cli", bin: programs[i], args: [], stdin: "input", options: { port: "options", allowed: [{ flags: [i ? "-b" : "-a"], arg: false }, { flags: ["-t", "--token"], arg: true }, { flags: ["-p", "--profile"], arg: true }] },
           okExit: [0], output: "text", sha256: createHash("sha256").update(readFileSync(programs[i])).digest("hex") } };
       rc.graph.add({ provider: { id: cap.provider, title: cap.title, source: "cli", origin: programs[i], learnedAt: "", capabilityIds: [cap.id] }, capabilities: [cap] });
     }
@@ -108,7 +108,26 @@ test("named step bindings reach the corresponding CLI calls and survive goal per
       want: "text", through: ids, inputBindings, run: true, publish: "sensitive option" }), error =>
       /refused fixed credential-like CLI option/.test(String(error)) && !String(error).includes("example-secret"));
   }
+  // Even an innocuously named option can carry an opaque secret. Never rely on
+  // recognising the secret's content or flag name before fixing it into a goal.
+  const opaque = "fixture-opaque-value";
+  for (const option of [["--profile", opaque], [`--profile=${opaque}`], ["-p", opaque], [`-p${opaque}`]]) {
+    await assert.rejects(rc.compose({ have: { input: "hello", firstOptions: { value: option, fixed: true }, secondOptions: ["-b"] },
+      want: "text", through: ids, inputBindings, run: true, publish: "unsafe options" }), error =>
+      /refused fixed value-bearing CLI option/.test(String(error)) && !String(error).includes(opaque));
+  }
+  const implicit = await rc.compose({ have: { input: "hello", options: { value: ["--profile", opaque], fixed: true } },
+    want: "text", through: [ids[0]], run: true, publish: "implicit unsafe options" });
+  assert.notEqual(implicit.executed?.status, "completed", "same-name implicit binding must not bypass retention checks");
+  assert.equal(implicit.published, undefined);
   assert.equal(calls.length, count, "recognizable fixed credentials are refused before dispatch");
+  const recovering = await create(programs, true);
+  const unsafeRecovery = await recovering.compose({ have: { input: "hello", firstOptions: ["--profile", opaque], secondOptions: ["-b"] },
+    want: "text", through: ids, inputBindings, run: true });
+  assert.notEqual(unsafeRecovery.executed?.status, "completed");
+  assert.equal(calls.length, count, "value-bearing options are refused before checkpoint or dispatch");
+  await recovering.flush();
+  assert.equal(JSON.stringify(store.state).includes(opaque), false, "opaque option values never enter the retained state");
   await rc.flush();
   assert.equal(JSON.stringify(store.state).includes("example-secret"), false, "rejected values do not enter persisted state");
 });

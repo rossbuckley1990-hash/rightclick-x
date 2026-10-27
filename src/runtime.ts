@@ -3,6 +3,7 @@
 // federation) is a thin shell around this class.
 
 import { checkpointValue, validWorkflow, type WorkflowContinuation, type CompositionContinuation } from "./core/workflow-continuation.ts";
+import { StateConflictError } from "./core/state-conflict.ts";
 import { CLI_CONFORMANCE_REQUIREMENT, CONTRACT_LINK_REQUIREMENT, decodeState, DEFERRED_INFERENCE_REQUIREMENT, PUBLICATION_SNAPSHOT_REQUIREMENT, STATE_FORMAT, STATE_REQUIREMENTS, STEP_INPUT_BINDINGS_REQUIREMENT, usesContractLinks, usesPublicationSnapshot, usesStepInputBindings } from "./core/state-format.ts";
 import { pointerValue, validLinkBinding, validLinkGroup, validLinkValue } from "./core/links.ts";
 import { ActivityLog, reference, type ActivityState, type ContractReference } from "./core/activity.ts";
@@ -42,6 +43,18 @@ import { detectRuntime, platformReflection, type PlatformFn, type RuntimeInfo } 
 export const VERSION = "0.1.0";
 /** Bump whenever semantic inference changes: persisted reflections are then re-derived from their sources. */
 export const SEMANTICS = 27;
+
+/** Only documented, value-free flags may be retained. An option argument can contain an
+ * opaque credential even when neither the option nor the input name looks sensitive. */
+function retainableCliOptions(value: unknown, contract: { allowed: Array<{ flags: string[]; arg: boolean; optionalArg?: boolean }>; excluded?: string[] }): boolean {
+  let argv: string[];
+  try { argv = validateOptions(value, contract.allowed, contract.excluded); } catch { return false; }
+  const flags = new Map(contract.allowed.flatMap(option => option.flags.map(flag => [flag, option] as const)));
+  return argv.every(flag => {
+    const option = flags.get(flag);
+    return !!option && !option.arg && !option.optionalArg && !option.flags.some(isSensitiveName);
+  });
+}
 
 export interface Store {
   load(): Promise<PersistedState | null>;
@@ -553,6 +566,8 @@ export class RightClick {
   readonly name: string;
   readonly startedAt = new Date();
   readonly published = new Map<string, PublishedGoal>();
+  /** A definition must not execute while its durable publication is unresolved. */
+  private readonly publishing = new Set<string>();
   /** When a failed plain run last re-read each contract source, so repeated failures do not re-read it on every call. */
   private healReads = new Map<string, number>();
   /** Ids re-learning pointed at a different operation; caller acknowledgement cannot clear them. */
@@ -569,6 +584,9 @@ export class RightClick {
   private mcpClients = new Map<string, McpClient>();
   private store?: Store;
   private saveTimer: ReturnType<typeof setTimeout> | null = null;
+  /** Serialize snapshot construction as well as writes. Pending publications never
+   * enter unrelated snapshots and become visible only after their own save succeeds. */
+  private saveTail: Promise<void> = Promise.resolve();
   private saveState: "not-observed" | "saved" | "failed" | "read-only" = "not-observed";
   private runCounter = 0;
   private destructivePolicy: "operator" | "agent-confirm" | "allow" = "operator";
@@ -1546,6 +1564,22 @@ export class RightClick {
 
   private async startWorkflow(runId: string, cap: Capability, inputs: Record<string, unknown>, verify: Predicate[], composition?: CompositionContinuation) {
     if (cap.invoke.kind !== "composite") throw new Error("workflow requires a retained composite");
+    // Recovery stores inputs before dispatch. Reject option arguments even under an innocuous
+    // flag or input name; a secret cannot be identified reliably from its string contents.
+    for (const step of cap.invoke.steps) {
+      const target = this.graph.get(step.capability);
+      if (target?.invoke.kind !== "cli") continue;
+      for (const option of [target.invoke.options, target.invoke.optionsAfterArgs]) {
+        if (!option) continue;
+        const binding = step.bindings.find(b => b.port === option.port);
+        if (!binding) continue;
+        let value: unknown;
+        if (binding.from.startsWith("$in.")) value = inputs[binding.from.slice(4)];
+        else if (binding.from === "$const") value = binding.value;
+        else throw new Error("workflow CLI options from prior outputs cannot be retained safely");
+        if (!retainableCliOptions(value, option)) throw new Error("workflow CLI option arguments cannot be retained safely");
+      }
+    }
     // Unresolved effects are never evicted to make room for a different action.
     if (this.workflowContinuations.size >= 64) throw new Error("workflow continuation storage is full");
     const createdAt = Date.now();
@@ -2480,6 +2514,7 @@ export class RightClick {
   private async composeNow(opts: ComposeOptions): Promise<ComposeResult> {
     let publicationExpected: string | null = null;
     if (opts.run && opts.publish) {
+      if (this.publishing.has(slugify(opts.publish))) throw new Error(`publication pending: goal:${slugify(opts.publish)}`);
       const existing = this.published.get(slugify(opts.publish));
       if (existing && opts.preserveExisting === true) throw new Error(`publication already exists: goal:${slugify(opts.publish)}; preserveExisting prevents replacement`);
       if (existing) {
@@ -2528,8 +2563,8 @@ export class RightClick {
           if (typeof input !== "string" || !/^[A-Za-z_][A-Za-z0-9_]*$/.test(input) || !Object.hasOwn(types, input)) throw new Error(`unknown or unsupported inputBindings input for ${id}.${port}`);
           const optionContract = [cap.invoke.options, cap.invoke.optionsAfterArgs].find(o => o?.port === port);
           if (optionContract && Object.hasOwn(fixed, input)) {
-            // Only reject recognizable credential flags. Opaque values still require
-            // operator care; the flag names and their documented aliases are not secrets.
+            // Keep only documented value-free flags. A value for an innocuous option may
+            // itself be a credential, so name-based detection is insufficient here.
             let argv: string[];
             try { argv = validateOptions(fixed[input], optionContract.allowed, optionContract.excluded); }
             catch { throw new Error(`invalid fixed CLI options for ${id}.${port}`); }
@@ -2541,6 +2576,7 @@ export class RightClick {
               if (option.flags.some(isSensitiveName)) throw new Error(`refused fixed credential-like CLI option for ${id}.${port}; supply it at invocation`);
               if (option.arg && !argv[i].includes("=")) i++;
             }
+            if (!retainableCliOptions(fixed[input], optionContract)) throw new Error(`refused fixed value-bearing CLI option for ${id}.${port}; supply it at invocation`);
           }
         }
         inputBindings[cap.id] = { ...ports };
@@ -2706,6 +2742,24 @@ export class RightClick {
           return { ...st, bindings: [...st.bindings.filter((b) => b.port !== gi.selectPort), { port: gi.selectPort, from: "$const", value: selectionWith(gi.selection, fields) }] };
         });
         const selected = steps.map(s => this.graph.get(s.capability)!);
+        // Explicit inputBindings are not the only way the planner can bind an
+        // option: a same-named fixed input binds implicitly. Check the actual
+        // selected steps before dispatch or publication, not just caller hints.
+        for (let i = 0; i < steps.length; i++) {
+          const target = selected[i];
+          if (target.invoke.kind !== "cli") continue;
+          for (const option of [target.invoke.options, target.invoke.optionsAfterArgs]) {
+            if (!option) continue;
+            const binding = steps[i].bindings.find(b => b.port === option.port);
+            const name = binding?.from.startsWith("$in.") ? binding.from.slice(4) : undefined;
+            if (name && Object.hasOwn(fixed, name) && !retainableCliOptions(fixed[name], option)) {
+              result.executed = { summary: p.summary, titles: titles(p), status: "failed", output: null,
+                verification: { status: "refuted", results: [] }, runs: [], attempts: [], durationMs: 0,
+                error: "fixed CLI option arguments cannot be retained safely" };
+              return result;
+            }
+          }
+        }
         const composition: CompositionContinuation = {
           id: `execution:composition:${crypto.randomUUID()}`, plan: { ...p, steps }, types,
           risk: selected.some(c => c.risk === "destructive") ? "destructive" : selected.some(c => c.risk === "write") ? "write" : selected.some(c => c.risk === "external") ? "external" : "read",
@@ -2968,11 +3022,11 @@ export class RightClick {
       const actual = existing ? await this.goalDigest(existing) : null;
       // No await between this comparison and the map update. A resumed older
       // continuation without a publication snapshot cannot replace a definition.
-      if (c.publicationExpected === undefined || c.publicationExpected !== actual || this.published.get(slug) !== existing) {
+      if (this.publishing.has(slug) || c.publicationExpected === undefined || c.publicationExpected !== actual || this.published.get(slug) !== existing) {
         result.publishRefused = `not published: goal:${slug} changed since execution began; inspect it and retry explicitly`;
         return result;
       }
-      this.published.set(slug, {
+      const candidate: PublishedGoal = {
         revision: crypto.randomUUID(),
         trust,
         slug,
@@ -2995,16 +3049,41 @@ export class RightClick {
         lastPipeline: titles(p),
         providers: [...new Set(p.steps.map((st) => this.graph.get(st.capability)!.provider))],
         lastResult,
-      });
-      this.registerGoal(this.published.get(slug)!);
-      result.published = { id: `goal:${slug}`, slug, path: `/x/${slug}`, trust, durable: false };
-      this.graph.emit("goal.published", { slug, title: opts.publish, pipeline: titles(p) });
-      // Reported durable only once stored: a failed or absent store must not read as a saved goal.
-      if (!this.store) result.published.persistence = "no store configured: available in this process only";
-      else if (this.store.readOnly) result.published.persistence = `state is read-only (${this.store.readOnly}): available in this process only`;
-      else {
-        try { await this.flush(); result.published.durable = true; }
-        catch (e) { result.published.persistence = `not persisted: ${String((e as Error)?.message ?? e).slice(0, 300)}`; }
+      };
+      this.publishing.add(slug);
+      try {
+        await this.queueSave(async () => {
+          try {
+            if (this.published.get(slug) !== existing) throw new StateConflictError("in-memory publication changed");
+            if (this.store && !this.store.readOnly) await this.writeSnapshot(candidate);
+          } catch (e) {
+            if (e instanceof StateConflictError) {
+              // The previous in-memory definition may be stale too. Withdraw it rather
+              // than restoring an authority or definition that storage no longer confirms.
+              if (this.published.get(slug) === existing) {
+                this.published.delete(slug);
+                this.graph.capabilities.delete(`goal:${slug}`);
+                const provider = this.graph.providers.get("goal:published");
+                if (provider) provider.capabilityIds = provider.capabilityIds.filter(id => id !== `goal:${slug}`);
+                this.graph.relink();
+                this.graph.retireBroken();
+              }
+            }
+            throw e;
+          }
+          this.published.set(slug, candidate);
+          this.registerGoal(candidate);
+          this.graph.emit("goal.published", { slug, title: opts.publish, pipeline: titles(p) });
+        });
+        result.published = { id: `goal:${slug}`, slug, path: `/x/${slug}`, trust, durable: !!this.store && !this.store.readOnly };
+        if (!this.store) result.published.persistence = "no store configured: available in this process only";
+        else if (this.store.readOnly) result.published.persistence = `state is read-only (${this.store.readOnly}): available in this process only`;
+      } catch (e) {
+        result.publishRefused = e instanceof StateConflictError
+          ? "not published: state conflict; reload the current state and retry explicitly"
+          : `not published: storage failure: ${String((e as Error)?.message ?? e).slice(0, 300)}`;
+      } finally {
+        this.publishing.delete(slug);
       }
     }
     return result;
@@ -3040,6 +3119,7 @@ export class RightClick {
   }
 
   private async executeGoal(slug: string, args: Record<string, unknown>, confirm?: boolean, activeGoals: string[] = [], verify: Predicate[] = []): Promise<ComposeResult> {
+    if (this.publishing.has(slug)) throw new Error(`saved goal publication is pending: ${slug}`);
     const g = this.published.get(slug);
     if (!g) throw new Error(`no published goal: ${slug}`);
     const capability = this.graph.get(`goal:${slug}`);
@@ -3850,12 +3930,25 @@ export class RightClick {
       clearTimeout(this.saveTimer);
       this.saveTimer = null;
     }
+    await this.queueSave(() => this.writeSnapshot());
+  }
+
+  private queueSave<T>(operation: () => Promise<T>): Promise<T> {
+    const next = this.saveTail.then(operation);
+    this.saveTail = next.then(() => {}, () => {});
+    return next;
+  }
+
+  private async writeSnapshot(candidate?: PublishedGoal): Promise<void> {
+    if (!this.store || this.store.readOnly) return;
     const reflections: Reflection[] = [...this.graph.providers.values()]
       .filter((p) => p.source !== "builtin" && p.source !== "platform")
       .map((p) => ({ provider: p, capabilities: p.capabilityIds.map((id) => this.graph.get(id)!).filter(Boolean) }));
     const cliConformance = [...this.cliConformance.values()].filter(p => this.graph.get(p.capability));
     try {
-      const published = [...this.published.values()], workflowContinuations = [...this.workflowContinuations.values()];
+      const published = [...this.published.values()].filter(g => !candidate || g.slug !== candidate.slug);
+      if (candidate) published.push(candidate);
+      const workflowContinuations = [...this.workflowContinuations.values()];
       await this.store.save({ version: 2, requirements: [...STATE_REQUIREMENTS, ...(usesContractLinks(reflections) ? [CONTRACT_LINK_REQUIREMENT] : []), ...(this.deferredInference.length ? [DEFERRED_INFERENCE_REQUIREMENT] : []), ...(cliConformance.length ? [CLI_CONFORMANCE_REQUIREMENT] : []), ...(usesStepInputBindings({ published, workflowContinuations }) ? [STEP_INPUT_BINDINGS_REQUIREMENT] : []), ...(usesPublicationSnapshot({ workflowContinuations }) ? [PUBLICATION_SNAPSHOT_REQUIREMENT] : [])], reflections, ...(this.deferredInference.length ? { deferredInference: this.deferredInference } : {}), ledger: this.ledger.toJSON(), receipts: this.chain.receipts.slice(-300), published, meaningChanges: [...this.meaningChanges.values()], activity: this.activity.snapshot(), environment: this.environmentReport, httpContinuations: [...this.httpContinuations.values()], workflowContinuations, ...(cliConformance.length ? { cliConformance } : {}), authFingerprints: await this.net.auth.fingerprints(), semantics: SEMANTICS, identities: this.graph.identities.toJSON() });
       this.saveState = "saved";
     } catch (error) {

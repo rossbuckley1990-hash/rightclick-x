@@ -269,8 +269,9 @@ test("publishing a goal reports durable only once it is stored, and says why whe
   const failing = { load: async () => null, save: async () => { throw new Error("storage unavailable"); } };
   const broken = await RightClick.create({ store: failing, sandbox: null, directories: [] });
   const notStored = await broken.compose({ ...goal, publish: "Not stored" });
-  assert.equal(notStored.published?.durable, false, "a goal that was not stored was reported as saved");
-  assert.match(notStored.published?.persistence ?? "", /storage unavailable/);
+  assert.equal(notStored.published, undefined, "failed publication must not be available in the current process");
+  assert.match(notStored.publishRefused ?? "", /storage unavailable/);
+  assert.equal(broken.graph.get("goal:not-stored"), undefined);
   assert.equal((broken.runtime() as any).storage.status, "failed");
 
   const memoryOnly = await RightClick.create({ sandbox: null, directories: [] });

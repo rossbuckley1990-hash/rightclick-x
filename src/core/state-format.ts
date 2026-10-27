@@ -25,7 +25,9 @@ export const CLI_CONFORMANCE_REQUIREMENT = "cli-conformance@1";
 export const STEP_INPUT_BINDINGS_REQUIREMENT = "step-input-bindings@1";
 /** A resumed publication must respect its dispatch-time snapshot. */
 export const PUBLICATION_SNAPSHOT_REQUIREMENT = "publication-snapshot@1";
-const supported = new Set<string>([...STATE_REQUIREMENTS, CONTRACT_LINK_REQUIREMENT, DEFERRED_INFERENCE_REQUIREMENT, CLI_CONFORMANCE_REQUIREMENT, STEP_INPUT_BINDINGS_REQUIREMENT, PUBLICATION_SNAPSHOT_REQUIREMENT]);
+/** File state written by cooperating compare-and-swap writers requires readers aware of that protocol. */
+export const FILE_STORE_CAS_REQUIREMENT = "file-store-cas@1";
+const supported = new Set<string>([...STATE_REQUIREMENTS, CONTRACT_LINK_REQUIREMENT, DEFERRED_INFERENCE_REQUIREMENT, CLI_CONFORMANCE_REQUIREMENT, STEP_INPUT_BINDINGS_REQUIREMENT, PUBLICATION_SNAPSHOT_REQUIREMENT, FILE_STORE_CAS_REQUIREMENT]);
 export function usesStepInputBindings(state: Pick<PersistedState, "published" | "workflowContinuations">): boolean {
   return (Array.isArray(state.published) && state.published.some(g => g?.inputBindings !== undefined)) ||
     (Array.isArray(state.workflowContinuations) && state.workflowContinuations.some(w => w?.composition?.options?.inputBindings !== undefined));
