@@ -111,6 +111,30 @@ test("a stale nested goal is refused before any earlier composition step runs", 
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
+test("a stale dynamically selected transitive goal is refused before an outer prefix", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "rcx-goal-dynamic-prefix-")), file = join(dir, "state.json");
+  try {
+    const writer = await RightClick.create({ store: new FileStore(file), directories: [] });
+    const inner = (value: string) => ({ have: { text: { type: "text" as const, value } }, want: "hash" as const,
+      through: ["builtin:text.sha256"], run: true, publish: "inner" });
+    const created = await writer.compose(inner("first"));
+    assert.equal(created.published?.durable, true);
+    const outer = await writer.compose({ have: { text: { type: "text", value: "first" } }, want: "hash",
+      through: ["goal:inner"], run: true, publish: "outer" });
+    assert.equal(outer.published?.durable, true, JSON.stringify(outer));
+    await writer.flush();
+    const stale = await RightClick.create({ store: new FileStore(file), directories: [] });
+    const changed = await writer.compose(inner("second"));
+    assert.equal(changed.published?.durable, true); await writer.flush();
+    const before = (stale as any).runs.size;
+    await assert.rejects((stale as any).runSteps([
+      { capability: "builtin:text.sha256", bindings: [{ port: "text", from: "$in.text" }] },
+      { capability: "goal:outer", bindings: [{ port: "text", from: "$in.text" }] },
+    ], "1.", { text: "prefix" }), /stale|revoked|conflict/);
+    assert.equal((stale as any).runs.size, before, "outer prefix must not execute before stale transitive goal refusal");
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
 test("a prestarted session-only replacement cannot commit while the old goal executes", async () => {
   const rc = await RightClick.create({ directories: [] });
   const options = (value: string) => ({ have: { text: { type: "text" as const, value, fixed: true } }, want: "hash" as const,

@@ -3151,11 +3151,30 @@ export class RightClick {
 
   private async withGoalLease<T>(pins: Array<{ slug: string; digest: string }>, invoke: () => Promise<T>): Promise<T> {
     if (this.activeProviderMutations) throw new Error("saved-goal execution is blocked while provider changes are in progress");
+    if (this.publishing.size) throw new Error("saved-goal execution is blocked while a publication is pending");
     this.activeGoalLeases++;
     try {
+      // A goal is replanned dynamically, and may select another saved goal that
+      // was not visible in the outer static step list. Pin every locally visible
+      // definition before any effect. This deliberately fails closed if any
+      // unrelated cached definition is stale; the host must reload state.
+      const goals = [...this.published.entries()];
+      if (goals.length > 1024) throw new Error("saved-goal lease preflight bound exceeded");
+      const all = new Map<string, string>();
+      for (const [slug, goal] of goals) {
+        if (!goal.revision) throw new Error(`saved goal has no immutable revision: ${slug}`);
+        const digest = await this.goalDigest(goal);
+        if (this.published.get(slug) !== goal) throw new Error(`saved goal changed during lease preflight: ${slug}`);
+        all.set(slug, digest);
+      }
+      if (this.published.size !== goals.length) throw new Error("saved goals changed during lease preflight");
+      for (const pin of pins) {
+        if (all.get(pin.slug) !== pin.digest) throw new StateConflictError(`saved goal ${pin.slug} is stale, revoked, or inconsistent`);
+      }
+      const allPins = [...all].map(([slug, digest]) => ({ slug, digest }));
       if (this.store) {
         if (!this.store.withGoalLease) throw new Error("saved-goal execution requires an authoritative lease-capable store");
-        return await this.store.withGoalLease(pins, invoke);
+        return await this.store.withGoalLease(allPins, invoke);
       }
       return await invoke();
     } finally { this.activeGoalLeases--; }
