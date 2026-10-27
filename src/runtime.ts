@@ -26,6 +26,7 @@ import { isSensitiveName, scrub, sensitiveValues } from "./core/secrets.ts";
 import { investigateCli, replayExamples, validateOptions, type Investigation } from "./reflectors/cli.ts";
 import { JsonRepresentationError, parseJsonValue } from "./core/json.ts";
 import { KNOWLEDGE_FORMAT, type ImportReport, type KnowledgeBundle } from "./core/knowledge.ts";
+import { makePortableGoal, parsePortableGoal, type PortableGoal, type PortableGoalApproval, type ProtectedValueRef } from "./core/portable-capability.ts";
 import { assessExecution, consequentialRisks, ExecutionDenied, intersectOrigins, parseExecutionPolicy, type ExecutionAssessment, type ExecutionPolicy } from "./core/execution-policy.ts";
 import { distance, inferType, inspectValue, type Inspection } from "./core/semantics.ts";
 import { describeResult, resultDescription, type ResultDescription } from "./core/result-description.ts";
@@ -3180,6 +3181,63 @@ export class RightClick {
       tags: ["saved", "goal", "reusable", g.trust ?? "unverified", ...(g.intent ?? g.title).split(/\s+/)],
       invoke: { kind: "goal", slug: g.slug },
     }, { id: "goal:published", title: "Reusable environmental capabilities", source: "composite", origin: this.name, learnedAt: g.publishedAt });
+  }
+
+  /** Host-only, explicit declassification: never exposed through the MCP tools.
+   * This does not classify arbitrary data; the host must review the approved
+   * definition including literals, names, witness arguments and metadata. */
+  exportPortableGoal(slug: string, refs: Record<string, ProtectedValueRef>, approval: PortableGoalApproval): PortableGoal {
+    if (!this.shareEvidence) throw new Error("not authorised: portable goal export requires host evidence-sharing authority");
+    const goal = this.published.get(slug);
+    if (!goal || !goal.revision) throw new Error("portable goal is unavailable or has no immutable revision");
+    const retained = (goal as PublishedGoal & { protectedInputs?: Record<string, ProtectedValueRef> }).protectedInputs;
+    if (retained && stableStringify(retained) !== stableStringify(refs)) throw new Error("protected input requirements cannot be removed or changed by portable export");
+    return makePortableGoal(goal, refs, approval);
+  }
+
+  /** Host-only import. Imported claims never confer authority or prior trust.
+   * This path creates a new local revision and refuses replacement. */
+  async importPortableGoal(value: unknown, approval: { approveDefinition: true }): Promise<{ id: string; revision: string }> {
+    if (!approval || approval.approveDefinition !== true || Object.keys(approval).length !== 1) throw new Error("host approval is required for portable goal import");
+    if (this.publishPolicy !== "any") throw new Error("portable goal import needs permission to publish an unverified goal");
+    if (!this.store || this.store.readOnly || !this.store.withGoalLease) throw new Error("portable goal import requires a writable, authoritative coordinated store");
+    if (this.activeGoalLeases || this.activeProviderMutations) throw new Error("portable goal import is blocked while execution or provider changes are in progress");
+    const artifact = parsePortableGoal(value);
+    const { goal, protectedInputs } = artifact;
+    // The protected-input state marker and execution refusal must be wired
+    // before protected imports can safely be persisted or read by other versions.
+    if (Object.keys(protectedInputs).length) throw new Error("protected-input import is unavailable until the runtime state requirement and execution refusal are enabled");
+    if (this.publishing.has(goal.slug) || this.published.has(goal.slug)) throw new StateConflictError("portable goal already exists; replacement requires explicit republication");
+    // Recheck every imported witness in the receiving runtime, including its
+    // contract and current authority. Never trust the sender's historical proof.
+    if (goal.witnesses?.length) await this.pinWitnesses(goal.witnesses);
+    if (this.activeGoalLeases || this.activeProviderMutations || this.publishing.has(goal.slug) || this.published.has(goal.slug)) throw new StateConflictError("portable goal changed during import");
+    const candidate: PublishedGoal = { ...structuredClone(goal), revision: crypto.randomUUID(), trust: "unverified", publishedAt: new Date().toISOString(), calls: 0,
+      ...(Object.keys(protectedInputs).length ? { protectedInputs: structuredClone(protectedInputs) } : {}) };
+    this.publishing.add(goal.slug);
+    try {
+      await this.queueSave(async () => {
+        if (this.published.has(goal.slug)) throw new StateConflictError("portable goal changed during import");
+        let persisted = false;
+        try {
+          await this.writeSnapshot(candidate);
+          persisted = true;
+          this.published.set(goal.slug, candidate);
+          this.registerGoal(candidate);
+        } catch (error) {
+          if (!persisted && error instanceof StateConflictError) throw error;
+          this.storeUncertain = true;
+          this.published.delete(goal.slug);
+          this.graph.capabilities.delete(`goal:${goal.slug}`);
+          const provider = this.graph.providers.get("goal:published");
+          if (provider) provider.capabilityIds = provider.capabilityIds.filter(id => id !== `goal:${goal.slug}`);
+          // Storage errors can contain untrusted data. Do not echo them into an
+          // import response and do not silently retry a possibly committed write.
+          throw new StateCommitUnknownError("portable goal import outcome is unknown; restart and reload before retrying");
+        }
+      });
+      return { id: `goal:${goal.slug}`, revision: candidate.revision! };
+    } finally { this.publishing.delete(goal.slug); }
   }
 
   private async executeGoal(slug: string, args: Record<string, unknown>, confirm?: boolean, activeGoals: string[] = [], verify: Predicate[] = []): Promise<ComposeResult> {
