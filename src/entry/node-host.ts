@@ -115,12 +115,20 @@ export class FileStore implements Store {
     this.file = file;
     this.onBackup = opts.onBackup;
   }
+  /** A symlink or multiply-linked file would allow different lock names to
+   *  observe the same state inode and then diverge on atomic rename. */
+  private async readStateBytes(): Promise<Uint8Array> {
+    const fs = await import("node:fs/promises");
+    const info = await fs.lstat(this.file);
+    if (!info.isFile() || info.isSymbolicLink() || info.nlink !== 1)
+      throw new StateConflictError("state path must be a singly linked regular file in a trusted directory");
+    return fs.readFile(this.file);
+  }
   async load(): Promise<PersistedState | null> {
     if (this.commitUnknown) throw new StateCommitUnknownError("open a fresh store and reload");
-    const fs = await import("node:fs/promises");
     let bytes: Uint8Array;
     try {
-      bytes = await fs.readFile(this.file);
+      bytes = await this.readStateBytes();
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === "ENOENT") { this.expected = null; this.loaded = undefined; return null; }
       throw error;
@@ -172,9 +180,8 @@ export class FileStore implements Store {
     }
   }
   private async assertGoalPins(pins: Array<{ slug: string; digest: string }>): Promise<void> {
-    const fs = await import("node:fs/promises");
     let state: PersistedState;
-    try { state = decodeState(JSON.parse(await fs.readFile(this.file, "utf8"))); }
+    try { state = decodeState(JSON.parse(new TextDecoder().decode(await this.readStateBytes()))); }
     catch { throw new StateConflictError("authoritative goal state is unavailable or invalid"); }
     for (const pin of pins) {
       const matches = (state.published ?? []).filter(g => g.slug === pin.slug);
@@ -202,7 +209,7 @@ export class FileStore implements Store {
     try {
     try {
       let current: Uint8Array | null;
-      try { current = await fs.readFile(this.file); }
+      try { current = await this.readStateBytes(); }
       catch (error) { if ((error as NodeJS.ErrnoException).code === "ENOENT") current = null; else throw error; }
       // An uninitialized adapter may create a new file, but must not overwrite an
       // existing snapshot it never observed. A stale snapshot must be reloaded.
