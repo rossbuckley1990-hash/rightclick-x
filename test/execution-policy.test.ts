@@ -138,6 +138,11 @@ test("operator environment policy is parsed and invalid settings fail closed", (
   assert.deepEqual(authorityFromEnv({ RCX_EXECUTION_POLICY: '{"allowedRisks":["read"]}' }).execution, { allowedRisks: ["read"] });
   assert.throws(() => authorityFromEnv({ RCX_EXECUTION_POLICY: '{"allowedRisk":["read"]}' }), /execution policy/);
   assert.throws(() => authorityFromEnv({ RCX_EXECUTION_POLICY: "not-json" }));
+  const samples = [{ args: { input: "b\na\n" }, output: "a\nb\n" }, { args: { input: "d\nc\n" }, output: "c\nd\n" }];
+  assert.deepEqual({ ...authorityFromEnv({ RCX_CLI_CONFORMANCE: JSON.stringify({ "cli:sort:run": { samples } }) }).cliConformance }, { "cli:sort:run": { samples } });
+  assert.equal(authorityFromEnv({}).cliConformance, undefined);
+  assert.throws(() => authorityFromEnv({ RCX_CLI_CONFORMANCE: JSON.stringify({ "cli:sort:run": { samples: samples.slice(0, 1) } }) }), /2–8 operator-authorized samples/);
+  assert.throws(() => authorityFromEnv({ RCX_CLI_CONFORMANCE: "not-json" }));
 });
 
 test("deep composite dependencies exceed the analysis bound without executing a leaf", async () => {

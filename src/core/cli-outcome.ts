@@ -5,6 +5,7 @@ export interface CliValidity {
   observed: string;
   processExit?: number | null;
   application: "not-assessed" | "reported-error" | "not-established";
+  conformance?: { status: "matched" | "refused"; contract: string; samples: string; checks: number; sha256: string };
   limitation: string;
 }
 

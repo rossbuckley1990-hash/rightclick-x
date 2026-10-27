@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import { RightClick, type RunRecord } from "../../../src/runtime.ts";
 import { FileStore } from "../../../src/entry/node-host.ts";
 import { hostSandbox } from "../../../src/core/sandbox.ts";
+import { recoverySamples } from "./recovery-samples.ts";
 
 type Arm = "A" | "B" | "C" | "D";
 type Phase = "cold" | "warm" | "r1" | "r2" | "r3";
@@ -41,6 +42,11 @@ if (!["A", "B", "C", "D"].includes(arm) || !["cold", "warm", "r1", "r2", "r3"].i
   console.error("usage: trials.ts <A|B|C|D> <cold|warm|r1|r2|r3>");
   process.exit(2);
 }
+
+const conformanceId = arm === "C" ? "cli:mlr:filter" : arm === "D" ? "cli:cli-anything-mlr:filter" : undefined;
+const cliConformance = process.env.RCX_TRIALS_CONFORMANCE === "samples" && conformanceId
+  ? { [conformanceId]: recoverySamples[conformanceId] }
+  : undefined;
 
 const OUT = join(TRIALS, arm, phase);
 const STATE = join(TRIALS, "state", `${arm}.json`);
@@ -161,7 +167,7 @@ function oracleCheck(task: string, file: string) {
   return { code: r.status ?? -1, text };
 }
 function oracleFor(task: string) {
-  const map: Record<string, string> = { T1: "t1", T2: "t2", T3: "t1", T4: "t2", T5: "t5", T6: "t6", T7: "t7" };
+  const map: Record<string, string> = { T1: "t1", T2: "t2", T3: "t1", T4: "t2", T5: "t5", T6: "t6", T7: "t7", R1: "t1" };
   return map[task];
 }
 function finishOracle(task: string, file: string, extra: Record<string, unknown> = {}) {
@@ -211,7 +217,7 @@ async function createRc(extra: Record<string, unknown> = {}) {
   return RightClick.create({
     directories: [],
     store: new FileStore(STATE),
-    authority: { investigate, execute: investigate },
+    authority: { investigate, execute: investigate, ...(cliConformance ? { cliConformance } : {}) },
     ...extra,
   });
 }
@@ -575,7 +581,7 @@ async function r1() {
     rc = await createRc();
     const r = await rcxRun(rc, "cli:cli-anything-mlr:filter", { options: ["--input", join(FIX, "invoices.csv"), "--region", "EMEA", "--min-amount", "500", "--columns", "invoice_id,supplier,amount"] });
     const file = join(OUTPUTS, "R1.json");
-    if (r.status === "completed") { writeJson(file, r.output); finishOracle("T1", file, { runs: [r] }); }
+    if (r.status === "completed") { writeJson(file, r.output); finishOracle("R1", file, { runs: [r] }); }
     else recordTask({ task: "R1", status: "fail", runs: [r], note: r.error });
     await rc.flush();
   }
@@ -655,11 +661,28 @@ ensureWork();
 const startedAt = new Date().toISOString();
 const result: any = {
   arm, phase, startedAt,
+  conformance: cliConformance ? {
+    setupType: "operator-authorized-synthetic-samples",
+    automaticDiscovery: false,
+    capabilities: Object.keys(cliConformance),
+    sampleCount: Object.values(cliConformance).reduce((count, spec) => count + spec.samples.length, 0),
+    repetitionsPerSample: 2,
+    integrationCost: {
+      note: "Additional manual input/expected-output authoring and exact-capability wiring; not zero-config discovery.",
+      authoredSampleModule: {
+        path: join(HERE, "recovery-samples.ts"),
+        bytes: readFileSync(join(HERE, "recovery-samples.ts")).byteLength,
+        sha256: sha(join(HERE, "recovery-samples.ts")),
+      },
+    },
+  } : { setupType: "none", sampleCount: 0 },
   environment: {
     node: process.version, mlr: MLR_PRISTINE, mlrSha256: sha(MLR_PRISTINE), harness: HARNESS_BIN, harnessSha256: sha(HARNESS_BIN),
     api: API, sandboxRead: process.env.RCX_SANDBOX_READ, sandboxPath: process.env.RCX_SANDBOX_PATH, network: process.env.RCX_SANDBOX_NET,
     product: {
       cli: sha(join(ROOT, "src/reflectors/cli.ts")), runtime: sha(join(ROOT, "src/runtime.ts")), types: sha(join(ROOT, "src/core/types.ts")),
+      conformance: sha(join(ROOT, "src/core/cli-conformance.ts")), sandbox: sha(join(ROOT, "src/core/sandbox.ts")),
+      state: sha(join(ROOT, "src/core/state-format.ts")), outcome: sha(join(ROOT, "src/core/cli-outcome.ts")),
     },
   },
 };

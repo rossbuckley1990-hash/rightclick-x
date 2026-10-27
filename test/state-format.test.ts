@@ -172,3 +172,16 @@ test("envelope integrity and unknown operation kinds refuse instead of partial r
   await assert.rejects(RightClick.create({ store: { load: async () => state, save: async () => { throw new Error("must not write"); } },
     sandbox: null, directories: [] }), /unsupported runtime state capability/);
 });
+
+test("state without CLI conformance pins does not require cli-conformance@1", async () => {
+  const store = new MemoryStore();
+  const rc = await RightClick.create({ store, directories: [] });
+  await rc.flush();
+  assert.ok(store.state);
+  assert.ok(!store.state.requirements?.includes("cli-conformance@1"), "readers that predate conformance can still read this state");
+  assert.equal(store.state.cliConformance, undefined);
+  const pinned = { ...structuredClone(store.state), cliConformance: [{ capability: "cli:tool:report", contract: "a".repeat(64), samples: "b".repeat(64),
+    policy: "c".repeat(64), sha256: "d".repeat(64), environment: "e".repeat(64), checks: 4 }] };
+  assert.throws(() => decodeState(pinned), /unsupported retained CLI conformance evidence/, "pins without their requirement are refused");
+  assert.doesNotThrow(() => decodeState({ ...pinned, requirements: [...pinned.requirements!, "cli-conformance@1"] }));
+});
