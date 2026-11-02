@@ -6,16 +6,36 @@ const SENSITIVE = /^(authorization|proxy-authorization|cookie|set-cookie)$|api[-
 
 export const REDACTED = "[redacted]";
 
+/** Redaction inspects no deeper than this. Past the cap every value is redacted, never passed through. */
+export const MAX_REDACTION_DEPTH = 12;
+
 export function isSensitiveName(name: string): boolean {
   return SENSITIVE.test(name.trim());
 }
 
-/** A deep copy with the values of credential-named keys replaced. */
+/** A subtree redaction refuses to inspect: the shape is kept, every value is replaced. */
+function redactUninspected(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(() => REDACTED);
+  if (value !== null && typeof value === "object") {
+    const out: Record<string, unknown> = {};
+    for (const k of Object.keys(value as Record<string, unknown>)) out[k] = REDACTED;
+    return out;
+  }
+  return value;
+}
+
+/** A deep copy with the values of credential-named keys replaced. Fails closed: a credential
+ *  named key keeps its redaction however it is wrapped, and anything too deep to inspect is
+ *  redacted wholesale rather than returned unread. */
 export function redact<T>(value: T, depth = 0): T {
-  if (depth > 12 || value === null || typeof value !== "object") return value;
+  if (value === null || typeof value !== "object") return value;
+  if (depth >= MAX_REDACTION_DEPTH) return redactUninspected(value) as T;
   if (Array.isArray(value)) return value.map((v) => redact(v, depth + 1)) as T;
   const out: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(value as Record<string, unknown>)) out[k] = isSensitiveName(k) && v != null && typeof v !== "object" ? REDACTED : redact(v, depth + 1);
+  for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+    if (isSensitiveName(k)) out[k] = v != null && typeof v !== "object" ? REDACTED : redactUninspected(v);
+    else out[k] = redact(v, depth + 1);
+  }
   return out as T;
 }
 
