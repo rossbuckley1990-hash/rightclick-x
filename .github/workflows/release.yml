@@ -1,0 +1,163 @@
+# Release pipeline (H3, issue #38). A pushed v* tag is the only trigger. The order is the
+# safety property this file exists to enforce, and ci/check-release-workflow.ts asserts it
+# on every CI run:
+#
+#   1. gate      — the tag matches package.json, and the release-blocker register (#9)
+#                  explicitly reads GO. A NO-GO or unreadable register refuses the release.
+#   2. build     — the full check suite runs, then artifacts are built from what was
+#                  tested, checksummed, and uploaded.
+#   3. attest    — build provenance is attested for every artifact BEFORE any release
+#                  exists to attach it to.
+#   4. publish   — a protected `release` environment (owner-configured required reviewers
+#                  is the human approval), then: verify the artifacts exist and match
+#                  their checksums, create the release as a DRAFT, verify the draft
+#                  carries the attested artifacts, and only then publish it. On any
+#                  failure the draft is deleted; the tag is never touched.
+#
+# npm publish is deliberately not here: it needs an npm token and an owner decision.
+# The register currently reads NO-GO, so this pipeline arms itself without firing.
+name: release
+on:
+  push:
+    tags: ["v*"]
+permissions: {}
+jobs:
+  gate:
+    # 1. Verify the source, the version and the release policy.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: the tag must match package.json
+        run: node -e "const v = require('./package.json').version; const t = process.env.GITHUB_REF_NAME.replace(/^v/, ''); if (t !== v) { console.error('tag ' + process.env.GITHUB_REF_NAME + ' does not match package.json ' + v); process.exit(1); } console.log('version:', v);"
+      - name: the release-blocker register (#9) must explicitly read GO
+        # Fail closed: a NO-GO register, an unreadable one, or a moved register all refuse.
+        run: |
+          BODY="$(gh issue view 9 --repo "$GITHUB_REPOSITORY" --json body --jq .body)" || {
+            echo "cannot read the release-blocker register (issue #9); refusing to release"; exit 1; }
+          if printf '%s' "$BODY" | head -5 | grep -qE 'Release:\s*NO-GO'; then
+            echo "the release-blocker register (#9) reads NO-GO; refusing to release"; exit 1
+          fi
+          if ! printf '%s' "$BODY" | head -5 | grep -qE 'Release:\s*GO\b'; then
+            echo "the release-blocker register (#9) does not explicitly read GO; refusing to release"; exit 1
+          fi
+          echo "register reads GO."
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: the release environment must exist with required reviewers
+        # The human approval gate. The owner creates the `release` environment with
+        # required reviewers; until it is protected, publishing is refused.
+        run: |
+          PROTECTED="$(gh api "repos/$GITHUB_REPOSITORY/environments/release" --jq '.protection_rules // [] | map(select(.type == "required_reviewers")) | length')" || {
+            echo "cannot read the release environment; create it with required reviewers before releasing"; exit 1; }
+          if [ "$PROTECTED" = "0" ]; then
+            echo "the release environment has no required reviewers; refusing to release"; exit 1
+          fi
+          echo "release environment is protected."
+        env:
+          GH_TOKEN: ${{ github.token }}
+  build:
+    # 2. Build artifacts from the verified source, after the full gate CI runs.
+    needs: gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - uses: oven-sh/setup-bun@v2
+      # The same checks CI runs: nothing is released that has not passed them.
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm run typecheck
+      - run: npm test
+      - run: node proof/run.ts
+      - run: npm run build
+      - run: npm run build:bin
+      - name: pack the npm tarball next to the build outputs
+        run: npm pack --pack-destination dist
+      - name: checksum every artifact (the checksum file excludes itself)
+        run: |
+          cd dist
+          find . -maxdepth 1 -type f ! -name SHA256SUMS.txt -printf '%f\n' | sort | xargs sha256sum > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+          test "$(wc -l < SHA256SUMS.txt)" -ge 3
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-artifacts
+          path: dist/
+          if-no-files-found: error
+  attest:
+    # 3. Provenance attestations complete BEFORE any release is created.
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-artifacts
+          path: dist
+      - uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: dist/*
+  publish:
+    # 4. Only now the GitHub release: draft, verify, publish — and clean up the draft
+    #    safely on failure. This job runs in the protected `release` environment, so a
+    #    required reviewer must approve it (the tag/version check above is not release
+    #    authorisation).
+    needs: [gate, attest]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    environment: release
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-artifacts
+          path: dist
+      - name: the required artifacts exist and match their checksums
+        run: |
+          test -f dist/rightclick-x-*.tgz || { echo "missing npm tarball"; exit 1; }
+          test -x dist/rcx || { echo "missing compiled binary"; exit 1; }
+          test -f dist/SHA256SUMS.txt || { echo "missing checksums"; exit 1; }
+          cd dist && sha256sum --check --strict SHA256SUMS.txt
+      - name: create the release as a draft with the attested artifacts
+        id: draft
+        run: gh release create "$GITHUB_REF_NAME" dist/* --draft --generate-notes --title "$GITHUB_REF_NAME"
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: verify the draft carries every artifact before publishing
+        run: |
+          EXPECTED="$(cd dist && find . -maxdepth 1 -type f -printf '%f\n' | sort)"
+          ACTUAL="$(gh release view "$GITHUB_REF_NAME" --json assets --jq '.assets[].name' | sort)"
+          if [ "$EXPECTED" != "$ACTUAL" ]; then
+            echo "draft is missing artifacts:"; diff <(printf '%s\n' "$EXPECTED") <(printf '%s\n' "$ACTUAL") || true
+            gh release delete "$GITHUB_REF_NAME" --yes || true
+            echo "draft deleted; the tag was not touched"; exit 1
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: publish the verified release
+        run: gh release edit "$GITHUB_REF_NAME" --draft=false
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: on failure, remove the incomplete draft safely (never the tag)
+        if: failure()
+        run: |
+          gh release delete "$GITHUB_REF_NAME" --yes || true
+          echo "draft deleted after failure; the tag was not touched"
+        env:
+          GH_TOKEN: ${{ github.token }}
