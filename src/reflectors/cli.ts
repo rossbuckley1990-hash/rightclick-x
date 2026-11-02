@@ -11,6 +11,7 @@
 // what was observed), unknown. "verified" is never set here: only independent checks set it.
 
 import type { Capability, CliInvoke, Port, Reflection, SemType } from "../core/types.ts";
+import { ClientFacingError } from "../interface/client-error.ts";
 import { inferType } from "../core/semantics.ts";
 export type { CliInvoke };
 import type { Sandbox, SandboxRun } from "../core/sandbox.ts";
@@ -288,12 +289,12 @@ export function validateOptions(value: unknown, allowed: Array<{ flags: string[]
   const out: string[] = [];
   for (let i = 0; i < toks.length; i++) {
     const t = toks[i];
-    if (denied.has(t) || denied.has(t.split("=", 1)[0])) throw new Error(`option ${JSON.stringify(t)} is excluded from this capability (HTTP 400 equivalent: nothing was run)`);
+    if (denied.has(t) || denied.has(t.split("=", 1)[0])) throw new ClientFacingError("invalid_argument", `option ${JSON.stringify(t)} is excluded from this capability (HTTP 400 equivalent: nothing was run)`);
     const exact = byFlag.get(t);
     if (exact) {
       out.push(t);
       if (exact.arg) {
-        if (i + 1 >= toks.length) throw new Error(`option ${t} needs a value`);
+        if (i + 1 >= toks.length) throw new ClientFacingError("invalid_argument", `option ${t} needs a value`);
         out.push(toks[++i]);
       }
       continue;
@@ -306,7 +307,7 @@ export function validateOptions(value: unknown, allowed: Array<{ flags: string[]
     const attached = /^(-[A-Za-z0-9])(.+)$/.exec(t);
     if (attached) {
       if (byFlag.get(attached[1])?.arg) {
-        if (denied.has(attached[1])) throw new Error(`option ${attached[1]} is excluded from this capability (HTTP 400 equivalent: nothing was run)`);
+        if (denied.has(attached[1])) throw new ClientFacingError("invalid_argument", `option ${attached[1]} is excluded from this capability (HTTP 400 equivalent: nothing was run)`);
         out.push(attached[1], attached[2]);
         continue;
       }
@@ -315,7 +316,7 @@ export function validateOptions(value: unknown, allowed: Array<{ flags: string[]
         continue;
       }
     }
-    throw new Error(`option ${JSON.stringify(t)} is not one this program documents; allowed: ${[...byFlag.keys()].slice(0, 60).join(" ")}`);
+    throw new ClientFacingError("invalid_argument", `option ${JSON.stringify(t)} is not one this program documents; allowed: ${[...byFlag.keys()].slice(0, 60).join(" ")}`);
   }
   return out;
 }

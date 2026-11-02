@@ -9,6 +9,8 @@
 
 import { pick } from "./verify.ts";
 
+import { ClientFacingError } from "../interface/client-error.ts";
+
 export interface OutputView {
   /** Path into the output (verify path syntax: "a.b", "0.c", or "items.id" to map over an array). */
   select?: string;
@@ -47,13 +49,13 @@ const VIEW_KEYS = new Set(["select", "fields", "count", "offset", "limit", "full
 
 export function parseView(v: unknown): OutputView | undefined {
   if (v === undefined || v === null) return undefined;
-  if (typeof v !== "object" || Array.isArray(v)) throw new Error("view must be an object");
+  if (typeof v !== "object" || Array.isArray(v)) throw new ClientFacingError("invalid_argument", "view must be an object");
   const o = v as Record<string, unknown>;
-  for (const k of Object.keys(o)) if (!VIEW_KEYS.has(k)) throw new Error(`unknown view option: ${k}`);
-  if (o.select !== undefined && typeof o.select !== "string") throw new Error("view.select must be a path string");
-  if (o.fields !== undefined && (!Array.isArray(o.fields) || o.fields.some((f) => typeof f !== "string"))) throw new Error("view.fields must be an array of path strings");
-  for (const k of ["offset", "limit"] as const) if (o[k] !== undefined && (!Number.isInteger(o[k]) || (o[k] as number) < 0)) throw new Error(`view.${k} must be a non-negative integer`);
-  for (const k of ["count", "full"] as const) if (o[k] !== undefined && typeof o[k] !== "boolean") throw new Error(`view.${k} must be a boolean`);
+  for (const k of Object.keys(o)) if (!VIEW_KEYS.has(k)) throw new ClientFacingError("invalid_argument", `unknown view option: ${k}`);
+  if (o.select !== undefined && typeof o.select !== "string") throw new ClientFacingError("invalid_argument", "view.select must be a path string");
+  if (o.fields !== undefined && (!Array.isArray(o.fields) || o.fields.some((f) => typeof f !== "string"))) throw new ClientFacingError("invalid_argument", "view.fields must be an array of path strings");
+  for (const k of ["offset", "limit"] as const) if (o[k] !== undefined && (!Number.isInteger(o[k]) || (o[k] as number) < 0)) throw new ClientFacingError("invalid_argument", `view.${k} must be a non-negative integer`);
+  for (const k of ["count", "full"] as const) if (o[k] !== undefined && typeof o[k] !== "boolean") throw new ClientFacingError("invalid_argument", `view.${k} must be a boolean`);
   return o as OutputView;
 }
 

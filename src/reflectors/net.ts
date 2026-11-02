@@ -5,13 +5,14 @@
 // capability (or a redirect) can never carry a key to some other host.
 
 import type { FetchLike, TransportContext, TransportRefusal } from "../core/types.ts";
+import { ClientFacingError } from "../interface/client-error.ts";
 
 /** Trusted host adapters can distinguish a boundary denial from transport failure.
  * This marker only stops work; it cannot authorize anything or attest a grant. */
-export class TransportRefused extends Error {
+export class TransportRefused extends ClientFacingError {
   readonly refusal: TransportRefusal;
   constructor(reason: string, capability?: string, runs: string[] = []) {
-    super(`blocked by execution boundary: ${reason}`);
+    super("transport_refused", `blocked by execution boundary: ${reason}`);
     this.name = "TransportRefused";
     this.refusal = { reason, capability, runs };
   }
@@ -174,20 +175,20 @@ export function isPrivateAddress(host: string): boolean {
 /** Throws if the URL is not allowed by the network policy. Resolves hostnames on server runtimes. */
 export async function checkUrl(policy: NetworkPolicy | undefined, raw: string): Promise<void> {
   const u = new URL(raw);
-  if (u.protocol !== "http:" && u.protocol !== "https:") throw new Error(`blocked by network policy: ${u.protocol} URLs are not allowed`);
+  if (u.protocol !== "http:" && u.protocol !== "https:") throw new ClientFacingError("transport_refused", `blocked by network policy: ${u.protocol} URLs are not allowed`);
   if (!policy) return;
-  if (policy.origins && !policy.origins.includes(u.origin)) throw new Error(`blocked by egress policy: ${u.origin} is not an approved origin`);
+  if (policy.origins && !policy.origins.includes(u.origin)) throw new ClientFacingError("transport_refused", `blocked by egress policy: ${u.origin} is not an approved origin`);
   const matches = (list?: string[]) => (list ?? []).some((x) => x === u.host || x === u.hostname || x === u.origin);
-  if (matches(policy.deny)) throw new Error(`blocked by network policy: ${u.host} is denied`);
+  if (matches(policy.deny)) throw new ClientFacingError("transport_refused", `blocked by network policy: ${u.host} is denied`);
   if (!policy.blockPrivate || matches(policy.allow)) return;
-  if (isPrivateAddress(u.hostname)) throw new Error(`blocked by network policy: ${u.hostname} is a private or metadata address`);
+  if (isPrivateAddress(u.hostname)) throw new ClientFacingError("transport_refused", `blocked by network policy: ${u.hostname} is a private or metadata address`);
   // DNS can point a public-looking name at a private address; check what it resolves to.
   const g = globalThis as any;
   if (g.process?.versions?.node && !/^[\d.]+$|:/.test(u.hostname)) {
     try {
       const dns = await import("node:dns/promises");
       const addrs = await dns.lookup(u.hostname, { all: true });
-      if (addrs.some((a) => isPrivateAddress(a.address))) throw new Error(`blocked by network policy: ${u.hostname} resolves to a private address`);
+      if (addrs.some((a) => isPrivateAddress(a.address))) throw new ClientFacingError("transport_refused", `blocked by network policy: ${u.hostname} resolves to a private address`);
     } catch (e) {
       if (String((e as Error).message).startsWith("blocked")) throw e;
     }

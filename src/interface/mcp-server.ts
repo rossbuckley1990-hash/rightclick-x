@@ -2,6 +2,7 @@
 // Streamable HTTP transports both feed messages through handle().
 
 import { redact, redactText } from "../core/secrets.ts";
+import { clientErrorText, toClientError } from "./client-error.ts";
 import { VERSION, type RightClick } from "../runtime.ts";
 import { ANNOTATED_TOOLS, TOOLS, dispatch } from "./tools.ts";
 
@@ -61,9 +62,11 @@ export async function handle(rc: RightClick, msg: JsonRpc): Promise<JsonRpc | nu
         const structured = out && typeof out === "object" && !Array.isArray(out) ? out : { result: out };
         return reply({ content: [{ type: "text", text: JSON.stringify(out) }], structuredContent: structured, isError: false });
       } catch (e) {
-        const error = String((e as Error)?.message ?? e);
-        audit(false, error);
-        return reply({ content: [{ type: "text", text: error }], isError: true });
+        // The client error boundary (H2, #38): only reviewed codes and messages cross.
+        // The raw exception goes to the audit sink — the protected diagnostic channel.
+        const view = toClientError(e, args);
+        audit(false, view.ref ? `${view.message} [ref ${view.ref}] ${view.detail}` : view.detail);
+        return reply({ content: [{ type: "text", text: clientErrorText(view) }], isError: true });
       }
     }
     default:

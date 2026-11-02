@@ -16,6 +16,7 @@
 // before it exists, so a barrier can precede the data it conceals: see pendingDenyRoot.
 
 import { validateFileNames } from "./cli-files.ts";
+import { ClientFacingError } from "../interface/client-error.ts";
 
 export interface SandboxLimits {
   timeoutMs: number;
@@ -96,7 +97,7 @@ function declaredRoots(value: string | undefined, what: string): string[] {
     const entry = raw.trim();
     if (!entry) continue;
     if (!entry.startsWith("/") || entry.includes("..") || !SAFE_PATH.test(entry)) {
-      throw new Error(`RCX_SANDBOX_${what} refused: ${entry} is not an absolute, plain path`);
+      throw new ClientFacingError("invalid_argument", `RCX_SANDBOX_${what} refused: a configured path is not absolute and plain`, `RCX_SANDBOX_${what} refused: ${entry} is not an absolute, plain path`);
     }
     out.push(entry);
   }
@@ -136,7 +137,7 @@ export function pendingDenyRoot(realpath: (p: string) => string, entry: string):
     }
     return real + entry.slice(literal.length);
   }
-  throw new Error(`RCX_SANDBOX_READ_DENY refused: no ancestor of ${entry} exists, so the barrier cannot be resolved`);
+  throw new ClientFacingError("invalid_argument", "RCX_SANDBOX_READ_DENY refused: no ancestor of a configured deny path exists, so the barrier cannot be resolved", `RCX_SANDBOX_READ_DENY refused: no ancestor of ${entry} exists, so the barrier cannot be resolved`);
 }
 
 export function sandboxPolicy(): Promise<SandboxPolicy> {
@@ -149,9 +150,9 @@ export function sandboxPolicy(): Promise<SandboxPolicy> {
         try {
           real = fs.realpathSync(entry);
         } catch {
-          throw new Error(`RCX_SANDBOX_${what} refused: ${entry} does not exist`);
+          throw new ClientFacingError("invalid_argument", `RCX_SANDBOX_${what} refused: a configured path does not exist`, `RCX_SANDBOX_${what} refused: ${entry} does not exist`);
         }
-        if (!SAFE_PATH.test(real)) throw new Error(`RCX_SANDBOX_${what} refused: ${real} is not a plain path`);
+        if (!SAFE_PATH.test(real)) throw new ClientFacingError("invalid_argument", `RCX_SANDBOX_${what} refused: a configured path is not plain`, `RCX_SANDBOX_${what} refused: ${real} is not a plain path`);
         return real;
       });
     const timeout = Number(env.RCX_SANDBOX_TIMEOUT_MS);
@@ -168,19 +169,19 @@ export function sandboxPolicy(): Promise<SandboxPolicy> {
         // Only absence may be recovered from. A permission error while resolving is not
         // a licence to deny some other path than the one the operator declared.
         if ((error as { code?: string }).code !== "ENOENT") {
-          throw new Error(`RCX_SANDBOX_READ_DENY refused: ${entry} cannot be resolved (${String(error)})`);
+          throw new ClientFacingError("invalid_argument", "RCX_SANDBOX_READ_DENY refused: a configured deny path cannot be resolved", `RCX_SANDBOX_READ_DENY refused: ${entry} cannot be resolved (${String(error)})`);
         }
         real = pendingDenyRoot((p) => fs.realpathSync(p), entry);
         readDenyPending.push(real);
       }
-      if (!SAFE_PATH.test(real)) throw new Error(`RCX_SANDBOX_READ_DENY refused: ${real} is not a plain path`);
+      if (!SAFE_PATH.test(real)) throw new ClientFacingError("invalid_argument", "RCX_SANDBOX_READ_DENY refused: a configured deny path is not a plain path", `RCX_SANDBOX_READ_DENY refused: ${real} is not a plain path`);
       return real;
     });
     for (const deny of readDenyRoots) {
       if (!readRoots.some((root) => deny.startsWith(`${root}/`))) {
         // A barrier that bars nothing is worse than no barrier: it reads as
         // enforced while excluding no file at all.
-        throw new Error(`RCX_SANDBOX_READ_DENY refused: ${deny} is not inside any RCX_SANDBOX_READ root, so it would exclude nothing`);
+        throw new ClientFacingError("invalid_argument", "RCX_SANDBOX_READ_DENY refused: a configured deny path is not inside any RCX_SANDBOX_READ root, so it would exclude nothing", `RCX_SANDBOX_READ_DENY refused: ${deny} is not inside any RCX_SANDBOX_READ root, so it would exclude nothing`);
       }
     }
     return {
@@ -395,7 +396,7 @@ export function makeSandbox(kind: Sandbox["kind"], policy: SandboxPolicy, bwrap 
         }
       } catch (error) {
         fs.rmSync(work, { recursive: true, force: true });
-        throw new Error(`cannot stage exact input files: ${String(error)} (HTTP 400 equivalent: nothing was run)`);
+        throw new ClientFacingError("program_failed", `cannot stage exact input files (HTTP 400 equivalent: nothing was run)`, String(error));
       }
       const wrapped = ["/bin/sh", "-c", LIMITS_SCRIPT, bin, ...args];
       let argv: string[];
