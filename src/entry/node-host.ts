@@ -6,6 +6,7 @@ import { goalDefinitionDigest } from "../core/goal-identity.ts";
 import { backupSuffix, decodeState, encodeState, FILE_STORE_CAS_REQUIREMENT, FILE_STORE_GOAL_LEASE_REQUIREMENT, migrationReplaces } from "../core/state-format.ts";
 import { StateCommitUnknownError, StateConflictError } from "../core/state-conflict.ts";
 import { handle, type JsonRpc } from "../interface/mcp-server.ts";
+import { REMOTE_ADDRESS } from "../interface/http.ts";
 
 export type FetchHandler = (req: Request) => Promise<Response>;
 
@@ -27,19 +28,29 @@ export async function serve(handler: FetchHandler, port = 8787, hostname = "127.
     return { url: `http://${hostname}:${s.addr.port}`, port: s.addr.port, close: () => s.shutdown() };
   }
   const http = await import("node:http");
+  const { Readable } = await import("node:stream");
   const server = http.createServer(async (req, res) => {
     try {
-      const chunks: Buffer[] = [];
-      for await (const c of req) chunks.push(c as Buffer);
-      const body = chunks.length ? Buffer.concat(chunks) : undefined;
+      // The request body is passed through as a stream (not pre-buffered): the handler's
+      // byte-true body cap is what actually bounds it. The socket's remote address — where
+      // the TCP connection really came from — is pinned onto the Request so unauthenticated
+      // rate limiting can key on it instead of client-suppliable headers.
       const headers = new Headers();
       for (const [k, v] of Object.entries(req.headers)) if (v !== undefined) headers.set(k, Array.isArray(v) ? v.join(", ") : v);
+      const hasBody = req.method !== "GET" && req.method !== "HEAD";
+      // `duplex: "half"` is required by the runtime for stream bodies but is absent from
+      // this TypeScript lib's RequestInit; the cast keeps the typecheck honest.
       const request = new Request(`http://${req.headers.host ?? `${hostname}:${port}`}${req.url}`, {
         method: req.method,
         headers,
-        body: body && req.method !== "GET" && req.method !== "HEAD" ? body : undefined,
-      });
+        body: hasBody ? (Readable.toWeb(req) as unknown as ReadableStream) : undefined,
+        ...(hasBody ? { duplex: "half" } : {}),
+      } as RequestInit);
+      (request as unknown as Record<symbol, unknown>)[REMOTE_ADDRESS] = req.socket.remoteAddress;
       const response = await handler(request);
+      // If the handler refused before reading the body (401/413/429), drain it so the
+      // connection is not left stalled with backpressure.
+      req.resume();
       res.writeHead(response.status, Object.fromEntries(response.headers));
       if (!response.body) return res.end();
       const reader = response.body.getReader();
@@ -50,9 +61,10 @@ export async function serve(handler: FetchHandler, port = 8787, hostname = "127.
         res.write(value);
       }
       res.end();
-    } catch (e) {
+    } catch {
+      // The host's own failure text never crosses to the client either (H2).
       if (!res.headersSent) res.writeHead(500, { "content-type": "text/plain" });
-      res.end(String((e as Error)?.message ?? e));
+      res.end("internal server error");
     }
   });
   await new Promise<void>((r) => server.listen(port, hostname, r));
