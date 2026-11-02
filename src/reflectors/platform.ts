@@ -5,6 +5,7 @@
 // graph nodes that compose with everything else.
 
 import type { Capability, Port, Reflection, SemType } from "../core/types.ts";
+import { ClientFacingError } from "../interface/client-error.ts";
 
 export type PlatformFn = (args: Record<string, any>) => Promise<unknown>;
 
@@ -75,7 +76,7 @@ export async function platformReflection(info: RuntimeInfo, opts: PlatformOption
     const within = (real: string, realRoot: string) => real === realRoot || real.startsWith(realRoot + path.sep);
     const inside = async (p: string, forWrite = false) => {
       const full = path.resolve(root, String(p));
-      if (full !== root && !full.startsWith(root + path.sep)) throw new Error(`path escapes workspace: ${p}`);
+      if (full !== root && !full.startsWith(root + path.sep)) throw new ClientFacingError("invalid_argument", `path escapes workspace: ${p}`);
       const realRoot = await fs.realpath(root);
       if (forWrite) {
         const link = await fs.lstat(full).catch(() => null);
@@ -83,11 +84,11 @@ export async function platformReflection(info: RuntimeInfo, opts: PlatformOption
         // The nearest existing ancestor must really be inside the workspace.
         let dir = path.dirname(full);
         while (!(await fs.lstat(dir).catch(() => null))) dir = path.dirname(dir);
-        if (!within(await fs.realpath(dir), realRoot)) throw new Error(`path escapes workspace: ${p}`);
+        if (!within(await fs.realpath(dir), realRoot)) throw new ClientFacingError("invalid_argument", `path escapes workspace: ${p}`);
         return full;
       }
       const real = await fs.realpath(full);
-      if (!within(real, realRoot)) throw new Error(`path escapes workspace: ${p}`);
+      if (!within(real, realRoot)) throw new ClientFacingError("invalid_argument", `path escapes workspace: ${p}`);
       return real;
     };
     add("fs.list", { title: "List workspace files", description: `List files in the workspace (${root}).`, inputs: [port("dir", "path", false)], outputs: [port("", "list:path")], risk: "read", tags: ["files", "list", "workspace"] }, async ({ dir }) => (await fs.readdir(await inside(dir ?? "."), { recursive: true })).map(String).slice(0, 1000));

@@ -1,3 +1,5 @@
+import { ClientFacingError } from "../interface/client-error.ts";
+
 export interface CliValidity {
   coverage: "partial";
   environment: "unchanged" | "changed" | "unrecorded";
@@ -9,12 +11,15 @@ export interface CliValidity {
   limitation: string;
 }
 
-export class CliValidityError extends Error {
+export class CliValidityError extends ClientFacingError {
   readonly validity?: CliValidity;
   readonly capability?: string;
   readonly runs: string[];
-  constructor(message: string, validity?: CliValidity, capability?: string, runs: string[] = []) {
-    super(message);
+  /** `message` is the reviewed client text; `detail` may carry the wrapped diagnostic
+   *  (a run-record error string) that must stay in the audit channel. */
+  constructor(message: string, validity?: CliValidity, capability?: string, runs: string[] = [], detail?: string) {
+    super("cli_validity", message, detail);
+    this.name = "CliValidityError";
     this.validity = validity;
     this.capability = capability;
     this.runs = runs;
