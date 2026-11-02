@@ -76,3 +76,7 @@ jobs:
         run: npm audit --omit=dev --audit-level=high
       - name: documentation links
         run: node ci/check-links.ts
+      - name: release workflow validation
+        # The release pipeline's job order is a security property (H3, #38); this keeps it
+        # true as the file evolves instead of trusting the review that added it.
+        run: node ci/check-release-workflow.ts
