@@ -1,0 +1,463 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/rossbuckley1990-hash/rightclick-x/main/docs/schema/capability-graph.v0.json",
+  "title": "RightClick X capability graph (draft v0)",
+  "description": "The exchange shape of a reflected capability graph: what every reflector (OpenAPI, GraphQL, MCP, web, CLI, platform, peer, builtin, composite) lands capabilities in, and what the runtime exports. Extracted from src/core/types.ts; the runtime is the reference implementation. Draft v0 - published for feedback, not yet frozen.",
+  "type": "object",
+  "required": ["name", "version", "capabilities"],
+  "properties": {
+    "name": { "type": "string", "minLength": 1 },
+    "region": { "type": "string" },
+    "version": { "type": "string", "minLength": 1 },
+    "capabilities": { "type": "array", "items": { "$ref": "#/$defs/Capability" } }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "SemType": {
+      "description": "A semantic type such as \"url\", \"text\", \"language\", \"geo.lat\", \"list:url\".",
+      "type": "string",
+      "minLength": 1
+    },
+    "Port": {
+      "type": "object",
+      "required": ["name", "type", "required"],
+      "properties": {
+        "name": { "type": "string", "description": "Input: argument name. Output: dotted path into the result; the empty string denotes the whole result." },
+        "type": { "$ref": "#/$defs/SemType" },
+        "required": { "type": "boolean" },
+        "description": { "type": "string" },
+        "wire": { "type": "string" },
+        "enum": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+        "schemes": { "type": "array", "items": { "type": "string" } },
+        "observed": { "type": "boolean" },
+        "anyText": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "SourceKind": {
+      "enum": ["builtin", "openapi", "graphql", "mcp", "web", "platform", "composite", "peer", "cli"]
+    },
+    "Risk": {
+      "description": "Destructive operations require confirmation; callers can constrain allowed risks.",
+      "enum": ["read", "write", "external", "destructive"]
+    },
+    "CapabilityAnchor": {
+      "type": "object",
+      "required": ["id", "title", "risk", "inputTypes", "outputTypes"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "source": { "type": "string" },
+        "title": { "type": "string", "minLength": 1 },
+        "risk": { "$ref": "#/$defs/Risk" },
+        "inputTypes": { "type": "array", "items": { "$ref": "#/$defs/SemType" } },
+        "outputTypes": { "type": "array", "items": { "$ref": "#/$defs/SemType" } },
+        "operation": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "HttpInvoke": {
+      "type": "object",
+      "required": ["kind", "method", "url", "pathParams", "queryParams", "headerParams", "body", "bodyParams"],
+      "properties": {
+        "kind": { "const": "http" },
+        "method": { "type": "string", "minLength": 1 },
+        "url": { "type": "string", "minLength": 1 },
+        "pathParams": { "type": "array", "items": { "type": "string" } },
+        "queryParams": { "type": "array", "items": { "type": "string" } },
+        "headerParams": { "type": "array", "items": { "type": "string" } },
+        "body": { "anyOf": [{ "enum": ["json", "form", "raw"] }, { "type": "null" }] },
+        "bodyParams": { "type": "array", "items": { "type": "string" } },
+        "constants": { "type": "object", "additionalProperties": { "type": "string" } },
+        "multiSegment": { "type": "array", "items": { "type": "string" } },
+        "entry": {
+          "type": "object",
+          "required": ["map", "keyInput"],
+          "properties": {
+            "map": { "type": "string" },
+            "keyInput": { "type": "string" }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "GraphQLInvoke": {
+      "type": "object",
+      "required": ["kind", "endpoint", "operation", "field", "args", "selection"],
+      "properties": {
+        "kind": { "const": "graphql" },
+        "endpoint": { "type": "string", "minLength": 1 },
+        "operation": { "enum": ["query", "mutation"] },
+        "field": { "type": "string", "minLength": 1 },
+        "args": { "type": "object", "additionalProperties": { "type": "string" } },
+        "selection": { "type": "string", "minLength": 1 },
+        "selectPort": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "McpInvoke": {
+      "type": "object",
+      "required": ["kind", "endpoint", "tool"],
+      "properties": {
+        "kind": { "const": "mcp" },
+        "endpoint": { "type": "string", "minLength": 1 },
+        "tool": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "BuiltinInvoke": {
+      "type": "object",
+      "required": ["kind", "fn"],
+      "properties": {
+        "kind": { "const": "builtin" },
+        "fn": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "PlatformInvoke": {
+      "type": "object",
+      "required": ["kind", "fn"],
+      "properties": {
+        "kind": { "const": "platform" },
+        "fn": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "PeerInvoke": {
+      "type": "object",
+      "required": ["kind", "endpoint", "id"],
+      "properties": {
+        "kind": { "const": "peer" },
+        "endpoint": { "type": "string", "minLength": 1 },
+        "id": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "GoalInvoke": {
+      "type": "object",
+      "required": ["kind", "slug"],
+      "properties": {
+        "kind": { "const": "goal" },
+        "slug": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "CliInvoke": {
+      "type": "object",
+      "required": ["kind", "bin", "args", "okExit", "output", "sha256"],
+      "properties": {
+        "kind": { "const": "cli" },
+        "bin": { "type": "string", "minLength": 1 },
+        "args": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              { "type": "string" },
+              {
+                "type": "object",
+                "required": ["input"],
+                "properties": {
+                  "input": { "type": "string", "minLength": 1 },
+                  "literal": { "type": "boolean" }
+                },
+                "additionalProperties": false
+              }
+            ]
+          }
+        },
+        "options": { "$ref": "#/$defs/CliOptions" },
+        "optionsAfterArgs": { "$ref": "#/$defs/CliOptions" },
+        "filesPort": { "type": "string" },
+        "operandsPort": { "type": "string" },
+        "stdin": { "type": "string" },
+        "okExit": { "type": "array", "items": { "type": "number" }, "minItems": 1 },
+        "output": { "enum": ["text", "json", "html", "xml"] },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "environment": {
+          "type": "object",
+          "required": ["version", "coverage", "digest"],
+          "properties": {
+            "version": { "const": 1 },
+            "coverage": { "const": "partial" },
+            "digest": { "type": "string", "minLength": 1 }
+          },
+          "additionalProperties": false
+        },
+        "behaviour": { "type": "string" },
+        "examples": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["outputSha256", "outputPreview"],
+            "properties": {
+              "stdin": { "type": "string" },
+              "files": { "type": "object", "additionalProperties": { "type": "string" } },
+              "literals": { "type": "array", "items": { "type": "string" } },
+              "outputSha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+              "outputPreview": { "type": "string" }
+            },
+            "additionalProperties": false
+          }
+        },
+        "continuity": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["behaviour", "examples"],
+            "properties": {
+              "behaviour": { "type": "string" },
+              "examples": { "type": "array", "minItems": 1 }
+            },
+            "additionalProperties": false
+          }
+        },
+        "volatile": { "const": "timestamps" }
+      },
+      "additionalProperties": false
+    },
+    "CliOptions": {
+      "type": "object",
+      "required": ["port", "allowed"],
+      "properties": {
+        "port": { "type": "string", "minLength": 1 },
+        "allowed": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["flags", "arg"],
+            "properties": {
+              "flags": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+              "arg": { "type": "boolean" },
+              "optionalArg": { "type": "boolean" }
+            },
+            "additionalProperties": false
+          }
+        },
+        "excluded": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    },
+    "Predicate": {
+      "anyOf": [
+        {
+          "type": "object",
+          "required": ["op"],
+          "properties": { "op": { "const": "exists" }, "path": { "type": "string" } },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["op"],
+          "properties": { "op": { "const": "equals" }, "path": { "type": "string" } },
+          "additionalProperties": true
+        },
+        {
+          "type": "object",
+          "required": ["op", "value"],
+          "properties": { "op": { "const": "contains" }, "path": { "type": "string" }, "value": { "type": "string" } },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["op", "pattern"],
+          "properties": { "op": { "const": "matches" }, "path": { "type": "string" }, "pattern": { "type": "string" } },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["op", "value"],
+          "properties": { "op": { "const": "type" }, "path": { "type": "string" }, "value": { "enum": ["string", "number", "boolean", "object", "array"] } },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["op", "value"],
+          "properties": { "op": { "enum": ["gt", "lt"] }, "path": { "type": "string" }, "value": { "type": "number" } },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["op", "value"],
+          "properties": { "op": { "const": "length_gt" }, "path": { "type": "string" }, "value": { "type": "number" } },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "WitnessAgreement": {
+      "type": "object",
+      "properties": {
+        "path": { "type": "string" },
+        "candidate": { "type": "string" },
+        "mode": { "enum": ["exact", "trimmed", "number"] },
+        "tolerance": { "type": "number" }
+      },
+      "additionalProperties": false
+    },
+    "OutcomeWitness": {
+      "type": "object",
+      "required": ["capability", "args", "verify"],
+      "properties": {
+        "capability": { "type": "string", "minLength": 1 },
+        "contract": { "type": "string" },
+        "args": {
+          "type": "object",
+          "additionalProperties": {
+            "anyOf": [
+              { "type": "object", "required": ["input"], "properties": { "input": { "type": "string" } }, "additionalProperties": false },
+              { "type": "object", "required": ["output"], "properties": { "output": { "type": "string" } }, "additionalProperties": false },
+              { "type": "object", "required": ["value"], "properties": { "value": true }, "additionalProperties": false }
+            ]
+          }
+        },
+        "verify": { "type": "array", "items": { "$ref": "#/$defs/Predicate" } },
+        "agree": { "$ref": "#/$defs/WitnessAgreement" }
+      },
+      "additionalProperties": false
+    },
+    "Binding": {
+      "type": "object",
+      "required": ["from"],
+      "properties": {
+        "port": { "type": "string" },
+        "value": true,
+        "from": { "type": "string", "minLength": 1 },
+        "link": {
+          "type": "object",
+          "required": ["name", "status", "pointer", "wire"],
+          "properties": {
+            "name": { "type": "string" },
+            "status": { "type": "number" },
+            "pointer": { "type": "string" },
+            "wire": { "enum": ["string", "number", "integer", "boolean"] },
+            "format": { "enum": ["uuid", "uri"] }
+          },
+          "additionalProperties": false
+        },
+        "each": {
+          "type": "object",
+          "required": ["max"],
+          "properties": {
+            "max": { "type": "number" },
+            "shapes": { "type": "array", "items": { "type": "string" } }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "ContractLink": {
+      "type": "object",
+      "required": ["name", "target", "status", "parameters"],
+      "properties": {
+        "name": { "type": "string" },
+        "target": { "type": "string" },
+        "status": { "type": "number" },
+        "parameters": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["port", "pointer", "wire"],
+            "properties": {
+              "port": { "type": "string" },
+              "pointer": { "type": "string" },
+              "wire": { "enum": ["string", "number", "integer", "boolean"] },
+              "format": { "enum": ["uuid", "uri"] }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "PlanStep": {
+      "type": "object",
+      "required": ["capability", "bindings"],
+      "properties": {
+        "capability": { "type": "string", "minLength": 1 },
+        "bindings": { "type": "array", "items": { "$ref": "#/$defs/Binding" } }
+      },
+      "additionalProperties": false
+    },
+    "CompositeInvoke": {
+      "type": "object",
+      "required": ["kind", "steps", "result"],
+      "properties": {
+        "kind": { "const": "composite" },
+        "steps": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/PlanStep" } },
+        "result": { "type": "string", "minLength": 1 },
+        "signatures": { "type": "array", "items": { "type": "string" } },
+        "verify": { "type": "array", "items": { "$ref": "#/$defs/Predicate" } },
+        "require": { "type": "array", "items": { "type": "string" } },
+        "witnesses": { "type": "array", "items": { "$ref": "#/$defs/OutcomeWitness" } },
+        "origins": { "type": "array", "items": { "type": "string" } },
+        "preserveInputs": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    },
+    "Invoke": {
+      "anyOf": [
+        { "$ref": "#/$defs/HttpInvoke" },
+        { "$ref": "#/$defs/GraphQLInvoke" },
+        { "$ref": "#/$defs/McpInvoke" },
+        { "$ref": "#/$defs/BuiltinInvoke" },
+        { "$ref": "#/$defs/PlatformInvoke" },
+        { "$ref": "#/$defs/PeerInvoke" },
+        { "$ref": "#/$defs/GoalInvoke" },
+        { "$ref": "#/$defs/CliInvoke" },
+        { "$ref": "#/$defs/CompositeInvoke" }
+      ]
+    },
+    "DeclaredField": {
+      "type": "object",
+      "required": ["path"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "type": { "$ref": "#/$defs/SemType" },
+        "selected": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "Capability": {
+      "type": "object",
+      "required": ["id", "title", "description", "provider", "source", "inputs", "outputs", "risk", "tags", "invoke"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "title": { "type": "string", "minLength": 1 },
+        "description": { "type": "string" },
+        "provider": { "type": "string", "minLength": 1 },
+        "source": { "$ref": "#/$defs/SourceKind" },
+        "inputs": { "type": "array", "items": { "$ref": "#/$defs/Port" } },
+        "outputs": { "type": "array", "items": { "$ref": "#/$defs/Port" } },
+        "risk": { "$ref": "#/$defs/Risk" },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "invoke": { "$ref": "#/$defs/Invoke" },
+        "fields": { "type": "array", "items": { "$ref": "#/$defs/DeclaredField" } },
+        "links": { "type": "array", "items": { "$ref": "#/$defs/ContractLink" } }
+      },
+      "additionalProperties": false
+    },
+    "Provider": {
+      "type": "object",
+      "required": ["id", "title", "source", "origin", "learnedAt", "capabilityIds"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "title": { "type": "string", "minLength": 1 },
+        "source": { "$ref": "#/$defs/SourceKind" },
+        "origin": { "type": "string", "minLength": 1 },
+        "learnedAt": { "type": "string" },
+        "capabilityIds": { "type": "array", "items": { "type": "string" } },
+        "meta": { "type": "object" }
+      },
+      "additionalProperties": false
+    },
+    "Reflection": {
+      "type": "object",
+      "required": ["provider", "capabilities"],
+      "properties": {
+        "provider": { "$ref": "#/$defs/Provider" },
+        "capabilities": { "type": "array", "items": { "$ref": "#/$defs/Capability" } }
+      },
+      "additionalProperties": false
+    }
+  }
+}
