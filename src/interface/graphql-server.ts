@@ -9,6 +9,7 @@
 // fragments, aliases, multiple root fields.
 
 import { goalParams, type RightClick } from "../runtime.ts";
+import { ClientFacingError } from "./client-error.ts";
 
 const named = (kind: string, name: string) => ({ kind, name, ofType: null });
 const nonNull = (t: unknown) => ({ kind: "NON_NULL", name: null, ofType: t });
@@ -86,7 +87,7 @@ export function introspection(rc: RightClick) {
 export function parseQuery(query: string, variables: Record<string, unknown> = {}) {
   const body = query.replace(/#[^\n]*/g, "");
   const m = /\{\s*(\w+)\s*(?:\(([^)]*)\))?\s*(?:\{([^}]*)\})?\s*\}\s*$/.exec(body.trim());
-  if (!m) throw new Error("unsupported query shape: select exactly one published goal");
+  if (!m) throw new ClientFacingError("invalid_argument", "unsupported query shape: select exactly one published goal");
   const args: Record<string, unknown> = {};
   for (const a of (m[2] ?? "").matchAll(/(\w+)\s*:\s*("(?:[^"\\]|\\.)*"|\$\w+|-?\d+(?:\.\d+)?|true|false|null)/g)) {
     const raw = a[2];

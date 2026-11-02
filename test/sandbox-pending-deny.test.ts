@@ -46,7 +46,13 @@ test("a deny root with no existing ancestor is refused, not resolved to nothing"
   const realpath = () => {
     throw Object.assign(new Error("ENOENT"), { code: "ENOENT" });
   };
-  assert.throws(() => pendingDenyRoot(realpath, "/nowhere/a/b"), /no ancestor of \/nowhere\/a\/b exists/);
+  // The refusal is client-visible, but the configured path itself is diagnostic detail
+  // (H2, #38): the message names the class of misconfiguration, not the server's layout.
+  assert.throws(() => pendingDenyRoot(realpath, "/nowhere/a/b"), (e: Error) => {
+    assert.match(e.message, /RCX_SANDBOX_READ_DENY refused: no ancestor of a configured deny path exists/);
+    assert.ok(!e.message.includes("/nowhere/a/b"), "the configured path leaked into the client message");
+    return true;
+  });
 });
 
 // --------------------------------------------------- the declaration path, end to end

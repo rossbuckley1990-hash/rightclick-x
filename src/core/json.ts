@@ -1,6 +1,13 @@
 // JSON.parse accepts numbers it cannot represent and silently collapses duplicate object keys.
 // Keep those cases out of typed execution; callers can retain the original document as text.
-export class JsonRepresentationError extends Error {}
+import { ClientFacingError } from "../interface/client-error.ts";
+
+export class JsonRepresentationError extends ClientFacingError {
+  constructor(message: string) {
+    super("malformed_response", message);
+    this.name = "JsonRepresentationError";
+  }
+}
 
 function decimal(token: string): string {
   const match = /^(-?)(\d+)(?:\.(\d+))?(?:[eE]([+-]?\d+))?$/.exec(token)!;

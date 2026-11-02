@@ -3,6 +3,7 @@
 // compose and run through these thirteen.
 
 import type { RightClick } from "../runtime.ts";
+import { ClientFacingError } from "./client-error.ts";
 import { applyView, parseView, OUTPUT_BUDGET, type OutputView } from "../core/view.ts";
 
 const obj = (properties: Record<string, unknown>, required: string[] = []) => ({ type: "object", properties, required, additionalProperties: false });
@@ -175,11 +176,11 @@ export async function dispatch(rc: RightClick, name: string, a: Record<string, a
     case "context_actions":
       return rc.actions({ value: a.value, type: a.type, limit: a.limit });
     case "context_explain":
-      if (a.detail !== undefined && !["run", "full"].includes(a.detail)) throw new Error("detail must be run or full");
+      if (a.detail !== undefined && !["run", "full"].includes(a.detail)) throw new ClientFacingError("invalid_argument", "detail must be run or full");
       return rc.explainDeferred(a.id) ?? (a.detail === "full" ? rc.explain(a.id) : rc.explainForRun(a.id));
     case "context_run": {
-      if ("acknowledgeChange" in a) throw new Error("acknowledgeChange is no longer supported: caller acknowledgement cannot authorise a changed operation");
-      if ("resumeRunId" in a) throw new Error("resume uses the explicit resume:<run-id> selector");
+      if ("acknowledgeChange" in a) throw new ClientFacingError("invalid_argument", "acknowledgeChange is no longer supported: caller acknowledgement cannot authorise a changed operation");
+      if ("resumeRunId" in a) throw new ClientFacingError("invalid_argument", "resume uses the explicit resume:<run-id> selector");
       // Validate the view before running: a malformed view must not cost a side effect.
       const v = parseView(a.view);
       const r = await rc.run(a.id, a.args ?? {}, { verify: a.verify, confirm: a.confirm, acknowledgeChange: a.acknowledgeChange });
@@ -203,6 +204,6 @@ export async function dispatch(rc: RightClick, name: string, a: Record<string, a
     case "context_watch":
       return rc.watch({ since: a.since, waitMs: a.waitMs });
     default:
-      throw new Error(`unknown tool: ${name}`);
+      throw new ClientFacingError("unknown_tool", `unknown tool: ${name}`);
   }
 }
