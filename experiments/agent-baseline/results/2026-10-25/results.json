@@ -1,0 +1,903 @@
+{
+  "at": "2026-10-25T22:49:38.136Z",
+  "claude": "2.1.301 (Claude Code)",
+  "tasks": {
+    "tidy": {
+      "program": "/usr/bin/tidy",
+      "intent": "correct and pretty-print an html document",
+      "arms": {
+        "rcx-warm": [
+          {
+            "wallMs": 25927,
+            "turns": 5,
+            "costUsd": 0.143231,
+            "tokens": {
+              "input": 8,
+              "output": 1064,
+              "cacheCreate": 12892,
+              "cacheRead": 93915
+            },
+            "models": [
+              "claude-opus-5-5"
+            ],
+            "isError": false,
+            "subtype": "success",
+            "answer": "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 3.2//EN\">\n<html>\n<head>\n<meta name=\"generator\" content=\n\"HTML Tidy for Mac OS X (vers 31 October 2006 - Apple Inc. build 8433), see www.w3.org\">\n<title>Harbour</title>\n</head>\n<body>\n<h2>Ferry times</h2>\n<p>Morning crossing</p>\n<p>Evening crossing</p>\n<ul>\n<li>Tickets</li>\n<li>Bikes</li>\n</ul>\n</body>\n</html>\n",
+            "reply": "BEGIN\n<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 3.2//EN\">\n<html>\n<head>\n<meta name=\"generator\" content=\n\"HTML Tidy for Mac OS X (vers 31 October 2006 - Apple Inc. build 8433), see www.w3.org\">\n<title>Harbour</title>\n</head>\n<body>\n<h2>Ferry times</h2>\n<p>Morning crossing</p>\n<p>Evening crossing</p>\n<ul>\n<li>Tickets</li>\n<li>Bikes</li>\n</ul>\n</body>\n</html>\nEND\n\nThis is the output of the saved `goal:html-cleanup` goal, which runs HTML Tidy with its default settings. It closed the open `<p>` and `<li>` tags, added a doctype and a generator meta tag, and put each element on its own line. The run's status is \"unverified\" because the goal has no stored checks. Tidy's default settings don't indent nested elements. If you want indentation, I can run `cli:tidy:i` (`tidy -i`) instead.",
+            "pass": true
+          },
+          {
+            "wallMs": 26567,
+            "turns": 5,
+            "costUsd": 0.14379,
+            "tokens": {
+              "input": 8,
+              "output": 981,
+              "cacheCreate": 13155,
+              "cacheRead": 94490
+            },
+            "models": [
+              "claude-opus-5-5"
+            ],
+            "isError": false,
+            "subtype": "success",
+            "answer": "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 3.2//EN\">\n<html>\n<head>\n<meta name=\"generator\" content=\n\"HTML Tidy for Mac OS X (vers 31 October 2006 - Apple Inc. build 8433), see www.w3.org\">\n<title>Library</title>\n</head>\n<body>\n<h2>Opening hours</h2>\n<p>Weekday mornings</p>\n<p>Saturday afternoons</p>\n<ul>\n<li>Returns</li>\n<li>Renewals</li>\n</ul>\n</body>\n</html>\n",
+            "reply": "I ran the input through RightClick X's saved `goal:html-cleanup` goal, which uses tidy with its default settings. It closed the unclosed `<p>` and `<li>` tags, added a DOCTYPE and a generator `<meta>` tag, and put each element on its own line. Every word of the input is still there. RightClick X marked the run as \"unverified\" because no checks were stored with the goal or added to this run.\n\nBEGIN\n<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 3.2//EN\">\n<html>\n<head>\n<meta name=\"generator\" content=\n\"HTML Tidy for Mac OS X (vers 31 October 2006 - Apple Inc. build 8433), see www.w3.org\">\n<title>Library</title>\n</head>\n<body>\n<h2>Opening hours</h2>\n<p>Weekday mornings</p>\n<p>Saturday afternoons</p>\n<ul>\n<li>Returns</li>\n<li>Renewals</li>\n</ul>\n</body>\n</html>\nEND\n\nThe output isn't indented. If you want nested elements indented, I can run the `cli:tidy:i` option (`tidy -i`) instead.",
+            "pass": true
+          },
+          {
+            "wallMs": 19702,
+            "turns": 6,
+            "costUsd": 0.1560566,
+            "tokens": {
+              "input": 8,
+              "output": 1181,
+              "cacheCreate": 14203,
+              "cacheRead": 93903
+            },
+            "models": [
+              "claude-opus-5-5"
+            ],
+            "isError": false,
+            "subtype": "success",
+            "answer": "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 3.2//EN\">\n\n<html>\n<head>\n  <meta name=\"generator\" content=\n  \"HTML Tidy for Mac OS X (vers 31 October 2006 - Apple Inc. build 8433), see www.w3.org\">\n\n  <title>Allotment</title>\n</head>\n\n<body>\n  <h2>Planting plan</h2>\n\n  <p>Early potatoes</p>\n\n  <p>Runner beans</p>\n\n  <ul>\n    <li>Compost</li>\n\n    <li>Netting</li>\n  </ul>\n</body>\n</html>\n",
+            "reply": "I ran the input through `tidy -i` in RightClick X. It closed the unclosed `<p>` and `<li>` tags, added a DOCTYPE and indented the result. Tidy also inserted a \"generator\" meta tag, which I've left in since you asked for the exact output.\n\nBEGIN\n<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 3.2//EN\">\n\n<html>\n<head>\n  <meta name=\"generator\" content=\n  \"HTML Tidy for Mac OS X (vers 31 October 2006 - Apple Inc. build 8433), see www.w3.org\">\n\n  <title>Allotment</title>\n</head>\n\n<body>\n  <h2>Planting plan</h2>\n\n  <p>Early potatoes</p>\n\n  <p>Runner beans</p>\n\n  <ul>\n    <li>Compost</li>\n\n    <li>Netting</li>\n  </ul>\n</body>\n</html>\nEND\n\nI also ran the saved `goal:html-cleanup`. It made the same fixes but left everything unindented, so it doesn't really pretty-print, and I used `tidy -i` instead. Tidy exited with code 1, which RightClick X treats as success and normally means it only issued warnings. No checks were run against the result.",
+            "pass": true
+          }
+        ],
+        "rcx-cold": [
+          {
+            "wallMs": 28509,
+            "turns": 8,
+            "costUsd": 0.1795794,
+            "tokens": {
+              "input": 16,
+              "output": 1272,
+              "cacheCreate": 14217,
+              "cacheRead": 201697
+            },
+            "models": [
+              "claude-opus-5-5"
+            ],
+            "isError": false,
+            "subtype": "success",
+            "answer": "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 3.2//EN\">\n<html>\n<head>\n<meta name=\"generator\" content=\n\"HTML Tidy for Mac OS X (vers 31 October 2006 - Apple Inc. build 8433), see www.w3.org\">\n<title>Harbour</title>\n</head>\n<body>\n<h2>Ferry times</h2>\n<p>Morning crossing</p>\n<p>Evening crossing</p>\n<ul>\n<li>Tickets</li>\n<li>Bikes</li>\n</ul>\n</body>\n</html>\n",
+            "reply": "I ran the input through RightClick X's `cli:tidy:default` capability, which wraps the operator-authorised `tidy` program (Apple build 8433, 2006). It closed the two `<p>` and two `<li>` tags that had no end tag, and added a DOCTYPE and a generator `<meta>` tag. tidy exited with code 1, which means it only issued warnings and is listed as a success for this capability. RightClick X marked the result \"unverified\" because no independent check ran on it.\n\nBEGIN\n<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 3.2//EN\">\n<html>\n<head>\n<meta name=\"generator\" content=\n\"HTML Tidy for Mac OS X (vers 31 October 2006 - Apple Inc. build 8433), see www.w3.org\">\n<title>Harbour</title>\n</head>\n<body>\n<h2>Ferry times</h2>\n<p>Morning crossing</p>\n<p>Evening crossing</p>\n<ul>\n<li>Tickets</li>\n<li>Bikes</li>\n</ul>\n</body>\n</html>\nEND",
+            "pass": true
+          },
+          {
+            "wallMs": 30519,
+            "turns": 8,
+            "costUsd": 0.1789838,
+            "tokens": {
+              "input": 16,
+              "output": 1247,
+              "cacheCreate": 14206,
+              "cacheRead": 201659
+            },
+            "models": [
+              "claude-opus-5-5"
+            ],
+            "isError": false,
+            "subtype": "success",
+            "answer": "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 3.2//EN\">\n<html>\n<head>\n<meta name=\"generator\" content=\n\"HTML Tidy for Mac OS X (vers 31 October 2006 - Apple Inc. build 8433), see www.w3.org\">\n<title>Library</title>\n</head>\n<body>\n<h2>Opening hours</h2>\n<p>Weekday mornings</p>\n<p>Saturday afternoons</p>\n<ul>\n<li>Returns</li>\n<li>Renewals</li>\n</ul>\n</body>\n</html>\n",
+            "reply": "I ran the input through HTML Tidy (Apple build 8433, 2006) using RightClick X's `cli:tidy:default`. It closed the open `<p>` and `<li>` tags, put each element on its own line, and added a DOCTYPE and a generator `<meta>` tag. Tidy exited with code 1, which means it fixed things and issued warnings; it isn't an error. RightClick X marks the result as unverified because no independent checks were run on it.\n\nBEGIN\n<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 3.2//EN\">\n<html>\n<head>\n<meta name=\"generator\" content=\n\"HTML Tidy for Mac OS X (vers 31 October 2006 - Apple Inc. build 8433), see www.w3.org\">\n<title>Library</title>\n</head>\n<body>\n<h2>Opening hours</h2>\n<p>Weekday mornings</p>\n<p>Saturday afternoons</p>\n<ul>\n<li>Returns</li>\n<li>Renewals</li>\n</ul>\n</body>\n</html>\nEND",
+            "pass": true
+          },
+          {
+            "wallMs": 37069,
+            "turns": 8,
+            "costUsd": 0.1762362,
+            "tokens": {
+              "input": 16,
+              "output": 1174,
+              "cacheCreate": 14059,
+              "cacheRead": 201101
+            },
+            "models": [
+              "claude-opus-5-5"
+            ],
+            "isError": false,
+            "subtype": "success",
+            "answer": "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 3.2//EN\">\n<html>\n<head>\n<meta name=\"generator\" content=\n\"HTML Tidy for Mac OS X (vers 31 October 2006 - Apple Inc. build 8433), see www.w3.org\">\n<title>Allotment</title>\n</head>\n<body>\n<h2>Planting plan</h2>\n<p>Early potatoes</p>\n<p>Runner beans</p>\n<ul>\n<li>Compost</li>\n<li>Netting</li>\n</ul>\n</body>\n</html>\n",
+            "reply": "I ran the input through HTML Tidy (Apple's 2006 build) using RightClick X's default `cli:tidy:default` capability. Tidy closed the unclosed `<p>` and `<li>` tags, put each element on its own line, and added a doctype and a generator meta tag. It exited with code 1, which means it issued warnings, not errors. Nothing checked the output independently.\n\nBEGIN\n<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 3.2//EN\">\n<html>\n<head>\n<meta name=\"generator\" content=\n\"HTML Tidy for Mac OS X (vers 31 October 2006 - Apple Inc. build 8433), see www.w3.org\">\n<title>Allotment</title>\n</head>\n<body>\n<h2>Planting plan</h2>\n<p>Early potatoes</p>\n<p>Runner beans</p>\n<ul>\n<li>Compost</li>\n<li>Netting</li>\n</ul>\n</body>\n</html>\nEND",
+            "pass": true
+          }
+        ],
+        "shell": [
+          {
+            "wallMs": 16085,
+            "turns": 2,
+            "costUsd": 0.078881,
+            "tokens": {
+              "input": 4,
+              "output": 741,
+              "cacheCreate": 6875,
+              "cacheRead": 45225
+            },
+            "models": [
+              "claude-opus-5-5"
+            ],
+            "isError": false,
+            "subtype": "success",
+            "answer": "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 3.2//EN\">\n\n<html>\n<head>\n  <meta name=\"generator\" content=\n  \"HTML Tidy for Mac OS X (vers 31 October 2006 - Apple Inc. build 8433), see www.w3.org\">\n\n  <title>Harbour</title>\n</head>\n\n<body>\n  <h2>Ferry times</h2>\n\n  <p>Morning crossing</p>\n\n  <p>Evening crossing</p>\n\n  <ul>\n    <li>Tickets</li>\n\n    <li>Bikes</li>\n  </ul>\n</body>\n</html>\n",
+            "reply": "I ran tidy with indented output (`-q -i`). It exited with status 1, which means it found warnings but no errors. The only warning was the missing `<!DOCTYPE>` declaration, so tidy added an HTML 3.2 doctype. It also closed the open `<p>` and `<li>` tags and added a generator `<meta>` tag.\n\nBEGIN\n<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 3.2//EN\">\n\n<html>\n<head>\n  <meta name=\"generator\" content=\n  \"HTML Tidy for Mac OS X (vers 31 October 2006 - Apple Inc. build 8433), see www.w3.org\">\n\n  <title>Harbour</title>\n</head>\n\n<body>\n  <h2>Ferry times</h2>\n\n  <p>Morning crossing</p>\n\n  <p>Evening crossing</p>\n\n  <ul>\n    <li>Tickets</li>\n\n    <li>Bikes</li>\n  </ul>\n</body>\n</html>\nEND",
+            "pass": true
+          },
+          {
+            "wallMs": 14002,
+            "turns": 2,
+            "costUsd": 0.07804340000000001,
+            "tokens": {
+              "input": 4,
+              "output": 710,
+              "cacheCreate": 6848,
+              "cacheRead": 45217
+            },
+            "models": [
+              "claude-opus-5-5"
+            ],
+            "isError": false,
+            "subtype": "success",
+            "answer": "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 3.2//EN\">\n\n<html>\n<head>\n  <meta name=\"generator\" content=\n  \"HTML Tidy for Mac OS X (vers 31 October 2006 - Apple Inc. build 8433), see www.w3.org\">\n\n  <title>Library</title>\n</head>\n\n<body>\n  <h2>Opening hours</h2>\n\n  <p>Weekday mornings</p>\n\n  <p>Saturday afternoons</p>\n\n  <ul>\n    <li>Returns</li>\n\n    <li>Renewals</li>\n  </ul>\n</body>\n</html>\n",
+            "reply": "I ran the input through the authorised `tidy` with `-q -i`. It closed the open `<p>` and `<li>` tags, added a DOCTYPE and a generator `<meta>` tag, and indented the document. It exited with status 1, which in tidy means it gave a warning, not an error. The only warning was the missing `<!DOCTYPE>`, which it added.\n\nBEGIN\n<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 3.2//EN\">\n\n<html>\n<head>\n  <meta name=\"generator\" content=\n  \"HTML Tidy for Mac OS X (vers 31 October 2006 - Apple Inc. build 8433), see www.w3.org\">\n\n  <title>Library</title>\n</head>\n\n<body>\n  <h2>Opening hours</h2>\n\n  <p>Weekday mornings</p>\n\n  <p>Saturday afternoons</p>\n\n  <ul>\n    <li>Returns</li>\n\n    <li>Renewals</li>\n  </ul>\n</body>\n</html>\nEND",
+            "pass": true
+          },
+          {
+            "wallMs": 13168,
+            "turns": 2,
+            "costUsd": 0.0777788,
+            "tokens": {
+              "input": 4,
+              "output": 694,
+              "cacheCreate": 6855,
+              "cacheRead": 45214
+            },
+            "models": [
+              "claude-opus-5-5"
+            ],
+            "isError": false,
+            "subtype": "success",
+            "answer": "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 3.2//EN\">\n\n<html>\n<head>\n  <meta name=\"generator\" content=\n  \"HTML Tidy for Mac OS X (vers 31 October 2006 - Apple Inc. build 8433), see www.w3.org\">\n\n  <title>Allotment</title>\n</head>\n\n<body>\n  <h2>Planting plan</h2>\n\n  <p>Early potatoes</p>\n\n  <p>Runner beans</p>\n\n  <ul>\n    <li>Compost</li>\n\n    <li>Netting</li>\n  </ul>\n</body>\n</html>\n",
+            "reply": "I ran tidy with `-q -i` (quiet, indented). It exited with status 1, which means it gave a warning but no errors. The only warning was \"missing <!DOCTYPE> declaration\", so tidy added a doctype itself. It also closed the open `<p>` and `<li>` tags.\n\nBEGIN\n<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 3.2//EN\">\n\n<html>\n<head>\n  <meta name=\"generator\" content=\n  \"HTML Tidy for Mac OS X (vers 31 October 2006 - Apple Inc. build 8433), see www.w3.org\">\n\n  <title>Allotment</title>\n</head>\n\n<body>\n  <h2>Planting plan</h2>\n\n  <p>Early potatoes</p>\n\n  <p>Runner beans</p>\n\n  <ul>\n    <li>Compost</li>\n\n    <li>Netting</li>\n  </ul>\n</body>\n</html>\nEND",
+            "pass": true
+          }
+        ]
+      },
+      "operatorSetup": {
+        "learnMs": 793,
+        "composeMs": 30,
+        "goal": "goal:html-cleanup",
+        "configuration": [
+          "RCX_INVESTIGATE=<program path>"
+        ]
+      }
+    },
+    "services": {
+      "arms": {
+        "rcx": [
+          {
+            "wallMs": 36665,
+            "turns": 11,
+            "costUsd": 0.26095360000000006,
+            "tokens": {
+              "input": 16,
+              "output": 2183,
+              "cacheCreate": 21331,
+              "cacheRead": 232908
+            },
+            "models": [
+              "claude-opus-5-5"
+            ],
+            "isError": false,
+            "subtype": "success",
+            "answer": "20\n",
+            "reply": "I looked up where order O-1002 ships, then got the sales tax rate for that country: 20%. The inspection service confirmed 20 is valid for O-1002. I saved the lookup as `goal:order-sales-tax-rate`, which later sessions can run with an order ID; it checks each result with the inspection service before returning it.\n\nBEGIN\n20\nEND",
+            "order": "O-1002",
+            "session": 1,
+            "rep": 1,
+            "truth": 20,
+            "pass": true,
+            "verifiedObserved": true,
+            "requests": 12,
+            "contractReads": 4,
+            "mcpCalls": [
+              {
+                "tool": "context_graph",
+                "ok": true,
+                "ms": 1.8
+              },
+              {
+                "tool": "context_learn",
+                "ok": true,
+                "ms": 15.1
+              },
+              {
+                "tool": "context_graph",
+                "ok": true,
+                "ms": 0.6
+              },
+              {
+                "tool": "context_explain",
+                "ok": true,
+                "ms": 1.8
+              },
+              {
+                "tool": "context_explain",
+                "ok": true,
+                "ms": 0.2
+              },
+              {
+                "tool": "context_explain",
+                "ok": true,
+                "ms": 0.2
+              },
+              {
+                "tool": "context_compose",
+                "ok": true,
+                "ms": 22.8,
+                "outcome": {
+                  "status": "failed",
+                  "verification": "refuted",
+                  "outcome": "established"
+                }
+              },
+              {
+                "tool": "context_compose",
+                "ok": true,
+                "ms": 14.5,
+                "outcome": {
+                  "status": "failed",
+                  "verification": "refuted",
+                  "outcome": "incomplete"
+                }
+              },
+              {
+                "tool": "context_compose",
+                "ok": true,
+                "ms": 19.6,
+                "outcome": {
+                  "status": "completed",
+                  "verification": "verified",
+                  "contract": "satisfied"
+                }
+              }
+            ]
+          },
+          {
+            "wallMs": 12332,
+            "turns": 4,
+            "costUsd": 0.1403886,
+            "tokens": {
+              "input": 8,
+              "output": 549,
+              "cacheCreate": 13723,
+              "cacheRead": 97963
+            },
+            "models": [
+              "claude-opus-5-5"
+            ],
+            "isError": false,
+            "subtype": "success",
+            "answer": "21\n",
+            "reply": "The rate for order O-1004 is 21. I got it from the saved goal `goal:order-sales-tax-rate`, which looked up where the order ships and then the sales tax rate for that country. The inspection service (`openapi:inspection:validate`) accepted the result and returned `valid: true`. The goal was already saved, so I reused it and didn't save anything new.\n\nBEGIN\n21\nEND",
+            "order": "O-1004",
+            "session": 2,
+            "rep": 1,
+            "truth": 21,
+            "pass": true,
+            "verifiedObserved": true,
+            "requests": 3,
+            "contractReads": 0,
+            "mcpCalls": [
+              {
+                "tool": "context_explain",
+                "ok": true,
+                "ms": 3
+              },
+              {
+                "tool": "context_run",
+                "ok": true,
+                "ms": 42.9,
+                "outcome": {
+                  "status": "completed",
+                  "verification": "verified"
+                }
+              }
+            ]
+          },
+          {
+            "wallMs": 16886,
+            "turns": 4,
+            "costUsd": 0.1427534,
+            "tokens": {
+              "input": 8,
+              "output": 637,
+              "cacheCreate": 13798,
+              "cacheRead": 97987
+            },
+            "models": [
+              "claude-opus-5-5"
+            ],
+            "isError": false,
+            "subtype": "success",
+            "answer": "22\n",
+            "reply": "I used the saved goal `goal:order-sales-tax-rate` and didn't need to build anything new. It looks up where order O-1003 ships, then gets the sales tax rate for that country. The rate came back as 22. The stored type check passed, and the inspection service (`openapi:inspection:validate`) confirmed the result with `valid: true`. The goal stays saved for later sessions.\n\nBEGIN\n22\nEND",
+            "order": "O-1003",
+            "session": 3,
+            "rep": 1,
+            "truth": 22,
+            "pass": true,
+            "verifiedObserved": true,
+            "requests": 3,
+            "contractReads": 0,
+            "mcpCalls": [
+              {
+                "tool": "context_explain",
+                "ok": true,
+                "ms": 2.4
+              },
+              {
+                "tool": "context_run",
+                "ok": true,
+                "ms": 44.5,
+                "outcome": {
+                  "status": "completed",
+                  "verification": "verified"
+                }
+              }
+            ]
+          },
+          {
+            "wallMs": 34492,
+            "turns": 14,
+            "costUsd": 0.31271360000000004,
+            "tokens": {
+              "input": 24,
+              "output": 2601,
+              "cacheCreate": 23215,
+              "cacheRead": 374388
+            },
+            "models": [
+              "claude-opus-5-5"
+            ],
+            "isError": false,
+            "subtype": "success",
+            "answer": "21\n",
+            "reply": "The sales tax rate for order O-1005 is 21%. The order ships to NL (the Netherlands), the tax service returns 21 for NL, and the inspection service confirmed 21 as valid for O-1005.\n\nI saved the steps as `goal:order-sales-tax-rate`, so later sessions can call it with `context_run` and an `order_id`. Each time it runs, it checks the result with the inspection service again.\n\nBEGIN\n21\nEND",
+            "order": "O-1005",
+            "session": 1,
+            "rep": 2,
+            "truth": 21,
+            "pass": true,
+            "verifiedObserved": true,
+            "requests": 15,
+            "contractReads": 4,
+            "mcpCalls": [
+              {
+                "tool": "context_graph",
+                "ok": true,
+                "ms": 3.4
+              },
+              {
+                "tool": "context_learn",
+                "ok": true,
+                "ms": 31.9
+              },
+              {
+                "tool": "context_graph",
+                "ok": true,
+                "ms": 1.5
+              },
+              {
+                "tool": "context_explain",
+                "ok": true,
+                "ms": 2.1
+              },
+              {
+                "tool": "context_explain",
+                "ok": true,
+                "ms": 0.3
+              },
+              {
+                "tool": "context_explain",
+                "ok": true,
+                "ms": 0.2
+              },
+              {
+                "tool": "context_compose",
+                "ok": true,
+                "ms": 24.6,
+                "outcome": {
+                  "status": "failed",
+                  "verification": "refuted",
+                  "outcome": "established"
+                }
+              },
+              {
+                "tool": "context_compose",
+                "ok": true,
+                "ms": 9.4,
+                "outcome": {
+                  "status": "failed",
+                  "verification": "refuted",
+                  "outcome": "incomplete"
+                }
+              },
+              {
+                "tool": "context_run",
+                "ok": true,
+                "ms": 4.4,
+                "outcome": {
+                  "status": "completed",
+                  "verification": "unverified"
+                }
+              },
+              {
+                "tool": "context_run",
+                "ok": true,
+                "ms": 3.3,
+                "outcome": {
+                  "status": "completed",
+                  "verification": "unverified"
+                }
+              },
+              {
+                "tool": "context_run",
+                "ok": true,
+                "ms": 4.9,
+                "outcome": {
+                  "status": "completed",
+                  "verification": "checked"
+                }
+              },
+              {
+                "tool": "context_compose",
+                "ok": true,
+                "ms": 13.3,
+                "outcome": {
+                  "status": "completed",
+                  "verification": "verified",
+                  "contract": "satisfied"
+                }
+              }
+            ]
+          },
+          {
+            "wallMs": 14672,
+            "turns": 4,
+            "costUsd": 0.14000400000000002,
+            "tokens": {
+              "input": 8,
+              "output": 547,
+              "cacheCreate": 13680,
+              "cacheRead": 97960
+            },
+            "models": [
+              "claude-opus-5-5"
+            ],
+            "isError": false,
+            "subtype": "success",
+            "answer": "19\n",
+            "reply": "The sales tax rate for order O-1001 is 19%. I got it by reusing the goal saved from an earlier session, `goal:order-sales-tax-rate`, which needed no changes. It looks up where the order ships, then gets the tax rate for that country. The inspection service (`openapi:inspection:validate`) checked the result independently and returned `valid: true`.\n\nBEGIN\n19\nEND",
+            "order": "O-1001",
+            "session": 2,
+            "rep": 2,
+            "truth": 19,
+            "pass": true,
+            "verifiedObserved": true,
+            "requests": 3,
+            "contractReads": 0,
+            "mcpCalls": [
+              {
+                "tool": "context_explain",
+                "ok": true,
+                "ms": 2.8
+              },
+              {
+                "tool": "context_run",
+                "ok": true,
+                "ms": 40.7,
+                "outcome": {
+                  "status": "completed",
+                  "verification": "verified"
+                }
+              }
+            ]
+          },
+          {
+            "wallMs": 14472,
+            "turns": 4,
+            "costUsd": 0.1389398,
+            "tokens": {
+              "input": 8,
+              "output": 502,
+              "cacheCreate": 13660,
+              "cacheRead": 97939
+            },
+            "models": [
+              "claude-opus-5-5"
+            ],
+            "isError": false,
+            "subtype": "success",
+            "answer": "20\n",
+            "reply": "I used the saved `goal:order-sales-tax-rate` capability, so there was nothing new to save. It found where order O-1002 ships and looked up that country's sales tax rate, which came back as 20%. The inspection service then confirmed the result was valid.\n\nBEGIN\n20\nEND",
+            "order": "O-1002",
+            "session": 3,
+            "rep": 2,
+            "truth": 20,
+            "pass": true,
+            "verifiedObserved": true,
+            "requests": 3,
+            "contractReads": 0,
+            "mcpCalls": [
+              {
+                "tool": "context_explain",
+                "ok": true,
+                "ms": 2.8
+              },
+              {
+                "tool": "context_run",
+                "ok": true,
+                "ms": 38.5,
+                "outcome": {
+                  "status": "completed",
+                  "verification": "verified"
+                }
+              }
+            ]
+          }
+        ],
+        "shell": [
+          {
+            "wallMs": 13416,
+            "turns": 5,
+            "costUsd": 0.09491300000000001,
+            "tokens": {
+              "input": 10,
+              "output": 500,
+              "cacheCreate": 7480,
+              "cacheRead": 125165
+            },
+            "models": [
+              "claude-opus-5-5"
+            ],
+            "isError": false,
+            "subtype": "success",
+            "answer": "20\n",
+            "reply": "Order O-1002 ships to France (FR), where the sales tax rate is 20%. The inspection service confirmed this rate as valid.\n\nBEGIN\n20\nEND",
+            "order": "O-1002",
+            "session": 1,
+            "rep": 1,
+            "truth": 20,
+            "pass": true,
+            "verifiedObserved": true,
+            "requests": 6,
+            "contractReads": 3
+          },
+          {
+            "wallMs": 18404,
+            "turns": 5,
+            "costUsd": 0.0948406,
+            "tokens": {
+              "input": 10,
+              "output": 502,
+              "cacheCreate": 7466,
+              "cacheRead": 125163
+            },
+            "models": [
+              "claude-opus-5-5"
+            ],
+            "isError": false,
+            "subtype": "success",
+            "answer": "21\n",
+            "reply": "Order O-1004 ships to Spain (ES), where the sales tax rate is 21%, and the inspection service confirmed 21 is valid for this order.\n\nBEGIN\n21\nEND",
+            "order": "O-1004",
+            "session": 2,
+            "rep": 1,
+            "truth": 21,
+            "pass": true,
+            "verifiedObserved": true,
+            "requests": 6,
+            "contractReads": 3
+          },
+          {
+            "wallMs": 16595,
+            "turns": 5,
+            "costUsd": 0.09485940000000001,
+            "tokens": {
+              "input": 10,
+              "output": 501,
+              "cacheCreate": 7471,
+              "cacheRead": 125157
+            },
+            "models": [
+              "claude-opus-5-5"
+            ],
+            "isError": false,
+            "subtype": "success",
+            "answer": "22\n",
+            "reply": "Order O-1003 ships to Italy (IT), where the sales tax rate is 22%. The inspection service confirmed this rate as valid for the order.\n\nBEGIN\n22\nEND",
+            "order": "O-1003",
+            "session": 3,
+            "rep": 1,
+            "truth": 22,
+            "pass": true,
+            "verifiedObserved": true,
+            "requests": 6,
+            "contractReads": 3
+          },
+          {
+            "wallMs": 14380,
+            "turns": 5,
+            "costUsd": 0.09536839999999999,
+            "tokens": {
+              "input": 10,
+              "output": 521,
+              "cacheCreate": 7484,
+              "cacheRead": 125182
+            },
+            "models": [
+              "claude-opus-5-5"
+            ],
+            "isError": false,
+            "subtype": "success",
+            "answer": "21\n",
+            "reply": "Order O-1005 ships to the Netherlands (NL), and the Levy service gives a 21% sales tax rate for NL. The inspection service confirmed 21 as valid for this order.\n\nBEGIN\n21\nEND",
+            "order": "O-1005",
+            "session": 1,
+            "rep": 2,
+            "truth": 21,
+            "pass": true,
+            "verifiedObserved": true,
+            "requests": 6,
+            "contractReads": 3
+          },
+          {
+            "wallMs": 16077,
+            "turns": 5,
+            "costUsd": 0.0948206,
+            "tokens": {
+              "input": 10,
+              "output": 501,
+              "cacheCreate": 7466,
+              "cacheRead": 125163
+            },
+            "models": [
+              "claude-opus-5-5"
+            ],
+            "isError": false,
+            "subtype": "success",
+            "answer": "19\n",
+            "reply": "Order O-1001 ships to Germany (DE), where the sales tax rate is 19%. The inspection service confirmed 19 as valid for this order.\n\nBEGIN\n19\nEND",
+            "order": "O-1001",
+            "session": 2,
+            "rep": 2,
+            "truth": 19,
+            "pass": true,
+            "verifiedObserved": true,
+            "requests": 6,
+            "contractReads": 3
+          },
+          {
+            "wallMs": 14436,
+            "turns": 5,
+            "costUsd": 0.0952208,
+            "tokens": {
+              "input": 10,
+              "output": 517,
+              "cacheCreate": 7476,
+              "cacheRead": 125164
+            },
+            "models": [
+              "claude-opus-5-5"
+            ],
+            "isError": false,
+            "subtype": "success",
+            "answer": "20\n",
+            "reply": "Order O-1002 ships to France (FR), and the tax service gives a 20% sales tax rate for France. The inspection service confirmed 20 as valid for this order.\n\nBEGIN\n20\nEND",
+            "order": "O-1002",
+            "session": 3,
+            "rep": 2,
+            "truth": 20,
+            "pass": true,
+            "verifiedObserved": true,
+            "requests": 6,
+            "contractReads": 3
+          }
+        ],
+        "shell-memory": [
+          {
+            "wallMs": 27205,
+            "turns": 6,
+            "costUsd": 0.11179240000000001,
+            "tokens": {
+              "input": 12,
+              "output": 843,
+              "cacheCreate": 8033,
+              "cacheRead": 153102
+            },
+            "models": [
+              "claude-opus-5-5"
+            ],
+            "isError": false,
+            "subtype": "success",
+            "answer": "20\n",
+            "reply": "Order O-1002 ships to France, and the tax service gives France a sales tax rate of 20%. I checked 20 with the inspection service and it returned valid. I left notes on the three services in `NOTES.md` in the working directory for later sessions.\n\nBEGIN\n20\nEND",
+            "order": "O-1002",
+            "session": 1,
+            "rep": 1,
+            "truth": 20,
+            "pass": true,
+            "verifiedObserved": true,
+            "requests": 6,
+            "contractReads": 3
+          },
+          {
+            "wallMs": 19733,
+            "turns": 6,
+            "costUsd": 0.09442620000000002,
+            "tokens": {
+              "input": 12,
+              "output": 716,
+              "cacheCreate": 6115,
+              "cacheRead": 155691
+            },
+            "models": [
+              "claude-opus-5-5"
+            ],
+            "isError": false,
+            "subtype": "success",
+            "answer": "21\n",
+            "reply": "Order O-1004 ships to Spain (ES), and the tax service gives Spain a sales tax rate of 21%. The inspection service confirmed 21 as valid for this order. I added the result to `NOTES.md` for later sessions.\n\nBEGIN\n21\nEND",
+            "order": "O-1004",
+            "session": 2,
+            "rep": 1,
+            "truth": 21,
+            "pass": true,
+            "verifiedObserved": true,
+            "requests": 6,
+            "contractReads": 3
+          },
+          {
+            "wallMs": 19413,
+            "turns": 6,
+            "costUsd": 0.09432760000000001,
+            "tokens": {
+              "input": 12,
+              "output": 695,
+              "cacheCreate": 6149,
+              "cacheRead": 155938
+            },
+            "models": [
+              "claude-opus-5-5"
+            ],
+            "isError": false,
+            "subtype": "success",
+            "answer": "22\n",
+            "reply": "Order O-1003 ships to Italy (IT), where the sales tax rate is 22%. The inspection service confirmed 22 as valid for this order. I also added this result to `NOTES.md` for later sessions.\n\nBEGIN\n22\nEND",
+            "order": "O-1003",
+            "session": 3,
+            "rep": 1,
+            "truth": 22,
+            "pass": true,
+            "verifiedObserved": true,
+            "requests": 6,
+            "contractReads": 3
+          },
+          {
+            "wallMs": 17359,
+            "turns": 6,
+            "costUsd": 0.1134862,
+            "tokens": {
+              "input": 12,
+              "output": 885,
+              "cacheCreate": 8140,
+              "cacheRead": 153091
+            },
+            "models": [
+              "claude-opus-5-5"
+            ],
+            "isError": false,
+            "subtype": "success",
+            "answer": "21\n",
+            "reply": "Order O-1005 ships to NL (the Netherlands), and the tax service gives NL a sales tax rate of 21%. The inspection service confirmed 21 as valid for this order.\n\nI tried to save a notes file in the working directory for later sessions, but the write wasn't approved, so nothing was saved.\n\nBEGIN\n21\nEND",
+            "order": "O-1005",
+            "session": 1,
+            "rep": 2,
+            "truth": 21,
+            "pass": true,
+            "verifiedObserved": true,
+            "requests": 6,
+            "contractReads": 3
+          },
+          {
+            "wallMs": 24097,
+            "turns": 6,
+            "costUsd": 0.09917100000000001,
+            "tokens": {
+              "input": 12,
+              "output": 922,
+              "cacheCreate": 6209,
+              "cacheRead": 155055
+            },
+            "models": [
+              "claude-opus-5-5"
+            ],
+            "isError": false,
+            "subtype": "success",
+            "answer": "19\n",
+            "reply": "Order O-1001 ships to Germany (DE), and the tax service gives a sales tax rate of 19% for DE. The inspection service confirmed 19 as valid for this order.\n\nI tried to save a notes file in the working directory for later sessions, but the write was declined, so no notes were left.\n\nBEGIN\n19\nEND",
+            "order": "O-1001",
+            "session": 2,
+            "rep": 2,
+            "truth": 19,
+            "pass": true,
+            "verifiedObserved": true,
+            "requests": 6,
+            "contractReads": 3
+          },
+          {
+            "wallMs": 19173,
+            "turns": 6,
+            "costUsd": 0.0985894,
+            "tokens": {
+              "input": 12,
+              "output": 906,
+              "cacheCreate": 6175,
+              "cacheRead": 155107
+            },
+            "models": [
+              "claude-opus-5-5"
+            ],
+            "isError": false,
+            "subtype": "success",
+            "answer": "20\n",
+            "reply": "Order O-1002 ships to France (FR), and the tax service gives France a sales tax rate of 20%. The inspection service confirmed 20 as valid for this order.\n\nI couldn't leave a notes file for later sessions because permission to write to the working directory was declined.\n\nBEGIN\n20\nEND",
+            "order": "O-1002",
+            "session": 3,
+            "rep": 2,
+            "truth": 20,
+            "pass": true,
+            "verifiedObserved": true,
+            "requests": 6,
+            "contractReads": 3
+          }
+        ]
+      },
+      "orders": [
+        [
+          "O-1002",
+          "O-1004",
+          "O-1003"
+        ],
+        [
+          "O-1005",
+          "O-1001",
+          "O-1002"
+        ]
+      ]
+    }
+  },
+  "summary": "# Agent baseline, 2026-10-25T22:49:38.136Z\n\n2.1.301 (Claude Code); models: claude-opus-5-5\n\n## tidy (3 trials per arm)\n\n| Arm | Pass | Inspection asked | Median time | Median turns | Median output tokens | Median uncached input | Median cache reads | Median cost (USD) |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| rcx-warm | 3/3 |  | 25.9 s | 5 | 1064 | 13163 | 93915 | 0.144 |\n| rcx-cold | 3/3 |  | 30.5 s | 8 | 1247 | 14222 | 201659 | 0.179 |\n| shell | 3/3 |  | 14.0 s | 2 | 710 | 6859 | 45217 | 0.078 |\n\n## services (2 repetitions of 3 sessions)\n\n| Arm | Pass | Inspection asked | Median time | Median turns | Median output tokens | Median uncached input | Median cache reads | Median cost (USD) |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| rcx, first session | 2/2 | 2/2 | 34.5 s | 11 | 2183 | 21347 | 232908 | 0.261 |\n| rcx, later sessions | 4/4 | 4/4 | 14.5 s | 4 | 547 | 13688 | 97960 | 0.140 |\n| shell, first session | 2/2 | 2/2 | 13.4 s | 5 | 500 | 7490 | 125165 | 0.095 |\n| shell, later sessions | 4/4 | 4/4 | 16.1 s | 5 | 501 | 7476 | 125163 | 0.095 |\n| shell-memory, first session | 2/2 | 2/2 | 17.4 s | 6 | 843 | 8045 | 153091 | 0.112 |\n| shell-memory, later sessions | 4/4 | 4/4 | 19.4 s | 6 | 716 | 6161 | 155107 | 0.094 |\n"
+}
