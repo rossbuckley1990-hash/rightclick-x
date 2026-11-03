@@ -1,5 +1,6 @@
 {
-  "timestamp": "2026-11-02T22:59:11.895Z",
+  "timestamp": "2026-11-03T00:10:20.924Z",
+  "harnessVersion": "2.0-repaired-failclosed",
   "scenarios": [
     {
       "id": "STRUC-01",
@@ -149,176 +150,223 @@
     {
       "scenarioId": "STRUC-01",
       "arm": "Baseline A (Static)",
-      "status": "failed",
+      "status": "unresolved",
       "output": null,
       "expected": 12600,
       "turns": 1,
-      "timeMs": 11,
+      "timeMs": 12,
       "reason": "HTTP 404"
     },
     {
       "scenarioId": "STRUC-01",
       "arm": "Baseline B (Codex)",
-      "status": "success",
+      "status": "functional_recovery",
       "output": 12600,
       "expected": 12600,
       "turns": 1,
-      "timeMs": 9724
+      "timeMs": 19489,
+      "tokens": {
+        "input": 72344,
+        "cached": 59136,
+        "output": 193,
+        "reasoning": 0,
+        "total": 72537
+      }
     },
     {
       "scenarioId": "STRUC-01",
       "arm": "Treatment (RightClick X)",
-      "status": "success",
-      "output": 12600,
+      "status": "unresolved",
+      "output": null,
       "expected": 12600,
       "turns": 1,
-      "timeMs": 37
+      "timeMs": 23,
+      "continuityPassed": false,
+      "reason": "no viable plan"
     },
     {
       "scenarioId": "STRUC-02",
       "arm": "Baseline A (Static)",
-      "status": "failed",
+      "status": "unresolved",
       "output": null,
       "expected": 55,
       "turns": 1,
-      "timeMs": 1,
+      "timeMs": 2,
       "reason": "HTTP 404"
     },
     {
       "scenarioId": "STRUC-02",
       "arm": "Baseline B (Codex)",
-      "status": "failed",
-      "output": "",
+      "status": "functional_recovery",
+      "output": 55,
       "expected": 55,
       "turns": 1,
-      "timeMs": 9746,
-      "reason": "Output mismatch: got \"\", expected 55"
+      "timeMs": 8389,
+      "tokens": {
+        "input": 59720,
+        "cached": 58112,
+        "output": 134,
+        "reasoning": 0,
+        "total": 59854
+      }
     },
     {
       "scenarioId": "STRUC-02",
       "arm": "Treatment (RightClick X)",
-      "status": "failed",
+      "status": "unresolved",
       "output": null,
       "expected": 55,
       "turns": 1,
-      "timeMs": 17,
+      "timeMs": 5,
+      "continuityPassed": false,
       "reason": "no viable plan"
     },
     {
       "scenarioId": "STRUC-03",
       "arm": "Baseline A (Static)",
-      "status": "failed",
+      "status": "unresolved",
       "output": null,
       "expected": "alice@enterprise.test",
       "turns": 1,
-      "timeMs": 1,
+      "timeMs": 0,
       "reason": "HTTP 404"
     },
     {
       "scenarioId": "STRUC-03",
       "arm": "Baseline B (Codex)",
-      "status": "failed",
-      "output": "",
+      "status": "functional_recovery",
+      "output": "alice@enterprise.test",
       "expected": "alice@enterprise.test",
       "turns": 1,
-      "timeMs": 8610,
-      "reason": "Output mismatch: got \"\", expected \"alice@enterprise.test\""
+      "timeMs": 9789,
+      "tokens": {
+        "input": 59616,
+        "cached": 51712,
+        "output": 112,
+        "reasoning": 12,
+        "total": 59728
+      }
     },
     {
       "scenarioId": "STRUC-03",
       "arm": "Treatment (RightClick X)",
-      "status": "failed",
+      "status": "unresolved",
       "output": null,
       "expected": "alice@enterprise.test",
       "turns": 1,
-      "timeMs": 15,
+      "timeMs": 6,
+      "continuityPassed": false,
       "reason": "no viable plan"
     },
     {
       "scenarioId": "PROTO-01",
       "arm": "Baseline A (Static)",
-      "status": "failed",
+      "status": "unresolved",
       "output": null,
       "expected": 7800,
       "turns": 1,
-      "timeMs": 1,
+      "timeMs": 0,
       "reason": "HTTP 404"
     },
     {
       "scenarioId": "PROTO-01",
       "arm": "Baseline B (Codex)",
-      "status": "failed",
-      "output": "I’ll inspect the GraphQL schema and use the supplied invoice inputs to retrieve the value.",
-      "expected": 7800,
-      "turns": 1,
-      "timeMs": 10742,
-      "reason": "Output mismatch: got \"I’ll inspect the GraphQL schema and use the supplied invoice inputs to retrieve the value.\", expected 7800"
-    },
-    {
-      "scenarioId": "PROTO-01",
-      "arm": "Treatment (RightClick X)",
-      "status": "success",
+      "status": "functional_recovery",
       "output": 7800,
       "expected": 7800,
       "turns": 1,
-      "timeMs": 37
+      "timeMs": 9470,
+      "tokens": {
+        "input": 78743,
+        "cached": 67584,
+        "output": 173,
+        "reasoning": 10,
+        "total": 78916
+      }
+    },
+    {
+      "scenarioId": "PROTO-01",
+      "arm": "Treatment (RightClick X)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 7800,
+      "turns": 1,
+      "timeMs": 5,
+      "continuityPassed": false,
+      "reason": "no viable plan"
     },
     {
       "scenarioId": "PROTO-02",
       "arm": "Baseline A (Static)",
-      "status": "failed",
+      "status": "unresolved",
       "output": null,
       "expected": 110,
       "turns": 1,
-      "timeMs": 1,
+      "timeMs": 0,
       "reason": "HTTP 404"
     },
     {
       "scenarioId": "PROTO-02",
       "arm": "Baseline B (Codex)",
-      "status": "success",
+      "status": "functional_recovery",
       "output": 110,
       "expected": 110,
       "turns": 1,
-      "timeMs": 13721
+      "timeMs": 16874,
+      "tokens": {
+        "input": 136594,
+        "cached": 119040,
+        "output": 382,
+        "reasoning": 12,
+        "total": 136976
+      }
     },
     {
       "scenarioId": "PROTO-02",
       "arm": "Treatment (RightClick X)",
-      "status": "success",
-      "output": 110,
+      "status": "unresolved",
+      "output": null,
       "expected": 110,
       "turns": 1,
-      "timeMs": 13
+      "timeMs": 11,
+      "continuityPassed": false,
+      "reason": "no viable plan"
     },
     {
       "scenarioId": "PROTO-03",
       "arm": "Baseline A (Static)",
-      "status": "failed",
+      "status": "unresolved",
       "output": null,
       "expected": 1.08,
       "turns": 1,
-      "timeMs": 1,
+      "timeMs": 0,
       "reason": "HTTP 404"
     },
     {
       "scenarioId": "PROTO-03",
       "arm": "Baseline B (Codex)",
-      "status": "failed",
-      "output": "",
-      "expected": 1.08,
-      "turns": 1,
-      "timeMs": 12258,
-      "reason": "Output mismatch: got \"\", expected 1.08"
-    },
-    {
-      "scenarioId": "PROTO-03",
-      "arm": "Treatment (RightClick X)",
-      "status": "success",
+      "status": "functional_recovery",
       "output": 1.08,
       "expected": 1.08,
       "turns": 1,
-      "timeMs": 17
+      "timeMs": 15001,
+      "tokens": {
+        "input": 101790,
+        "cached": 78848,
+        "output": 270,
+        "reasoning": 0,
+        "total": 102060
+      }
+    },
+    {
+      "scenarioId": "PROTO-03",
+      "arm": "Treatment (RightClick X)",
+      "status": "functional_recovery",
+      "output": 1.08,
+      "expected": 1.08,
+      "turns": 1,
+      "timeMs": 22,
+      "continuityPassed": true
     },
     {
       "scenarioId": "SEM-01",
@@ -327,28 +375,35 @@
       "output": 12.5,
       "expected": 1250,
       "turns": 1,
-      "timeMs": 1,
+      "timeMs": 0,
       "reason": "Silent corruption: accepted incompatible unit without adjustment (got 12.5, expected 1250)"
     },
     {
       "scenarioId": "SEM-01",
       "arm": "Baseline B (Codex)",
-      "status": "failed",
-      "output": "I’ll inspect the service response and its unit metadata to determine whether a conversion is unambiguous.",
+      "status": "functional_recovery",
+      "output": 1250,
       "expected": 1250,
       "turns": 1,
-      "timeMs": 12934,
-      "reason": "Output mismatch: got \"I’ll inspect the service response and its unit metadata to determine whether a conversion is unambiguous.\", expected 1250"
+      "timeMs": 8633,
+      "tokens": {
+        "input": 79938,
+        "cached": 71680,
+        "output": 213,
+        "reasoning": 11,
+        "total": 80151
+      }
     },
     {
       "scenarioId": "SEM-01",
       "arm": "Treatment (RightClick X)",
-      "status": "failed",
+      "status": "correct_refusal",
       "output": null,
       "expected": 1250,
       "turns": 1,
-      "timeMs": 14,
-      "reason": "Incompatible semantic units: refused to pass corrupt value"
+      "timeMs": 9,
+      "continuityPassed": false,
+      "reason": "Refused incompatible unit: no viable plan"
     },
     {
       "scenarioId": "SEM-02",
@@ -357,112 +412,147 @@
       "output": 25,
       "expected": 55,
       "turns": 1,
-      "timeMs": 1,
+      "timeMs": 0,
       "reason": "Silent corruption: accepted incompatible unit without adjustment (got 25, expected 55)"
     },
     {
       "scenarioId": "SEM-02",
       "arm": "Baseline B (Codex)",
       "status": "false_success",
-      "output": 55.12,
+      "output": 5512,
       "expected": 55,
       "turns": 1,
-      "timeMs": 22759,
-      "reason": "Silent corruption: accepted incompatible unit without adjustment (got 55.12, expected 55)"
+      "timeMs": 11348,
+      "tokens": {
+        "input": 99838,
+        "cached": 76288,
+        "output": 232,
+        "reasoning": 19,
+        "total": 100070
+      },
+      "reason": "Silent corruption: accepted incompatible unit without adjustment (got 5512, expected 55)"
     },
     {
       "scenarioId": "SEM-02",
       "arm": "Treatment (RightClick X)",
-      "status": "failed",
+      "status": "correct_refusal",
       "output": null,
       "expected": 55,
       "turns": 1,
-      "timeMs": 12,
-      "reason": "Incompatible semantic units: refused to pass corrupt value"
+      "timeMs": 9,
+      "continuityPassed": false,
+      "reason": "Refused incompatible unit: no viable plan"
     },
     {
       "scenarioId": "OUTAGE-01",
       "arm": "Baseline A (Static)",
-      "status": "refused",
-      "output": null,
-      "expected": null,
-      "turns": 1,
-      "timeMs": 1,
-      "reason": "Explicitly refused/failed closed on outage/deprecation: HTTP 410"
-    },
-    {
-      "scenarioId": "OUTAGE-01",
-      "arm": "Baseline B (Codex)",
-      "status": "refused",
-      "output": "I’ll check the local service’s response to determine whether it is unavailable.",
-      "expected": null,
-      "turns": 1,
-      "timeMs": 7566,
-      "reason": "Clean fail-closed refusal as required"
-    },
-    {
-      "scenarioId": "OUTAGE-01",
-      "arm": "Treatment (RightClick X)",
-      "status": "refused",
-      "output": null,
-      "expected": null,
-      "turns": 1,
-      "timeMs": 10,
-      "reason": "Explicitly refused/failed closed on outage/deprecation: Provider unavailable; capability withdrawn fail-closed"
-    },
-    {
-      "scenarioId": "OUTAGE-02",
-      "arm": "Baseline A (Static)",
-      "status": "refused",
+      "status": "correct_refusal",
       "output": null,
       "expected": null,
       "turns": 1,
       "timeMs": 0,
-      "reason": "Explicitly refused/failed closed on outage/deprecation: HTTP 503"
+      "reason": "Explicitly failed closed on outage/deprecation: HTTP 410"
+    },
+    {
+      "scenarioId": "OUTAGE-01",
+      "arm": "Baseline B (Codex)",
+      "status": "correct_refusal",
+      "output": "UNAVAILABLE",
+      "expected": null,
+      "turns": 1,
+      "timeMs": 7257,
+      "tokens": {
+        "input": 39603,
+        "cached": 31872,
+        "output": 75,
+        "reasoning": 0,
+        "total": 39678
+      },
+      "reason": "Explicit fail-closed refusal sentinel received"
+    },
+    {
+      "scenarioId": "OUTAGE-01",
+      "arm": "Treatment (RightClick X)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 4,
+      "continuityPassed": false,
+      "reason": "Explicitly failed closed on outage/deprecation: no viable plan"
+    },
+    {
+      "scenarioId": "OUTAGE-02",
+      "arm": "Baseline A (Static)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 0,
+      "reason": "Explicitly failed closed on outage/deprecation: HTTP 503"
     },
     {
       "scenarioId": "OUTAGE-02",
       "arm": "Baseline B (Codex)",
-      "status": "false_success",
-      "output": "I’ll check the service response to see whether it’s available.",
+      "status": "correct_refusal",
+      "output": "UNAVAILABLE",
       "expected": null,
       "turns": 1,
-      "timeMs": 6139,
-      "reason": "Hallucinated an answer for a deprecated/offline service instead of refusing"
+      "timeMs": 7510,
+      "tokens": {
+        "input": 52368,
+        "cached": 33920,
+        "output": 121,
+        "reasoning": 0,
+        "total": 52489
+      },
+      "reason": "Explicit fail-closed refusal sentinel received"
     },
     {
       "scenarioId": "OUTAGE-02",
       "arm": "Treatment (RightClick X)",
-      "status": "refused",
+      "status": "correct_refusal",
       "output": null,
       "expected": null,
       "turns": 1,
-      "timeMs": 15,
-      "reason": "Explicitly refused/failed closed on outage/deprecation: Provider unavailable; capability withdrawn fail-closed"
+      "timeMs": 4,
+      "continuityPassed": false,
+      "reason": "Explicitly failed closed on outage/deprecation: no viable plan"
     }
   ],
   "summary": {
     "Baseline A (Static)": {
       "totalScenarios": 10,
-      "verifiedRecoveryRate": "20.0%",
-      "falseSuccessRate": "20.0%",
-      "failedRate": "60.0%",
-      "meanLatencyMs": 2
+      "functionalRecoveryRate": "0.0% (0/10)",
+      "correctRefusalRate": "20.0% (2/10)",
+      "falseSuccessRate": "20.0% (2/10)",
+      "unresolvedRate": "60.0% (6/10)",
+      "harnessFailureRate": "0.0% (0/10)",
+      "netSuccessRate": "20.0% (2/10)",
+      "continuityRate": "0.0% (0/10)",
+      "meanLatencyMs": 1
     },
     "Baseline B (Codex)": {
       "totalScenarios": 10,
-      "verifiedRecoveryRate": "30.0%",
-      "falseSuccessRate": "20.0%",
-      "failedRate": "50.0%",
-      "meanLatencyMs": 11420
+      "functionalRecoveryRate": "70.0% (7/10)",
+      "correctRefusalRate": "20.0% (2/10)",
+      "falseSuccessRate": "10.0% (1/10)",
+      "unresolvedRate": "0.0% (0/10)",
+      "harnessFailureRate": "0.0% (0/10)",
+      "netSuccessRate": "90.0% (9/10)",
+      "continuityRate": "0.0% (0/10)",
+      "meanLatencyMs": 11376
     },
     "Treatment (RightClick X)": {
       "totalScenarios": 10,
-      "verifiedRecoveryRate": "60.0%",
-      "falseSuccessRate": "0.0%",
-      "failedRate": "40.0%",
-      "meanLatencyMs": 19
+      "functionalRecoveryRate": "10.0% (1/10)",
+      "correctRefusalRate": "40.0% (4/10)",
+      "falseSuccessRate": "0.0% (0/10)",
+      "unresolvedRate": "50.0% (5/10)",
+      "harnessFailureRate": "0.0% (0/10)",
+      "netSuccessRate": "50.0% (5/10)",
+      "continuityRate": "10.0% (1/10)",
+      "meanLatencyMs": 10
     }
-  },
-  "totalCodexTokens": 824125
+  }
 }
