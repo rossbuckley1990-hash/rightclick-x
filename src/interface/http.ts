@@ -13,6 +13,7 @@
 //   POST /api/<tool>                    any context_* tool, JSON in/out
 
 import { VERSION, type RightClick } from "../runtime.ts";
+import { clientErrorText, ClientFacingError, toClientError } from "./client-error.ts";
 import { DASHBOARD_HTML } from "./dashboard.ts";
 import { dashboardMetrics, capabilityPage, capabilityState } from "./dashboard-state.ts";
 import { executeGraphQL } from "./graphql-server.ts";
@@ -60,6 +61,14 @@ class RateLimiter {
 const JSON_HEADERS = { "content-type": "application/json; charset=utf-8", "access-control-allow-origin": "*" };
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body, null, 2), { status, headers: JSON_HEADERS });
+
+/** The client error boundary for HTTP routes (H2, #38): a stable code and a safe message;
+ *  raw exception text stays in the server log, referenced by the opaque ref. */
+function clientError(e: unknown, args?: Record<string, unknown>, status = 400): Response {
+  const view = toClientError(e, args);
+  if (view.ref) console.error(`[rcx-diagnostic ${view.ref}] ${String(view.detail).slice(0, 500)}`);
+  return json({ error: clientErrorText(view), ...(view.ref ? { ref: view.ref } : {}) }, status);
+}
 
 function authorized(req: Request, opts: HttpOptions): boolean {
   if (opts.open && !opts.token) return true;
@@ -117,7 +126,12 @@ export function createHandler(rc: RightClick, opts: HttpOptions = {}): (req: Req
     try {
       if (path === "/mcp") {
         if (req.method !== "POST") return new Response("MCP endpoint: POST JSON-RPC here.", { status: 405, headers: { allow: "POST" } });
-        const body = (await req.json()) as JsonRpc | JsonRpc[];
+        let body: JsonRpc | JsonRpc[];
+        try {
+          body = (await req.json()) as JsonRpc | JsonRpc[];
+        } catch {
+          throw new ClientFacingError("invalid_argument", "request body must be valid JSON");
+        }
         const msgs = Array.isArray(body) ? body : [body];
         const out = (await Promise.all(msgs.map((m) => handle(rc, m)))).filter((m): m is JsonRpc => !!m);
         if (!out.length) return new Response(null, { status: 202 });
@@ -131,9 +145,18 @@ export function createHandler(rc: RightClick, opts: HttpOptions = {}): (req: Req
         // GET is safe by HTTP's contract (links, prefetch, crawlers): only read-only goals answer it.
         const risk = rc.graph.get(`goal:${x[1]}`)?.risk;
         if (req.method === "GET" && risk && risk !== "read") return new Response(JSON.stringify({ error: `goal ${x[1]} can change state (${risk}); use POST` }), { status: 405, headers: { "content-type": "application/json", allow: "POST" } });
-        const args = req.method === "GET" ? Object.fromEntries(url.searchParams) : ((await req.json().catch(() => ({}))) as Record<string, unknown>);
-        const out = await rc.callPublished(x[1], args);
-        return json(out, out.status === "pending" ? 202 : out.ok ? 200 : 502);
+        let args: Record<string, unknown>;
+        try {
+          args = req.method === "GET" ? Object.fromEntries(url.searchParams) : ((await req.json().catch(() => ({}))) as Record<string, unknown>);
+        } catch {
+          args = {};
+        }
+        try {
+          const out = await rc.callPublished(x[1], args);
+          return json(out, out.status === "pending" ? 202 : out.ok ? 200 : 502);
+        } catch (e) {
+          return clientError(e, args);
+        }
       }
       if (req.method === "GET" && path === "/api/viz") return json(viz(rc));
       if (req.method === "GET" && path === "/api/authority-evidence") return json(await authorityEvidence());
@@ -153,19 +176,37 @@ export function createHandler(rc: RightClick, opts: HttpOptions = {}): (req: Req
       if (req.method === "GET" && path === "/events") return events(rc, Number(url.searchParams.get("since") ?? rc.graph.cursor));
       if (req.method === "GET" && path === "/api/tools") return json(TOOLS);
       if (req.method === "POST" && path === "/api/run") {
-        const a = (await req.json()) as any;
-        return json(await rc.run(a.id, a.args ?? {}, { verify: a.verify, acknowledgeChange: a.acknowledgeChange }));
+        let a: any;
+        try {
+          a = (await req.json()) as any;
+        } catch {
+          throw new ClientFacingError("invalid_argument", "request body must be valid JSON");
+        }
+        try {
+          return json(await rc.run(a.id, a.args ?? {}, { verify: a.verify, acknowledgeChange: a.acknowledgeChange }));
+        } catch (e) {
+          return clientError(e, a.args);
+        }
       }
       const m = /^\/api\/(?:context_)?([a-z_]+)$/.exec(path);
       if (req.method === "POST" && m) {
         const name = `context_${m[1]}`;
         if (!TOOLS.some((t) => t.name === name)) return json({ error: `unknown tool ${name}` }, 404);
-        const args = req.headers.get("content-length") === "0" ? {} : await req.json().catch(() => ({}));
-        return json(await dispatch(rc, name, args as Record<string, unknown>));
+        let args: Record<string, unknown>;
+        try {
+          args = req.headers.get("content-length") === "0" ? {} : ((await req.json().catch(() => ({}))) as Record<string, unknown>);
+        } catch {
+          args = {};
+        }
+        try {
+          return json(await dispatch(rc, name, args));
+        } catch (e) {
+          return clientError(e, args);
+        }
       }
       return json({ error: "not found" }, 404);
     } catch (e) {
-      return json({ error: String((e as Error)?.message ?? e) }, 400);
+      return clientError(e);
     }
   };
 }

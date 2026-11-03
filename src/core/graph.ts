@@ -48,6 +48,10 @@ export interface LearnDelta {
   /** Crystallized pipelines retired because a step they depend on changed or vanished. */
   retired?: string[];
   capabilitiesAdded: number;
+  /** What was learned, run-ready: id, title and typed inputs of each new capability, so a
+   *  caller can go learn → run without a search-and-explain round trip. Bounded to the
+   *  first 25; the rest are counted in capabilitiesAdded. */
+  capabilities?: Array<{ id: string; title: string; inputs: Array<{ name: string; type: string; required: boolean }> }>;
   powersBefore: number;
   powersAfter: number;
   newPowers: number;
@@ -101,6 +105,9 @@ export class CapabilityGraph {
     const delta: LearnDelta = {
       provider: provider.id,
       capabilitiesAdded: capabilities.length,
+      // Run-ready disclosure: the learned operations with their typed inputs. A capable
+      // caller can invoke directly from this list; context_explain remains for full detail.
+      ...(capabilities.length ? { capabilities: capabilities.slice(0, 25).map((c) => ({ id: c.id, title: c.title, inputs: c.inputs.map((p) => ({ name: p.name, type: String(p.type ?? p.description ?? "value"), required: !!p.required })) })) } : {}),
       powersBefore: before,
       powersAfter: after,
       newPowers: after - before,

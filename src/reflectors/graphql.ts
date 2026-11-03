@@ -3,6 +3,7 @@
 
 import { graphqlScalar, inferInContext } from "../core/semantics.ts";
 import type { Capability, DeclaredField, GraphQLFailureEvidence, Port, Reflection, SemType } from "../core/types.ts";
+import { ClientFacingError } from "../interface/client-error.ts";
 import { slug } from "./net.ts";
 
 /** Introspection query with a type-reference nesting depth (servers often cap query depth). */
@@ -364,10 +365,16 @@ function humanize(s: string): string {
   return t.charAt(0).toUpperCase() + t.slice(1);
 }
 
-/** Terminal for this request, never an invitation to replan or replay effects. */
-export class GraphQLFailure extends Error {
+/** Terminal for this request, never an invitation to replan or replay effects.
+ *  `evidence.reason` is the full diagnostic (audit channel). `safeMessage` overrides the
+ *  client text when the reason embeds provider response bodies. */
+export class GraphQLFailure extends ClientFacingError {
   readonly evidence: GraphQLFailureEvidence;
-  constructor(evidence: GraphQLFailureEvidence) { super(evidence.reason); this.evidence = evidence; }
+  constructor(evidence: GraphQLFailureEvidence, safeMessage?: string) {
+    super("graphql_error", safeMessage ?? evidence.reason, evidence.reason);
+    this.name = "GraphQLFailure";
+    this.evidence = evidence;
+  }
 }
 
 /** Local document mistakes are not evidence of provider drift. */

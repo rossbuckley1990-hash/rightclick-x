@@ -40,6 +40,7 @@ import { McpClient } from "./reflectors/mcp.ts";
 import { continuationPolicy, continuationTargets, followHttp202, httpContractDigest, validHttpCursor, type HttpContinuationCursor, type HttpContinuationOptions, type HttpContinuationEvidence, type ContinuationPolicy } from "./reflectors/http-continuation.ts";
 import { Authority, cancelBody, readBody, refuseDeniedResponse, request, TransportRefused, type Net, type NetworkPolicy } from "./reflectors/net.ts";
 import { detectRuntime, platformReflection, type PlatformFn, type RuntimeInfo } from "./reflectors/platform.ts";
+import { ClientFacingError, capturedErrorText, type ClientErrorCode } from "./interface/client-error.ts";
 
 export const VERSION = "0.1.0";
 // Only the lease-owning saved-goal entry point can request bounded deferred
@@ -317,20 +318,21 @@ export interface RunRecord {
   changedMeaning?: MeaningChange;
 }
 
-export class ConfirmationRequired extends Error {
+export class ConfirmationRequired extends ClientFacingError {
   capability: string;
   constructor(capability: string, title: string, needsOperator = false) {
-    super(needsOperator
+    super("confirmation_required", needsOperator
       ? `"${title}" (${capability}) is destructive and has no operator approval. An operator must approve it in RightClick X's configuration (authority.approve / RCX_APPROVE); a tool argument cannot.`
       : `"${title}" (${capability}) is destructive: call again with confirm: true to run it`);
+    this.name = "ConfirmationRequired";
     this.capability = capability;
   }
 }
 
-class StepError extends Error {
+class StepError extends ClientFacingError {
   capability: string;
-  constructor(capability: string, message: string) {
-    super(message);
+  constructor(capability: string, message: string, code: ClientErrorCode = "program_failed", detail?: string) {
+    super(code, message, detail);
     this.capability = capability;
   }
 }
@@ -338,7 +340,10 @@ class StepError extends Error {
 class WitnessPreflightError extends CliValidityError {
   readonly witness: WitnessResult;
   constructor(capability: string, cause: unknown) {
-    super(String((cause as Error)?.message ?? cause), cause instanceof CliValidityError ? cause.validity : undefined, capability);
+    // The wrapped cause may carry provider text: the client sees the safe summary,
+    // the cause text stays in the diagnostic detail.
+    super(cause instanceof ClientFacingError ? cause.message : `witness preflight failed (${cause instanceof Error ? cause.name : "non-error"}); the detail is recorded server-side`,
+      cause instanceof CliValidityError ? cause.validity : undefined, capability, [], cause instanceof ClientFacingError ? cause.detail : String((cause as Error)?.message ?? cause));
     this.witness = { capability, runId: "", status: "failed", verification: { status: this.validity ? "unverified" : "refuted", results: [] }, error: this.message,
       ...(this.validity ? { cliValidity: this.validity } : {}) };
   }
@@ -355,7 +360,7 @@ export interface MissingDataEvidence {
 class MissingData extends StepError {
   readonly evidence: MissingDataEvidence;
   constructor(evidence: MissingDataEvidence) {
-    super(evidence.producer, `${evidence.producer}: its result has no value at ${evidence.path || "(result)"}, which ${evidence.consumer}.${evidence.port} needs`);
+    super(evidence.producer, `${evidence.producer}: its result has no value at ${evidence.path || "(result)"}, which ${evidence.consumer}.${evidence.port} needs`, "missing_data");
     this.evidence = { ...evidence, runs: [...new Set(evidence.runs)].slice(-128) };
   }
 }
@@ -375,7 +380,7 @@ export interface PlanningRefusal {
 class PlanningRefused extends StepError {
   readonly evidence: PlanningRefusal;
   constructor(evidence: PlanningRefusal) {
-    super(evidence.blocked[0].capability, evidence.reason);
+    super(evidence.blocked[0].capability, evidence.reason, "planning_refused");
     this.evidence = { ...evidence, runs: [...new Set(evidence.runs)].slice(-128) };
   }
 }
@@ -393,9 +398,19 @@ export interface PendingOutcome {
 class PendingOutcomeError extends StepError {
   readonly pending: PendingOutcome;
   constructor(pending: PendingOutcome) {
-    super(pending.capability, "outcome pending; completion is not established; the original action was not replayed");
+    super(pending.capability, "outcome pending; completion is not established; the original action was not replayed", "outcome_pending");
     this.pending = pending;
   }
+}
+
+/** Wrap a caught step failure for rethrow: reviewed text crosses as the message, raw
+ *  text is kept as the diagnostic detail. StepErrors pass through unchanged. */
+function stepFailure(capability: string, e: unknown): StepError {
+  if (e instanceof StepError) return e;
+  return new StepError(capability,
+    e instanceof ClientFacingError ? e.message : `${e instanceof Error ? e.name : "failure"} in a pipeline step; the detail is recorded server-side`,
+    e instanceof ClientFacingError ? e.code : "program_failed",
+    e instanceof ClientFacingError ? e.detail : String((e as Error)?.message ?? e));
 }
 
 /** A fan-out step refused before any call: its list is longer than the cap. The provider did nothing wrong. */
@@ -910,7 +925,7 @@ export class RightClick {
         directories.push(
           s.status === "fulfilled"
             ? { id: d.id, title: d.title, reachable: true, candidates: s.value }
-            : { id: d.id, title: d.title, reachable: false, error: String((s.reason as Error)?.message ?? s.reason), candidates: [] },
+            : { id: d.id, title: d.title, reachable: false, error: capturedErrorText(s.reason), candidates: [] },
         );
       });
     } else {
@@ -1014,7 +1029,7 @@ export class RightClick {
   }
 
   private async learnSources(opts: Parameters<RightClick["learn"]>[0], retainedCli?: { capability: Capability; execution: HttpExecution }, permit?: symbol) {
-    if (this.activeGoalLeases && (permit !== GOAL_RESTORE_PERMIT || this.activeGoalLeases !== 1)) throw new Error("provider changes are blocked while a saved goal is executing");
+    if (this.activeGoalLeases && (permit !== GOAL_RESTORE_PERMIT || this.activeGoalLeases !== 1)) throw new ClientFacingError("goal_state", "provider changes are blocked while a saved goal is executing");
     this.activeProviderMutations++;
     try { return await this.learnSourcesUnlocked(opts, retainedCli); }
     finally { this.activeProviderMutations--; }
@@ -1121,9 +1136,9 @@ export class RightClick {
           }
           results.push({ source, probes: d.probes, learned, drift });
         } catch (e) {
-          if (this.deferredInference.some(d => waiting.includes(d))) keepDeferred(String((e as Error).message ?? e));
+          if (this.deferredInference.some(d => waiting.includes(d))) keepDeferred(capturedErrorText(e));
           if (retainedCli && e instanceof CliValidityError) { this.graph.measuring = true; throw e; }
-          results.push({ source, probes: [], learned: [], error: String((e as Error).message ?? e) });
+          results.push({ source, probes: [], learned: [], error: capturedErrorText(e) });
         }
       }),
     );
@@ -1217,7 +1232,7 @@ export class RightClick {
   }
 
   forget(providerId: string) {
-    if (this.activeGoalLeases) throw new Error("provider revocation is blocked while a saved goal is executing");
+    if (this.activeGoalLeases) throw new ClientFacingError("goal_state", "provider revocation is blocked while a saved goal is executing");
     const live = this.graph.forget(providerId);
     // A deferred provider is removed too, with any deferred pipeline that could then never return.
     const removed = new Set(this.deferredInference.filter(d => d.reflection.provider.id === providerId).flatMap(d => d.reflection.capabilities.map(c => c.id)));
@@ -1297,7 +1312,7 @@ export class RightClick {
 
   explain(id: string) {
     const c = this.graph.get(id) ?? this.graph.search(id, 1)[0]?.capability;
-    if (!c) throw new Error(`unknown capability: ${id}`);
+    if (!c) throw new ClientFacingError("unknown_capability", `unknown capability: ${id}`);
     const n = this.graph.neighbors(c.id);
     const example: Record<string, unknown> = {};
     for (const p of c.inputs) if (p.required) example[p.name] = EXAMPLES[p.type] ?? `<${p.type}>`;
@@ -1579,12 +1594,12 @@ export class RightClick {
   }
 
   private async saveWorkflow(w: WorkflowContinuation) {
-    if (!validWorkflow(w)) throw new Error("workflow checkpoint is unsupported, oversized or contains credential-like data");
+    if (!validWorkflow(w)) throw new ClientFacingError("invalid_argument", "workflow checkpoint is unsupported, oversized or contains credential-like data");
     await this.flush();
   }
 
   private async startWorkflow(runId: string, cap: Capability, inputs: Record<string, unknown>, verify: Predicate[], composition?: CompositionContinuation) {
-    if (cap.invoke.kind !== "composite") throw new Error("workflow requires a retained composite");
+    if (cap.invoke.kind !== "composite") throw new ClientFacingError("invalid_argument", "workflow requires a retained composite");
     // Recovery stores inputs before dispatch. Reject option arguments even under an innocuous
     // flag or input name; a secret cannot be identified reliably from its string contents.
     for (const step of cap.invoke.steps) {
@@ -1597,19 +1612,19 @@ export class RightClick {
         let value: unknown;
         if (binding.from.startsWith("$in.")) value = inputs[binding.from.slice(4)];
         else if (binding.from === "$const") value = binding.value;
-        else throw new Error("workflow CLI options from prior outputs cannot be retained safely");
-        if (!retainableCliOptions(value, option)) throw new Error("workflow CLI option arguments cannot be retained safely");
+        else throw new ClientFacingError("invalid_argument", "workflow CLI options from prior outputs cannot be retained safely");
+        if (!retainableCliOptions(value, option)) throw new ClientFacingError("invalid_argument", "workflow CLI option arguments cannot be retained safely");
       }
     }
     // Unresolved effects are never evicted to make room for a different action.
-    if (this.workflowContinuations.size >= 64) throw new Error("workflow continuation storage is full");
+    if (this.workflowContinuations.size >= 64) throw new ClientFacingError("goal_state", "workflow continuation storage is full");
     const createdAt = Date.now();
     const w: WorkflowContinuation = { version: 1, runId, capability: cap.id, contractDigest: await httpContractDigest(cap),
       stepDigests: await Promise.all(cap.invoke.steps.map(s => httpContractDigest(this.graph.get(s.capability)!))),
       inputs: structuredClone(inputs), verify: structuredClone(verify), createdAt, expiresAt: createdAt + 3_600_000,
       outputs: [], runs: [], next: 0, phase: "ready",
       ...(composition ? { composition: structuredClone(composition), compositionDigest: await sha256(stableStringify(composition)) } : {}) };
-    if (!validWorkflow(w)) throw new Error("workflow inputs cannot be retained safely");
+    if (!validWorkflow(w)) throw new ClientFacingError("invalid_argument", "workflow inputs cannot be retained safely");
     this.workflowContinuations.set(runId, w);
     try { await this.saveWorkflow(w); }
     catch (e) { this.workflowContinuations.delete(runId); throw e; }
@@ -1668,7 +1683,7 @@ export class RightClick {
 
   async run(id: string, args: Record<string, unknown> = {}, opts: RunOptions = {}): Promise<RunRecord> {
     if (id.startsWith("resume:") && [...this.workflowContinuations.values()].some(w => w.childRunId === id.slice(7))) {
-      throw new Error("resume the owning workflow; its child cannot be consumed separately");
+      throw new ClientFacingError("invalid_argument", "resume the owning workflow; its child cannot be consumed separately");
     }
     if (!id.startsWith("resume:")) await this.restoreDeferredFor([id], undefined, opts.net);
     const continuation = id.startsWith("resume:") ? this.workflowContinuations.get(id.slice(7)) : undefined;
@@ -1680,13 +1695,13 @@ export class RightClick {
   private async dispatchRun(id: string, args: Record<string, unknown>, opts: RunOptions, parent?: WorkflowContinuation, composition?: CompositionContinuation): Promise<RunRecord> {
     // Older runtimes reject this id instead of ignoring a new option and
     // accidentally submitting the ordinary action again.
-    if ("resumeRunId" in opts) throw new Error("resume uses the explicit resume:<run-id> selector");
+    if ("resumeRunId" in opts) throw new ClientFacingError("invalid_argument", "resume uses the explicit resume:<run-id> selector");
     const resumeRunId = typeof id === "string" && id.startsWith("resume:") ? id.slice(7) : undefined;
     if (resumeRunId !== undefined) {
       const pending = this.workflowContinuations.get(resumeRunId) ?? this.httpContinuations.get(resumeRunId);
-      if (!pending) throw new Error(`no resumable HTTP operation: ${resumeRunId}`);
-      if (Object.keys(args).length || opts.verify !== undefined || opts.confirm !== undefined) throw new Error("resume cannot change inputs or stored checks");
-      if (this.activeContinuations.has(resumeRunId)) throw new Error("HTTP continuation is already active");
+      if (!pending) throw new ClientFacingError("unknown_run", `no resumable HTTP operation: ${resumeRunId}`);
+      if (Object.keys(args).length || opts.verify !== undefined || opts.confirm !== undefined) throw new ClientFacingError("invalid_argument", "resume cannot change inputs or stored checks");
+      if (this.activeContinuations.has(resumeRunId)) throw new ClientFacingError("goal_state", "HTTP continuation is already active");
       this.activeContinuations.add(resumeRunId);
       id = pending.capability;
     }
@@ -1727,7 +1742,7 @@ export class RightClick {
     }
     if (resumedWorkflow) args = structuredClone(resumedWorkflow.inputs);
     const cap = composition ? this.compositionCapability(composition) : this.graph.get(id);
-    if (!cap) throw new Error(`unknown capability: ${id}`);
+    if (!cap) throw new ClientFacingError("unknown_capability", `unknown capability: ${id}`);
     if (cap.invoke.kind === "composite" && cap.invoke.origins) {
       const net = opts.net ?? this.net;
       const origins = intersectOrigins(intersectOrigins(this.net.policy?.origins, net.policy?.origins), cap.invoke.origins);
@@ -1780,7 +1795,7 @@ export class RightClick {
         try { this.assertExecution(cap); } catch { stop("denied"); }
       } else {
         this.assertExecution(cap);
-        if (refused) throw new Error(refused);
+        if (refused) throw new ClientFacingError("changed_meaning", refused);
       }
       const coerced = resumed ? {} : coerceArgs(cap, args);
       if (composition) {
@@ -1795,7 +1810,7 @@ export class RightClick {
         output = compositionResult.executed!.output;
         steps = r.runs;
         verification = compositionResult.executed!.verification;
-        if (compositionResult.executed!.status !== "completed") throw new Error(compositionResult.executed!.error ?? "retained outcome contract violated");
+        if (compositionResult.executed!.status !== "completed") throw new ClientFacingError("program_failed", compositionResult.executed!.error ?? "retained outcome contract violated");
       } else if (cap.invoke.kind === "goal") {
         const slug = cap.invoke.slug;
         const r = await this.executeGoal(slug, coerced, opts.confirm, opts.activeGoals, opts.verify);
@@ -1816,7 +1831,7 @@ export class RightClick {
         if (r.executed?.cliValidity?.environment === "changed" || r.executed?.cliValidity?.application === "reported-error")
           throw new CliValidityError(r.executed.error ?? "CLI validity refused", r.executed.cliValidity, cap.id, r.executed.runs);
         if (r.planningRefusal ?? r.executed?.planningRefusal) throw new PlanningRefused((r.planningRefusal ?? r.executed?.planningRefusal)!);
-        if (r.executed?.status !== "completed") throw new Error(attempts?.map((a) => a.error).join("; ") || "no pipeline found for saved goal");
+        if (r.executed?.status !== "completed") throw new ClientFacingError("planning_refused", attempts?.map((a) => a.error).join("; ") || "no pipeline found for saved goal");
       } else if (cap.invoke.kind === "composite") {
         if (!workflow && this.workflowRecovery && !suppliedNet && this.recoverableWorkflow(cap)) {
           workflow = await this.startWorkflow(runId, cap, coerced, opts.verify ?? []);
@@ -1827,11 +1842,11 @@ export class RightClick {
         output = r.output;
         steps = r.runs;
         verification = check(output, cap.invoke.verify ?? []);
-        if (verification.status === "refuted") throw new Error("stored verification refuted");
+        if (verification.status === "refuted") throw new ClientFacingError("program_failed", "stored verification refuted");
         const absent = outputCarries(output, cap.invoke.require ?? []).absent;
-        if (absent.length) throw new Error(`stored required information missing: ${absent.join(", ")}`);
+        if (absent.length) throw new ClientFacingError("missing_data", `stored required information missing: ${absent.join(", ")}`);
         const lost = lostWords((cap.invoke.preserveInputs ?? []).map(name => coerced[name]), output);
-        if (lost.length) throw new Error(`stored preservation requirement refuted: lost ${lost.length} input words`);
+        if (lost.length) throw new ClientFacingError("program_failed", `stored preservation requirement refuted: lost ${lost.length} input words`);
         witnesses = await this.checkWitnesses(cap.invoke.witnesses ?? [], coerced, output, r.runs, opts.net,
           workflow ? cap.invoke.steps.map(s => this.graph.get(s.capability)!.provider) : []);
         const waiting = witnesses.find(w => w.status === "pending");
@@ -1842,7 +1857,7 @@ export class RightClick {
         if (badGraphQL) throw new GraphQLFailure({ ...badGraphQL.graphqlFailure!, runs: [...r.runs, badGraphQL.runId] });
         const invalidCli = witnesses.find(w => w.cliValidity?.environment === "changed" || w.cliValidity?.application === "reported-error");
         if (invalidCli) throw new CliValidityError(invalidCli.error ?? "CLI witness validity refused", invalidCli.cliValidity, invalidCli.capability, [...r.runs, invalidCli.runId]);
-        if (witnesses.some((w) => w.status !== "completed")) throw new Error("independent outcome witness refuted: " + witnesses.filter((w) => w.status !== "completed").map((w) => w.error ?? w.capability).join("; "));
+        if (witnesses.some((w) => w.status !== "completed")) throw new ClientFacingError("program_failed", "independent outcome witness refuted: " + witnesses.filter((w) => w.status !== "completed").map((w) => w.error ?? w.capability).join("; "));
         if (witnesses.length) verification = { ...verification, status: "verified" };
       } else {
         this.activeContinuations.add(continuationId);
@@ -1852,18 +1867,18 @@ export class RightClick {
           // A caller's own mistake (an undocumented option, a literal that looks like an option)
           // says nothing about the provider: no repair, no re-investigation.
           if (e instanceof PendingOutcomeError || e instanceof TransportRefused || e instanceof ExecutionDenied || e instanceof JsonRepresentationError || e instanceof GraphQLFailure || e instanceof CliValidityError || opts.planned || !HEALABLE.has(cap.invoke.kind) || /HTTP 400 equivalent|is not one this program documents|needs a value/.test(String((e as Error)?.message ?? e))) throw e;
-          const h = await this.healRun(cap, args, String((e as Error)?.message ?? e), opts.net, execution, opts.confirm);
+          const h = await this.healRun(cap, args, e, opts.net, execution, opts.confirm);
           healing = h.healing;
-          if (!h.healed) throw new Error(`${healing.error}; ${healing.note}`);
+          if (!h.healed) throw new ClientFacingError("heal_failed", `${healing.error}; ${healing.note}`);
           output = h.output;
         } finally { if (!resumed) this.activeContinuations.delete(continuationId); }
       }
       const extra = check(output, resumed?.verify ?? resumedWorkflow?.verify ?? opts.verify ?? []);
       verification = { status: extra.status === "refuted" ? "refuted" : verification.status === "verified" ? "verified" : verification.status === "checked" || extra.status === "checked" ? "checked" : "unverified", results: [...verification.results, ...extra.results] };
-      if (verification.status === "refuted") throw new Error("verification refuted: " + JSON.stringify(extra.results.filter((p) => !p.ok)));
+      if (verification.status === "refuted") throw new ClientFacingError("program_failed", "verification refuted: " + JSON.stringify(extra.results.filter((p) => !p.ok)));
     } catch (e) {
       invalidDocument = e instanceof GraphQLFailure && e.evidence.kind === "invalid-document";
-      error = String((e as Error)?.message ?? e);
+      error = capturedErrorText(e);
       if (e instanceof GraphQLFailure) {
         graphqlFailure = { ...e.evidence, capability: e.evidence.capability ?? cap.id,
           runs: [...new Set([...e.evidence.runs, runId])] };
@@ -2037,13 +2052,13 @@ export class RightClick {
         execution.cliValidity.conformance!.checks++;
         const output = await this.execute(sampleCap, coerceArgs(sampleCap, sample.args), this.net, {}, probe);
         const value = sample.format === "json" && typeof output === "string" ? parseJsonValue(output) : output;
-        if (stableStringify(value) !== stableStringify(sample.output)) throw new Error("independent expected sample output differs (changed meaning or insufficient evidence)");
+        if (stableStringify(value) !== stableStringify(sample.output)) throw new ClientFacingError("changed_meaning", "independent expected sample output differs (changed meaning or insufficient evidence)");
         if (!await sameProgram(inv.bin, allowed.identity) || primary() !== currentSha ||
             (await observeCliEnvironment(inv.bin, sb.policy)).digest !== environment.digest)
-          throw new Error("executable or environment changed during conformance samples");
+          throw new ClientFacingError("changed_meaning", "executable or environment changed during conformance samples");
       }
     } catch (error) {
-      const reason = String((error as Error)?.message ?? error);
+      const reason = capturedErrorText(error);
       this.cliRefusals.set(refusalKey, reason);
       return refuse(reason);
     }
@@ -2071,11 +2086,11 @@ export class RightClick {
   /** Investigate an operator-authorised local program (source "cli:/path/to/program"). */
   private async investigate(bin: string): Promise<Discovery> {
     const check = await checkProgram(bin, this.investigable);
-    if (!check.ok && !check.missing) throw new Error(check.reason);
+    if (!check.ok && !check.missing) throw new ClientFacingError("execution_denied", check.reason);
     // A registered program that is not there (any more): nothing to learn; previous capabilities are withdrawn.
     if (!check.ok) return { reflections: [], probes: [{ url: `cli:${bin}`, kind: "cli", ok: false, detail: check.reason }] };
     const sb = await this.sandbox();
-    if (!sb) throw new Error(`unavailable: no sandbox on this host, so ${bin} is not investigated or run`);
+    if (!sb) throw new ClientFacingError("unavailable", `unavailable: no sandbox on this host, so ${bin} is not investigated or run`);
     const environment = await observeCliEnvironment(bin, sb.policy);
     {
       const fs = await import("node:fs");
@@ -2091,7 +2106,7 @@ export class RightClick {
     }
     this.onInvestigationStart?.(bin);
     const { reflection, investigation } = await investigateCli(bin, sb);
-    if (!(await sameProgram(bin, check.identity))) throw new Error(`${bin} changed while it was being investigated; nothing learned`);
+    if (!(await sameProgram(bin, check.identity))) throw new ClientFacingError("changed_meaning", `${bin} changed while it was being investigated; nothing learned`);
     if ((await observeCliEnvironment(bin, sb.policy)).digest !== environment.digest)
       throw new CliValidityError("CLI execution environment changed during investigation; nothing learned");
     if (reflection) {
@@ -2170,7 +2185,10 @@ export class RightClick {
     return out;
   }
 
-  private async healRun(cap: Capability, args: Record<string, unknown>, error: string, net: Net = this.net, execution: HttpExecution = {}, confirm?: boolean): Promise<{ healing: NonNullable<RunRecord["healing"]>; healed: boolean; output?: unknown }> {
+  private async healRun(cap: Capability, args: Record<string, unknown>, failure: unknown, net: Net = this.net, execution: HttpExecution = {}, confirm?: boolean): Promise<{ healing: NonNullable<RunRecord["healing"]>; healed: boolean; output?: unknown }> {
+    // The healing record is client-visible: only reviewed text is stored. The raw message
+    // (which may carry provider text) is matched internally and dropped from the record.
+    const error = capturedErrorText(failure);
     const provider = this.graph.providers.get(cap.provider);
     // No independent non-commit witness is available here: error text can be provider-controlled.
     // Only reads or operations the operator declared side-effect-free can be resent after an
@@ -2227,7 +2245,7 @@ export class RightClick {
               return refuse(`program behaviour changed since it was investigated (changed meaning); its output for an identical successful call differs from the retained receipt (HTTP 409 equivalent)`);
           } catch (e) {
             if (e instanceof CliValidityError) throw e;
-            return refuse(`changed program failed an invocation that previously succeeded: ${String((e as Error)?.message ?? e)} (HTTP 409 equivalent)`);
+            return refuse(`changed program failed an invocation that previously succeeded: ${capturedErrorText(e)} (HTTP 409 equivalent)`);
           }
         } else if (!prior.examples?.length) {
           return refuse(`program changed since it was investigated and ${cap.id} has no conformance examples or prior successful call to revalidate it; re-investigate to accept the new program (HTTP 409 equivalent)`);
@@ -2238,7 +2256,7 @@ export class RightClick {
           try {
             replay = await replayExamples(prior, sb);
           } catch (e) {
-            return done(`could not revalidate the changed program against its conformance examples: ${String((e as Error)?.message ?? e)}`);
+            return done(`could not revalidate the changed program against its conformance examples: ${capturedErrorText(e)}`);
           }
           if (replay.matched !== replay.total)
             return refuse(`program behaviour changed since it was investigated (changed meaning); conformance examples no longer match: ${replay.mismatches.join("; ")} (HTTP 409 equivalent)`);
@@ -2271,7 +2289,7 @@ export class RightClick {
       return { healing: { ...healing, note }, healed: true, output };
     } catch (e) {
       if (e instanceof PendingOutcomeError || e instanceof TransportRefused || e instanceof GraphQLFailure || e instanceof CliValidityError) throw e;
-      return done(`${note}: ${String((e as Error)?.message ?? e)}`);
+      return done(`${note}: ${capturedErrorText(e)}`);
     }
   }
 
@@ -2280,7 +2298,7 @@ export class RightClick {
       const requested = opts.runId, seen = new Set<string>();
       let resolved = requested;
       for (;;) {
-        if (seen.has(resolved) || seen.size >= 8) throw new Error("invalid retained run linkage");
+        if (seen.has(resolved) || seen.size >= 8) throw new ClientFacingError("unknown_run", "invalid retained run linkage");
         seen.add(resolved);
         const linked = this.runs.get(resolved)?.workflowRunId ?? this.chain.receipts.findLast(r => r.runId === resolved)?.workflowRunId;
         if (!linked) break;
@@ -2304,7 +2322,7 @@ export class RightClick {
       const receipt = this.chain.receipts.findLast(r => r.runId === resolved);
       if (receipt) return { runId: receipt.runId, capability: receipt.capability, status: receipt.status,
         verification: { status: receipt.verification, results: [] }, receipt, outputUnavailable: true, ...identity };
-      throw new Error(`unknown run: ${resolved}`);
+      throw new ClientFacingError("unknown_run", `unknown run: ${resolved}`);
     }
     return { recent: [...this.runs.values()].slice(-(opts.limit ?? 20)).reverse().map(({ output, ...r }) => ({ ...r, output: preview(output) })),
       pendingWorkflows: [...this.workflowContinuations.values()].map(w => ({ runId: w.runId, capability: w.capability, phase: w.phase, next: w.next, pending: this.workflowPending(w) })),
@@ -2322,11 +2340,11 @@ export class RightClick {
         this.activity.append({ kind: "execution.continuation", status: "retired", reason: "resume-window-expired",
           subjects: [expired.capability], runs: [id] });
       }
-      if (!previous && this.httpContinuations.size >= 64) throw new Error("HTTP continuation storage is full");
+      if (!previous && this.httpContinuations.size >= 64) throw new ClientFacingError("goal_state", "HTTP continuation storage is full");
       const createdAt = previous?.createdAt ?? Date.now();
       const next: HttpRunContinuation = { runId, capability: cap.id, contractDigest: await httpContractDigest(cap),
         createdAt, expiresAt: previous?.expiresAt ?? createdAt + 3_600_000, cursor: structuredClone(cursor), verify: structuredClone(verify) };
-      if (!validHttpRun(next)) throw new Error("unsupported HTTP continuation checkpoint");
+      if (!validHttpRun(next)) throw new ClientFacingError("goal_state", "unsupported HTTP continuation checkpoint");
       this.httpContinuations.set(runId, next);
     } else this.httpContinuations.delete(runId);
     try { await this.flush(); }
@@ -2345,7 +2363,7 @@ export class RightClick {
       checkpoint: execution.checkpoint, current: id => this.graph.get(id), authorize: (target, values) => {
         this.assertExecution(target);
         const refusal = this.changedMeaningRefusal(target.id);
-        if (refusal) throw new Error(refusal);
+        if (refusal) throw new ClientFacingError("changed_meaning", refusal);
         coerceArgs(target, values);
       } });
     execution.continuation = followed.evidence;
@@ -2361,20 +2379,20 @@ export class RightClick {
 
   /** Pin the checker contract so a saved proof cannot silently become a different test. */
   private async pinWitnesses(witnesses: OutcomeWitness[]): Promise<OutcomeWitness[]> {
-    if (!Array.isArray(witnesses) || witnesses.length > 16) throw new Error("witnesses must be an array of at most 16 checks");
+    if (!Array.isArray(witnesses) || witnesses.length > 16) throw new ClientFacingError("invalid_argument", "witnesses must be an array of at most 16 checks");
     return Promise.all(witnesses.map(async (w) => {
       const c = this.graph.get(w.capability);
-      if (!c || c.invoke.kind === "goal") throw new Error(`witness must be an available read-only provider capability: ${w.capability}`);
+      if (!c || c.invoke.kind === "goal") throw new ClientFacingError("invalid_argument", `witness must be an available read-only provider capability: ${w.capability}`);
       // A crystallized pipeline may witness only when every step is itself a possible witness:
       // an available, read-only, executable provider capability.
       const steps = this.witnessSteps(c);
       for (const step of steps) {
-        if (consequentialRisks(step).some((r) => r !== "read") || step.invoke.kind === "goal") throw new Error(`witness must be an available read-only provider capability: ${w.capability}`);
+        if (consequentialRisks(step).some((r) => r !== "read") || step.invoke.kind === "goal") throw new ClientFacingError("invalid_argument", `witness must be an available read-only provider capability: ${w.capability}`);
         this.assertExecution(step);
       }
       this.assertExecution(c);
       if (w.agree !== undefined) assertAgreement(w.agree);
-      if (w.verify !== undefined && !Array.isArray(w.verify) || (!w.verify?.length && !w.agree)) throw new Error(`witness needs nonempty verification predicates or an agreement: ${w.capability}`);
+      if (w.verify !== undefined && !Array.isArray(w.verify) || (!w.verify?.length && !w.agree)) throw new ClientFacingError("invalid_argument", `witness needs nonempty verification predicates or an agreement: ${w.capability}`);
       // FNV graph signatures are useful for change detection but are not safe
       // authorization/proof identities. Include every member of a composite witness.
       const contractFields = (cap: Capability) => ({ id: cap.id, provider: cap.provider, source: cap.source,
@@ -2386,21 +2404,21 @@ export class RightClick {
         const current = pending.pop()!;
         if (seen.has(current.id)) continue;
         seen.add(current.id);
-        if (seen.size > 64) throw new Error(`witness pipeline too large: ${c.id}`);
+        if (seen.size > 64) throw new ClientFacingError("invalid_argument", `witness pipeline too large: ${c.id}`);
         members.push(current);
         if (current.invoke.kind === "composite") for (const step of current.invoke.steps) {
           const child = this.graph.get(step.capability);
-          if (!child) throw new Error(`witness must be an available read-only provider capability: ${c.id} (missing step ${step.capability})`);
+          if (!child) throw new ClientFacingError("invalid_argument", `witness must be an available read-only provider capability: ${c.id} (missing step ${step.capability})`);
           pending.push(child);
         }
       }
       const contract = `sha256:${await sha256(stableStringify(members.map(contractFields).sort((a, b) => a.id.localeCompare(b.id))))}`;
-      if (w.contract && w.contract !== contract) throw new Error(`witness contract changed or uses a legacy pin: ${w.capability}; establish a new check explicitly`);
+      if (w.contract && w.contract !== contract) throw new ClientFacingError("changed_meaning", `witness contract changed or uses a legacy pin: ${w.capability}; establish a new check explicitly`);
       for (const binding of Object.values(w.args ?? {})) {
-        if (!binding || typeof binding !== "object" || Object.keys(binding).length !== 1 || !("input" in binding || "output" in binding || "value" in binding)) throw new Error("witness arguments must use exactly one of input, output or value");
-        if ("input" in binding && typeof binding.input !== "string" || "output" in binding && typeof binding.output !== "string") throw new Error("witness input/output paths must be strings");
+        if (!binding || typeof binding !== "object" || Object.keys(binding).length !== 1 || !("input" in binding || "output" in binding || "value" in binding)) throw new ClientFacingError("invalid_argument", "witness arguments must use exactly one of input, output or value");
+        if ("input" in binding && typeof binding.input !== "string" || "output" in binding && typeof binding.output !== "string") throw new ClientFacingError("invalid_argument", "witness input/output paths must be strings");
         // Shown the candidate, a recomputation could simply hand it back.
-        if (w.agree && "output" in binding) throw new Error(`an agreement witness recomputes from the inputs and is never given the candidate result: ${w.capability}`);
+        if (w.agree && "output" in binding) throw new ClientFacingError("invalid_argument", `an agreement witness recomputes from the inputs and is never given the candidate result: ${w.capability}`);
       }
       return structuredClone({ ...w, args: w.args ?? {}, verify: w.verify ?? [], contract });
     }));
@@ -2413,11 +2431,11 @@ export class RightClick {
       const next = pending.pop()!;
       if (seen.has(next.id)) continue;
       seen.add(next.id);
-      if (seen.size > 64) throw new Error(`witness pipeline too large: ${c.id}`);
+      if (seen.size > 64) throw new ClientFacingError("invalid_argument", `witness pipeline too large: ${c.id}`);
       if (next.invoke.kind !== "composite") { steps.push(next); continue; }
       for (const id of next.invoke.steps.map((s) => s.capability)) {
         const child = this.graph.get(id);
-        if (!child) throw new Error(`witness must be an available read-only provider capability: ${c.id} (missing step ${id})`);
+        if (!child) throw new ClientFacingError("invalid_argument", `witness must be an available read-only provider capability: ${c.id} (missing step ${id})`);
         pending.push(child);
       }
     }
@@ -2443,11 +2461,11 @@ export class RightClick {
         const w = (await this.pinWitnesses([original]))[0];
         const cap = this.graph.get(w.capability)!;
         // A pipeline witness is independent only if none of its steps' providers produced the result.
-        if (this.witnessSteps(cap).some((step) => providers.has(step.provider))) throw new Error("outcome witness must be separate from the providers producing the result");
+        if (this.witnessSteps(cap).some((step) => providers.has(step.provider))) throw new ClientFacingError("invalid_argument", "outcome witness must be separate from the providers producing the result");
         const args: Record<string, unknown> = {};
         for (const [key, binding] of Object.entries(w.args)) {
           const value = "input" in binding ? pick(inputs, binding.input) : "output" in binding ? pick(output, binding.output) : binding.value;
-          if (value === undefined) throw new Error(`unresolved witness argument: ${key}`);
+          if (value === undefined) throw new ClientFacingError("invalid_argument", `unresolved witness argument: ${key}`);
           args[key] = value;
         }
         await this.preflightCli(cap, true);
@@ -2461,7 +2479,7 @@ export class RightClick {
           ...(r.refusal ? { refusal: r.refusal } : {}), ...(r.graphqlFailure ? { graphqlFailure: r.graphqlFailure } : {}), ...(r.cliValidity ? { cliValidity: r.cliValidity } : {}) });
         if (r.refusal || r.graphqlFailure || r.cliValidity?.environment === "changed" || r.cliValidity?.application === "reported-error") break;
       } catch (e) {
-        evidence.push({ capability: original.capability, runId: "", status: "failed", verification: { status: "refuted", results: [] }, error: String((e as Error)?.message ?? e) });
+        evidence.push({ capability: original.capability, runId: "", status: "failed", verification: { status: "refuted", results: [] }, error: capturedErrorText(e) });
       }
     }
     return evidence;
@@ -2493,7 +2511,7 @@ export class RightClick {
       // An absent explicit id is an error, not a search phrase that may select
       // some unrelated operation or disappear from the caller's constraints.
       const cap = this.graph.get(reference) ?? (!/^[\w-]+:/.test(reference) ? this.graph.search(reference, 1)[0]?.capability : undefined);
-      if (!cap) throw new Error(`unresolved required anchor: ${reference}`);
+      if (!cap) throw new ClientFacingError("unavailable", `unresolved required anchor: ${reference}`);
       return this.describeAnchor(cap);
     });
   }
@@ -2517,7 +2535,7 @@ export class RightClick {
         // one capability at that source still carries it; never the id.
         const successors = pinned && anchor.source ? this.graph.list().filter((c) => c.id !== exact.id && carriesPinned(c)) : [];
         if (successors.length === 1) return successors[0].id;
-        throw new Error(`required anchor contract changed meaning: ${anchor.id}${pinned && this.operationField(exact).operation !== pinned ? ` (it called ${pinned}, it now calls ${this.operationField(exact).operation})` : ""}`);
+        throw new ClientFacingError("changed_meaning", `required anchor contract changed meaning: ${anchor.id}${pinned && this.operationField(exact).operation !== pinned ? ` (it called ${pinned}, it now calls ${this.operationField(exact).operation})` : ""}`);
       }
       const available = anchor.source ? this.graph.list().filter(c => !this.meaningChanges.has(c.id)) : [];
       const knownChanges = new Set([...this.meaningChanges.values()].flatMap(c => [c.id, ...(c.current ? [c.current] : [])]));
@@ -2528,8 +2546,8 @@ export class RightClick {
       // restrictions and the saved outcome checks still apply to the selected route.
       let candidates = pinned ? available.filter(carriesPinned) : [];
       if (!candidates.length) candidates = available.filter(c => equivalent(c) && !knownChanges.has(c.id));
-      if (!candidates.length && pinned && available.some(equivalent)) throw new Error(`required anchor contract changed meaning: ${anchor.id}; no current operation matches ${pinned}`);
-      if (candidates.length !== 1) throw new Error(`${candidates.length ? "ambiguous" : "unresolved"} required anchor: ${anchor.id}; expected one equivalent operation at ${anchor.source ?? "its original identity"}, found ${candidates.length}`);
+      if (!candidates.length && pinned && available.some(equivalent)) throw new ClientFacingError("changed_meaning", `required anchor contract changed meaning: ${anchor.id}; no current operation matches ${pinned}`);
+      if (candidates.length !== 1) throw new ClientFacingError("planning_refused", `${candidates.length ? "ambiguous" : "unresolved"} required anchor: ${anchor.id}; expected one equivalent operation at ${anchor.source ?? "its original identity"}, found ${candidates.length}`);
       return candidates[0].id;
     });
   }
@@ -2543,6 +2561,10 @@ export class RightClick {
   /** A permit is passed only by the leased saved-goal entry point; callers cannot
    * provide it through the public compose options or an MCP request. */
   private async composeScoped(opts: ComposeOptions, permit?: symbol): Promise<ComposeResult> {
+    // Validation before any work: a missing or malformed have/want is a caller mistake
+    // with a useful message, never a TypeError from inside the planner.
+    if (!opts.have || typeof opts.have !== "object" || Array.isArray(opts.have)) throw new ClientFacingError("invalid_argument", "have must be an object naming your inputs, e.g. {place: \"Lisbon\"}");
+    if (!opts.want || typeof opts.want !== "string") throw new ClientFacingError("invalid_argument", "want must be a semantic type string, e.g. text, language or geo.lat");
     // Independent witnesses are part of the call: a deferred checker is restored like a step.
     await this.restoreDeferredFor([...opts.through ?? [], ...(opts.anchors ?? []).map(a => a.id), ...(opts.witnesses ?? []).map(w => w.capability)], opts.origins, this.net, permit);
     const request = this.activity.append({ kind: "composition.requested", status: "requested" });
@@ -2568,13 +2590,13 @@ export class RightClick {
   private async composeNow(opts: ComposeOptions, permit?: symbol): Promise<ComposeResult> {
     let publicationExpected: string | null = null;
     if (opts.run && opts.publish) {
-      if (this.activeGoalLeases) throw new Error("goal publication is blocked while a saved goal is executing");
-      if (this.publishing.has(slugify(opts.publish))) throw new Error(`publication pending: goal:${slugify(opts.publish)}`);
+      if (this.activeGoalLeases) throw new ClientFacingError("goal_state", "goal publication is blocked while a saved goal is executing");
+      if (this.publishing.has(slugify(opts.publish))) throw new ClientFacingError("goal_state", `publication pending: goal:${slugify(opts.publish)}`);
       const existing = this.published.get(slugify(opts.publish));
-      if (existing && opts.preserveExisting === true) throw new Error(`publication already exists: goal:${slugify(opts.publish)}; preserveExisting prevents replacement`);
+      if (existing && opts.preserveExisting === true) throw new ClientFacingError("goal_state", `publication already exists: goal:${slugify(opts.publish)}; preserveExisting prevents replacement`);
       if (existing) {
         publicationExpected = await this.goalDigest(existing);
-        if (this.published.get(slugify(opts.publish)) !== existing) throw new Error("publication changed while preparing replacement; retry explicitly");
+        if (this.published.get(slugify(opts.publish)) !== existing) throw new ClientFacingError("goal_state", "publication changed while preparing replacement; retry explicitly");
       }
     }
     const witnesses = await this.pinWitnesses(opts.witnesses ?? []);
@@ -2595,7 +2617,7 @@ export class RightClick {
       // {"value": "EUR", "fixed": true}: a constant of the goal rather than a parameter of a published API.
       if (v && typeof v === "object" && !Array.isArray(v) && (v as any).fixed === true && "value" in (v as any)) {
         // A credential fixed into a goal would let every caller of the goal act with it.
-        if (isSensitiveName(k)) throw new Error(`refused: "${k}" looks like a credential and cannot be fixed into a goal; leave it as an input each caller supplies`);
+        if (isSensitiveName(k)) throw new ClientFacingError("invalid_argument", `refused: "${k}" looks like a credential and cannot be fixed into a goal; leave it as an input each caller supplies`);
         fixed[k] = (v as any).value;
         v = "type" in (v as any) ? { type: (v as any).type, value: (v as any).value } : (v as any).value;
       }
@@ -2616,32 +2638,32 @@ export class RightClick {
     // persisted anchor so identity changes cannot silently redirect a caller's choices.
     const inputBindings: Record<string, Record<string, string>> = {};
     if (opts.inputBindings !== undefined) {
-      if (!opts.inputBindings || typeof opts.inputBindings !== "object" || Array.isArray(opts.inputBindings)) throw new Error("inputBindings must be an object");
+      if (!opts.inputBindings || typeof opts.inputBindings !== "object" || Array.isArray(opts.inputBindings)) throw new ClientFacingError("invalid_argument", "inputBindings must be an object");
       for (const [id, ports] of Object.entries(opts.inputBindings)) {
         const index = anchors.findIndex(a => a.id === id);
-        if (index < 0) throw new Error(`inputBindings requires an explicitly anchored capability: ${id}`);
+        if (index < 0) throw new ClientFacingError("invalid_argument", `inputBindings requires an explicitly anchored capability: ${id}`);
         const cap = this.graph.get(through[index]);
-        if (!cap || cap.invoke.kind !== "cli") throw new Error(`inputBindings requires an anchored CLI capability: ${id}`);
-        if (!ports || typeof ports !== "object" || Array.isArray(ports) || !Object.keys(ports).length) throw new Error(`inputBindings for ${id} must name ports`);
+        if (!cap || cap.invoke.kind !== "cli") throw new ClientFacingError("invalid_argument", `inputBindings requires an anchored CLI capability: ${id}`);
+        if (!ports || typeof ports !== "object" || Array.isArray(ports) || !Object.keys(ports).length) throw new ClientFacingError("invalid_argument", `inputBindings for ${id} must name ports`);
         for (const [port, input] of Object.entries(ports)) {
-          if (!cap.inputs.some(p => p.name === port)) throw new Error(`unknown inputBindings port ${id}.${port}`);
-          if (typeof input !== "string" || !/^[A-Za-z_][A-Za-z0-9_]*$/.test(input) || !Object.hasOwn(types, input)) throw new Error(`unknown or unsupported inputBindings input for ${id}.${port}`);
+          if (!cap.inputs.some(p => p.name === port)) throw new ClientFacingError("invalid_argument", `unknown inputBindings port ${id}.${port}`);
+          if (typeof input !== "string" || !/^[A-Za-z_][A-Za-z0-9_]*$/.test(input) || !Object.hasOwn(types, input)) throw new ClientFacingError("invalid_argument", `unknown or unsupported inputBindings input for ${id}.${port}`);
           const optionContract = [cap.invoke.options, cap.invoke.optionsAfterArgs].find(o => o?.port === port);
           if (optionContract && Object.hasOwn(fixed, input)) {
             // Keep only documented value-free flags. A value for an innocuous option may
             // itself be a credential, so name-based detection is insufficient here.
             let argv: string[];
             try { argv = validateOptions(fixed[input], optionContract.allowed, optionContract.excluded); }
-            catch { throw new Error(`invalid fixed CLI options for ${id}.${port}`); }
+            catch { throw new ClientFacingError("invalid_argument", `invalid fixed CLI options for ${id}.${port}`); }
             const byFlag = new Map(optionContract.allowed.flatMap(o => o.flags.map(flag => [flag, o] as const)));
             for (let i = 0; i < argv.length; i++) {
               const flag = argv[i].split("=", 1)[0];
               const option = byFlag.get(flag);
               if (!option) continue;
-              if (option.flags.some(isSensitiveName)) throw new Error(`refused fixed credential-like CLI option for ${id}.${port}; supply it at invocation`);
+              if (option.flags.some(isSensitiveName)) throw new ClientFacingError("invalid_argument", `refused fixed credential-like CLI option for ${id}.${port}; supply it at invocation`);
               if (option.arg && !argv[i].includes("=")) i++;
             }
-            if (!retainableCliOptions(fixed[input], optionContract)) throw new Error(`refused fixed value-bearing CLI option for ${id}.${port}; supply it at invocation`);
+            if (!retainableCliOptions(fixed[input], optionContract)) throw new ClientFacingError("invalid_argument", `refused fixed value-bearing CLI option for ${id}.${port}; supply it at invocation`);
           }
         }
         inputBindings[cap.id] = { ...ports };
@@ -2833,7 +2855,7 @@ export class RightClick {
           anchors, fixed, origins, witnesses, require, preservesInput: assessOf(p).preservesInput, publicationExpected,
           goals: await Promise.all((opts.activeGoals ?? []).map(async slug => {
             const g = this.published.get(slug);
-            if (!g) throw new Error(`saved goal is unavailable: ${slug}`);
+            if (!g) throw new ClientFacingError("unavailable", `saved goal is unavailable: ${slug}`);
             return { slug, digest: await this.goalDigest(g) };
           })),
         };
@@ -2919,11 +2941,11 @@ export class RightClick {
         // unless the operator declared them side-effect-free. Stop here instead.
         const stateful = this.mayHaveTakenEffect(p.steps, failed);
         if (stateful.length) {
-          attempts.push({ summary: p.summary, failed, error: String((e as Error)?.message ?? e), healing: `not retried: ${stateful.map((c) => c.id).join(", ")} can change state and may already have taken effect (an operator can declare side-effect-free operations in authority.retry)` });
+          attempts.push({ summary: p.summary, failed, error: capturedErrorText(e), healing: `not retried: ${stateful.map((c) => c.id).join(", ")} can change state and may already have taken effect (an operator can declare side-effect-free operations in authority.retry)` });
           plans = [];
           break;
         }
-        const attempt: { summary: string; failed: string; error: string; healing?: string } = { summary: p.summary, failed, error: String((e as Error)?.message ?? e) };
+        const attempt: { summary: string; failed: string; error: string; healing?: string } = { summary: p.summary, failed, error: capturedErrorText(e) };
         attempts.push(attempt);
         // Self-maintenance: the provider may have changed its API. Re-reflect its
         // source once; if the contract drifted, the graph now describes the new
@@ -3022,7 +3044,7 @@ export class RightClick {
     const titles = (plan: Plan) => plan.steps.map(s => this.graph.get(s.capability)!.title + (s.bindings.some(b => b.each) ? " (each)" : ""));
     let lastWitnesses: WitnessResult[] = [];
     let verification: RunRecord["verification"] = check(r.output, opts.verify ?? []);
-    if (verification.status === "refuted") throw new StepError(p.steps[p.steps.length - 1].capability, `verification refuted: ${JSON.stringify(verification.results.filter((x) => !x.ok))}`);
+    if (verification.status === "refuted") throw new StepError(p.steps[p.steps.length - 1].capability, `verification refuted: ${JSON.stringify(verification.results.filter((x) => !x.ok))}`, "program_failed");
     lastWitnesses = await this.checkWitnesses(witnesses, values, r.output, r.runs, net,
       c.plan.steps.map(s => this.graph.get(s.capability)!.provider));
     observeWitnesses(lastWitnesses);
@@ -3034,7 +3056,7 @@ export class RightClick {
     if (badGraphQL) throw new GraphQLFailure({ ...badGraphQL.graphqlFailure!, runs: [...r.runs, badGraphQL.runId] });
     const invalidCli = lastWitnesses.find(w => w.cliValidity?.environment === "changed" || w.cliValidity?.application === "reported-error");
     if (invalidCli) throw new CliValidityError(invalidCli.error ?? "CLI witness validity refused", invalidCli.cliValidity, invalidCli.capability, [...r.runs, invalidCli.runId]);
-    if (lastWitnesses.some((w) => w.status !== "completed")) throw new StepError(p.steps[p.steps.length - 1].capability, `verification refuted by independent outcome witness: ${lastWitnesses.filter((w) => w.status !== "completed").map((w) => w.error ?? w.capability).join("; ")}`);
+    if (lastWitnesses.some((w) => w.status !== "completed")) throw new StepError(p.steps[p.steps.length - 1].capability, `verification refuted by independent outcome witness: ${lastWitnesses.filter((w) => w.status !== "completed").map((w) => w.error ?? w.capability).join("; ")}`, "program_failed");
     if (lastWitnesses.length) verification = { ...verification, status: "verified" };
     if (require.length) {
       // The contract said the result carries it; check that this result actually does.
@@ -3042,7 +3064,7 @@ export class RightClick {
       result.outcome = seen.absent.length
         ? { status: "incomplete", require, covered: Object.fromEntries(seen.present.map((t) => [t, p.satisfaction?.covered[t] ?? ""])), missing: seen.absent, joins: p.satisfaction?.joins ?? [], reason: `the executed result lacks: ${seen.absent.join(", ")}` }
         : { status: "established", require, covered: p.satisfaction?.covered ?? {}, missing: [], joins: p.satisfaction?.joins ?? [], checkedAfterRun: true };
-      if (seen.absent.length) throw new StepError(p.steps[p.steps.length - 1].capability, `required output information missing: ${seen.absent.join(", ")}`);
+      if (seen.absent.length) throw new StepError(p.steps[p.steps.length - 1].capability, `required output information missing: ${seen.absent.join(", ")}`, "missing_data");
     }
     const assurance: Assurance = verification.status === "verified" ? "independently-checked" : verification.status === "checked" ? "predicate-checked" : "unchecked";
     // Preservation: a plan chosen on evidence that every step keeps its input's words must not
@@ -3183,14 +3205,14 @@ export class RightClick {
   }
 
   private async executeGoal(slug: string, args: Record<string, unknown>, confirm?: boolean, activeGoals: string[] = [], verify: Predicate[] = []): Promise<ComposeResult> {
-    if (this.publishing.has(slug)) throw new Error(`saved goal publication is pending: ${slug}`);
+    if (this.publishing.has(slug)) throw new ClientFacingError("goal_state", `saved goal publication is pending: ${slug}`);
     const g = this.published.get(slug);
-    if (!g) throw new Error(`no published goal: ${slug}`);
-    if (!g.revision) throw new Error(`saved goal ${slug} has no immutable revision; explicitly republish it with a new revision before execution`);
+    if (!g) throw new ClientFacingError("unknown_capability", `no published goal: ${slug}`);
+    if (!g.revision) throw new ClientFacingError("goal_state", `saved goal ${slug} has no immutable revision; explicitly republish it with a new revision before execution`);
     const digest = await this.goalDigest(g);
     return this.withGoalLease([{ slug, digest }], async () => {
       const capability = this.graph.get(`goal:${slug}`);
-      if (!capability) throw new Error(`saved goal is unavailable: ${slug}`);
+      if (!capability) throw new ClientFacingError("unavailable", `saved goal is unavailable: ${slug}`);
       this.checkExecutionAuthority(capability, confirm);
       this.assertExecution(capability);
       // This read-only re-derivation is scoped to known retained sources, only
@@ -3205,8 +3227,8 @@ export class RightClick {
   }
 
   private async withGoalLease<T>(pins: Array<{ slug: string; digest: string }>, invoke: () => Promise<T>): Promise<T> {
-    if (this.activeProviderMutations) throw new Error("saved-goal execution is blocked while provider changes are in progress");
-    if (this.publishing.size) throw new Error("saved-goal execution is blocked while a publication is pending");
+    if (this.activeProviderMutations) throw new ClientFacingError("goal_state", "saved-goal execution is blocked while provider changes are in progress");
+    if (this.publishing.size) throw new ClientFacingError("goal_state", "saved-goal execution is blocked while a publication is pending");
     this.activeGoalLeases++;
     try {
       // A goal is replanned dynamically, and may select another saved goal that
@@ -3214,23 +3236,23 @@ export class RightClick {
       // definition before any effect. This deliberately fails closed if any
       // unrelated cached definition is stale; the host must reload state.
       const goals = [...this.published.entries()];
-      if (goals.length > 1024) throw new Error("saved-goal lease preflight bound exceeded");
+      if (goals.length > 1024) throw new ClientFacingError("goal_state", "saved-goal lease preflight bound exceeded");
       const all = new Map<string, string>();
       for (const [slug, goal] of goals) {
-        if (!goal.revision) throw new Error(`saved goal ${slug} has no immutable revision; explicitly republish it with a new revision before execution`);
+        if (!goal.revision) throw new ClientFacingError("goal_state", `saved goal ${slug} has no immutable revision; explicitly republish it with a new revision before execution`);
         if ((goal.witnesses ?? []).some(w => !/^sha256:[a-f0-9]{64}$/.test(w.contract ?? "")))
-          throw new Error(`saved goal has an unpinned or legacy witness: ${slug}; establish a new check explicitly`);
+          throw new ClientFacingError("goal_state", `saved goal has an unpinned or legacy witness: ${slug}; establish a new check explicitly`);
         const digest = await this.goalDigest(goal);
-        if (this.published.get(slug) !== goal) throw new Error(`saved goal changed during lease preflight: ${slug}`);
+        if (this.published.get(slug) !== goal) throw new ClientFacingError("goal_state", `saved goal changed during lease preflight: ${slug}`);
         all.set(slug, digest);
       }
-      if (this.published.size !== goals.length) throw new Error("saved goals changed during lease preflight");
+      if (this.published.size !== goals.length) throw new ClientFacingError("goal_state", "saved goals changed during lease preflight");
       for (const pin of pins) {
         if (all.get(pin.slug) !== pin.digest) throw new StateConflictError(`saved goal ${pin.slug} is stale, revoked, or inconsistent`);
       }
       const allPins = [...all].map(([slug, digest]) => ({ slug, digest }));
       if (this.store) {
-        if (!this.store.withGoalLease) throw new Error(`saved-goal execution requires an authoritative lease-capable store; this adapter cannot guarantee freshness or coordinate replacement${this.store.readOnly ? ` (${this.store.readOnly})` : ""}. Use a coordinated store or an explicitly immutable authoritative snapshot`);
+        if (!this.store.withGoalLease) throw new ClientFacingError("goal_state", `saved-goal execution requires an authoritative lease-capable store; this adapter cannot guarantee freshness or coordinate replacement${this.store.readOnly ? ` (${this.store.readOnly})` : ""}. Use a coordinated store or an explicitly immutable authoritative snapshot`);
         return await this.store.withGoalLease(allPins, invoke);
       }
       return await invoke();
@@ -3238,14 +3260,14 @@ export class RightClick {
   }
 
   private async executeLeasedGoal(slug: string, g: PublishedGoal, args: Record<string, unknown>, confirm?: boolean, activeGoals: string[] = [], verify: Predicate[] = []): Promise<ComposeResult> {
-    if (this.publishing.has(slug) || this.published.get(slug) !== g) throw new Error(`saved goal changed before execution: ${slug}`);
+    if (this.publishing.has(slug) || this.published.get(slug) !== g) throw new ClientFacingError("goal_state", `saved goal changed before execution: ${slug}`);
     if ((g.witnesses ?? []).some(w => !/^sha256:[a-f0-9]{64}$/.test(w.contract ?? "")))
-      throw new Error(`saved goal has an unpinned or legacy witness: ${slug}; establish a new check explicitly`);
+      throw new ClientFacingError("goal_state", `saved goal has an unpinned or legacy witness: ${slug}; establish a new check explicitly`);
     const capability = this.graph.get(`goal:${slug}`);
-    if (!capability) throw new Error(`saved goal is unavailable: ${slug}`);
+    if (!capability) throw new ClientFacingError("unavailable", `saved goal is unavailable: ${slug}`);
     // Generated REST/GraphQL enter here directly rather than through run().
     this.assertExecution(capability);
-    if (activeGoals.includes(slug) || activeGoals.length >= 8) throw new Error(`recursive saved goal: ${slug}`);
+    if (activeGoals.includes(slug) || activeGoals.length >= 8) throw new ClientFacingError("goal_state", `recursive saved goal: ${slug}`);
     // Older persisted goals can acquire descriptors only while their original
     // anchors still exist. Missing old ids fail explicitly rather than weaken.
     if (!g.anchors) {
@@ -3253,7 +3275,7 @@ export class RightClick {
       this.persist();
     }
     const missing = goalParams(g).map(([k]) => k).filter((k) => args[k] === undefined || args[k] === "");
-    if (missing.length) throw new Error(`missing parameter(s): ${missing.join(", ")}`);
+    if (missing.length) throw new ClientFacingError("invalid_argument", `missing parameter(s): ${missing.join(", ")}`);
     const have: Record<string, unknown> = {};
     for (const [k, t] of Object.entries(g.have)) {
       // Pinned inputs come from the goal itself; a caller cannot override them.
@@ -3381,7 +3403,7 @@ export class RightClick {
     for (const witness of witnesses) {
       try {
         if (!/^sha256:[a-f0-9]{64}$/.test(witness.contract ?? ""))
-          throw new Error("retained witness has no supported contract pin; establish a new check explicitly");
+          throw new ClientFacingError("goal_state", "retained witness has no supported contract pin; establish a new check explicitly");
         const w = (await this.pinWitnesses([witness]))[0];
         await this.preflightCli(this.graph.get(w.capability)!, true);
       } catch (cause) { throw new WitnessPreflightError(witness.capability, cause); }
@@ -3428,13 +3450,13 @@ export class RightClick {
     const visited = new Set<string>();
     const scan = async (id: string): Promise<void> => {
       if (visited.has(id)) return;
-      if (visited.size >= 1024) throw new Error("saved-goal dependency preflight bound exceeded");
+      if (visited.size >= 1024) throw new ClientFacingError("goal_state", "saved-goal dependency preflight bound exceeded");
       visited.add(id);
       const cap = this.graph.get(id);
-      if (!cap) throw new StepError(id, `missing capability ${id}`);
+      if (!cap) throw new StepError(id, `missing capability ${id}`, "unavailable");
       if (cap.invoke.kind === "goal") {
         const goal = this.published.get(cap.invoke.slug);
-        if (!goal?.revision) throw new Error(`saved goal has no immutable revision: ${cap.invoke.slug}`);
+        if (!goal?.revision) throw new ClientFacingError("goal_state", `saved goal has no immutable revision: ${cap.invoke.slug}`);
         pins.push({ slug: cap.invoke.slug, digest: await this.goalDigest(goal) });
       } else if (cap.invoke.kind === "composite") {
         for (const step of cap.invoke.steps) await scan(step.capability);
@@ -3449,9 +3471,9 @@ export class RightClick {
     // Check every known dependency before the first effect, including nested composites.
     for (const [index, step] of steps.entries()) {
       const cap = this.graph.get(step.capability);
-      if (!cap) throw new StepError(step.capability, `missing capability ${step.capability}`);
+      if (!cap) throw new StepError(step.capability, `missing capability ${step.capability}`, "unavailable");
       try { this.assertExecution(cap); }
-      catch (e) { throw new StepError(cap.id, String((e as Error).message)); }
+      catch (e) { throw stepFailure(cap.id, e); }
       await this.preflightCli(cap);
       for (const b of step.bindings) if (b.link) {
         const sourceIndex = /^(\d+)\.$/.exec(b.from);
@@ -3520,7 +3542,7 @@ export class RightClick {
         if (r.planningRefusal) throw new PlanningRefused({ ...r.planningRefusal, runs: [...runs, ...r.planningRefusal.runs] });
         if (r.cliValidity?.environment === "changed" || r.cliValidity?.application === "reported-error")
           throw new CliValidityError(r.error ?? "CLI validity refused", r.cliValidity, r.failedCapability ?? step.capability, runs);
-        if (r.status === "failed") throw new StepError(r.failedCapability ?? step.capability, `${step.capability}: ${r.error}`);
+        if (r.status === "failed") throw new StepError(r.failedCapability ?? step.capability, `${step.capability}: ${r.error}`, "program_failed");
         if (r.responseStatus !== undefined) responseStatuses.set(index, r.responseStatus);
         if (workflow) {
           if (workflow.phase !== "ready") throw new PendingOutcomeError(this.workflowPending(workflow, "step result could not be retained"));
@@ -3547,7 +3569,7 @@ export class RightClick {
         if (r.planningRefusal) throw new PlanningRefused({ ...r.planningRefusal, runs: [...runs, ...r.planningRefusal.runs] });
         if (r.cliValidity?.environment === "changed" || r.cliValidity?.application === "reported-error")
           throw new CliValidityError(r.error ?? "CLI validity refused", r.cliValidity, r.failedCapability ?? step.capability, runs);
-        if (r.status === "failed") throw new StepError(r.failedCapability ?? step.capability, `${step.capability} (item ${JSON.stringify(item)}, ${report.ran} of ${items.length}): ${r.error}`);
+        if (r.status === "failed") throw new StepError(r.failedCapability ?? step.capability, `${step.capability} (item ${JSON.stringify(item)}, ${report.ran} of ${items.length}): ${r.error}`, "program_failed");
         each.push(r.output);
       }
       outputs.push(each);
@@ -3569,10 +3591,10 @@ export class RightClick {
       case "search":
         return this.graph.search(opts.query ?? "", opts.limit ?? 10).map(({ capability: c, score }) => ({ id: c.id, title: c.title, provider: c.provider, source: c.source, score: Number(score.toFixed(3)) }));
       case "neighbors":
-        if (!opts.id) throw new Error("neighbors needs id");
+        if (!opts.id) throw new ClientFacingError("invalid_argument", "neighbors needs id");
         return this.graph.neighbors(opts.id);
       case "paths":
-        if (!opts.from || !opts.to) throw new Error("paths needs from and to types");
+        if (!opts.from || !opts.to) throw new ClientFacingError("invalid_argument", "paths needs from and to types");
         return plan(this.graph, this.ledger, { have: { input: opts.from }, want: opts.to, limit: opts.limit ?? 10 }).map((p) => ({ summary: p.summary, steps: p.steps.length, providers: p.providers, cost: Number(p.cost.toFixed(2)) }));
       case "export":
         return this.exportGraph();
@@ -3581,7 +3603,7 @@ export class RightClick {
       case "edges":
         return this.graph.sampleEdges(opts.limit ?? 2000);
       default:
-        throw new Error(`unknown graph op: ${opts.op} (stats|types|search|neighbors|paths|export|knowledge|edges|authority)`);
+        throw new ClientFacingError("invalid_argument", `unknown graph op: ${opts.op} (stats|types|search|neighbors|paths|export|knowledge|edges|authority)`);
     }
   }
 
@@ -3590,7 +3612,7 @@ export class RightClick {
    * authority. Contains no credentials, caller data, outputs or receipts.
    */
   exportKnowledge(): KnowledgeBundle {
-    if (!this.shareEvidence) throw new Error("not authorised: exporting capability knowledge needs the operator's evidence-sharing authority (authority.shareEvidence / RCX_SHARE_EVIDENCE=1)");
+    if (!this.shareEvidence) throw new ClientFacingError("execution_denied", "not authorised: exporting capability knowledge needs the operator's evidence-sharing authority (authority.shareEvidence / RCX_SHARE_EVIDENCE=1)");
     const g = globalThis as any;
     const programs: KnowledgeBundle["programs"] = [];
     for (const p of this.graph.providers.values()) {
@@ -3628,14 +3650,14 @@ export class RightClick {
    * conformance example. Nothing imported is trusted on the exporter's word.
    */
   async importKnowledge(bundle: KnowledgeBundle): Promise<ImportReport> {
-    if (this.activeGoalLeases) throw new Error("knowledge import is blocked while a saved goal is executing");
+    if (this.activeGoalLeases) throw new ClientFacingError("goal_state", "knowledge import is blocked while a saved goal is executing");
     this.activeProviderMutations++;
     try { return await this.importKnowledgeUnlocked(bundle); }
     finally { this.activeProviderMutations--; }
   }
 
   private async importKnowledgeUnlocked(bundle: KnowledgeBundle): Promise<ImportReport> {
-    if (bundle?.format !== KNOWLEDGE_FORMAT) throw new Error(`not capability knowledge: expected format ${KNOWLEDGE_FORMAT}`);
+    if (bundle?.format !== KNOWLEDGE_FORMAT) throw new ClientFacingError("invalid_argument", `not capability knowledge: expected format ${KNOWLEDGE_FORMAT}`);
     const report: ImportReport = { format: bundle.format, from: bundle.source, programs: [], goals: [] };
     if (bundle.source?.semantics !== SEMANTICS) {
       const reason = `inference version ${bundle.source?.semantics ?? "unknown"} is not supported here (${SEMANTICS}); re-investigate the authorised source before exporting again`;
@@ -3828,12 +3850,12 @@ export class RightClick {
     switch (inv.kind) {
       case "builtin": {
         const fn = this.builtins.get(inv.fn);
-        if (!fn) throw new Error(`builtin missing: ${inv.fn}`);
+        if (!fn) throw new ClientFacingError("internal", `builtin missing: ${inv.fn}`);
         return fn(args as Record<string, any>, net);
       }
       case "platform": {
         const fn = this.platformFns.get(inv.fn);
-        if (!fn) throw new Error(`platform capability not available on ${this.info.name}: ${inv.fn}`);
+        if (!fn) throw new ClientFacingError("unavailable", `platform capability not available on ${this.info.name}: ${inv.fn}`);
         return fn(args as Record<string, any>);
       }
       case "http": {
@@ -3878,7 +3900,7 @@ export class RightClick {
             current: id => this.graph.get(id), signal: execution.signal, authorize: (target, values) => {
               this.assertExecution(target);
               const refusal = this.changedMeaningRefusal(target.id);
-              if (refusal) throw new Error(refusal);
+              if (refusal) throw new ClientFacingError("changed_meaning", refusal);
               coerceArgs(target, values);
             } });
           execution.continuation = followed.evidence;
@@ -3886,13 +3908,15 @@ export class RightClick {
           out = followed.output;
         } else {
           out = await readBody(res);
-          if (!res.ok) throw new Error(`HTTP ${res.status}: ${String(JSON.stringify(preview(out))).slice(0, 300)}`);
+          // The body is provider-controlled text (it may echo credentials, other tenants'
+          // data or server internals): it stays in the diagnostic detail, never the message.
+          if (!res.ok) throw new ClientFacingError("provider_error", `HTTP ${res.status} from ${u.origin}; the provider's response detail is recorded server-side`, `HTTP ${res.status}: ${String(JSON.stringify(preview(out))).slice(0, 300)}`);
         }
         if (inv.entry) {
           // A keyed map holds many answers; the caller asked for one. A missing key is an error, never a guess.
           const key = String(args[inv.entry.keyInput] ?? "");
           const map = pick(out, inv.entry.map);
-          if (!map || typeof map !== "object" || !Object.prototype.hasOwnProperty.call(map, key)) throw new Error(`no ${inv.entry.map} entry for "${key}"`);
+          if (!map || typeof map !== "object" || !Object.prototype.hasOwnProperty.call(map, key)) throw new ClientFacingError("invalid_argument", `no ${inv.entry.map} entry for "${key}"`);
           return (map as Record<string, unknown>)[key];
         }
         return out;
@@ -3925,9 +3949,10 @@ export class RightClick {
         }
         if (Array.isArray(j?.errors) && j.errors.length && Object.hasOwn(j, "data")) {
           throw new GraphQLFailure({ kind: "execution-errors",
-            reason: `GraphQL execution errors; partial or null data is not a completed outcome: ${JSON.stringify(j.errors).slice(0, 300)}`, runs: [] });
+            reason: `GraphQL execution errors; partial or null data is not a completed outcome: ${JSON.stringify(j.errors).slice(0, 300)}`, runs: [] },
+            "GraphQL execution errors; partial or null data is not a completed outcome; the provider's error detail is recorded server-side");
         }
-        if (!res.ok || (j?.errors?.length && !j?.data?.[inv.field])) throw new Error(`GraphQL: ${JSON.stringify(j?.errors ?? j).slice(0, 300)}`);
+        if (!res.ok || (j?.errors?.length && !j?.data?.[inv.field])) throw new ClientFacingError("provider_error", `GraphQL provider call failed (HTTP ${res.status}); the response detail is recorded server-side`, `GraphQL: ${String(JSON.stringify(j?.errors ?? j)).slice(0, 300)}`);
         if (!j?.data || typeof j.data !== "object" || Array.isArray(j.data) || !Object.hasOwn(j.data, inv.field))
           throw malformed(`data does not contain the requested root field ${inv.field}`);
         return j.data[inv.field];
@@ -3950,17 +3975,19 @@ export class RightClick {
         // A remote denial is sufficient to stop, never sufficient to authorize.
         if (j?.refusal) throw new TransportRefused("peer reports an execution-boundary refusal", cap.id);
         if (j?.planningRefusal) throw new TransportRefused("peer reports a local planning refusal; independent authority is not assessed", cap.id);
-        if (!res.ok || j?.status !== "completed") throw new Error(`peer: ${j?.error ?? "no completed outcome"}`);
+        // The remote peer's own error text is untrusted provider text: the refusal kinds above
+        // are the reviewed vocabulary; anything else stays in the diagnostic detail.
+        if (!res.ok || j?.status !== "completed") throw new ClientFacingError("provider_error", `peer call failed (HTTP ${res.status}${j?.status ? `, reported status ${String(j.status).slice(0, 40)}` : ""}); the remote diagnostic is recorded server-side`, `peer: ${j?.error ?? "no completed outcome"}`);
         return j.output;
       }
       case "cli": {
         // Authority is checked on every run, not only when the program was learned: an operator
         // who revokes it (permission changed) stops existing capabilities too.
         const allowed = await checkProgram(inv.bin, this.executable);
-        if (!allowed.ok && allowed.missing) throw new Error(`${allowed.reason} (HTTP 404 equivalent: nothing was run)`);
-        if (!allowed.ok) throw new Error(`not authorised to run ${inv.bin}: ${allowed.reason.replace(/^(not authorised|refused): /, "")} (HTTP 403 equivalent: nothing was run)`);
+        if (!allowed.ok && allowed.missing) throw new ClientFacingError("unavailable", `${allowed.reason} (HTTP 404 equivalent: nothing was run)`);
+        if (!allowed.ok) throw new ClientFacingError("execution_denied", `not authorised to run ${inv.bin}: ${allowed.reason.replace(/^(not authorised|refused): /, "")} (HTTP 403 equivalent: nothing was run)`);
         const sb = sampleSandbox ?? await this.sandbox();
-        if (!sb) throw new Error(`unavailable: no sandbox on this host`);
+        if (!sb) throw new ClientFacingError("unavailable", `unavailable: no sandbox on this host`);
         const fs = await import("node:fs");
         // The program must still be the one that was investigated.
         const id = allowed.identity;
@@ -3971,7 +3998,7 @@ export class RightClick {
           cached = { key, sha256: createHash("sha256").update(fs.readFileSync(id.real)).digest("hex") };
           this.hashCache.set(inv.bin, cached);
         }
-        if (cached.sha256 !== inv.sha256) throw new Error(`program changed since it was investigated: ${inv.bin} (sha256 ${cached.sha256.slice(0, 12)}, investigated ${inv.sha256.slice(0, 12)}); not run (HTTP 409 equivalent)`);
+        if (cached.sha256 !== inv.sha256) throw new ClientFacingError("changed_meaning", `program changed since it was investigated: ${inv.bin} (sha256 ${cached.sha256.slice(0, 12)}, investigated ${inv.sha256.slice(0, 12)}); not run (HTTP 409 equivalent)`);
         const files: Record<string, string> = Object.create(null);
         // Documented options chosen by the caller, checked against the declared list first.
         const chosen = inv.options ? validateOptions(args[inv.options.port], inv.options.allowed, inv.options.excluded) : [];
@@ -3981,7 +4008,7 @@ export class RightClick {
           if (a.literal) {
             const v = String(args[a.input] ?? "");
             // A literal that looks like an option would smuggle in an undocumented one.
-            if (v.startsWith("-")) throw new Error(`argument "${a.input}" may not start with "-"; pass options through the documented options input (HTTP 400 equivalent: nothing was run)`);
+            if (v.startsWith("-")) throw new ClientFacingError("invalid_argument", `argument "${a.input}" may not start with "-"; pass options through the documented options input (HTTP 400 equivalent: nothing was run)`);
             return v;
           }
           // With named files supplied instead, an unfilled content operand is left out.
@@ -3994,7 +4021,7 @@ export class RightClick {
         // Auxiliary files and positional operands are different roles. Do not guess a role from
         // an option value: a pattern can equal a file name. The caller can name the exact operands.
         const named = inv.filesPort ? args[inv.filesPort] : undefined;
-        if (named !== undefined && (!named || typeof named !== "object" || Array.isArray(named))) throw new Error("files must be an object mapping exact names to content (HTTP 400 equivalent: nothing was run)");
+        if (named !== undefined && (!named || typeof named !== "object" || Array.isArray(named))) throw new ClientFacingError("invalid_argument", "files must be an object mapping exact names to content (HTTP 400 equivalent: nothing was run)");
         const names = Object.keys(named ?? {});
         validateFileNames([...Object.keys(files), ...names]);
         if (named) {
@@ -4003,7 +4030,7 @@ export class RightClick {
           }
         }
         const operands = inv.operandsPort ? args[inv.operandsPort] : undefined;
-        if (operands !== undefined && (!Array.isArray(operands) || !operands.every(n => typeof n === "string" && names.includes(n)))) throw new Error("operands must be a list of names present in files (HTTP 400 equivalent: nothing was run)");
+        if (operands !== undefined && (!Array.isArray(operands) || !operands.every(n => typeof n === "string" && names.includes(n)))) throw new ClientFacingError("invalid_argument", "operands must be a list of names present in files (HTTP 400 equivalent: nothing was run)");
         argv.push(...(operands === undefined ? names : operands as string[]));
         const before = await this.checkCliEnvironment(cap, sb, execution);
         const r = await sb.run(inv.bin, argv, { stdin: inv.stdin ? asContent(args[inv.stdin]) : "", files, purpose: sampleSandbox ? "revalidation" : "execution" });
@@ -4015,28 +4042,28 @@ export class RightClick {
           throw new CliValidityError("CLI execution environment changed during the call; output discarded; not replayed", execution.cliValidity, cap.id);
         }
         // A file swapped while it ran: its output belongs to a program nobody checked.
-        if (!(await sameProgram(inv.bin, id))) throw new Error(`${inv.bin} was replaced while it ran; its output is discarded (HTTP 409 equivalent)`);
-        if (r.limit && r.limit !== "time" && r.limit !== "output") throw new Error(`${inv.bin} exceeded the sandbox's ${r.limit} limit`);
-        if (r.timedOut) throw new Error(`${inv.bin} timed out in the sandbox`);
-        if (r.truncated) throw new Error(`${inv.bin} exceeded the output limit`);
+        if (!(await sameProgram(inv.bin, id))) throw new ClientFacingError("changed_meaning", `${inv.bin} was replaced while it ran; its output is discarded (HTTP 409 equivalent)`);
+        if (r.limit && r.limit !== "time" && r.limit !== "output") throw new ClientFacingError("program_failed", `${inv.bin} exceeded the sandbox's ${r.limit} limit`);
+        if (r.timedOut) throw new ClientFacingError("program_failed", `${inv.bin} timed out in the sandbox`);
+        if (r.truncated) throw new ClientFacingError("program_failed", `${inv.bin} exceeded the output limit`);
         let envelope: unknown;
         try { envelope = JSON.parse(r.stdout); } catch {}
         execution.cliValidity!.application = reportsApplicationError(envelope) ? "reported-error" : "not-established";
         if (execution.cliValidity!.application === "reported-error")
           throw new CliValidityError(`CLI reported an application-level error envelope (process exit ${r.code}); outcome not established; not replayed`, execution.cliValidity, cap.id);
-        if (!inv.okExit.includes(r.code ?? -1) || !r.stdout.trim()) throw new Error(`${inv.bin} exited ${r.code}${r.stdout.trim() ? "" : " without output"}: ${r.stderr.slice(0, 300)}`);
+        if (!inv.okExit.includes(r.code ?? -1) || !r.stdout.trim()) throw new ClientFacingError("program_failed", `${inv.bin} exited ${r.code}${r.stdout.trim() ? "" : " without output"}: ${r.stderr.slice(0, 300)}`);
         if (inv.output === "json") {
           try { return parseJsonValue(r.stdout); }
           catch (error) {
             if (error instanceof JsonRepresentationError) throw error;
-            throw new Error(`${inv.bin} did not print JSON this time`);
+            throw new ClientFacingError("program_failed", `${inv.bin} did not print JSON this time`);
           }
         }
         return r.stdout;
       }
       case "composite":
       case "goal":
-        throw new Error("composite capabilities run through run()");
+        throw new ClientFacingError("invalid_argument", "composite capabilities run through run()");
     }
   }
 
@@ -4162,7 +4189,7 @@ function coerceArgs(cap: Capability, args: Record<string, unknown>): Record<stri
   if (cap.invoke.kind === "cli") {
     const known = new Set(cap.inputs.map((p) => p.name));
     const unknown = Object.keys(args).filter((k) => !known.has(k));
-    if (unknown.length) throw new Error(`unknown input(s) ${unknown.map((k) => JSON.stringify(k)).join(", ")} for ${cap.id}; its inputs are: ${cap.inputs.map((p) => `${p.name}${p.required ? "" : " (optional)"}: ${p.description ?? p.type}`).join(" | ")} (HTTP 400 equivalent: nothing was run)`);
+    if (unknown.length) throw new ClientFacingError("invalid_argument", `unknown input(s) ${unknown.map((k) => JSON.stringify(k)).join(", ")} for ${cap.id}; its inputs are: ${cap.inputs.map((p) => `${p.name}${p.required ? "" : " (optional)"}: ${p.description ?? p.type}`).join(" | ")} (HTTP 400 equivalent: nothing was run)`);
   }
   const out: Record<string, unknown> = { ...args };
   for (const p of cap.inputs) {
@@ -4184,7 +4211,7 @@ function coerceArgs(cap: Capability, args: Record<string, unknown>): Record<stri
     }
   }
   const missing = cap.inputs.filter((p) => p.required && (out[p.name] === undefined || out[p.name] === null)).map((p) => p.name);
-  if (missing.length) throw new Error(`missing required input(s): ${missing.join(", ")}`);
+  if (missing.length) throw new ClientFacingError("invalid_argument", `missing required input(s): ${missing.join(", ")}`);
   return out;
 }
 

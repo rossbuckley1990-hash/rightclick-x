@@ -2,6 +2,7 @@
 import type { CapabilityGraph } from "./graph.ts";
 import { egressOf } from "./planner.ts";
 import type { Capability, Risk } from "./types.ts";
+import { ClientFacingError } from "../interface/client-error.ts";
 
 export interface ExecutionPolicy {
   /** Omitted = unrestricted; [] = none. All configured allowlists intersect. */
@@ -97,10 +98,12 @@ export function assessExecution(c: Capability, graph: CapabilityGraph, policy: E
   return { capability: c.id, declaredRisk: c.risk, consequentialRisks: [...new Set([...risk, ...dependencies.flatMap((d) => d.consequentialRisks)])], origins, allowed: !reasons.length, requiresPlan: dynamic || dependencies.some((d) => d.requiresPlan), reasons, dependencies };
 }
 
-export class ExecutionDenied extends Error {
+export class ExecutionDenied extends ClientFacingError {
   readonly assessment: ExecutionAssessment;
   constructor(assessment: ExecutionAssessment) {
-    super(`blocked by execution policy: ${assessment.capability}: ${assessment.reasons.join("; ")}`);
+    // Capability ids and policy reason phrases are public graph/policy metadata.
+    super("execution_denied", `blocked by execution policy: ${assessment.capability}: ${assessment.reasons.join("; ")}`);
+    this.name = "ExecutionDenied";
     this.assessment = assessment;
   }
 }
