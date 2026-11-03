@@ -76,3 +76,13 @@ jobs:
         run: npm audit --omit=dev --audit-level=high
       - name: documentation links
         run: node ci/check-links.ts
+  container:
+    # The production image must build and must refuse to run as root (M1, issue #38).
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: the production image builds and runs as an unprivileged user
+        run: |
+          docker build -t rightclick-x .
+          docker run --rm --entrypoint node rightclick-x -e "if (process.getuid() === 0) { console.error('container runs as root'); process.exit(1); } console.log('runs as uid', process.getuid())"
