@@ -6,6 +6,8 @@ import type { CliValidity } from "./cli-outcome.ts";
 
 export type Predicate =
   | { op: "exists"; path?: string }
+  | { op: "safe_integer"; path?: string }
+  | { op: "input_equals"; path?: string; input: string }
   | { op: "equals"; path?: string; value: unknown }
   | { op: "contains"; path?: string; value: string }
   | { op: "matches"; path?: string; pattern: string }
@@ -111,12 +113,20 @@ export function pick(value: unknown, path?: string): unknown {
  * Stored predicates checked by RightClick X itself on the output. Passing them is a check
  * ("checked"), not independent verification: only a separate witness provider verifies.
  */
-export function check(value: unknown, predicates: Predicate[]): { status: "checked" | "refuted" | "unverified"; results: PredicateResult[] } {
+export function check(value: unknown, predicates: Predicate[], inputs: Record<string, unknown> = {}): { status: "checked" | "refuted" | "unverified"; results: PredicateResult[] } {
   if (!predicates?.length) return { status: "unverified", results: [] };
   const results = predicates.map((p) => {
     const actual = pick(value, p.path);
     let ok = false;
     switch (p.op) {
+      case "safe_integer":
+        ok = typeof actual === "number" && Number.isSafeInteger(actual);
+        break;
+      case "input_equals": {
+        const expected = pick(inputs, p.input);
+        ok = actual !== undefined && expected !== undefined && stable(actual) === stable(expected);
+        break;
+      }
       case "exists":
         ok = actual !== undefined && actual !== null && actual !== "";
         break;

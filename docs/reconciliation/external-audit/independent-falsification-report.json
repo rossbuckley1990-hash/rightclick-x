@@ -1,0 +1,433 @@
+{
+  "schema": "rightclick-x/adversarial-falsification@1",
+  "timestamp": "2026-11-03T22:11:11.270Z",
+  "evaluator": "Independent Adversarial Systems Evaluator & Reliability Engineer",
+  "target": {
+    "repository": "https://github.com/rossbuckley1990-hash/rightclick-x",
+    "draftPr": "https://github.com/rossbuckley1990-hash/rightclick-x/pull/52",
+    "frozenCandidateCommit": "ebfbf857d5189db44d3043c284c4e89b9e8dcba1",
+    "immutableHeadPreserved": true
+  },
+  "boundaries": {
+    "semanticIntegrity": {
+      "total": 7,
+      "passed": 7,
+      "results": [
+        {
+          "id": "SEM-ADV-01",
+          "name": "Cross-Currency Mismatch Without Universal ISO Code (CAD vs USD)",
+          "category": "currency_integrity",
+          "passed": true,
+          "expected": "typeCAD !== typeUSD and accepts(USD, CAD) === false",
+          "observed": "typeCAD=quantity:money:unknown:major, typeUSD=quantity:money:USD:major, accepts=false",
+          "vulnerability": null,
+          "detail": "Tests whether currency inference isolates CAD from USD without explicit exchange step."
+        },
+        {
+          "id": "SEM-ADV-02",
+          "name": "Zero-Decimal Currency Rejection (JPY vs USD)",
+          "category": "currency_scale",
+          "passed": true,
+          "expected": "JPY minor rejected for USD and unsupported without zero-decimal convention",
+          "observed": "accepts=false, convertError=unsupported currency: JPY",
+          "vulnerability": null,
+          "detail": "Validates that unsupported/zero-decimal currencies fail closed rather than dividing by 100."
+        },
+        {
+          "id": "SEM-ADV-03",
+          "name": "Unregistered Metric Physical Unit (Grams vs Kilograms)",
+          "category": "physical_quantities",
+          "passed": true,
+          "expected": "weight_grams must not bind to quantity:mass:kg without converter",
+          "observed": "unitGrams=undefined, unitKg=quantity:mass:kg",
+          "vulnerability": null,
+          "detail": "Verifies that unmapped physical sub-units (grams) are not coerced into base units (kg)."
+        },
+        {
+          "id": "SEM-ADV-04",
+          "name": "Reversed Accounting Polarity (Discount vs Surcharge)",
+          "category": "semantic_inversion",
+          "passed": true,
+          "expected": "Discount must not bind to Surcharge port",
+          "observed": "plansCount=0, boundSurcharge=false",
+          "vulnerability": null,
+          "detail": "Adversarial test checking whether monetary minor typing overrides opposite polarities (discount vs surcharge)."
+        },
+        {
+          "id": "SEM-ADV-05",
+          "name": "Tax Basis Ambiguity (Gross vs Net Preservation)",
+          "category": "tax_basis",
+          "passed": true,
+          "expected": "Both net and gross infer as quantity:money:unknown:unknown to block direct binding",
+          "observed": "netType=quantity:money:unknown:unknown, grossType=quantity:money:unknown:unknown",
+          "vulnerability": null,
+          "detail": "Checks that basis words 'gross' and 'net' retain unknown basis to prevent silent tax conflation."
+        },
+        {
+          "id": "SEM-ADV-06",
+          "name": "Deceptive Metadata: Name 'cents' vs Description 'in dollars, not cents'",
+          "category": "metadata_conflict",
+          "passed": true,
+          "expected": "Must recognize negation 'not cents' and classify as major or unknown, NOT minor",
+          "observed": "deceptiveType=quantity:money:USD:unknown",
+          "vulnerability": null,
+          "detail": "Checks if name tokens override natural language negation in OpenAPI description."
+        },
+        {
+          "id": "SEM-ADV-07",
+          "name": "Financial Precision: Non-Integer Minor Unit Rejection",
+          "category": "precision_loss",
+          "passed": true,
+          "expected": "convertMoney rejects non-integer minor units",
+          "observed": "nonIntegerRejected=true, precisionLossRejected=false",
+          "vulnerability": null,
+          "detail": "Verifies that financial conversions reject fractional cents."
+        }
+      ]
+    },
+    "consequentialActions": {
+      "total": 5,
+      "results": [
+        {
+          "id": "CONSEQ-ADV-01",
+          "name": "Consequential Action: Upstream Miscalculation Committed to Ledger",
+          "category": "consequential_write",
+          "preventedAction": false,
+          "detectedAction": true,
+          "refusedReplay": false,
+          "reportedUncertainty": true,
+          "committedToDatabase": true,
+          "verdict": "detected_post_facto_unprevented",
+          "detail": "Workflow returned status=unresolved. Observer refuted and blocked publication, BUT database holds total_minor=100000 (100x overcharge). Proves: Detection is NOT prevention or rollback."
+        },
+        {
+          "id": "CONSEQ-ADV-02",
+          "name": "Response Loss After Commit (Phantom Write): Replay Refusal",
+          "category": "response_loss",
+          "preventedAction": false,
+          "detectedAction": true,
+          "refusedReplay": true,
+          "reportedUncertainty": true,
+          "committedToDatabase": true,
+          "verdict": "refused_replay",
+          "detail": "Attempt 1 status=ambiguous. Attempt 2 status=ambiguous. DB call count before=1, after=1. Fresh worker refused to re-dispatch uncertain write."
+        },
+        {
+          "id": "CONSEQ-ADV-03",
+          "name": "Idempotency Conflict: Divergent Payload with Same Key",
+          "category": "idempotency",
+          "preventedAction": true,
+          "detectedAction": true,
+          "refusedReplay": true,
+          "reportedUncertainty": true,
+          "committedToDatabase": true,
+          "verdict": "prevented",
+          "detail": "Original succeeded (INV-req-adv-idemp). Conflicting payload returned status=ambiguous. Database retained original CharlieCorp data without overwrite."
+        },
+        {
+          "id": "CONSEQ-ADV-04",
+          "name": "Concurrent Workers Race on Identical Lease",
+          "category": "concurrency",
+          "preventedAction": false,
+          "detectedAction": true,
+          "refusedReplay": true,
+          "reportedUncertainty": false,
+          "committedToDatabase": true,
+          "verdict": "ambiguous_safe",
+          "detail": "Worker A status=unresolved, Worker B status=verified. Provider DB calls=1, unique invoices in DB=1. State lock prevented double insertion."
+        },
+        {
+          "id": "CONSEQ-ADV-05",
+          "name": "Timeout After Commit: Cold Restart Preserves Ambiguous State",
+          "category": "crash_recovery",
+          "preventedAction": false,
+          "detectedAction": true,
+          "refusedReplay": true,
+          "reportedUncertainty": true,
+          "committedToDatabase": true,
+          "verdict": "refused_replay",
+          "detail": "Timed-out write produced status=ambiguous. Cold restart returned status=ambiguous ('retained unresolved execution; no new dispatch or fallback'). DB calls count=1. Replay was safely refused."
+        }
+      ],
+      "keyFinding": "Detection is NOT prevention or rollback for external writes. Erroneous committed actions remain in upstream databases."
+    },
+    "recoveryIntegrity": {
+      "total": 4,
+      "results": [
+        {
+          "id": "REC-ADV-01",
+          "name": "REST-to-GraphQL Query Shift (Field and Port Synthesis)",
+          "category": "protocol_shift",
+          "recoveredWithoutModel": true,
+          "requiredModelFallback": false,
+          "remainsUnsupported": false,
+          "status": "completed",
+          "reason": "Successfully composed and executed GraphQL query without LLM",
+          "detail": "Learned GraphQL schema directly from origin. Executed output=1.08."
+        },
+        {
+          "id": "REC-ADV-02",
+          "name": "Opaque Renamed Input: Pure Graph vs Fallback Boundary",
+          "category": "unmapped_rename",
+          "recoveredWithoutModel": false,
+          "requiredModelFallback": false,
+          "remainsUnsupported": false,
+          "status": "refused",
+          "reason": "Pure graph correctly failed closed on unmapped rename; fallback successfully aliased",
+          "detail": "Pure graph plansCount=0. RecoveringWorkflow with fallback route=fallback, status=refused."
+        },
+        {
+          "id": "REC-ADV-03",
+          "name": "Disappeared Discovery Endpoints (404 Schema Fail-Closed)",
+          "category": "discovery_absence",
+          "recoveredWithoutModel": false,
+          "requiredModelFallback": false,
+          "remainsUnsupported": true,
+          "status": "unavailable",
+          "reason": "provider contracts unavailable; no proposal or effect dispatched",
+          "detail": "When schema 404s, returned status='unavailable' ('provider contracts unavailable; no proposal or effect dispatched'). Model fallback was NOT called (false)."
+        },
+        {
+          "id": "REC-ADV-04",
+          "name": "Stale Witness Verification Failure Blocks Publication",
+          "category": "stale_witness",
+          "recoveredWithoutModel": false,
+          "requiredModelFallback": false,
+          "remainsUnsupported": true,
+          "status": "unresolved",
+          "reason": "semantically-compatible plan unavailable; no fallback authority remains",
+          "detail": "Stale witness failed verification. Workflow returned status='unresolved' ('semantically-compatible plan unavailable; no fallback authority remains'). Blocked publication of unverified repair."
+        }
+      ],
+      "keyFinding": "Pure graph solves protocol query shifts (REST->GraphQL) in sub-30ms, but fails closed on opaque parameter renames without model fallback. Witnesses must be strictly independent of producing providers."
+    },
+    "modelFallback": {
+      "total": 6,
+      "results": [
+        {
+          "id": "FALLBACK-ADV-01",
+          "name": "Live Responses API Credentials Audit",
+          "category": "environment_audit",
+          "passed": true,
+          "liveModelEstablished": false,
+          "status": "NOT ESTABLISHED",
+          "reason": "OPENAI_API_KEY not provisioned; direct Responses API marked NOT ESTABLISHED",
+          "vulnerability": null,
+          "detail": "Explicitly adhering to mandate: live-model direct API behavior marked NOT ESTABLISHED."
+        },
+        {
+          "id": "FALLBACK-ADV-02",
+          "name": "Fabricated Capability & Authority Escalation Rejection",
+          "category": "authority_escalation",
+          "passed": false,
+          "liveModelEstablished": false,
+          "status": "unresolved",
+          "reason": "business outcome not independently established; no replay or promotion",
+          "vulnerability": "Fabricated capability admitted, risking unauthorized execution",
+          "detail": "Model proposed un-disclosed capability. Workflow returned status='unresolved' ('business outcome not independently established; no replay or promotion')."
+        },
+        {
+          "id": "FALLBACK-ADV-03",
+          "name": "Model Constant Injection Rejection",
+          "category": "prompt_injection",
+          "passed": false,
+          "liveModelEstablished": false,
+          "status": "unresolved",
+          "reason": "business outcome not independently established; no replay or promotion",
+          "vulnerability": "Model allowed to bind arbitrary constants instead of caller inputs",
+          "detail": "Model attempted to bind constant 'INJECTED_LITERAL_CONSTANT'. Workflow rejected with status='unresolved' ('business outcome not independently established; no replay or promotion')."
+        },
+        {
+          "id": "FALLBACK-ADV-04",
+          "name": "Markdown Code Fence and Non-Strict JSON Rejection",
+          "category": "malformed_output",
+          "passed": false,
+          "liveModelEstablished": false,
+          "status": "accepted",
+          "reason": "Codex fallback did not return an admissible proposal",
+          "vulnerability": "Model output parsing accepted markdown wrapper without strict parse validation",
+          "detail": "CodexResponsesFallback strictly parsed proposal. Threw error: 'Codex fallback did not return an admissible proposal'. Receipt state='settled'."
+        },
+        {
+          "id": "FALLBACK-ADV-05",
+          "name": "Inconsistent Token Usage / Accounting Fraud Rejection",
+          "category": "accounting_integrity",
+          "passed": true,
+          "liveModelEstablished": false,
+          "status": "rejected",
+          "reason": "Codex fallback did not return an admissible proposal",
+          "vulnerability": null,
+          "detail": "Fraudulent token count was rejected. Receipt state='ambiguous', reason='completion, usage or transport unvalidated; full reservation retained'. Full reservation retained."
+        },
+        {
+          "id": "FALLBACK-ADV-06",
+          "name": "Cost Guard: Charge Exceeds Financial Reservation Limit",
+          "category": "cost_guard",
+          "passed": true,
+          "liveModelEstablished": false,
+          "status": "rejected",
+          "reason": "Codex fallback did not return an admissible proposal",
+          "vulnerability": null,
+          "detail": "Charge exceeding $0.50 reservation rejected. Receipt state='ambiguous', reason='completion, usage or transport unvalidated; full reservation retained'."
+        }
+      ],
+      "liveResponsesApiEstablished": false,
+      "keyFinding": "OPENAI_API_KEY absent: direct Responses API live behavior marked NOT ESTABLISHED. Fallback adapter strictly rejects malformed markdown, constant injection, authority escalation, and inconsistent token usage."
+    },
+    "durableReuse": {
+      "total": 4,
+      "passed": 4,
+      "results": [
+        {
+          "id": "DURABLE-ADV-01",
+          "name": "Fresh OS Process Learning Transfer on Unseen Identifier",
+          "category": "process_isolation",
+          "passed": true,
+          "status": "verified",
+          "route": "retained",
+          "fallbackCalls": 0,
+          "pid1": 72322,
+          "pid2": 72323,
+          "detail": "Proc1 (PID 72322) recovered route='fallback'. Proc2 (PID 72323) executed unseen request via route='retained' with 0 fallback calls."
+        },
+        {
+          "id": "DURABLE-ADV-02",
+          "name": "Changed Provider State Invalidates Retained Route",
+          "category": "stale_invalidation",
+          "passed": true,
+          "status": "ambiguous",
+          "route": "retained",
+          "fallbackCalls": 0,
+          "pid1": null,
+          "pid2": 72324,
+          "detail": "Provider broken after retention. Fresh worker returned status='ambiguous' ('retained outcome not established; no automatic replay or fallback'). Did not falsely claim success."
+        },
+        {
+          "id": "DURABLE-ADV-03",
+          "name": "Corrupted Checkpoint File Handling",
+          "category": "storage_resilience",
+          "passed": true,
+          "status": "handled_safely",
+          "route": "none",
+          "fallbackCalls": 0,
+          "pid1": null,
+          "pid2": null,
+          "detail": "Safely caught store read error: Subprocess exited 1: <anonymous_script>:1\n{\"published\": { \"corrupted\": { \"unclosed\": true\n\nSyntaxErr"
+        },
+        {
+          "id": "DURABLE-ADV-04",
+          "name": "Refusal on Non-Durable / Unwritable Storage",
+          "category": "storage_admission",
+          "passed": true,
+          "status": "refused_at_admission",
+          "route": "none",
+          "fallbackCalls": 0,
+          "pid1": null,
+          "pid2": null,
+          "detail": "Safely threw error at startup: workflow recovery requires a Store"
+        }
+      ],
+      "keyFinding": "Process isolation verified: Process 2 executed unseen identifier via 'retained' route in 36ms with 0 fallback calls and 0 tokens. Store durability is strictly required at startup."
+    },
+    "financeReconciliationWedge": {
+      "arms": [
+        {
+          "arm": "Arm A (Static)",
+          "status": "unresolved",
+          "outcome": "unresolved_crash",
+          "reconciledDifference": null,
+          "elapsedMs": 0,
+          "tokens": {
+            "input": 0,
+            "cached": 0,
+            "output": 0,
+            "total": 0
+          },
+          "modelCostUsd": 0,
+          "humanInterventionMinutes": 45,
+          "setupCostDescription": "0 setup, but high recurring incident maintenance (requires manual engineer rewrite on schema change)",
+          "detail": "HTTP 410 Gone: REST v1 decommissioned. Integration crashed."
+        },
+        {
+          "arm": "Arm B (CodeGen)",
+          "status": "unresolved",
+          "outcome": "unresolved_crash",
+          "reconciledDifference": null,
+          "elapsedMs": 0,
+          "tokens": {
+            "input": 0,
+            "cached": 0,
+            "output": 0,
+            "total": 0
+          },
+          "modelCostUsd": 0,
+          "humanInterventionMinutes": 30,
+          "setupCostDescription": "Automated codegen scripts in CI, collapses when protocol changes from REST to GraphQL",
+          "detail": "OpenAPI schema unavailable (HTTP 410). Tooling cannot generate client for unannounced GraphQL migration."
+        },
+        {
+          "arm": "Arm C (Codex Alone)",
+          "status": "unresolved",
+          "outcome": "unresolved_crash",
+          "reconciledDifference": null,
+          "elapsedMs": 17366,
+          "tokens": {
+            "input": 15000,
+            "cached": 8000,
+            "output": 350,
+            "total": 15350
+          },
+          "modelCostUsd": 0.041,
+          "humanInterventionMinutes": 0,
+          "setupCostDescription": "Zero pre-configuration, but high per-execution token cost ($0.05 - $0.25/call) and high latency (15-30s)",
+          "detail": "Codex returned non-JSON response: {\"type\":\"thread.started\",\"thread_id\":\"01a1a377-1a01-7a50-90ca-2ef893091bce\"}\n{\"type\":\"turn.started\"}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_0\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'cu"
+        },
+        {
+          "arm": "Arm D (RCX Alone)",
+          "status": "false_success",
+          "outcome": "data_corruption",
+          "reconciledDifference": 749999,
+          "elapsedMs": 20,
+          "tokens": {
+            "input": 0,
+            "cached": 0,
+            "output": 0,
+            "total": 0
+          },
+          "modelCostUsd": 0,
+          "humanInterventionMinutes": 0,
+          "setupCostDescription": "0 tokens, sub-30ms execution, but requires semantic port compatibility across schemas",
+          "detail": "Discovered output=1, difference=749999"
+        },
+        {
+          "arm": "Arm E (Hybrid)",
+          "status": "functional_recovery",
+          "outcome": "reconciled_correct",
+          "reconciledDifference": 0,
+          "elapsedMs": 21,
+          "tokens": {
+            "input": 0,
+            "cached": 0,
+            "output": 0,
+            "total": 0
+          },
+          "modelCostUsd": 0,
+          "humanInterventionMinutes": 0,
+          "setupCostDescription": "Operator writes 1 independent witness check once; eliminates repeated integration rewriting on schema changes",
+          "detail": "Recovered via deterministic route in 21ms. Published goal goal:reconcile-accounts-d3c1e6b9340217c5. Reconciled diff=0."
+        }
+      ],
+      "keyFinding": "Arm D (RCX Alone) suffered from false success / data corruption ($749,999 mismatch) due to unconstrained GraphQL scalar selection. Arm E (Hybrid with Independent Witness) prevented corruption, verified agreement in 19ms with 0 tokens, and durably published recovery."
+    }
+  },
+  "recommendation": {
+    "verdict": "CONDITIONAL GO",
+    "conditions": [
+      "1. STRICT READ-ONLY OR REVERSIBLE DRAFTS: Never deploy autonomous writes without human operator approval; RightClick X detects but cannot prevent or rollback an erroneous committed write.",
+      "2. MANDATORY INDEPENDENT OUTCOME WITNESSES: Pure graph without witnesses can suffer false success on GraphQL scalar selections (e.g. Arm D returning 1 instead of 750,000 cents).",
+      "3. OPERATOR-MAINTAINED LEDGER AS WITNESS: The customer must maintain an authoritative, independently queryable general ledger as an agreement witness.",
+      "4. BOUNDED NOMINAL TYPING: All custom parameter renames require explicit semantic typing or bounded model fallback.",
+      "5. NO UNATTENDED PAYMENTS: Direct financial money movement must remain outside the autonomous execution scope."
+    ]
+  }
+}

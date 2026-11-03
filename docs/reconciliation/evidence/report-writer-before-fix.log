@@ -1,0 +1,50 @@
+node:internal/child_process:1175
+    result.error = new ErrnoException(result.error, 'spawnSync ' + options.file);
+                   ^
+
+<ref *1> Error: spawnSync git ENOBUFS
+    at Object.spawnSync (node:internal/child_process:1175:20)
+    at spawnSync (node:child_process:976:24)
+    at execFileSync (node:child_process:1019:15)
+    at file:///Users/ross/Documents/Codex/2026-11-03/files-pasted-by-the-user-actenon/work/rightclick-x/experiments/reconciliation/run.ts:120:52 {
+  errno: -55,
+  code: 'ENOBUFS',
+  syscall: 'spawnSync git',
+  path: 'git',
+  spawnargs: [ 'diff', 'HEAD' ],
+  error: [Circular *1],
+  status: null,
+  signal: 'SIGTERM',
+  output: [
+    null,
+    Buffer(1114112) [Uint8Array] [
+      100, 105, 102, 102,  32,  45,  45, 103, 105, 116,  32,  97,
+       47, 101, 120, 112, 101, 114, 105, 109, 101, 110, 116, 115,
+       47, 111, 112, 101, 110,  45, 119, 111, 114, 108, 100,  47,
+      101, 118, 105, 100, 101, 110,  99, 101,  47, 110, 101, 103,
+       97, 116, 105, 118, 101,  45,  99, 111, 110, 116, 114, 111,
+      108, 115,  46, 106, 115, 111, 110,  32,  98,  47, 101, 120,
+      112, 101, 114, 105, 109, 101, 110, 116, 115,  47, 111, 112,
+      101, 110,  45, 119, 111, 114, 108, 100,  47, 101, 118, 105,
+      100, 101, 110,  99,
+      ... 1114012 more items
+    ],
+    Buffer(0) [Uint8Array] []
+  ],
+  pid: 40650,
+  stdout: Buffer(1114112) [Uint8Array] [
+    100, 105, 102, 102,  32,  45,  45, 103, 105, 116,  32,  97,
+     47, 101, 120, 112, 101, 114, 105, 109, 101, 110, 116, 115,
+     47, 111, 112, 101, 110,  45, 119, 111, 114, 108, 100,  47,
+    101, 118, 105, 100, 101, 110,  99, 101,  47, 110, 101, 103,
+     97, 116, 105, 118, 101,  45,  99, 111, 110, 116, 114, 111,
+    108, 115,  46, 106, 115, 111, 110,  32,  98,  47, 101, 120,
+    112, 101, 114, 105, 109, 101, 110, 116, 115,  47, 111, 112,
+    101, 110,  45, 119, 111, 114, 108, 100,  47, 101, 118, 105,
+    100, 101, 110,  99,
+    ... 1114012 more items
+  ],
+  stderr: Buffer(0) [Uint8Array] []
+}
+
+Node.js v26.12.0

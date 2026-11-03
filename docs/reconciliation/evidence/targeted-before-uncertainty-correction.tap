@@ -1,0 +1,58 @@
+✔ read-only execution refuses POST despite a read label and caller confirmation (38.877584ms)
+✔ read-only execution refuses DELETE despite a read label and caller confirmation (0.6845ms)
+✔ read-only execution refuses graphql despite a read label and caller confirmation (2.232083ms)
+✔ read-only execution refuses mcp despite a read label and caller confirmation (1.827125ms)
+✔ read-only execution refuses composite despite a read label and caller confirmation (0.815542ms)
+✔ read-only product distinguishes match and mismatch, then reuses on a fresh runtime (93.472417ms)
+✔ reconciliation refuses amount without publication or write dispatch (20.558583ms)
+✔ reconciliation refuses currency without publication or write dispatch (17.832917ms)
+✔ reconciliation refuses identity without publication or write dispatch (18.155333ms)
+✔ reconciliation refuses period without publication or write dispatch (17.484541ms)
+✔ reconciliation refuses precision without publication or write dispatch (17.322625ms)
+✔ reconciliation refuses units without publication or write dispatch (17.084625ms)
+✔ reconciliation refuses basis without publication or write dispatch (16.431791ms)
+✔ reconciliation refuses checker-drift without publication or write dispatch (11.017417ms)
+✔ reconciliation refuses rate-limit without publication or write dispatch (16.816917ms)
+✔ reconciliation refuses loss without publication or write dispatch (16.080917ms)
+✔ reconciliation refuses pending without publication or write dispatch (15.836167ms)
+✔ a real REST removal and GraphQL discovery preserves independent checks (46.967041ms)
+✔ a changed checker cannot be silently repinned on an existing goal (23.855083ms)
+✔ missing pins, volatile storage and a same-origin checker fail admission (4.175458ms)
+✔ publication failure does not claim a durable reconciliation (15.539417ms)
+✔ the shared oracle rejects matching wrong identities and fractional or unsafe integers (0.100958ms)
+✔ pending reads remain ambiguous on restart and do not dispatch another request (16.013458ms)
+✖ provider unavailability is not a semantic contradiction (14.960583ms)
+✔ a state statistic cannot substitute for a settlement amount (46.413625ms)
+✔ a description statistic cannot substitute for a settlement amount (4.228167ms)
+✔ a note statistic cannot substitute for a settlement amount (2.850125ms)
+✔ an explicitly requested word count remains executable and unverified (9.690167ms)
+✔ unused typed outputs cannot justify an unrequested count or decision (0.725208ms)
+ℹ tests 29
+ℹ suites 0
+ℹ pass 28
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 755.8045
+
+✖ failing tests:
+
+test at test/reconciliation.test.ts:110:1
+✖ provider unavailability is not a semantic contradiction (14.960583ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'ambiguous'
+  - 'unverified'
+  
+      at TestContext.<anonymous> (file:///Users/ross/Documents/Codex/2026-11-03/files-pasted-by-the-user-actenon/work/rightclick-x/test/reconciliation.test.ts:114:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'ambiguous',
+    expected: 'unverified',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

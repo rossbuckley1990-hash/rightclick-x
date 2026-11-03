@@ -16,7 +16,7 @@
 //
 // Contracts state only what can be observed or is backed by evidence; they never claim arbitrary
 // semantic correctness. What cannot be established is reported as such.
-import type { CapabilityGraph } from "./graph.ts";
+import { tokenize, type CapabilityGraph } from "./graph.ts";
 import { tokensOf } from "./planner.ts";
 import { carries } from "./satisfaction.ts";
 import type { Capability, PlanStep, SemType } from "./types.ts";
@@ -120,13 +120,20 @@ function judge(graph: CapabilityGraph, steps: PlanStep[], result: string, ctx: {
       const ok = inner.every((x) => x.reason !== "unjustified");
       return { ...base, reason: (ok ? (inner.some((x) => x.reason === "requested") ? "requested" : "type-conversion") : "unjustified") as StepReason, inner };
     }
-    if ([...tokensOf(cap)].some((t) => ctx.intent.has(t))) return { ...base, reason: "requested" as StepReason };
+    const used = [...steps.slice(i + 1).flatMap(s => s.bindings.filter(b => b.value === undefined).map(b => b.from)), result]
+      .filter(ref => ref.startsWith(`${i}.`));
+    const selectedNames = used.flatMap(ref => tokenize(ref.slice(String(i).length + 1)));
+    if ([...tokensOf(cap), ...selectedNames].some((t) => ctx.intent.has(t))) return { ...base, reason: "requested" as StepReason };
     if (ctx.require.length && ctx.require.some((t) => [...cap.outputs.map((o) => o.name), ...(cap.fields ?? []).map((f) => f.path)].some((p) => carries(p, t)))) return { ...base, reason: "required-information" as StepReason };
     // A type conversion: what it consumed is of another type than what it produces for later use.
     const consumed = st.bindings.filter((b) => b.value === undefined).map((b) => typeOfRef(graph, steps, b.from, ctx.have)).filter(Boolean) as SemType[];
-    const usedLater = steps.slice(i + 1).some((s) => s.bindings.some((b) => b.from.startsWith(`${i}.`))) || result.startsWith(`${i}.`);
-    const produced = cap.outputs.map((o) => o.type);
-    const converts = usedLater && produced.some((t) => !consumed.length || consumed.every((c) => c.replace(/^list:/, "") !== t.replace(/^list:/, "")));
+    const produced = used.map(ref => typeOfRef(graph, steps, ref, ctx.have)).filter(Boolean) as SemType[];
+    // A count, score or decision is new information, not a representation conversion.
+    // The caller must request/anchor that derivation or require its information.
+    // Judge only consumed outputs: an unused typed port cannot justify a generic scalar.
+    const derivesScalar = produced.some(t => /^(?:list:)?(?:number|boolean)$/.test(t));
+    const converts = used.length > 0 && consumed.length > 0 && !derivesScalar &&
+      produced.some(t => consumed.every(c => c.replace(/^list:/, "") !== t.replace(/^list:/, "")));
     // Same-type plumbing (text -> text, json -> json) is not a conversion anything needed.
     const sameGeneric = consumed.length > 0 && produced.every((t) => GENERIC.test(t)) && consumed.every((c) => produced.includes(c));
     if (converts && !sameGeneric) return { ...base, reason: "type-conversion" as StepReason };

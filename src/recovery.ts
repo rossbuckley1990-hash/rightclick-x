@@ -106,6 +106,8 @@ export class RecoveringWorkflow {
       const slug = `${this.contract.name}-${hash.slice(0, 16)}`;
       const learned = await this.rc.learn({ sources: this.contract.sources });
       if (learned.results.some(r => r.error || !r.learned.length)) return finish("unavailable", "provider contracts unavailable; no proposal or effect dispatched");
+      try { await this.rc.pinOutcomeWitnesses(this.contract.witnesses); }
+      catch { return finish("refused", "operator-pinned checker unavailable, changed, or outside authority; no operation dispatched"); }
       const existing = this.rc.published.get(slug);
       if (existing) {
         if (existing.recovery?.contract !== hash || existing.trust !== "verified") return finish("refused", "retained goal does not carry this verified business contract");
