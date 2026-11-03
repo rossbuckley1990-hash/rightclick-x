@@ -1,6 +1,8 @@
 // Contract-declared result fields: every path a JSON schema declares, through objects and
 // arrays, bounded. A plan is judged by what its result carries (core/satisfaction.ts), and
 // that is often deeper than the ports used for binding.
+import { inferType } from "./semantics.ts";
+import { isQuantityType } from "./quantities.ts";
 import type { DeclaredField } from "./types.ts";
 
 type Obj = Record<string, any>;
@@ -20,7 +22,9 @@ export function schemaFields(schema: Obj | undefined, resolve: (o: any) => any =
       for (const [name, prop] of Object.entries<Obj>(s.properties ?? {})) {
         if (out.length >= limit) return;
         const path = prefix ? `${prefix}.${name}` : name;
-        out.push({ path });
+        const declared = resolve(prop);
+        const type = inferType(name, declared, declared?.description ?? "");
+        out.push({ path, ...(isQuantityType(type.replace(/^(?:list:)+/, "")) ? { type } : {}) });
         next.push({ s: prop, prefix: path, seen: seen2 });
       }
     };

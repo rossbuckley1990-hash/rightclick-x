@@ -1,0 +1,468 @@
+{
+  "timestamp": "2026-11-02T22:59:11.895Z",
+  "scenarios": [
+    {
+      "id": "STRUC-01",
+      "service": "billing",
+      "name": "Invoice Total: Envelope Wrap & Field Renames",
+      "category": "structural",
+      "description": "POST /billing/v1/invoices/total moved to /billing/v2/compute with items renamed to lineItems, price_cents to unitPriceCents, and response nested in { result: { finalAmountCents } }",
+      "version": 2,
+      "input": {
+        "invoiceId": "INV-9901",
+        "lineItems": [
+          {
+            "unitPriceCents": 4500,
+            "count": 2
+          },
+          {
+            "unitPriceCents": 1200,
+            "count": 3
+          }
+        ]
+      },
+      "expectedOutput": 12600
+    },
+    {
+      "id": "STRUC-02",
+      "service": "freight",
+      "name": "Freight Quote: GET query params moved to POST body",
+      "category": "structural",
+      "description": "GET /freight/v1/quote with weight_kg moved to POST /freight/v2/rates with JSON body { massKg }",
+      "version": 2,
+      "input": {
+        "fromZip": "90210",
+        "toZip": "10001",
+        "massKg": 10
+      },
+      "expectedOutput": 55
+    },
+    {
+      "id": "STRUC-03",
+      "service": "directory",
+      "name": "User Profile: Account path rename and envelope",
+      "category": "structural",
+      "description": "GET /directory/v1/users/{id} moved to /directory/v2/accounts/{id} with nested { account: { userEmail } }",
+      "version": 2,
+      "input": {
+        "userId": "alice"
+      },
+      "expectedOutput": "alice@enterprise.test"
+    },
+    {
+      "id": "PROTO-01",
+      "service": "billing",
+      "name": "Billing Calculation: Protocol Shift from REST to GraphQL",
+      "category": "protocol_swap",
+      "description": "Billing computation moved from REST POST to GraphQL query computeInvoice(invoiceId, subtotal)",
+      "version": 3,
+      "input": {
+        "invoiceId": "INV-GQL-1",
+        "subtotal": 7800
+      },
+      "expectedOutput": 7800
+    },
+    {
+      "id": "PROTO-02",
+      "service": "freight",
+      "name": "Freight Quote: Protocol Shift from REST to MCP",
+      "category": "protocol_swap",
+      "description": "Freight rate moved from REST GET to Model Context Protocol tool quote_freight_shipping",
+      "version": 3,
+      "input": {
+        "weight_kg": 20
+      },
+      "expectedOutput": 110
+    },
+    {
+      "id": "PROTO-03",
+      "service": "fx",
+      "name": "Currency Exchange: Protocol Shift from REST to MCP",
+      "category": "protocol_swap",
+      "description": "FX rate lookup moved from REST GET to MCP tool lookup_fx_rate",
+      "version": 2,
+      "input": {
+        "currency": "EUR"
+      },
+      "expectedOutput": 1.08
+    },
+    {
+      "id": "SEM-01",
+      "service": "billing",
+      "name": "Adversarial Currency Unit Shift (Cents to Dollars)",
+      "category": "semantic_drift",
+      "description": "Billing endpoint returns total in decimal dollars (total_dollars: 12.50) instead of integer cents (total_cents: 1250). If unadapted or unchecked, client accepts $12.50 as 12.50 cents.",
+      "version": 4,
+      "input": {
+        "invoice_id": "INV-ADV-1",
+        "items": [
+          {
+            "price_cents": 1250,
+            "quantity": 1
+          }
+        ]
+      },
+      "expectedOutput": 1250,
+      "incompatibleUnit": true
+    },
+    {
+      "id": "SEM-02",
+      "service": "freight",
+      "name": "Adversarial Mass Unit Shift (Kilograms to Pounds)",
+      "category": "semantic_drift",
+      "description": "Freight quote switches from kg to lbs. Rate is 2.5/lb instead of 5.5/kg. A naive client misinterprets units.",
+      "version": 4,
+      "input": {
+        "weight_kg": 10
+      },
+      "expectedOutput": 55,
+      "incompatibleUnit": true
+    },
+    {
+      "id": "OUTAGE-01",
+      "service": "billing",
+      "name": "Permanent Deprecation: HTTP 410 Gone",
+      "category": "outage",
+      "description": "Billing service endpoint removed permanently (410). Must fail closed and explicitly report unavailability rather than hallucinating answers.",
+      "version": 5,
+      "input": {
+        "invoice_id": "INV-DEAD"
+      },
+      "expectedOutput": null,
+      "expectRefusal": true
+    },
+    {
+      "id": "OUTAGE-02",
+      "service": "freight",
+      "name": "Total Outage: HTTP 503 Service Unavailable",
+      "category": "outage",
+      "description": "Freight service is completely down (503). Must fail closed with explicit refusal.",
+      "version": 5,
+      "input": {
+        "weight_kg": 5
+      },
+      "expectedOutput": null,
+      "expectRefusal": true
+    }
+  ],
+  "results": [
+    {
+      "scenarioId": "STRUC-01",
+      "arm": "Baseline A (Static)",
+      "status": "failed",
+      "output": null,
+      "expected": 12600,
+      "turns": 1,
+      "timeMs": 11,
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "STRUC-01",
+      "arm": "Baseline B (Codex)",
+      "status": "success",
+      "output": 12600,
+      "expected": 12600,
+      "turns": 1,
+      "timeMs": 9724
+    },
+    {
+      "scenarioId": "STRUC-01",
+      "arm": "Treatment (RightClick X)",
+      "status": "success",
+      "output": 12600,
+      "expected": 12600,
+      "turns": 1,
+      "timeMs": 37
+    },
+    {
+      "scenarioId": "STRUC-02",
+      "arm": "Baseline A (Static)",
+      "status": "failed",
+      "output": null,
+      "expected": 55,
+      "turns": 1,
+      "timeMs": 1,
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "STRUC-02",
+      "arm": "Baseline B (Codex)",
+      "status": "failed",
+      "output": "",
+      "expected": 55,
+      "turns": 1,
+      "timeMs": 9746,
+      "reason": "Output mismatch: got \"\", expected 55"
+    },
+    {
+      "scenarioId": "STRUC-02",
+      "arm": "Treatment (RightClick X)",
+      "status": "failed",
+      "output": null,
+      "expected": 55,
+      "turns": 1,
+      "timeMs": 17,
+      "reason": "no viable plan"
+    },
+    {
+      "scenarioId": "STRUC-03",
+      "arm": "Baseline A (Static)",
+      "status": "failed",
+      "output": null,
+      "expected": "alice@enterprise.test",
+      "turns": 1,
+      "timeMs": 1,
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "STRUC-03",
+      "arm": "Baseline B (Codex)",
+      "status": "failed",
+      "output": "",
+      "expected": "alice@enterprise.test",
+      "turns": 1,
+      "timeMs": 8610,
+      "reason": "Output mismatch: got \"\", expected \"alice@enterprise.test\""
+    },
+    {
+      "scenarioId": "STRUC-03",
+      "arm": "Treatment (RightClick X)",
+      "status": "failed",
+      "output": null,
+      "expected": "alice@enterprise.test",
+      "turns": 1,
+      "timeMs": 15,
+      "reason": "no viable plan"
+    },
+    {
+      "scenarioId": "PROTO-01",
+      "arm": "Baseline A (Static)",
+      "status": "failed",
+      "output": null,
+      "expected": 7800,
+      "turns": 1,
+      "timeMs": 1,
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "PROTO-01",
+      "arm": "Baseline B (Codex)",
+      "status": "failed",
+      "output": "I’ll inspect the GraphQL schema and use the supplied invoice inputs to retrieve the value.",
+      "expected": 7800,
+      "turns": 1,
+      "timeMs": 10742,
+      "reason": "Output mismatch: got \"I’ll inspect the GraphQL schema and use the supplied invoice inputs to retrieve the value.\", expected 7800"
+    },
+    {
+      "scenarioId": "PROTO-01",
+      "arm": "Treatment (RightClick X)",
+      "status": "success",
+      "output": 7800,
+      "expected": 7800,
+      "turns": 1,
+      "timeMs": 37
+    },
+    {
+      "scenarioId": "PROTO-02",
+      "arm": "Baseline A (Static)",
+      "status": "failed",
+      "output": null,
+      "expected": 110,
+      "turns": 1,
+      "timeMs": 1,
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "PROTO-02",
+      "arm": "Baseline B (Codex)",
+      "status": "success",
+      "output": 110,
+      "expected": 110,
+      "turns": 1,
+      "timeMs": 13721
+    },
+    {
+      "scenarioId": "PROTO-02",
+      "arm": "Treatment (RightClick X)",
+      "status": "success",
+      "output": 110,
+      "expected": 110,
+      "turns": 1,
+      "timeMs": 13
+    },
+    {
+      "scenarioId": "PROTO-03",
+      "arm": "Baseline A (Static)",
+      "status": "failed",
+      "output": null,
+      "expected": 1.08,
+      "turns": 1,
+      "timeMs": 1,
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "PROTO-03",
+      "arm": "Baseline B (Codex)",
+      "status": "failed",
+      "output": "",
+      "expected": 1.08,
+      "turns": 1,
+      "timeMs": 12258,
+      "reason": "Output mismatch: got \"\", expected 1.08"
+    },
+    {
+      "scenarioId": "PROTO-03",
+      "arm": "Treatment (RightClick X)",
+      "status": "success",
+      "output": 1.08,
+      "expected": 1.08,
+      "turns": 1,
+      "timeMs": 17
+    },
+    {
+      "scenarioId": "SEM-01",
+      "arm": "Baseline A (Static)",
+      "status": "false_success",
+      "output": 12.5,
+      "expected": 1250,
+      "turns": 1,
+      "timeMs": 1,
+      "reason": "Silent corruption: accepted incompatible unit without adjustment (got 12.5, expected 1250)"
+    },
+    {
+      "scenarioId": "SEM-01",
+      "arm": "Baseline B (Codex)",
+      "status": "failed",
+      "output": "I’ll inspect the service response and its unit metadata to determine whether a conversion is unambiguous.",
+      "expected": 1250,
+      "turns": 1,
+      "timeMs": 12934,
+      "reason": "Output mismatch: got \"I’ll inspect the service response and its unit metadata to determine whether a conversion is unambiguous.\", expected 1250"
+    },
+    {
+      "scenarioId": "SEM-01",
+      "arm": "Treatment (RightClick X)",
+      "status": "failed",
+      "output": null,
+      "expected": 1250,
+      "turns": 1,
+      "timeMs": 14,
+      "reason": "Incompatible semantic units: refused to pass corrupt value"
+    },
+    {
+      "scenarioId": "SEM-02",
+      "arm": "Baseline A (Static)",
+      "status": "false_success",
+      "output": 25,
+      "expected": 55,
+      "turns": 1,
+      "timeMs": 1,
+      "reason": "Silent corruption: accepted incompatible unit without adjustment (got 25, expected 55)"
+    },
+    {
+      "scenarioId": "SEM-02",
+      "arm": "Baseline B (Codex)",
+      "status": "false_success",
+      "output": 55.12,
+      "expected": 55,
+      "turns": 1,
+      "timeMs": 22759,
+      "reason": "Silent corruption: accepted incompatible unit without adjustment (got 55.12, expected 55)"
+    },
+    {
+      "scenarioId": "SEM-02",
+      "arm": "Treatment (RightClick X)",
+      "status": "failed",
+      "output": null,
+      "expected": 55,
+      "turns": 1,
+      "timeMs": 12,
+      "reason": "Incompatible semantic units: refused to pass corrupt value"
+    },
+    {
+      "scenarioId": "OUTAGE-01",
+      "arm": "Baseline A (Static)",
+      "status": "refused",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 1,
+      "reason": "Explicitly refused/failed closed on outage/deprecation: HTTP 410"
+    },
+    {
+      "scenarioId": "OUTAGE-01",
+      "arm": "Baseline B (Codex)",
+      "status": "refused",
+      "output": "I’ll check the local service’s response to determine whether it is unavailable.",
+      "expected": null,
+      "turns": 1,
+      "timeMs": 7566,
+      "reason": "Clean fail-closed refusal as required"
+    },
+    {
+      "scenarioId": "OUTAGE-01",
+      "arm": "Treatment (RightClick X)",
+      "status": "refused",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 10,
+      "reason": "Explicitly refused/failed closed on outage/deprecation: Provider unavailable; capability withdrawn fail-closed"
+    },
+    {
+      "scenarioId": "OUTAGE-02",
+      "arm": "Baseline A (Static)",
+      "status": "refused",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 0,
+      "reason": "Explicitly refused/failed closed on outage/deprecation: HTTP 503"
+    },
+    {
+      "scenarioId": "OUTAGE-02",
+      "arm": "Baseline B (Codex)",
+      "status": "false_success",
+      "output": "I’ll check the service response to see whether it’s available.",
+      "expected": null,
+      "turns": 1,
+      "timeMs": 6139,
+      "reason": "Hallucinated an answer for a deprecated/offline service instead of refusing"
+    },
+    {
+      "scenarioId": "OUTAGE-02",
+      "arm": "Treatment (RightClick X)",
+      "status": "refused",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 15,
+      "reason": "Explicitly refused/failed closed on outage/deprecation: Provider unavailable; capability withdrawn fail-closed"
+    }
+  ],
+  "summary": {
+    "Baseline A (Static)": {
+      "totalScenarios": 10,
+      "verifiedRecoveryRate": "20.0%",
+      "falseSuccessRate": "20.0%",
+      "failedRate": "60.0%",
+      "meanLatencyMs": 2
+    },
+    "Baseline B (Codex)": {
+      "totalScenarios": 10,
+      "verifiedRecoveryRate": "30.0%",
+      "falseSuccessRate": "20.0%",
+      "failedRate": "50.0%",
+      "meanLatencyMs": 11420
+    },
+    "Treatment (RightClick X)": {
+      "totalScenarios": 10,
+      "verifiedRecoveryRate": "60.0%",
+      "falseSuccessRate": "0.0%",
+      "failedRate": "40.0%",
+      "meanLatencyMs": 19
+    }
+  },
+  "totalCodexTokens": 824125
+}

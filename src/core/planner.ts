@@ -12,12 +12,17 @@ import { schemeFits, schemeOnly } from "./identities.ts";
 import { validLinkGroup } from "./links.ts";
 import { accepts, distance, isNominal } from "./semantics.ts";
 import { tokenize, type CapabilityGraph } from "./graph.ts";
+import { isQuantityType } from "./quantities.ts";
 import type { Ledger } from "./ledger.ts";
 import type { Binding, Capability, PlanStep, Port, Risk, SemType } from "./types.ts";
 
 export interface Goal {
   /** Named inputs the caller can supply, with semantic types. */
   have: Record<string, SemType>;
+  /** Raw caller input values, used for provenance inspection. */
+  haveRaw?: Record<string, unknown>;
+  /** A generic projection may retain quantities only with caller-supplied checks. */
+  checkedQuantityProjection?: boolean;
   /** Desired output type. */
   want: SemType;
   /** Free-text intent ("weather", "translate", "summary") used to rank and filter. */
@@ -271,7 +276,7 @@ export function plan(graph: CapabilityGraph, ledger: Ledger, goal: Goal, expansi
           .filter((x) => satisfies(goal.want, x.v.type))
           .sort((a, b) => a.d - b.d || b.s - a.s)[0];
         if (hit) {
-          const p = finalize(graph, child, hit.v, hit.d, intent, goal.want, goal.require, goal.have, goal.schemes ?? {});
+          const p = finalize(graph, child, hit.v, hit.d, intent, goal.want, goal.require, goal.have, goal.schemes ?? {}, goal.checkedQuantityProjection);
           if (p) results.push(p);
         }
         next.push(child);
@@ -514,7 +519,7 @@ function intentOf(graph: CapabilityGraph, node: Node, intent: Set<string>, resul
   return covered.size;
 }
 
-function finalize(graph: CapabilityGraph, node: Node, v: Value, d: number, intent: Set<string>, want?: SemType, require?: string[], have: Record<string, SemType> = {}, haveSchemes: Record<string, string[]> = {}): Plan | null {
+function finalize(graph: CapabilityGraph, node: Node, v: Value, d: number, intent: Set<string>, want?: SemType, require?: string[], have: Record<string, SemType> = {}, haveSchemes: Record<string, string[]> = {}, checkedQuantityProjection = false): Plan | null {
   // Drop trailing steps that don't contribute to the result.
   const needed = new Set<number>([v.step]);
   for (let i = node.steps.length - 1; i >= 0; i--) {
@@ -525,6 +530,16 @@ function finalize(graph: CapabilityGraph, node: Node, v: Value, d: number, inten
     }
   }
   if (needed.size !== node.steps.length) return null; // a shorter plan covers this
+
+  // A primitive goal is not a unit specification. Preserve typed results, or
+  // require explicit checks before a generic projection. Never infer a
+  // conversion from the caller's payload text. A schema is still only a claim.
+  const quantity = (type: string) => isQuantityType(type.replace(/^(?:list:)+/, ""));
+  const producing = graph.get(node.steps[v.step].capability)!;
+  const declaredQuantity = [...producing.outputs, ...(producing.fields ?? [])].some(p => quantity(p.type ?? ""));
+  const erased = quantity(v.type) || (v.type.replace(/^(?:list:)+/, "") === "json" && declaredQuantity);
+  if (["number", "json", "list:number", "list:json"].includes(want ?? "") && erased && !checkedQuantityProjection) return null;
+
   const providers = [...new Set(node.steps.map((s) => graph.get(s.capability)!.provider))];
   const titles = node.steps.map((s) => graph.get(s.capability)!.title + (s.bindings.some((b) => b.each) ? " (each)" : ""));
   const intentScore = intentOf(graph, node, intent, v.ref);

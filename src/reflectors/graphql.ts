@@ -48,7 +48,7 @@ interface FullType {
 }
 
 function needsArguments(field: Field): boolean {
-  return field.args.some(a => a.type.kind === "NON_NULL" && a.defaultValue == null);
+  return (field.args ?? []).some(a => a.type.kind === "NON_NULL" && a.defaultValue == null);
 }
 
 interface SelectionSchema {
@@ -111,7 +111,7 @@ export async function completeTypeReferences(doc: any, read: (query: string) => 
   };
   for (const mode of ["outputs", "arguments"] as const) {
     const selected = types.filter(t => /^[_A-Za-z][_0-9A-Za-z]*$/.test(t.name) && t.fields?.some(f =>
-      mode === "outputs" ? !completeRef(f.type) : f.args.some(a => !completeRef(a.type)))).slice(0, 16);
+      mode === "outputs" ? !completeRef(f.type) : (f.args ?? []).some(a => !completeRef(a.type)))).slice(0, 16);
     if (!selected.length) continue;
     const ref = "kind name ofType { kind name ofType { kind name ofType { kind name ofType { kind name } } } }";
     const fields = mode === "outputs" ? `name type { ${ref} }` : `name args { name type { ${ref} } }`;
@@ -127,7 +127,7 @@ export async function completeTypeReferences(doc: any, read: (query: string) => 
         if (matches.length !== 1) continue;
         if (mode === "outputs") {
           if (!completeRef(old.type) && compatible(old.type, matches[0].type)) { old.type = matches[0].type; filled++; }
-        } else for (const arg of old.args) {
+        } else for (const arg of old.args ?? []) {
           const args = (matches[0].args ?? []).filter((a: any) => a.name === arg.name);
           if (args.length === 1 && !completeRef(arg.type) && compatible(arg.type, args[0].type)) { arg.type = args[0].type; filled++; }
         }
@@ -181,11 +181,11 @@ export function reflectGraphQL(introspection: any, endpoint: string, title?: str
     const root = rootName ? types.get(rootName) : undefined;
     for (const field of root?.fields ?? []) {
       if (field.name.startsWith("__")) continue;
-      if (!completeRef(field.type) || field.args.some(a => !completeRef(a.type))) {
+      if (!completeRef(field.type) || (field.args ?? []).some(a => !completeRef(a.type))) {
         incomplete.push(`${operation}.${field.name}: incomplete type reference`);
         continue;
       }
-      const inputs: Port[] = field.args.map((a) => ({
+      const inputs: Port[] = (field.args ?? []).map((a) => ({
         name: a.name,
         type: semantic(a.name, a.type, a.description ?? "", field.name),
         required: a.type.kind === "NON_NULL" && a.defaultValue == null,
@@ -194,7 +194,7 @@ export function reflectGraphQL(introspection: any, endpoint: string, title?: str
       }));
       const { selection, ports, omitted, total } = buildSelection(field, types);
       // The default selection is bounded; say what it leaves out and let the caller choose.
-      const selectPort = ports.length > 1 && !field.args.some((a) => a.name === "selection") ? "selection" : undefined;
+      const selectPort = ports.length > 1 && !(field.args ?? []).some((a) => a.name === "selection") ? "selection" : undefined;
       if (selectPort) {
         const shown = omitted.length ? ` Default selects ${total - omitted.length} of ${total} fields; also available: ${clip(omitted.join(", "), 3000)}.` : "";
         inputs.push({ name: selectPort, type: "text", required: false, wire: "selection set", description: `Optional GraphQL selection set for the returned ${named(field.type).name}, e.g. "{ id name nested { field } }"; replaces the default selection.${shown}` });
@@ -228,7 +228,7 @@ export function reflectGraphQL(introspection: any, endpoint: string, title?: str
           endpoint,
           operation,
           field: field.name,
-          args: Object.fromEntries(field.args.map((a) => [a.name, printType(a.type)])),
+          args: Object.fromEntries((field.args ?? []).map((a) => [a.name, printType(a.type)])),
           selection,
           ...(selectPort ? { selectPort } : {}),
         },

@@ -1,4 +1,6 @@
 export { RightClick, VERSION, type RuntimeOptions, type RunRecord, type ComposeResult, type Store, type PersistedState } from "./runtime.ts";
+export { RecoveringWorkflow, type RecoveryContract, type RecoveryResult, type FallbackAgent, type FallbackLimits, type RepairContext, type RepairProposal, type AgentUsage } from "./recovery.ts";
+export { UNITS, unitType, type SemanticEvidence, establishedSemantics } from "./core/units.ts";
 export { decodeState, encodeState, STATE_FORMAT, STATE_REQUIREMENTS } from "./core/state-format.ts";
 export { CapabilityGraph, type GraphEvent, type Powers } from "./core/graph.ts";
 export { plan, type Plan, type Goal } from "./core/planner.ts";
@@ -20,3 +22,4 @@ export { TOOLS, dispatch } from "./interface/tools.ts";
 export type * from "./core/types.ts";
 export type { ExecutionPolicy, ExecutionAssessment } from "./core/execution-policy.ts";
 export type { OperatorAuthority } from "./runtime.ts";
+export { CodexResponsesFallback, type CodexFallbackOptions, type FallbackReceipt } from "./codex-fallback.ts";

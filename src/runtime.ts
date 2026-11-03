@@ -46,7 +46,7 @@ export const VERSION = "0.1.0";
 // re-derivation. Public learn/compose calls never receive this symbol.
 const GOAL_RESTORE_PERMIT = Symbol("goal-deferred-restore");
 /** Bump whenever semantic inference changes: persisted reflections are then re-derived from their sources. */
-export const SEMANTICS = 27;
+export const SEMANTICS = 28;
 
 /** Only documented, value-free flags may be retained. An option argument can contain an
  * opaque credential even when neither the option nor the input name looks sensitive. */
@@ -146,6 +146,8 @@ function validHttpRun(c: HttpRunContinuation): boolean {
  * finds at call time, so it survives upstream changes.
  */
 export interface PublishedGoal {
+  /** Provenance of a bounded recovery proposal; never an authority grant. */
+  recovery?: { contract: string; source: "deterministic" | "fallback"; proposalHash?: string; contextHash?: string };
   slug: string;
   /** Distinguishes successive definitions even when their contents are identical. */
   revision?: string;
@@ -402,6 +404,8 @@ class PendingOutcomeError extends StepError {
 class FanOutRefused extends StepError {}
 
 export interface ComposeOptions {
+  /** Host recovery API provenance. It cannot change checks or execution authority. */
+  recovery?: PublishedGoal["recovery"];
   have: Record<string, unknown>;
   want: SemType;
   intent?: string;
@@ -414,7 +418,7 @@ export interface ComposeOptions {
   risks?: Capability["risk"][];
   /** Capability ids or search phrases the pipeline must pass through. */
   through?: string[];
-  /** Bind ports on anchored CLI capabilities to distinct named have inputs. */
+  /** Bind ports on anchored capabilities to distinct named have inputs. */
   inputBindings?: Record<string, Record<string, string>>;
   /** Internal persisted anchor contracts; callers specify through instead. */
   anchors?: CapabilityAnchor[];
@@ -2311,6 +2315,12 @@ export class RightClick {
       pendingHttp: [...this.httpContinuations.values()].map(c => ({ runId: c.runId, resumeId: `resume:${c.runId}`, capability: c.capability, expiresAt: c.expiresAt, requestsUsed: c.cursor.used })) };
   }
 
+  /** Admission facts for the host recovery API, not additional authority. */
+  recoveryAdmission() {
+    return { durable: !!this.store && !this.store.readOnly && !this.storeUncertain,
+      checkpoints: this.workflowRecovery, pending: this.workflowContinuations.size + this.httpContinuations.size };
+  }
+
   private async checkpointHttp(runId: string, cap: Capability, verify: Predicate[], cursor: HttpContinuationCursor | null, parent?: WorkflowContinuation) {
     const parentPhase = parent?.phase;
     if (parent) parent.phase = cursor ? "waiting" : "dispatching";
@@ -2621,12 +2631,16 @@ export class RightClick {
         const index = anchors.findIndex(a => a.id === id);
         if (index < 0) throw new Error(`inputBindings requires an explicitly anchored capability: ${id}`);
         const cap = this.graph.get(through[index]);
-        if (!cap || cap.invoke.kind !== "cli") throw new Error(`inputBindings requires an anchored CLI capability: ${id}`);
+        if (!cap || !["cli", "http", "graphql", "mcp"].includes(cap.invoke.kind)) throw new Error(`inputBindings requires an anchored executable capability: ${id}`);
         if (!ports || typeof ports !== "object" || Array.isArray(ports) || !Object.keys(ports).length) throw new Error(`inputBindings for ${id} must name ports`);
         for (const [port, input] of Object.entries(ports)) {
           if (!cap.inputs.some(p => p.name === port)) throw new Error(`unknown inputBindings port ${id}.${port}`);
           if (typeof input !== "string" || !/^[A-Za-z_][A-Za-z0-9_]*$/.test(input) || !Object.hasOwn(types, input)) throw new Error(`unknown or unsupported inputBindings input for ${id}.${port}`);
-          const optionContract = [cap.invoke.options, cap.invoke.optionsAfterArgs].find(o => o?.port === port);
+          // Explicit remote aliases may constrain a compatible type, never
+          // rename an unrelated identifier or discard a dimensional contract.
+          if (cap.invoke.kind !== "cli" && cap.inputs.find(p => p.name === port)!.type !== types[input])
+            throw new Error(`inputBindings semantic mismatch for ${id}.${port}`);
+          const optionContract = cap.invoke.kind === "cli" ? [cap.invoke.options, cap.invoke.optionsAfterArgs].find(o => o?.port === port) : undefined;
           if (optionContract && Object.hasOwn(fixed, input)) {
             // Keep only documented value-free flags. A value for an innocuous option may
             // itself be a credential, so name-based detection is insufficient here.
@@ -2663,7 +2677,7 @@ export class RightClick {
     // A caller's value named and shaped like a learned identifier scheme's carries that scheme.
     const schemes = Object.fromEntries(Object.entries(values).map(([k, v]) => [k, this.graph.identities.schemesFor(this.graph.capabilities.values(), k, v)]).filter(([, s]) => s.length));
     const require = (opts.require ?? []).map((t) => String(t).trim()).filter(Boolean);
-    const goal = { have: types, want: opts.want, intent: opts.intent, maxSteps: opts.maxSteps, limit: opts.limit ?? 5, risks: opts.risks, through, exclude: blocked, origins, schemes, inputBindings, ...(require.length ? { require } : {}) };
+    const goal = { have: types, haveRaw: opts.have, checkedQuantityProjection: !!(opts.verify?.length || witnesses.length), want: opts.want, intent: opts.intent, maxSteps: opts.maxSteps, limit: opts.limit ?? 5, risks: opts.risks, through, exclude: blocked, origins, schemes, inputBindings, ...(require.length ? { require } : {}) };
     let undeclared: string[] = [];
     const search = () => {
       undeclared = undeclaredRequirements(this.graph, require);
@@ -2829,7 +2843,7 @@ export class RightClick {
           id: `execution:composition:${crypto.randomUUID()}`, plan: { ...p, steps }, types,
           risk: selected.some(c => c.risk === "destructive") ? "destructive" : selected.some(c => c.risk === "write") ? "write" : selected.some(c => c.risk === "external") ? "external" : "read",
           options: { want: opts.want, intent: opts.intent, verify: opts.verify, crystallize: opts.crystallize,
-            publish: opts.publish, risks: opts.risks, through: opts.through, maxSteps: opts.maxSteps, inputBindings: opts.inputBindings },
+            publish: opts.publish, risks: opts.risks, through: opts.through, maxSteps: opts.maxSteps, inputBindings: opts.inputBindings, recovery: opts.recovery },
           anchors, fixed, origins, witnesses, require, preservesInput: assessOf(p).preservesInput, publicationExpected,
           goals: await Promise.all((opts.activeGoals ?? []).map(async slug => {
             const g = this.published.get(slug);
@@ -3092,6 +3106,7 @@ export class RightClick {
         return result;
       }
       const candidate: PublishedGoal = {
+        ...(opts.recovery ? { recovery: structuredClone(opts.recovery) } : {}),
         revision: crypto.randomUUID(),
         trust,
         slug,

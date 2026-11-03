@@ -1,0 +1,98 @@
+✖ historical SEM-02: generic number does not establish a semantic business result (50.11625ms)
+✖ historical SEM-04: generic number does not establish a semantic business result (16.891834ms)
+✖ historical SEM-05: generic number does not establish a semantic business result (0.15975ms)
+✖ historical SEM-07: generic number does not establish a semantic business result (11.38575ms)
+✖ historical SEM-08: generic number does not establish a semantic business result (11.591125ms)
+✖ historical SEM-09: generic number does not establish a semantic business result (7.132ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 0
+ℹ fail 6
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 240.993916
+
+✖ failing tests:
+
+test at ../rcx-original-reproduction/test/semantic-continuity.test.ts:12:3
+✖ historical SEM-02: generic number does not establish a semantic business result (50.11625ms)
+  AssertionError [ERR_ASSERTION]: {"scenario":"SEM-02","expected":55,"actual":25,"plans":[{"resultType":"quantity:money:USD:unknown","result":"0.cost_usd","steps":[{"capability":"openapi:freight-api-lbs:getquotelbs","bindings":[{"port":"weight_lbs","from":"$in.weight_kg"}]}]}],"verification":{"status":"unverified","results":[]}}
+      at TestContext.<anonymous> (file://$ORIGINAL_SOURCE/test/semantic-continuity.test.ts:22:14)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'completed',
+    expected: 'completed',
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at ../rcx-original-reproduction/test/semantic-continuity.test.ts:12:3
+✖ historical SEM-04: generic number does not establish a semantic business result (16.891834ms)
+  AssertionError [ERR_ASSERTION]: {"scenario":"SEM-04","expected":10000,"actual":108.25,"plans":[{"resultType":"number","result":"0.gross_total","steps":[{"capability":"openapi:billing-service-gross-tax:calculategross","bindings":[]}]}],"verification":{"status":"unverified","results":[]}}
+      at TestContext.<anonymous> (file://$ORIGINAL_SOURCE/test/semantic-continuity.test.ts:22:14)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'completed',
+    expected: 'completed',
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at ../rcx-original-reproduction/test/semantic-continuity.test.ts:12:3
+✖ historical SEM-05: generic number does not establish a semantic business result (0.15975ms)
+  TypeError [Error]: factories[scenario.service] is not a function
+      at TestContext.<anonymous> (file://$ORIGINAL_SOURCE/test/semantic-continuity.test.ts:14:75)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at ../rcx-original-reproduction/test/semantic-continuity.test.ts:12:3
+✖ historical SEM-07: generic number does not establish a semantic business result (11.38575ms)
+  AssertionError [ERR_ASSERTION]: {"scenario":"SEM-07","expected":50,"actual":13.2,"plans":[{"resultType":"number","result":"0.volume_gal","steps":[{"capability":"openapi:freight-api-volume:getvolume","bindings":[]}]}],"verification":{"status":"unverified","results":[]}}
+      at TestContext.<anonymous> (file://$ORIGINAL_SOURCE/test/semantic-continuity.test.ts:22:14)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'completed',
+    expected: 'completed',
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at ../rcx-original-reproduction/test/semantic-continuity.test.ts:12:3
+✖ historical SEM-08: generic number does not establish a semantic business result (11.591125ms)
+  AssertionError [ERR_ASSERTION]: {"scenario":"SEM-08","expected":100,"actual":95.37,"plans":[{"resultType":"number","result":"0.quota_mib","steps":[{"capability":"openapi:directory-service-storage-quota:getquota","bindings":[]}]}],"verification":{"status":"unverified","results":[]}}
+      at TestContext.<anonymous> (file://$ORIGINAL_SOURCE/test/semantic-continuity.test.ts:22:14)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'completed',
+    expected: 'completed',
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at ../rcx-original-reproduction/test/semantic-continuity.test.ts:12:3
+✖ historical SEM-09: generic number does not establish a semantic business result (7.132ms)
+  AssertionError [ERR_ASSERTION]: {"scenario":"SEM-09","expected":100,"actual":62.14,"plans":[{"resultType":"number","result":"0.speed_mph","steps":[{"capability":"openapi:freight-api-speed:getspeed","bindings":[]}]}],"verification":{"status":"unverified","results":[]}}
+      at TestContext.<anonymous> (file://$ORIGINAL_SOURCE/test/semantic-continuity.test.ts:22:14)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'completed',
+    expected: 'completed',
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }

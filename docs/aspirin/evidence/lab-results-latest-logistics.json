@@ -1,0 +1,243 @@
+{
+  "seed": 47402731,
+  "domain": "logistics",
+  "gateway": false,
+  "startedAt": "2026-11-03T21:20:23.588Z",
+  "steps": [
+    {
+      "n": 1,
+      "title": "Start disposable services generated from fixtures",
+      "ok": true,
+      "domain": "logistics",
+      "services": 3,
+      "givenToRightClickX": "the services' root addresses"
+    },
+    {
+      "n": 2,
+      "title": "Connect an MCP client to RightClick X (stdio)",
+      "ok": true,
+      "tools": 13,
+      "startupMs": 166.7
+    },
+    {
+      "n": 3,
+      "title": "Present a business objective: \"For a shipment, find the shipping rate charged from its warehouse's city.\"",
+      "ok": true,
+      "goal": {
+        "have": {
+          "shipment_id": "<id>"
+        },
+        "want": "number",
+        "intent": "shipping rate shipment warehouse city",
+        "verify": [
+          {
+            "op": "type",
+            "value": "number"
+          }
+        ]
+      }
+    },
+    {
+      "n": 4,
+      "title": "Discover contracts from root addresses only (no protocols, no schemas given)",
+      "ok": true,
+      "found": [
+        "graphql",
+        "mcp",
+        "mcp"
+      ],
+      "newCapabilities": 3,
+      "ms": 42
+    },
+    {
+      "n": 5,
+      "title": "Identify suitable capabilities",
+      "ok": true,
+      "candidatePlans": 2,
+      "best": [
+        "Track shipment",
+        "Look up warehouse",
+        "Lookup Shipping Rate For A City"
+      ],
+      "planningMs": 3.7
+    },
+    {
+      "n": 6,
+      "title": "Compose a multi-provider workflow",
+      "ok": true,
+      "steps": [
+        "Track shipment ← shipment_id=$in.shipment_id",
+        "Look up warehouse ← warehouse_number=0.warehouseId",
+        "Lookup Shipping Rate For A City ← city=1.location"
+      ]
+    },
+    {
+      "n": 7,
+      "title": "Execute the workflow",
+      "ok": true,
+      "input": "SHP-1003",
+      "pipeline": [
+        "Track shipment",
+        "Look up warehouse",
+        "Lookup Shipping Rate For A City"
+      ],
+      "ms": 7.8
+    },
+    {
+      "n": 8,
+      "title": "Verify against independently held test data",
+      "ok": true,
+      "expected": 29.9,
+      "got": 29.9
+    },
+    {
+      "n": 9,
+      "title": "Save the successful composition and reuse it",
+      "ok": true,
+      "saved": "Shipping rate shipment warehouse city: Track shipment → Look up warehouse → Lookup Shipping Rate For A City",
+      "reusedAs": [
+        "Shipping rate shipment warehouse city: Track shipment → Look up warehouse → Lookup Shipping Rate For A City"
+      ],
+      "expected": 13.6,
+      "got": 13.6,
+      "ms": 3.3
+    },
+    {
+      "n": 10,
+      "title": "Change the interface of the last provider in the chain (Kestrel Freight)",
+      "ok": true,
+      "before": "graphql \"Lookup shipping rate for a city\" city → city, rate",
+      "after": "openapi \"City shipping rate\" location → result.{location, shipping_rate}"
+    },
+    {
+      "n": 11,
+      "title": "Recover without changing integration code",
+      "ok": true,
+      "healing": [
+        "API drift at http://127.0.0.1:55935/: graphql:127-0-0-1-55935-graphql → openapi:kestrel-freight; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+      ],
+      "via": [
+        "mcp:mistral-depot",
+        "mcp:fernway",
+        "openapi:kestrel-freight"
+      ],
+      "expected": 25.4,
+      "got": 25.4,
+      "ms": 11.4
+    },
+    {
+      "n": 12,
+      "title": "Remove that provider (Kestrel Freight)",
+      "ok": true
+    },
+    {
+      "n": 13,
+      "title": "Withdraw its capabilities accurately; report the objective as impossible, not faked",
+      "ok": true,
+      "status": "failed",
+      "healing": [
+        "provider gone at http://127.0.0.1:55935/: withdrew openapi:kestrel-freight (1 capabilities, 1 pipeline(s) retired)"
+      ],
+      "withdrawn": [
+        "Kestrel Freight"
+      ],
+      "capabilities": "27 → 25",
+      "savedPipelines": "1 → 0"
+    },
+    {
+      "n": 14,
+      "title": "Introduce a different provider (Ashgrove, mcp): the objective works again",
+      "ok": true,
+      "learned": [
+        "mcp: 1 tools"
+      ],
+      "via": [
+        "mcp:mistral-depot",
+        "mcp:fernway",
+        "mcp:ashgrove"
+      ],
+      "expected": 27.8,
+      "got": 27.8,
+      "ms": 3.4
+    }
+  ],
+  "benchmarks": {
+    "startupMs": 166.7,
+    "mcpLatencyMs": {
+      "p50": 0.04,
+      "p95": 0.22
+    },
+    "discoveryMs": 42,
+    "graph": {
+      "providers": 5,
+      "capabilities": 26,
+      "edges": 37,
+      "chains2": 37,
+      "chains3": 51,
+      "total": 114
+    },
+    "graphStatsMs": 0.1,
+    "planningMs": 3.7,
+    "executionMs": 7.8,
+    "recoveryAfterChangeMs": 11.4,
+    "recoveryAfterNewProviderMs": 3.4,
+    "memoryMB": 91
+  },
+  "freeze": {
+    "commit": "fe60f255fde53cbe4c43b2e4b24f49dac5af0620",
+    "tag": "lab-freeze-9",
+    "productCodeChangedSinceTag": "bin/command-input.ts\nbin/rcx.ts\nsrc/core/activity.ts\nsrc/core/authority.ts\nsrc/core/cli-conformance.ts\nsrc/core/cli-continuity.ts\nsrc/core/cli-environment.ts\nsrc/core/cli-files.ts\nsrc/core/cli-outcome.ts\nsrc/core/contract.ts\nsrc/core/execution-policy.ts\nsrc/core/fields.ts\nsrc/core/goal-identity.ts\nsrc/core/graph.ts\nsrc/core/identities.ts\nsrc/core/json.ts\nsrc/core/knowledge.ts\nsrc/core/ledger.ts\nsrc/core/links.ts\nsrc/core/planner.ts\nsrc/core/programs.ts\nsrc/core/result-description.ts\nsrc/core/sandbox.ts\nsrc/core/satisfaction.ts\nsrc/core/secrets.ts\nsrc/core/semantics.ts\nsrc/core/state-conflict.ts\nsrc/core/state-format.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/core/workflow-continuation.ts\nsrc/core/yaml.ts\nsrc/entry/durable.ts\nsrc/entry/edge.ts\nsrc/entry/node-host.ts\nsrc/index.ts\nsrc/interface/authority-evidence.ts\nsrc/interface/dashboard-state.ts\nsrc/interface/dashboard.ts\nsrc/interface/graphql-server.ts\nsrc/interface/http.ts\nsrc/interface/mcp-server.ts\nsrc/interface/tools.ts\nsrc/reflectors/cli.ts\nsrc/reflectors/discover.ts\nsrc/reflectors/environment.ts\nsrc/reflectors/graphql.ts\nsrc/reflectors/http-continuation.ts\nsrc/reflectors/mcp.ts\nsrc/reflectors/net.ts\nsrc/reflectors/openapi-links.ts\nsrc/reflectors/openapi.ts\nsrc/reflectors/platform.ts\nsrc/runtime.ts",
+    "uncommittedProductChanges": "M src/core/planner.ts\n M src/core/quantities.ts\n M src/core/semantics.ts\n M src/core/workflow-continuation.ts\n M src/index.ts\n M src/runtime.ts\n?? src/codex-fallback.ts\n?? src/core/units.ts\n?? src/recovery.ts",
+    "frozen": false
+  },
+  "environment": [
+    {
+      "service": "shipments",
+      "brand": "Mistral Depot",
+      "protocol": "mcp",
+      "operation": "Track shipment",
+      "input": "shipment_id",
+      "outputs": [
+        "shipment_id",
+        "warehouseId",
+        "gross_weight"
+      ]
+    },
+    {
+      "service": "warehouses",
+      "brand": "Fernway",
+      "protocol": "mcp",
+      "operation": "Look up warehouse",
+      "input": "warehouse_number",
+      "outputs": [
+        "warehouse_number",
+        "location",
+        "manager_email"
+      ]
+    },
+    {
+      "service": "rates",
+      "brand": "Kestrel Freight",
+      "protocol": "graphql",
+      "operation": "Lookup shipping rate for a city",
+      "input": "city",
+      "outputs": [
+        "city",
+        "rate"
+      ]
+    }
+  ],
+  "firstRunProviders": [
+    "mcp:mistral-depot",
+    "mcp:fernway",
+    "graphql:127-0-0-1-55935-graphql"
+  ],
+  "receipts": {
+    "count": 21,
+    "intact": true,
+    "brokenAt": null,
+    "head": "ebb10c54c1c13d104b8c96aa24c7f33c4d688a64335877456e9e05b075525bea"
+  },
+  "passed": 14,
+  "total": 14
+}

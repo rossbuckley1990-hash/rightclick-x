@@ -1,0 +1,2121 @@
+{
+  "schema": "rightclick-x/aspirin-development@1",
+  "at": "2026-11-03T21:25:04.610Z",
+  "passed": true,
+  "modelInvocations": 0,
+  "limitations": [
+    "Engineering-authored development fixture, not independent held-out evaluation",
+    "Fallback proposals are scripted; model reasoning and model costs are not established",
+    "SQLite uniqueness supplies provider idempotency; not universal exactly-once semantics",
+    "Worker processes receive original business contract and invocation only; no conversation",
+    "Observer is a separate read-only process; not cryptographic attestation"
+  ],
+  "events": [
+    {
+      "label": "day-one-rest",
+      "request": {
+        "request_id": "one",
+        "customer": "customer-A",
+        "currency": "USD",
+        "lines": [
+          {
+            "unit_minor": 1250,
+            "quantity": 2
+          },
+          {
+            "unit_minor": 37,
+            "quantity": 3
+          }
+        ]
+      },
+      "result": {
+        "status": "verified",
+        "reason": "independent business checks passed and recovery was durably published",
+        "route": "deterministic",
+        "durable": true,
+        "output": {
+          "invoice_id": "INV-one",
+          "customer": "customer-A",
+          "currency": "USD",
+          "total_minor": 2611
+        },
+        "goal": "goal:issue-invoice-99e0bc1f95acc22e",
+        "evidence": {
+          "goal": {
+            "have": {
+              "invoice": "json"
+            },
+            "want": "json",
+            "intent": "create customer invoice",
+            "through": [
+              "openapi:invoice-provider:createinvoice"
+            ]
+          },
+          "plans": [
+            {
+              "steps": [
+                {
+                  "capability": "openapi:invoice-provider:createinvoice",
+                  "bindings": [
+                    {
+                      "port": "invoice",
+                      "from": "$in.invoice"
+                    }
+                  ]
+                }
+              ],
+              "result": "0.",
+              "resultType": "json",
+              "cost": 1.3833333333333333,
+              "intentScore": 3,
+              "fit": 1.25,
+              "resultScore": 5,
+              "providers": [
+                "openapi:invoice-provider"
+              ],
+              "summary": "Create customer invoice",
+              "titles": [
+                "Create customer invoice"
+              ],
+              "contract": {
+                "status": "satisfied",
+                "steps": [
+                  {
+                    "step": 0,
+                    "capability": "openapi:invoice-provider:createinvoice",
+                    "title": "Create customer invoice",
+                    "reason": "caller-anchored"
+                  }
+                ],
+                "violations": [],
+                "preservesInput": false
+              }
+            }
+          ],
+          "contract": {
+            "input": [
+              {
+                "name": "invoice",
+                "type": "json"
+              }
+            ],
+            "output": {
+              "type": "json",
+              "requires": []
+            },
+            "transformations": [
+              "creat",
+              "custom",
+              "invoic"
+            ],
+            "invariants": [
+              "lineage: every step is requested, provides required information, converts a type a later step needs, or was named by the caller",
+              "distinct inputs: no step receives the same value on two required ports",
+              "preservation: where every step has evidence of keeping its input's words, the result must keep the caller's words"
+            ],
+            "completeness": "the result is of type json",
+            "provenance": "every bound value comes from the caller or an earlier step of this plan",
+            "verification": {
+              "predicates": 0,
+              "witnesses": 1,
+              "strongest": "independently-checked"
+            },
+            "authority": {
+              "risks": [
+                "write"
+              ],
+              "destructiveNeedsOperatorApproval": true
+            },
+            "allowedUncertainty": "none: a result whose contract cannot be established is reported as not established, not as success",
+            "failureConditions": [
+              "a step not justified by the request (lineage)",
+              "a required piece of information missing from the result",
+              "a join supported only by a generic type when information is required",
+              "a check (predicate or witness) refuted",
+              "content lost where every step was expected to preserve it"
+            ]
+          },
+          "executed": {
+            "summary": "Create customer invoice",
+            "titles": [
+              "Create customer invoice"
+            ],
+            "output": {
+              "invoice_id": "INV-one",
+              "customer": "customer-A",
+              "currency": "USD",
+              "total_minor": 2611
+            },
+            "status": "completed",
+            "verification": {
+              "status": "verified",
+              "results": []
+            },
+            "runs": [
+              "run_mw174yth_2_34926866-8db9-47e2-9be2-f78190bb802f"
+            ],
+            "attempts": [],
+            "durationMs": 11.1,
+            "witnesses": [
+              {
+                "capability": "openapi:independent-audit:observeinvoice",
+                "runId": "run_mw174ytn_3_5267d693-1ba1-4cd2-837a-49259ce63ec9",
+                "status": "completed",
+                "output": {
+                  "invoice_id": "INV-one",
+                  "customer": "customer-A",
+                  "currency": "USD",
+                  "total_minor": 2611
+                },
+                "verification": {
+                  "status": "checked",
+                  "results": [
+                    {
+                      "predicate": {
+                        "op": "exists",
+                        "path": "invoice_id"
+                      },
+                      "ok": true,
+                      "actual": "INV-one"
+                    }
+                  ]
+                },
+                "agreement": {
+                  "mode": "exact",
+                  "ok": true,
+                  "witness": {
+                    "invoice_id": "INV-one",
+                    "customer": "customer-A",
+                    "currency": "USD",
+                    "total_minor": 2611
+                  },
+                  "candidate": {
+                    "invoice_id": "INV-one",
+                    "customer": "customer-A",
+                    "currency": "USD",
+                    "total_minor": 2611
+                  }
+                }
+              }
+            ],
+            "contract": {
+              "status": "satisfied",
+              "violations": [],
+              "assurance": "independently-checked"
+            }
+          },
+          "published": {
+            "id": "goal:issue-invoice-99e0bc1f95acc22e",
+            "slug": "issue-invoice-99e0bc1f95acc22e",
+            "path": "/x/issue-invoice-99e0bc1f95acc22e",
+            "trust": "verified",
+            "durable": true
+          }
+        },
+        "measurements": {
+          "elapsedMs": 51.793791999999996,
+          "fallbackCalls": 0,
+          "contextBytes": 0,
+          "proposalBytes": 0,
+          "usage": null,
+          "mcpBytes": 0,
+          "modelCost": "not-invoked"
+        },
+        "adapter": "none"
+      },
+      "wallMs": 209.509416
+    },
+    {
+      "label": "day-two-graphql-recovery",
+      "request": {
+        "request_id": "two",
+        "customer": "customer-A",
+        "currency": "USD",
+        "lines": [
+          {
+            "unit_minor": 1250,
+            "quantity": 2
+          },
+          {
+            "unit_minor": 37,
+            "quantity": 3
+          }
+        ]
+      },
+      "result": {
+        "status": "verified",
+        "reason": "independent business checks passed and recovery was durably published",
+        "route": "fallback",
+        "durable": true,
+        "output": {
+          "invoice_id": "INV-two",
+          "customer": "customer-A",
+          "currency": "USD",
+          "total_minor": 2611
+        },
+        "goal": "goal:issue-invoice-99e0bc1f95acc22e",
+        "evidence": {
+          "goal": {
+            "have": {
+              "invoice": "json"
+            },
+            "want": "json",
+            "intent": "create customer invoice",
+            "through": [
+              "graphql:127-0-0-1-57641-graphql:mutation:issueInvoice"
+            ]
+          },
+          "plans": [
+            {
+              "steps": [
+                {
+                  "capability": "graphql:127-0-0-1-57641-graphql:mutation:issueInvoice",
+                  "bindings": [
+                    {
+                      "port": "payload",
+                      "from": "$in.invoice"
+                    }
+                  ]
+                }
+              ],
+              "result": "0.",
+              "resultType": "json",
+              "cost": 1.3833333333333333,
+              "intentScore": 1,
+              "fit": 1,
+              "resultScore": 5,
+              "providers": [
+                "graphql:127-0-0-1-57641-graphql"
+              ],
+              "summary": "Issue Invoice (mutation)",
+              "titles": [
+                "Issue Invoice (mutation)"
+              ],
+              "contract": {
+                "status": "satisfied",
+                "steps": [
+                  {
+                    "step": 0,
+                    "capability": "graphql:127-0-0-1-57641-graphql:mutation:issueInvoice",
+                    "title": "Issue Invoice (mutation)",
+                    "reason": "caller-anchored"
+                  }
+                ],
+                "violations": [],
+                "preservesInput": false
+              }
+            }
+          ],
+          "contract": {
+            "input": [
+              {
+                "name": "invoice",
+                "type": "json"
+              }
+            ],
+            "output": {
+              "type": "json",
+              "requires": []
+            },
+            "transformations": [
+              "creat",
+              "custom",
+              "invoic"
+            ],
+            "invariants": [
+              "lineage: every step is requested, provides required information, converts a type a later step needs, or was named by the caller",
+              "distinct inputs: no step receives the same value on two required ports",
+              "preservation: where every step has evidence of keeping its input's words, the result must keep the caller's words"
+            ],
+            "completeness": "the result is of type json",
+            "provenance": "every bound value comes from the caller or an earlier step of this plan",
+            "verification": {
+              "predicates": 0,
+              "witnesses": 1,
+              "strongest": "independently-checked"
+            },
+            "authority": {
+              "risks": [
+                "write"
+              ],
+              "destructiveNeedsOperatorApproval": true
+            },
+            "allowedUncertainty": "none: a result whose contract cannot be established is reported as not established, not as success",
+            "failureConditions": [
+              "a step not justified by the request (lineage)",
+              "a required piece of information missing from the result",
+              "a join supported only by a generic type when information is required",
+              "a check (predicate or witness) refuted",
+              "content lost where every step was expected to preserve it"
+            ]
+          },
+          "executed": {
+            "summary": "Issue Invoice (mutation)",
+            "titles": [
+              "Issue Invoice (mutation)"
+            ],
+            "output": {
+              "invoice_id": "INV-two",
+              "customer": "customer-A",
+              "currency": "USD",
+              "total_minor": 2611
+            },
+            "status": "completed",
+            "verification": {
+              "status": "verified",
+              "results": []
+            },
+            "runs": [
+              "run_mw174z2r_2_b0b718b2-e508-4be2-b994-d15640b72cb0"
+            ],
+            "attempts": [],
+            "durationMs": 9.6,
+            "witnesses": [
+              {
+                "capability": "openapi:independent-audit:observeinvoice",
+                "runId": "run_mw174z2w_3_2e5eda8a-4f9d-4716-b3b2-034196918ecc",
+                "status": "completed",
+                "output": {
+                  "invoice_id": "INV-two",
+                  "customer": "customer-A",
+                  "currency": "USD",
+                  "total_minor": 2611
+                },
+                "verification": {
+                  "status": "checked",
+                  "results": [
+                    {
+                      "predicate": {
+                        "op": "exists",
+                        "path": "invoice_id"
+                      },
+                      "ok": true,
+                      "actual": "INV-two"
+                    }
+                  ]
+                },
+                "agreement": {
+                  "mode": "exact",
+                  "ok": true,
+                  "witness": {
+                    "invoice_id": "INV-two",
+                    "customer": "customer-A",
+                    "currency": "USD",
+                    "total_minor": 2611
+                  },
+                  "candidate": {
+                    "invoice_id": "INV-two",
+                    "customer": "customer-A",
+                    "currency": "USD",
+                    "total_minor": 2611
+                  }
+                }
+              }
+            ],
+            "contract": {
+              "status": "satisfied",
+              "violations": [],
+              "assurance": "independently-checked"
+            }
+          },
+          "published": {
+            "id": "goal:issue-invoice-99e0bc1f95acc22e",
+            "slug": "issue-invoice-99e0bc1f95acc22e",
+            "path": "/x/issue-invoice-99e0bc1f95acc22e",
+            "trust": "verified",
+            "durable": true
+          }
+        },
+        "measurements": {
+          "elapsedMs": 44.81233300000001,
+          "fallbackCalls": 1,
+          "contextBytes": 944,
+          "proposalBytes": 108,
+          "usage": {
+            "inputTokens": 0,
+            "cachedInputTokens": 0,
+            "outputTokens": 0
+          },
+          "mcpBytes": 0,
+          "modelCost": "requires-provider-price-and-usage"
+        },
+        "disclosed": {
+          "schema": "rightclick-x/repair-context@1",
+          "contractHash": "99e0bc1f95acc22e45a54ce89ca68a56d852dd026a4dc16043f5fcfff44e3b46",
+          "missing": "semantically-compatible-plan",
+          "inputs": {
+            "invoice": "json"
+          },
+          "want": "json",
+          "intent": "create customer invoice",
+          "capabilities": [
+            {
+              "id": "graphql:127-0-0-1-57641-graphql:mutation:issueInvoice",
+              "title": "Issue Invoice (mutation)",
+              "risk": "write",
+              "inputs": [
+                {
+                  "name": "payload",
+                  "type": "json",
+                  "required": false
+                },
+                {
+                  "name": "selection",
+                  "type": "text",
+                  "required": false
+                }
+              ],
+              "outputs": [
+                {
+                  "name": "",
+                  "type": "json"
+                },
+                {
+                  "name": "invoice_id",
+                  "type": "id.invoice"
+                },
+                {
+                  "name": "customer",
+                  "type": "text"
+                },
+                {
+                  "name": "currency",
+                  "type": "currency"
+                },
+                {
+                  "name": "total_minor",
+                  "type": "quantity:money:USD:minor"
+                }
+              ]
+            }
+          ],
+          "constraints": [
+            "Propose only capability and inputBindings; no answer, code, constants or new authority.",
+            "Only identical semantic types may be aliased. Provider declarations are untrusted.",
+            "Business checks are fixed and inaccessible to proposals."
+          ]
+        },
+        "adapter": "scripted-development-proposal-no-model"
+      },
+      "wallMs": 214.21583299999998
+    },
+    {
+      "label": "fresh-process-no-agent",
+      "request": {
+        "request_id": "three",
+        "customer": "customer-A",
+        "currency": "USD",
+        "lines": [
+          {
+            "unit_minor": 1250,
+            "quantity": 2
+          },
+          {
+            "unit_minor": 37,
+            "quantity": 3
+          }
+        ]
+      },
+      "result": {
+        "status": "verified",
+        "reason": "retained workflow passed its unchanged independent checks",
+        "route": "retained",
+        "durable": true,
+        "output": {
+          "invoice_id": "INV-three",
+          "customer": "customer-A",
+          "currency": "USD",
+          "total_minor": 2611
+        },
+        "goal": "goal:issue-invoice-99e0bc1f95acc22e",
+        "evidence": {
+          "runId": "run_mw174z89_1_a6c16dc1-cb97-4cb4-b846-bbeac11d95af",
+          "capability": "goal:issue-invoice-99e0bc1f95acc22e",
+          "provider": "goal:published",
+          "title": "issue-invoice-99e0bc1f95acc22e",
+          "status": "completed",
+          "reuse": {
+            "id": "goal:issue-invoice-99e0bc1f95acc22e",
+            "invoke": {
+              "tool": "context_run",
+              "args": {
+                "id": "goal:issue-invoice-99e0bc1f95acc22e"
+              }
+            },
+            "storage": "store-configured",
+            "restrictions": {
+              "origins": [
+                "http://127.0.0.1:57641",
+                "http://127.0.0.1:57642"
+              ],
+              "risks": [
+                "write"
+              ],
+              "through": [
+                "graphql:127-0-0-1-57641-graphql:mutation:issueInvoice"
+              ],
+              "inputBindings": {
+                "graphql:127-0-0-1-57641-graphql:mutation:issueInvoice": {
+                  "payload": "invoice"
+                }
+              },
+              "require": [],
+              "maxSteps": 3
+            },
+            "note": "This definition is already saved in runtime state. Supply its inputs to context_run; republishing replaces the definition unless preserveExisting:true is used. A configured store is not proof of a successful durable write. These saved restrictions supplement current operator policy; stored checks still apply. Retention does not imply authority or successful execution."
+          },
+          "output": {
+            "invoice_id": "INV-three",
+            "customer": "customer-A",
+            "currency": "USD",
+            "total_minor": 2611
+          },
+          "startedAt": "2026-11-03T21:25:00.633Z",
+          "durationMs": 14.9,
+          "verification": {
+            "status": "verified",
+            "results": []
+          },
+          "receipt": {
+            "runId": "run_mw174z89_1_a6c16dc1-cb97-4cb4-b846-bbeac11d95af",
+            "capability": "goal:issue-invoice-99e0bc1f95acc22e",
+            "provider": "goal:published",
+            "startedAt": "2026-11-03T21:25:00.633Z",
+            "durationMs": 14.9,
+            "status": "completed",
+            "verification": "verified",
+            "seq": 10,
+            "inputDigest": "577cf0dca4b7cd0d75c36c366f594e80b71f817e30b6de0873434929f0941c68",
+            "outputDigest": "443a1bf8c1b2e1a6d7f715cff817af8e6052bb1614102d1aabb185dc1e77d81c",
+            "prev": "643f8811e21a8e61682966e49e1001add5eada595a9d395440d9be1af440b1c6",
+            "hash": "0588b7be4c783ab141b9b69cd92124007c859401184affc0d97d1b42d53f94c1"
+          },
+          "steps": [
+            "run_mw174z8h_3_7f845211-9c9e-424e-a0f6-726c28ccfb29"
+          ],
+          "witnesses": [
+            {
+              "capability": "openapi:independent-audit:observeinvoice",
+              "runId": "run_mw174z8m_4_0ddf3b3b-a5c9-4145-9160-b928d1c741dd",
+              "status": "completed",
+              "output": {
+                "invoice_id": "INV-three",
+                "customer": "customer-A",
+                "currency": "USD",
+                "total_minor": 2611
+              },
+              "verification": {
+                "status": "checked",
+                "results": [
+                  {
+                    "predicate": {
+                      "op": "exists",
+                      "path": "invoice_id"
+                    },
+                    "ok": true,
+                    "actual": "INV-three"
+                  }
+                ]
+              },
+              "agreement": {
+                "mode": "exact",
+                "ok": true,
+                "witness": {
+                  "invoice_id": "INV-three",
+                  "customer": "customer-A",
+                  "currency": "USD",
+                  "total_minor": 2611
+                },
+                "candidate": {
+                  "invoice_id": "INV-three",
+                  "customer": "customer-A",
+                  "currency": "USD",
+                  "total_minor": 2611
+                }
+              }
+            }
+          ],
+          "attempts": []
+        },
+        "measurements": {
+          "elapsedMs": 39.340790999999996,
+          "fallbackCalls": 0,
+          "contextBytes": 0,
+          "proposalBytes": 0,
+          "usage": null,
+          "mcpBytes": 0,
+          "modelCost": "not-invoked"
+        },
+        "adapter": "none"
+      },
+      "wallMs": 203.10791599999993
+    },
+    {
+      "label": "idempotent-same-request",
+      "request": {
+        "request_id": "three",
+        "customer": "customer-A",
+        "currency": "USD",
+        "lines": [
+          {
+            "unit_minor": 1250,
+            "quantity": 2
+          },
+          {
+            "unit_minor": 37,
+            "quantity": 3
+          }
+        ]
+      },
+      "result": {
+        "status": "verified",
+        "reason": "retained workflow passed its unchanged independent checks",
+        "route": "retained",
+        "durable": true,
+        "output": {
+          "invoice_id": "INV-three",
+          "customer": "customer-A",
+          "currency": "USD",
+          "total_minor": 2611
+        },
+        "goal": "goal:issue-invoice-99e0bc1f95acc22e",
+        "evidence": {
+          "runId": "run_mw174ze2_1_e80dfd99-f502-4c93-a7f7-30faef610691",
+          "capability": "goal:issue-invoice-99e0bc1f95acc22e",
+          "provider": "goal:published",
+          "title": "issue-invoice-99e0bc1f95acc22e",
+          "status": "completed",
+          "reuse": {
+            "id": "goal:issue-invoice-99e0bc1f95acc22e",
+            "invoke": {
+              "tool": "context_run",
+              "args": {
+                "id": "goal:issue-invoice-99e0bc1f95acc22e"
+              }
+            },
+            "storage": "store-configured",
+            "restrictions": {
+              "origins": [
+                "http://127.0.0.1:57641",
+                "http://127.0.0.1:57642"
+              ],
+              "risks": [
+                "write"
+              ],
+              "through": [
+                "graphql:127-0-0-1-57641-graphql:mutation:issueInvoice"
+              ],
+              "inputBindings": {
+                "graphql:127-0-0-1-57641-graphql:mutation:issueInvoice": {
+                  "payload": "invoice"
+                }
+              },
+              "require": [],
+              "maxSteps": 3
+            },
+            "note": "This definition is already saved in runtime state. Supply its inputs to context_run; republishing replaces the definition unless preserveExisting:true is used. A configured store is not proof of a successful durable write. These saved restrictions supplement current operator policy; stored checks still apply. Retention does not imply authority or successful execution."
+          },
+          "output": {
+            "invoice_id": "INV-three",
+            "customer": "customer-A",
+            "currency": "USD",
+            "total_minor": 2611
+          },
+          "startedAt": "2026-11-03T21:25:00.842Z",
+          "durationMs": 15,
+          "verification": {
+            "status": "verified",
+            "results": []
+          },
+          "receipt": {
+            "runId": "run_mw174ze2_1_e80dfd99-f502-4c93-a7f7-30faef610691",
+            "capability": "goal:issue-invoice-99e0bc1f95acc22e",
+            "provider": "goal:published",
+            "startedAt": "2026-11-03T21:25:00.842Z",
+            "durationMs": 15,
+            "status": "completed",
+            "verification": "verified",
+            "seq": 14,
+            "inputDigest": "577cf0dca4b7cd0d75c36c366f594e80b71f817e30b6de0873434929f0941c68",
+            "outputDigest": "443a1bf8c1b2e1a6d7f715cff817af8e6052bb1614102d1aabb185dc1e77d81c",
+            "prev": "9f18cbec28db21f02bf39343fc743525d5b521205fb55c4f3ab45fb7f902fb31",
+            "hash": "1bdcb075f8ee91816682bb4e017c8c9f7e3fc7ab6f045a05d494851cc8dc39a6"
+          },
+          "steps": [
+            "run_mw174ze9_3_211f56a1-fc60-4fea-a264-d66172f3a895"
+          ],
+          "witnesses": [
+            {
+              "capability": "openapi:independent-audit:observeinvoice",
+              "runId": "run_mw174zef_4_daac021b-fc61-4498-9372-decd36ec41ad",
+              "status": "completed",
+              "output": {
+                "invoice_id": "INV-three",
+                "customer": "customer-A",
+                "currency": "USD",
+                "total_minor": 2611
+              },
+              "verification": {
+                "status": "checked",
+                "results": [
+                  {
+                    "predicate": {
+                      "op": "exists",
+                      "path": "invoice_id"
+                    },
+                    "ok": true,
+                    "actual": "INV-three"
+                  }
+                ]
+              },
+              "agreement": {
+                "mode": "exact",
+                "ok": true,
+                "witness": {
+                  "invoice_id": "INV-three",
+                  "customer": "customer-A",
+                  "currency": "USD",
+                  "total_minor": 2611
+                },
+                "candidate": {
+                  "invoice_id": "INV-three",
+                  "customer": "customer-A",
+                  "currency": "USD",
+                  "total_minor": 2611
+                }
+              }
+            }
+          ],
+          "attempts": []
+        },
+        "measurements": {
+          "elapsedMs": 40.70791700000001,
+          "fallbackCalls": 0,
+          "contextBytes": 0,
+          "proposalBytes": 0,
+          "usage": null,
+          "mcpBytes": 0,
+          "modelCost": "not-invoked"
+        },
+        "adapter": "none"
+      },
+      "wallMs": 211.50537499999996
+    },
+    {
+      "label": "concurrent-a",
+      "request": {
+        "request_id": "parallel",
+        "customer": "customer-A",
+        "currency": "USD",
+        "lines": [
+          {
+            "unit_minor": 1250,
+            "quantity": 2
+          },
+          {
+            "unit_minor": 37,
+            "quantity": 3
+          }
+        ]
+      },
+      "result": {
+        "status": "unresolved",
+        "reason": "retained outcome not established; no automatic replay or fallback",
+        "route": "retained",
+        "durable": false,
+        "evidence": {
+          "runId": "run_mw174zkh_1_2bf768e1-fb2d-4478-8581-703f747fd644",
+          "capability": "goal:issue-invoice-99e0bc1f95acc22e",
+          "provider": "goal:published",
+          "title": "issue-invoice-99e0bc1f95acc22e",
+          "status": "failed",
+          "reuse": {
+            "id": "goal:issue-invoice-99e0bc1f95acc22e",
+            "invoke": {
+              "tool": "context_run",
+              "args": {
+                "id": "goal:issue-invoice-99e0bc1f95acc22e"
+              }
+            },
+            "storage": "store-configured",
+            "restrictions": {
+              "origins": [
+                "http://127.0.0.1:57641",
+                "http://127.0.0.1:57642"
+              ],
+              "risks": [
+                "write"
+              ],
+              "through": [
+                "graphql:127-0-0-1-57641-graphql:mutation:issueInvoice"
+              ],
+              "inputBindings": {
+                "graphql:127-0-0-1-57641-graphql:mutation:issueInvoice": {
+                  "payload": "invoice"
+                }
+              },
+              "require": [],
+              "maxSteps": 3
+            },
+            "note": "This definition is already saved in runtime state. Supply its inputs to context_run; republishing replaces the definition unless preserveExisting:true is used. A configured store is not proof of a successful durable write. These saved restrictions supplement current operator policy; stored checks still apply. Retention does not imply authority or successful execution."
+          },
+          "error": "state conflict: goal execution or publication holds the file lock",
+          "startedAt": "2026-11-03T21:25:01.073Z",
+          "durationMs": 1.3,
+          "verification": {
+            "status": "refuted",
+            "results": []
+          },
+          "receipt": {
+            "runId": "run_mw174zkh_1_2bf768e1-fb2d-4478-8581-703f747fd644",
+            "capability": "goal:issue-invoice-99e0bc1f95acc22e",
+            "provider": "goal:published",
+            "startedAt": "2026-11-03T21:25:01.073Z",
+            "durationMs": 1.3,
+            "status": "failed",
+            "verification": "refuted",
+            "seq": 15,
+            "inputDigest": "929d5c7ea057afaed12742ec8aab6000a1415c7179b943333812ef4a1181fc71",
+            "outputDigest": "553de4950f86b2b5c1b92915681584401bd71ae5a9e8ebb92f648abcbebb428e",
+            "prev": "1bdcb075f8ee91816682bb4e017c8c9f7e3fc7ab6f045a05d494851cc8dc39a6",
+            "hash": "ac2776b55e09501bf624e1b802b19116b03ac263dcfd562a526c940ca5e1aef6"
+          }
+        },
+        "measurements": {
+          "elapsedMs": 34.885750000000016,
+          "fallbackCalls": 0,
+          "contextBytes": 0,
+          "proposalBytes": 0,
+          "usage": null,
+          "mcpBytes": 0,
+          "modelCost": "not-invoked"
+        },
+        "adapter": "none"
+      },
+      "wallMs": 217.41004199999998
+    },
+    {
+      "label": "concurrent-b",
+      "request": {
+        "request_id": "parallel",
+        "customer": "customer-A",
+        "currency": "USD",
+        "lines": [
+          {
+            "unit_minor": 1250,
+            "quantity": 2
+          },
+          {
+            "unit_minor": 37,
+            "quantity": 3
+          }
+        ]
+      },
+      "result": {
+        "status": "verified",
+        "reason": "retained workflow passed its unchanged independent checks",
+        "route": "retained",
+        "durable": true,
+        "output": {
+          "invoice_id": "INV-parallel",
+          "customer": "customer-A",
+          "currency": "USD",
+          "total_minor": 2611
+        },
+        "goal": "goal:issue-invoice-99e0bc1f95acc22e",
+        "evidence": {
+          "runId": "run_mw174zk9_1_06494fa9-6081-4fe2-943c-87df7725c674",
+          "capability": "goal:issue-invoice-99e0bc1f95acc22e",
+          "provider": "goal:published",
+          "title": "issue-invoice-99e0bc1f95acc22e",
+          "status": "completed",
+          "reuse": {
+            "id": "goal:issue-invoice-99e0bc1f95acc22e",
+            "invoke": {
+              "tool": "context_run",
+              "args": {
+                "id": "goal:issue-invoice-99e0bc1f95acc22e"
+              }
+            },
+            "storage": "store-configured",
+            "restrictions": {
+              "origins": [
+                "http://127.0.0.1:57641",
+                "http://127.0.0.1:57642"
+              ],
+              "risks": [
+                "write"
+              ],
+              "through": [
+                "graphql:127-0-0-1-57641-graphql:mutation:issueInvoice"
+              ],
+              "inputBindings": {
+                "graphql:127-0-0-1-57641-graphql:mutation:issueInvoice": {
+                  "payload": "invoice"
+                }
+              },
+              "require": [],
+              "maxSteps": 3
+            },
+            "note": "This definition is already saved in runtime state. Supply its inputs to context_run; republishing replaces the definition unless preserveExisting:true is used. A configured store is not proof of a successful durable write. These saved restrictions supplement current operator policy; stored checks still apply. Retention does not imply authority or successful execution."
+          },
+          "output": {
+            "invoice_id": "INV-parallel",
+            "customer": "customer-A",
+            "currency": "USD",
+            "total_minor": 2611
+          },
+          "startedAt": "2026-11-03T21:25:01.065Z",
+          "durationMs": 24.2,
+          "verification": {
+            "status": "verified",
+            "results": []
+          },
+          "receipt": {
+            "runId": "run_mw174zk9_1_06494fa9-6081-4fe2-943c-87df7725c674",
+            "capability": "goal:issue-invoice-99e0bc1f95acc22e",
+            "provider": "goal:published",
+            "startedAt": "2026-11-03T21:25:01.065Z",
+            "durationMs": 24.2,
+            "status": "completed",
+            "verification": "verified",
+            "seq": 18,
+            "inputDigest": "929d5c7ea057afaed12742ec8aab6000a1415c7179b943333812ef4a1181fc71",
+            "outputDigest": "91330e02eeb5454d0844bb0a4cec02afe11c89d3fc07542e370fb11f16bd66ef",
+            "prev": "71ee5c14d627814c74329ef038c3c068730c109e0aeef6d39db84e9c9f0c3dbe",
+            "hash": "5d693d748462ce8b569a7871e48e6493025b5b4c2f12f1e1784e98063ff77b90"
+          },
+          "steps": [
+            "run_mw174zkk_3_e86f083c-3b11-47bc-a9a5-dfdf9fee2961"
+          ],
+          "witnesses": [
+            {
+              "capability": "openapi:independent-audit:observeinvoice",
+              "runId": "run_mw174zku_4_c126e648-3c35-4c83-92bf-971b59296d1d",
+              "status": "completed",
+              "output": {
+                "invoice_id": "INV-parallel",
+                "customer": "customer-A",
+                "currency": "USD",
+                "total_minor": 2611
+              },
+              "verification": {
+                "status": "checked",
+                "results": [
+                  {
+                    "predicate": {
+                      "op": "exists",
+                      "path": "invoice_id"
+                    },
+                    "ok": true,
+                    "actual": "INV-parallel"
+                  }
+                ]
+              },
+              "agreement": {
+                "mode": "exact",
+                "ok": true,
+                "witness": {
+                  "invoice_id": "INV-parallel",
+                  "customer": "customer-A",
+                  "currency": "USD",
+                  "total_minor": 2611
+                },
+                "candidate": {
+                  "invoice_id": "INV-parallel",
+                  "customer": "customer-A",
+                  "currency": "USD",
+                  "total_minor": 2611
+                }
+              }
+            }
+          ],
+          "attempts": []
+        },
+        "measurements": {
+          "elapsedMs": 53.945375,
+          "fallbackCalls": 0,
+          "contextBytes": 0,
+          "proposalBytes": 0,
+          "usage": null,
+          "mcpBytes": 0,
+          "modelCost": "not-invoked"
+        },
+        "adapter": "none"
+      },
+      "wallMs": 235.78624999999988
+    },
+    {
+      "label": "unauthorised-worker",
+      "request": {
+        "request_id": "denied",
+        "customer": "customer-A",
+        "currency": "USD",
+        "lines": [
+          {
+            "unit_minor": 1250,
+            "quantity": 2
+          },
+          {
+            "unit_minor": 37,
+            "quantity": 3
+          }
+        ]
+      },
+      "result": {
+        "status": "unavailable",
+        "reason": "provider contracts unavailable; no proposal or effect dispatched",
+        "route": "deterministic",
+        "durable": false,
+        "measurements": {
+          "elapsedMs": 26.090083000000007,
+          "fallbackCalls": 0,
+          "contextBytes": 0,
+          "proposalBytes": 0,
+          "usage": null,
+          "mcpBytes": 0,
+          "modelCost": "not-invoked"
+        },
+        "adapter": "scripted-development-proposal-no-model"
+      },
+      "wallMs": 191.99791600000003
+    },
+    {
+      "label": "misleading-unit-contract",
+      "request": {
+        "request_id": "lie",
+        "customer": "customer-A",
+        "currency": "USD",
+        "lines": [
+          {
+            "unit_minor": 1250,
+            "quantity": 2
+          },
+          {
+            "unit_minor": 37,
+            "quantity": 3
+          }
+        ]
+      },
+      "result": {
+        "status": "unresolved",
+        "reason": "business outcome not independently established; no replay or promotion",
+        "route": "fallback",
+        "durable": false,
+        "evidence": {
+          "goal": {
+            "have": {
+              "invoice": "json"
+            },
+            "want": "json",
+            "intent": "create customer invoice",
+            "through": [
+              "graphql:127-0-0-1-57641-graphql:mutation:issueInvoice"
+            ]
+          },
+          "plans": [
+            {
+              "steps": [
+                {
+                  "capability": "graphql:127-0-0-1-57641-graphql:mutation:issueInvoice",
+                  "bindings": [
+                    {
+                      "port": "payload",
+                      "from": "$in.invoice"
+                    }
+                  ]
+                }
+              ],
+              "result": "0.",
+              "resultType": "json",
+              "cost": 1.3833333333333333,
+              "intentScore": 1,
+              "fit": 1,
+              "resultScore": 5,
+              "providers": [
+                "graphql:127-0-0-1-57641-graphql"
+              ],
+              "summary": "Issue Invoice (mutation)",
+              "titles": [
+                "Issue Invoice (mutation)"
+              ],
+              "contract": {
+                "status": "satisfied",
+                "steps": [
+                  {
+                    "step": 0,
+                    "capability": "graphql:127-0-0-1-57641-graphql:mutation:issueInvoice",
+                    "title": "Issue Invoice (mutation)",
+                    "reason": "caller-anchored"
+                  }
+                ],
+                "violations": [],
+                "preservesInput": false
+              }
+            }
+          ],
+          "contract": {
+            "input": [
+              {
+                "name": "invoice",
+                "type": "json"
+              }
+            ],
+            "output": {
+              "type": "json",
+              "requires": []
+            },
+            "transformations": [
+              "creat",
+              "custom",
+              "invoic"
+            ],
+            "invariants": [
+              "lineage: every step is requested, provides required information, converts a type a later step needs, or was named by the caller",
+              "distinct inputs: no step receives the same value on two required ports",
+              "preservation: where every step has evidence of keeping its input's words, the result must keep the caller's words"
+            ],
+            "completeness": "the result is of type json",
+            "provenance": "every bound value comes from the caller or an earlier step of this plan",
+            "verification": {
+              "predicates": 0,
+              "witnesses": 1,
+              "strongest": "independently-checked"
+            },
+            "authority": {
+              "risks": [
+                "write"
+              ],
+              "destructiveNeedsOperatorApproval": true
+            },
+            "allowedUncertainty": "none: a result whose contract cannot be established is reported as not established, not as success",
+            "failureConditions": [
+              "a step not justified by the request (lineage)",
+              "a required piece of information missing from the result",
+              "a join supported only by a generic type when information is required",
+              "a check (predicate or witness) refuted",
+              "content lost where every step was expected to preserve it"
+            ]
+          },
+          "executed": {
+            "summary": "Issue Invoice (mutation)",
+            "titles": [
+              "Issue Invoice (mutation)"
+            ],
+            "output": null,
+            "status": "failed",
+            "verification": {
+              "status": "refuted",
+              "results": []
+            },
+            "runs": [],
+            "attempts": [
+              {
+                "summary": "Issue Invoice (mutation)",
+                "failed": "graphql:127-0-0-1-57641-graphql:mutation:issueInvoice",
+                "error": "verification refuted by independent outcome witness: HTTP 409: {\"error\":\"business effect disagrees with original request\"}",
+                "healing": "retained execution: no alternative plan or replay"
+              }
+            ],
+            "durationMs": 8.5,
+            "witnesses": [
+              {
+                "capability": "openapi:independent-audit:observeinvoice",
+                "runId": "run_mw174zzj_3_4814bf95-bef4-4c3a-b1d5-ebb6b0bad755",
+                "status": "failed",
+                "verification": {
+                  "status": "refuted",
+                  "results": []
+                },
+                "error": "HTTP 409: {\"error\":\"business effect disagrees with original request\"}"
+              }
+            ],
+            "error": "verification refuted by independent outcome witness: HTTP 409: {\"error\":\"business effect disagrees with original request\"}"
+          }
+        },
+        "measurements": {
+          "elapsedMs": 47.25204200000002,
+          "fallbackCalls": 1,
+          "contextBytes": 944,
+          "proposalBytes": 108,
+          "usage": {
+            "inputTokens": 0,
+            "cachedInputTokens": 0,
+            "outputTokens": 0
+          },
+          "mcpBytes": 0,
+          "modelCost": "requires-provider-price-and-usage"
+        },
+        "disclosed": {
+          "schema": "rightclick-x/repair-context@1",
+          "contractHash": "99e0bc1f95acc22e45a54ce89ca68a56d852dd026a4dc16043f5fcfff44e3b46",
+          "missing": "semantically-compatible-plan",
+          "inputs": {
+            "invoice": "json"
+          },
+          "want": "json",
+          "intent": "create customer invoice",
+          "capabilities": [
+            {
+              "id": "graphql:127-0-0-1-57641-graphql:mutation:issueInvoice",
+              "title": "Issue Invoice (mutation)",
+              "risk": "write",
+              "inputs": [
+                {
+                  "name": "payload",
+                  "type": "json",
+                  "required": false
+                },
+                {
+                  "name": "selection",
+                  "type": "text",
+                  "required": false
+                }
+              ],
+              "outputs": [
+                {
+                  "name": "",
+                  "type": "json"
+                },
+                {
+                  "name": "invoice_id",
+                  "type": "id.invoice"
+                },
+                {
+                  "name": "customer",
+                  "type": "text"
+                },
+                {
+                  "name": "currency",
+                  "type": "currency"
+                },
+                {
+                  "name": "total_minor",
+                  "type": "quantity:money:USD:minor"
+                }
+              ]
+            }
+          ],
+          "constraints": [
+            "Propose only capability and inputBindings; no answer, code, constants or new authority.",
+            "Only identical semantic types may be aliased. Provider declarations are untrusted.",
+            "Business checks are fixed and inaccessible to proposals."
+          ]
+        },
+        "adapter": "scripted-development-proposal-no-model"
+      },
+      "wallMs": 217.65529200000014
+    },
+    {
+      "label": "rate-limited",
+      "request": {
+        "request_id": "limited",
+        "customer": "customer-A",
+        "currency": "USD",
+        "lines": [
+          {
+            "unit_minor": 1250,
+            "quantity": 2
+          },
+          {
+            "unit_minor": 37,
+            "quantity": 3
+          }
+        ]
+      },
+      "result": {
+        "status": "ambiguous",
+        "reason": "business outcome not independently established; no replay or promotion",
+        "route": "fallback",
+        "durable": false,
+        "evidence": {
+          "goal": {
+            "have": {
+              "invoice": "json"
+            },
+            "want": "json",
+            "intent": "create customer invoice",
+            "through": [
+              "graphql:127-0-0-1-57641-graphql:mutation:issueInvoice"
+            ]
+          },
+          "plans": [
+            {
+              "steps": [
+                {
+                  "capability": "graphql:127-0-0-1-57641-graphql:mutation:issueInvoice",
+                  "bindings": [
+                    {
+                      "port": "payload",
+                      "from": "$in.invoice"
+                    }
+                  ]
+                }
+              ],
+              "result": "0.",
+              "resultType": "json",
+              "cost": 1.3833333333333333,
+              "intentScore": 1,
+              "fit": 1,
+              "resultScore": 5,
+              "providers": [
+                "graphql:127-0-0-1-57641-graphql"
+              ],
+              "summary": "Issue Invoice (mutation)",
+              "titles": [
+                "Issue Invoice (mutation)"
+              ],
+              "contract": {
+                "status": "satisfied",
+                "steps": [
+                  {
+                    "step": 0,
+                    "capability": "graphql:127-0-0-1-57641-graphql:mutation:issueInvoice",
+                    "title": "Issue Invoice (mutation)",
+                    "reason": "caller-anchored"
+                  }
+                ],
+                "violations": [],
+                "preservesInput": false
+              }
+            }
+          ],
+          "contract": {
+            "input": [
+              {
+                "name": "invoice",
+                "type": "json"
+              }
+            ],
+            "output": {
+              "type": "json",
+              "requires": []
+            },
+            "transformations": [
+              "creat",
+              "custom",
+              "invoic"
+            ],
+            "invariants": [
+              "lineage: every step is requested, provides required information, converts a type a later step needs, or was named by the caller",
+              "distinct inputs: no step receives the same value on two required ports",
+              "preservation: where every step has evidence of keeping its input's words, the result must keep the caller's words"
+            ],
+            "completeness": "the result is of type json",
+            "provenance": "every bound value comes from the caller or an earlier step of this plan",
+            "verification": {
+              "predicates": 0,
+              "witnesses": 1,
+              "strongest": "independently-checked"
+            },
+            "authority": {
+              "risks": [
+                "write"
+              ],
+              "destructiveNeedsOperatorApproval": true
+            },
+            "allowedUncertainty": "none: a result whose contract cannot be established is reported as not established, not as success",
+            "failureConditions": [
+              "a step not justified by the request (lineage)",
+              "a required piece of information missing from the result",
+              "a join supported only by a generic type when information is required",
+              "a check (predicate or witness) refuted",
+              "content lost where every step was expected to preserve it"
+            ]
+          },
+          "executed": {
+            "summary": "Issue Invoice (mutation)",
+            "titles": [
+              "Issue Invoice (mutation)"
+            ],
+            "output": null,
+            "status": "failed",
+            "verification": {
+              "status": "refuted",
+              "results": []
+            },
+            "runs": [],
+            "attempts": [
+              {
+                "summary": "Issue Invoice (mutation)",
+                "failed": "graphql:127-0-0-1-57641-graphql:mutation:issueInvoice",
+                "error": "graphql:127-0-0-1-57641-graphql:mutation:issueInvoice: GraphQL: {\"error\":\"rate limited\"}",
+                "healing": "retained execution: no alternative plan or replay"
+              }
+            ],
+            "durationMs": 6.8,
+            "error": "graphql:127-0-0-1-57641-graphql:mutation:issueInvoice: GraphQL: {\"error\":\"rate limited\"}"
+          }
+        },
+        "measurements": {
+          "elapsedMs": 40.954083999999995,
+          "fallbackCalls": 1,
+          "contextBytes": 944,
+          "proposalBytes": 108,
+          "usage": {
+            "inputTokens": 0,
+            "cachedInputTokens": 0,
+            "outputTokens": 0
+          },
+          "mcpBytes": 0,
+          "modelCost": "requires-provider-price-and-usage"
+        },
+        "disclosed": {
+          "schema": "rightclick-x/repair-context@1",
+          "contractHash": "99e0bc1f95acc22e45a54ce89ca68a56d852dd026a4dc16043f5fcfff44e3b46",
+          "missing": "semantically-compatible-plan",
+          "inputs": {
+            "invoice": "json"
+          },
+          "want": "json",
+          "intent": "create customer invoice",
+          "capabilities": [
+            {
+              "id": "graphql:127-0-0-1-57641-graphql:mutation:issueInvoice",
+              "title": "Issue Invoice (mutation)",
+              "risk": "write",
+              "inputs": [
+                {
+                  "name": "payload",
+                  "type": "json",
+                  "required": false
+                },
+                {
+                  "name": "selection",
+                  "type": "text",
+                  "required": false
+                }
+              ],
+              "outputs": [
+                {
+                  "name": "",
+                  "type": "json"
+                },
+                {
+                  "name": "invoice_id",
+                  "type": "id.invoice"
+                },
+                {
+                  "name": "customer",
+                  "type": "text"
+                },
+                {
+                  "name": "currency",
+                  "type": "currency"
+                },
+                {
+                  "name": "total_minor",
+                  "type": "quantity:money:USD:minor"
+                }
+              ]
+            }
+          ],
+          "constraints": [
+            "Propose only capability and inputBindings; no answer, code, constants or new authority.",
+            "Only identical semantic types may be aliased. Provider declarations are untrusted.",
+            "Business checks are fixed and inaccessible to proposals."
+          ]
+        },
+        "adapter": "scripted-development-proposal-no-model"
+      },
+      "wallMs": 198.3065829999996
+    },
+    {
+      "label": "response-lost-after-commit",
+      "request": {
+        "request_id": "lost",
+        "customer": "customer-A",
+        "currency": "USD",
+        "lines": [
+          {
+            "unit_minor": 1250,
+            "quantity": 2
+          },
+          {
+            "unit_minor": 37,
+            "quantity": 3
+          }
+        ]
+      },
+      "result": {
+        "status": "ambiguous",
+        "reason": "business outcome not independently established; no replay or promotion",
+        "route": "fallback",
+        "durable": false,
+        "evidence": {
+          "goal": {
+            "have": {
+              "invoice": "json"
+            },
+            "want": "json",
+            "intent": "create customer invoice",
+            "through": [
+              "graphql:127-0-0-1-57641-graphql:mutation:issueInvoice"
+            ]
+          },
+          "plans": [
+            {
+              "steps": [
+                {
+                  "capability": "graphql:127-0-0-1-57641-graphql:mutation:issueInvoice",
+                  "bindings": [
+                    {
+                      "port": "payload",
+                      "from": "$in.invoice"
+                    }
+                  ]
+                }
+              ],
+              "result": "0.",
+              "resultType": "json",
+              "cost": 1.3833333333333333,
+              "intentScore": 1,
+              "fit": 1,
+              "resultScore": 5,
+              "providers": [
+                "graphql:127-0-0-1-57641-graphql"
+              ],
+              "summary": "Issue Invoice (mutation)",
+              "titles": [
+                "Issue Invoice (mutation)"
+              ],
+              "contract": {
+                "status": "satisfied",
+                "steps": [
+                  {
+                    "step": 0,
+                    "capability": "graphql:127-0-0-1-57641-graphql:mutation:issueInvoice",
+                    "title": "Issue Invoice (mutation)",
+                    "reason": "caller-anchored"
+                  }
+                ],
+                "violations": [],
+                "preservesInput": false
+              }
+            }
+          ],
+          "contract": {
+            "input": [
+              {
+                "name": "invoice",
+                "type": "json"
+              }
+            ],
+            "output": {
+              "type": "json",
+              "requires": []
+            },
+            "transformations": [
+              "creat",
+              "custom",
+              "invoic"
+            ],
+            "invariants": [
+              "lineage: every step is requested, provides required information, converts a type a later step needs, or was named by the caller",
+              "distinct inputs: no step receives the same value on two required ports",
+              "preservation: where every step has evidence of keeping its input's words, the result must keep the caller's words"
+            ],
+            "completeness": "the result is of type json",
+            "provenance": "every bound value comes from the caller or an earlier step of this plan",
+            "verification": {
+              "predicates": 0,
+              "witnesses": 1,
+              "strongest": "independently-checked"
+            },
+            "authority": {
+              "risks": [
+                "write"
+              ],
+              "destructiveNeedsOperatorApproval": true
+            },
+            "allowedUncertainty": "none: a result whose contract cannot be established is reported as not established, not as success",
+            "failureConditions": [
+              "a step not justified by the request (lineage)",
+              "a required piece of information missing from the result",
+              "a join supported only by a generic type when information is required",
+              "a check (predicate or witness) refuted",
+              "content lost where every step was expected to preserve it"
+            ]
+          },
+          "executed": {
+            "summary": "Issue Invoice (mutation)",
+            "titles": [
+              "Issue Invoice (mutation)"
+            ],
+            "output": null,
+            "status": "failed",
+            "verification": {
+              "status": "refuted",
+              "results": []
+            },
+            "runs": [],
+            "attempts": [
+              {
+                "summary": "Issue Invoice (mutation)",
+                "failed": "graphql:127-0-0-1-57641-graphql:mutation:issueInvoice",
+                "error": "graphql:127-0-0-1-57641-graphql:mutation:issueInvoice: fetch failed",
+                "healing": "retained execution: no alternative plan or replay"
+              }
+            ],
+            "durationMs": 7.6,
+            "error": "graphql:127-0-0-1-57641-graphql:mutation:issueInvoice: fetch failed"
+          }
+        },
+        "measurements": {
+          "elapsedMs": 42.57991599999998,
+          "fallbackCalls": 1,
+          "contextBytes": 944,
+          "proposalBytes": 108,
+          "usage": {
+            "inputTokens": 0,
+            "cachedInputTokens": 0,
+            "outputTokens": 0
+          },
+          "mcpBytes": 0,
+          "modelCost": "requires-provider-price-and-usage"
+        },
+        "disclosed": {
+          "schema": "rightclick-x/repair-context@1",
+          "contractHash": "99e0bc1f95acc22e45a54ce89ca68a56d852dd026a4dc16043f5fcfff44e3b46",
+          "missing": "semantically-compatible-plan",
+          "inputs": {
+            "invoice": "json"
+          },
+          "want": "json",
+          "intent": "create customer invoice",
+          "capabilities": [
+            {
+              "id": "graphql:127-0-0-1-57641-graphql:mutation:issueInvoice",
+              "title": "Issue Invoice (mutation)",
+              "risk": "write",
+              "inputs": [
+                {
+                  "name": "payload",
+                  "type": "json",
+                  "required": false
+                },
+                {
+                  "name": "selection",
+                  "type": "text",
+                  "required": false
+                }
+              ],
+              "outputs": [
+                {
+                  "name": "",
+                  "type": "json"
+                },
+                {
+                  "name": "invoice_id",
+                  "type": "id.invoice"
+                },
+                {
+                  "name": "customer",
+                  "type": "text"
+                },
+                {
+                  "name": "currency",
+                  "type": "currency"
+                },
+                {
+                  "name": "total_minor",
+                  "type": "quantity:money:USD:minor"
+                }
+              ]
+            }
+          ],
+          "constraints": [
+            "Propose only capability and inputBindings; no answer, code, constants or new authority.",
+            "Only identical semantic types may be aliased. Provider declarations are untrusted.",
+            "Business checks are fixed and inaccessible to proposals."
+          ]
+        },
+        "adapter": "scripted-development-proposal-no-model"
+      },
+      "wallMs": 196.71462500000007
+    },
+    {
+      "label": "fresh-process-must-not-replay-unknown",
+      "request": {
+        "request_id": "lost",
+        "customer": "customer-A",
+        "currency": "USD",
+        "lines": [
+          {
+            "unit_minor": 1250,
+            "quantity": 2
+          },
+          {
+            "unit_minor": 37,
+            "quantity": 3
+          }
+        ]
+      },
+      "result": {
+        "status": "ambiguous",
+        "reason": "retained unresolved execution; no new dispatch or fallback",
+        "route": "deterministic",
+        "durable": false,
+        "measurements": {
+          "elapsedMs": 0.02641700000000924,
+          "fallbackCalls": 0,
+          "contextBytes": 0,
+          "proposalBytes": 0,
+          "usage": null,
+          "mcpBytes": 0,
+          "modelCost": "not-invoked"
+        },
+        "adapter": "scripted-development-proposal-no-model"
+      },
+      "wallMs": 167.946375
+    },
+    {
+      "label": "timeout-after-commit",
+      "request": {
+        "request_id": "slow",
+        "customer": "customer-A",
+        "currency": "USD",
+        "lines": [
+          {
+            "unit_minor": 1250,
+            "quantity": 2
+          },
+          {
+            "unit_minor": 37,
+            "quantity": 3
+          }
+        ]
+      },
+      "result": {
+        "status": "ambiguous",
+        "reason": "business outcome not independently established; no replay or promotion",
+        "route": "fallback",
+        "durable": false,
+        "evidence": {
+          "goal": {
+            "have": {
+              "invoice": "json"
+            },
+            "want": "json",
+            "intent": "create customer invoice",
+            "through": [
+              "graphql:127-0-0-1-57641-graphql:mutation:issueInvoice"
+            ]
+          },
+          "plans": [
+            {
+              "steps": [
+                {
+                  "capability": "graphql:127-0-0-1-57641-graphql:mutation:issueInvoice",
+                  "bindings": [
+                    {
+                      "port": "payload",
+                      "from": "$in.invoice"
+                    }
+                  ]
+                }
+              ],
+              "result": "0.",
+              "resultType": "json",
+              "cost": 1.3833333333333333,
+              "intentScore": 1,
+              "fit": 1,
+              "resultScore": 5,
+              "providers": [
+                "graphql:127-0-0-1-57641-graphql"
+              ],
+              "summary": "Issue Invoice (mutation)",
+              "titles": [
+                "Issue Invoice (mutation)"
+              ],
+              "contract": {
+                "status": "satisfied",
+                "steps": [
+                  {
+                    "step": 0,
+                    "capability": "graphql:127-0-0-1-57641-graphql:mutation:issueInvoice",
+                    "title": "Issue Invoice (mutation)",
+                    "reason": "caller-anchored"
+                  }
+                ],
+                "violations": [],
+                "preservesInput": false
+              }
+            }
+          ],
+          "contract": {
+            "input": [
+              {
+                "name": "invoice",
+                "type": "json"
+              }
+            ],
+            "output": {
+              "type": "json",
+              "requires": []
+            },
+            "transformations": [
+              "creat",
+              "custom",
+              "invoic"
+            ],
+            "invariants": [
+              "lineage: every step is requested, provides required information, converts a type a later step needs, or was named by the caller",
+              "distinct inputs: no step receives the same value on two required ports",
+              "preservation: where every step has evidence of keeping its input's words, the result must keep the caller's words"
+            ],
+            "completeness": "the result is of type json",
+            "provenance": "every bound value comes from the caller or an earlier step of this plan",
+            "verification": {
+              "predicates": 0,
+              "witnesses": 1,
+              "strongest": "independently-checked"
+            },
+            "authority": {
+              "risks": [
+                "write"
+              ],
+              "destructiveNeedsOperatorApproval": true
+            },
+            "allowedUncertainty": "none: a result whose contract cannot be established is reported as not established, not as success",
+            "failureConditions": [
+              "a step not justified by the request (lineage)",
+              "a required piece of information missing from the result",
+              "a join supported only by a generic type when information is required",
+              "a check (predicate or witness) refuted",
+              "content lost where every step was expected to preserve it"
+            ]
+          },
+          "executed": {
+            "summary": "Issue Invoice (mutation)",
+            "titles": [
+              "Issue Invoice (mutation)"
+            ],
+            "output": null,
+            "status": "failed",
+            "verification": {
+              "status": "refuted",
+              "results": []
+            },
+            "runs": [],
+            "attempts": [
+              {
+                "summary": "Issue Invoice (mutation)",
+                "failed": "graphql:127-0-0-1-57641-graphql:mutation:issueInvoice",
+                "error": "graphql:127-0-0-1-57641-graphql:mutation:issueInvoice: timeout after 1500ms: http://127.0.0.1:57641/graphql",
+                "healing": "retained execution: no alternative plan or replay"
+              }
+            ],
+            "durationMs": 1526.1,
+            "error": "graphql:127-0-0-1-57641-graphql:mutation:issueInvoice: timeout after 1500ms: http://127.0.0.1:57641/graphql"
+          }
+        },
+        "measurements": {
+          "elapsedMs": 1561.439625,
+          "fallbackCalls": 1,
+          "contextBytes": 944,
+          "proposalBytes": 108,
+          "usage": {
+            "inputTokens": 0,
+            "cachedInputTokens": 0,
+            "outputTokens": 0
+          },
+          "mcpBytes": 0,
+          "modelCost": "requires-provider-price-and-usage"
+        },
+        "disclosed": {
+          "schema": "rightclick-x/repair-context@1",
+          "contractHash": "99e0bc1f95acc22e45a54ce89ca68a56d852dd026a4dc16043f5fcfff44e3b46",
+          "missing": "semantically-compatible-plan",
+          "inputs": {
+            "invoice": "json"
+          },
+          "want": "json",
+          "intent": "create customer invoice",
+          "capabilities": [
+            {
+              "id": "graphql:127-0-0-1-57641-graphql:mutation:issueInvoice",
+              "title": "Issue Invoice (mutation)",
+              "risk": "write",
+              "inputs": [
+                {
+                  "name": "payload",
+                  "type": "json",
+                  "required": false
+                },
+                {
+                  "name": "selection",
+                  "type": "text",
+                  "required": false
+                }
+              ],
+              "outputs": [
+                {
+                  "name": "",
+                  "type": "json"
+                },
+                {
+                  "name": "invoice_id",
+                  "type": "id.invoice"
+                },
+                {
+                  "name": "customer",
+                  "type": "text"
+                },
+                {
+                  "name": "currency",
+                  "type": "currency"
+                },
+                {
+                  "name": "total_minor",
+                  "type": "quantity:money:USD:minor"
+                }
+              ]
+            }
+          ],
+          "constraints": [
+            "Propose only capability and inputBindings; no answer, code, constants or new authority.",
+            "Only identical semantic types may be aliased. Provider declarations are untrusted.",
+            "Business checks are fixed and inaccessible to proposals."
+          ]
+        },
+        "adapter": "scripted-development-proposal-no-model"
+      },
+      "wallMs": 1731.4691670000002
+    },
+    {
+      "label": "timeout-cold-restart-no-replay",
+      "request": {
+        "request_id": "slow",
+        "customer": "customer-A",
+        "currency": "USD",
+        "lines": [
+          {
+            "unit_minor": 1250,
+            "quantity": 2
+          },
+          {
+            "unit_minor": 37,
+            "quantity": 3
+          }
+        ]
+      },
+      "result": {
+        "status": "ambiguous",
+        "reason": "retained unresolved execution; no new dispatch or fallback",
+        "route": "deterministic",
+        "durable": false,
+        "measurements": {
+          "elapsedMs": 0.022207999999992012,
+          "fallbackCalls": 0,
+          "contextBytes": 0,
+          "proposalBytes": 0,
+          "usage": null,
+          "mcpBytes": 0,
+          "modelCost": "not-invoked"
+        },
+        "adapter": "scripted-development-proposal-no-model"
+      },
+      "wallMs": 164.5599999999995
+    },
+    {
+      "label": "independent-database-observation",
+      "rows": [
+        {
+          "request_id": "lie",
+          "customer": "customer-A",
+          "currency": "USD",
+          "total_minor": 261100,
+          "invoice_id": "INV-lie"
+        },
+        {
+          "request_id": "lost",
+          "customer": "customer-A",
+          "currency": "USD",
+          "total_minor": 2611,
+          "invoice_id": "INV-lost"
+        },
+        {
+          "request_id": "one",
+          "customer": "customer-A",
+          "currency": "USD",
+          "total_minor": 2611,
+          "invoice_id": "INV-one"
+        },
+        {
+          "request_id": "parallel",
+          "customer": "customer-A",
+          "currency": "USD",
+          "total_minor": 2611,
+          "invoice_id": "INV-parallel"
+        },
+        {
+          "request_id": "slow",
+          "customer": "customer-A",
+          "currency": "USD",
+          "total_minor": 2611,
+          "invoice_id": "INV-slow"
+        },
+        {
+          "request_id": "three",
+          "customer": "customer-A",
+          "currency": "USD",
+          "total_minor": 2611,
+          "invoice_id": "INV-three"
+        },
+        {
+          "request_id": "two",
+          "customer": "customer-A",
+          "currency": "USD",
+          "total_minor": 2611,
+          "invoice_id": "INV-two"
+        }
+      ],
+      "calls": [
+        {
+          "request_id": "lie",
+          "outcome": "attempt",
+          "count": 1
+        },
+        {
+          "request_id": "limited",
+          "outcome": "rate-limited",
+          "count": 1
+        },
+        {
+          "request_id": "lost",
+          "outcome": "attempt",
+          "count": 1
+        },
+        {
+          "request_id": "one",
+          "outcome": "attempt",
+          "count": 1
+        },
+        {
+          "request_id": "parallel",
+          "outcome": "attempt",
+          "count": 1
+        },
+        {
+          "request_id": "slow",
+          "outcome": "attempt",
+          "count": 1
+        },
+        {
+          "request_id": "three",
+          "outcome": "attempt",
+          "count": 2
+        },
+        {
+          "request_id": "two",
+          "outcome": "attempt",
+          "count": 1
+        }
+      ],
+      "databaseHash": "89a2318c76452be80e1d743f163f3dd96623b2b05604aa06985c6b5501238362"
+    }
+  ],
+  "originalArtifactSHA256": "5378a67cfda0b4f015bbba83c1a5af32520ad1e2d16a8af0737d9fc209252c2d",
+  "localTempPathOmitted": true
+}

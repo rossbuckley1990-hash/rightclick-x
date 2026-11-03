@@ -1,0 +1,4499 @@
+{
+  "metadata": {
+    "timestamp": "2026-11-03T20:25:02.168Z",
+    "benchmark": "50-Scenario Workflow Survival Challenge",
+    "arms": [
+      "Arm A (Static)",
+      "Arm B (Deterministic Tooling)",
+      "Arm C (Codex Alone)",
+      "Arm D (RightClick X Alone)",
+      "Arm E (Hybrid Codex + RCX)"
+    ],
+    "scenariosCount": 50,
+    "modelLocked": "gpt-6.1-sol"
+  },
+  "summary": {
+    "Arm A (Static)": {
+      "functional_recovery": 0,
+      "correct_refusal": 11,
+      "false_success": 3,
+      "unresolved": 36,
+      "total": 50,
+      "recovery_rate_pct": 0,
+      "refusal_rate_pct": 100,
+      "false_success_rate_pct": 6,
+      "net_robustness_pct": 10,
+      "total_tokens": 0,
+      "avg_latency_ms": 122
+    },
+    "Arm B (Deterministic Tooling)": {
+      "functional_recovery": 7,
+      "correct_refusal": 11,
+      "false_success": 2,
+      "unresolved": 30,
+      "total": 50,
+      "recovery_rate_pct": 14,
+      "refusal_rate_pct": 100,
+      "false_success_rate_pct": 4,
+      "net_robustness_pct": 28,
+      "total_tokens": 0,
+      "avg_latency_ms": 121
+    },
+    "Arm C (Codex Alone)": {
+      "functional_recovery": 23,
+      "correct_refusal": 8,
+      "false_success": 5,
+      "unresolved": 14,
+      "total": 50,
+      "recovery_rate_pct": 46,
+      "refusal_rate_pct": 72.7,
+      "false_success_rate_pct": 10,
+      "net_robustness_pct": 42,
+      "total_tokens": 4591410,
+      "avg_latency_ms": 20367
+    },
+    "Arm D (RightClick X Alone)": {
+      "functional_recovery": 19,
+      "correct_refusal": 11,
+      "false_success": 5,
+      "unresolved": 15,
+      "total": 50,
+      "recovery_rate_pct": 38,
+      "refusal_rate_pct": 100,
+      "false_success_rate_pct": 10,
+      "net_robustness_pct": 40,
+      "total_tokens": 0,
+      "avg_latency_ms": 500
+    },
+    "Arm E (Hybrid Codex + RCX)": {
+      "functional_recovery": 26,
+      "correct_refusal": 11,
+      "false_success": 3,
+      "unresolved": 10,
+      "total": 50,
+      "recovery_rate_pct": 52,
+      "refusal_rate_pct": 100,
+      "false_success_rate_pct": 6,
+      "net_robustness_pct": 62,
+      "total_tokens": 1801744,
+      "avg_latency_ms": 8354
+    }
+  },
+  "results": [
+    {
+      "scenarioId": "STRUC-01",
+      "category": "structural",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 12600,
+      "turns": 1,
+      "timeMs": 23,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "STRUC-01",
+      "category": "structural",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "functional_recovery",
+      "output": 12600,
+      "expected": 12600,
+      "turns": 1,
+      "timeMs": 3,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "STRUC-01",
+      "category": "structural",
+      "arm": "Arm C (Codex Alone)",
+      "status": "functional_recovery",
+      "output": 12600,
+      "expected": 12600,
+      "turns": 1,
+      "timeMs": 30693,
+      "tokens": {
+        "input": 88812,
+        "cached": 78080,
+        "output": 231,
+        "reasoning": 0,
+        "total": 89043
+      }
+    },
+    {
+      "scenarioId": "STRUC-01",
+      "category": "structural",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "functional_recovery",
+      "output": 12600,
+      "expected": 12600,
+      "turns": 1,
+      "timeMs": 68,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "STRUC-01",
+      "category": "structural",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "functional_recovery",
+      "output": 12600,
+      "expected": 12600,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "STRUC-02",
+      "category": "structural",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 55,
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "STRUC-02",
+      "category": "structural",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "functional_recovery",
+      "output": 55,
+      "expected": 55,
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "STRUC-02",
+      "category": "structural",
+      "arm": "Arm C (Codex Alone)",
+      "status": "functional_recovery",
+      "output": 55,
+      "expected": 55,
+      "turns": 1,
+      "timeMs": 14431,
+      "tokens": {
+        "input": 80702,
+        "cached": 63872,
+        "output": 217,
+        "reasoning": 12,
+        "total": 80919
+      }
+    },
+    {
+      "scenarioId": "STRUC-02",
+      "category": "structural",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "functional_recovery",
+      "output": 55,
+      "expected": 55,
+      "turns": 1,
+      "timeMs": 18,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "STRUC-02",
+      "category": "structural",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "functional_recovery",
+      "output": 55,
+      "expected": 55,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "STRUC-03",
+      "category": "structural",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "alice@enterprise.test",
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "STRUC-03",
+      "category": "structural",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "functional_recovery",
+      "output": "alice@enterprise.test",
+      "expected": "alice@enterprise.test",
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "STRUC-03",
+      "category": "structural",
+      "arm": "Arm C (Codex Alone)",
+      "status": "functional_recovery",
+      "output": "alice@enterprise.test",
+      "expected": "alice@enterprise.test",
+      "turns": 1,
+      "timeMs": 13190,
+      "tokens": {
+        "input": 80559,
+        "cached": 71936,
+        "output": 196,
+        "reasoning": 0,
+        "total": 80755
+      }
+    },
+    {
+      "scenarioId": "STRUC-03",
+      "category": "structural",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "functional_recovery",
+      "output": "alice@enterprise.test",
+      "expected": "alice@enterprise.test",
+      "turns": 1,
+      "timeMs": 19,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "STRUC-03",
+      "category": "structural",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "functional_recovery",
+      "output": "alice@enterprise.test",
+      "expected": "alice@enterprise.test",
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "STRUC-04",
+      "category": "structural",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "PROCESSED_CUST-77",
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "STRUC-04",
+      "category": "structural",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "functional_recovery",
+      "output": "PROCESSED_CUST-77",
+      "expected": "PROCESSED_CUST-77",
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "STRUC-04",
+      "category": "structural",
+      "arm": "Arm C (Codex Alone)",
+      "status": "functional_recovery",
+      "output": "PROCESSED_CUST-77",
+      "expected": "PROCESSED_CUST-77",
+      "turns": 1,
+      "timeMs": 19440,
+      "tokens": {
+        "input": 93712,
+        "cached": 68864,
+        "output": 283,
+        "reasoning": 0,
+        "total": 93995
+      }
+    },
+    {
+      "scenarioId": "STRUC-04",
+      "category": "structural",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "functional_recovery",
+      "output": "PROCESSED_CUST-77",
+      "expected": "PROCESSED_CUST-77",
+      "turns": 1,
+      "timeMs": 18,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "STRUC-04",
+      "category": "structural",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "functional_recovery",
+      "output": "PROCESSED_CUST-77",
+      "expected": "PROCESSED_CUST-77",
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "STRUC-05",
+      "category": "structural",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 42,
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "STRUC-05",
+      "category": "structural",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "expected": 42,
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Value mismatch: observed undefined, expected 42"
+    },
+    {
+      "scenarioId": "STRUC-05",
+      "category": "structural",
+      "arm": "Arm C (Codex Alone)",
+      "status": "functional_recovery",
+      "output": 42,
+      "expected": 42,
+      "turns": 1,
+      "timeMs": 30170,
+      "tokens": {
+        "input": 138683,
+        "cached": 132352,
+        "output": 563,
+        "reasoning": 0,
+        "total": 139246
+      }
+    },
+    {
+      "scenarioId": "STRUC-05",
+      "category": "structural",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "unresolved",
+      "output": 1,
+      "expected": 42,
+      "turns": 1,
+      "timeMs": 18,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Value mismatch: observed 1, expected 42"
+    },
+    {
+      "scenarioId": "STRUC-05",
+      "category": "structural",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "functional_recovery",
+      "output": 42,
+      "expected": 42,
+      "turns": 1,
+      "timeMs": 14306,
+      "tokens": {
+        "input": 116463,
+        "cached": 87296,
+        "output": 136,
+        "reasoning": 0,
+        "total": 116599
+      }
+    },
+    {
+      "scenarioId": "STRUC-06",
+      "category": "structural",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 1000,
+      "turns": 1,
+      "timeMs": 3,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "STRUC-06",
+      "category": "structural",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "functional_recovery",
+      "output": 1000,
+      "expected": 1000,
+      "turns": 1,
+      "timeMs": 2,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "STRUC-06",
+      "category": "structural",
+      "arm": "Arm C (Codex Alone)",
+      "status": "functional_recovery",
+      "output": 1000,
+      "expected": 1000,
+      "turns": 1,
+      "timeMs": 33509,
+      "tokens": {
+        "input": 98359,
+        "cached": 83712,
+        "output": 310,
+        "reasoning": 22,
+        "total": 98669
+      }
+    },
+    {
+      "scenarioId": "STRUC-06",
+      "category": "structural",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "functional_recovery",
+      "output": 1000,
+      "expected": 1000,
+      "turns": 1,
+      "timeMs": 24,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "STRUC-06",
+      "category": "structural",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "functional_recovery",
+      "output": 1000,
+      "expected": 1000,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "STRUC-07",
+      "category": "structural",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "2023-11-14T22:13:20Z",
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "STRUC-07",
+      "category": "structural",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "expected": "2023-11-14T22:13:20Z",
+      "turns": 1,
+      "timeMs": 2,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Value mismatch: observed undefined, expected \"2023-11-14T22:13:20Z\""
+    },
+    {
+      "scenarioId": "STRUC-07",
+      "category": "structural",
+      "arm": "Arm C (Codex Alone)",
+      "status": "functional_recovery",
+      "output": "2023-11-14T22:13:20Z",
+      "expected": "2023-11-14T22:13:20Z",
+      "turns": 1,
+      "timeMs": 21029,
+      "tokens": {
+        "input": 120778,
+        "cached": 94848,
+        "output": 274,
+        "reasoning": 0,
+        "total": 121052
+      }
+    },
+    {
+      "scenarioId": "STRUC-07",
+      "category": "structural",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "functional_recovery",
+      "output": "2023-11-14T22:13:20Z",
+      "expected": "2023-11-14T22:13:20Z",
+      "turns": 1,
+      "timeMs": 18,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "STRUC-07",
+      "category": "structural",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "functional_recovery",
+      "output": "2023-11-14T22:13:20Z",
+      "expected": "2023-11-14T22:13:20Z",
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "STRUC-08",
+      "category": "structural",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "USER-101@ORG-99.enterprise.test",
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "STRUC-08",
+      "category": "structural",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "expected": "USER-101@ORG-99.enterprise.test",
+      "turns": 1,
+      "timeMs": 3,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Value mismatch: observed undefined, expected \"USER-101@ORG-99.enterprise.test\""
+    },
+    {
+      "scenarioId": "STRUC-08",
+      "category": "structural",
+      "arm": "Arm C (Codex Alone)",
+      "status": "functional_recovery",
+      "output": "USER-101@ORG-99.enterprise.test",
+      "expected": "USER-101@ORG-99.enterprise.test",
+      "turns": 1,
+      "timeMs": 29402,
+      "tokens": {
+        "input": 166851,
+        "cached": 131968,
+        "output": 586,
+        "reasoning": 0,
+        "total": 167437
+      }
+    },
+    {
+      "scenarioId": "STRUC-08",
+      "category": "structural",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "functional_recovery",
+      "output": "USER-101@ORG-99.enterprise.test",
+      "expected": "USER-101@ORG-99.enterprise.test",
+      "turns": 1,
+      "timeMs": 27,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "STRUC-08",
+      "category": "structural",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "functional_recovery",
+      "output": "USER-101@ORG-99.enterprise.test",
+      "expected": "USER-101@ORG-99.enterprise.test",
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "STRUC-09",
+      "category": "structural",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "AUTH_SUCCESS_INV-POLY",
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "STRUC-09",
+      "category": "structural",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "functional_recovery",
+      "output": "AUTH_SUCCESS_INV-POLY",
+      "expected": "AUTH_SUCCESS_INV-POLY",
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "STRUC-09",
+      "category": "structural",
+      "arm": "Arm C (Codex Alone)",
+      "status": "functional_recovery",
+      "output": "AUTH_SUCCESS_INV-POLY",
+      "expected": "AUTH_SUCCESS_INV-POLY",
+      "turns": 1,
+      "timeMs": 20119,
+      "tokens": {
+        "input": 99554,
+        "cached": 77440,
+        "output": 223,
+        "reasoning": 7,
+        "total": 99777
+      }
+    },
+    {
+      "scenarioId": "STRUC-09",
+      "category": "structural",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "functional_recovery",
+      "output": "AUTH_SUCCESS_INV-POLY",
+      "expected": "AUTH_SUCCESS_INV-POLY",
+      "turns": 1,
+      "timeMs": 13,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "STRUC-09",
+      "category": "structural",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "functional_recovery",
+      "output": "AUTH_SUCCESS_INV-POLY",
+      "expected": "AUTH_SUCCESS_INV-POLY",
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "STRUC-10",
+      "category": "structural",
+      "arm": "Arm A (Static)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: HTTP 404"
+    },
+    {
+      "scenarioId": "STRUC-10",
+      "category": "structural",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: HTTP 422"
+    },
+    {
+      "scenarioId": "STRUC-10",
+      "category": "structural",
+      "arm": "Arm C (Codex Alone)",
+      "status": "false_success",
+      "output": "Missing line items",
+      "expected": null,
+      "turns": 1,
+      "timeMs": 13200,
+      "tokens": {
+        "input": 107977,
+        "cached": 90240,
+        "output": 194,
+        "reasoning": 0,
+        "total": 108171
+      },
+      "reason": "Hallucinated output on unavailable service: \"Missing line items\""
+    },
+    {
+      "scenarioId": "STRUC-10",
+      "category": "structural",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 16,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: no viable plan"
+    },
+    {
+      "scenarioId": "STRUC-10",
+      "category": "structural",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: Explicitly refused unavailable service: no viable plan"
+    },
+    {
+      "scenarioId": "STRUC-11",
+      "category": "structural",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "ACTIVE_CUST-REQ-HDR",
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "STRUC-11",
+      "category": "structural",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "expected": "ACTIVE_CUST-REQ-HDR",
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Value mismatch: observed undefined, expected \"ACTIVE_CUST-REQ-HDR\""
+    },
+    {
+      "scenarioId": "STRUC-11",
+      "category": "structural",
+      "arm": "Arm C (Codex Alone)",
+      "status": "functional_recovery",
+      "output": "ACTIVE_CUST-REQ-HDR",
+      "expected": "ACTIVE_CUST-REQ-HDR",
+      "turns": 1,
+      "timeMs": 22262,
+      "tokens": {
+        "input": 110101,
+        "cached": 89600,
+        "output": 251,
+        "reasoning": 0,
+        "total": 110352
+      }
+    },
+    {
+      "scenarioId": "STRUC-11",
+      "category": "structural",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "ACTIVE_CUST-REQ-HDR",
+      "turns": 1,
+      "timeMs": 15,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "no viable plan"
+    },
+    {
+      "scenarioId": "STRUC-11",
+      "category": "structural",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "functional_recovery",
+      "output": "ACTIVE_CUST-REQ-HDR",
+      "expected": "ACTIVE_CUST-REQ-HDR",
+      "turns": 1,
+      "timeMs": 20303,
+      "tokens": {
+        "input": 90863,
+        "cached": 71552,
+        "output": 205,
+        "reasoning": 0,
+        "total": 91068
+      }
+    },
+    {
+      "scenarioId": "STRUC-12",
+      "category": "structural",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "VERIFIED_SAN FRANCISCO_94107",
+      "turns": 1,
+      "timeMs": 2,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "STRUC-12",
+      "category": "structural",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "expected": "VERIFIED_SAN FRANCISCO_94107",
+      "turns": 1,
+      "timeMs": 2,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Value mismatch: observed undefined, expected \"VERIFIED_SAN FRANCISCO_94107\""
+    },
+    {
+      "scenarioId": "STRUC-12",
+      "category": "structural",
+      "arm": "Arm C (Codex Alone)",
+      "status": "functional_recovery",
+      "output": "VERIFIED_SAN FRANCISCO_94107",
+      "expected": "VERIFIED_SAN FRANCISCO_94107",
+      "turns": 1,
+      "timeMs": 17634,
+      "tokens": {
+        "input": 95851,
+        "cached": 83072,
+        "output": 236,
+        "reasoning": 0,
+        "total": 96087
+      }
+    },
+    {
+      "scenarioId": "STRUC-12",
+      "category": "structural",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "unresolved",
+      "output": "VERIFIED__",
+      "expected": "VERIFIED_SAN FRANCISCO_94107",
+      "turns": 1,
+      "timeMs": 21,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Value mismatch: observed \"VERIFIED__\", expected \"VERIFIED_SAN FRANCISCO_94107\""
+    },
+    {
+      "scenarioId": "STRUC-12",
+      "category": "structural",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "functional_recovery",
+      "output": "VERIFIED_SAN FRANCISCO_94107",
+      "expected": "VERIFIED_SAN FRANCISCO_94107",
+      "turns": 1,
+      "timeMs": 18577,
+      "tokens": {
+        "input": 100189,
+        "cached": 84096,
+        "output": 263,
+        "reasoning": 0,
+        "total": 100452
+      }
+    },
+    {
+      "scenarioId": "STRUC-13",
+      "category": "structural",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "ACTIVE",
+      "turns": 1,
+      "timeMs": 2,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "STRUC-13",
+      "category": "structural",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "expected": "ACTIVE",
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Value mismatch: observed undefined, expected \"ACTIVE\""
+    },
+    {
+      "scenarioId": "STRUC-13",
+      "category": "structural",
+      "arm": "Arm C (Codex Alone)",
+      "status": "functional_recovery",
+      "output": "ACTIVE",
+      "expected": "ACTIVE",
+      "turns": 1,
+      "timeMs": 14051,
+      "tokens": {
+        "input": 91840,
+        "cached": 67712,
+        "output": 233,
+        "reasoning": 0,
+        "total": 92073
+      }
+    },
+    {
+      "scenarioId": "STRUC-13",
+      "category": "structural",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "functional_recovery",
+      "output": "ACTIVE",
+      "expected": "ACTIVE",
+      "turns": 1,
+      "timeMs": 25,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "STRUC-13",
+      "category": "structural",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "functional_recovery",
+      "output": "ACTIVE",
+      "expected": "ACTIVE",
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "STRUC-14",
+      "category": "structural",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "BATCH_UPDATED_1",
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "STRUC-14",
+      "category": "structural",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "expected": "BATCH_UPDATED_1",
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Value mismatch: observed undefined, expected \"BATCH_UPDATED_1\""
+    },
+    {
+      "scenarioId": "STRUC-14",
+      "category": "structural",
+      "arm": "Arm C (Codex Alone)",
+      "status": "functional_recovery",
+      "output": "BATCH_UPDATED_1",
+      "expected": "BATCH_UPDATED_1",
+      "turns": 1,
+      "timeMs": 14958,
+      "tokens": {
+        "input": 91797,
+        "cached": 67968,
+        "output": 233,
+        "reasoning": 0,
+        "total": 92030
+      }
+    },
+    {
+      "scenarioId": "STRUC-14",
+      "category": "structural",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "functional_recovery",
+      "output": "BATCH_UPDATED_1",
+      "expected": "BATCH_UPDATED_1",
+      "turns": 1,
+      "timeMs": 17,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "STRUC-14",
+      "category": "structural",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "functional_recovery",
+      "output": "BATCH_UPDATED_1",
+      "expected": "BATCH_UPDATED_1",
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "STRUC-15",
+      "category": "structural",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 18,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "STRUC-15",
+      "category": "structural",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "expected": 18,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Value mismatch: observed undefined, expected 18"
+    },
+    {
+      "scenarioId": "STRUC-15",
+      "category": "structural",
+      "arm": "Arm C (Codex Alone)",
+      "status": "functional_recovery",
+      "output": 18,
+      "expected": 18,
+      "turns": 1,
+      "timeMs": 20371,
+      "tokens": {
+        "input": 142200,
+        "cached": 105600,
+        "output": 505,
+        "reasoning": 0,
+        "total": 142705
+      }
+    },
+    {
+      "scenarioId": "STRUC-15",
+      "category": "structural",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "unresolved",
+      "output": 1,
+      "expected": 18,
+      "turns": 1,
+      "timeMs": 18,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Value mismatch: observed 1, expected 18"
+    },
+    {
+      "scenarioId": "STRUC-15",
+      "category": "structural",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "unresolved",
+      "output": "category==tools",
+      "expected": 18,
+      "turns": 1,
+      "timeMs": 17493,
+      "tokens": {
+        "input": 100077,
+        "cached": 84096,
+        "output": 234,
+        "reasoning": 16,
+        "total": 100311
+      },
+      "reason": "Value mismatch: observed \"category==tools\", expected 18"
+    },
+    {
+      "scenarioId": "PROTO-01",
+      "category": "protocol_swap",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 7800,
+      "turns": 1,
+      "timeMs": 2,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "PROTO-01",
+      "category": "protocol_swap",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 7800,
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Schema unavailable: HTTP 404"
+    },
+    {
+      "scenarioId": "PROTO-01",
+      "category": "protocol_swap",
+      "arm": "Arm C (Codex Alone)",
+      "status": "functional_recovery",
+      "output": 7800,
+      "expected": 7800,
+      "turns": 1,
+      "timeMs": 15123,
+      "tokens": {
+        "input": 114904,
+        "cached": 90880,
+        "output": 363,
+        "reasoning": 0,
+        "total": 115267
+      }
+    },
+    {
+      "scenarioId": "PROTO-01",
+      "category": "protocol_swap",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "functional_recovery",
+      "output": 7800,
+      "expected": 7800,
+      "turns": 1,
+      "timeMs": 18,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "PROTO-01",
+      "category": "protocol_swap",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "functional_recovery",
+      "output": 7800,
+      "expected": 7800,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "PROTO-02",
+      "category": "protocol_swap",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 110,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "PROTO-02",
+      "category": "protocol_swap",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 110,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Schema unavailable: HTTP 404"
+    },
+    {
+      "scenarioId": "PROTO-02",
+      "category": "protocol_swap",
+      "arm": "Arm C (Codex Alone)",
+      "status": "functional_recovery",
+      "output": 110,
+      "expected": 110,
+      "turns": 1,
+      "timeMs": 16092,
+      "tokens": {
+        "input": 181323,
+        "cached": 162176,
+        "output": 539,
+        "reasoning": 0,
+        "total": 181862
+      }
+    },
+    {
+      "scenarioId": "PROTO-02",
+      "category": "protocol_swap",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "functional_recovery",
+      "output": 110,
+      "expected": 110,
+      "turns": 1,
+      "timeMs": 14,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "PROTO-02",
+      "category": "protocol_swap",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "functional_recovery",
+      "output": 110,
+      "expected": 110,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "PROTO-03",
+      "category": "protocol_swap",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 1.08,
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "PROTO-03",
+      "category": "protocol_swap",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 1.08,
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "PROTO-03",
+      "category": "protocol_swap",
+      "arm": "Arm C (Codex Alone)",
+      "status": "functional_recovery",
+      "output": 1.08,
+      "expected": 1.08,
+      "turns": 1,
+      "timeMs": 28212,
+      "tokens": {
+        "input": 230353,
+        "cached": 193408,
+        "output": 762,
+        "reasoning": 21,
+        "total": 231115
+      }
+    },
+    {
+      "scenarioId": "PROTO-03",
+      "category": "protocol_swap",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "functional_recovery",
+      "output": 1.08,
+      "expected": 1.08,
+      "turns": 1,
+      "timeMs": 24,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "PROTO-03",
+      "category": "protocol_swap",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "functional_recovery",
+      "output": 1.08,
+      "expected": 1.08,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "PROTO-04",
+      "category": "protocol_swap",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 150,
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "PROTO-04",
+      "category": "protocol_swap",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "expected": 150,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Value mismatch: observed undefined, expected 150"
+    },
+    {
+      "scenarioId": "PROTO-04",
+      "category": "protocol_swap",
+      "arm": "Arm C (Codex Alone)",
+      "status": "functional_recovery",
+      "output": 150,
+      "expected": 150,
+      "turns": 1,
+      "timeMs": 15553,
+      "tokens": {
+        "input": 107558,
+        "cached": 89856,
+        "output": 258,
+        "reasoning": 0,
+        "total": 107816
+      }
+    },
+    {
+      "scenarioId": "PROTO-04",
+      "category": "protocol_swap",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "functional_recovery",
+      "output": 150,
+      "expected": 150,
+      "turns": 1,
+      "timeMs": 19,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "PROTO-04",
+      "category": "protocol_swap",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "functional_recovery",
+      "output": 150,
+      "expected": 150,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "PROTO-05",
+      "category": "protocol_swap",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "DELIVERED",
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 503"
+    },
+    {
+      "scenarioId": "PROTO-05",
+      "category": "protocol_swap",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "DELIVERED",
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Schema unavailable: HTTP 503"
+    },
+    {
+      "scenarioId": "PROTO-05",
+      "category": "protocol_swap",
+      "arm": "Arm C (Codex Alone)",
+      "status": "unresolved",
+      "output": "I’ll inspect the service endpoints to find the tracking value.",
+      "expected": "DELIVERED",
+      "turns": 1,
+      "timeMs": 35063,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 22000
+      },
+      "reason": "Value mismatch: observed \"I’ll inspect the service endpoints to find the tracking value.\", expected \"DELIVERED\""
+    },
+    {
+      "scenarioId": "PROTO-05",
+      "category": "protocol_swap",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "DELIVERED",
+      "turns": 1,
+      "timeMs": 53,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "no viable plan"
+    },
+    {
+      "scenarioId": "PROTO-05",
+      "category": "protocol_swap",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "unresolved",
+      "output": "Freight backend unavailable",
+      "expected": "DELIVERED",
+      "turns": 1,
+      "timeMs": 15245,
+      "tokens": {
+        "input": 138380,
+        "cached": 119168,
+        "output": 356,
+        "reasoning": 10,
+        "total": 138736
+      },
+      "reason": "Value mismatch: observed \"Freight backend unavailable\", expected \"DELIVERED\""
+    },
+    {
+      "scenarioId": "PROTO-06",
+      "category": "protocol_swap",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "BID_ACCEPTED_5000",
+      "turns": 1,
+      "timeMs": 4,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "PROTO-06",
+      "category": "protocol_swap",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "BID_ACCEPTED_5000",
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Schema unavailable: HTTP 404"
+    },
+    {
+      "scenarioId": "PROTO-06",
+      "category": "protocol_swap",
+      "arm": "Arm C (Codex Alone)",
+      "status": "unresolved",
+      "output": "I’ll inspect the local service to find the correct endpoint and extract the result.",
+      "expected": "BID_ACCEPTED_5000",
+      "turns": 1,
+      "timeMs": 35022,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 22000
+      },
+      "reason": "Value mismatch: observed \"I’ll inspect the local service to find the correct endpoint and extract the result.\", expected \"BID_ACCEPTED_5000\""
+    },
+    {
+      "scenarioId": "PROTO-06",
+      "category": "protocol_swap",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "BID_ACCEPTED_5000",
+      "turns": 1,
+      "timeMs": 10,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "no viable plan"
+    },
+    {
+      "scenarioId": "PROTO-06",
+      "category": "protocol_swap",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "unresolved",
+      "output": "I’ll inspect the local service and resolve the bidding request.",
+      "expected": "BID_ACCEPTED_5000",
+      "turns": 1,
+      "timeMs": 35025,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 22000
+      },
+      "reason": "Value mismatch: observed \"I’ll inspect the local service and resolve the bidding request.\", expected \"BID_ACCEPTED_5000\""
+    },
+    {
+      "scenarioId": "PROTO-07",
+      "category": "protocol_swap",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "NOTE_CLEARED",
+      "turns": 1,
+      "timeMs": 4,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "PROTO-07",
+      "category": "protocol_swap",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "expected": "NOTE_CLEARED",
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Value mismatch: observed undefined, expected \"NOTE_CLEARED\""
+    },
+    {
+      "scenarioId": "PROTO-07",
+      "category": "protocol_swap",
+      "arm": "Arm C (Codex Alone)",
+      "status": "functional_recovery",
+      "output": "NOTE_CLEARED",
+      "expected": "NOTE_CLEARED",
+      "turns": 1,
+      "timeMs": 16095,
+      "tokens": {
+        "input": 109988,
+        "cached": 89600,
+        "output": 244,
+        "reasoning": 0,
+        "total": 110232
+      }
+    },
+    {
+      "scenarioId": "PROTO-07",
+      "category": "protocol_swap",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "NOTE_CLEARED",
+      "turns": 1,
+      "timeMs": 12,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "no viable plan"
+    },
+    {
+      "scenarioId": "PROTO-07",
+      "category": "protocol_swap",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "functional_recovery",
+      "output": "NOTE_CLEARED",
+      "expected": "NOTE_CLEARED",
+      "turns": 1,
+      "timeMs": 10542,
+      "tokens": {
+        "input": 106599,
+        "cached": 95872,
+        "output": 210,
+        "reasoning": 0,
+        "total": 106809
+      }
+    },
+    {
+      "scenarioId": "PROTO-08",
+      "category": "protocol_swap",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "CREATED_SKU-MCP-NEW",
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "PROTO-08",
+      "category": "protocol_swap",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "CREATED_SKU-MCP-NEW",
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Schema unavailable: HTTP 404"
+    },
+    {
+      "scenarioId": "PROTO-08",
+      "category": "protocol_swap",
+      "arm": "Arm C (Codex Alone)",
+      "status": "functional_recovery",
+      "output": "CREATED_SKU-MCP-NEW",
+      "expected": "CREATED_SKU-MCP-NEW",
+      "turns": 1,
+      "timeMs": 22306,
+      "tokens": {
+        "input": 197028,
+        "cached": 178560,
+        "output": 703,
+        "reasoning": 0,
+        "total": 197731
+      }
+    },
+    {
+      "scenarioId": "PROTO-08",
+      "category": "protocol_swap",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "CREATED_SKU-MCP-NEW",
+      "turns": 1,
+      "timeMs": 40,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "create_inventory_item"
+    },
+    {
+      "scenarioId": "PROTO-08",
+      "category": "protocol_swap",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "functional_recovery",
+      "output": "CREATED_SKU-MCP-NEW",
+      "expected": "CREATED_SKU-MCP-NEW",
+      "turns": 1,
+      "timeMs": 17969,
+      "tokens": {
+        "input": 109314,
+        "cached": 98176,
+        "output": 455,
+        "reasoning": 0,
+        "total": 109769
+      }
+    },
+    {
+      "scenarioId": "PROTO-09",
+      "category": "protocol_swap",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "PDF_RENDERED_INV-ASYNC-PDF",
+      "turns": 1,
+      "timeMs": 2,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "PROTO-09",
+      "category": "protocol_swap",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "PDF_RENDERED_INV-ASYNC-PDF",
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Schema unavailable: HTTP 404"
+    },
+    {
+      "scenarioId": "PROTO-09",
+      "category": "protocol_swap",
+      "arm": "Arm C (Codex Alone)",
+      "status": "unresolved",
+      "output": "I’ll inspect the local service to find the invoice result.",
+      "expected": "PDF_RENDERED_INV-ASYNC-PDF",
+      "turns": 1,
+      "timeMs": 35027,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 22000
+      },
+      "reason": "Value mismatch: observed \"I’ll inspect the local service to find the invoice result.\", expected \"PDF_RENDERED_INV-ASYNC-PDF\""
+    },
+    {
+      "scenarioId": "PROTO-09",
+      "category": "protocol_swap",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "PDF_RENDERED_INV-ASYNC-PDF",
+      "turns": 1,
+      "timeMs": 15,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "no viable plan"
+    },
+    {
+      "scenarioId": "PROTO-09",
+      "category": "protocol_swap",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "unresolved",
+      "output": "I’ll inspect the service schema and follow the job’s polling URL to retrieve the result.",
+      "expected": "PDF_RENDERED_INV-ASYNC-PDF",
+      "turns": 1,
+      "timeMs": 35033,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 22000
+      },
+      "reason": "Value mismatch: observed \"I’ll inspect the service schema and follow the job’s polling URL to retrieve the result.\", expected \"PDF_RENDERED_INV-ASYNC-PDF\""
+    },
+    {
+      "scenarioId": "PROTO-10",
+      "category": "protocol_swap",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "carol@enterprise.test",
+      "turns": 1,
+      "timeMs": 3,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "PROTO-10",
+      "category": "protocol_swap",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "carol@enterprise.test",
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Schema unavailable: HTTP 404"
+    },
+    {
+      "scenarioId": "PROTO-10",
+      "category": "protocol_swap",
+      "arm": "Arm C (Codex Alone)",
+      "status": "unresolved",
+      "output": "{\"type\":\"thread.started\",\"thread_id\":\"01a1a30a-a883-7400-99a3-bd78074df32b\"}\n{\"type\":\"turn.started\"}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_0\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s -i http://127.0.0.1:61810'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_0\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s -i http://127.0.0.1:61810'\",\"aggregated_output\":\"HTTP/1.1 404 Not Found\\r\\ncontent-type: application/json\\r\\nDate: Tue, 03 Nov 2026 20:12:31 GMT\\r\\nConnection: keep-alive\\r\\nKeep-Alive: timeout=5\\r\\nTransfer-Encoding: chunked\\r\\n\\r\\n{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_1\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'for p in /openapi.json /schema /graphql /mcp; do curl -s -i http://127.0.0.1:61810$p; done'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_1\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'for p in /openapi.json /schema /graphql /mcp; do curl -s -i http://127.0.0.1:61810$p; done'\",\"aggregated_output\":\"\",\"exit_code\":7,\"status\":\"failed\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_2\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s -i http://127.0.0.1:61810/openapi.json'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_2\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s -i http://127.0.0.1:61810/openapi.json'\",\"aggregated_output\":\"HTTP/1.1 404 Not Found\\r\\ncontent-type: application/json\\r\\nDate: Tue, 03 Nov 2026 20:12:34 GMT\\r\\nConnection: keep-alive\\r\\nKeep-Alive: timeout=5\\r\\nTransfer-Encoding: chunked\\r\\n\\r\\n{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_3\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s -i http://127.0.0.1:61810/graphql'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_3\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s -i http://127.0.0.1:61810/graphql'\",\"aggregated_output\":\"HTTP/1.1 404 Not Found\\r\\ncontent-type: application/json\\r\\nDate: Tue, 03 Nov 2026 20:12:37 GMT\\r\\nConnection: keep-alive\\r\\nKeep-Alive: timeout=5\\r\\nTransfer-Encoding: chunked\\r\\n\\r\\n{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_4\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s -i http://127.0.0.1:61810/api'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_5\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s -i http://127.0.0.1:61810/schema'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_6\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s -i http://127.0.0.1:61810/mcp'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_7\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s -i http://127.0.0.1:61810/docs'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_4\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s -i http://127.0.0.1:61810/api'\",\"aggregated_output\":\"HTTP/1.1 404 Not Found\\r\\ncontent-type: application/json\\r\\nDate: Tue, 03 Nov 2026 20:12:37 GMT\\r\\nConnection: keep-alive\\r\\nKeep-Alive: timeout=5\\r\\nTransfer-Encoding: chunked\\r\\n\\r\\n{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_5\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s -i http://127.0.0.1:61810/schema'\",\"aggregated_output\":\"HTTP/1.1 404 Not Found\\r\\ncontent-type: application/json\\r\\nDate: Tue, 03 Nov 2026 20:12:37 GMT\\r\\nConnection: keep-alive\\r\\nKeep-Alive: timeout=5\\r\\nTransfer-Encoding: chunked\\r\\n\\r\\n{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_6\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s -i http://127.0.0.1:61810/mcp'\",\"aggregated_output\":\"HTTP/1.1 404 Not Found\\r\\ncontent-type: application/json\\r\\nDate: Tue, 03 Nov 2026 20:12:37 GMT\\r\\nConnection: keep-alive\\r\\nKeep-Alive: timeout=5\\r\\nTransfer-Encoding: chunked\\r\\n\\r\\n{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_7\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s -i http://127.0.0.1:61810/docs'\",\"aggregated_output\":\"HTTP/1.1 404 Not Found\\r\\ncontent-type: application/json\\r\\nDate: Tue, 03 Nov 2026 20:12:37 GMT\\r\\nConnection: keep-alive\\r\\nKeep-Alive: timeout=5\\r\\nTransfer-Encoding: chunked\\r\\n\\r\\n{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_8\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc \\\"curl -s -i -X POST http://127.0.0.1:61810/graphql -H 'Content-Type: application/json' -d '{\\\\\\\"query\\\\\\\":\\\\\\\"{__schema{queryType{fields{name args{name type{kind name ofType{kind name}}} type{kind name ofType{kind name}}}}}}\\\\\\\"}'\\\"\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_8\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc \\\"curl -s -i -X POST http://127.0.0.1:61810/graphql -H 'Content-Type: application/json' -d '{\\\\\\\"query\\\\\\\":\\\\\\\"{__schema{queryType{fields{name args{name type{kind name ofType{kind name}}} type{kind name ofType{kind name}}}}}}\\\\\\\"}'\\\"\",\"aggregated_output\":\"HTTP/1.1 404 Not Found\\r\\ncontent-type: application/json\\r\\nDate: Tue, 03 Nov 2026 20:12:39 GMT\\r\\nConnection: keep-alive\\r\\nKeep-Alive: timeout=5\\r\\nTransfer-Encoding: chunked\\r\\n\\r\\n{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_9\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/schema'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_10\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/graphql'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_11\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/swagger.json'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_9\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/schema'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_12\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/openapi.json'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_10\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/graphql'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_11\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/swagger.json'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_13\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/sdl'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_14\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/mcp'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_15\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/.well-known/openapi.json'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_12\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/openapi.json'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_13\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/sdl'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_14\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/mcp'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_15\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/.well-known/openapi.json'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_16\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/health'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_16\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/health'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_17\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s -i -X OPTIONS http://127.0.0.1:61810/'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_17\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s -i -X OPTIONS http://127.0.0.1:61810/'\",\"aggregated_output\":\"HTTP/1.1 404 Not Found\\r\\ncontent-type: application/json\\r\\nDate: Tue, 03 Nov 2026 20:12:48 GMT\\r\\nConnection: keep-alive\\r\\nKeep-Alive: timeout=5\\r\\nTransfer-Encoding: chunked\\r\\n\\r\\n{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_18\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/v1/openapi.json'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_18\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/v1/openapi.json'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_19\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/.well-known/schema'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_20\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api-docs'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_21\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/schema.json'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_19\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/.well-known/schema'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_20\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api-docs'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_21\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/schema.json'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_22\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/v1/openapi.json'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_23\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/users/carol'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_24\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/users/carol'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_25\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/swagger'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_26\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/openapi'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_27\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/v1/schema'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_28\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/mcp/sse'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_29\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/sse'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_30\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/healthz'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_31\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/schema.json'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_32\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/rpc'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_22\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/v1/openapi.json'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_23\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/users/carol'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_24\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/users/carol'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_25\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/swagger'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_26\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/openapi'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_27\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/v1/schema'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_28\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/mcp/sse'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_29\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/sse'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_30\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/healthz'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_31\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/schema.json'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_32\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/rpc'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_33\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc \\\"curl -s -i -X POST http://127.0.0.1:61810/mcp -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' -d '{\\\\\\\"jsonrpc\\\\\\\":\\\\\\\"2.0\\\\\\\",\\\\\\\"id\\\\\\\":1,\\\\\\\"method\\\\\\\":\\\\\\\"tools/list\\\\\\\",\\\\\\\"params\\\\\\\":{}}'\\\"\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_33\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc \\\"curl -s -i -X POST http://127.0.0.1:61810/mcp -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' -d '{\\\\\\\"jsonrpc\\\\\\\":\\\\\\\"2.0\\\\\\\",\\\\\\\"id\\\\\\\":1,\\\\\\\"method\\\\\\\":\\\\\\\"tools/list\\\\\\\",\\\\\\\"params\\\\\\\":{}}'\\\"\",\"aggregated_output\":\"HTTP/1.1 404 Not Found\\r\\ncontent-type: application/json\\r\\nDate: Tue, 03 Nov 2026 20:12:56 GMT\\r\\nConnection: keep-alive\\r\\nKeep-Alive: timeout=5\\r\\nTransfer-Encoding: chunked\\r\\n\\r\\n{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_34\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/v2/openapi.json'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_35\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/v2/openapi.json'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_34\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/v2/openapi.json'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_35\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/v2/openapi.json'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_36\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/v3/openapi.json'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_37\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/v3/openapi.json'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_38\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/swagger/v1/swagger.json'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_39\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/v1/schema'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_36\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/v3/openapi.json'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_38\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/swagger/v1/swagger.json'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_37\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/v3/openapi.json'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_40\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api-docs/swagger.json'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_39\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/v1/schema'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_41\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/rest/openapi.json'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_40\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api-docs/swagger.json'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_41\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/rest/openapi.json'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_42\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/discovery'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_42\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/discovery'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_43\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/.well-known/ai-plugin.json'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_44\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/metadata'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_43\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/.well-known/ai-plugin.json'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_44\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/metadata'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_45\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/openapi.yaml'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_45\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/openapi.yaml'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_46\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/schema/graphql'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_46\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/schema/graphql'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_47\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/graphql/schema'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_47\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/graphql/schema'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_48\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/user/carol'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_48\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/user/carol'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}",
+      "expected": "carol@enterprise.test",
+      "turns": 1,
+      "timeMs": 35034,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 22000
+      },
+      "reason": "Value mismatch: observed \"{\\\"type\\\":\\\"thread.started\\\",\\\"thread_id\\\":\\\"01a1a30a-a883-7400-99a3-bd78074df32b\\\"}\\n{\\\"type\\\":\\\"turn.started\\\"}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_0\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s -i http://127.0.0.1:61810'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_0\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s -i http://127.0.0.1:61810'\\\",\\\"aggregated_output\\\":\\\"HTTP/1.1 404 Not Found\\\\r\\\\ncontent-type: application/json\\\\r\\\\nDate: Tue, 03 Nov 2026 20:12:31 GMT\\\\r\\\\nConnection: keep-alive\\\\r\\\\nKeep-Alive: timeout=5\\\\r\\\\nTransfer-Encoding: chunked\\\\r\\\\n\\\\r\\\\n{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_1\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'for p in /openapi.json /schema /graphql /mcp; do curl -s -i http://127.0.0.1:61810$p; done'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_1\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'for p in /openapi.json /schema /graphql /mcp; do curl -s -i http://127.0.0.1:61810$p; done'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":7,\\\"status\\\":\\\"failed\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_2\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s -i http://127.0.0.1:61810/openapi.json'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_2\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s -i http://127.0.0.1:61810/openapi.json'\\\",\\\"aggregated_output\\\":\\\"HTTP/1.1 404 Not Found\\\\r\\\\ncontent-type: application/json\\\\r\\\\nDate: Tue, 03 Nov 2026 20:12:34 GMT\\\\r\\\\nConnection: keep-alive\\\\r\\\\nKeep-Alive: timeout=5\\\\r\\\\nTransfer-Encoding: chunked\\\\r\\\\n\\\\r\\\\n{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_3\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s -i http://127.0.0.1:61810/graphql'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_3\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s -i http://127.0.0.1:61810/graphql'\\\",\\\"aggregated_output\\\":\\\"HTTP/1.1 404 Not Found\\\\r\\\\ncontent-type: application/json\\\\r\\\\nDate: Tue, 03 Nov 2026 20:12:37 GMT\\\\r\\\\nConnection: keep-alive\\\\r\\\\nKeep-Alive: timeout=5\\\\r\\\\nTransfer-Encoding: chunked\\\\r\\\\n\\\\r\\\\n{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_4\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s -i http://127.0.0.1:61810/api'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_5\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s -i http://127.0.0.1:61810/schema'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_6\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s -i http://127.0.0.1:61810/mcp'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_7\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s -i http://127.0.0.1:61810/docs'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_4\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s -i http://127.0.0.1:61810/api'\\\",\\\"aggregated_output\\\":\\\"HTTP/1.1 404 Not Found\\\\r\\\\ncontent-type: application/json\\\\r\\\\nDate: Tue, 03 Nov 2026 20:12:37 GMT\\\\r\\\\nConnection: keep-alive\\\\r\\\\nKeep-Alive: timeout=5\\\\r\\\\nTransfer-Encoding: chunked\\\\r\\\\n\\\\r\\\\n{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_5\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s -i http://127.0.0.1:61810/schema'\\\",\\\"aggregated_output\\\":\\\"HTTP/1.1 404 Not Found\\\\r\\\\ncontent-type: application/json\\\\r\\\\nDate: Tue, 03 Nov 2026 20:12:37 GMT\\\\r\\\\nConnection: keep-alive\\\\r\\\\nKeep-Alive: timeout=5\\\\r\\\\nTransfer-Encoding: chunked\\\\r\\\\n\\\\r\\\\n{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_6\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s -i http://127.0.0.1:61810/mcp'\\\",\\\"aggregated_output\\\":\\\"HTTP/1.1 404 Not Found\\\\r\\\\ncontent-type: application/json\\\\r\\\\nDate: Tue, 03 Nov 2026 20:12:37 GMT\\\\r\\\\nConnection: keep-alive\\\\r\\\\nKeep-Alive: timeout=5\\\\r\\\\nTransfer-Encoding: chunked\\\\r\\\\n\\\\r\\\\n{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_7\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s -i http://127.0.0.1:61810/docs'\\\",\\\"aggregated_output\\\":\\\"HTTP/1.1 404 Not Found\\\\r\\\\ncontent-type: application/json\\\\r\\\\nDate: Tue, 03 Nov 2026 20:12:37 GMT\\\\r\\\\nConnection: keep-alive\\\\r\\\\nKeep-Alive: timeout=5\\\\r\\\\nTransfer-Encoding: chunked\\\\r\\\\n\\\\r\\\\n{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_8\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc \\\\\\\"curl -s -i -X POST http://127.0.0.1:61810/graphql -H 'Content-Type: application/json' -d '{\\\\\\\\\\\\\\\"query\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"{__schema{queryType{fields{name args{name type{kind name ofType{kind name}}} type{kind name ofType{kind name}}}}}}\\\\\\\\\\\\\\\"}'\\\\\\\"\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_8\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc \\\\\\\"curl -s -i -X POST http://127.0.0.1:61810/graphql -H 'Content-Type: application/json' -d '{\\\\\\\\\\\\\\\"query\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"{__schema{queryType{fields{name args{name type{kind name ofType{kind name}}} type{kind name ofType{kind name}}}}}}\\\\\\\\\\\\\\\"}'\\\\\\\"\\\",\\\"aggregated_output\\\":\\\"HTTP/1.1 404 Not Found\\\\r\\\\ncontent-type: application/json\\\\r\\\\nDate: Tue, 03 Nov 2026 20:12:39 GMT\\\\r\\\\nConnection: keep-alive\\\\r\\\\nKeep-Alive: timeout=5\\\\r\\\\nTransfer-Encoding: chunked\\\\r\\\\n\\\\r\\\\n{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_9\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/schema'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_10\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/graphql'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_11\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/swagger.json'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_9\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/schema'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_12\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/openapi.json'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_10\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/graphql'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_11\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/swagger.json'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_13\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/sdl'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_14\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/mcp'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_15\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/.well-known/openapi.json'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_12\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/openapi.json'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_13\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/sdl'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_14\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/mcp'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_15\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/.well-known/openapi.json'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_16\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/health'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_16\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/health'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_17\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s -i -X OPTIONS http://127.0.0.1:61810/'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_17\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s -i -X OPTIONS http://127.0.0.1:61810/'\\\",\\\"aggregated_output\\\":\\\"HTTP/1.1 404 Not Found\\\\r\\\\ncontent-type: application/json\\\\r\\\\nDate: Tue, 03 Nov 2026 20:12:48 GMT\\\\r\\\\nConnection: keep-alive\\\\r\\\\nKeep-Alive: timeout=5\\\\r\\\\nTransfer-Encoding: chunked\\\\r\\\\n\\\\r\\\\n{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_18\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/v1/openapi.json'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_18\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/v1/openapi.json'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_19\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/.well-known/schema'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_20\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api-docs'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_21\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/schema.json'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_19\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/.well-known/schema'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_20\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api-docs'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_21\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/schema.json'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_22\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/v1/openapi.json'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_23\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/users/carol'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_24\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/users/carol'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_25\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/swagger'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_26\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/openapi'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_27\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/v1/schema'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_28\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/mcp/sse'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_29\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/sse'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_30\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/healthz'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_31\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/schema.json'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_32\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/rpc'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_22\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/v1/openapi.json'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_23\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/users/carol'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_24\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/users/carol'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_25\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/swagger'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_26\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/openapi'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_27\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/v1/schema'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_28\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/mcp/sse'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_29\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/sse'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_30\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/healthz'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_31\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/schema.json'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_32\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/rpc'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_33\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc \\\\\\\"curl -s -i -X POST http://127.0.0.1:61810/mcp -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' -d '{\\\\\\\\\\\\\\\"jsonrpc\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"2.0\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"id\\\\\\\\\\\\\\\":1,\\\\\\\\\\\\\\\"method\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"tools/list\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"params\\\\\\\\\\\\\\\":{}}'\\\\\\\"\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_33\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc \\\\\\\"curl -s -i -X POST http://127.0.0.1:61810/mcp -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' -d '{\\\\\\\\\\\\\\\"jsonrpc\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"2.0\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"id\\\\\\\\\\\\\\\":1,\\\\\\\\\\\\\\\"method\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"tools/list\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"params\\\\\\\\\\\\\\\":{}}'\\\\\\\"\\\",\\\"aggregated_output\\\":\\\"HTTP/1.1 404 Not Found\\\\r\\\\ncontent-type: application/json\\\\r\\\\nDate: Tue, 03 Nov 2026 20:12:56 GMT\\\\r\\\\nConnection: keep-alive\\\\r\\\\nKeep-Alive: timeout=5\\\\r\\\\nTransfer-Encoding: chunked\\\\r\\\\n\\\\r\\\\n{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_34\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/v2/openapi.json'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_35\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/v2/openapi.json'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_34\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/v2/openapi.json'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_35\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/v2/openapi.json'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_36\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/v3/openapi.json'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_37\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/v3/openapi.json'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_38\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/swagger/v1/swagger.json'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_39\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/v1/schema'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_36\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/v3/openapi.json'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_38\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/swagger/v1/swagger.json'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_37\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/v3/openapi.json'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_40\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api-docs/swagger.json'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_39\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/v1/schema'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_41\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/rest/openapi.json'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_40\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api-docs/swagger.json'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_41\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/rest/openapi.json'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_42\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/discovery'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_42\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/discovery'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_43\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/.well-known/ai-plugin.json'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_44\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/metadata'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_43\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/.well-known/ai-plugin.json'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_44\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/metadata'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_45\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/openapi.yaml'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_45\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/openapi.yaml'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_46\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/schema/graphql'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_46\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/schema/graphql'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_47\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/graphql/schema'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_47\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/graphql/schema'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_48\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/user/carol'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_48\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/user/carol'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\", expected \"carol@enterprise.test\""
+    },
+    {
+      "scenarioId": "PROTO-10",
+      "category": "protocol_swap",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "carol@enterprise.test",
+      "turns": 1,
+      "timeMs": 12,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "no viable plan"
+    },
+    {
+      "scenarioId": "PROTO-10",
+      "category": "protocol_swap",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "unresolved",
+      "output": "I’ll inspect the local service and follow its navigation links to find the value for carol.",
+      "expected": "carol@enterprise.test",
+      "turns": 1,
+      "timeMs": 35042,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 22000
+      },
+      "reason": "Value mismatch: observed \"I’ll inspect the local service and follow its navigation links to find the value for carol.\", expected \"carol@enterprise.test\""
+    },
+    {
+      "scenarioId": "PROTO-11",
+      "category": "protocol_swap",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 1.29,
+      "turns": 1,
+      "timeMs": 3,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "PROTO-11",
+      "category": "protocol_swap",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 1.29,
+      "turns": 1,
+      "timeMs": 2,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "PROTO-11",
+      "category": "protocol_swap",
+      "arm": "Arm C (Codex Alone)",
+      "status": "unresolved",
+      "output": "I’ll inspect the local service to find the correct endpoint and extract the GBP value.",
+      "expected": 1.29,
+      "turns": 1,
+      "timeMs": 35019,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 22000
+      },
+      "reason": "Value mismatch: observed \"I’ll inspect the local service to find the correct endpoint and extract the GBP value.\", expected 1.29"
+    },
+    {
+      "scenarioId": "PROTO-11",
+      "category": "protocol_swap",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "functional_recovery",
+      "output": 1.29,
+      "expected": 1.29,
+      "turns": 1,
+      "timeMs": 30,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "PROTO-11",
+      "category": "protocol_swap",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "functional_recovery",
+      "output": 1.29,
+      "expected": 1.29,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "PROTO-12",
+      "category": "protocol_swap",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 82.5,
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "PROTO-12",
+      "category": "protocol_swap",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "expected": 82.5,
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Value mismatch: observed undefined, expected 82.5"
+    },
+    {
+      "scenarioId": "PROTO-12",
+      "category": "protocol_swap",
+      "arm": "Arm C (Codex Alone)",
+      "status": "functional_recovery",
+      "output": 82.5,
+      "expected": 82.5,
+      "turns": 1,
+      "timeMs": 15905,
+      "tokens": {
+        "input": 107367,
+        "cached": 72960,
+        "output": 258,
+        "reasoning": 0,
+        "total": 107625
+      }
+    },
+    {
+      "scenarioId": "PROTO-12",
+      "category": "protocol_swap",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "functional_recovery",
+      "output": 82.5,
+      "expected": 82.5,
+      "turns": 1,
+      "timeMs": 31,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "PROTO-12",
+      "category": "protocol_swap",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "functional_recovery",
+      "output": 82.5,
+      "expected": 82.5,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "PROTO-13",
+      "category": "protocol_swap",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 4200,
+      "turns": 1,
+      "timeMs": 2,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "PROTO-13",
+      "category": "protocol_swap",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 4200,
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Schema unavailable: HTTP 404"
+    },
+    {
+      "scenarioId": "PROTO-13",
+      "category": "protocol_swap",
+      "arm": "Arm C (Codex Alone)",
+      "status": "functional_recovery",
+      "output": 4200,
+      "expected": 4200,
+      "turns": 1,
+      "timeMs": 19260,
+      "tokens": {
+        "input": 155521,
+        "cached": 145920,
+        "output": 441,
+        "reasoning": 0,
+        "total": 155962
+      }
+    },
+    {
+      "scenarioId": "PROTO-13",
+      "category": "protocol_swap",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "functional_recovery",
+      "output": 4200,
+      "expected": 4200,
+      "turns": 1,
+      "timeMs": 27,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "PROTO-13",
+      "category": "protocol_swap",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "functional_recovery",
+      "output": 4200,
+      "expected": 4200,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "PROTO-14",
+      "category": "protocol_swap",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 0.0065,
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "PROTO-14",
+      "category": "protocol_swap",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 0.0065,
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "PROTO-14",
+      "category": "protocol_swap",
+      "arm": "Arm C (Codex Alone)",
+      "status": "unresolved",
+      "output": 404,
+      "expected": 0.0065,
+      "turns": 1,
+      "timeMs": 35028,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 22000
+      },
+      "reason": "Value mismatch: observed 404, expected 0.0065"
+    },
+    {
+      "scenarioId": "PROTO-14",
+      "category": "protocol_swap",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "functional_recovery",
+      "output": 0.0065,
+      "expected": 0.0065,
+      "turns": 1,
+      "timeMs": 32,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "PROTO-14",
+      "category": "protocol_swap",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "functional_recovery",
+      "output": 0.0065,
+      "expected": 0.0065,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "PROTO-15",
+      "category": "protocol_swap",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "SUB_REGISTERED_ACK",
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "PROTO-15",
+      "category": "protocol_swap",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "SUB_REGISTERED_ACK",
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Schema unavailable: HTTP 404"
+    },
+    {
+      "scenarioId": "PROTO-15",
+      "category": "protocol_swap",
+      "arm": "Arm C (Codex Alone)",
+      "status": "unresolved",
+      "output": "",
+      "expected": "SUB_REGISTERED_ACK",
+      "turns": 1,
+      "timeMs": 35021,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 22000
+      },
+      "reason": "Value mismatch: observed \"\", expected \"SUB_REGISTERED_ACK\""
+    },
+    {
+      "scenarioId": "PROTO-15",
+      "category": "protocol_swap",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "unresolved",
+      "output": "agent.test",
+      "expected": "SUB_REGISTERED_ACK",
+      "turns": 1,
+      "timeMs": 19,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Value mismatch: observed \"agent.test\", expected \"SUB_REGISTERED_ACK\""
+    },
+    {
+      "scenarioId": "PROTO-15",
+      "category": "protocol_swap",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "unresolved",
+      "output": "I’ll inspect the service schema and identify the webhook registration route.",
+      "expected": "SUB_REGISTERED_ACK",
+      "turns": 1,
+      "timeMs": 35024,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 22000
+      },
+      "reason": "Value mismatch: observed \"I’ll inspect the service schema and identify the webhook registration route.\", expected \"SUB_REGISTERED_ACK\""
+    },
+    {
+      "scenarioId": "SEM-01",
+      "category": "semantic_drift",
+      "arm": "Arm A (Static)",
+      "status": "false_success",
+      "output": 12.5,
+      "expected": 1250,
+      "turns": 1,
+      "timeMs": 2,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Unadapted currency unit accepted: 12.50 dollars where 1250 cents required"
+    },
+    {
+      "scenarioId": "SEM-01",
+      "category": "semantic_drift",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "false_success",
+      "output": 12.5,
+      "expected": 1250,
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Unadapted currency unit accepted: 12.50 dollars where 1250 cents required"
+    },
+    {
+      "scenarioId": "SEM-01",
+      "category": "semantic_drift",
+      "arm": "Arm C (Codex Alone)",
+      "status": "functional_recovery",
+      "output": 1250,
+      "expected": 1250,
+      "turns": 1,
+      "timeMs": 16261,
+      "tokens": {
+        "input": 135790,
+        "cached": 124544,
+        "output": 312,
+        "reasoning": 0,
+        "total": 136102
+      },
+      "reason": "Converted incompatible unit to client ground truth"
+    },
+    {
+      "scenarioId": "SEM-01",
+      "category": "semantic_drift",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 1250,
+      "turns": 1,
+      "timeMs": 15,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "no viable plan"
+    },
+    {
+      "scenarioId": "SEM-01",
+      "category": "semantic_drift",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "functional_recovery",
+      "output": 1250,
+      "expected": 1250,
+      "turns": 1,
+      "timeMs": 14753,
+      "tokens": {
+        "input": 113195,
+        "cached": 83200,
+        "output": 327,
+        "reasoning": 51,
+        "total": 113522
+      },
+      "reason": "Converted incompatible unit to client ground truth"
+    },
+    {
+      "scenarioId": "SEM-02",
+      "category": "semantic_drift",
+      "arm": "Arm A (Static)",
+      "status": "false_success",
+      "output": 25,
+      "expected": 55,
+      "turns": 1,
+      "timeMs": 2,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Unadapted mass unit drift accepted: 25 instead of ground truth 55.0"
+    },
+    {
+      "scenarioId": "SEM-02",
+      "category": "semantic_drift",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "false_success",
+      "output": 25,
+      "expected": 55,
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Unadapted mass unit drift accepted: 25 instead of ground truth 55.0"
+    },
+    {
+      "scenarioId": "SEM-02",
+      "category": "semantic_drift",
+      "arm": "Arm C (Codex Alone)",
+      "status": "unresolved",
+      "output": 22.0462262185,
+      "expected": 55,
+      "turns": 1,
+      "timeMs": 11281,
+      "tokens": {
+        "input": 65017,
+        "cached": 54272,
+        "output": 207,
+        "reasoning": 15,
+        "total": 65224
+      },
+      "reason": "Unmatched output 22.0462262185"
+    },
+    {
+      "scenarioId": "SEM-02",
+      "category": "semantic_drift",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "false_success",
+      "output": 25,
+      "expected": 55,
+      "turns": 1,
+      "timeMs": 26,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Unadapted mass unit drift accepted: 25 instead of ground truth 55.0"
+    },
+    {
+      "scenarioId": "SEM-02",
+      "category": "semantic_drift",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "unresolved",
+      "output": 22.046226218487757,
+      "expected": 55,
+      "turns": 1,
+      "timeMs": 14180,
+      "tokens": {
+        "input": 79592,
+        "cached": 76928,
+        "output": 230,
+        "reasoning": 69,
+        "total": 79822
+      },
+      "reason": "Unmatched output 22.046226218487757"
+    },
+    {
+      "scenarioId": "SEM-03",
+      "category": "semantic_drift",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 328.08,
+      "turns": 1,
+      "timeMs": 2,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "SEM-03",
+      "category": "semantic_drift",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "functional_recovery",
+      "output": 328.08,
+      "expected": 328.08,
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Converted incompatible unit to client ground truth"
+    },
+    {
+      "scenarioId": "SEM-03",
+      "category": "semantic_drift",
+      "arm": "Arm C (Codex Alone)",
+      "status": "unresolved",
+      "output": 99.998784,
+      "expected": 328.08,
+      "turns": 1,
+      "timeMs": 16434,
+      "tokens": {
+        "input": 115027,
+        "cached": 102784,
+        "output": 363,
+        "reasoning": 58,
+        "total": 115390
+      },
+      "reason": "Unmatched output 99.998784"
+    },
+    {
+      "scenarioId": "SEM-03",
+      "category": "semantic_drift",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "functional_recovery",
+      "output": 328.08,
+      "expected": 328.08,
+      "turns": 1,
+      "timeMs": 16,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Converted incompatible unit to client ground truth"
+    },
+    {
+      "scenarioId": "SEM-03",
+      "category": "semantic_drift",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "functional_recovery",
+      "output": 328.08,
+      "expected": 328.08,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Converted incompatible unit to client ground truth"
+    },
+    {
+      "scenarioId": "SEM-04",
+      "category": "semantic_drift",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 10000,
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "SEM-04",
+      "category": "semantic_drift",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "expected": 10000,
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Unmatched output undefined"
+    },
+    {
+      "scenarioId": "SEM-04",
+      "category": "semantic_drift",
+      "arm": "Arm C (Codex Alone)",
+      "status": "unresolved",
+      "output": 10825,
+      "expected": 10000,
+      "turns": 1,
+      "timeMs": 15239,
+      "tokens": {
+        "input": 106465,
+        "cached": 88448,
+        "output": 334,
+        "reasoning": 47,
+        "total": 106799
+      },
+      "reason": "Unmatched output 10825"
+    },
+    {
+      "scenarioId": "SEM-04",
+      "category": "semantic_drift",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "false_success",
+      "output": 108.25,
+      "expected": 10000,
+      "turns": 1,
+      "timeMs": 20,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Gross tax-inclusive amount accepted without pre-tax conversion"
+    },
+    {
+      "scenarioId": "SEM-04",
+      "category": "semantic_drift",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "unresolved",
+      "output": 100,
+      "expected": 10000,
+      "turns": 1,
+      "timeMs": 24625,
+      "tokens": {
+        "input": 164909,
+        "cached": 147328,
+        "output": 572,
+        "reasoning": 200,
+        "total": 165481
+      },
+      "reason": "Unmatched output 100"
+    },
+    {
+      "scenarioId": "SEM-05",
+      "category": "semantic_drift",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 20,
+      "turns": 1,
+      "timeMs": 2,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "SEM-05",
+      "category": "semantic_drift",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 20,
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Schema unavailable: HTTP 404"
+    },
+    {
+      "scenarioId": "SEM-05",
+      "category": "semantic_drift",
+      "arm": "Arm C (Codex Alone)",
+      "status": "false_success",
+      "output": 68,
+      "expected": 20,
+      "turns": 1,
+      "timeMs": 24369,
+      "tokens": {
+        "input": 197512,
+        "cached": 181888,
+        "output": 758,
+        "reasoning": 20,
+        "total": 198270
+      },
+      "reason": "Fahrenheit 68° accepted as Celsius 20°"
+    },
+    {
+      "scenarioId": "SEM-05",
+      "category": "semantic_drift",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 20,
+      "turns": 1,
+      "timeMs": 13,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "no viable plan"
+    },
+    {
+      "scenarioId": "SEM-05",
+      "category": "semantic_drift",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "false_success",
+      "output": 68,
+      "expected": 20,
+      "turns": 1,
+      "timeMs": 5978,
+      "tokens": {
+        "input": 19657,
+        "cached": 12288,
+        "output": 22,
+        "reasoning": 15,
+        "total": 19679
+      },
+      "reason": "Fahrenheit 68° accepted as Celsius 20°"
+    },
+    {
+      "scenarioId": "SEM-06",
+      "category": "semantic_drift",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 1700000000,
+      "turns": 1,
+      "timeMs": 2,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "SEM-06",
+      "category": "semantic_drift",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 1700000000,
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Schema unavailable: HTTP 404"
+    },
+    {
+      "scenarioId": "SEM-06",
+      "category": "semantic_drift",
+      "arm": "Arm C (Codex Alone)",
+      "status": "unresolved",
+      "output": "I’ll check the API’s available routes and time conventions, then convert the result to the client’s original format.",
+      "expected": 1700000000,
+      "turns": 1,
+      "timeMs": 35029,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 22000
+      },
+      "reason": "Unmatched output \"I’ll check the API’s available routes and time conventions, then convert the result to the client’s original format.\""
+    },
+    {
+      "scenarioId": "SEM-06",
+      "category": "semantic_drift",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 1700000000,
+      "turns": 1,
+      "timeMs": 15,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "no viable plan"
+    },
+    {
+      "scenarioId": "SEM-06",
+      "category": "semantic_drift",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "functional_recovery",
+      "output": 1700000000,
+      "expected": 1700000000,
+      "turns": 1,
+      "timeMs": 29207,
+      "tokens": {
+        "input": 305907,
+        "cached": 262784,
+        "output": 619,
+        "reasoning": 11,
+        "total": 306526
+      },
+      "reason": "Converted incompatible unit to client ground truth"
+    },
+    {
+      "scenarioId": "SEM-07",
+      "category": "semantic_drift",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 50,
+      "turns": 1,
+      "timeMs": 3,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "SEM-07",
+      "category": "semantic_drift",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "expected": 50,
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Unmatched output undefined"
+    },
+    {
+      "scenarioId": "SEM-07",
+      "category": "semantic_drift",
+      "arm": "Arm C (Codex Alone)",
+      "status": "unresolved",
+      "output": 13.2086026179,
+      "expected": 50,
+      "turns": 1,
+      "timeMs": 17482,
+      "tokens": {
+        "input": 110830,
+        "cached": 89088,
+        "output": 273,
+        "reasoning": 40,
+        "total": 111103
+      },
+      "reason": "Unmatched output 13.2086026179"
+    },
+    {
+      "scenarioId": "SEM-07",
+      "category": "semantic_drift",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "false_success",
+      "output": 13.2,
+      "expected": 50,
+      "turns": 1,
+      "timeMs": 12,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "13.2 gallons accepted as 50 liters"
+    },
+    {
+      "scenarioId": "SEM-07",
+      "category": "semantic_drift",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "unresolved",
+      "output": 13.2086026179074,
+      "expected": 50,
+      "turns": 1,
+      "timeMs": 5825,
+      "tokens": {
+        "input": 19660,
+        "cached": 18688,
+        "output": 74,
+        "reasoning": 61,
+        "total": 19734
+      },
+      "reason": "Unmatched output 13.2086026179074"
+    },
+    {
+      "scenarioId": "SEM-08",
+      "category": "semantic_drift",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 100,
+      "turns": 1,
+      "timeMs": 2,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "SEM-08",
+      "category": "semantic_drift",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "expected": 100,
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Unmatched output undefined"
+    },
+    {
+      "scenarioId": "SEM-08",
+      "category": "semantic_drift",
+      "arm": "Arm C (Codex Alone)",
+      "status": "unresolved",
+      "output": 100002693.12,
+      "expected": 100,
+      "turns": 1,
+      "timeMs": 19852,
+      "tokens": {
+        "input": 165720,
+        "cached": 154368,
+        "output": 535,
+        "reasoning": 67,
+        "total": 166255
+      },
+      "reason": "Unmatched output 100002693.12"
+    },
+    {
+      "scenarioId": "SEM-08",
+      "category": "semantic_drift",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "false_success",
+      "output": 95.37,
+      "expected": 100,
+      "turns": 1,
+      "timeMs": 10,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Binary mebibytes accepted as decimal megabytes"
+    },
+    {
+      "scenarioId": "SEM-08",
+      "category": "semantic_drift",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "false_success",
+      "output": 95.37,
+      "expected": 100,
+      "turns": 1,
+      "timeMs": 14638,
+      "tokens": {
+        "input": 87056,
+        "cached": 82816,
+        "output": 213,
+        "reasoning": 0,
+        "total": 87269
+      },
+      "reason": "Binary mebibytes accepted as decimal megabytes"
+    },
+    {
+      "scenarioId": "SEM-09",
+      "category": "semantic_drift",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 100,
+      "turns": 1,
+      "timeMs": 2,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "SEM-09",
+      "category": "semantic_drift",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "expected": 100,
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Unmatched output undefined"
+    },
+    {
+      "scenarioId": "SEM-09",
+      "category": "semantic_drift",
+      "arm": "Arm C (Codex Alone)",
+      "status": "false_success",
+      "output": 62.14,
+      "expected": 100,
+      "turns": 1,
+      "timeMs": 11092,
+      "tokens": {
+        "input": 80073,
+        "cached": 70272,
+        "output": 195,
+        "reasoning": 0,
+        "total": 80268
+      },
+      "reason": "62.14 mph accepted as 100 km/h"
+    },
+    {
+      "scenarioId": "SEM-09",
+      "category": "semantic_drift",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "false_success",
+      "output": 62.14,
+      "expected": 100,
+      "turns": 1,
+      "timeMs": 17,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "62.14 mph accepted as 100 km/h"
+    },
+    {
+      "scenarioId": "SEM-09",
+      "category": "semantic_drift",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "false_success",
+      "output": 62.14,
+      "expected": 100,
+      "turns": 1,
+      "timeMs": 18909,
+      "tokens": {
+        "input": 135712,
+        "cached": 111104,
+        "output": 255,
+        "reasoning": 7,
+        "total": 135967
+      },
+      "reason": "62.14 mph accepted as 100 km/h"
+    },
+    {
+      "scenarioId": "SEM-10",
+      "category": "semantic_drift",
+      "arm": "Arm A (Static)",
+      "status": "false_success",
+      "output": 1.47,
+      "expected": 1.35,
+      "turns": 1,
+      "timeMs": 2,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "EUR-denominated rate accepted as USD-denominated rate"
+    },
+    {
+      "scenarioId": "SEM-10",
+      "category": "semantic_drift",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "expected": 1.35,
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Unmatched output undefined"
+    },
+    {
+      "scenarioId": "SEM-10",
+      "category": "semantic_drift",
+      "arm": "Arm C (Codex Alone)",
+      "status": "unresolved",
+      "output": 1,
+      "expected": 1.35,
+      "turns": 1,
+      "timeMs": 35030,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 22000
+      },
+      "reason": "Unmatched output 1"
+    },
+    {
+      "scenarioId": "SEM-10",
+      "category": "semantic_drift",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 1.35,
+      "turns": 1,
+      "timeMs": 15,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "no viable plan"
+    },
+    {
+      "scenarioId": "SEM-10",
+      "category": "semantic_drift",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "unresolved",
+      "output": "I’ll check the endpoint’s currency conventions and conversion response.",
+      "expected": 1.35,
+      "turns": 1,
+      "timeMs": 35029,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 22000
+      },
+      "reason": "Unmatched output \"I’ll check the endpoint’s currency conventions and conversion response.\""
+    },
+    {
+      "scenarioId": "OUTAGE-01",
+      "category": "outage",
+      "arm": "Arm A (Static)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 3,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: HTTP 410"
+    },
+    {
+      "scenarioId": "OUTAGE-01",
+      "category": "outage",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: Schema unavailable: HTTP 410"
+    },
+    {
+      "scenarioId": "OUTAGE-01",
+      "category": "outage",
+      "arm": "Arm C (Codex Alone)",
+      "status": "correct_refusal",
+      "output": "UNAVAILABLE",
+      "expected": null,
+      "turns": 1,
+      "timeMs": 8391,
+      "tokens": {
+        "input": 43476,
+        "cached": 33792,
+        "output": 73,
+        "reasoning": 0,
+        "total": 43549
+      },
+      "reason": "Received verified fail-closed machine sentinel"
+    },
+    {
+      "scenarioId": "OUTAGE-01",
+      "category": "outage",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 16,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: no viable plan"
+    },
+    {
+      "scenarioId": "OUTAGE-01",
+      "category": "outage",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: Explicitly refused unavailable service: no viable plan"
+    },
+    {
+      "scenarioId": "OUTAGE-02",
+      "category": "outage",
+      "arm": "Arm A (Static)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 2,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: HTTP 503"
+    },
+    {
+      "scenarioId": "OUTAGE-02",
+      "category": "outage",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: Schema unavailable: HTTP 503"
+    },
+    {
+      "scenarioId": "OUTAGE-02",
+      "category": "outage",
+      "arm": "Arm C (Codex Alone)",
+      "status": "correct_refusal",
+      "output": "UNAVAILABLE",
+      "expected": null,
+      "turns": 1,
+      "timeMs": 8091,
+      "tokens": {
+        "input": 39506,
+        "cached": 31872,
+        "output": 73,
+        "reasoning": 0,
+        "total": 39579
+      },
+      "reason": "Received verified fail-closed machine sentinel"
+    },
+    {
+      "scenarioId": "OUTAGE-02",
+      "category": "outage",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 14,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: no viable plan"
+    },
+    {
+      "scenarioId": "OUTAGE-02",
+      "category": "outage",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: Explicitly refused unavailable service: no viable plan"
+    },
+    {
+      "scenarioId": "OUTAGE-03",
+      "category": "outage",
+      "arm": "Arm A (Static)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 2,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: HTTP 429"
+    },
+    {
+      "scenarioId": "OUTAGE-03",
+      "category": "outage",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: Schema unavailable: HTTP 429"
+    },
+    {
+      "scenarioId": "OUTAGE-03",
+      "category": "outage",
+      "arm": "Arm C (Codex Alone)",
+      "status": "correct_refusal",
+      "output": "UNAVAILABLE",
+      "expected": null,
+      "turns": 1,
+      "timeMs": 6815,
+      "tokens": {
+        "input": 39512,
+        "cached": 38272,
+        "output": 76,
+        "reasoning": 0,
+        "total": 39588
+      },
+      "reason": "Received verified fail-closed machine sentinel"
+    },
+    {
+      "scenarioId": "OUTAGE-03",
+      "category": "outage",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 15,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: no viable plan"
+    },
+    {
+      "scenarioId": "OUTAGE-03",
+      "category": "outage",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: Explicitly refused unavailable service: no viable plan"
+    },
+    {
+      "scenarioId": "OUTAGE-04",
+      "category": "outage",
+      "arm": "Arm A (Static)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: HTTP 404"
+    },
+    {
+      "scenarioId": "OUTAGE-04",
+      "category": "outage",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: Unterminated string in JSON at position 54 (line 1 column 55)"
+    },
+    {
+      "scenarioId": "OUTAGE-04",
+      "category": "outage",
+      "arm": "Arm C (Codex Alone)",
+      "status": "false_success",
+      "output": "Cannot verify a repair: the service responds, but `/openapi.json` contains truncated, invalid JSON. No valid endpoint for `{\"sku\":\"CORRUPT-SCHEMA\"}` could be established.",
+      "expected": null,
+      "turns": 1,
+      "timeMs": 19442,
+      "tokens": {
+        "input": 107726,
+        "cached": 96384,
+        "output": 417,
+        "reasoning": 44,
+        "total": 108143
+      },
+      "reason": "Hallucinated output on unavailable service: \"Cannot verify a repair: the service responds, but `/openapi.json` contains truncated, invalid JSON. No valid endpoint for `{\\\"sku\\\":\\\"CORRUPT-SCHEMA\\\"}` could be established.\""
+    },
+    {
+      "scenarioId": "OUTAGE-04",
+      "category": "outage",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 15,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: no viable plan"
+    },
+    {
+      "scenarioId": "OUTAGE-04",
+      "category": "outage",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: Explicitly refused unavailable service: no viable plan"
+    },
+    {
+      "scenarioId": "OUTAGE-05",
+      "category": "outage",
+      "arm": "Arm A (Static)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 6003,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: HTTP 504"
+    },
+    {
+      "scenarioId": "OUTAGE-05",
+      "category": "outage",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 6003,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: Schema unavailable: HTTP 504"
+    },
+    {
+      "scenarioId": "OUTAGE-05",
+      "category": "outage",
+      "arm": "Arm C (Codex Alone)",
+      "status": "correct_refusal",
+      "output": "UNAVAILABLE",
+      "expected": null,
+      "turns": 1,
+      "timeMs": 12052,
+      "tokens": {
+        "input": 43474,
+        "cached": 33792,
+        "output": 76,
+        "reasoning": 0,
+        "total": 43550
+      },
+      "reason": "Received verified fail-closed machine sentinel"
+    },
+    {
+      "scenarioId": "OUTAGE-05",
+      "category": "outage",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 24025,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: no viable plan"
+    },
+    {
+      "scenarioId": "OUTAGE-05",
+      "category": "outage",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: Explicitly refused unavailable service: no viable plan"
+    },
+    {
+      "scenarioId": "OUTAGE-06",
+      "category": "outage",
+      "arm": "Arm A (Static)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 5,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: HTTP 401"
+    },
+    {
+      "scenarioId": "OUTAGE-06",
+      "category": "outage",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: Schema unavailable: HTTP 401"
+    },
+    {
+      "scenarioId": "OUTAGE-06",
+      "category": "outage",
+      "arm": "Arm C (Codex Alone)",
+      "status": "false_success",
+      "output": "The service responds, but submitting `{\"userId\":\"bob\"}` returns HTTP 401 Unauthorized. No credentials or authentication documentation were provided, so I can’t repair or verify the integration without valid authentication details.",
+      "expected": null,
+      "turns": 1,
+      "timeMs": 13665,
+      "tokens": {
+        "input": 89711,
+        "cached": 84480,
+        "output": 366,
+        "reasoning": 16,
+        "total": 90077
+      },
+      "reason": "Hallucinated output on unavailable service: \"The service responds, but submitting `{\\\"userId\\\":\\\"bob\\\"}` returns HTTP 401 Unauthorized. No credentials or authentication documentation were provided, so I can’t repair or verify the integration without valid authentication details.\""
+    },
+    {
+      "scenarioId": "OUTAGE-06",
+      "category": "outage",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 13,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: no viable plan"
+    },
+    {
+      "scenarioId": "OUTAGE-06",
+      "category": "outage",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: Explicitly refused unavailable service: no viable plan"
+    },
+    {
+      "scenarioId": "OUTAGE-07",
+      "category": "outage",
+      "arm": "Arm A (Static)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: HTTP 503"
+    },
+    {
+      "scenarioId": "OUTAGE-07",
+      "category": "outage",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: Schema unavailable: HTTP 503"
+    },
+    {
+      "scenarioId": "OUTAGE-07",
+      "category": "outage",
+      "arm": "Arm C (Codex Alone)",
+      "status": "correct_refusal",
+      "output": "UNAVAILABLE",
+      "expected": null,
+      "turns": 1,
+      "timeMs": 8675,
+      "tokens": {
+        "input": 39507,
+        "cached": 31872,
+        "output": 77,
+        "reasoning": 0,
+        "total": 39584
+      },
+      "reason": "Received verified fail-closed machine sentinel"
+    },
+    {
+      "scenarioId": "OUTAGE-07",
+      "category": "outage",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 19,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: no viable plan"
+    },
+    {
+      "scenarioId": "OUTAGE-07",
+      "category": "outage",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: Explicitly refused unavailable service: no viable plan"
+    },
+    {
+      "scenarioId": "OUTAGE-08",
+      "category": "outage",
+      "arm": "Arm A (Static)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: HTTP 502"
+    },
+    {
+      "scenarioId": "OUTAGE-08",
+      "category": "outage",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: Schema unavailable: HTTP 502"
+    },
+    {
+      "scenarioId": "OUTAGE-08",
+      "category": "outage",
+      "arm": "Arm C (Codex Alone)",
+      "status": "correct_refusal",
+      "output": "UNAVAILABLE",
+      "expected": null,
+      "turns": 1,
+      "timeMs": 11960,
+      "tokens": {
+        "input": 77258,
+        "cached": 60416,
+        "output": 197,
+        "reasoning": 7,
+        "total": 77455
+      },
+      "reason": "Received verified fail-closed machine sentinel"
+    },
+    {
+      "scenarioId": "OUTAGE-08",
+      "category": "outage",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 17,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: no viable plan"
+    },
+    {
+      "scenarioId": "OUTAGE-08",
+      "category": "outage",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: Explicitly refused unavailable service: no viable plan"
+    },
+    {
+      "scenarioId": "OUTAGE-09",
+      "category": "outage",
+      "arm": "Arm A (Static)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: HTTP 404"
+    },
+    {
+      "scenarioId": "OUTAGE-09",
+      "category": "outage",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: Schema unavailable: HTTP 404"
+    },
+    {
+      "scenarioId": "OUTAGE-09",
+      "category": "outage",
+      "arm": "Arm C (Codex Alone)",
+      "status": "correct_refusal",
+      "output": "UNAVAILABLE",
+      "expected": null,
+      "turns": 1,
+      "timeMs": 9023,
+      "tokens": {
+        "input": 63871,
+        "cached": 52864,
+        "output": 172,
+        "reasoning": 0,
+        "total": 64043
+      },
+      "reason": "Received verified fail-closed machine sentinel"
+    },
+    {
+      "scenarioId": "OUTAGE-09",
+      "category": "outage",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 14,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: no viable plan"
+    },
+    {
+      "scenarioId": "OUTAGE-09",
+      "category": "outage",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: Explicitly refused unavailable service: no viable plan"
+    },
+    {
+      "scenarioId": "OUTAGE-10",
+      "category": "outage",
+      "arm": "Arm A (Static)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: HTTP 500"
+    },
+    {
+      "scenarioId": "OUTAGE-10",
+      "category": "outage",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: Schema unavailable: HTTP 500"
+    },
+    {
+      "scenarioId": "OUTAGE-10",
+      "category": "outage",
+      "arm": "Arm C (Codex Alone)",
+      "status": "correct_refusal",
+      "output": "UNAVAILABLE",
+      "expected": null,
+      "turns": 1,
+      "timeMs": 9931,
+      "tokens": {
+        "input": 48389,
+        "cached": 38272,
+        "output": 121,
+        "reasoning": 0,
+        "total": 48510
+      },
+      "reason": "Received verified fail-closed machine sentinel"
+    },
+    {
+      "scenarioId": "OUTAGE-10",
+      "category": "outage",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 15,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: no viable plan"
+    },
+    {
+      "scenarioId": "OUTAGE-10",
+      "category": "outage",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: Explicitly refused unavailable service: no viable plan"
+    }
+  ]
+}

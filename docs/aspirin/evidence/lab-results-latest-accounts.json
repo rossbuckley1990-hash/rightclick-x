@@ -1,0 +1,243 @@
+{
+  "seed": 217320662,
+  "domain": "accounts",
+  "gateway": false,
+  "startedAt": "2026-11-03T21:20:28.440Z",
+  "steps": [
+    {
+      "n": 1,
+      "title": "Start disposable services generated from fixtures",
+      "ok": true,
+      "domain": "accounts",
+      "services": 3,
+      "givenToRightClickX": "the services' root addresses"
+    },
+    {
+      "n": 2,
+      "title": "Connect an MCP client to RightClick X (stdio)",
+      "ok": true,
+      "tools": 13,
+      "startupMs": 152.6
+    },
+    {
+      "n": 3,
+      "title": "Present a business objective: \"For a bank account, find the VAT rate that applies in its holder's country.\"",
+      "ok": true,
+      "goal": {
+        "have": {
+          "account_id": "<id>"
+        },
+        "want": "number",
+        "intent": "vat rate account holder country",
+        "verify": [
+          {
+            "op": "type",
+            "value": "number"
+          }
+        ]
+      }
+    },
+    {
+      "n": 4,
+      "title": "Discover contracts from root addresses only (no protocols, no schemas given)",
+      "ok": true,
+      "found": [
+        "graphql",
+        "mcp",
+        "mcp"
+      ],
+      "newCapabilities": 3,
+      "ms": 35.1
+    },
+    {
+      "n": 5,
+      "title": "Identify suitable capabilities",
+      "ok": true,
+      "candidatePlans": 3,
+      "best": [
+        "Account Inquiry",
+        "Get account holder",
+        "VAT rate lookup"
+      ],
+      "planningMs": 4.2
+    },
+    {
+      "n": 6,
+      "title": "Compose a multi-provider workflow",
+      "ok": true,
+      "steps": [
+        "Account Inquiry ← acctno=$in.account_id",
+        "Get account holder ← hldr=0.cref",
+        "VAT rate lookup ← cc=1.jur"
+      ]
+    },
+    {
+      "n": 7,
+      "title": "Execute the workflow",
+      "ok": true,
+      "input": "ACC-1006",
+      "pipeline": [
+        "Account Inquiry",
+        "Get account holder",
+        "VAT rate lookup"
+      ],
+      "ms": 7.6
+    },
+    {
+      "n": 8,
+      "title": "Verify against independently held test data",
+      "ok": true,
+      "expected": 5.8,
+      "got": 5.8
+    },
+    {
+      "n": 9,
+      "title": "Save the successful composition and reuse it",
+      "ok": true,
+      "saved": "Vat rate account holder country: Account Inquiry → Get account holder → VAT rate lookup",
+      "reusedAs": [
+        "Vat rate account holder country: Account Inquiry → Get account holder → VAT rate lookup"
+      ],
+      "expected": 9.2,
+      "got": 9.2,
+      "ms": 3.8
+    },
+    {
+      "n": 10,
+      "title": "Change the interface of the last provider in the chain (Duneworks)",
+      "ok": true,
+      "before": "mcp \"VAT rate lookup\" cc → cc, txr",
+      "after": "graphql \"VAT rate inquiry\" jur → result.{jur, vatpct}"
+    },
+    {
+      "n": 11,
+      "title": "Recover without changing integration code",
+      "ok": true,
+      "healing": [
+        "API drift at http://127.0.0.1:56823/: mcp:duneworks → graphql:127-0-0-1-56823-graphql; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+      ],
+      "via": [
+        "graphql:127-0-0-1-56821-graphql",
+        "mcp:harbourly",
+        "graphql:127-0-0-1-56823-graphql"
+      ],
+      "expected": 11.7,
+      "got": 11.7,
+      "ms": 12.2
+    },
+    {
+      "n": 12,
+      "title": "Remove that provider (Duneworks)",
+      "ok": true
+    },
+    {
+      "n": 13,
+      "title": "Withdraw its capabilities accurately; report the objective as impossible, not faked",
+      "ok": true,
+      "status": "failed",
+      "healing": [
+        "provider gone at http://127.0.0.1:56823/: withdrew graphql:127-0-0-1-56823-graphql (1 capabilities, 1 pipeline(s) retired)"
+      ],
+      "withdrawn": [
+        "GraphQL 127.0.0.1:56823"
+      ],
+      "capabilities": "27 → 25",
+      "savedPipelines": "1 → 0"
+    },
+    {
+      "n": 14,
+      "title": "Introduce a different provider (Northwind Billing, graphql): the objective works again",
+      "ok": true,
+      "learned": [
+        "graphql: 1 fields"
+      ],
+      "via": [
+        "graphql:127-0-0-1-56821-graphql",
+        "mcp:harbourly",
+        "graphql:127-0-0-1-56897-graphql"
+      ],
+      "expected": 11.7,
+      "got": 11.7,
+      "ms": 2.8
+    }
+  ],
+  "benchmarks": {
+    "startupMs": 152.6,
+    "mcpLatencyMs": {
+      "p50": 0.03,
+      "p95": 0.12
+    },
+    "discoveryMs": 35.1,
+    "graph": {
+      "providers": 5,
+      "capabilities": 26,
+      "edges": 43,
+      "chains2": 43,
+      "chains3": 63,
+      "total": 132
+    },
+    "graphStatsMs": 0.1,
+    "planningMs": 4.2,
+    "executionMs": 7.6,
+    "recoveryAfterChangeMs": 12.2,
+    "recoveryAfterNewProviderMs": 2.8,
+    "memoryMB": 92
+  },
+  "freeze": {
+    "commit": "fe60f255fde53cbe4c43b2e4b24f49dac5af0620",
+    "tag": "lab-freeze-9",
+    "productCodeChangedSinceTag": "bin/command-input.ts\nbin/rcx.ts\nsrc/core/activity.ts\nsrc/core/authority.ts\nsrc/core/cli-conformance.ts\nsrc/core/cli-continuity.ts\nsrc/core/cli-environment.ts\nsrc/core/cli-files.ts\nsrc/core/cli-outcome.ts\nsrc/core/contract.ts\nsrc/core/execution-policy.ts\nsrc/core/fields.ts\nsrc/core/goal-identity.ts\nsrc/core/graph.ts\nsrc/core/identities.ts\nsrc/core/json.ts\nsrc/core/knowledge.ts\nsrc/core/ledger.ts\nsrc/core/links.ts\nsrc/core/planner.ts\nsrc/core/programs.ts\nsrc/core/result-description.ts\nsrc/core/sandbox.ts\nsrc/core/satisfaction.ts\nsrc/core/secrets.ts\nsrc/core/semantics.ts\nsrc/core/state-conflict.ts\nsrc/core/state-format.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/core/workflow-continuation.ts\nsrc/core/yaml.ts\nsrc/entry/durable.ts\nsrc/entry/edge.ts\nsrc/entry/node-host.ts\nsrc/index.ts\nsrc/interface/authority-evidence.ts\nsrc/interface/dashboard-state.ts\nsrc/interface/dashboard.ts\nsrc/interface/graphql-server.ts\nsrc/interface/http.ts\nsrc/interface/mcp-server.ts\nsrc/interface/tools.ts\nsrc/reflectors/cli.ts\nsrc/reflectors/discover.ts\nsrc/reflectors/environment.ts\nsrc/reflectors/graphql.ts\nsrc/reflectors/http-continuation.ts\nsrc/reflectors/mcp.ts\nsrc/reflectors/net.ts\nsrc/reflectors/openapi-links.ts\nsrc/reflectors/openapi.ts\nsrc/reflectors/platform.ts\nsrc/runtime.ts",
+    "uncommittedProductChanges": "M src/core/planner.ts\n M src/core/quantities.ts\n M src/core/semantics.ts\n M src/core/workflow-continuation.ts\n M src/index.ts\n M src/runtime.ts\n?? src/codex-fallback.ts\n?? src/core/units.ts\n?? src/recovery.ts",
+    "frozen": false
+  },
+  "environment": [
+    {
+      "service": "ledger",
+      "brand": "Lumen Cargo",
+      "protocol": "graphql",
+      "operation": "Account inquiry",
+      "input": "acctno",
+      "outputs": [
+        "acctno",
+        "cref",
+        "curbal"
+      ]
+    },
+    {
+      "service": "kyc",
+      "brand": "Harbourly",
+      "protocol": "mcp",
+      "operation": "Get account holder",
+      "input": "hldr",
+      "outputs": [
+        "hldr",
+        "nm",
+        "jur"
+      ]
+    },
+    {
+      "service": "vat",
+      "brand": "Duneworks",
+      "protocol": "mcp",
+      "operation": "VAT rate lookup",
+      "input": "cc",
+      "outputs": [
+        "cc",
+        "txr"
+      ]
+    }
+  ],
+  "firstRunProviders": [
+    "graphql:127-0-0-1-56821-graphql",
+    "mcp:harbourly",
+    "mcp:duneworks"
+  ],
+  "receipts": {
+    "count": 21,
+    "intact": true,
+    "brokenAt": null,
+    "head": "8d333fb74cef401d54148238af1ba341fe978e5512e81a12638d07d72dfc60eb"
+  },
+  "passed": 14,
+  "total": 14
+}
