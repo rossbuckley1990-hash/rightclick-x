@@ -6,8 +6,8 @@
 **Independent Acceptance Gate**: SENTINEL v1.0 (`/Users/ross/sentinel-verified/dist/cli.js`)  
 **External Frozen Contract**: `/Users/ross/sentinel-contract-survival-10.json`  
 **Contract Content Hash**: `5bff8cac8062758955a21c607edf3885926c11e5777a3292183379b31ddbad1e`  
-**Receipt Content Hash**: `dd7399492059cac3114c4eec187957480825865eb8e2bb17fadaf95ff9170723`  
-**HTML Evidence Report**: `/Users/ross/.sentinel/reports/dd7399492059cac3114c4eec187957480825865eb8e2bb17fadaf95ff9170723.html`  
+**Receipt Content Hash**: `1770ca7bf72164ebce134a028cc80d55796c81427f8a81071d060de3f7f1a170`  
+**HTML Evidence Report**: `/Users/ross/.sentinel/reports/1770ca7bf72164ebce134a028cc80d55796c81427f8a81071d060de3f7f1a170.html`  
 
 ---
 
@@ -171,11 +171,11 @@ All 10 mutation checks passed, confirming that the checks require authentic, dyn
 
 ## 8. Verification Artifacts & Reproducibility
 
-- **Receipt Hash**: `dd7399492059cac3114c4eec187957480825865eb8e2bb17fadaf95ff9170723`
-- **Report Path**: `/Users/ross/.sentinel/reports/dd7399492059cac3114c4eec187957480825865eb8e2bb17fadaf95ff9170723.html`
+- **Receipt Hash**: `1770ca7bf72164ebce134a028cc80d55796c81427f8a81071d060de3f7f1a170`
+- **Report Path**: `/Users/ross/.sentinel/reports/1770ca7bf72164ebce134a028cc80d55796c81427f8a81071d060de3f7f1a170.html`
 - **Replay Command**:
   ```bash
-  node /Users/ross/sentinel-verified/dist/cli.js replay dd7399492059cac3114c4eec187957480825865eb8e2bb17fadaf95ff9170723 --allow-local
+  node /Users/ross/sentinel-verified/dist/cli.js replay 1770ca7bf72164ebce134a028cc80d55796c81427f8a81071d060de3f7f1a170 --allow-local
   ```
 - **Live Re-Verification Command**:
   ```bash
