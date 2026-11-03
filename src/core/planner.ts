@@ -535,7 +535,9 @@ function finalize(graph: CapabilityGraph, node: Node, v: Value, d: number, inten
   // require explicit checks before a generic projection. Never infer a
   // conversion from the caller's payload text. A schema is still only a claim.
   const quantity = (type: string) => isQuantityType(type.replace(/^(?:list:)+/, ""));
-  const erased = quantity(v.type) || (v.type.replace(/^(?:list:)+/, "") === "json" && graph.get(node.steps[v.step].capability)!.outputs.some(p => quantity(p.type)));
+  const producing = graph.get(node.steps[v.step].capability)!;
+  const declaredQuantity = [...producing.outputs, ...(producing.fields ?? [])].some(p => quantity(p.type ?? ""));
+  const erased = quantity(v.type) || (v.type.replace(/^(?:list:)+/, "") === "json" && declaredQuantity);
   if (["number", "json", "list:number", "list:json"].includes(want ?? "") && erased && !checkedQuantityProjection) return null;
 
   const providers = [...new Set(node.steps.map((s) => graph.get(s.capability)!.provider))];
