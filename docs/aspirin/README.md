@@ -66,4 +66,4 @@ Use a fresh evidence filename. The exercise starts separate authenticated provid
 
 Original reproduction: archive `4b3d3e2`, copy the test-only reproduction from `fe60f25`, run `node --test test/semantic-continuity.test.ts`. Five original affected cases fail with the original incorrect values. The additional temperature control has no discoverable original contract and already refuses deterministically; the hybrid's historical temperature answer is not a reproduced model execution.
 
-New source and evidence identities are in `evidence/source-identities.json` and `evidence/SHA256SUMS`. Failed development attempts are retained. Existing scripts write `latest` artifacts; this session copied new results separately and restored those historical files before committing.
+New source and evidence identities are in `evidence/source-identities.json`, the subsequent `evidence/accounting-freeze.json`, and `evidence/SHA256SUMS`. Failed development attempts are retained. Existing scripts write `latest` artifacts; this session copied new results separately and restored those historical files before committing.
