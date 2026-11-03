@@ -394,6 +394,19 @@ export function samplesFor(docs: string, seed: number): Sample[] {
   // A feature-rich text that exercises common behaviours (tabs, repeats, blank lines, case,
   // numbers, runs of spaces), so a program's operative transformation is actually observed.
   out.push({ kind: "text", content: `${pick(words, 2)}\t${seed % 90 + 10}\t${pick(words, 4).toUpperCase()}\n${pick(words, 5)}  ${pick(words, 6)}   end\n\n${pick(words, 2)}\t${seed % 90 + 10}\t${pick(words, 4).toUpperCase()}\nZeta 3\nalpha 21\n` });
+  // Contrasting Markdown documents, for programs whose own documentation names a document
+  // format. A format-specific mode (one that reports what a document contains) produces
+  // nothing at all on a document without any, so two samples that differ in content are
+  // needed before its output can be shown to depend on its input. Nothing here names a
+  // program: the same five documents go to every program whose docs mention them.
+  if (/\bmarkdown\b|\bmd\b|\blink|\burl\b|\bdocument|\bpage\b|\bsite\b/i.test(d)) {
+    const host = (i: number) => `${pick(words, i)}.${pick(words, i + 2)}.example.com`;
+    out.push({ kind: "md", content: `# ${sentence(1)}\n\nSee [${pick(words, 2)}](https://${host(1)}/${pick(words, 3)}) and\n[${pick(words, 4)}](https://${host(5)}/spec/v${seed % 4}) for details.\n\nA third destination: [${pick(words, 6)}](https://${host(1)}/about).\n` });
+    out.push({ kind: "md", content: `# ${sentence(2)}\n\nReported by [${pick(words, 3)}](https://${host(7)}/items/${seed % 9}) and\n[${pick(words, 5)}](https://${host(9)}/index.html).\n\nAlso [${pick(words, 1)}](https://${host(3)}/${pick(words, 2)}/${pick(words, 4)}).\n` });
+    out.push({ kind: "md", content: `# ${sentence(3)}\n\n${pick(words, 1)} ${pick(words, 3)} **${pick(words, 5)}** ${pick(words, 7)}.\n\n- ${pick(words, 2)} ${pick(words, 4)}\n- ${pick(words, 6)} ${pick(words, 8)}\n\nA closing paragraph with no destinations at all.\n` });
+    out.push({ kind: "md", content: `# ${sentence(4)}\n\n- [sibling](${pick(words, 1)}.md)\n- [parent](../other/${pick(words, 2)}.md)\n- [rooted](/absolute/${pick(words, 3)}/page.md)\n` });
+    out.push({ kind: "md", content: `# ${sentence(5)}\n\nInline: [${pick(words, 1)}](https://${host(2)}/a).\nAutolink: <https://${host(4)}/b>.\nMail: <${pick(words, 5)}@${host(6)}>.\nReference: [${pick(words, 7)}][ref]\n\n[ref]: https://${host(8)}/f\n\n\`\`\`text\nfenced, so not a link: https://${host(9)}/ignored\n\`\`\`\n\n<!-- comment: https://${host(3)}/hidden -->\n` });
+  }
   // Plain text, in related pairs that differ in some lines (useful to compare/merge tools).
   for (const v of [0, 11]) {
     const base = Array.from({ length: 6 + (v % 3) }, (_, i) => sentence(i + v));
@@ -455,13 +468,22 @@ export function outputKind(stdout: string): CliInvoke["output"] {
   return "text";
 }
 
-const SEM: Record<string, SemType> = { html: "html", xml: "text", json: "json", csv: "text", text: "text" };
+const SEM: Record<string, SemType> = { html: "html", xml: "text", json: "json", csv: "text", text: "text", md: "markdown" };
 
 function slug(s: string) {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "run";
 }
 
-const OUTPUT_WORDS = /\b(output|print|show|display|format|indent|pretty|quiet|suppress|error|warning|report|count|side|column|wrap|sort|unique|case|upper|lower|number|summary|xml|xhtml|json|clean|strip|compact|width|minimal|verbose|ignore|merge|left|right|common|only)\b/i;
+const OUTPUT_WORDS = /\b(output|print|show|display|format|indent|pretty|quiet|suppress|error|warning|report|count|side|column|wrap|sort|unique|case|upper|lower|number|summary|xml|xhtml|json|clean|strip|compact|width|minimal|verbose|ignore|merge|left|right|common|only|dump|dumped|emit|render)\b/i;
+
+/** Sample kinds a program's own documentation names, used to decide which kinds a mode is probed on. */
+const FORMAT_WORDS: Record<string, RegExp> = {
+  md: /\bmarkdown\b|\bmd\b/i,
+  html: /\bx?html\b/i,
+  xml: /\bxml\b/i,
+  json: /\bjson\b/i,
+  csv: /\bcsv\b|comma.separated/i,
+};
 
 export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed?: number } = {}): Promise<{ reflection: Reflection | null; investigation: Investigation }> {
   const fs = await import("node:fs");
@@ -794,9 +816,27 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
   const primaryKind = (defaultWorks("text") ? "text" : kinds.find(defaultWorks)) ?? kinds[0];
   // The channel took several kinds of text (plain, markup, JSON, CSV): every mode reads any text.
   const channelAnyText = defaultWorks("text") && kinds.filter(defaultWorks).length >= 2;
+  // A mode is probed on the most general kind the program accepted, and on the input formats its
+  // own documentation names: a format-specific mode reports nothing at all on a document that lacks
+  // what it reports, so probing one kind cannot show that its output depends on its input.
+  const probeKinds = [primaryKind, ...kinds.filter((k) => k !== primaryKind && FORMAT_WORDS[k]?.test(inv.program.description ?? ""))];
   for (const o of candidates) {
     const flag = o.flags[o.flags.length - 1];
-    if (works(await attempt(flag.replace(/^-+/, ""), [flag], best, primaryKind, 0))) await attempt(flag.replace(/^-+/, ""), [flag], best, primaryKind, 1);
+    const mode = flag.replace(/^-+/, "");
+    for (const kind of probeKinds) {
+      const pool = samples.filter((s) => s.kind === kind).length;
+      if (!pool) continue;
+      // Enough variants to establish input-dependence: two working trials whose outputs differ.
+      const seen = new Set<string>();
+      let working = 0;
+      for (let v = 0; v < Math.min(4, pool) && !(working >= 2 && seen.size >= 2); v++) {
+        const t = await attempt(mode, [flag], best, kind, v);
+        if (!works(t)) continue;
+        working++;
+        seen.add(t!.r.stdout);
+      }
+      if (working >= 2 && seen.size >= 2) break;
+    }
   }
 
   // Failure behaviour: empty input.
@@ -873,7 +913,10 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
       const kw = k === "html" ? "x?html" : k;
       return new RegExp(`\\b${kw}\\b`, "i").test(purpose) && !new RegExp(`\\b(as|to|into|in)\\s+${kw}\\b`, "i").test(purpose) && defaultWorks(k);
     });
-    const portType: SemType = documented.length === 1 && SEM[documented[0]] !== "text" ? SEM[documented[0]] : anyText ? "text" : inType;
+    // Typed by what the experiments actually fed it, then by documented purpose, then by whether
+    // several kinds of text worked.
+    const portType: SemType = inKinds.length === 1 && SEM[inKinds[0]] !== "text" ? SEM[inKinds[0]]
+      : documented.length === 1 && SEM[documented[0]] !== "text" ? SEM[documented[0]] : anyText ? "text" : inType;
     const names = best.id === "stdin" ? [portType === "html" ? "html" : portType === "json" ? "json" : "input"] : portNames;
     const literalPort = (n: string) => (/^[a-z][\w]*$/i.test(n) ? n : `value${literalNames.indexOf(n) + 1}`);
     const inputs: Port[] = [

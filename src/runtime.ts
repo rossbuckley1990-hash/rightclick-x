@@ -3987,7 +3987,11 @@ export class RightClick {
           // With named files supplied instead, an unfilled content operand is left out.
           if (args[a.input] === undefined && inv.filesPort && args[inv.filesPort]) return null;
           // Named by what the content is (.json, .html, .xml, .svg): many programs choose a parser by extension.
-          const name = `in${i}-${a.input.replace(/[^\w]/g, "")}.${contentExtension(asContent(args[a.input]))}`;
+          // A port that declares a document format names its own extension; sniffing is only the fallback.
+          // Without this, a capability investigated on .md samples is handed a .txt file at run time and the
+          // program parses it as something else, so the observed contract does not hold for the caller.
+          const declared = PORT_EXTENSIONS[cap.inputs.find((p) => p.name === a.input)?.type ?? ""];
+          const name = `in${i}-${a.input.replace(/[^\w]/g, "")}.${declared ?? contentExtension(asContent(args[a.input]))}`;
           files[name] = asContent(args[a.input]);
           return name;
         }), ...chosenAfterArgs].filter((x): x is string => x !== null);
@@ -4140,6 +4144,9 @@ function asContent(v: unknown): string {
 }
 
 /** A file extension for content passed as a file operand, from what the content is. */
+/** Canonical file extension for a declared document format, so a staged input matches its port type. */
+const PORT_EXTENSIONS: Record<string, string> = { markdown: "md", html: "html", xml: "xml", json: "json", csv: "csv", svg: "svg" };
+
 function contentExtension(content: string): string {
   const t = content.trim();
   if (/^[{[]/.test(t)) {
