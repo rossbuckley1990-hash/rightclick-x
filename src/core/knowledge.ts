@@ -1,12 +1,13 @@
-// Portable capability knowledge: what one installation learned about software, exported without
-// credentials or anyone's data, and accepted elsewhere only after the receiving runtime has
-// revalidated it against its own environment and authority.
+// Legacy capability knowledge. The receiving runtime revalidates local program behavior and
+// authority, but the v2 envelope can retain arbitrary provider-controlled descriptions and other
+// metadata. It is not a confidentiality boundary; inspect/classify it before sharing.
 //
 // Exported: program identity (name, version, SHA-256, OS, architecture), learned capabilities
 // (contracts, invocation templates, behaviour fingerprints), evidence claims, and conformance
 // examples made of the investigator's SYNTHETIC inputs. Published goals built on them go without
 // their fixed values.
-// Never exported: credentials, caller inputs or outputs, run records, receipts, fixed goal values.
+// Goal fixed values, run records and receipts are omitted, but arbitrary metadata may itself
+// contain confidential information. Name-based redaction cannot establish its absence.
 import type { Capability, SemType } from "./types.ts";
 
 // Version 2 requires an understood inference profile. Older receivers must reject

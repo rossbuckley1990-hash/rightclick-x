@@ -5,6 +5,7 @@ import type { PersistedState } from "../runtime.ts";
 import type { Reflection } from "./types.ts";
 import { validCliEnvironment } from "./cli-environment.ts";
 import { validCliConformancePin } from "./cli-conformance.ts";
+import { parseProtectedValueRef } from "./portable-capability.ts";
 
 export const STATE_FORMAT = "rightclick-x/runtime-state@2";
 export const STATE_REQUIREMENTS = [
@@ -31,7 +32,12 @@ export const PUBLICATION_SNAPSHOT_REQUIREMENT = "publication-snapshot@1";
 /** File state written by cooperating compare-and-swap writers requires readers aware of that protocol. */
 export const FILE_STORE_CAS_REQUIREMENT = "file-store-cas@1";
 export const FILE_STORE_GOAL_LEASE_REQUIREMENT = "file-store-goal-lease@1";
-const supported = new Set<string>([...STATE_REQUIREMENTS, CONTRACT_LINK_REQUIREMENT, DEFERRED_INFERENCE_REQUIREMENT, CLI_CONFORMANCE_REQUIREMENT, STEP_INPUT_BINDINGS_REQUIREMENT, PUBLICATION_SNAPSHOT_REQUIREMENT, FILE_STORE_CAS_REQUIREMENT, FILE_STORE_GOAL_LEASE_REQUIREMENT]);
+/** Older runtimes must not silently ignore protected slots and run the goal. */
+export const PROTECTED_VALUE_SLOTS_REQUIREMENT = "protected-value-slots@1";
+const supported = new Set<string>([...STATE_REQUIREMENTS, CONTRACT_LINK_REQUIREMENT, DEFERRED_INFERENCE_REQUIREMENT, CLI_CONFORMANCE_REQUIREMENT, STEP_INPUT_BINDINGS_REQUIREMENT, PUBLICATION_SNAPSHOT_REQUIREMENT, FILE_STORE_CAS_REQUIREMENT, FILE_STORE_GOAL_LEASE_REQUIREMENT, PROTECTED_VALUE_SLOTS_REQUIREMENT]);
+export function usesProtectedValueSlots(state: Pick<PersistedState, "published">): boolean {
+  return Array.isArray(state.published) && state.published.some(g => g?.protectedInputs !== undefined);
+}
 export function usesStepInputBindings(state: Pick<PersistedState, "published" | "workflowContinuations">): boolean {
   return (Array.isArray(state.published) && state.published.some(g => g?.inputBindings !== undefined)) ||
     (Array.isArray(state.workflowContinuations) && state.workflowContinuations.some(w => w?.composition?.options?.inputBindings !== undefined));
@@ -106,6 +112,15 @@ export function decodeState(value: unknown): PersistedState {
     throw new Error("runtime state is missing the step input bindings requirement");
   if (usesPublicationSnapshot(state as PersistedState) && !state.requirements?.includes(PUBLICATION_SNAPSHOT_REQUIREMENT))
     throw new Error("runtime state is missing the publication snapshot requirement");
+  if (usesProtectedValueSlots(state as PersistedState) && !state.requirements?.includes(PROTECTED_VALUE_SLOTS_REQUIREMENT))
+    throw new Error("runtime state is missing the protected value slots requirement");
+  for (const goal of state.published ?? []) if (goal?.protectedInputs !== undefined) {
+    if (!object(goal.protectedInputs) || !object(goal.have) || !Object.keys(goal.protectedInputs).length || Object.keys(goal.protectedInputs).length > 16) throw new Error("invalid protected goal slots");
+    for (const [name, ref] of Object.entries(goal.protectedInputs)) {
+      if (!Object.hasOwn(goal.have, name) || goal.fixed && Object.hasOwn(goal.fixed, name)) throw new Error("invalid protected goal slots");
+      try { parseProtectedValueRef(ref); } catch { throw new Error("invalid protected goal slots"); }
+    }
+  }
   return state as PersistedState;
 }
 

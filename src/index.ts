@@ -1,5 +1,7 @@
 export { RightClick, VERSION, type RuntimeOptions, type RunRecord, type ComposeResult, type Store, type PersistedState } from "./runtime.ts";
+export type { ProtectedValueHost } from "./core/protected-value-host.ts";
 export { decodeState, encodeState, STATE_FORMAT, STATE_REQUIREMENTS } from "./core/state-format.ts";
+export { PORTABLE_GOAL_FORMAT, parsePortableGoal, parseProtectedValueRef, type PortableGoal, type PortableGoalApproval, type ProtectedValueRef } from "./core/portable-capability.ts";
 export { CapabilityGraph, type GraphEvent, type Powers } from "./core/graph.ts";
 export { plan, type Plan, type Goal } from "./core/planner.ts";
 export { inferType, inspectValue, distance, strongly } from "./core/semantics.ts";

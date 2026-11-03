@@ -25,7 +25,7 @@ All of these are enforced in code outside the language model:
   - Limits apply to time, CPU, file size and output. Memory and process count have a sampled watchdog, not a hard kernel bound. The runtime terminates the run's process group on exit or a detected limit.
   - Destructive operations need operator approval (`RCX_APPROVE`) plus the caller's confirmation.
   - State-changing calls that may have taken effect are never re-sent automatically.
-- **Credentials** are pinned to their origin. A caller's headers never follow a redirect to another origin. Credentials are redacted from audit logs and persisted errors, and cannot be fixed into published goals.
+- **Credential transport.** Configured headers are pinned to their origin and do not follow a redirect to another origin. Existing name-based redaction and fixed-value checks do not recognize every confidential value: arbitrary metadata, innocently named values and provider echoes may be retained. Do not treat existing snapshots, receipts or exports as secret-free; see [capability memory limitations](docs/security/secure-capability-memory-v1.md).
 - **Publication and evidence sharing** are operator authorities (`authority.publish`, `RCX_SHARE_EVIDENCE`).
 
 The full record, the adversarial tests and the residual risks are in [docs/north-star/SECURITY-STAGE1.md](docs/north-star/SECURITY-STAGE1.md).
@@ -37,3 +37,4 @@ The full record, the adversarial tests and the residual risks are in [docs/north
 - `sandbox-exec` is deprecated by Apple, although it still ships.
 - Windows has no sandbox implementation, so programs are never run there.
 - Receipts form a tamper-evident hash chain kept by the same process. They are not independent attestation.
+- Existing unkeyed receipt digests and credential fingerprints can permit offline guessing of low-entropy values. Existing state and backups require explicit review and cannot be assumed confidential or safe to share.
