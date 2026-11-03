@@ -17,3 +17,22 @@ test("actual tool calls, unknown items, fatal errors, missing or inconsistent us
   assert.equal(parse(start, answer).valid, false);
   assert.equal(parse(start, answer, { ...done, usage: { ...done.usage, cached_input_tokens: 101 } }).valid, false);
 });
+
+test("source identity covers untracked code and ignores large generated historical evidence", async () => {
+  const { sourceIdentity } = await import("../experiments/reconciliation/source-identity.ts");
+  const { mkdtemp, mkdir, writeFile, rm } = await import("node:fs/promises");
+  const { execFileSync } = await import("node:child_process");
+  const { tmpdir } = await import("node:os");
+  const { join } = await import("node:path");
+  const dir = await mkdtemp(join(tmpdir(), "rcx-source-id-"));
+  try {
+    execFileSync("git", ["init", "-q", dir]);
+    await mkdir(join(dir, "src")); await mkdir(join(dir, "proof"));
+    await writeFile(join(dir, "src/operation.ts"), "export const value = 1;\n");
+    const first = await sourceIdentity(dir);
+    await writeFile(join(dir, "proof/generated.json"), "x".repeat(2_000_000));
+    assert.equal((await sourceIdentity(dir)).digest, first.digest);
+    await writeFile(join(dir, "src/operation.ts"), "export const value = 2;\n");
+    assert.notEqual((await sourceIdentity(dir)).digest, first.digest);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});

@@ -44,3 +44,15 @@ RCX_TARGET=/absolute/path/to/frozen-checkout node --test test/semantic-derivatio
 ```
 
 The last command must fail against the frozen implementation. The same assertions pass against this branch. Engineering-authored regressions and the equal-contract runner are development fixtures, not sealed independent tests. Preserve these known answers and freeze source before a separate evaluator supplies new cases.
+
+## Additional defect found during final validation
+
+Repeated migrations exposed a lifecycle defect in the first product implementation (`324c3088daccfa7f1dddbe4a9e0730e4e00ce80d`): a completed call left an observation save scheduled. A fresh runtime could collide with that stale writer. The direct regression recorded six saves at completion and a seventh afterward. Six of 18 unchanged migration executions failed under six concurrent workers. The correction drains scheduled and queued saves before returning product ownership; all 18 repeated executions then passed. Failure to finish persistence reports ambiguity, never durable success. This is an observed correction, not a universal concurrency guarantee.
+
+The regression can target a separate checkout of that pre-fix implementation:
+
+```sh
+RCX_RECONCILIATION_TARGET=/absolute/path/to/324c308-checkout node --test --test-name-pattern='drains scheduled persistence' test/reconciliation.test.ts
+```
+
+A report-writer failure was also preserved: hashing an unrestricted `git diff` overflowed its buffer after existing test commands regenerated large evidence files. New test outputs were copied aside and the historical tracked files restored byte-for-byte. Source identities now hash actual implementation files (including untracked source), exclude generated evidence, and are compared before and after an evaluation. A regression checks that multi-megabyte generated output cannot break source fingerprinting.

@@ -10,8 +10,10 @@ import { verifyReconciliation } from "../../src/reconciliation.ts";
 import { INTROSPECTION_QUERY } from "../../src/reflectors/graphql.ts";
 import { readWith, maintainedClient, generateClient, admitModelSelection, type ReadClient } from "./controls.ts";
 import { codexControl, parseControlEvents } from "./codex-control.ts";
+import { sourceIdentity } from "./source-identity.ts";
 const destination = resolve(process.argv[2] ?? `/tmp/rcx-reconciliation-${Date.now()}`);
 await mkdir(destination, { recursive: false }); // Never overwrite a failed or historical run.
+const initialSource = await sourceIdentity();
 const root = await mkdtemp(join(tmpdir(), "rcx-reconciliation-"));
 const s = await startServices(join(root, "ledger.sqlite"));
 const events: unknown[] = [], arms: unknown[] = [];
@@ -115,9 +117,13 @@ try {
   assert.equal(s.db.prepare("SELECT COUNT(*) n FROM calls WHERE method NOT IN ('GET','HEAD') AND queryOnly=0").get()!.n, 0, "every POST independently classified as an approved read query");
 } catch (e) { failure = String(e); process.exitCode = 1; }
 finally {
+  let finalSource: Awaited<ReturnType<typeof sourceIdentity>> | null = null;
+  try { finalSource = await sourceIdentity(); if (finalSource.digest !== initialSource.digest) failure ??= "implementation files changed during evaluation"; }
+  catch { failure ??= "final source identity unavailable"; }
+  if (failure) process.exitCode = 1;
   const calls = s.db.prepare("SELECT service,method,path,queryOnly,COUNT(*) count FROM calls GROUP BY service,method,path,queryOnly").all();
   const report = { schema: "rcx-readonly-development@1", source: execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim(),
-    worktreePatchHash: createHash("sha256").update(execFileSync("git", ["diff", "HEAD"])).digest("hex"),
+    sourceIdentity: initialSource, finalSourceDigest: finalSource?.digest ?? null,
     frozenAuditSource: "ebfbf857d5189db44d3043c284c4e89b9e8dcba1", failure: failure ?? null,
     elapsedMs: performance.now() - started, businessTablesUnchanged: snapshot() === before, calls, events, arms,
     directResponsesApi: { status: "NOT ESTABLISHED", environmentKeyPresent: !!process.env.OPENAI_API_KEY, requestCount: 0 },

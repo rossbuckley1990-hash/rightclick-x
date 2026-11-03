@@ -85,7 +85,10 @@ export function reconciliationExecutionPolicy(origins: string[]): ExecutionPolic
 export class VerifiedReconciliation {
   readonly #workflow: RecoveringWorkflow;
   readonly #contract: ReconciliationContract;
+  readonly #runtime: RightClick;
+  #active = false;
   private constructor(rc: RightClick, contract: ReconciliationContract, options: ReconciliationOptions) {
+    this.#runtime = rc;
     this.#contract = structuredClone(contract);
     this.#workflow = new RecoveringWorkflow(rc, { name: contract.name,
       sources: [contract.secondarySource, contract.checker.source], origins: contract.approvedOrigins,
@@ -139,6 +142,24 @@ export class VerifiedReconciliation {
   }
 
   async reconcile(input: ReconciliationInput): Promise<ReconciliationResult> {
+    if (this.#active) return { outcome: "UNRESOLVED/UNVERIFIED", state: "unsupported", durable: false,
+      explanation: "Another reconciliation owns this runtime. Wait for its reported outcome." };
+    this.#active = true;
+    let result: ReconciliationResult | undefined;
+    try {
+      result = await this.reconcileOnce(input);
+      // Runtime observation timers must not become a stale writer after a caller
+      // starts a fresh session on this store. Drain all saves before yielding ownership.
+      await this.#runtime.flush();
+      return result;
+    } catch {
+      return { outcome: "UNRESOLVED/UNVERIFIED", state: "ambiguous", durable: false,
+        explanation: "Persistence completion could not be established. Inspect retained state before another attempt.",
+        ...(result ? { route: result.route, measurements: result.measurements } : {}) };
+    } finally { this.#active = false; }
+  }
+
+  private async reconcileOnce(input: ReconciliationInput): Promise<ReconciliationResult> {
     const unknown = (state: ReconciliationResult["state"], explanation: string): ReconciliationResult =>
       ({ outcome: "UNRESOLVED/UNVERIFIED", state, explanation, durable: false });
     if (!input || Object.keys(input).sort().join(",") !== "account,period" ||

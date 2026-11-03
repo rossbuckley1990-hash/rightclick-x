@@ -116,3 +116,17 @@ test("provider unavailability is not a semantic contradiction", async t => {
   assert.equal(r.state, "ambiguous");
   assert.deepEqual(r.failedChecks, []);
 });
+
+test("a completed product call drains scheduled persistence before another owner starts", async t => {
+  const f = await fixture(t);
+  let saves = 0;
+  const save = f.options.store.save.bind(f.options.store);
+  f.options.store.save = async state => { saves++; await save(state); };
+  const Reconciler = process.env.RCX_RECONCILIATION_TARGET
+    ? (await import(`${process.env.RCX_RECONCILIATION_TARGET}/src/reconciliation.ts`)).VerifiedReconciliation : VerifiedReconciliation;
+  const r = await (await Reconciler.create(f.contract, f.options)).reconcile({ account: "ACC-77", period: "2026-10" });
+  assert.equal(r.state, "verified");
+  const completedSaves = saves;
+  await new Promise(resolve => setTimeout(resolve, 100));
+  assert.equal(saves, completedSaves, "no background writer may outlive the reported completed transaction");
+});
