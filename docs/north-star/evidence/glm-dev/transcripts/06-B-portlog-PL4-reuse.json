@@ -1,0 +1,52 @@
+{
+ "prompt": "The task: Give the tide heights in metres for tuesday, in time order.\nThe API's base URL is http://127.0.0.1:46333.\nDocumentation (the API's OpenAPI contract):\n{\"openapi\":\"3.0.0\",\"info\":{\"title\":\"PortLog\",\"version\":\"1.0\",\"description\":\"Berth scheduling for the fictional harbour of Vessby.\"},\"servers\":[{\"url\":\"http://127.0.0.1:46333\"}],\"paths\":{\"/v1/berths\":{\"get\":{\"operationId\":\"listBerths\",\"summary\":\"All berths with quay, depth and current status.\",\"responses\":{\"200\":{\"description\":\"ok\"}}}},\"/v1/vessels/{imo}\":{\"get\":{\"operationId\":\"getVessel\",\"summary\":\"One vessel by IMO number.\",\"parameters\":[{\"name\":\"imo\",\"in\":\"path\",\"required\":true,\"schema\":{\"type\":\"string\"}}],\"responses\":{\"200\":{\"description\":\"ok\"},\"404\":{\"description\":\"unknown vessel\"}}}},\"/v1/schedule\":{\"get\":{\"operationId\":\"berthSchedule\",\"summary\":\"Arrivals and departures for one berth.\",\"parameters\":[{\"name\":\"berth\",\"in\":\"query\",\"required\":true,\"schema\":{\"type\":\"string\"}}],\"responses\":{\"200\":{\"description\":\"ok\"}}}},\"/v1/tides\":{\"get\":{\"operationId\":\"tideTable\",\"summary\":\"Tide times and heights for a weekday.\",\"parameters\":[{\"name\":\"day\",\"in\":\"query\",\"required\":true,\"schema\":{\"type\":\"string\",\"enum\":[\"monday\",\"tuesday\"]}}],\"responses\":{\"200\":{\"description\":\"ok\"}}}}}}\nUse your tools to produce the result; do not compute it yourself.\nCheck it is correct.\nIf it cannot be done correctly, answer UNABLE: <reason>.\nAnswer between BEGIN and END lines.",
+ "system": "You are a careful software agent. Use your tools to find real answers; never guess API output or compute results yourself. Answer between BEGIN and END lines.",
+ "messages": [
+  {
+   "role": "system",
+   "content": "You are a careful software agent. Use your tools to find real answers; never guess API output or compute results yourself. Answer between BEGIN and END lines."
+  },
+  {
+   "role": "user",
+   "content": "The task: Give the tide heights in metres for tuesday, in time order.\nThe API's base URL is http://127.0.0.1:46333.\nDocumentation (the API's OpenAPI contract):\n{\"openapi\":\"3.0.0\",\"info\":{\"title\":\"PortLog\",\"version\":\"1.0\",\"description\":\"Berth scheduling for the fictional harbour of Vessby.\"},\"servers\":[{\"url\":\"http://127.0.0.1:46333\"}],\"paths\":{\"/v1/berths\":{\"get\":{\"operationId\":\"listBerths\",\"summary\":\"All berths with quay, depth and current status.\",\"responses\":{\"200\":{\"description\":\"ok\"}}}},\"/v1/vessels/{imo}\":{\"get\":{\"operationId\":\"getVessel\",\"summary\":\"One vessel by IMO number.\",\"parameters\":[{\"name\":\"imo\",\"in\":\"path\",\"required\":true,\"schema\":{\"type\":\"string\"}}],\"responses\":{\"200\":{\"description\":\"ok\"},\"404\":{\"description\":\"unknown vessel\"}}}},\"/v1/schedule\":{\"get\":{\"operationId\":\"berthSchedule\",\"summary\":\"Arrivals and departures for one berth.\",\"parameters\":[{\"name\":\"berth\",\"in\":\"query\",\"required\":true,\"schema\":{\"type\":\"string\"}}],\"responses\":{\"200\":{\"description\":\"ok\"}}}},\"/v1/tides\":{\"get\":{\"operationId\":\"tideTable\",\"summary\":\"Tide times and heights for a weekday.\",\"parameters\":[{\"name\":\"day\",\"in\":\"query\",\"required\":true,\"schema\":{\"type\":\"string\",\"enum\":[\"monday\",\"tuesday\"]}}],\"responses\":{\"200\":{\"description\":\"ok\"}}}}}}\nUse your tools to produce the result; do not compute it yourself.\nCheck it is correct.\nIf it cannot be done correctly, answer UNABLE: <reason>.\nAnswer between BEGIN and END lines."
+  },
+  {
+   "content": "\nI'll help you get the tide heights for Tuesday. Let me call the tideTable API endpoint with \"tuesday\" as the day parameter.\n",
+   "role": "assistant",
+   "tool_calls": [
+    {
+     "function": {
+      "arguments": "{\"url\":\"http://127.0.0.1:46333/v1/tides?day=tuesday\"}",
+      "name": "http_get"
+     },
+     "id": "call_-7109471906373298188",
+     "index": 0,
+     "type": "function"
+    }
+   ]
+  },
+  {
+   "role": "tool",
+   "tool_call_id": "call_-7109471906373298188",
+   "content": "{\"status\":200,\"body\":\"[{\\\"time\\\":\\\"03:29\\\",\\\"height_m\\\":3.4},{\\\"time\\\":\\\"09:44\\\",\\\"height_m\\\":4.8},{\\\"time\\\":\\\"15:58\\\",\\\"height_m\\\":2.5},{\\\"time\\\":\\\"22:08\\\",\\\"height_m\\\":5.1}]\"}"
+  },
+  {
+   "content": "\nBEGIN\nTuesday tide heights in metres (in time order):\n- 03:29: 3.4m\n- 09:44: 4.8m\n- 15:58: 2.5m\n- 22:08: 5.1m\nEND",
+   "role": "assistant"
+  }
+ ],
+ "result": {
+  "answer": "\nBEGIN\nTuesday tide heights in metres (in time order):\n- 03:29: 3.4m\n- 09:44: 4.8m\n- 15:58: 2.5m\n- 22:08: 5.1m\nEND",
+  "tokens": 1450,
+  "turns": 2,
+  "toolCalls": [
+   {
+    "tool": "http_get",
+    "args": {
+     "url": "http://127.0.0.1:46333/v1/tides?day=tuesday"
+    }
+   }
+  ],
+  "seconds": 1.9
+ }
+}
