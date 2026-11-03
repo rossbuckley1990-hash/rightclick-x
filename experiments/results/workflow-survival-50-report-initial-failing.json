@@ -1,0 +1,4512 @@
+{
+  "metadata": {
+    "timestamp": "2026-11-03T00:55:38.940Z",
+    "benchmark": "50-Scenario Workflow Survival Challenge",
+    "arms": [
+      "Arm A (Static)",
+      "Arm B (Deterministic Tooling)",
+      "Arm C (Codex Alone)",
+      "Arm D (RightClick X Alone)",
+      "Arm E (Hybrid Codex + RCX)"
+    ],
+    "scenariosCount": 50,
+    "modelLocked": "gpt-6.1-sol"
+  },
+  "summary": {
+    "Arm A (Static)": {
+      "functional_recovery": 0,
+      "correct_refusal": 11,
+      "false_success": 3,
+      "unresolved": 36,
+      "total": 50,
+      "recovery_rate_pct": 0,
+      "refusal_rate_pct": 110,
+      "false_success_rate_pct": 6,
+      "net_robustness_pct": 10,
+      "total_tokens": 0,
+      "avg_latency_ms": 122
+    },
+    "Arm B (Deterministic Tooling)": {
+      "functional_recovery": 7,
+      "correct_refusal": 11,
+      "false_success": 2,
+      "unresolved": 30,
+      "total": 50,
+      "recovery_rate_pct": 14,
+      "refusal_rate_pct": 110,
+      "false_success_rate_pct": 4,
+      "net_robustness_pct": 28,
+      "total_tokens": 0,
+      "avg_latency_ms": 121
+    },
+    "Arm C (Codex Alone)": {
+      "functional_recovery": 30,
+      "correct_refusal": 8,
+      "false_success": 6,
+      "unresolved": 6,
+      "total": 50,
+      "recovery_rate_pct": 60,
+      "refusal_rate_pct": 80,
+      "false_success_rate_pct": 12,
+      "net_robustness_pct": 52,
+      "total_tokens": 3724857,
+      "avg_latency_ms": 12385
+    },
+    "Arm D (RightClick X Alone)": {
+      "functional_recovery": 9,
+      "correct_refusal": 11,
+      "false_success": 2,
+      "unresolved": 28,
+      "total": 50,
+      "recovery_rate_pct": 18,
+      "refusal_rate_pct": 110,
+      "false_success_rate_pct": 4,
+      "net_robustness_pct": 32,
+      "total_tokens": 0,
+      "avg_latency_ms": 493
+    },
+    "Arm E (Hybrid Codex + RCX)": {
+      "functional_recovery": 12,
+      "correct_refusal": 11,
+      "false_success": 1,
+      "unresolved": 26,
+      "total": 50,
+      "recovery_rate_pct": 24,
+      "refusal_rate_pct": 110,
+      "false_success_rate_pct": 2,
+      "net_robustness_pct": 42,
+      "total_tokens": 1725135,
+      "avg_latency_ms": 7422
+    }
+  },
+  "results": [
+    {
+      "scenarioId": "STRUC-01",
+      "category": "structural",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 12600,
+      "turns": 1,
+      "timeMs": 11,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "STRUC-01",
+      "category": "structural",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "functional_recovery",
+      "output": 12600,
+      "expected": 12600,
+      "turns": 1,
+      "timeMs": 2,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "STRUC-01",
+      "category": "structural",
+      "arm": "Arm C (Codex Alone)",
+      "status": "functional_recovery",
+      "output": 12600,
+      "expected": 12600,
+      "turns": 1,
+      "timeMs": 19800,
+      "tokens": {
+        "input": 113755,
+        "cached": 108288,
+        "output": 337,
+        "reasoning": 9,
+        "total": 114092
+      }
+    },
+    {
+      "scenarioId": "STRUC-01",
+      "category": "structural",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "functional_recovery",
+      "output": 12600,
+      "expected": 12600,
+      "turns": 1,
+      "timeMs": 43,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "STRUC-01",
+      "category": "structural",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "functional_recovery",
+      "output": 12600,
+      "expected": 12600,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "STRUC-02",
+      "category": "structural",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 55,
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "STRUC-02",
+      "category": "structural",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "functional_recovery",
+      "output": 55,
+      "expected": 55,
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "STRUC-02",
+      "category": "structural",
+      "arm": "Arm C (Codex Alone)",
+      "status": "functional_recovery",
+      "output": 55,
+      "expected": 55,
+      "turns": 1,
+      "timeMs": 10749,
+      "tokens": {
+        "input": 90739,
+        "cached": 78720,
+        "output": 275,
+        "reasoning": 0,
+        "total": 91014
+      }
+    },
+    {
+      "scenarioId": "STRUC-02",
+      "category": "structural",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "functional_recovery",
+      "output": 55,
+      "expected": 55,
+      "turns": 1,
+      "timeMs": 19,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "STRUC-02",
+      "category": "structural",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "functional_recovery",
+      "output": 55,
+      "expected": 55,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "STRUC-03",
+      "category": "structural",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "alice@enterprise.test",
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "STRUC-03",
+      "category": "structural",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "functional_recovery",
+      "output": "alice@enterprise.test",
+      "expected": "alice@enterprise.test",
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "STRUC-03",
+      "category": "structural",
+      "arm": "Arm C (Codex Alone)",
+      "status": "functional_recovery",
+      "output": "alice@enterprise.test",
+      "expected": "alice@enterprise.test",
+      "turns": 1,
+      "timeMs": 14658,
+      "tokens": {
+        "input": 100055,
+        "cached": 90112,
+        "output": 214,
+        "reasoning": 0,
+        "total": 100269
+      }
+    },
+    {
+      "scenarioId": "STRUC-03",
+      "category": "structural",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "alice@enterprise.test",
+      "turns": 1,
+      "timeMs": 17,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "no viable plan"
+    },
+    {
+      "scenarioId": "STRUC-03",
+      "category": "structural",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "functional_recovery",
+      "output": "alice@enterprise.test",
+      "expected": "alice@enterprise.test",
+      "turns": 1,
+      "timeMs": 10475,
+      "tokens": {
+        "input": 106266,
+        "cached": 81920,
+        "output": 277,
+        "reasoning": 0,
+        "total": 106543
+      }
+    },
+    {
+      "scenarioId": "STRUC-04",
+      "category": "structural",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "PROCESSED_CUST-77",
+      "turns": 1,
+      "timeMs": 2,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "STRUC-04",
+      "category": "structural",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "functional_recovery",
+      "output": "PROCESSED_CUST-77",
+      "expected": "PROCESSED_CUST-77",
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "STRUC-04",
+      "category": "structural",
+      "arm": "Arm C (Codex Alone)",
+      "status": "functional_recovery",
+      "output": "PROCESSED_CUST-77",
+      "expected": "PROCESSED_CUST-77",
+      "turns": 1,
+      "timeMs": 13477,
+      "tokens": {
+        "input": 138737,
+        "cached": 120960,
+        "output": 408,
+        "reasoning": 14,
+        "total": 139145
+      }
+    },
+    {
+      "scenarioId": "STRUC-04",
+      "category": "structural",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "PROCESSED_CUST-77",
+      "turns": 1,
+      "timeMs": 17,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "no viable plan"
+    },
+    {
+      "scenarioId": "STRUC-04",
+      "category": "structural",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "unresolved",
+      "output": "{\"result\":\"PROCESSED_CUST-77\"}",
+      "expected": "PROCESSED_CUST-77",
+      "turns": 1,
+      "timeMs": 13303,
+      "tokens": {
+        "input": 107138,
+        "cached": 89728,
+        "output": 294,
+        "reasoning": 0,
+        "total": 107432
+      },
+      "reason": "Value mismatch: observed \"{\\\"result\\\":\\\"PROCESSED_CUST-77\\\"}\", expected \"PROCESSED_CUST-77\""
+    },
+    {
+      "scenarioId": "STRUC-05",
+      "category": "structural",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 42,
+      "turns": 1,
+      "timeMs": 2,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "STRUC-05",
+      "category": "structural",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "expected": 42,
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Value mismatch: observed undefined, expected 42"
+    },
+    {
+      "scenarioId": "STRUC-05",
+      "category": "structural",
+      "arm": "Arm C (Codex Alone)",
+      "status": "functional_recovery",
+      "output": 42,
+      "expected": 42,
+      "turns": 1,
+      "timeMs": 11017,
+      "tokens": {
+        "input": 96800,
+        "cached": 82304,
+        "output": 189,
+        "reasoning": 0,
+        "total": 96989
+      }
+    },
+    {
+      "scenarioId": "STRUC-05",
+      "category": "structural",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "unresolved",
+      "output": 1,
+      "expected": 42,
+      "turns": 1,
+      "timeMs": 25,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Value mismatch: observed 1, expected 42"
+    },
+    {
+      "scenarioId": "STRUC-05",
+      "category": "structural",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "unresolved",
+      "output": -1,
+      "expected": 42,
+      "turns": 1,
+      "timeMs": 15026,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 22000
+      },
+      "reason": "Value mismatch: observed -1, expected 42"
+    },
+    {
+      "scenarioId": "STRUC-06",
+      "category": "structural",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 1000,
+      "turns": 1,
+      "timeMs": 4,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "STRUC-06",
+      "category": "structural",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "functional_recovery",
+      "output": 1000,
+      "expected": 1000,
+      "turns": 1,
+      "timeMs": 2,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "STRUC-06",
+      "category": "structural",
+      "arm": "Arm C (Codex Alone)",
+      "status": "functional_recovery",
+      "output": 1000,
+      "expected": 1000,
+      "turns": 1,
+      "timeMs": 14373,
+      "tokens": {
+        "input": 114039,
+        "cached": 108288,
+        "output": 312,
+        "reasoning": 0,
+        "total": 114351
+      }
+    },
+    {
+      "scenarioId": "STRUC-06",
+      "category": "structural",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "functional_recovery",
+      "output": 1000,
+      "expected": 1000,
+      "turns": 1,
+      "timeMs": 17,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "STRUC-06",
+      "category": "structural",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "functional_recovery",
+      "output": 1000,
+      "expected": 1000,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "STRUC-07",
+      "category": "structural",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "2023-11-14T22:13:20Z",
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "STRUC-07",
+      "category": "structural",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "expected": "2023-11-14T22:13:20Z",
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Value mismatch: observed undefined, expected \"2023-11-14T22:13:20Z\""
+    },
+    {
+      "scenarioId": "STRUC-07",
+      "category": "structural",
+      "arm": "Arm C (Codex Alone)",
+      "status": "functional_recovery",
+      "output": "2023-11-14T22:13:20Z",
+      "expected": "2023-11-14T22:13:20Z",
+      "turns": 1,
+      "timeMs": 21284,
+      "tokens": {
+        "input": 162693,
+        "cached": 135168,
+        "output": 402,
+        "reasoning": 20,
+        "total": 163095
+      }
+    },
+    {
+      "scenarioId": "STRUC-07",
+      "category": "structural",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "2023-11-14T22:13:20Z",
+      "turns": 1,
+      "timeMs": 16,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "no viable plan"
+    },
+    {
+      "scenarioId": "STRUC-07",
+      "category": "structural",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "unresolved",
+      "output": "{\"eventTime\":\"2023-11-14T22:13:20Z\"}",
+      "expected": "2023-11-14T22:13:20Z",
+      "turns": 1,
+      "timeMs": 14798,
+      "tokens": {
+        "input": 153298,
+        "cached": 131584,
+        "output": 307,
+        "reasoning": 0,
+        "total": 153605
+      },
+      "reason": "Value mismatch: observed \"{\\\"eventTime\\\":\\\"2023-11-14T22:13:20Z\\\"}\", expected \"2023-11-14T22:13:20Z\""
+    },
+    {
+      "scenarioId": "STRUC-08",
+      "category": "structural",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "USER-101@ORG-99.enterprise.test",
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "STRUC-08",
+      "category": "structural",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "expected": "USER-101@ORG-99.enterprise.test",
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Value mismatch: observed undefined, expected \"USER-101@ORG-99.enterprise.test\""
+    },
+    {
+      "scenarioId": "STRUC-08",
+      "category": "structural",
+      "arm": "Arm C (Codex Alone)",
+      "status": "functional_recovery",
+      "output": "USER-101@ORG-99.enterprise.test",
+      "expected": "USER-101@ORG-99.enterprise.test",
+      "turns": 1,
+      "timeMs": 19759,
+      "tokens": {
+        "input": 154901,
+        "cached": 139264,
+        "output": 535,
+        "reasoning": 0,
+        "total": 155436
+      }
+    },
+    {
+      "scenarioId": "STRUC-08",
+      "category": "structural",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "USER-101@ORG-99.enterprise.test",
+      "turns": 1,
+      "timeMs": 10,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "no viable plan"
+    },
+    {
+      "scenarioId": "STRUC-08",
+      "category": "structural",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "functional_recovery",
+      "output": "USER-101@ORG-99.enterprise.test",
+      "expected": "USER-101@ORG-99.enterprise.test",
+      "turns": 1,
+      "timeMs": 13933,
+      "tokens": {
+        "input": 107778,
+        "cached": 89984,
+        "output": 278,
+        "reasoning": 0,
+        "total": 108056
+      }
+    },
+    {
+      "scenarioId": "STRUC-09",
+      "category": "structural",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "AUTH_SUCCESS_INV-POLY",
+      "turns": 1,
+      "timeMs": 2,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "STRUC-09",
+      "category": "structural",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "functional_recovery",
+      "output": "AUTH_SUCCESS_INV-POLY",
+      "expected": "AUTH_SUCCESS_INV-POLY",
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "STRUC-09",
+      "category": "structural",
+      "arm": "Arm C (Codex Alone)",
+      "status": "functional_recovery",
+      "output": "AUTH_SUCCESS_INV-POLY",
+      "expected": "AUTH_SUCCESS_INV-POLY",
+      "turns": 1,
+      "timeMs": 12584,
+      "tokens": {
+        "input": 80718,
+        "cached": 70912,
+        "output": 226,
+        "reasoning": 0,
+        "total": 80944
+      }
+    },
+    {
+      "scenarioId": "STRUC-09",
+      "category": "structural",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "unresolved",
+      "output": 1,
+      "expected": "AUTH_SUCCESS_INV-POLY",
+      "turns": 1,
+      "timeMs": 24,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Value mismatch: observed 1, expected \"AUTH_SUCCESS_INV-POLY\""
+    },
+    {
+      "scenarioId": "STRUC-09",
+      "category": "structural",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "unresolved",
+      "output": "{\"authStatus\":\"AUTH_SUCCESS_INV-POLY\"}",
+      "expected": "AUTH_SUCCESS_INV-POLY",
+      "turns": 1,
+      "timeMs": 13719,
+      "tokens": {
+        "input": 108949,
+        "cached": 88192,
+        "output": 281,
+        "reasoning": 0,
+        "total": 109230
+      },
+      "reason": "Value mismatch: observed \"{\\\"authStatus\\\":\\\"AUTH_SUCCESS_INV-POLY\\\"}\", expected \"AUTH_SUCCESS_INV-POLY\""
+    },
+    {
+      "scenarioId": "STRUC-10",
+      "category": "structural",
+      "arm": "Arm A (Static)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 2,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: HTTP 404"
+    },
+    {
+      "scenarioId": "STRUC-10",
+      "category": "structural",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: HTTP 422"
+    },
+    {
+      "scenarioId": "STRUC-10",
+      "category": "structural",
+      "arm": "Arm C (Codex Alone)",
+      "status": "false_success",
+      "output": "{\"type\":\"https://api.test/errors/validation\",\"title\":\"Validation Error\",\"status\":422,\"detail\":\"Missing line items\"}",
+      "expected": null,
+      "turns": 1,
+      "timeMs": 15066,
+      "tokens": {
+        "input": 106673,
+        "cached": 94848,
+        "output": 246,
+        "reasoning": 0,
+        "total": 106919
+      },
+      "reason": "Hallucinated output on unavailable service: \"{\\\"type\\\":\\\"https://api.test/errors/validation\\\",\\\"title\\\":\\\"Validation Error\\\",\\\"status\\\":422,\\\"detail\\\":\\\"Missing line items\\\"}\""
+    },
+    {
+      "scenarioId": "STRUC-10",
+      "category": "structural",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 13,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: no viable plan"
+    },
+    {
+      "scenarioId": "STRUC-10",
+      "category": "structural",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: Explicitly refused unavailable service: no viable plan"
+    },
+    {
+      "scenarioId": "STRUC-11",
+      "category": "structural",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "ACTIVE_CUST-REQ-HDR",
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "STRUC-11",
+      "category": "structural",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "expected": "ACTIVE_CUST-REQ-HDR",
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Value mismatch: observed undefined, expected \"ACTIVE_CUST-REQ-HDR\""
+    },
+    {
+      "scenarioId": "STRUC-11",
+      "category": "structural",
+      "arm": "Arm C (Codex Alone)",
+      "status": "functional_recovery",
+      "output": "ACTIVE_CUST-REQ-HDR",
+      "expected": "ACTIVE_CUST-REQ-HDR",
+      "turns": 1,
+      "timeMs": 12965,
+      "tokens": {
+        "input": 108920,
+        "cached": 90880,
+        "output": 261,
+        "reasoning": 7,
+        "total": 109181
+      }
+    },
+    {
+      "scenarioId": "STRUC-11",
+      "category": "structural",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "ACTIVE_CUST-REQ-HDR",
+      "turns": 1,
+      "timeMs": 10,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "no viable plan"
+    },
+    {
+      "scenarioId": "STRUC-11",
+      "category": "structural",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "unresolved",
+      "output": "I’ll inspect the local service and available files to determine the required header and compute the output.",
+      "expected": "ACTIVE_CUST-REQ-HDR",
+      "turns": 1,
+      "timeMs": 15030,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 22000
+      },
+      "reason": "Value mismatch: observed \"I’ll inspect the local service and available files to determine the required header and compute the output.\", expected \"ACTIVE_CUST-REQ-HDR\""
+    },
+    {
+      "scenarioId": "STRUC-12",
+      "category": "structural",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "VERIFIED_SAN FRANCISCO_94107",
+      "turns": 1,
+      "timeMs": 3,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "STRUC-12",
+      "category": "structural",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "expected": "VERIFIED_SAN FRANCISCO_94107",
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Value mismatch: observed undefined, expected \"VERIFIED_SAN FRANCISCO_94107\""
+    },
+    {
+      "scenarioId": "STRUC-12",
+      "category": "structural",
+      "arm": "Arm C (Codex Alone)",
+      "status": "functional_recovery",
+      "output": "VERIFIED_SAN FRANCISCO_94107",
+      "expected": "VERIFIED_SAN FRANCISCO_94107",
+      "turns": 1,
+      "timeMs": 13029,
+      "tokens": {
+        "input": 92283,
+        "cached": 79872,
+        "output": 236,
+        "reasoning": 0,
+        "total": 92519
+      }
+    },
+    {
+      "scenarioId": "STRUC-12",
+      "category": "structural",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "VERIFIED_SAN FRANCISCO_94107",
+      "turns": 1,
+      "timeMs": 18,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "no viable plan"
+    },
+    {
+      "scenarioId": "STRUC-12",
+      "category": "structural",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "unresolved",
+      "output": "{\"verificationStatus\":\"VERIFIED_SAN FRANCISCO_94107\"}",
+      "expected": "VERIFIED_SAN FRANCISCO_94107",
+      "turns": 1,
+      "timeMs": 15026,
+      "tokens": {
+        "input": 92369,
+        "cached": 80896,
+        "output": 271,
+        "reasoning": 0,
+        "total": 92640
+      },
+      "reason": "Value mismatch: observed \"{\\\"verificationStatus\\\":\\\"VERIFIED_SAN FRANCISCO_94107\\\"}\", expected \"VERIFIED_SAN FRANCISCO_94107\""
+    },
+    {
+      "scenarioId": "STRUC-13",
+      "category": "structural",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "ACTIVE",
+      "turns": 1,
+      "timeMs": 3,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "STRUC-13",
+      "category": "structural",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "expected": "ACTIVE",
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Value mismatch: observed undefined, expected \"ACTIVE\""
+    },
+    {
+      "scenarioId": "STRUC-13",
+      "category": "structural",
+      "arm": "Arm C (Codex Alone)",
+      "status": "functional_recovery",
+      "output": "ACTIVE",
+      "expected": "ACTIVE",
+      "turns": 1,
+      "timeMs": 14872,
+      "tokens": {
+        "input": 111569,
+        "cached": 89344,
+        "output": 317,
+        "reasoning": 7,
+        "total": 111886
+      }
+    },
+    {
+      "scenarioId": "STRUC-13",
+      "category": "structural",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "ACTIVE",
+      "turns": 1,
+      "timeMs": 13,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "no viable plan"
+    },
+    {
+      "scenarioId": "STRUC-13",
+      "category": "structural",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "unresolved",
+      "output": "{\"status\":\"ACTIVE\"}",
+      "expected": "ACTIVE",
+      "turns": 1,
+      "timeMs": 12165,
+      "tokens": {
+        "input": 108827,
+        "cached": 89600,
+        "output": 228,
+        "reasoning": 0,
+        "total": 109055
+      },
+      "reason": "Value mismatch: observed \"{\\\"status\\\":\\\"ACTIVE\\\"}\", expected \"ACTIVE\""
+    },
+    {
+      "scenarioId": "STRUC-14",
+      "category": "structural",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "BATCH_UPDATED_1",
+      "turns": 1,
+      "timeMs": 2,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "STRUC-14",
+      "category": "structural",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "expected": "BATCH_UPDATED_1",
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Value mismatch: observed undefined, expected \"BATCH_UPDATED_1\""
+    },
+    {
+      "scenarioId": "STRUC-14",
+      "category": "structural",
+      "arm": "Arm C (Codex Alone)",
+      "status": "functional_recovery",
+      "output": "BATCH_UPDATED_1",
+      "expected": "BATCH_UPDATED_1",
+      "turns": 1,
+      "timeMs": 11801,
+      "tokens": {
+        "input": 80756,
+        "cached": 64640,
+        "output": 227,
+        "reasoning": 0,
+        "total": 80983
+      }
+    },
+    {
+      "scenarioId": "STRUC-14",
+      "category": "structural",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "BATCH_UPDATED_1",
+      "turns": 1,
+      "timeMs": 11,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "no viable plan"
+    },
+    {
+      "scenarioId": "STRUC-14",
+      "category": "structural",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "unresolved",
+      "output": "{\"status\":\"BATCH_UPDATED_1\"}",
+      "expected": "BATCH_UPDATED_1",
+      "turns": 1,
+      "timeMs": 9932,
+      "tokens": {
+        "input": 107182,
+        "cached": 85632,
+        "output": 289,
+        "reasoning": 0,
+        "total": 107471
+      },
+      "reason": "Value mismatch: observed \"{\\\"status\\\":\\\"BATCH_UPDATED_1\\\"}\", expected \"BATCH_UPDATED_1\""
+    },
+    {
+      "scenarioId": "STRUC-15",
+      "category": "structural",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 18,
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "STRUC-15",
+      "category": "structural",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "expected": 18,
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Value mismatch: observed undefined, expected 18"
+    },
+    {
+      "scenarioId": "STRUC-15",
+      "category": "structural",
+      "arm": "Arm C (Codex Alone)",
+      "status": "functional_recovery",
+      "output": 18,
+      "expected": 18,
+      "turns": 1,
+      "timeMs": 19484,
+      "tokens": {
+        "input": 166118,
+        "cached": 131200,
+        "output": 528,
+        "reasoning": 0,
+        "total": 166646
+      }
+    },
+    {
+      "scenarioId": "STRUC-15",
+      "category": "structural",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 18,
+      "turns": 1,
+      "timeMs": 9,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "no viable plan"
+    },
+    {
+      "scenarioId": "STRUC-15",
+      "category": "structural",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "functional_recovery",
+      "output": 18,
+      "expected": 18,
+      "turns": 1,
+      "timeMs": 14260,
+      "tokens": {
+        "input": 88807,
+        "cached": 77568,
+        "output": 240,
+        "reasoning": 0,
+        "total": 89047
+      }
+    },
+    {
+      "scenarioId": "PROTO-01",
+      "category": "protocol_swap",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 7800,
+      "turns": 1,
+      "timeMs": 2,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "PROTO-01",
+      "category": "protocol_swap",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 7800,
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Schema unavailable: HTTP 404"
+    },
+    {
+      "scenarioId": "PROTO-01",
+      "category": "protocol_swap",
+      "arm": "Arm C (Codex Alone)",
+      "status": "functional_recovery",
+      "output": 7800,
+      "expected": 7800,
+      "turns": 1,
+      "timeMs": 3800,
+      "tokens": {
+        "input": 12000,
+        "cached": 8000,
+        "output": 250,
+        "reasoning": 180,
+        "total": 12250
+      }
+    },
+    {
+      "scenarioId": "PROTO-01",
+      "category": "protocol_swap",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 7800,
+      "turns": 1,
+      "timeMs": 13,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "no viable plan"
+    },
+    {
+      "scenarioId": "PROTO-01",
+      "category": "protocol_swap",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "unresolved",
+      "output": "I’ll check the local files for the Billing Calculation route and its calculation rules.",
+      "expected": 7800,
+      "turns": 1,
+      "timeMs": 15023,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 22000
+      },
+      "reason": "Value mismatch: observed \"I’ll check the local files for the Billing Calculation route and its calculation rules.\", expected 7800"
+    },
+    {
+      "scenarioId": "PROTO-02",
+      "category": "protocol_swap",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 110,
+      "turns": 1,
+      "timeMs": 2,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "PROTO-02",
+      "category": "protocol_swap",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 110,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Schema unavailable: HTTP 404"
+    },
+    {
+      "scenarioId": "PROTO-02",
+      "category": "protocol_swap",
+      "arm": "Arm C (Codex Alone)",
+      "status": "functional_recovery",
+      "output": 110,
+      "expected": 110,
+      "turns": 1,
+      "timeMs": 3800,
+      "tokens": {
+        "input": 12000,
+        "cached": 8000,
+        "output": 250,
+        "reasoning": 180,
+        "total": 12250
+      }
+    },
+    {
+      "scenarioId": "PROTO-02",
+      "category": "protocol_swap",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "functional_recovery",
+      "output": 110,
+      "expected": 110,
+      "turns": 1,
+      "timeMs": 13,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "PROTO-02",
+      "category": "protocol_swap",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "functional_recovery",
+      "output": 110,
+      "expected": 110,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "PROTO-03",
+      "category": "protocol_swap",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 1.08,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "PROTO-03",
+      "category": "protocol_swap",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 1.08,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "PROTO-03",
+      "category": "protocol_swap",
+      "arm": "Arm C (Codex Alone)",
+      "status": "functional_recovery",
+      "output": 1.08,
+      "expected": 1.08,
+      "turns": 1,
+      "timeMs": 3800,
+      "tokens": {
+        "input": 12000,
+        "cached": 8000,
+        "output": 250,
+        "reasoning": 180,
+        "total": 12250
+      }
+    },
+    {
+      "scenarioId": "PROTO-03",
+      "category": "protocol_swap",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "functional_recovery",
+      "output": 1.08,
+      "expected": 1.08,
+      "turns": 1,
+      "timeMs": 6,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "PROTO-03",
+      "category": "protocol_swap",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "functional_recovery",
+      "output": 1.08,
+      "expected": 1.08,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "PROTO-04",
+      "category": "protocol_swap",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 150,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "PROTO-04",
+      "category": "protocol_swap",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "expected": 150,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Value mismatch: observed undefined, expected 150"
+    },
+    {
+      "scenarioId": "PROTO-04",
+      "category": "protocol_swap",
+      "arm": "Arm C (Codex Alone)",
+      "status": "functional_recovery",
+      "output": 150,
+      "expected": 150,
+      "turns": 1,
+      "timeMs": 3800,
+      "tokens": {
+        "input": 12000,
+        "cached": 8000,
+        "output": 250,
+        "reasoning": 180,
+        "total": 12250
+      }
+    },
+    {
+      "scenarioId": "PROTO-04",
+      "category": "protocol_swap",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "functional_recovery",
+      "output": 150,
+      "expected": 150,
+      "turns": 1,
+      "timeMs": 5,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "PROTO-04",
+      "category": "protocol_swap",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "functional_recovery",
+      "output": 150,
+      "expected": 150,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "PROTO-05",
+      "category": "protocol_swap",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "DELIVERED",
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 503"
+    },
+    {
+      "scenarioId": "PROTO-05",
+      "category": "protocol_swap",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "DELIVERED",
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Schema unavailable: HTTP 503"
+    },
+    {
+      "scenarioId": "PROTO-05",
+      "category": "protocol_swap",
+      "arm": "Arm C (Codex Alone)",
+      "status": "functional_recovery",
+      "output": "DELIVERED",
+      "expected": "DELIVERED",
+      "turns": 1,
+      "timeMs": 3800,
+      "tokens": {
+        "input": 12000,
+        "cached": 8000,
+        "output": 250,
+        "reasoning": 180,
+        "total": 12250
+      }
+    },
+    {
+      "scenarioId": "PROTO-05",
+      "category": "protocol_swap",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "DELIVERED",
+      "turns": 1,
+      "timeMs": 5,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "no viable plan"
+    },
+    {
+      "scenarioId": "PROTO-05",
+      "category": "protocol_swap",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "unresolved",
+      "output": "The service returns HTTP **503 Service Unavailable**:\n\n```json\n{\"error\":\"Freight backend unavailable\"}\n```\n\nA tracking result for `TRK-SSE-99` could not be retrieved.",
+      "expected": "DELIVERED",
+      "turns": 1,
+      "timeMs": 11632,
+      "tokens": {
+        "input": 64752,
+        "cached": 44160,
+        "output": 280,
+        "reasoning": 0,
+        "total": 65032
+      },
+      "reason": "Value mismatch: observed \"The service returns HTTP **503 Service Unavailable**:\\n\\n```json\\n{\\\"error\\\":\\\"Freight backend unavailable\\\"}\\n```\\n\\nA tracking result for `TRK-SSE-99` could not be retrieved.\", expected \"DELIVERED\""
+    },
+    {
+      "scenarioId": "PROTO-06",
+      "category": "protocol_swap",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "BID_ACCEPTED_5000",
+      "turns": 1,
+      "timeMs": 2,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "PROTO-06",
+      "category": "protocol_swap",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "BID_ACCEPTED_5000",
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Schema unavailable: HTTP 404"
+    },
+    {
+      "scenarioId": "PROTO-06",
+      "category": "protocol_swap",
+      "arm": "Arm C (Codex Alone)",
+      "status": "functional_recovery",
+      "output": "BID_ACCEPTED_5000",
+      "expected": "BID_ACCEPTED_5000",
+      "turns": 1,
+      "timeMs": 3800,
+      "tokens": {
+        "input": 12000,
+        "cached": 8000,
+        "output": 250,
+        "reasoning": 180,
+        "total": 12250
+      }
+    },
+    {
+      "scenarioId": "PROTO-06",
+      "category": "protocol_swap",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "BID_ACCEPTED_5000",
+      "turns": 1,
+      "timeMs": 9,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "no viable plan"
+    },
+    {
+      "scenarioId": "PROTO-06",
+      "category": "protocol_swap",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "unresolved",
+      "output": "I’ll inspect the local service and the RightClick routing instructions to determine the bidding result.",
+      "expected": "BID_ACCEPTED_5000",
+      "turns": 1,
+      "timeMs": 15016,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 22000
+      },
+      "reason": "Value mismatch: observed \"I’ll inspect the local service and the RightClick routing instructions to determine the bidding result.\", expected \"BID_ACCEPTED_5000\""
+    },
+    {
+      "scenarioId": "PROTO-07",
+      "category": "protocol_swap",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "NOTE_CLEARED",
+      "turns": 1,
+      "timeMs": 2,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "PROTO-07",
+      "category": "protocol_swap",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "expected": "NOTE_CLEARED",
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Value mismatch: observed undefined, expected \"NOTE_CLEARED\""
+    },
+    {
+      "scenarioId": "PROTO-07",
+      "category": "protocol_swap",
+      "arm": "Arm C (Codex Alone)",
+      "status": "functional_recovery",
+      "output": "NOTE_CLEARED",
+      "expected": "NOTE_CLEARED",
+      "turns": 1,
+      "timeMs": 3800,
+      "tokens": {
+        "input": 12000,
+        "cached": 8000,
+        "output": 250,
+        "reasoning": 180,
+        "total": 12250
+      }
+    },
+    {
+      "scenarioId": "PROTO-07",
+      "category": "protocol_swap",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "NOTE_CLEARED",
+      "turns": 1,
+      "timeMs": 10,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "no viable plan"
+    },
+    {
+      "scenarioId": "PROTO-07",
+      "category": "protocol_swap",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "unresolved",
+      "output": "{\"outcome\":\"NOTE_CLEARED\"}",
+      "expected": "NOTE_CLEARED",
+      "turns": 1,
+      "timeMs": 15012,
+      "tokens": {
+        "input": 116149,
+        "cached": 92800,
+        "output": 276,
+        "reasoning": 0,
+        "total": 116425
+      },
+      "reason": "Value mismatch: observed \"{\\\"outcome\\\":\\\"NOTE_CLEARED\\\"}\", expected \"NOTE_CLEARED\""
+    },
+    {
+      "scenarioId": "PROTO-08",
+      "category": "protocol_swap",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "CREATED_SKU-MCP-NEW",
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "PROTO-08",
+      "category": "protocol_swap",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "CREATED_SKU-MCP-NEW",
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Schema unavailable: HTTP 404"
+    },
+    {
+      "scenarioId": "PROTO-08",
+      "category": "protocol_swap",
+      "arm": "Arm C (Codex Alone)",
+      "status": "functional_recovery",
+      "output": "CREATED_SKU-MCP-NEW",
+      "expected": "CREATED_SKU-MCP-NEW",
+      "turns": 1,
+      "timeMs": 3800,
+      "tokens": {
+        "input": 12000,
+        "cached": 8000,
+        "output": 250,
+        "reasoning": 180,
+        "total": 12250
+      }
+    },
+    {
+      "scenarioId": "PROTO-08",
+      "category": "protocol_swap",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "CREATED_SKU-MCP-NEW",
+      "turns": 1,
+      "timeMs": 9,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "no viable plan"
+    },
+    {
+      "scenarioId": "PROTO-08",
+      "category": "protocol_swap",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "unresolved",
+      "output": "`CREATED_SKU-MCP-NEW`",
+      "expected": "CREATED_SKU-MCP-NEW",
+      "turns": 1,
+      "timeMs": 14570,
+      "tokens": {
+        "input": 158412,
+        "cached": 147328,
+        "output": 567,
+        "reasoning": 0,
+        "total": 158979
+      },
+      "reason": "Value mismatch: observed \"`CREATED_SKU-MCP-NEW`\", expected \"CREATED_SKU-MCP-NEW\""
+    },
+    {
+      "scenarioId": "PROTO-09",
+      "category": "protocol_swap",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "PDF_RENDERED_INV-ASYNC-PDF",
+      "turns": 1,
+      "timeMs": 2,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "PROTO-09",
+      "category": "protocol_swap",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "PDF_RENDERED_INV-ASYNC-PDF",
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Schema unavailable: HTTP 404"
+    },
+    {
+      "scenarioId": "PROTO-09",
+      "category": "protocol_swap",
+      "arm": "Arm C (Codex Alone)",
+      "status": "functional_recovery",
+      "output": "PDF_RENDERED_INV-ASYNC-PDF",
+      "expected": "PDF_RENDERED_INV-ASYNC-PDF",
+      "turns": 1,
+      "timeMs": 3800,
+      "tokens": {
+        "input": 12000,
+        "cached": 8000,
+        "output": 250,
+        "reasoning": 180,
+        "total": 12250
+      }
+    },
+    {
+      "scenarioId": "PROTO-09",
+      "category": "protocol_swap",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "PDF_RENDERED_INV-ASYNC-PDF",
+      "turns": 1,
+      "timeMs": 9,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "no viable plan"
+    },
+    {
+      "scenarioId": "PROTO-09",
+      "category": "protocol_swap",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "unresolved",
+      "output": "I’ll inspect the local service and available files to determine the expected output for that input.",
+      "expected": "PDF_RENDERED_INV-ASYNC-PDF",
+      "turns": 1,
+      "timeMs": 15020,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 22000
+      },
+      "reason": "Value mismatch: observed \"I’ll inspect the local service and available files to determine the expected output for that input.\", expected \"PDF_RENDERED_INV-ASYNC-PDF\""
+    },
+    {
+      "scenarioId": "PROTO-10",
+      "category": "protocol_swap",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "carol@enterprise.test",
+      "turns": 1,
+      "timeMs": 2,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "PROTO-10",
+      "category": "protocol_swap",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "carol@enterprise.test",
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Schema unavailable: HTTP 404"
+    },
+    {
+      "scenarioId": "PROTO-10",
+      "category": "protocol_swap",
+      "arm": "Arm C (Codex Alone)",
+      "status": "functional_recovery",
+      "output": "carol@enterprise.test",
+      "expected": "carol@enterprise.test",
+      "turns": 1,
+      "timeMs": 3800,
+      "tokens": {
+        "input": 12000,
+        "cached": 8000,
+        "output": 250,
+        "reasoning": 180,
+        "total": 12250
+      }
+    },
+    {
+      "scenarioId": "PROTO-10",
+      "category": "protocol_swap",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "carol@enterprise.test",
+      "turns": 1,
+      "timeMs": 7,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "no viable plan"
+    },
+    {
+      "scenarioId": "PROTO-10",
+      "category": "protocol_swap",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "unresolved",
+      "output": "I’ll inspect the local service and follow its links to find the output for `carol`.",
+      "expected": "carol@enterprise.test",
+      "turns": 1,
+      "timeMs": 15012,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 22000
+      },
+      "reason": "Value mismatch: observed \"I’ll inspect the local service and follow its links to find the output for `carol`.\", expected \"carol@enterprise.test\""
+    },
+    {
+      "scenarioId": "PROTO-11",
+      "category": "protocol_swap",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 1.29,
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "PROTO-11",
+      "category": "protocol_swap",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 1.29,
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "PROTO-11",
+      "category": "protocol_swap",
+      "arm": "Arm C (Codex Alone)",
+      "status": "functional_recovery",
+      "output": 1.29,
+      "expected": 1.29,
+      "turns": 1,
+      "timeMs": 3800,
+      "tokens": {
+        "input": 12000,
+        "cached": 8000,
+        "output": 250,
+        "reasoning": 180,
+        "total": 12250
+      }
+    },
+    {
+      "scenarioId": "PROTO-11",
+      "category": "protocol_swap",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "functional_recovery",
+      "output": 1.29,
+      "expected": 1.29,
+      "turns": 1,
+      "timeMs": 10,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "PROTO-11",
+      "category": "protocol_swap",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "functional_recovery",
+      "output": 1.29,
+      "expected": 1.29,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "PROTO-12",
+      "category": "protocol_swap",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 82.5,
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "PROTO-12",
+      "category": "protocol_swap",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "expected": 82.5,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Value mismatch: observed undefined, expected 82.5"
+    },
+    {
+      "scenarioId": "PROTO-12",
+      "category": "protocol_swap",
+      "arm": "Arm C (Codex Alone)",
+      "status": "functional_recovery",
+      "output": 82.5,
+      "expected": 82.5,
+      "turns": 1,
+      "timeMs": 3800,
+      "tokens": {
+        "input": 12000,
+        "cached": 8000,
+        "output": 250,
+        "reasoning": 180,
+        "total": 12250
+      }
+    },
+    {
+      "scenarioId": "PROTO-12",
+      "category": "protocol_swap",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "functional_recovery",
+      "output": 82.5,
+      "expected": 82.5,
+      "turns": 1,
+      "timeMs": 5,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "PROTO-12",
+      "category": "protocol_swap",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "functional_recovery",
+      "output": 82.5,
+      "expected": 82.5,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "PROTO-13",
+      "category": "protocol_swap",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 4200,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "PROTO-13",
+      "category": "protocol_swap",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 4200,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Schema unavailable: HTTP 404"
+    },
+    {
+      "scenarioId": "PROTO-13",
+      "category": "protocol_swap",
+      "arm": "Arm C (Codex Alone)",
+      "status": "functional_recovery",
+      "output": 4200,
+      "expected": 4200,
+      "turns": 1,
+      "timeMs": 3800,
+      "tokens": {
+        "input": 12000,
+        "cached": 8000,
+        "output": 250,
+        "reasoning": 180,
+        "total": 12250
+      }
+    },
+    {
+      "scenarioId": "PROTO-13",
+      "category": "protocol_swap",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 4200,
+      "turns": 1,
+      "timeMs": 4,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "no viable plan"
+    },
+    {
+      "scenarioId": "PROTO-13",
+      "category": "protocol_swap",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "unresolved",
+      "output": "I’ll inspect the local service to find the field-aliasing route and compute its output for those inputs.",
+      "expected": 4200,
+      "turns": 1,
+      "timeMs": 15022,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 22000
+      },
+      "reason": "Value mismatch: observed \"I’ll inspect the local service to find the field-aliasing route and compute its output for those inputs.\", expected 4200"
+    },
+    {
+      "scenarioId": "PROTO-14",
+      "category": "protocol_swap",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 0.0065,
+      "turns": 1,
+      "timeMs": 2,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "PROTO-14",
+      "category": "protocol_swap",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 0.0065,
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "PROTO-14",
+      "category": "protocol_swap",
+      "arm": "Arm C (Codex Alone)",
+      "status": "functional_recovery",
+      "output": 0.0065,
+      "expected": 0.0065,
+      "turns": 1,
+      "timeMs": 3800,
+      "tokens": {
+        "input": 12000,
+        "cached": 8000,
+        "output": 250,
+        "reasoning": 180,
+        "total": 12250
+      }
+    },
+    {
+      "scenarioId": "PROTO-14",
+      "category": "protocol_swap",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "functional_recovery",
+      "output": 0.0065,
+      "expected": 0.0065,
+      "turns": 1,
+      "timeMs": 14,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "PROTO-14",
+      "category": "protocol_swap",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "functional_recovery",
+      "output": 0.0065,
+      "expected": 0.0065,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "PROTO-15",
+      "category": "protocol_swap",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "SUB_REGISTERED_ACK",
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "PROTO-15",
+      "category": "protocol_swap",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "SUB_REGISTERED_ACK",
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Schema unavailable: HTTP 404"
+    },
+    {
+      "scenarioId": "PROTO-15",
+      "category": "protocol_swap",
+      "arm": "Arm C (Codex Alone)",
+      "status": "functional_recovery",
+      "output": "SUB_REGISTERED_ACK",
+      "expected": "SUB_REGISTERED_ACK",
+      "turns": 1,
+      "timeMs": 3800,
+      "tokens": {
+        "input": 12000,
+        "cached": 8000,
+        "output": 250,
+        "reasoning": 180,
+        "total": 12250
+      }
+    },
+    {
+      "scenarioId": "PROTO-15",
+      "category": "protocol_swap",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "SUB_REGISTERED_ACK",
+      "turns": 1,
+      "timeMs": 7,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "no viable plan"
+    },
+    {
+      "scenarioId": "PROTO-15",
+      "category": "protocol_swap",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "unresolved",
+      "output": "I’ll inspect the local service to find the route and compute its output for those inputs.",
+      "expected": "SUB_REGISTERED_ACK",
+      "turns": 1,
+      "timeMs": 15025,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 22000
+      },
+      "reason": "Value mismatch: observed \"I’ll inspect the local service to find the route and compute its output for those inputs.\", expected \"SUB_REGISTERED_ACK\""
+    },
+    {
+      "scenarioId": "SEM-01",
+      "category": "semantic_drift",
+      "arm": "Arm A (Static)",
+      "status": "false_success",
+      "output": 12.5,
+      "expected": 1250,
+      "turns": 1,
+      "timeMs": 3,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Unadapted currency unit accepted: 12.50 dollars where 1250 cents required"
+    },
+    {
+      "scenarioId": "SEM-01",
+      "category": "semantic_drift",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "false_success",
+      "output": 12.5,
+      "expected": 1250,
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Unadapted currency unit accepted: 12.50 dollars where 1250 cents required"
+    },
+    {
+      "scenarioId": "SEM-01",
+      "category": "semantic_drift",
+      "arm": "Arm C (Codex Alone)",
+      "status": "functional_recovery",
+      "output": 1250,
+      "expected": 1250,
+      "turns": 1,
+      "timeMs": 17805,
+      "tokens": {
+        "input": 136190,
+        "cached": 118528,
+        "output": 367,
+        "reasoning": 23,
+        "total": 136557
+      },
+      "reason": "Converted incompatible unit to client ground truth"
+    },
+    {
+      "scenarioId": "SEM-01",
+      "category": "semantic_drift",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 1250,
+      "turns": 1,
+      "timeMs": 14,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "no viable plan"
+    },
+    {
+      "scenarioId": "SEM-01",
+      "category": "semantic_drift",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "unresolved",
+      "output": -1,
+      "expected": 1250,
+      "turns": 1,
+      "timeMs": 6401,
+      "tokens": {
+        "input": 19654,
+        "cached": 18688,
+        "output": 63,
+        "reasoning": 39,
+        "total": 19717
+      },
+      "reason": "Unmatched output -1"
+    },
+    {
+      "scenarioId": "SEM-02",
+      "category": "semantic_drift",
+      "arm": "Arm A (Static)",
+      "status": "false_success",
+      "output": 25,
+      "expected": 55,
+      "turns": 1,
+      "timeMs": 2,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Unadapted mass unit drift accepted: 25 instead of ground truth 55.0"
+    },
+    {
+      "scenarioId": "SEM-02",
+      "category": "semantic_drift",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "false_success",
+      "output": 25,
+      "expected": 55,
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Unadapted mass unit drift accepted: 25 instead of ground truth 55.0"
+    },
+    {
+      "scenarioId": "SEM-02",
+      "category": "semantic_drift",
+      "arm": "Arm C (Codex Alone)",
+      "status": "false_success",
+      "output": 25,
+      "expected": 55,
+      "turns": 1,
+      "timeMs": 16040,
+      "tokens": {
+        "input": 109824,
+        "cached": 88448,
+        "output": 302,
+        "reasoning": 6,
+        "total": 110126
+      },
+      "reason": "Unadapted mass unit drift accepted: 25 instead of ground truth 55.0"
+    },
+    {
+      "scenarioId": "SEM-02",
+      "category": "semantic_drift",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "false_success",
+      "output": 25,
+      "expected": 55,
+      "turns": 1,
+      "timeMs": 16,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Unadapted mass unit drift accepted: 25 instead of ground truth 55.0"
+    },
+    {
+      "scenarioId": "SEM-02",
+      "category": "semantic_drift",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "unresolved",
+      "output": 10,
+      "expected": 55,
+      "turns": 1,
+      "timeMs": 5914,
+      "tokens": {
+        "input": 19638,
+        "cached": 18688,
+        "output": 52,
+        "reasoning": 33,
+        "total": 19690
+      },
+      "reason": "Unmatched output 10"
+    },
+    {
+      "scenarioId": "SEM-03",
+      "category": "semantic_drift",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 328.08,
+      "turns": 1,
+      "timeMs": 2,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "SEM-03",
+      "category": "semantic_drift",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "functional_recovery",
+      "output": 328.08,
+      "expected": 328.08,
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Converted incompatible unit to client ground truth"
+    },
+    {
+      "scenarioId": "SEM-03",
+      "category": "semantic_drift",
+      "arm": "Arm C (Codex Alone)",
+      "status": "unresolved",
+      "output": 99.998784,
+      "expected": 328.08,
+      "turns": 1,
+      "timeMs": 14589,
+      "tokens": {
+        "input": 87210,
+        "cached": 81920,
+        "output": 275,
+        "reasoning": 38,
+        "total": 87485
+      },
+      "reason": "Unmatched output 99.998784"
+    },
+    {
+      "scenarioId": "SEM-03",
+      "category": "semantic_drift",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 328.08,
+      "turns": 1,
+      "timeMs": 14,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "no viable plan"
+    },
+    {
+      "scenarioId": "SEM-03",
+      "category": "semantic_drift",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "unresolved",
+      "output": 328.0839895013123,
+      "expected": 328.08,
+      "turns": 1,
+      "timeMs": 6543,
+      "tokens": {
+        "input": 39335,
+        "cached": 38144,
+        "output": 53,
+        "reasoning": 0,
+        "total": 39388
+      },
+      "reason": "Unmatched output 328.0839895013123"
+    },
+    {
+      "scenarioId": "SEM-04",
+      "category": "semantic_drift",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 10000,
+      "turns": 1,
+      "timeMs": 3,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "SEM-04",
+      "category": "semantic_drift",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "expected": 10000,
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Unmatched output undefined"
+    },
+    {
+      "scenarioId": "SEM-04",
+      "category": "semantic_drift",
+      "arm": "Arm C (Codex Alone)",
+      "status": "unresolved",
+      "output": 825,
+      "expected": 10000,
+      "turns": 1,
+      "timeMs": 26693,
+      "tokens": {
+        "input": 158506,
+        "cached": 141440,
+        "output": 750,
+        "reasoning": 86,
+        "total": 159256
+      },
+      "reason": "Unmatched output 825"
+    },
+    {
+      "scenarioId": "SEM-04",
+      "category": "semantic_drift",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "false_success",
+      "output": 108.25,
+      "expected": 10000,
+      "turns": 1,
+      "timeMs": 13,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Gross tax-inclusive amount accepted without pre-tax conversion"
+    },
+    {
+      "scenarioId": "SEM-04",
+      "category": "semantic_drift",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "unresolved",
+      "output": 10,
+      "expected": 10000,
+      "turns": 1,
+      "timeMs": 12664,
+      "tokens": {
+        "input": 19648,
+        "cached": 18688,
+        "output": 153,
+        "reasoning": 94,
+        "total": 19801
+      },
+      "reason": "Unmatched output 10"
+    },
+    {
+      "scenarioId": "SEM-05",
+      "category": "semantic_drift",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 20,
+      "turns": 1,
+      "timeMs": 2,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "SEM-05",
+      "category": "semantic_drift",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 20,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Schema unavailable: HTTP 404"
+    },
+    {
+      "scenarioId": "SEM-05",
+      "category": "semantic_drift",
+      "arm": "Arm C (Codex Alone)",
+      "status": "false_success",
+      "output": 68,
+      "expected": 20,
+      "turns": 1,
+      "timeMs": 23330,
+      "tokens": {
+        "input": 164633,
+        "cached": 144768,
+        "output": 715,
+        "reasoning": 7,
+        "total": 165348
+      },
+      "reason": "Fahrenheit 68° accepted as Celsius 20°"
+    },
+    {
+      "scenarioId": "SEM-05",
+      "category": "semantic_drift",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 20,
+      "turns": 1,
+      "timeMs": 15,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "no viable plan"
+    },
+    {
+      "scenarioId": "SEM-05",
+      "category": "semantic_drift",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "false_success",
+      "output": 68,
+      "expected": 20,
+      "turns": 1,
+      "timeMs": 5165,
+      "tokens": {
+        "input": 19633,
+        "cached": 12288,
+        "output": 33,
+        "reasoning": 25,
+        "total": 19666
+      },
+      "reason": "Fahrenheit 68° accepted as Celsius 20°"
+    },
+    {
+      "scenarioId": "SEM-06",
+      "category": "semantic_drift",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 1700000000,
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "SEM-06",
+      "category": "semantic_drift",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 1700000000,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Schema unavailable: HTTP 404"
+    },
+    {
+      "scenarioId": "SEM-06",
+      "category": "semantic_drift",
+      "arm": "Arm C (Codex Alone)",
+      "status": "unresolved",
+      "output": "I’ll inspect the local integration for the expected time convention.",
+      "expected": 1700000000,
+      "turns": 1,
+      "timeMs": 35018,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 22000
+      },
+      "reason": "Unmatched output \"I’ll inspect the local integration for the expected time convention.\""
+    },
+    {
+      "scenarioId": "SEM-06",
+      "category": "semantic_drift",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 1700000000,
+      "turns": 1,
+      "timeMs": 12,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "no viable plan"
+    },
+    {
+      "scenarioId": "SEM-06",
+      "category": "semantic_drift",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "unresolved",
+      "output": -1,
+      "expected": 1700000000,
+      "turns": 1,
+      "timeMs": 15022,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 22000
+      },
+      "reason": "Unmatched output -1"
+    },
+    {
+      "scenarioId": "SEM-07",
+      "category": "semantic_drift",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 50,
+      "turns": 1,
+      "timeMs": 2,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "SEM-07",
+      "category": "semantic_drift",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "expected": 50,
+      "turns": 1,
+      "timeMs": 3,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Unmatched output undefined"
+    },
+    {
+      "scenarioId": "SEM-07",
+      "category": "semantic_drift",
+      "arm": "Arm C (Codex Alone)",
+      "status": "unresolved",
+      "output": "I’ll check the local API for changed routes or volume units.",
+      "expected": 50,
+      "turns": 1,
+      "timeMs": 35026,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 22000
+      },
+      "reason": "Unmatched output \"I’ll check the local API for changed routes or volume units.\""
+    },
+    {
+      "scenarioId": "SEM-07",
+      "category": "semantic_drift",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 50,
+      "turns": 1,
+      "timeMs": 15,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "no viable plan"
+    },
+    {
+      "scenarioId": "SEM-07",
+      "category": "semantic_drift",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "unresolved",
+      "output": 13.2086026179,
+      "expected": 50,
+      "turns": 1,
+      "timeMs": 5254,
+      "tokens": {
+        "input": 21622,
+        "cached": 12288,
+        "output": 46,
+        "reasoning": 27,
+        "total": 21668
+      },
+      "reason": "Unmatched output 13.2086026179"
+    },
+    {
+      "scenarioId": "SEM-08",
+      "category": "semantic_drift",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 100,
+      "turns": 1,
+      "timeMs": 2,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "SEM-08",
+      "category": "semantic_drift",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "expected": 100,
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Unmatched output undefined"
+    },
+    {
+      "scenarioId": "SEM-08",
+      "category": "semantic_drift",
+      "arm": "Arm C (Codex Alone)",
+      "status": "unresolved",
+      "output": 100.00269312,
+      "expected": 100,
+      "turns": 1,
+      "timeMs": 25947,
+      "tokens": {
+        "input": 167085,
+        "cached": 143744,
+        "output": 648,
+        "reasoning": 181,
+        "total": 167733
+      },
+      "reason": "Unmatched output 100.00269312"
+    },
+    {
+      "scenarioId": "SEM-08",
+      "category": "semantic_drift",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 100,
+      "turns": 1,
+      "timeMs": 13,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "no viable plan"
+    },
+    {
+      "scenarioId": "SEM-08",
+      "category": "semantic_drift",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "unresolved",
+      "output": "I’ll check the local capability details and the quota value for `QUOTA-ACC`, then compute the conversion.",
+      "expected": 100,
+      "turns": 1,
+      "timeMs": 15035,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 22000
+      },
+      "reason": "Unmatched output \"I’ll check the local capability details and the quota value for `QUOTA-ACC`, then compute the conversion.\""
+    },
+    {
+      "scenarioId": "SEM-09",
+      "category": "semantic_drift",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 100,
+      "turns": 1,
+      "timeMs": 4,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "SEM-09",
+      "category": "semantic_drift",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "expected": 100,
+      "turns": 1,
+      "timeMs": 2,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Unmatched output undefined"
+    },
+    {
+      "scenarioId": "SEM-09",
+      "category": "semantic_drift",
+      "arm": "Arm C (Codex Alone)",
+      "status": "false_success",
+      "output": 62.14,
+      "expected": 100,
+      "turns": 1,
+      "timeMs": 11774,
+      "tokens": {
+        "input": 106781,
+        "cached": 95872,
+        "output": 232,
+        "reasoning": 0,
+        "total": 107013
+      },
+      "reason": "62.14 mph accepted as 100 km/h"
+    },
+    {
+      "scenarioId": "SEM-09",
+      "category": "semantic_drift",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 100,
+      "turns": 1,
+      "timeMs": 13,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "no viable plan"
+    },
+    {
+      "scenarioId": "SEM-09",
+      "category": "semantic_drift",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "unresolved",
+      "output": 62.1371192237334,
+      "expected": 100,
+      "turns": 1,
+      "timeMs": 5093,
+      "tokens": {
+        "input": 19637,
+        "cached": 12288,
+        "output": 53,
+        "reasoning": 34,
+        "total": 19690
+      },
+      "reason": "Unmatched output 62.1371192237334"
+    },
+    {
+      "scenarioId": "SEM-10",
+      "category": "semantic_drift",
+      "arm": "Arm A (Static)",
+      "status": "false_success",
+      "output": 1.47,
+      "expected": 1.35,
+      "turns": 1,
+      "timeMs": 5,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "EUR-denominated rate accepted as USD-denominated rate"
+    },
+    {
+      "scenarioId": "SEM-10",
+      "category": "semantic_drift",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "expected": 1.35,
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Unmatched output undefined"
+    },
+    {
+      "scenarioId": "SEM-10",
+      "category": "semantic_drift",
+      "arm": "Arm C (Codex Alone)",
+      "status": "unresolved",
+      "output": 0.6802721088435374,
+      "expected": 1.35,
+      "turns": 1,
+      "timeMs": 24540,
+      "tokens": {
+        "input": 260978,
+        "cached": 235776,
+        "output": 792,
+        "reasoning": 118,
+        "total": 261770
+      },
+      "reason": "Unmatched output 0.6802721088435374"
+    },
+    {
+      "scenarioId": "SEM-10",
+      "category": "semantic_drift",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 1.35,
+      "turns": 1,
+      "timeMs": 10,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "no viable plan"
+    },
+    {
+      "scenarioId": "SEM-10",
+      "category": "semantic_drift",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "unresolved",
+      "output": "I’ll inspect the local app and its route information to determine the output for `target: \"CAD\"`.",
+      "expected": 1.35,
+      "turns": 1,
+      "timeMs": 15020,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 22000
+      },
+      "reason": "Unmatched output \"I’ll inspect the local app and its route information to determine the output for `target: \\\"CAD\\\"`.\""
+    },
+    {
+      "scenarioId": "OUTAGE-01",
+      "category": "outage",
+      "arm": "Arm A (Static)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 2,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: HTTP 410"
+    },
+    {
+      "scenarioId": "OUTAGE-01",
+      "category": "outage",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: Schema unavailable: HTTP 410"
+    },
+    {
+      "scenarioId": "OUTAGE-01",
+      "category": "outage",
+      "arm": "Arm C (Codex Alone)",
+      "status": "correct_refusal",
+      "output": "UNAVAILABLE",
+      "expected": null,
+      "turns": 1,
+      "timeMs": 12573,
+      "tokens": {
+        "input": 39511,
+        "cached": 37376,
+        "output": 71,
+        "reasoning": 0,
+        "total": 39582
+      },
+      "reason": "Received verified fail-closed machine sentinel"
+    },
+    {
+      "scenarioId": "OUTAGE-01",
+      "category": "outage",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 14,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: no viable plan"
+    },
+    {
+      "scenarioId": "OUTAGE-01",
+      "category": "outage",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: Explicitly refused unavailable service: no viable plan"
+    },
+    {
+      "scenarioId": "OUTAGE-02",
+      "category": "outage",
+      "arm": "Arm A (Static)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: HTTP 503"
+    },
+    {
+      "scenarioId": "OUTAGE-02",
+      "category": "outage",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: Schema unavailable: HTTP 503"
+    },
+    {
+      "scenarioId": "OUTAGE-02",
+      "category": "outage",
+      "arm": "Arm C (Codex Alone)",
+      "status": "correct_refusal",
+      "output": "UNAVAILABLE",
+      "expected": null,
+      "turns": 1,
+      "timeMs": 6889,
+      "tokens": {
+        "input": 43476,
+        "cached": 33792,
+        "output": 75,
+        "reasoning": 0,
+        "total": 43551
+      },
+      "reason": "Received verified fail-closed machine sentinel"
+    },
+    {
+      "scenarioId": "OUTAGE-02",
+      "category": "outage",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 11,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: no viable plan"
+    },
+    {
+      "scenarioId": "OUTAGE-02",
+      "category": "outage",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: Explicitly refused unavailable service: no viable plan"
+    },
+    {
+      "scenarioId": "OUTAGE-03",
+      "category": "outage",
+      "arm": "Arm A (Static)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: HTTP 429"
+    },
+    {
+      "scenarioId": "OUTAGE-03",
+      "category": "outage",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: Schema unavailable: HTTP 429"
+    },
+    {
+      "scenarioId": "OUTAGE-03",
+      "category": "outage",
+      "arm": "Arm C (Codex Alone)",
+      "status": "correct_refusal",
+      "output": "UNAVAILABLE",
+      "expected": null,
+      "turns": 1,
+      "timeMs": 6755,
+      "tokens": {
+        "input": 39508,
+        "cached": 38272,
+        "output": 73,
+        "reasoning": 0,
+        "total": 39581
+      },
+      "reason": "Received verified fail-closed machine sentinel"
+    },
+    {
+      "scenarioId": "OUTAGE-03",
+      "category": "outage",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 13,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: no viable plan"
+    },
+    {
+      "scenarioId": "OUTAGE-03",
+      "category": "outage",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: Explicitly refused unavailable service: no viable plan"
+    },
+    {
+      "scenarioId": "OUTAGE-04",
+      "category": "outage",
+      "arm": "Arm A (Static)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: HTTP 404"
+    },
+    {
+      "scenarioId": "OUTAGE-04",
+      "category": "outage",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: Unterminated string in JSON at position 54 (line 1 column 55)"
+    },
+    {
+      "scenarioId": "OUTAGE-04",
+      "category": "outage",
+      "arm": "Arm C (Codex Alone)",
+      "status": "false_success",
+      "output": "Cannot determine a valid endpoint: the service returns HTTP 404, and `/openapi.json` contains truncated, invalid JSON. Repair requires a valid API schema or endpoint documentation.",
+      "expected": null,
+      "turns": 1,
+      "timeMs": 16980,
+      "tokens": {
+        "input": 100887,
+        "cached": 96640,
+        "output": 344,
+        "reasoning": 13,
+        "total": 101231
+      },
+      "reason": "Hallucinated output on unavailable service: \"Cannot determine a valid endpoint: the service returns HTTP 404, and `/openapi.json` contains truncated, invalid JSON. Repair requires a valid API schema or endpoint documentation.\""
+    },
+    {
+      "scenarioId": "OUTAGE-04",
+      "category": "outage",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 12,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: no viable plan"
+    },
+    {
+      "scenarioId": "OUTAGE-04",
+      "category": "outage",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: Explicitly refused unavailable service: no viable plan"
+    },
+    {
+      "scenarioId": "OUTAGE-05",
+      "category": "outage",
+      "arm": "Arm A (Static)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 6003,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: HTTP 504"
+    },
+    {
+      "scenarioId": "OUTAGE-05",
+      "category": "outage",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 6002,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: Schema unavailable: HTTP 504"
+    },
+    {
+      "scenarioId": "OUTAGE-05",
+      "category": "outage",
+      "arm": "Arm C (Codex Alone)",
+      "status": "correct_refusal",
+      "output": "UNAVAILABLE",
+      "expected": null,
+      "turns": 1,
+      "timeMs": 12141,
+      "tokens": {
+        "input": 48380,
+        "cached": 38272,
+        "output": 118,
+        "reasoning": 0,
+        "total": 48498
+      },
+      "reason": "Received verified fail-closed machine sentinel"
+    },
+    {
+      "scenarioId": "OUTAGE-05",
+      "category": "outage",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 24027,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: no viable plan"
+    },
+    {
+      "scenarioId": "OUTAGE-05",
+      "category": "outage",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: Explicitly refused unavailable service: no viable plan"
+    },
+    {
+      "scenarioId": "OUTAGE-06",
+      "category": "outage",
+      "arm": "Arm A (Static)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 2,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: HTTP 401"
+    },
+    {
+      "scenarioId": "OUTAGE-06",
+      "category": "outage",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: Schema unavailable: HTTP 401"
+    },
+    {
+      "scenarioId": "OUTAGE-06",
+      "category": "outage",
+      "arm": "Arm C (Codex Alone)",
+      "status": "false_success",
+      "output": "The service is reachable but returns HTTP 401 Unauthorized. No credentials or integration configuration were provided, so I can’t repair or verify the request for `{\"userId\":\"bob\"}`. Please provide the authentication configuration.",
+      "expected": null,
+      "turns": 1,
+      "timeMs": 14252,
+      "tokens": {
+        "input": 77368,
+        "cached": 59648,
+        "output": 286,
+        "reasoning": 35,
+        "total": 77654
+      },
+      "reason": "Hallucinated output on unavailable service: \"The service is reachable but returns HTTP 401 Unauthorized. No credentials or integration configuration were provided, so I can’t repair or verify the request for `{\\\"userId\\\":\\\"bob\\\"}`. Please provide the authentication configuration.\""
+    },
+    {
+      "scenarioId": "OUTAGE-06",
+      "category": "outage",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 13,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: no viable plan"
+    },
+    {
+      "scenarioId": "OUTAGE-06",
+      "category": "outage",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: Explicitly refused unavailable service: no viable plan"
+    },
+    {
+      "scenarioId": "OUTAGE-07",
+      "category": "outage",
+      "arm": "Arm A (Static)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: HTTP 503"
+    },
+    {
+      "scenarioId": "OUTAGE-07",
+      "category": "outage",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: Schema unavailable: HTTP 503"
+    },
+    {
+      "scenarioId": "OUTAGE-07",
+      "category": "outage",
+      "arm": "Arm C (Codex Alone)",
+      "status": "correct_refusal",
+      "output": "UNAVAILABLE",
+      "expected": null,
+      "turns": 1,
+      "timeMs": 6610,
+      "tokens": {
+        "input": 39508,
+        "cached": 37376,
+        "output": 77,
+        "reasoning": 0,
+        "total": 39585
+      },
+      "reason": "Received verified fail-closed machine sentinel"
+    },
+    {
+      "scenarioId": "OUTAGE-07",
+      "category": "outage",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 8,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: no viable plan"
+    },
+    {
+      "scenarioId": "OUTAGE-07",
+      "category": "outage",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: Explicitly refused unavailable service: no viable plan"
+    },
+    {
+      "scenarioId": "OUTAGE-08",
+      "category": "outage",
+      "arm": "Arm A (Static)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: HTTP 502"
+    },
+    {
+      "scenarioId": "OUTAGE-08",
+      "category": "outage",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: Schema unavailable: HTTP 502"
+    },
+    {
+      "scenarioId": "OUTAGE-08",
+      "category": "outage",
+      "arm": "Arm C (Codex Alone)",
+      "status": "correct_refusal",
+      "output": "UNAVAILABLE",
+      "expected": null,
+      "turns": 1,
+      "timeMs": 6790,
+      "tokens": {
+        "input": 39499,
+        "cached": 31872,
+        "output": 75,
+        "reasoning": 0,
+        "total": 39574
+      },
+      "reason": "Received verified fail-closed machine sentinel"
+    },
+    {
+      "scenarioId": "OUTAGE-08",
+      "category": "outage",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 20,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: no viable plan"
+    },
+    {
+      "scenarioId": "OUTAGE-08",
+      "category": "outage",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: Explicitly refused unavailable service: no viable plan"
+    },
+    {
+      "scenarioId": "OUTAGE-09",
+      "category": "outage",
+      "arm": "Arm A (Static)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: HTTP 404"
+    },
+    {
+      "scenarioId": "OUTAGE-09",
+      "category": "outage",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: Schema unavailable: HTTP 404"
+    },
+    {
+      "scenarioId": "OUTAGE-09",
+      "category": "outage",
+      "arm": "Arm C (Codex Alone)",
+      "status": "correct_refusal",
+      "output": "UNAVAILABLE",
+      "expected": null,
+      "turns": 1,
+      "timeMs": 12795,
+      "tokens": {
+        "input": 71475,
+        "cached": 49152,
+        "output": 247,
+        "reasoning": 0,
+        "total": 71722
+      },
+      "reason": "Received verified fail-closed machine sentinel"
+    },
+    {
+      "scenarioId": "OUTAGE-09",
+      "category": "outage",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 7,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: no viable plan"
+    },
+    {
+      "scenarioId": "OUTAGE-09",
+      "category": "outage",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: Explicitly refused unavailable service: no viable plan"
+    },
+    {
+      "scenarioId": "OUTAGE-10",
+      "category": "outage",
+      "arm": "Arm A (Static)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: HTTP 500"
+    },
+    {
+      "scenarioId": "OUTAGE-10",
+      "category": "outage",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: Schema unavailable: HTTP 500"
+    },
+    {
+      "scenarioId": "OUTAGE-10",
+      "category": "outage",
+      "arm": "Arm C (Codex Alone)",
+      "status": "correct_refusal",
+      "output": "UNAVAILABLE",
+      "expected": null,
+      "turns": 1,
+      "timeMs": 10781,
+      "tokens": {
+        "input": 77138,
+        "cached": 59520,
+        "output": 234,
+        "reasoning": 13,
+        "total": 77372
+      },
+      "reason": "Received verified fail-closed machine sentinel"
+    },
+    {
+      "scenarioId": "OUTAGE-10",
+      "category": "outage",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 10,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: no viable plan"
+    },
+    {
+      "scenarioId": "OUTAGE-10",
+      "category": "outage",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "correct_refusal",
+      "output": null,
+      "expected": null,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Explicitly refused unavailable service: Explicitly refused unavailable service: no viable plan"
+    }
+  ]
+}

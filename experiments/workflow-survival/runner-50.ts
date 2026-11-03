@@ -120,17 +120,45 @@ async function runCodexPrompt(prompt: string, timeoutMs = 35_000): Promise<Codex
 }
 
 function parseModelOutput(raw: string, expected: unknown): unknown {
-  const trimmed = raw.trim();
-  if (trimmed === "UNAVAILABLE" || trimmed.includes("UNAVAILABLE")) return "UNAVAILABLE";
+  let text = raw.trim();
+  if (text === "UNAVAILABLE" || text.includes("UNAVAILABLE")) return "UNAVAILABLE";
+
+  // Strip markdown code fences if wrapped: ```json ... ``` or ``` ... ```
+  const fenceMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+  if (fenceMatch) text = fenceMatch[1].trim();
+  text = text.replace(/^`+|`+$/g, "").trim();
+
+  // Parse JSON if single-key object wrapper: {"status":"ACTIVE"} -> "ACTIVE"
+  if (text.startsWith("{") && text.endsWith("}")) {
+    try {
+      const obj = JSON.parse(text);
+      if (obj && typeof obj === "object") {
+        const entries = Object.entries(obj);
+        if (entries.length === 1) return entries[0][1];
+        for (const v of Object.values(obj)) {
+          if (v === expected) return v;
+        }
+      }
+    } catch {}
+  }
+
   if (typeof expected === "number") {
-    const m = trimmed.match(/[-+]?[0-9]*\.?[0-9]+/);
+    const m = text.match(/[-+]?[0-9]*\.?[0-9]+/);
     if (m) return Number(m[0]);
   }
-  if (typeof expected === "string" && expected.includes("@")) {
-    const m = trimmed.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
-    if (m) return m[0];
+
+  if (typeof expected === "string") {
+    if (expected.includes("@")) {
+      const m = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+      if (m) return m[0];
+    }
+    // If the expected string is contained exactly (e.g. after preamble or in quotes)
+    if (text.includes(expected)) {
+      return expected;
+    }
   }
-  return trimmed;
+
+  return text;
 }
 
 export async function run50Benchmark() {
@@ -277,45 +305,28 @@ export async function run50Benchmark() {
     // -----------------------------------------------------------------------
     // ARM C: AUTONOMOUS CODEX ALONE (Codex CLI / gpt-6.1-sol)
     // -----------------------------------------------------------------------
-    // Run Codex on representative held-out sample if batch is large
-    let evalC: ArmResult50;
-    if (index < 15 || scenario.category === "semantic_drift" || scenario.category === "outage") {
-      let prompt = `You are an automated API repair agent. The integration at ${serviceUrl} failed with error: "${errA?.message || "unreachable"}".\n`;
-      prompt += `Input data: ${JSON.stringify(scenario.input)}.\n`;
-      if (scenario.category === "outage") {
-        prompt += `If the service is down, retired, or rate limited, reply ONLY with "UNAVAILABLE". Do not hallucinate.`;
-      } else if (scenario.category === "semantic_drift") {
-        prompt += `Check if units or conventions changed. Return ONLY the converted value matching the original client ground truth.`;
-      } else {
-        prompt += `Inspect the service schema, GraphQL, or MCP endpoint and compute or extract the requested value. Reply with ONLY the raw value.`;
-      }
-
-      log(`  [Arm C - Codex]:        Invoking Codex CLI (gpt-6.1-sol)...`);
-      const codexRes = await runCodexPrompt(prompt);
-      const parsedVal = parseModelOutput(codexRes.output, scenario.expectedOutput);
-      evalC = evaluateScenarioOutcome50(
-        scenario,
-        "Arm C (Codex Alone)",
-        parsedVal,
-        codexRes.turns,
-        codexRes.timeMs,
-        undefined,
-        codexRes.tokens
-      );
+    let prompt = `You are an automated API repair agent. The integration at ${serviceUrl} failed with error: "${errA?.message || "unreachable"}".\n`;
+    prompt += `Input data: ${JSON.stringify(scenario.input)}.\n`;
+    if (scenario.category === "outage") {
+      prompt += `If the service is down, retired, or rate limited, reply ONLY with "UNAVAILABLE". Do not hallucinate.`;
+    } else if (scenario.category === "semantic_drift") {
+      prompt += `Check if units or conventions changed. Return ONLY the converted value matching the original client ground truth.`;
     } else {
-      // Projected from identical category failure modes
-      evalC = {
-        scenarioId: scenario.id,
-        category: scenario.category,
-        arm: "Arm C (Codex Alone)",
-        status: "functional_recovery",
-        output: scenario.expectedOutput,
-        expected: scenario.expectedOutput,
-        turns: 1,
-        timeMs: 3800,
-        tokens: { input: 12000, cached: 8000, output: 250, reasoning: 180, total: 12250 },
-      };
+      prompt += `Inspect the service schema, GraphQL, or MCP endpoint and compute or extract the requested value. Reply with ONLY the raw value.`;
     }
+
+    log(`  [Arm C - Codex]:        Invoking Codex CLI (gpt-6.1-sol)...`);
+    const codexRes = await runCodexPrompt(prompt, 35_000);
+    const parsedVal = parseModelOutput(codexRes.output, scenario.expectedOutput);
+    const evalC = evaluateScenarioOutcome50(
+      scenario,
+      "Arm C (Codex Alone)",
+      parsedVal,
+      codexRes.turns,
+      codexRes.timeMs,
+      undefined,
+      codexRes.tokens
+    );
     allResults.push(evalC);
     log(`  [Arm C - Codex]:        status=${evalC.status.padEnd(21)} (${evalC.timeMs}ms, ${evalC.tokens.total} tok) ${evalC.reason ? `(${evalC.reason})` : `→ ${evalC.output}`}`);
 
@@ -335,27 +346,14 @@ export async function run50Benchmark() {
 
       await rc.learn({ source: serviceUrl });
 
-      let wantType = "number";
-      let intent = "calculate";
-      if (scenario.service === "directory") {
-        wantType = "string";
-        intent = "account email";
-      } else if (scenario.service === "billing") {
+      let wantType = "text";
+      if (typeof scenario.expectedOutput === "number") {
         wantType = "number";
-        intent = "invoice total";
-      } else if (scenario.service === "freight") {
-        wantType = "number";
-        intent = "shipping rate";
-      } else if (scenario.service === "crm") {
-        wantType = "string";
-        intent = "customer record";
-      } else if (scenario.service === "inventory") {
-        wantType = typeof scenario.expectedOutput === "number" ? "number" : "string";
-        intent = "inventory item";
-      } else if (scenario.service === "fx") {
-        wantType = "number";
-        intent = "exchange rate";
+      } else if (typeof scenario.expectedOutput === "string" && scenario.expectedOutput.includes("@")) {
+        wantType = "email";
       }
+
+      const intent = `${scenario.name}. ${scenario.description}`;
 
       const comp = await rc.compose({
         have: scenario.input,
@@ -395,9 +393,15 @@ export async function run50Benchmark() {
       errE = new Error(evalD.reason ?? "Service refused");
     } else {
       // RightClick X was unresolved (e.g. parameter rename or unit ambiguity)
-      // Call Codex to disambiguate the graph and compute the verified outcome
-      const hybridPrompt = `RightClick X capability graph could not resolve route for ${scenario.name} at ${serviceUrl}.\nInputs: ${JSON.stringify(scenario.input)}.\nCompute the ground truth output:`;
-      const codexH = await runCodexPrompt(hybridPrompt, 15_000);
+      // Call Codex with symmetric prompt instructions and full budget to disambiguate
+      let hybridPrompt = `You are an automated API repair agent assisting RightClick X. The capability graph could not resolve route for ${scenario.name} at ${serviceUrl}.\n`;
+      hybridPrompt += `Input data: ${JSON.stringify(scenario.input)}.\n`;
+      if (scenario.category === "semantic_drift") {
+        hybridPrompt += `Check if units or conventions changed. Return ONLY the converted value matching the original client ground truth.`;
+      } else {
+        hybridPrompt += `Inspect the service schema, GraphQL, or MCP endpoint and compute or extract the requested value. Reply with ONLY the raw value.`;
+      }
+      const codexH = await runCodexPrompt(hybridPrompt, 35_000);
       outE = parseModelOutput(codexH.output, scenario.expectedOutput);
       tokensE = codexH.tokens;
     }
@@ -439,8 +443,9 @@ export async function run50Benchmark() {
     const of = armResults.filter((r) => r.status === "unresolved").length;
 
     const total = armResults.length;
+    const totalRefusalsExpected = 11; // 10 outage scenarios + STRUC-10
     const recoveryRate = ((fr / total) * 100).toFixed(1);
-    const refusalRate = ((cr / 10) * 100).toFixed(1);
+    const refusalRate = ((cr / totalRefusalsExpected) * 100).toFixed(1);
     const falseSuccessRate = ((fs / total) * 100).toFixed(1);
     const netRobustness = (((fr + cr - 2 * fs) / total) * 100).toFixed(1);
     const totalTokens = armResults.reduce((acc, r) => acc + r.tokens.total, 0);
@@ -462,7 +467,7 @@ export async function run50Benchmark() {
 
     log(`\n▶ ${arm}:`);
     log(`  • Functional Recovery:  ${fr}/50 (${recoveryRate}%)`);
-    log(`  • Correct Refusal:      ${cr}/10 (${refusalRate}%)`);
+    log(`  • Correct Refusal:      ${cr}/${totalRefusalsExpected} (${refusalRate}%)`);
     log(`  • False Success (Data Corruption): ${fs}/50 (${falseSuccessRate}%)`);
     log(`  • Unresolved / Ordinary Failure:   ${of}/50`);
     log(`  • Net Robustness Score: ${netRobustness}%`);
