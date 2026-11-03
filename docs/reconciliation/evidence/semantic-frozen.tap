@@ -1,0 +1,143 @@
+✖ a state statistic cannot substitute for a settlement amount (30.164625ms)
+✖ a description statistic cannot substitute for a settlement amount (5.294417ms)
+✖ a note statistic cannot substitute for a settlement amount (2.695708ms)
+✔ an explicitly requested word count remains executable and unverified (1.191709ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 1
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 188.277875
+
+✖ failing tests:
+
+test at test/semantic-derivation.test.ts:10:3
+✖ a state statistic cannot substitute for a settlement amount (30.164625ms)
+  AssertionError [ERR_ASSERTION]: {"goal":{"have":{"account":"account"},"want":"number","intent":"account settlement total","through":[]},"plans":[{"steps":[{"capability":"openapi:gateway:accountsettlement","bindings":[{"port":"account","from":"$in.account"}]},{"capability":"builtin:text.stats","bindings":[{"port":"text","from":"0.state"}]}],"result":"1.words","resultType":"number","cost":2.7666666666666666,"intentScore":3,"fit":1.25,"resultScore":-0.1,"providers":["openapi:gateway","builtin:core"],"summary":"Account settlement total → Text statistics","titles":["Account settlement total","Text statistics"],"contract":{"status":"satisfied","steps":[{"step":0,"capability":"openapi:gateway:accountsettlement","title":"Account settlement total","reason":"requested"},{"step":1,"capability":"builtin:text.stats","title":"Text statistics","reason":"type-conversion"}],"violations":[],"preservesInput":false}}],"contract":{"input":[{"name":"account","type":"account"}],"output":{"type":"number","requires":[]},"transformations":["account","settlement","total"],"invariants":["lineage: every step is requested, provides required information, converts a type a later step needs, or was named by the caller","distinct inputs: no step receives the same value on two required ports","preservation: where every step has evidence of keeping its input's words, the result must keep the caller's words"],"completeness":"the result is of type number","provenance":"every bound value comes from the caller or an earlier step of this plan","verification":{"predicates":0,"witnesses":0,"strongest":"unchecked"},"authority":{"risks":[],"destructiveNeedsOperatorApproval":true},"allowedUncertainty":"none: a result whose contract cannot be established is reported as not established, not as success","failureConditions":["a step not justified by the request (lineage)","a required piece of information missing from the result","a join supported only by a generic type when information is required","a check (predicate or witness) refuted","content lost where every step was expected to preserve it"]},"executed":{"contract":{"status":"satisfied","violations":[],"assurance":"unchecked"},"summary":"Account settlement total → Text statistics","titles":["Account settlement total","Text statistics"],"output":1,"status":"completed","verification":{"status":"unverified","results":[]},"runs":["run_mw19dfr3_1_9b30b1ee-9cde-41eb-a063-8c927a4e09a0","run_mw19dfrd_2_f651f486-7d84-4945-b9ba-47ef2418f44f"],"attempts":[],"durationMs":12,"witnesses":[]},"crystallized":{"id":"composite:a8760b369f29","title":"Account settlement total: Account settlement total → Text statistics","newPowers":1}}
+  + actual - expected
+  
+  + {
+  +   attempts: [],
+  +   contract: {
+  +     assurance: 'unchecked',
+  +     status: 'satisfied',
+  +     violations: []
+  +   },
+  +   durationMs: 12,
+  +   output: 1,
+  +   runs: [
+  +     'run_mw19dfr3_1_9b30b1ee-9cde-41eb-a063-8c927a4e09a0',
+  +     'run_mw19dfrd_2_f651f486-7d84-4945-b9ba-47ef2418f44f'
+  +   ],
+  +   status: 'completed',
+  +   summary: 'Account settlement total → Text statistics',
+  +   titles: [
+  +     'Account settlement total',
+  +     'Text statistics'
+  +   ],
+  +   verification: {
+  +     results: [],
+  +     status: 'unverified'
+  +   },
+  +   witnesses: []
+  + }
+  - undefined
+  
+      at TestContext.<anonymous> (file:///Users/ross/Documents/Codex/2026-11-03/files-pasted-by-the-user-actenon/work/rightclick-x/test/semantic-derivation.test.ts:25:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: { contract: { status: 'satisfied', violations: [], assurance: 'unchecked' }, summary: 'Account settlement total → Text statistics', titles: [ 'Account settlement total', 'Text statistics' ], output: 1, status: 'completed', verification: { status: 'unverified', results: [] }, runs: [ 'run_mw19dfr3_1_9b30b1ee-9cde-41eb-a063-8c927a4e09a0', 'run_mw19dfrd_2_f651f486-7d84-4945-b9ba-47ef2418f44f' ], attempts: [], durationMs: 12, witnesses: [] },
+    expected: undefined,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/semantic-derivation.test.ts:10:3
+✖ a description statistic cannot substitute for a settlement amount (5.294417ms)
+  AssertionError [ERR_ASSERTION]: {"goal":{"have":{"account":"account"},"want":"number","intent":"account settlement total","through":[]},"plans":[{"steps":[{"capability":"openapi:gateway:accountsettlement","bindings":[{"port":"account","from":"$in.account"}]},{"capability":"builtin:text.stats","bindings":[{"port":"text","from":"0.description"}]}],"result":"1.words","resultType":"number","cost":2.7666666666666666,"intentScore":3,"fit":1.25,"resultScore":-0.1,"providers":["openapi:gateway","builtin:core"],"summary":"Account settlement total → Text statistics","titles":["Account settlement total","Text statistics"],"contract":{"status":"satisfied","steps":[{"step":0,"capability":"openapi:gateway:accountsettlement","title":"Account settlement total","reason":"requested"},{"step":1,"capability":"builtin:text.stats","title":"Text statistics","reason":"type-conversion"}],"violations":[],"preservesInput":false}}],"contract":{"input":[{"name":"account","type":"account"}],"output":{"type":"number","requires":[]},"transformations":["account","settlement","total"],"invariants":["lineage: every step is requested, provides required information, converts a type a later step needs, or was named by the caller","distinct inputs: no step receives the same value on two required ports","preservation: where every step has evidence of keeping its input's words, the result must keep the caller's words"],"completeness":"the result is of type number","provenance":"every bound value comes from the caller or an earlier step of this plan","verification":{"predicates":0,"witnesses":0,"strongest":"unchecked"},"authority":{"risks":[],"destructiveNeedsOperatorApproval":true},"allowedUncertainty":"none: a result whose contract cannot be established is reported as not established, not as success","failureConditions":["a step not justified by the request (lineage)","a required piece of information missing from the result","a join supported only by a generic type when information is required","a check (predicate or witness) refuted","content lost where every step was expected to preserve it"]},"executed":{"contract":{"status":"satisfied","violations":[],"assurance":"unchecked"},"summary":"Account settlement total → Text statistics","titles":["Account settlement total","Text statistics"],"output":1,"status":"completed","verification":{"status":"unverified","results":[]},"runs":["run_mw19dfri_1_766c0d5e-1319-4e9f-a448-d937b73828d4","run_mw19dfrk_2_39ff2253-d95f-4570-9ec2-33ab54188e16"],"attempts":[],"durationMs":2,"witnesses":[]},"crystallized":{"id":"composite:28fd2964f6cf","title":"Account settlement total: Account settlement total → Text statistics","newPowers":1}}
+  + actual - expected
+  
+  + {
+  +   attempts: [],
+  +   contract: {
+  +     assurance: 'unchecked',
+  +     status: 'satisfied',
+  +     violations: []
+  +   },
+  +   durationMs: 2,
+  +   output: 1,
+  +   runs: [
+  +     'run_mw19dfri_1_766c0d5e-1319-4e9f-a448-d937b73828d4',
+  +     'run_mw19dfrk_2_39ff2253-d95f-4570-9ec2-33ab54188e16'
+  +   ],
+  +   status: 'completed',
+  +   summary: 'Account settlement total → Text statistics',
+  +   titles: [
+  +     'Account settlement total',
+  +     'Text statistics'
+  +   ],
+  +   verification: {
+  +     results: [],
+  +     status: 'unverified'
+  +   },
+  +   witnesses: []
+  + }
+  - undefined
+  
+      at TestContext.<anonymous> (file:///Users/ross/Documents/Codex/2026-11-03/files-pasted-by-the-user-actenon/work/rightclick-x/test/semantic-derivation.test.ts:25:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: { contract: { status: 'satisfied', violations: [], assurance: 'unchecked' }, summary: 'Account settlement total → Text statistics', titles: [ 'Account settlement total', 'Text statistics' ], output: 1, status: 'completed', verification: { status: 'unverified', results: [] }, runs: [ 'run_mw19dfri_1_766c0d5e-1319-4e9f-a448-d937b73828d4', 'run_mw19dfrk_2_39ff2253-d95f-4570-9ec2-33ab54188e16' ], attempts: [], durationMs: 2, witnesses: [] },
+    expected: undefined,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/semantic-derivation.test.ts:10:3
+✖ a note statistic cannot substitute for a settlement amount (2.695708ms)
+  AssertionError [ERR_ASSERTION]: {"goal":{"have":{"account":"account"},"want":"number","intent":"account settlement total","through":[]},"plans":[{"steps":[{"capability":"openapi:gateway:accountsettlement","bindings":[{"port":"account","from":"$in.account"}]},{"capability":"builtin:text.stats","bindings":[{"port":"text","from":"0.note"}]}],"result":"1.words","resultType":"number","cost":2.7666666666666666,"intentScore":3,"fit":1.25,"resultScore":-0.1,"providers":["openapi:gateway","builtin:core"],"summary":"Account settlement total → Text statistics","titles":["Account settlement total","Text statistics"],"contract":{"status":"satisfied","steps":[{"step":0,"capability":"openapi:gateway:accountsettlement","title":"Account settlement total","reason":"requested"},{"step":1,"capability":"builtin:text.stats","title":"Text statistics","reason":"type-conversion"}],"violations":[],"preservesInput":false}}],"contract":{"input":[{"name":"account","type":"account"}],"output":{"type":"number","requires":[]},"transformations":["account","settlement","total"],"invariants":["lineage: every step is requested, provides required information, converts a type a later step needs, or was named by the caller","distinct inputs: no step receives the same value on two required ports","preservation: where every step has evidence of keeping its input's words, the result must keep the caller's words"],"completeness":"the result is of type number","provenance":"every bound value comes from the caller or an earlier step of this plan","verification":{"predicates":0,"witnesses":0,"strongest":"unchecked"},"authority":{"risks":[],"destructiveNeedsOperatorApproval":true},"allowedUncertainty":"none: a result whose contract cannot be established is reported as not established, not as success","failureConditions":["a step not justified by the request (lineage)","a required piece of information missing from the result","a join supported only by a generic type when information is required","a check (predicate or witness) refuted","content lost where every step was expected to preserve it"]},"executed":{"contract":{"status":"satisfied","violations":[],"assurance":"unchecked"},"summary":"Account settlement total → Text statistics","titles":["Account settlement total","Text statistics"],"output":1,"status":"completed","verification":{"status":"unverified","results":[]},"runs":["run_mw19dfrm_1_5e51d439-878b-4299-aa3c-da6841de2cae","run_mw19dfrn_2_daae83e1-ccbe-462d-9b8e-a66a403c79dc"],"attempts":[],"durationMs":1,"witnesses":[]},"crystallized":{"id":"composite:7fea7b8894e0","title":"Account settlement total: Account settlement total → Text statistics","newPowers":1}}
+  + actual - expected
+  
+  + {
+  +   attempts: [],
+  +   contract: {
+  +     assurance: 'unchecked',
+  +     status: 'satisfied',
+  +     violations: []
+  +   },
+  +   durationMs: 1,
+  +   output: 1,
+  +   runs: [
+  +     'run_mw19dfrm_1_5e51d439-878b-4299-aa3c-da6841de2cae',
+  +     'run_mw19dfrn_2_daae83e1-ccbe-462d-9b8e-a66a403c79dc'
+  +   ],
+  +   status: 'completed',
+  +   summary: 'Account settlement total → Text statistics',
+  +   titles: [
+  +     'Account settlement total',
+  +     'Text statistics'
+  +   ],
+  +   verification: {
+  +     results: [],
+  +     status: 'unverified'
+  +   },
+  +   witnesses: []
+  + }
+  - undefined
+  
+      at TestContext.<anonymous> (file:///Users/ross/Documents/Codex/2026-11-03/files-pasted-by-the-user-actenon/work/rightclick-x/test/semantic-derivation.test.ts:25:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: { contract: { status: 'satisfied', violations: [], assurance: 'unchecked' }, summary: 'Account settlement total → Text statistics', titles: [ 'Account settlement total', 'Text statistics' ], output: 1, status: 'completed', verification: { status: 'unverified', results: [] }, runs: [ 'run_mw19dfrm_1_5e51d439-878b-4299-aa3c-da6841de2cae', 'run_mw19dfrn_2_daae83e1-ccbe-462d-9b8e-a66a403c79dc' ], attempts: [], durationMs: 1, witnesses: [] },
+    expected: undefined,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
