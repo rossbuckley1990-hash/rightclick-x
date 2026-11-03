@@ -31,6 +31,8 @@ A fresh instance reloads the saved goal, re-discovers current contracts, and kee
 
 `CodexResponsesFallback` supplies the `FallbackAgent` interface with one non-streaming Responses API call, no tools and no model-generated code execution. The operator explicitly supplies an available compatible Codex model, API key, current reviewed prices and an accounting reservation. It never loads host credentials automatically. Contract disclosure to that model is part of choosing the adapter. The exact selected model must match the returned model identity; aliases resolving to a different snapshot are refused.
 
+MCP/context overhead is reported as null where the wrapper has no complete transport meter. Even an ordinary transaction must not claim measured zero customer context cost from zero internal inference.
+
 The adapter bounds context bytes, output tokens, time and response bytes. It validates terminal completion and usage, including cached input and total-token arithmetic. It records only a request hash, sizes, usage, elapsed time and reserved/settled cost. It never retains credentials, prompt text, proposal text or reasoning in its accounting receipt. Unknown completion or usage retains the full reservation. A reservation is **not a provider-enforced spending cap**; usage above it is ambiguous and needs reconciliation. A provider/project spending limit is an additional operator control.
 
 There was no API credential in this execution environment. Adapter tests used documented response shapes and synthetic prices. No paid model run or model-reasoning comparison was performed. The stateful exercise uses an explicitly labelled scripted proposal adapter. Fresh-process reuse is demonstrated; a fresh model agent session remains untested.

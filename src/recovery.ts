@@ -43,7 +43,7 @@ export interface RecoveryResult {
   route: "deterministic" | "fallback" | "retained";
   evidence?: ComposeResult | RunRecord;
   measurements: { elapsedMs: number; fallbackCalls: number; contextBytes: number; proposalBytes: number; usage: AgentUsage | null;
-    mcpBytes: number; modelCost: "not-invoked" | "requires-provider-price-and-usage" };
+    mcpBytes: number | null; modelCost: "not-invoked" | "requires-provider-price-and-usage" };
 }
 const bytes = (v: unknown) => new TextEncoder().encode(JSON.stringify(v)).length;
 const object = (v: unknown): v is Record<string, unknown> => !!v && typeof v === "object" && !Array.isArray(v) && Object.getPrototypeOf(v) === Object.prototype;
@@ -83,7 +83,7 @@ export class RecoveringWorkflow {
 
   async execute(inputs: Record<string, unknown>): Promise<RecoveryResult> {
     const started = performance.now();
-    const measurements: RecoveryResult["measurements"] = { elapsedMs: 0, fallbackCalls: 0, contextBytes: 0, proposalBytes: 0, usage: null, mcpBytes: 0, modelCost: "not-invoked" };
+    const measurements: RecoveryResult["measurements"] = { elapsedMs: 0, fallbackCalls: 0, contextBytes: 0, proposalBytes: 0, usage: null, mcpBytes: null, modelCost: "not-invoked" };
     let route: RecoveryResult["route"] = "deterministic";
     const finish = (status: RecoveryResult["status"], reason: string, extra: Partial<RecoveryResult> = {}): RecoveryResult =>
       ({ status, reason, route, durable: false, ...extra, measurements: { ...measurements, elapsedMs: performance.now() - started } });

@@ -56,6 +56,7 @@ test("ordinary deterministic execution does not invoke the fallback", async () =
   const result = await new RecoveringWorkflow(f.rc, f.contract, agent).execute({ text: "rose" });
   assert.equal(result.status, "verified", JSON.stringify(result));
   assert.equal(result.measurements.fallbackCalls, 0);
+  assert.equal(result.measurements.mcpBytes, null, "unmetered transport/context overhead must not be labelled zero");
 });
 
 for (const proposal of [68, 95.37, 62.14, { output: 20 }, { code: "return 20" },
