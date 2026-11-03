@@ -1,0 +1,95 @@
+✔ bounded model proposal accounts complete usage without retaining prompt, credential or reasoning (31.896542ms)
+✔ unvalidated truncated retains reservation and never retries (2.90175ms)
+✔ unvalidated cached retains reservation and never retries (2.001125ms)
+✔ unvalidated total retains reservation and never retries (4.439292ms)
+✔ unvalidated status retains reservation and never retries (4.370958ms)
+✔ unvalidated model retains reservation and never retries (5.218333ms)
+✔ unvalidated oversize retains reservation and never retries (0.738417ms)
+✔ unvalidated network retains reservation and never retries (0.910292ms)
+✔ business observation, not hardcoded bad numbers, determines false success (0.589292ms)
+✔ unknown effects, absent telemetry, failures and refusal prose do not invent success (0.069625ms)
+✔ all model turns and cached input count; missing or inconsistent usage remains unknown (0.557958ms)
+✔ runner executes all five arms with identical public input and keeps process failure separate (1204.276875ms)
+✔ monetary inference preserves currency and units without guessing or reading negation as evidence (1.187541ms)
+✔ numeric goals can receive monetary results but numeric inputs cannot silently erase units (0.162292ms)
+✔ money conversions round decimal half away from zero and reject unsafe or non-finite amounts (0.562ms)
+✔ unanchored composition inserts a currency-preserving conversion before calculating tax (36.108084ms)
+✔ composition cannot invent a currency exchange or guess a currency for unqualified cents (2.7715ms)
+✔ fallback maps an optional input, verifies, persists, and a fresh runtime needs no agent (59.233125ms)
+✔ ordinary deterministic execution does not invoke the fallback (11.056084ms)
+✔ untrusted proposal cannot supply an answer, acceptance oracle or authority: 68 (1.540708ms)
+✔ untrusted proposal cannot supply an answer, acceptance oracle or authority: 95.37 (1.55775ms)
+✔ untrusted proposal cannot supply an answer, acceptance oracle or authority: 62.14 (1.067792ms)
+✔ untrusted proposal cannot supply an answer, acceptance oracle or authority: {"output":20} (1.285375ms)
+✔ untrusted proposal cannot supply an answer, acceptance oracle or authority: {"code":"return 20"} (1.276667ms)
+✔ untrusted proposal cannot supply an answer, acceptance oracle or authority: {"capability":"openapi:writer:uppercase","inputBindings":{"payload":"text"},"witnesses":[]} (1.674916ms)
+✔ untrusted proposal cannot supply an answer, acceptance oracle or authority: {"capability":"openapi:unapproved:write","inputBindings":{}} (1.103125ms)
+✔ untrusted proposal cannot supply an answer, acceptance oracle or authority: {"capability":"openapi:writer:uppercase","inputBindings":{"payload":"secret"}} (1.370833ms)
+✔ a wrong outcome fails unchanged independent verification and is never promoted (6.093042ms)
+✔ missing usage, timeout, and persistence failure cannot claim publication (17.64275ms)
+✔ a changed provider cannot silently repin the original independent verifier (5.32925ms)
+✔ publication failure after execution preserves the effect without claiming a durable repair (3.853458ms)
+✔ historical SEM-02: generic number does not establish a semantic business result (56.832458ms)
+✔ historical SEM-04: generic number does not establish a semantic business result (14.844334ms)
+✔ historical SEM-05: generic number does not establish a semantic business result (13.201958ms)
+✔ historical SEM-07: generic number does not establish a semantic business result (9.955458ms)
+✔ historical SEM-08: generic number does not establish a semantic business result (11.155541ms)
+✔ historical SEM-09: generic number does not establish a semantic business result (7.852125ms)
+✔ dimensional contracts generalise across names and reject incompatible bindings (0.238875ms)
+✔ generic JSON does not launder units; a typed result preserves the provider declaration without certifying it (6.227292ms)
+✖ a list of JSON records cannot erase embedded quantity fields (2.184416ms)
+ℹ tests 40
+ℹ suites 0
+ℹ pass 39
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1354.275208
+
+✖ failing tests:
+
+test at test/semantic-continuity.test.ts:68:1
+✖ a list of JSON records cannot erase embedded quantity fields (2.184416ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + {
+  +   attempts: [],
+  +   contract: {
+  +     assurance: 'unchecked',
+  +     status: 'satisfied',
+  +     violations: []
+  +   },
+  +   durationMs: 1,
+  +   output: [
+  +     {
+  +       measurement_kg: 7
+  +     }
+  +   ],
+  +   runs: [
+  +     'run_mw172dyg_1_de585f2e-e5ab-4a66-a1f7-ed15161671e7'
+  +   ],
+  +   status: 'completed',
+  +   summary: 'Measure',
+  +   titles: [
+  +     'Measure'
+  +   ],
+  +   verification: {
+  +     results: [],
+  +     status: 'unverified'
+  +   },
+  +   witnesses: []
+  + }
+  - undefined
+  
+      at TestContext.<anonymous> (file://$WORKSPACE/test/semantic-continuity.test.ts:77:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { contract: { status: 'satisfied', violations: [], assurance: 'unchecked' }, summary: 'Measure', titles: [ 'Measure' ], output: [ [Object] ], status: 'completed', verification: { status: 'unverified', results: [] }, runs: [ 'run_mw172dyg_1_de585f2e-e5ab-4a66-a1f7-ed15161671e7' ], attempts: [], durationMs: 1, witnesses: [] },
+    expected: undefined,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

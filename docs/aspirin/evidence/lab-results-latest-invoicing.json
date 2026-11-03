@@ -1,0 +1,244 @@
+{
+  "seed": 861835240,
+  "domain": "invoicing",
+  "gateway": false,
+  "startedAt": "2026-11-03T21:20:19.082Z",
+  "steps": [
+    {
+      "n": 1,
+      "title": "Start disposable services generated from fixtures",
+      "ok": true,
+      "domain": "invoicing",
+      "services": 3,
+      "givenToRightClickX": "the services' root addresses"
+    },
+    {
+      "n": 2,
+      "title": "Connect an MCP client to RightClick X (stdio)",
+      "ok": true,
+      "tools": 13,
+      "startupMs": 163.7
+    },
+    {
+      "n": 3,
+      "title": "Present a business objective: \"For an invoice, find the tax rate that applies in its customer's country.\"",
+      "ok": true,
+      "goal": {
+        "have": {
+          "invoice_id": "<id>"
+        },
+        "want": "number",
+        "intent": "tax rate invoice customer country",
+        "verify": [
+          {
+            "op": "type",
+            "value": "number"
+          }
+        ]
+      }
+    },
+    {
+      "n": 4,
+      "title": "Discover contracts from root addresses only (no protocols, no schemas given)",
+      "ok": true,
+      "found": [
+        "graphql",
+        "graphql",
+        "openapi"
+      ],
+      "newCapabilities": 3,
+      "ms": 39.6
+    },
+    {
+      "n": 5,
+      "title": "Identify suitable capabilities",
+      "ok": true,
+      "candidatePlans": 3,
+      "best": [
+        "Fetch Invoice Details",
+        "Get Customer",
+        "Country tax rate"
+      ],
+      "planningMs": 4.7
+    },
+    {
+      "n": 6,
+      "title": "Compose a multi-provider workflow",
+      "ok": true,
+      "steps": [
+        "Fetch Invoice Details ← invoice_number=$in.invoice_id",
+        "Get Customer ← customer_number=0.customer_number",
+        "Country tax rate ← countryCode=1.country"
+      ]
+    },
+    {
+      "n": 7,
+      "title": "Execute the workflow",
+      "ok": true,
+      "input": "INV-1005",
+      "pipeline": [
+        "Fetch Invoice Details",
+        "Get Customer",
+        "Country tax rate"
+      ],
+      "ms": 9
+    },
+    {
+      "n": 8,
+      "title": "Verify against independently held test data",
+      "ok": true,
+      "expected": 21,
+      "got": 21
+    },
+    {
+      "n": 9,
+      "title": "Save the successful composition and reuse it",
+      "ok": true,
+      "saved": "Tax rate invoice customer country: Fetch Invoice Details → Get Customer → Country tax rate",
+      "reusedAs": [
+        "Tax rate invoice customer country: Fetch Invoice Details → Get Customer → Country tax rate"
+      ],
+      "expected": 21,
+      "got": 21,
+      "ms": 4.9
+    },
+    {
+      "n": 10,
+      "title": "Change the interface of the last provider in the chain (Harbourly)",
+      "ok": true,
+      "before": "openapi \"Country tax rate\" countryCode → countryCode, rate",
+      "after": "mcp \"Tax rate by country\" country → result.{country, tax_rate}"
+    },
+    {
+      "n": 11,
+      "title": "Recover without changing integration code",
+      "ok": true,
+      "healing": [
+        "API drift at http://127.0.0.1:55065/: openapi:harbourly → mcp:harbourly; +1 −1 ~0 capabilities; 1 pipeline(s) retired"
+      ],
+      "via": [
+        "graphql:127-0-0-1-55063-graphql",
+        "graphql:127-0-0-1-55064-graphql",
+        "mcp:harbourly"
+      ],
+      "expected": 21,
+      "got": 21,
+      "ms": 12.7
+    },
+    {
+      "n": 12,
+      "title": "Remove that provider (Harbourly)",
+      "ok": true
+    },
+    {
+      "n": 13,
+      "title": "Withdraw its capabilities accurately; report the objective as impossible, not faked",
+      "ok": true,
+      "status": "failed",
+      "healing": [
+        "provider gone at http://127.0.0.1:55065/: withdrew mcp:harbourly (1 capabilities, 1 pipeline(s) retired)"
+      ],
+      "withdrawn": [
+        "Harbourly"
+      ],
+      "capabilities": "27 → 25",
+      "savedPipelines": "1 → 0"
+    },
+    {
+      "n": 14,
+      "title": "Introduce a different provider (Quillbase, mcp): the objective works again",
+      "ok": true,
+      "learned": [
+        "mcp: 1 tools"
+      ],
+      "via": [
+        "graphql:127-0-0-1-55063-graphql",
+        "graphql:127-0-0-1-55064-graphql",
+        "mcp:quillbase"
+      ],
+      "expected": 10.5,
+      "got": 10.5,
+      "ms": 3
+    }
+  ],
+  "benchmarks": {
+    "startupMs": 163.7,
+    "mcpLatencyMs": {
+      "p50": 0.05,
+      "p95": 0.13
+    },
+    "discoveryMs": 39.6,
+    "graph": {
+      "providers": 5,
+      "capabilities": 26,
+      "edges": 43,
+      "chains2": 43,
+      "chains3": 63,
+      "total": 132
+    },
+    "graphStatsMs": 0.1,
+    "planningMs": 4.7,
+    "executionMs": 9,
+    "recoveryAfterChangeMs": 12.7,
+    "recoveryAfterNewProviderMs": 3,
+    "memoryMB": 92
+  },
+  "freeze": {
+    "commit": "fe60f255fde53cbe4c43b2e4b24f49dac5af0620",
+    "tag": "lab-freeze-9",
+    "productCodeChangedSinceTag": "bin/command-input.ts\nbin/rcx.ts\nsrc/core/activity.ts\nsrc/core/authority.ts\nsrc/core/cli-conformance.ts\nsrc/core/cli-continuity.ts\nsrc/core/cli-environment.ts\nsrc/core/cli-files.ts\nsrc/core/cli-outcome.ts\nsrc/core/contract.ts\nsrc/core/execution-policy.ts\nsrc/core/fields.ts\nsrc/core/goal-identity.ts\nsrc/core/graph.ts\nsrc/core/identities.ts\nsrc/core/json.ts\nsrc/core/knowledge.ts\nsrc/core/ledger.ts\nsrc/core/links.ts\nsrc/core/planner.ts\nsrc/core/programs.ts\nsrc/core/result-description.ts\nsrc/core/sandbox.ts\nsrc/core/satisfaction.ts\nsrc/core/secrets.ts\nsrc/core/semantics.ts\nsrc/core/state-conflict.ts\nsrc/core/state-format.ts\nsrc/core/types.ts\nsrc/core/verify.ts\nsrc/core/view.ts\nsrc/core/workflow-continuation.ts\nsrc/core/yaml.ts\nsrc/entry/durable.ts\nsrc/entry/edge.ts\nsrc/entry/node-host.ts\nsrc/index.ts\nsrc/interface/authority-evidence.ts\nsrc/interface/dashboard-state.ts\nsrc/interface/dashboard.ts\nsrc/interface/graphql-server.ts\nsrc/interface/http.ts\nsrc/interface/mcp-server.ts\nsrc/interface/tools.ts\nsrc/reflectors/cli.ts\nsrc/reflectors/discover.ts\nsrc/reflectors/environment.ts\nsrc/reflectors/graphql.ts\nsrc/reflectors/http-continuation.ts\nsrc/reflectors/mcp.ts\nsrc/reflectors/net.ts\nsrc/reflectors/openapi-links.ts\nsrc/reflectors/openapi.ts\nsrc/reflectors/platform.ts\nsrc/runtime.ts",
+    "uncommittedProductChanges": "M src/core/planner.ts\n M src/core/quantities.ts\n M src/core/semantics.ts\n M src/core/workflow-continuation.ts\n M src/index.ts\n M src/runtime.ts\n?? src/codex-fallback.ts\n?? src/core/units.ts\n?? src/recovery.ts",
+    "frozen": false
+  },
+  "environment": [
+    {
+      "service": "invoices",
+      "brand": "Fernway",
+      "protocol": "graphql",
+      "operation": "Fetch invoice details",
+      "input": "invoice_number",
+      "outputs": [
+        "invoice_number",
+        "customer_number",
+        "amount",
+        "currency_code"
+      ]
+    },
+    {
+      "service": "customers",
+      "brand": "Tallyport",
+      "protocol": "graphql",
+      "operation": "Get customer",
+      "input": "customer_number",
+      "outputs": [
+        "customer_number",
+        "legal_name",
+        "country"
+      ]
+    },
+    {
+      "service": "tax",
+      "brand": "Harbourly",
+      "protocol": "openapi",
+      "operation": "Country tax rate",
+      "input": "countryCode",
+      "outputs": [
+        "countryCode",
+        "rate"
+      ]
+    }
+  ],
+  "firstRunProviders": [
+    "graphql:127-0-0-1-55063-graphql",
+    "graphql:127-0-0-1-55064-graphql",
+    "openapi:harbourly"
+  ],
+  "receipts": {
+    "count": 21,
+    "intact": true,
+    "brokenAt": null,
+    "head": "ca88333b18e4b5c14f4e28ad1d5d9de500e0f46ec4d4a3eb365c3429d4c8c76c"
+  },
+  "passed": 14,
+  "total": 14
+}
