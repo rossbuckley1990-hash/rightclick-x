@@ -22,12 +22,13 @@ const snapshot = () => JSON.stringify([s.db.prepare("SELECT * FROM authoritative
 const before = snapshot();
 let failure: string | undefined;
 async function processRun(script: string, args: string[]) {
+  const processStart = performance.now();
   const p = spawn(process.execPath, [resolve(`experiments/reconciliation/${script}`), ...args], { stdio: ["ignore", "pipe", "pipe"] });
   let out = "", err = "";
   p.stdout.on("data", b => out += b); p.stderr.on("data", b => err += b);
   const code = await new Promise<number | null>((done, reject) => { p.once("error", reject); p.once("close", done); });
   if (code !== 0) throw new Error(`worker ${script} failed (${code}): ${err.slice(0,1000)}`);
-  return out.trim() ? JSON.parse(out.trim()) : null;
+  return out.trim() ? { ...JSON.parse(out.trim()), processWallMs: performance.now() - processStart } : null;
 }
 try {
   const setupStart = performance.now();
