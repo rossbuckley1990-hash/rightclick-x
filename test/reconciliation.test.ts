@@ -23,6 +23,7 @@ test("read-only product distinguishes match and mismatch, then reuses on a fresh
   const first = await (await f.create()).reconcile({ account: "ACC-77", period: "2026-10" });
   assert.equal(first.outcome, "VERIFIED MATCH", JSON.stringify(first));
   assert.equal(first.differenceMinor, "0");
+  assert.deepEqual(first.units, { currency: "USD", unit: "minor", basis: "settled" });
   assert.equal(first.durable, true);
   const second = await (await f.create()).reconcile({ account: "ACC-88", period: "2026-10" });
   assert.equal(second.outcome, "VERIFIED MISMATCH", JSON.stringify(second));

@@ -35,6 +35,7 @@ export interface ReconciliationResult {
   state: "verified" | "contradicted" | "pending" | "ambiguous" | "unsupported" | "unverified";
   explanation: string;
   differenceMinor?: string;
+  units?: ReconciliationContract["expected"];
   route?: RecoveryResult["route"];
   durable: boolean;
   evidence?: { contractHash: string; inputHash: string; observationHash: string;
@@ -186,6 +187,7 @@ export class VerifiedReconciliation {
     return { outcome: checked.differenceMinor === "0" ? "VERIFIED MATCH" : "VERIFIED MISMATCH", state: "verified",
       explanation: "Pinned independent observations agree on identity, period, currency, units and accounting basis. Amounts were compared exactly.",
       differenceMinor: checked.differenceMinor, route: r.route, durable: r.durable, measurements: r.measurements,
+      units: structuredClone(this.#contract.expected),
       evidence: { contractHash: await sha256(stableStringify(this.#contract)), inputHash: await sha256(stableStringify(input)),
         observationHash: await sha256(stableStringify({ candidate: r.output, witness: witness.output })),
         checkerContract: this.#contract.checker.contract, rulesDigest: this.#contract.checker.rulesDigest, goal: r.goal, witnessRun: witness.runId } };
