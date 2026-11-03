@@ -2561,6 +2561,10 @@ export class RightClick {
   /** A permit is passed only by the leased saved-goal entry point; callers cannot
    * provide it through the public compose options or an MCP request. */
   private async composeScoped(opts: ComposeOptions, permit?: symbol): Promise<ComposeResult> {
+    // Validation before any work: a missing or malformed have/want is a caller mistake
+    // with a useful message, never a TypeError from inside the planner.
+    if (!opts.have || typeof opts.have !== "object" || Array.isArray(opts.have)) throw new ClientFacingError("invalid_argument", "have must be an object naming your inputs, e.g. {place: \"Lisbon\"}");
+    if (!opts.want || typeof opts.want !== "string") throw new ClientFacingError("invalid_argument", "want must be a semantic type string, e.g. text, language or geo.lat");
     // Independent witnesses are part of the call: a deferred checker is restored like a step.
     await this.restoreDeferredFor([...opts.through ?? [], ...(opts.anchors ?? []).map(a => a.id), ...(opts.witnesses ?? []).map(w => w.capability)], opts.origins, this.net, permit);
     const request = this.activity.append({ kind: "composition.requested", status: "requested" });
