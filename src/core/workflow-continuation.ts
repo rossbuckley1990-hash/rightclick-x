@@ -12,6 +12,7 @@ export interface CompositionContinuation {
   plan: Plan;
   types: Record<string, SemType>;
   options: {
+    recovery?: { contract: string; source: "deterministic" | "fallback"; proposalHash?: string; contextHash?: string };
     want: SemType; intent?: string; verify?: Predicate[]; crystallize?: boolean;
     publish?: string; risks?: Capability["risk"][]; through?: string[]; maxSteps?: number;
     inputBindings?: Record<string, Record<string, string>>;

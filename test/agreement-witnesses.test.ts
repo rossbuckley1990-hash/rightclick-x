@@ -60,7 +60,7 @@ const compose = (rc: RightClick, extra: Record<string, unknown>) => dispatch(rc,
 }) as Promise<ComposeResult>;
 /** The independent implementation of the same outcome, saved as a pipeline. */
 async function independentPipeline(rc: RightClick) {
-  const built = await dispatch(rc, "context_compose", { have: { order_id: "A-1" }, want: "number", intent: "vat percent for a shipment", run: true,
+  const built = await dispatch(rc, "context_compose", { have: { order_id: "A-1" }, want: "quantity:ratio:percent", intent: "vat percent for a shipment", run: true,
     through: ["openapi:registry:lookupshipment", "openapi:tariffs:vatpercent"] }) as ComposeResult;
   assert.equal(built.executed?.output, 19, JSON.stringify(built).slice(0, 400));
   assert.ok(built.crystallized?.id);
@@ -160,7 +160,7 @@ test("an agreement witness is never shown the candidate, and must be independent
   const rc = await create();
   await assert.rejects(compose(rc, { witnesses: [{ capability: "openapi:tariffs:vatpercent", args: { country: { output: "" } }, agree: {} }] }), /never given the candidate result/);
   // A pipeline that reuses one of the producer's providers is not independent of it.
-  const shared = await dispatch(rc, "context_compose", { have: { order_id: "A-1" }, want: "number", intent: "vat percent via orders", run: true,
+  const shared = await dispatch(rc, "context_compose", { have: { order_id: "A-1" }, want: "quantity:ratio:percent", intent: "vat percent via orders", run: true,
     through: ["openapi:orders:getorder", "openapi:tariffs:vatpercent"] }) as ComposeResult;
   const notIndependent = await compose(rc, { witnesses: [{ capability: shared.crystallized!.id, args: { order_id: { input: "order_id" } }, agree: { mode: "number" } }] });
   assert.notEqual(notIndependent.executed?.status, "completed");

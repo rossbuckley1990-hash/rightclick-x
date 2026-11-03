@@ -9,6 +9,7 @@
 import { JsonRepresentationError, parseJsonValue } from "./json.ts";
 import type { SemType } from "./types.ts";
 import { inferMoneyType, isQuantityType, isResolvedQuantity } from "./quantities.ts";
+import { inferUnitType } from "./units.ts";
 
 /** child -> parent. Everything string-like is ultimately "text"; everything is "json". */
 const PARENT: Record<string, SemType> = {
@@ -183,7 +184,9 @@ export function inferType(name: string, schema: SchemaLike = {}, description = "
   if (rawType === "integer" || rawType === "number") {
     if (/(^|_)(lat|latitude)$/.test(n)) return "geo.lat";
     if (/(^|_)(lon|lng|long|longitude)$/.test(n)) return "geo.lon";
-    const quantity = inferMoneyType(name, [schema.description, description].filter(Boolean).join(" "));
+    const declaration = [schema.description, description].filter(Boolean).join(" ");
+    const monetary = inferMoneyType(name, declaration);
+    const quantity = monetary && !monetary.includes(":unknown:") ? monetary : inferUnitType(name, declaration) ?? monetary;
     if (quantity) return quantity;
     return "number";
   }

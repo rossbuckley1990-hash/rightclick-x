@@ -1,6 +1,7 @@
 // Monetary quantities retain currency and scale. A number is not enough to
 // establish that two monetary values can safely flow into one another.
 import type { SemType } from "./types.ts";
+import { knownUnitType } from "./units.ts";
 
 export type MoneyUnit = "minor" | "major" | "unknown";
 
@@ -21,7 +22,7 @@ export function isQuantityType(type: SemType): boolean {
 
 /** Unresolved quantities are evidence of ambiguity, not permission to bind. */
 export function isResolvedQuantity(type: SemType): boolean {
-  return /^quantity:money:[A-Z]{3}:(minor|major)$/.test(type);
+  return /^quantity:money:[A-Z]{3}:(minor|major)$/.test(type) || knownUnitType(type);
 }
 
 export function inferMoneyType(name: string, description = ""): SemType | undefined {
