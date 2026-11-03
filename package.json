@@ -8,10 +8,22 @@
     "rcx": "./dist/rcx.mjs"
   },
   "exports": {
-    ".": { "types": "./src/index.ts", "default": "./dist/index.mjs" },
-    "./node": { "types": "./src/entry/node-host.ts", "default": "./dist/node.mjs" },
-    "./edge": { "types": "./src/entry/edge.ts", "default": "./dist/edge.js" },
-    "./actenon-evidence": { "types": "./integrations/actenon/authority-evidence.ts", "default": "./integrations/actenon/authority-evidence.mjs" }
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./dist/index.mjs"
+    },
+    "./node": {
+      "types": "./src/entry/node-host.ts",
+      "default": "./dist/node.mjs"
+    },
+    "./edge": {
+      "types": "./src/entry/edge.ts",
+      "default": "./dist/edge.js"
+    },
+    "./actenon-evidence": {
+      "types": "./integrations/actenon/authority-evidence.ts",
+      "default": "./integrations/actenon/authority-evidence.mjs"
+    }
   },
   "engines": {
     "node": ">=22.18"
@@ -30,7 +42,8 @@
     "proof:ai": "node proof/ai-clients.ts --run",
     "proof:real": "node proof/real-ai.ts --run",
     "demo:unknown": "node demo/unknown.ts",
-    "check": "npm run typecheck && npm test"
+    "check": "npm run typecheck && npm test",
+    "test:aspirin": "node experiments/aspirin/run.ts"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20261015.1",
