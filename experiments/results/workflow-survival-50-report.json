@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "timestamp": "2026-11-03T00:55:38.940Z",
+    "timestamp": "2026-11-03T20:25:02.168Z",
     "benchmark": "50-Scenario Workflow Survival Challenge",
     "arms": [
       "Arm A (Static)",
@@ -20,7 +20,7 @@
       "unresolved": 36,
       "total": 50,
       "recovery_rate_pct": 0,
-      "refusal_rate_pct": 110,
+      "refusal_rate_pct": 100,
       "false_success_rate_pct": 6,
       "net_robustness_pct": 10,
       "total_tokens": 0,
@@ -33,50 +33,50 @@
       "unresolved": 30,
       "total": 50,
       "recovery_rate_pct": 14,
-      "refusal_rate_pct": 110,
+      "refusal_rate_pct": 100,
       "false_success_rate_pct": 4,
       "net_robustness_pct": 28,
       "total_tokens": 0,
       "avg_latency_ms": 121
     },
     "Arm C (Codex Alone)": {
-      "functional_recovery": 30,
+      "functional_recovery": 23,
       "correct_refusal": 8,
-      "false_success": 6,
-      "unresolved": 6,
+      "false_success": 5,
+      "unresolved": 14,
       "total": 50,
-      "recovery_rate_pct": 60,
-      "refusal_rate_pct": 80,
-      "false_success_rate_pct": 12,
-      "net_robustness_pct": 52,
-      "total_tokens": 3724857,
-      "avg_latency_ms": 12385
+      "recovery_rate_pct": 46,
+      "refusal_rate_pct": 72.7,
+      "false_success_rate_pct": 10,
+      "net_robustness_pct": 42,
+      "total_tokens": 4591410,
+      "avg_latency_ms": 20367
     },
     "Arm D (RightClick X Alone)": {
-      "functional_recovery": 9,
+      "functional_recovery": 19,
       "correct_refusal": 11,
-      "false_success": 2,
-      "unresolved": 28,
+      "false_success": 5,
+      "unresolved": 15,
       "total": 50,
-      "recovery_rate_pct": 18,
-      "refusal_rate_pct": 110,
-      "false_success_rate_pct": 4,
-      "net_robustness_pct": 32,
+      "recovery_rate_pct": 38,
+      "refusal_rate_pct": 100,
+      "false_success_rate_pct": 10,
+      "net_robustness_pct": 40,
       "total_tokens": 0,
-      "avg_latency_ms": 493
+      "avg_latency_ms": 500
     },
     "Arm E (Hybrid Codex + RCX)": {
-      "functional_recovery": 12,
+      "functional_recovery": 26,
       "correct_refusal": 11,
-      "false_success": 1,
-      "unresolved": 26,
+      "false_success": 3,
+      "unresolved": 10,
       "total": 50,
-      "recovery_rate_pct": 24,
-      "refusal_rate_pct": 110,
-      "false_success_rate_pct": 2,
-      "net_robustness_pct": 42,
-      "total_tokens": 1725135,
-      "avg_latency_ms": 7422
+      "recovery_rate_pct": 52,
+      "refusal_rate_pct": 100,
+      "false_success_rate_pct": 6,
+      "net_robustness_pct": 62,
+      "total_tokens": 1801744,
+      "avg_latency_ms": 8354
     }
   },
   "results": [
@@ -88,7 +88,7 @@
       "output": null,
       "expected": 12600,
       "turns": 1,
-      "timeMs": 11,
+      "timeMs": 23,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -106,7 +106,7 @@
       "output": 12600,
       "expected": 12600,
       "turns": 1,
-      "timeMs": 2,
+      "timeMs": 3,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -123,13 +123,13 @@
       "output": 12600,
       "expected": 12600,
       "turns": 1,
-      "timeMs": 19800,
+      "timeMs": 30693,
       "tokens": {
-        "input": 113755,
-        "cached": 108288,
-        "output": 337,
-        "reasoning": 9,
-        "total": 114092
+        "input": 88812,
+        "cached": 78080,
+        "output": 231,
+        "reasoning": 0,
+        "total": 89043
       }
     },
     {
@@ -140,7 +140,7 @@
       "output": 12600,
       "expected": 12600,
       "turns": 1,
-      "timeMs": 43,
+      "timeMs": 68,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -209,13 +209,13 @@
       "output": 55,
       "expected": 55,
       "turns": 1,
-      "timeMs": 10749,
+      "timeMs": 14431,
       "tokens": {
-        "input": 90739,
-        "cached": 78720,
-        "output": 275,
-        "reasoning": 0,
-        "total": 91014
+        "input": 80702,
+        "cached": 63872,
+        "output": 217,
+        "reasoning": 12,
+        "total": 80919
       }
     },
     {
@@ -225,6 +225,92 @@
       "status": "functional_recovery",
       "output": 55,
       "expected": 55,
+      "turns": 1,
+      "timeMs": 18,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "STRUC-02",
+      "category": "structural",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "functional_recovery",
+      "output": 55,
+      "expected": 55,
+      "turns": 1,
+      "timeMs": 0,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "STRUC-03",
+      "category": "structural",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": "alice@enterprise.test",
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "STRUC-03",
+      "category": "structural",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "functional_recovery",
+      "output": "alice@enterprise.test",
+      "expected": "alice@enterprise.test",
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      }
+    },
+    {
+      "scenarioId": "STRUC-03",
+      "category": "structural",
+      "arm": "Arm C (Codex Alone)",
+      "status": "functional_recovery",
+      "output": "alice@enterprise.test",
+      "expected": "alice@enterprise.test",
+      "turns": 1,
+      "timeMs": 13190,
+      "tokens": {
+        "input": 80559,
+        "cached": 71936,
+        "output": 196,
+        "reasoning": 0,
+        "total": 80755
+      }
+    },
+    {
+      "scenarioId": "STRUC-03",
+      "category": "structural",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "functional_recovery",
+      "output": "alice@enterprise.test",
+      "expected": "alice@enterprise.test",
       "turns": 1,
       "timeMs": 19,
       "tokens": {
@@ -236,12 +322,12 @@
       }
     },
     {
-      "scenarioId": "STRUC-02",
+      "scenarioId": "STRUC-03",
       "category": "structural",
       "arm": "Arm E (Hybrid Codex + RCX)",
       "status": "functional_recovery",
-      "output": 55,
-      "expected": 55,
+      "output": "alice@enterprise.test",
+      "expected": "alice@enterprise.test",
       "turns": 1,
       "timeMs": 0,
       "tokens": {
@@ -253,93 +339,6 @@
       }
     },
     {
-      "scenarioId": "STRUC-03",
-      "category": "structural",
-      "arm": "Arm A (Static)",
-      "status": "unresolved",
-      "output": null,
-      "expected": "alice@enterprise.test",
-      "turns": 1,
-      "timeMs": 1,
-      "tokens": {
-        "input": 0,
-        "cached": 0,
-        "output": 0,
-        "reasoning": 0,
-        "total": 0
-      },
-      "reason": "HTTP 404"
-    },
-    {
-      "scenarioId": "STRUC-03",
-      "category": "structural",
-      "arm": "Arm B (Deterministic Tooling)",
-      "status": "functional_recovery",
-      "output": "alice@enterprise.test",
-      "expected": "alice@enterprise.test",
-      "turns": 1,
-      "timeMs": 1,
-      "tokens": {
-        "input": 0,
-        "cached": 0,
-        "output": 0,
-        "reasoning": 0,
-        "total": 0
-      }
-    },
-    {
-      "scenarioId": "STRUC-03",
-      "category": "structural",
-      "arm": "Arm C (Codex Alone)",
-      "status": "functional_recovery",
-      "output": "alice@enterprise.test",
-      "expected": "alice@enterprise.test",
-      "turns": 1,
-      "timeMs": 14658,
-      "tokens": {
-        "input": 100055,
-        "cached": 90112,
-        "output": 214,
-        "reasoning": 0,
-        "total": 100269
-      }
-    },
-    {
-      "scenarioId": "STRUC-03",
-      "category": "structural",
-      "arm": "Arm D (RightClick X Alone)",
-      "status": "unresolved",
-      "output": null,
-      "expected": "alice@enterprise.test",
-      "turns": 1,
-      "timeMs": 17,
-      "tokens": {
-        "input": 0,
-        "cached": 0,
-        "output": 0,
-        "reasoning": 0,
-        "total": 0
-      },
-      "reason": "no viable plan"
-    },
-    {
-      "scenarioId": "STRUC-03",
-      "category": "structural",
-      "arm": "Arm E (Hybrid Codex + RCX)",
-      "status": "functional_recovery",
-      "output": "alice@enterprise.test",
-      "expected": "alice@enterprise.test",
-      "turns": 1,
-      "timeMs": 10475,
-      "tokens": {
-        "input": 106266,
-        "cached": 81920,
-        "output": 277,
-        "reasoning": 0,
-        "total": 106543
-      }
-    },
-    {
       "scenarioId": "STRUC-04",
       "category": "structural",
       "arm": "Arm A (Static)",
@@ -347,7 +346,7 @@
       "output": null,
       "expected": "PROCESSED_CUST-77",
       "turns": 1,
-      "timeMs": 2,
+      "timeMs": 1,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -382,50 +381,48 @@
       "output": "PROCESSED_CUST-77",
       "expected": "PROCESSED_CUST-77",
       "turns": 1,
-      "timeMs": 13477,
+      "timeMs": 19440,
       "tokens": {
-        "input": 138737,
-        "cached": 120960,
-        "output": 408,
-        "reasoning": 14,
-        "total": 139145
+        "input": 93712,
+        "cached": 68864,
+        "output": 283,
+        "reasoning": 0,
+        "total": 93995
       }
     },
     {
       "scenarioId": "STRUC-04",
       "category": "structural",
       "arm": "Arm D (RightClick X Alone)",
-      "status": "unresolved",
-      "output": null,
+      "status": "functional_recovery",
+      "output": "PROCESSED_CUST-77",
       "expected": "PROCESSED_CUST-77",
       "turns": 1,
-      "timeMs": 17,
+      "timeMs": 18,
       "tokens": {
         "input": 0,
         "cached": 0,
         "output": 0,
         "reasoning": 0,
         "total": 0
-      },
-      "reason": "no viable plan"
+      }
     },
     {
       "scenarioId": "STRUC-04",
       "category": "structural",
       "arm": "Arm E (Hybrid Codex + RCX)",
-      "status": "unresolved",
-      "output": "{\"result\":\"PROCESSED_CUST-77\"}",
+      "status": "functional_recovery",
+      "output": "PROCESSED_CUST-77",
       "expected": "PROCESSED_CUST-77",
       "turns": 1,
-      "timeMs": 13303,
+      "timeMs": 0,
       "tokens": {
-        "input": 107138,
-        "cached": 89728,
-        "output": 294,
+        "input": 0,
+        "cached": 0,
+        "output": 0,
         "reasoning": 0,
-        "total": 107432
-      },
-      "reason": "Value mismatch: observed \"{\\\"result\\\":\\\"PROCESSED_CUST-77\\\"}\", expected \"PROCESSED_CUST-77\""
+        "total": 0
+      }
     },
     {
       "scenarioId": "STRUC-05",
@@ -435,7 +432,7 @@
       "output": null,
       "expected": 42,
       "turns": 1,
-      "timeMs": 2,
+      "timeMs": 1,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -470,13 +467,13 @@
       "output": 42,
       "expected": 42,
       "turns": 1,
-      "timeMs": 11017,
+      "timeMs": 30170,
       "tokens": {
-        "input": 96800,
-        "cached": 82304,
-        "output": 189,
+        "input": 138683,
+        "cached": 132352,
+        "output": 563,
         "reasoning": 0,
-        "total": 96989
+        "total": 139246
       }
     },
     {
@@ -487,7 +484,7 @@
       "output": 1,
       "expected": 42,
       "turns": 1,
-      "timeMs": 25,
+      "timeMs": 18,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -501,19 +498,18 @@
       "scenarioId": "STRUC-05",
       "category": "structural",
       "arm": "Arm E (Hybrid Codex + RCX)",
-      "status": "unresolved",
-      "output": -1,
+      "status": "functional_recovery",
+      "output": 42,
       "expected": 42,
       "turns": 1,
-      "timeMs": 15026,
+      "timeMs": 14306,
       "tokens": {
-        "input": 0,
-        "cached": 0,
-        "output": 0,
+        "input": 116463,
+        "cached": 87296,
+        "output": 136,
         "reasoning": 0,
-        "total": 22000
-      },
-      "reason": "Value mismatch: observed -1, expected 42"
+        "total": 116599
+      }
     },
     {
       "scenarioId": "STRUC-06",
@@ -523,7 +519,7 @@
       "output": null,
       "expected": 1000,
       "turns": 1,
-      "timeMs": 4,
+      "timeMs": 3,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -558,13 +554,13 @@
       "output": 1000,
       "expected": 1000,
       "turns": 1,
-      "timeMs": 14373,
+      "timeMs": 33509,
       "tokens": {
-        "input": 114039,
-        "cached": 108288,
-        "output": 312,
-        "reasoning": 0,
-        "total": 114351
+        "input": 98359,
+        "cached": 83712,
+        "output": 310,
+        "reasoning": 22,
+        "total": 98669
       }
     },
     {
@@ -575,7 +571,7 @@
       "output": 1000,
       "expected": 1000,
       "turns": 1,
-      "timeMs": 17,
+      "timeMs": 24,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -626,7 +622,7 @@
       "status": "unresolved",
       "expected": "2023-11-14T22:13:20Z",
       "turns": 1,
-      "timeMs": 1,
+      "timeMs": 2,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -644,50 +640,48 @@
       "output": "2023-11-14T22:13:20Z",
       "expected": "2023-11-14T22:13:20Z",
       "turns": 1,
-      "timeMs": 21284,
+      "timeMs": 21029,
       "tokens": {
-        "input": 162693,
-        "cached": 135168,
-        "output": 402,
-        "reasoning": 20,
-        "total": 163095
+        "input": 120778,
+        "cached": 94848,
+        "output": 274,
+        "reasoning": 0,
+        "total": 121052
       }
     },
     {
       "scenarioId": "STRUC-07",
       "category": "structural",
       "arm": "Arm D (RightClick X Alone)",
-      "status": "unresolved",
-      "output": null,
+      "status": "functional_recovery",
+      "output": "2023-11-14T22:13:20Z",
       "expected": "2023-11-14T22:13:20Z",
       "turns": 1,
-      "timeMs": 16,
+      "timeMs": 18,
       "tokens": {
         "input": 0,
         "cached": 0,
         "output": 0,
         "reasoning": 0,
         "total": 0
-      },
-      "reason": "no viable plan"
+      }
     },
     {
       "scenarioId": "STRUC-07",
       "category": "structural",
       "arm": "Arm E (Hybrid Codex + RCX)",
-      "status": "unresolved",
-      "output": "{\"eventTime\":\"2023-11-14T22:13:20Z\"}",
+      "status": "functional_recovery",
+      "output": "2023-11-14T22:13:20Z",
       "expected": "2023-11-14T22:13:20Z",
       "turns": 1,
-      "timeMs": 14798,
+      "timeMs": 0,
       "tokens": {
-        "input": 153298,
-        "cached": 131584,
-        "output": 307,
+        "input": 0,
+        "cached": 0,
+        "output": 0,
         "reasoning": 0,
-        "total": 153605
-      },
-      "reason": "Value mismatch: observed \"{\\\"eventTime\\\":\\\"2023-11-14T22:13:20Z\\\"}\", expected \"2023-11-14T22:13:20Z\""
+        "total": 0
+      }
     },
     {
       "scenarioId": "STRUC-08",
@@ -714,7 +708,7 @@
       "status": "unresolved",
       "expected": "USER-101@ORG-99.enterprise.test",
       "turns": 1,
-      "timeMs": 1,
+      "timeMs": 3,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -732,32 +726,31 @@
       "output": "USER-101@ORG-99.enterprise.test",
       "expected": "USER-101@ORG-99.enterprise.test",
       "turns": 1,
-      "timeMs": 19759,
+      "timeMs": 29402,
       "tokens": {
-        "input": 154901,
-        "cached": 139264,
-        "output": 535,
+        "input": 166851,
+        "cached": 131968,
+        "output": 586,
         "reasoning": 0,
-        "total": 155436
+        "total": 167437
       }
     },
     {
       "scenarioId": "STRUC-08",
       "category": "structural",
       "arm": "Arm D (RightClick X Alone)",
-      "status": "unresolved",
-      "output": null,
+      "status": "functional_recovery",
+      "output": "USER-101@ORG-99.enterprise.test",
       "expected": "USER-101@ORG-99.enterprise.test",
       "turns": 1,
-      "timeMs": 10,
+      "timeMs": 27,
       "tokens": {
         "input": 0,
         "cached": 0,
         "output": 0,
         "reasoning": 0,
         "total": 0
-      },
-      "reason": "no viable plan"
+      }
     },
     {
       "scenarioId": "STRUC-08",
@@ -767,13 +760,13 @@
       "output": "USER-101@ORG-99.enterprise.test",
       "expected": "USER-101@ORG-99.enterprise.test",
       "turns": 1,
-      "timeMs": 13933,
+      "timeMs": 0,
       "tokens": {
-        "input": 107778,
-        "cached": 89984,
-        "output": 278,
+        "input": 0,
+        "cached": 0,
+        "output": 0,
         "reasoning": 0,
-        "total": 108056
+        "total": 0
       }
     },
     {
@@ -784,7 +777,7 @@
       "output": null,
       "expected": "AUTH_SUCCESS_INV-POLY",
       "turns": 1,
-      "timeMs": 2,
+      "timeMs": 1,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -802,7 +795,7 @@
       "output": "AUTH_SUCCESS_INV-POLY",
       "expected": "AUTH_SUCCESS_INV-POLY",
       "turns": 1,
-      "timeMs": 1,
+      "timeMs": 0,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -819,50 +812,48 @@
       "output": "AUTH_SUCCESS_INV-POLY",
       "expected": "AUTH_SUCCESS_INV-POLY",
       "turns": 1,
-      "timeMs": 12584,
+      "timeMs": 20119,
       "tokens": {
-        "input": 80718,
-        "cached": 70912,
-        "output": 226,
-        "reasoning": 0,
-        "total": 80944
+        "input": 99554,
+        "cached": 77440,
+        "output": 223,
+        "reasoning": 7,
+        "total": 99777
       }
     },
     {
       "scenarioId": "STRUC-09",
       "category": "structural",
       "arm": "Arm D (RightClick X Alone)",
-      "status": "unresolved",
-      "output": 1,
+      "status": "functional_recovery",
+      "output": "AUTH_SUCCESS_INV-POLY",
       "expected": "AUTH_SUCCESS_INV-POLY",
       "turns": 1,
-      "timeMs": 24,
+      "timeMs": 13,
       "tokens": {
         "input": 0,
         "cached": 0,
         "output": 0,
         "reasoning": 0,
         "total": 0
-      },
-      "reason": "Value mismatch: observed 1, expected \"AUTH_SUCCESS_INV-POLY\""
+      }
     },
     {
       "scenarioId": "STRUC-09",
       "category": "structural",
       "arm": "Arm E (Hybrid Codex + RCX)",
-      "status": "unresolved",
-      "output": "{\"authStatus\":\"AUTH_SUCCESS_INV-POLY\"}",
+      "status": "functional_recovery",
+      "output": "AUTH_SUCCESS_INV-POLY",
       "expected": "AUTH_SUCCESS_INV-POLY",
       "turns": 1,
-      "timeMs": 13719,
+      "timeMs": 0,
       "tokens": {
-        "input": 108949,
-        "cached": 88192,
-        "output": 281,
+        "input": 0,
+        "cached": 0,
+        "output": 0,
         "reasoning": 0,
-        "total": 109230
-      },
-      "reason": "Value mismatch: observed \"{\\\"authStatus\\\":\\\"AUTH_SUCCESS_INV-POLY\\\"}\", expected \"AUTH_SUCCESS_INV-POLY\""
+        "total": 0
+      }
     },
     {
       "scenarioId": "STRUC-10",
@@ -872,7 +863,7 @@
       "output": null,
       "expected": null,
       "turns": 1,
-      "timeMs": 2,
+      "timeMs": 0,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -890,7 +881,7 @@
       "output": null,
       "expected": null,
       "turns": 1,
-      "timeMs": 1,
+      "timeMs": 0,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -905,18 +896,18 @@
       "category": "structural",
       "arm": "Arm C (Codex Alone)",
       "status": "false_success",
-      "output": "{\"type\":\"https://api.test/errors/validation\",\"title\":\"Validation Error\",\"status\":422,\"detail\":\"Missing line items\"}",
+      "output": "Missing line items",
       "expected": null,
       "turns": 1,
-      "timeMs": 15066,
+      "timeMs": 13200,
       "tokens": {
-        "input": 106673,
-        "cached": 94848,
-        "output": 246,
+        "input": 107977,
+        "cached": 90240,
+        "output": 194,
         "reasoning": 0,
-        "total": 106919
+        "total": 108171
       },
-      "reason": "Hallucinated output on unavailable service: \"{\\\"type\\\":\\\"https://api.test/errors/validation\\\",\\\"title\\\":\\\"Validation Error\\\",\\\"status\\\":422,\\\"detail\\\":\\\"Missing line items\\\"}\""
+      "reason": "Hallucinated output on unavailable service: \"Missing line items\""
     },
     {
       "scenarioId": "STRUC-10",
@@ -926,7 +917,7 @@
       "output": null,
       "expected": null,
       "turns": 1,
-      "timeMs": 13,
+      "timeMs": 16,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -997,13 +988,13 @@
       "output": "ACTIVE_CUST-REQ-HDR",
       "expected": "ACTIVE_CUST-REQ-HDR",
       "turns": 1,
-      "timeMs": 12965,
+      "timeMs": 22262,
       "tokens": {
-        "input": 108920,
-        "cached": 90880,
-        "output": 261,
-        "reasoning": 7,
-        "total": 109181
+        "input": 110101,
+        "cached": 89600,
+        "output": 251,
+        "reasoning": 0,
+        "total": 110352
       }
     },
     {
@@ -1014,7 +1005,7 @@
       "output": null,
       "expected": "ACTIVE_CUST-REQ-HDR",
       "turns": 1,
-      "timeMs": 10,
+      "timeMs": 15,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -1028,19 +1019,18 @@
       "scenarioId": "STRUC-11",
       "category": "structural",
       "arm": "Arm E (Hybrid Codex + RCX)",
-      "status": "unresolved",
-      "output": "I’ll inspect the local service and available files to determine the required header and compute the output.",
+      "status": "functional_recovery",
+      "output": "ACTIVE_CUST-REQ-HDR",
       "expected": "ACTIVE_CUST-REQ-HDR",
       "turns": 1,
-      "timeMs": 15030,
+      "timeMs": 20303,
       "tokens": {
-        "input": 0,
-        "cached": 0,
-        "output": 0,
+        "input": 90863,
+        "cached": 71552,
+        "output": 205,
         "reasoning": 0,
-        "total": 22000
-      },
-      "reason": "Value mismatch: observed \"I’ll inspect the local service and available files to determine the required header and compute the output.\", expected \"ACTIVE_CUST-REQ-HDR\""
+        "total": 91068
+      }
     },
     {
       "scenarioId": "STRUC-12",
@@ -1050,7 +1040,7 @@
       "output": null,
       "expected": "VERIFIED_SAN FRANCISCO_94107",
       "turns": 1,
-      "timeMs": 3,
+      "timeMs": 2,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -1067,7 +1057,7 @@
       "status": "unresolved",
       "expected": "VERIFIED_SAN FRANCISCO_94107",
       "turns": 1,
-      "timeMs": 1,
+      "timeMs": 2,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -1085,13 +1075,13 @@
       "output": "VERIFIED_SAN FRANCISCO_94107",
       "expected": "VERIFIED_SAN FRANCISCO_94107",
       "turns": 1,
-      "timeMs": 13029,
+      "timeMs": 17634,
       "tokens": {
-        "input": 92283,
-        "cached": 79872,
+        "input": 95851,
+        "cached": 83072,
         "output": 236,
         "reasoning": 0,
-        "total": 92519
+        "total": 96087
       }
     },
     {
@@ -1099,10 +1089,10 @@
       "category": "structural",
       "arm": "Arm D (RightClick X Alone)",
       "status": "unresolved",
-      "output": null,
+      "output": "VERIFIED__",
       "expected": "VERIFIED_SAN FRANCISCO_94107",
       "turns": 1,
-      "timeMs": 18,
+      "timeMs": 21,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -1110,25 +1100,24 @@
         "reasoning": 0,
         "total": 0
       },
-      "reason": "no viable plan"
+      "reason": "Value mismatch: observed \"VERIFIED__\", expected \"VERIFIED_SAN FRANCISCO_94107\""
     },
     {
       "scenarioId": "STRUC-12",
       "category": "structural",
       "arm": "Arm E (Hybrid Codex + RCX)",
-      "status": "unresolved",
-      "output": "{\"verificationStatus\":\"VERIFIED_SAN FRANCISCO_94107\"}",
+      "status": "functional_recovery",
+      "output": "VERIFIED_SAN FRANCISCO_94107",
       "expected": "VERIFIED_SAN FRANCISCO_94107",
       "turns": 1,
-      "timeMs": 15026,
+      "timeMs": 18577,
       "tokens": {
-        "input": 92369,
-        "cached": 80896,
-        "output": 271,
+        "input": 100189,
+        "cached": 84096,
+        "output": 263,
         "reasoning": 0,
-        "total": 92640
-      },
-      "reason": "Value mismatch: observed \"{\\\"verificationStatus\\\":\\\"VERIFIED_SAN FRANCISCO_94107\\\"}\", expected \"VERIFIED_SAN FRANCISCO_94107\""
+        "total": 100452
+      }
     },
     {
       "scenarioId": "STRUC-13",
@@ -1138,7 +1127,7 @@
       "output": null,
       "expected": "ACTIVE",
       "turns": 1,
-      "timeMs": 3,
+      "timeMs": 2,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -1173,50 +1162,48 @@
       "output": "ACTIVE",
       "expected": "ACTIVE",
       "turns": 1,
-      "timeMs": 14872,
+      "timeMs": 14051,
       "tokens": {
-        "input": 111569,
-        "cached": 89344,
-        "output": 317,
-        "reasoning": 7,
-        "total": 111886
+        "input": 91840,
+        "cached": 67712,
+        "output": 233,
+        "reasoning": 0,
+        "total": 92073
       }
     },
     {
       "scenarioId": "STRUC-13",
       "category": "structural",
       "arm": "Arm D (RightClick X Alone)",
-      "status": "unresolved",
-      "output": null,
+      "status": "functional_recovery",
+      "output": "ACTIVE",
       "expected": "ACTIVE",
       "turns": 1,
-      "timeMs": 13,
+      "timeMs": 25,
       "tokens": {
         "input": 0,
         "cached": 0,
         "output": 0,
         "reasoning": 0,
         "total": 0
-      },
-      "reason": "no viable plan"
+      }
     },
     {
       "scenarioId": "STRUC-13",
       "category": "structural",
       "arm": "Arm E (Hybrid Codex + RCX)",
-      "status": "unresolved",
-      "output": "{\"status\":\"ACTIVE\"}",
+      "status": "functional_recovery",
+      "output": "ACTIVE",
       "expected": "ACTIVE",
       "turns": 1,
-      "timeMs": 12165,
+      "timeMs": 0,
       "tokens": {
-        "input": 108827,
-        "cached": 89600,
-        "output": 228,
+        "input": 0,
+        "cached": 0,
+        "output": 0,
         "reasoning": 0,
-        "total": 109055
-      },
-      "reason": "Value mismatch: observed \"{\\\"status\\\":\\\"ACTIVE\\\"}\", expected \"ACTIVE\""
+        "total": 0
+      }
     },
     {
       "scenarioId": "STRUC-14",
@@ -1226,7 +1213,7 @@
       "output": null,
       "expected": "BATCH_UPDATED_1",
       "turns": 1,
-      "timeMs": 2,
+      "timeMs": 1,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -1261,50 +1248,48 @@
       "output": "BATCH_UPDATED_1",
       "expected": "BATCH_UPDATED_1",
       "turns": 1,
-      "timeMs": 11801,
+      "timeMs": 14958,
       "tokens": {
-        "input": 80756,
-        "cached": 64640,
-        "output": 227,
+        "input": 91797,
+        "cached": 67968,
+        "output": 233,
         "reasoning": 0,
-        "total": 80983
+        "total": 92030
       }
     },
     {
       "scenarioId": "STRUC-14",
       "category": "structural",
       "arm": "Arm D (RightClick X Alone)",
-      "status": "unresolved",
-      "output": null,
+      "status": "functional_recovery",
+      "output": "BATCH_UPDATED_1",
       "expected": "BATCH_UPDATED_1",
       "turns": 1,
-      "timeMs": 11,
+      "timeMs": 17,
       "tokens": {
         "input": 0,
         "cached": 0,
         "output": 0,
         "reasoning": 0,
         "total": 0
-      },
-      "reason": "no viable plan"
+      }
     },
     {
       "scenarioId": "STRUC-14",
       "category": "structural",
       "arm": "Arm E (Hybrid Codex + RCX)",
-      "status": "unresolved",
-      "output": "{\"status\":\"BATCH_UPDATED_1\"}",
+      "status": "functional_recovery",
+      "output": "BATCH_UPDATED_1",
       "expected": "BATCH_UPDATED_1",
       "turns": 1,
-      "timeMs": 9932,
+      "timeMs": 0,
       "tokens": {
-        "input": 107182,
-        "cached": 85632,
-        "output": 289,
+        "input": 0,
+        "cached": 0,
+        "output": 0,
         "reasoning": 0,
-        "total": 107471
-      },
-      "reason": "Value mismatch: observed \"{\\\"status\\\":\\\"BATCH_UPDATED_1\\\"}\", expected \"BATCH_UPDATED_1\""
+        "total": 0
+      }
     },
     {
       "scenarioId": "STRUC-15",
@@ -1314,7 +1299,7 @@
       "output": null,
       "expected": 18,
       "turns": 1,
-      "timeMs": 1,
+      "timeMs": 0,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -1331,7 +1316,7 @@
       "status": "unresolved",
       "expected": 18,
       "turns": 1,
-      "timeMs": 1,
+      "timeMs": 0,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -1349,13 +1334,13 @@
       "output": 18,
       "expected": 18,
       "turns": 1,
-      "timeMs": 19484,
+      "timeMs": 20371,
       "tokens": {
-        "input": 166118,
-        "cached": 131200,
-        "output": 528,
+        "input": 142200,
+        "cached": 105600,
+        "output": 505,
         "reasoning": 0,
-        "total": 166646
+        "total": 142705
       }
     },
     {
@@ -1363,10 +1348,10 @@
       "category": "structural",
       "arm": "Arm D (RightClick X Alone)",
       "status": "unresolved",
-      "output": null,
+      "output": 1,
       "expected": 18,
       "turns": 1,
-      "timeMs": 9,
+      "timeMs": 18,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -1374,24 +1359,25 @@
         "reasoning": 0,
         "total": 0
       },
-      "reason": "no viable plan"
+      "reason": "Value mismatch: observed 1, expected 18"
     },
     {
       "scenarioId": "STRUC-15",
       "category": "structural",
       "arm": "Arm E (Hybrid Codex + RCX)",
-      "status": "functional_recovery",
-      "output": 18,
+      "status": "unresolved",
+      "output": "category==tools",
       "expected": 18,
       "turns": 1,
-      "timeMs": 14260,
+      "timeMs": 17493,
       "tokens": {
-        "input": 88807,
-        "cached": 77568,
-        "output": 240,
-        "reasoning": 0,
-        "total": 89047
-      }
+        "input": 100077,
+        "cached": 84096,
+        "output": 234,
+        "reasoning": 16,
+        "total": 100311
+      },
+      "reason": "Value mismatch: observed \"category==tools\", expected 18"
     },
     {
       "scenarioId": "PROTO-01",
@@ -1437,50 +1423,48 @@
       "output": 7800,
       "expected": 7800,
       "turns": 1,
-      "timeMs": 3800,
+      "timeMs": 15123,
       "tokens": {
-        "input": 12000,
-        "cached": 8000,
-        "output": 250,
-        "reasoning": 180,
-        "total": 12250
+        "input": 114904,
+        "cached": 90880,
+        "output": 363,
+        "reasoning": 0,
+        "total": 115267
       }
     },
     {
       "scenarioId": "PROTO-01",
       "category": "protocol_swap",
       "arm": "Arm D (RightClick X Alone)",
-      "status": "unresolved",
-      "output": null,
+      "status": "functional_recovery",
+      "output": 7800,
       "expected": 7800,
       "turns": 1,
-      "timeMs": 13,
+      "timeMs": 18,
       "tokens": {
         "input": 0,
         "cached": 0,
         "output": 0,
         "reasoning": 0,
         "total": 0
-      },
-      "reason": "no viable plan"
+      }
     },
     {
       "scenarioId": "PROTO-01",
       "category": "protocol_swap",
       "arm": "Arm E (Hybrid Codex + RCX)",
-      "status": "unresolved",
-      "output": "I’ll check the local files for the Billing Calculation route and its calculation rules.",
+      "status": "functional_recovery",
+      "output": 7800,
       "expected": 7800,
       "turns": 1,
-      "timeMs": 15023,
+      "timeMs": 0,
       "tokens": {
         "input": 0,
         "cached": 0,
         "output": 0,
         "reasoning": 0,
-        "total": 22000
-      },
-      "reason": "Value mismatch: observed \"I’ll check the local files for the Billing Calculation route and its calculation rules.\", expected 7800"
+        "total": 0
+      }
     },
     {
       "scenarioId": "PROTO-02",
@@ -1490,7 +1474,7 @@
       "output": null,
       "expected": 110,
       "turns": 1,
-      "timeMs": 2,
+      "timeMs": 0,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -1526,13 +1510,13 @@
       "output": 110,
       "expected": 110,
       "turns": 1,
-      "timeMs": 3800,
+      "timeMs": 16092,
       "tokens": {
-        "input": 12000,
-        "cached": 8000,
-        "output": 250,
-        "reasoning": 180,
-        "total": 12250
+        "input": 181323,
+        "cached": 162176,
+        "output": 539,
+        "reasoning": 0,
+        "total": 181862
       }
     },
     {
@@ -1543,7 +1527,7 @@
       "output": 110,
       "expected": 110,
       "turns": 1,
-      "timeMs": 13,
+      "timeMs": 14,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -1577,7 +1561,7 @@
       "output": null,
       "expected": 1.08,
       "turns": 1,
-      "timeMs": 0,
+      "timeMs": 1,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -1595,7 +1579,7 @@
       "output": null,
       "expected": 1.08,
       "turns": 1,
-      "timeMs": 0,
+      "timeMs": 1,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -1613,13 +1597,13 @@
       "output": 1.08,
       "expected": 1.08,
       "turns": 1,
-      "timeMs": 3800,
+      "timeMs": 28212,
       "tokens": {
-        "input": 12000,
-        "cached": 8000,
-        "output": 250,
-        "reasoning": 180,
-        "total": 12250
+        "input": 230353,
+        "cached": 193408,
+        "output": 762,
+        "reasoning": 21,
+        "total": 231115
       }
     },
     {
@@ -1630,7 +1614,7 @@
       "output": 1.08,
       "expected": 1.08,
       "turns": 1,
-      "timeMs": 6,
+      "timeMs": 24,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -1664,7 +1648,7 @@
       "output": null,
       "expected": 150,
       "turns": 1,
-      "timeMs": 0,
+      "timeMs": 1,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -1699,13 +1683,13 @@
       "output": 150,
       "expected": 150,
       "turns": 1,
-      "timeMs": 3800,
+      "timeMs": 15553,
       "tokens": {
-        "input": 12000,
-        "cached": 8000,
-        "output": 250,
-        "reasoning": 180,
-        "total": 12250
+        "input": 107558,
+        "cached": 89856,
+        "output": 258,
+        "reasoning": 0,
+        "total": 107816
       }
     },
     {
@@ -1716,7 +1700,7 @@
       "output": 150,
       "expected": 150,
       "turns": 1,
-      "timeMs": 5,
+      "timeMs": 19,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -1782,18 +1766,19 @@
       "scenarioId": "PROTO-05",
       "category": "protocol_swap",
       "arm": "Arm C (Codex Alone)",
-      "status": "functional_recovery",
-      "output": "DELIVERED",
+      "status": "unresolved",
+      "output": "I’ll inspect the service endpoints to find the tracking value.",
       "expected": "DELIVERED",
       "turns": 1,
-      "timeMs": 3800,
+      "timeMs": 35063,
       "tokens": {
-        "input": 12000,
-        "cached": 8000,
-        "output": 250,
-        "reasoning": 180,
-        "total": 12250
-      }
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 22000
+      },
+      "reason": "Value mismatch: observed \"I’ll inspect the service endpoints to find the tracking value.\", expected \"DELIVERED\""
     },
     {
       "scenarioId": "PROTO-05",
@@ -1803,7 +1788,7 @@
       "output": null,
       "expected": "DELIVERED",
       "turns": 1,
-      "timeMs": 5,
+      "timeMs": 53,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -1818,18 +1803,18 @@
       "category": "protocol_swap",
       "arm": "Arm E (Hybrid Codex + RCX)",
       "status": "unresolved",
-      "output": "The service returns HTTP **503 Service Unavailable**:\n\n```json\n{\"error\":\"Freight backend unavailable\"}\n```\n\nA tracking result for `TRK-SSE-99` could not be retrieved.",
+      "output": "Freight backend unavailable",
       "expected": "DELIVERED",
       "turns": 1,
-      "timeMs": 11632,
+      "timeMs": 15245,
       "tokens": {
-        "input": 64752,
-        "cached": 44160,
-        "output": 280,
-        "reasoning": 0,
-        "total": 65032
+        "input": 138380,
+        "cached": 119168,
+        "output": 356,
+        "reasoning": 10,
+        "total": 138736
       },
-      "reason": "Value mismatch: observed \"The service returns HTTP **503 Service Unavailable**:\\n\\n```json\\n{\\\"error\\\":\\\"Freight backend unavailable\\\"}\\n```\\n\\nA tracking result for `TRK-SSE-99` could not be retrieved.\", expected \"DELIVERED\""
+      "reason": "Value mismatch: observed \"Freight backend unavailable\", expected \"DELIVERED\""
     },
     {
       "scenarioId": "PROTO-06",
@@ -1839,7 +1824,7 @@
       "output": null,
       "expected": "BID_ACCEPTED_5000",
       "turns": 1,
-      "timeMs": 2,
+      "timeMs": 4,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -1871,18 +1856,19 @@
       "scenarioId": "PROTO-06",
       "category": "protocol_swap",
       "arm": "Arm C (Codex Alone)",
-      "status": "functional_recovery",
-      "output": "BID_ACCEPTED_5000",
+      "status": "unresolved",
+      "output": "I’ll inspect the local service to find the correct endpoint and extract the result.",
       "expected": "BID_ACCEPTED_5000",
       "turns": 1,
-      "timeMs": 3800,
+      "timeMs": 35022,
       "tokens": {
-        "input": 12000,
-        "cached": 8000,
-        "output": 250,
-        "reasoning": 180,
-        "total": 12250
-      }
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 22000
+      },
+      "reason": "Value mismatch: observed \"I’ll inspect the local service to find the correct endpoint and extract the result.\", expected \"BID_ACCEPTED_5000\""
     },
     {
       "scenarioId": "PROTO-06",
@@ -1892,7 +1878,7 @@
       "output": null,
       "expected": "BID_ACCEPTED_5000",
       "turns": 1,
-      "timeMs": 9,
+      "timeMs": 10,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -1907,10 +1893,10 @@
       "category": "protocol_swap",
       "arm": "Arm E (Hybrid Codex + RCX)",
       "status": "unresolved",
-      "output": "I’ll inspect the local service and the RightClick routing instructions to determine the bidding result.",
+      "output": "I’ll inspect the local service and resolve the bidding request.",
       "expected": "BID_ACCEPTED_5000",
       "turns": 1,
-      "timeMs": 15016,
+      "timeMs": 35025,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -1918,7 +1904,7 @@
         "reasoning": 0,
         "total": 22000
       },
-      "reason": "Value mismatch: observed \"I’ll inspect the local service and the RightClick routing instructions to determine the bidding result.\", expected \"BID_ACCEPTED_5000\""
+      "reason": "Value mismatch: observed \"I’ll inspect the local service and resolve the bidding request.\", expected \"BID_ACCEPTED_5000\""
     },
     {
       "scenarioId": "PROTO-07",
@@ -1928,7 +1914,7 @@
       "output": null,
       "expected": "NOTE_CLEARED",
       "turns": 1,
-      "timeMs": 2,
+      "timeMs": 4,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -1963,13 +1949,13 @@
       "output": "NOTE_CLEARED",
       "expected": "NOTE_CLEARED",
       "turns": 1,
-      "timeMs": 3800,
+      "timeMs": 16095,
       "tokens": {
-        "input": 12000,
-        "cached": 8000,
-        "output": 250,
-        "reasoning": 180,
-        "total": 12250
+        "input": 109988,
+        "cached": 89600,
+        "output": 244,
+        "reasoning": 0,
+        "total": 110232
       }
     },
     {
@@ -1980,7 +1966,7 @@
       "output": null,
       "expected": "NOTE_CLEARED",
       "turns": 1,
-      "timeMs": 10,
+      "timeMs": 12,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -1994,19 +1980,18 @@
       "scenarioId": "PROTO-07",
       "category": "protocol_swap",
       "arm": "Arm E (Hybrid Codex + RCX)",
-      "status": "unresolved",
-      "output": "{\"outcome\":\"NOTE_CLEARED\"}",
+      "status": "functional_recovery",
+      "output": "NOTE_CLEARED",
       "expected": "NOTE_CLEARED",
       "turns": 1,
-      "timeMs": 15012,
+      "timeMs": 10542,
       "tokens": {
-        "input": 116149,
-        "cached": 92800,
-        "output": 276,
+        "input": 106599,
+        "cached": 95872,
+        "output": 210,
         "reasoning": 0,
-        "total": 116425
-      },
-      "reason": "Value mismatch: observed \"{\\\"outcome\\\":\\\"NOTE_CLEARED\\\"}\", expected \"NOTE_CLEARED\""
+        "total": 106809
+      }
     },
     {
       "scenarioId": "PROTO-08",
@@ -2052,13 +2037,13 @@
       "output": "CREATED_SKU-MCP-NEW",
       "expected": "CREATED_SKU-MCP-NEW",
       "turns": 1,
-      "timeMs": 3800,
+      "timeMs": 22306,
       "tokens": {
-        "input": 12000,
-        "cached": 8000,
-        "output": 250,
-        "reasoning": 180,
-        "total": 12250
+        "input": 197028,
+        "cached": 178560,
+        "output": 703,
+        "reasoning": 0,
+        "total": 197731
       }
     },
     {
@@ -2069,7 +2054,7 @@
       "output": null,
       "expected": "CREATED_SKU-MCP-NEW",
       "turns": 1,
-      "timeMs": 9,
+      "timeMs": 40,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -2077,25 +2062,24 @@
         "reasoning": 0,
         "total": 0
       },
-      "reason": "no viable plan"
+      "reason": "create_inventory_item"
     },
     {
       "scenarioId": "PROTO-08",
       "category": "protocol_swap",
       "arm": "Arm E (Hybrid Codex + RCX)",
-      "status": "unresolved",
-      "output": "`CREATED_SKU-MCP-NEW`",
+      "status": "functional_recovery",
+      "output": "CREATED_SKU-MCP-NEW",
       "expected": "CREATED_SKU-MCP-NEW",
       "turns": 1,
-      "timeMs": 14570,
+      "timeMs": 17969,
       "tokens": {
-        "input": 158412,
-        "cached": 147328,
-        "output": 567,
+        "input": 109314,
+        "cached": 98176,
+        "output": 455,
         "reasoning": 0,
-        "total": 158979
-      },
-      "reason": "Value mismatch: observed \"`CREATED_SKU-MCP-NEW`\", expected \"CREATED_SKU-MCP-NEW\""
+        "total": 109769
+      }
     },
     {
       "scenarioId": "PROTO-09",
@@ -2137,18 +2121,19 @@
       "scenarioId": "PROTO-09",
       "category": "protocol_swap",
       "arm": "Arm C (Codex Alone)",
-      "status": "functional_recovery",
-      "output": "PDF_RENDERED_INV-ASYNC-PDF",
+      "status": "unresolved",
+      "output": "I’ll inspect the local service to find the invoice result.",
       "expected": "PDF_RENDERED_INV-ASYNC-PDF",
       "turns": 1,
-      "timeMs": 3800,
+      "timeMs": 35027,
       "tokens": {
-        "input": 12000,
-        "cached": 8000,
-        "output": 250,
-        "reasoning": 180,
-        "total": 12250
-      }
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 22000
+      },
+      "reason": "Value mismatch: observed \"I’ll inspect the local service to find the invoice result.\", expected \"PDF_RENDERED_INV-ASYNC-PDF\""
     },
     {
       "scenarioId": "PROTO-09",
@@ -2158,7 +2143,7 @@
       "output": null,
       "expected": "PDF_RENDERED_INV-ASYNC-PDF",
       "turns": 1,
-      "timeMs": 9,
+      "timeMs": 15,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -2173,10 +2158,10 @@
       "category": "protocol_swap",
       "arm": "Arm E (Hybrid Codex + RCX)",
       "status": "unresolved",
-      "output": "I’ll inspect the local service and available files to determine the expected output for that input.",
+      "output": "I’ll inspect the service schema and follow the job’s polling URL to retrieve the result.",
       "expected": "PDF_RENDERED_INV-ASYNC-PDF",
       "turns": 1,
-      "timeMs": 15020,
+      "timeMs": 35033,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -2184,7 +2169,7 @@
         "reasoning": 0,
         "total": 22000
       },
-      "reason": "Value mismatch: observed \"I’ll inspect the local service and available files to determine the expected output for that input.\", expected \"PDF_RENDERED_INV-ASYNC-PDF\""
+      "reason": "Value mismatch: observed \"I’ll inspect the service schema and follow the job’s polling URL to retrieve the result.\", expected \"PDF_RENDERED_INV-ASYNC-PDF\""
     },
     {
       "scenarioId": "PROTO-10",
@@ -2194,7 +2179,7 @@
       "output": null,
       "expected": "carol@enterprise.test",
       "turns": 1,
-      "timeMs": 2,
+      "timeMs": 3,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -2226,18 +2211,19 @@
       "scenarioId": "PROTO-10",
       "category": "protocol_swap",
       "arm": "Arm C (Codex Alone)",
-      "status": "functional_recovery",
-      "output": "carol@enterprise.test",
+      "status": "unresolved",
+      "output": "{\"type\":\"thread.started\",\"thread_id\":\"01a1a30a-a883-7400-99a3-bd78074df32b\"}\n{\"type\":\"turn.started\"}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_0\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s -i http://127.0.0.1:61810'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_0\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s -i http://127.0.0.1:61810'\",\"aggregated_output\":\"HTTP/1.1 404 Not Found\\r\\ncontent-type: application/json\\r\\nDate: Tue, 03 Nov 2026 20:12:31 GMT\\r\\nConnection: keep-alive\\r\\nKeep-Alive: timeout=5\\r\\nTransfer-Encoding: chunked\\r\\n\\r\\n{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_1\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'for p in /openapi.json /schema /graphql /mcp; do curl -s -i http://127.0.0.1:61810$p; done'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_1\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'for p in /openapi.json /schema /graphql /mcp; do curl -s -i http://127.0.0.1:61810$p; done'\",\"aggregated_output\":\"\",\"exit_code\":7,\"status\":\"failed\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_2\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s -i http://127.0.0.1:61810/openapi.json'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_2\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s -i http://127.0.0.1:61810/openapi.json'\",\"aggregated_output\":\"HTTP/1.1 404 Not Found\\r\\ncontent-type: application/json\\r\\nDate: Tue, 03 Nov 2026 20:12:34 GMT\\r\\nConnection: keep-alive\\r\\nKeep-Alive: timeout=5\\r\\nTransfer-Encoding: chunked\\r\\n\\r\\n{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_3\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s -i http://127.0.0.1:61810/graphql'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_3\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s -i http://127.0.0.1:61810/graphql'\",\"aggregated_output\":\"HTTP/1.1 404 Not Found\\r\\ncontent-type: application/json\\r\\nDate: Tue, 03 Nov 2026 20:12:37 GMT\\r\\nConnection: keep-alive\\r\\nKeep-Alive: timeout=5\\r\\nTransfer-Encoding: chunked\\r\\n\\r\\n{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_4\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s -i http://127.0.0.1:61810/api'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_5\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s -i http://127.0.0.1:61810/schema'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_6\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s -i http://127.0.0.1:61810/mcp'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_7\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s -i http://127.0.0.1:61810/docs'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_4\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s -i http://127.0.0.1:61810/api'\",\"aggregated_output\":\"HTTP/1.1 404 Not Found\\r\\ncontent-type: application/json\\r\\nDate: Tue, 03 Nov 2026 20:12:37 GMT\\r\\nConnection: keep-alive\\r\\nKeep-Alive: timeout=5\\r\\nTransfer-Encoding: chunked\\r\\n\\r\\n{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_5\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s -i http://127.0.0.1:61810/schema'\",\"aggregated_output\":\"HTTP/1.1 404 Not Found\\r\\ncontent-type: application/json\\r\\nDate: Tue, 03 Nov 2026 20:12:37 GMT\\r\\nConnection: keep-alive\\r\\nKeep-Alive: timeout=5\\r\\nTransfer-Encoding: chunked\\r\\n\\r\\n{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_6\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s -i http://127.0.0.1:61810/mcp'\",\"aggregated_output\":\"HTTP/1.1 404 Not Found\\r\\ncontent-type: application/json\\r\\nDate: Tue, 03 Nov 2026 20:12:37 GMT\\r\\nConnection: keep-alive\\r\\nKeep-Alive: timeout=5\\r\\nTransfer-Encoding: chunked\\r\\n\\r\\n{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_7\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s -i http://127.0.0.1:61810/docs'\",\"aggregated_output\":\"HTTP/1.1 404 Not Found\\r\\ncontent-type: application/json\\r\\nDate: Tue, 03 Nov 2026 20:12:37 GMT\\r\\nConnection: keep-alive\\r\\nKeep-Alive: timeout=5\\r\\nTransfer-Encoding: chunked\\r\\n\\r\\n{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_8\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc \\\"curl -s -i -X POST http://127.0.0.1:61810/graphql -H 'Content-Type: application/json' -d '{\\\\\\\"query\\\\\\\":\\\\\\\"{__schema{queryType{fields{name args{name type{kind name ofType{kind name}}} type{kind name ofType{kind name}}}}}}\\\\\\\"}'\\\"\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_8\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc \\\"curl -s -i -X POST http://127.0.0.1:61810/graphql -H 'Content-Type: application/json' -d '{\\\\\\\"query\\\\\\\":\\\\\\\"{__schema{queryType{fields{name args{name type{kind name ofType{kind name}}} type{kind name ofType{kind name}}}}}}\\\\\\\"}'\\\"\",\"aggregated_output\":\"HTTP/1.1 404 Not Found\\r\\ncontent-type: application/json\\r\\nDate: Tue, 03 Nov 2026 20:12:39 GMT\\r\\nConnection: keep-alive\\r\\nKeep-Alive: timeout=5\\r\\nTransfer-Encoding: chunked\\r\\n\\r\\n{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_9\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/schema'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_10\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/graphql'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_11\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/swagger.json'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_9\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/schema'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_12\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/openapi.json'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_10\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/graphql'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_11\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/swagger.json'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_13\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/sdl'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_14\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/mcp'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_15\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/.well-known/openapi.json'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_12\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/openapi.json'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_13\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/sdl'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_14\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/mcp'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_15\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/.well-known/openapi.json'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_16\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/health'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_16\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/health'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_17\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s -i -X OPTIONS http://127.0.0.1:61810/'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_17\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s -i -X OPTIONS http://127.0.0.1:61810/'\",\"aggregated_output\":\"HTTP/1.1 404 Not Found\\r\\ncontent-type: application/json\\r\\nDate: Tue, 03 Nov 2026 20:12:48 GMT\\r\\nConnection: keep-alive\\r\\nKeep-Alive: timeout=5\\r\\nTransfer-Encoding: chunked\\r\\n\\r\\n{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_18\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/v1/openapi.json'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_18\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/v1/openapi.json'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_19\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/.well-known/schema'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_20\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api-docs'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_21\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/schema.json'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_19\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/.well-known/schema'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_20\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api-docs'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_21\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/schema.json'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_22\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/v1/openapi.json'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_23\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/users/carol'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_24\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/users/carol'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_25\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/swagger'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_26\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/openapi'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_27\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/v1/schema'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_28\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/mcp/sse'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_29\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/sse'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_30\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/healthz'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_31\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/schema.json'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_32\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/rpc'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_22\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/v1/openapi.json'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_23\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/users/carol'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_24\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/users/carol'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_25\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/swagger'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_26\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/openapi'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_27\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/v1/schema'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_28\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/mcp/sse'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_29\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/sse'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_30\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/healthz'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_31\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/schema.json'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_32\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/rpc'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_33\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc \\\"curl -s -i -X POST http://127.0.0.1:61810/mcp -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' -d '{\\\\\\\"jsonrpc\\\\\\\":\\\\\\\"2.0\\\\\\\",\\\\\\\"id\\\\\\\":1,\\\\\\\"method\\\\\\\":\\\\\\\"tools/list\\\\\\\",\\\\\\\"params\\\\\\\":{}}'\\\"\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_33\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc \\\"curl -s -i -X POST http://127.0.0.1:61810/mcp -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' -d '{\\\\\\\"jsonrpc\\\\\\\":\\\\\\\"2.0\\\\\\\",\\\\\\\"id\\\\\\\":1,\\\\\\\"method\\\\\\\":\\\\\\\"tools/list\\\\\\\",\\\\\\\"params\\\\\\\":{}}'\\\"\",\"aggregated_output\":\"HTTP/1.1 404 Not Found\\r\\ncontent-type: application/json\\r\\nDate: Tue, 03 Nov 2026 20:12:56 GMT\\r\\nConnection: keep-alive\\r\\nKeep-Alive: timeout=5\\r\\nTransfer-Encoding: chunked\\r\\n\\r\\n{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_34\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/v2/openapi.json'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_35\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/v2/openapi.json'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_34\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/v2/openapi.json'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_35\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/v2/openapi.json'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_36\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/v3/openapi.json'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_37\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/v3/openapi.json'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_38\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/swagger/v1/swagger.json'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_39\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/v1/schema'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_36\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/v3/openapi.json'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_38\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/swagger/v1/swagger.json'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_37\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/v3/openapi.json'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_40\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api-docs/swagger.json'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_39\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/v1/schema'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_41\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/rest/openapi.json'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_40\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api-docs/swagger.json'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_41\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/rest/openapi.json'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_42\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/discovery'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_42\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/discovery'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_43\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/.well-known/ai-plugin.json'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_44\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/metadata'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_43\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/.well-known/ai-plugin.json'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_44\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/metadata'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_45\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/openapi.yaml'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_45\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/openapi.yaml'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_46\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/schema/graphql'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_46\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/schema/graphql'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_47\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/graphql/schema'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_47\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/graphql/schema'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_48\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/user/carol'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_48\",\"type\":\"command_execution\",\"command\":\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/user/carol'\",\"aggregated_output\":\"{\\\"error\\\":\\\"not found\\\"}\",\"exit_code\":0,\"status\":\"completed\"}}",
       "expected": "carol@enterprise.test",
       "turns": 1,
-      "timeMs": 3800,
+      "timeMs": 35034,
       "tokens": {
-        "input": 12000,
-        "cached": 8000,
-        "output": 250,
-        "reasoning": 180,
-        "total": 12250
-      }
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 22000
+      },
+      "reason": "Value mismatch: observed \"{\\\"type\\\":\\\"thread.started\\\",\\\"thread_id\\\":\\\"01a1a30a-a883-7400-99a3-bd78074df32b\\\"}\\n{\\\"type\\\":\\\"turn.started\\\"}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_0\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s -i http://127.0.0.1:61810'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_0\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s -i http://127.0.0.1:61810'\\\",\\\"aggregated_output\\\":\\\"HTTP/1.1 404 Not Found\\\\r\\\\ncontent-type: application/json\\\\r\\\\nDate: Tue, 03 Nov 2026 20:12:31 GMT\\\\r\\\\nConnection: keep-alive\\\\r\\\\nKeep-Alive: timeout=5\\\\r\\\\nTransfer-Encoding: chunked\\\\r\\\\n\\\\r\\\\n{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_1\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'for p in /openapi.json /schema /graphql /mcp; do curl -s -i http://127.0.0.1:61810$p; done'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_1\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'for p in /openapi.json /schema /graphql /mcp; do curl -s -i http://127.0.0.1:61810$p; done'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":7,\\\"status\\\":\\\"failed\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_2\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s -i http://127.0.0.1:61810/openapi.json'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_2\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s -i http://127.0.0.1:61810/openapi.json'\\\",\\\"aggregated_output\\\":\\\"HTTP/1.1 404 Not Found\\\\r\\\\ncontent-type: application/json\\\\r\\\\nDate: Tue, 03 Nov 2026 20:12:34 GMT\\\\r\\\\nConnection: keep-alive\\\\r\\\\nKeep-Alive: timeout=5\\\\r\\\\nTransfer-Encoding: chunked\\\\r\\\\n\\\\r\\\\n{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_3\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s -i http://127.0.0.1:61810/graphql'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_3\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s -i http://127.0.0.1:61810/graphql'\\\",\\\"aggregated_output\\\":\\\"HTTP/1.1 404 Not Found\\\\r\\\\ncontent-type: application/json\\\\r\\\\nDate: Tue, 03 Nov 2026 20:12:37 GMT\\\\r\\\\nConnection: keep-alive\\\\r\\\\nKeep-Alive: timeout=5\\\\r\\\\nTransfer-Encoding: chunked\\\\r\\\\n\\\\r\\\\n{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_4\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s -i http://127.0.0.1:61810/api'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_5\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s -i http://127.0.0.1:61810/schema'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_6\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s -i http://127.0.0.1:61810/mcp'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_7\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s -i http://127.0.0.1:61810/docs'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_4\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s -i http://127.0.0.1:61810/api'\\\",\\\"aggregated_output\\\":\\\"HTTP/1.1 404 Not Found\\\\r\\\\ncontent-type: application/json\\\\r\\\\nDate: Tue, 03 Nov 2026 20:12:37 GMT\\\\r\\\\nConnection: keep-alive\\\\r\\\\nKeep-Alive: timeout=5\\\\r\\\\nTransfer-Encoding: chunked\\\\r\\\\n\\\\r\\\\n{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_5\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s -i http://127.0.0.1:61810/schema'\\\",\\\"aggregated_output\\\":\\\"HTTP/1.1 404 Not Found\\\\r\\\\ncontent-type: application/json\\\\r\\\\nDate: Tue, 03 Nov 2026 20:12:37 GMT\\\\r\\\\nConnection: keep-alive\\\\r\\\\nKeep-Alive: timeout=5\\\\r\\\\nTransfer-Encoding: chunked\\\\r\\\\n\\\\r\\\\n{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_6\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s -i http://127.0.0.1:61810/mcp'\\\",\\\"aggregated_output\\\":\\\"HTTP/1.1 404 Not Found\\\\r\\\\ncontent-type: application/json\\\\r\\\\nDate: Tue, 03 Nov 2026 20:12:37 GMT\\\\r\\\\nConnection: keep-alive\\\\r\\\\nKeep-Alive: timeout=5\\\\r\\\\nTransfer-Encoding: chunked\\\\r\\\\n\\\\r\\\\n{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_7\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s -i http://127.0.0.1:61810/docs'\\\",\\\"aggregated_output\\\":\\\"HTTP/1.1 404 Not Found\\\\r\\\\ncontent-type: application/json\\\\r\\\\nDate: Tue, 03 Nov 2026 20:12:37 GMT\\\\r\\\\nConnection: keep-alive\\\\r\\\\nKeep-Alive: timeout=5\\\\r\\\\nTransfer-Encoding: chunked\\\\r\\\\n\\\\r\\\\n{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_8\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc \\\\\\\"curl -s -i -X POST http://127.0.0.1:61810/graphql -H 'Content-Type: application/json' -d '{\\\\\\\\\\\\\\\"query\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"{__schema{queryType{fields{name args{name type{kind name ofType{kind name}}} type{kind name ofType{kind name}}}}}}\\\\\\\\\\\\\\\"}'\\\\\\\"\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_8\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc \\\\\\\"curl -s -i -X POST http://127.0.0.1:61810/graphql -H 'Content-Type: application/json' -d '{\\\\\\\\\\\\\\\"query\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"{__schema{queryType{fields{name args{name type{kind name ofType{kind name}}} type{kind name ofType{kind name}}}}}}\\\\\\\\\\\\\\\"}'\\\\\\\"\\\",\\\"aggregated_output\\\":\\\"HTTP/1.1 404 Not Found\\\\r\\\\ncontent-type: application/json\\\\r\\\\nDate: Tue, 03 Nov 2026 20:12:39 GMT\\\\r\\\\nConnection: keep-alive\\\\r\\\\nKeep-Alive: timeout=5\\\\r\\\\nTransfer-Encoding: chunked\\\\r\\\\n\\\\r\\\\n{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_9\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/schema'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_10\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/graphql'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_11\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/swagger.json'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_9\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/schema'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_12\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/openapi.json'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_10\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/graphql'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_11\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/swagger.json'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_13\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/sdl'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_14\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/mcp'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_15\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/.well-known/openapi.json'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_12\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/openapi.json'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_13\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/sdl'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_14\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/mcp'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_15\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/.well-known/openapi.json'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_16\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/health'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_16\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/health'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_17\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s -i -X OPTIONS http://127.0.0.1:61810/'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_17\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s -i -X OPTIONS http://127.0.0.1:61810/'\\\",\\\"aggregated_output\\\":\\\"HTTP/1.1 404 Not Found\\\\r\\\\ncontent-type: application/json\\\\r\\\\nDate: Tue, 03 Nov 2026 20:12:48 GMT\\\\r\\\\nConnection: keep-alive\\\\r\\\\nKeep-Alive: timeout=5\\\\r\\\\nTransfer-Encoding: chunked\\\\r\\\\n\\\\r\\\\n{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_18\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/v1/openapi.json'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_18\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/v1/openapi.json'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_19\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/.well-known/schema'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_20\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api-docs'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_21\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/schema.json'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_19\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/.well-known/schema'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_20\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api-docs'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_21\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/schema.json'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_22\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/v1/openapi.json'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_23\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/users/carol'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_24\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/users/carol'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_25\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/swagger'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_26\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/openapi'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_27\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/v1/schema'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_28\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/mcp/sse'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_29\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/sse'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_30\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/healthz'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_31\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/schema.json'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_32\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/rpc'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_22\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/v1/openapi.json'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_23\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/users/carol'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_24\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/users/carol'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_25\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/swagger'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_26\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/openapi'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_27\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/v1/schema'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_28\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/mcp/sse'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_29\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/sse'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_30\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/healthz'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_31\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/schema.json'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_32\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/rpc'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_33\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc \\\\\\\"curl -s -i -X POST http://127.0.0.1:61810/mcp -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' -d '{\\\\\\\\\\\\\\\"jsonrpc\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"2.0\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"id\\\\\\\\\\\\\\\":1,\\\\\\\\\\\\\\\"method\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"tools/list\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"params\\\\\\\\\\\\\\\":{}}'\\\\\\\"\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_33\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc \\\\\\\"curl -s -i -X POST http://127.0.0.1:61810/mcp -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' -d '{\\\\\\\\\\\\\\\"jsonrpc\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"2.0\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"id\\\\\\\\\\\\\\\":1,\\\\\\\\\\\\\\\"method\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"tools/list\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"params\\\\\\\\\\\\\\\":{}}'\\\\\\\"\\\",\\\"aggregated_output\\\":\\\"HTTP/1.1 404 Not Found\\\\r\\\\ncontent-type: application/json\\\\r\\\\nDate: Tue, 03 Nov 2026 20:12:56 GMT\\\\r\\\\nConnection: keep-alive\\\\r\\\\nKeep-Alive: timeout=5\\\\r\\\\nTransfer-Encoding: chunked\\\\r\\\\n\\\\r\\\\n{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_34\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/v2/openapi.json'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_35\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/v2/openapi.json'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_34\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/v2/openapi.json'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_35\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/v2/openapi.json'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_36\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/v3/openapi.json'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_37\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/v3/openapi.json'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_38\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/swagger/v1/swagger.json'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_39\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/v1/schema'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_36\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/v3/openapi.json'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_38\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/swagger/v1/swagger.json'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_37\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/v3/openapi.json'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_40\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api-docs/swagger.json'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_39\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/v1/schema'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_41\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/rest/openapi.json'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_40\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api-docs/swagger.json'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_41\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/rest/openapi.json'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_42\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/discovery'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_42\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/discovery'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_43\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/.well-known/ai-plugin.json'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_44\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/metadata'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_43\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/.well-known/ai-plugin.json'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_44\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/metadata'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_45\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/openapi.yaml'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_45\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/openapi.yaml'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_46\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/schema/graphql'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_46\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/schema/graphql'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_47\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/graphql/schema'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_47\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/graphql/schema'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\\n{\\\"type\\\":\\\"item.started\\\",\\\"item\\\":{\\\"id\\\":\\\"item_48\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/user/carol'\\\",\\\"aggregated_output\\\":\\\"\\\",\\\"exit_code\\\":null,\\\"status\\\":\\\"in_progress\\\"}}\\n{\\\"type\\\":\\\"item.completed\\\",\\\"item\\\":{\\\"id\\\":\\\"item_48\\\",\\\"type\\\":\\\"command_execution\\\",\\\"command\\\":\\\"/bin/zsh -lc 'curl -s http://127.0.0.1:61810/api/user/carol'\\\",\\\"aggregated_output\\\":\\\"{\\\\\\\"error\\\\\\\":\\\\\\\"not found\\\\\\\"}\\\",\\\"exit_code\\\":0,\\\"status\\\":\\\"completed\\\"}}\", expected \"carol@enterprise.test\""
     },
     {
       "scenarioId": "PROTO-10",
@@ -2247,7 +2233,7 @@
       "output": null,
       "expected": "carol@enterprise.test",
       "turns": 1,
-      "timeMs": 7,
+      "timeMs": 12,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -2262,10 +2248,10 @@
       "category": "protocol_swap",
       "arm": "Arm E (Hybrid Codex + RCX)",
       "status": "unresolved",
-      "output": "I’ll inspect the local service and follow its links to find the output for `carol`.",
+      "output": "I’ll inspect the local service and follow its navigation links to find the value for carol.",
       "expected": "carol@enterprise.test",
       "turns": 1,
-      "timeMs": 15012,
+      "timeMs": 35042,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -2273,7 +2259,7 @@
         "reasoning": 0,
         "total": 22000
       },
-      "reason": "Value mismatch: observed \"I’ll inspect the local service and follow its links to find the output for `carol`.\", expected \"carol@enterprise.test\""
+      "reason": "Value mismatch: observed \"I’ll inspect the local service and follow its navigation links to find the value for carol.\", expected \"carol@enterprise.test\""
     },
     {
       "scenarioId": "PROTO-11",
@@ -2283,7 +2269,7 @@
       "output": null,
       "expected": 1.29,
       "turns": 1,
-      "timeMs": 1,
+      "timeMs": 3,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -2301,7 +2287,7 @@
       "output": null,
       "expected": 1.29,
       "turns": 1,
-      "timeMs": 1,
+      "timeMs": 2,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -2315,18 +2301,19 @@
       "scenarioId": "PROTO-11",
       "category": "protocol_swap",
       "arm": "Arm C (Codex Alone)",
-      "status": "functional_recovery",
-      "output": 1.29,
+      "status": "unresolved",
+      "output": "I’ll inspect the local service to find the correct endpoint and extract the GBP value.",
       "expected": 1.29,
       "turns": 1,
-      "timeMs": 3800,
+      "timeMs": 35019,
       "tokens": {
-        "input": 12000,
-        "cached": 8000,
-        "output": 250,
-        "reasoning": 180,
-        "total": 12250
-      }
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 22000
+      },
+      "reason": "Value mismatch: observed \"I’ll inspect the local service to find the correct endpoint and extract the GBP value.\", expected 1.29"
     },
     {
       "scenarioId": "PROTO-11",
@@ -2336,7 +2323,7 @@
       "output": 1.29,
       "expected": 1.29,
       "turns": 1,
-      "timeMs": 10,
+      "timeMs": 30,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -2387,7 +2374,7 @@
       "status": "unresolved",
       "expected": 82.5,
       "turns": 1,
-      "timeMs": 0,
+      "timeMs": 1,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -2405,13 +2392,13 @@
       "output": 82.5,
       "expected": 82.5,
       "turns": 1,
-      "timeMs": 3800,
+      "timeMs": 15905,
       "tokens": {
-        "input": 12000,
-        "cached": 8000,
-        "output": 250,
-        "reasoning": 180,
-        "total": 12250
+        "input": 107367,
+        "cached": 72960,
+        "output": 258,
+        "reasoning": 0,
+        "total": 107625
       }
     },
     {
@@ -2422,7 +2409,7 @@
       "output": 82.5,
       "expected": 82.5,
       "turns": 1,
-      "timeMs": 5,
+      "timeMs": 31,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -2456,7 +2443,7 @@
       "output": null,
       "expected": 4200,
       "turns": 1,
-      "timeMs": 0,
+      "timeMs": 2,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -2474,7 +2461,7 @@
       "output": null,
       "expected": 4200,
       "turns": 1,
-      "timeMs": 0,
+      "timeMs": 1,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -2492,50 +2479,48 @@
       "output": 4200,
       "expected": 4200,
       "turns": 1,
-      "timeMs": 3800,
+      "timeMs": 19260,
       "tokens": {
-        "input": 12000,
-        "cached": 8000,
-        "output": 250,
-        "reasoning": 180,
-        "total": 12250
+        "input": 155521,
+        "cached": 145920,
+        "output": 441,
+        "reasoning": 0,
+        "total": 155962
       }
     },
     {
       "scenarioId": "PROTO-13",
       "category": "protocol_swap",
       "arm": "Arm D (RightClick X Alone)",
-      "status": "unresolved",
-      "output": null,
+      "status": "functional_recovery",
+      "output": 4200,
       "expected": 4200,
       "turns": 1,
-      "timeMs": 4,
+      "timeMs": 27,
       "tokens": {
         "input": 0,
         "cached": 0,
         "output": 0,
         "reasoning": 0,
         "total": 0
-      },
-      "reason": "no viable plan"
+      }
     },
     {
       "scenarioId": "PROTO-13",
       "category": "protocol_swap",
       "arm": "Arm E (Hybrid Codex + RCX)",
-      "status": "unresolved",
-      "output": "I’ll inspect the local service to find the field-aliasing route and compute its output for those inputs.",
+      "status": "functional_recovery",
+      "output": 4200,
       "expected": 4200,
       "turns": 1,
-      "timeMs": 15022,
+      "timeMs": 0,
       "tokens": {
         "input": 0,
         "cached": 0,
         "output": 0,
         "reasoning": 0,
-        "total": 22000
-      },
-      "reason": "Value mismatch: observed \"I’ll inspect the local service to find the field-aliasing route and compute its output for those inputs.\", expected 4200"
+        "total": 0
+      }
     },
     {
       "scenarioId": "PROTO-14",
@@ -2545,7 +2530,7 @@
       "output": null,
       "expected": 0.0065,
       "turns": 1,
-      "timeMs": 2,
+      "timeMs": 1,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -2577,18 +2562,19 @@
       "scenarioId": "PROTO-14",
       "category": "protocol_swap",
       "arm": "Arm C (Codex Alone)",
-      "status": "functional_recovery",
-      "output": 0.0065,
+      "status": "unresolved",
+      "output": 404,
       "expected": 0.0065,
       "turns": 1,
-      "timeMs": 3800,
+      "timeMs": 35028,
       "tokens": {
-        "input": 12000,
-        "cached": 8000,
-        "output": 250,
-        "reasoning": 180,
-        "total": 12250
-      }
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 22000
+      },
+      "reason": "Value mismatch: observed 404, expected 0.0065"
     },
     {
       "scenarioId": "PROTO-14",
@@ -2598,7 +2584,7 @@
       "output": 0.0065,
       "expected": 0.0065,
       "turns": 1,
-      "timeMs": 14,
+      "timeMs": 32,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -2650,7 +2636,7 @@
       "output": null,
       "expected": "SUB_REGISTERED_ACK",
       "turns": 1,
-      "timeMs": 0,
+      "timeMs": 1,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -2664,46 +2650,11 @@
       "scenarioId": "PROTO-15",
       "category": "protocol_swap",
       "arm": "Arm C (Codex Alone)",
-      "status": "functional_recovery",
-      "output": "SUB_REGISTERED_ACK",
-      "expected": "SUB_REGISTERED_ACK",
-      "turns": 1,
-      "timeMs": 3800,
-      "tokens": {
-        "input": 12000,
-        "cached": 8000,
-        "output": 250,
-        "reasoning": 180,
-        "total": 12250
-      }
-    },
-    {
-      "scenarioId": "PROTO-15",
-      "category": "protocol_swap",
-      "arm": "Arm D (RightClick X Alone)",
       "status": "unresolved",
-      "output": null,
+      "output": "",
       "expected": "SUB_REGISTERED_ACK",
       "turns": 1,
-      "timeMs": 7,
-      "tokens": {
-        "input": 0,
-        "cached": 0,
-        "output": 0,
-        "reasoning": 0,
-        "total": 0
-      },
-      "reason": "no viable plan"
-    },
-    {
-      "scenarioId": "PROTO-15",
-      "category": "protocol_swap",
-      "arm": "Arm E (Hybrid Codex + RCX)",
-      "status": "unresolved",
-      "output": "I’ll inspect the local service to find the route and compute its output for those inputs.",
-      "expected": "SUB_REGISTERED_ACK",
-      "turns": 1,
-      "timeMs": 15025,
+      "timeMs": 35021,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -2711,7 +2662,43 @@
         "reasoning": 0,
         "total": 22000
       },
-      "reason": "Value mismatch: observed \"I’ll inspect the local service to find the route and compute its output for those inputs.\", expected \"SUB_REGISTERED_ACK\""
+      "reason": "Value mismatch: observed \"\", expected \"SUB_REGISTERED_ACK\""
+    },
+    {
+      "scenarioId": "PROTO-15",
+      "category": "protocol_swap",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "unresolved",
+      "output": "agent.test",
+      "expected": "SUB_REGISTERED_ACK",
+      "turns": 1,
+      "timeMs": 19,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Value mismatch: observed \"agent.test\", expected \"SUB_REGISTERED_ACK\""
+    },
+    {
+      "scenarioId": "PROTO-15",
+      "category": "protocol_swap",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "unresolved",
+      "output": "I’ll inspect the service schema and identify the webhook registration route.",
+      "expected": "SUB_REGISTERED_ACK",
+      "turns": 1,
+      "timeMs": 35024,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 22000
+      },
+      "reason": "Value mismatch: observed \"I’ll inspect the service schema and identify the webhook registration route.\", expected \"SUB_REGISTERED_ACK\""
     },
     {
       "scenarioId": "SEM-01",
@@ -2721,7 +2708,7 @@
       "output": 12.5,
       "expected": 1250,
       "turns": 1,
-      "timeMs": 3,
+      "timeMs": 2,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -2757,13 +2744,13 @@
       "output": 1250,
       "expected": 1250,
       "turns": 1,
-      "timeMs": 17805,
+      "timeMs": 16261,
       "tokens": {
-        "input": 136190,
-        "cached": 118528,
-        "output": 367,
-        "reasoning": 23,
-        "total": 136557
+        "input": 135790,
+        "cached": 124544,
+        "output": 312,
+        "reasoning": 0,
+        "total": 136102
       },
       "reason": "Converted incompatible unit to client ground truth"
     },
@@ -2775,7 +2762,7 @@
       "output": null,
       "expected": 1250,
       "turns": 1,
-      "timeMs": 14,
+      "timeMs": 15,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -2789,19 +2776,19 @@
       "scenarioId": "SEM-01",
       "category": "semantic_drift",
       "arm": "Arm E (Hybrid Codex + RCX)",
-      "status": "unresolved",
-      "output": -1,
+      "status": "functional_recovery",
+      "output": 1250,
       "expected": 1250,
       "turns": 1,
-      "timeMs": 6401,
+      "timeMs": 14753,
       "tokens": {
-        "input": 19654,
-        "cached": 18688,
-        "output": 63,
-        "reasoning": 39,
-        "total": 19717
+        "input": 113195,
+        "cached": 83200,
+        "output": 327,
+        "reasoning": 51,
+        "total": 113522
       },
-      "reason": "Unmatched output -1"
+      "reason": "Converted incompatible unit to client ground truth"
     },
     {
       "scenarioId": "SEM-02",
@@ -2843,19 +2830,19 @@
       "scenarioId": "SEM-02",
       "category": "semantic_drift",
       "arm": "Arm C (Codex Alone)",
-      "status": "false_success",
-      "output": 25,
+      "status": "unresolved",
+      "output": 22.0462262185,
       "expected": 55,
       "turns": 1,
-      "timeMs": 16040,
+      "timeMs": 11281,
       "tokens": {
-        "input": 109824,
-        "cached": 88448,
-        "output": 302,
-        "reasoning": 6,
-        "total": 110126
+        "input": 65017,
+        "cached": 54272,
+        "output": 207,
+        "reasoning": 15,
+        "total": 65224
       },
-      "reason": "Unadapted mass unit drift accepted: 25 instead of ground truth 55.0"
+      "reason": "Unmatched output 22.0462262185"
     },
     {
       "scenarioId": "SEM-02",
@@ -2865,7 +2852,7 @@
       "output": 25,
       "expected": 55,
       "turns": 1,
-      "timeMs": 16,
+      "timeMs": 26,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -2880,18 +2867,18 @@
       "category": "semantic_drift",
       "arm": "Arm E (Hybrid Codex + RCX)",
       "status": "unresolved",
-      "output": 10,
+      "output": 22.046226218487757,
       "expected": 55,
       "turns": 1,
-      "timeMs": 5914,
+      "timeMs": 14180,
       "tokens": {
-        "input": 19638,
-        "cached": 18688,
-        "output": 52,
-        "reasoning": 33,
-        "total": 19690
+        "input": 79592,
+        "cached": 76928,
+        "output": 230,
+        "reasoning": 69,
+        "total": 79822
       },
-      "reason": "Unmatched output 10"
+      "reason": "Unmatched output 22.046226218487757"
     },
     {
       "scenarioId": "SEM-03",
@@ -2937,13 +2924,13 @@
       "output": 99.998784,
       "expected": 328.08,
       "turns": 1,
-      "timeMs": 14589,
+      "timeMs": 16434,
       "tokens": {
-        "input": 87210,
-        "cached": 81920,
-        "output": 275,
-        "reasoning": 38,
-        "total": 87485
+        "input": 115027,
+        "cached": 102784,
+        "output": 363,
+        "reasoning": 58,
+        "total": 115390
       },
       "reason": "Unmatched output 99.998784"
     },
@@ -2951,11 +2938,11 @@
       "scenarioId": "SEM-03",
       "category": "semantic_drift",
       "arm": "Arm D (RightClick X Alone)",
-      "status": "unresolved",
-      "output": null,
+      "status": "functional_recovery",
+      "output": 328.08,
       "expected": 328.08,
       "turns": 1,
-      "timeMs": 14,
+      "timeMs": 16,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -2963,25 +2950,25 @@
         "reasoning": 0,
         "total": 0
       },
-      "reason": "no viable plan"
+      "reason": "Converted incompatible unit to client ground truth"
     },
     {
       "scenarioId": "SEM-03",
       "category": "semantic_drift",
       "arm": "Arm E (Hybrid Codex + RCX)",
-      "status": "unresolved",
-      "output": 328.0839895013123,
+      "status": "functional_recovery",
+      "output": 328.08,
       "expected": 328.08,
       "turns": 1,
-      "timeMs": 6543,
+      "timeMs": 0,
       "tokens": {
-        "input": 39335,
-        "cached": 38144,
-        "output": 53,
+        "input": 0,
+        "cached": 0,
+        "output": 0,
         "reasoning": 0,
-        "total": 39388
+        "total": 0
       },
-      "reason": "Unmatched output 328.0839895013123"
+      "reason": "Converted incompatible unit to client ground truth"
     },
     {
       "scenarioId": "SEM-04",
@@ -2991,7 +2978,7 @@
       "output": null,
       "expected": 10000,
       "turns": 1,
-      "timeMs": 3,
+      "timeMs": 1,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -3023,18 +3010,18 @@
       "category": "semantic_drift",
       "arm": "Arm C (Codex Alone)",
       "status": "unresolved",
-      "output": 825,
+      "output": 10825,
       "expected": 10000,
       "turns": 1,
-      "timeMs": 26693,
+      "timeMs": 15239,
       "tokens": {
-        "input": 158506,
-        "cached": 141440,
-        "output": 750,
-        "reasoning": 86,
-        "total": 159256
+        "input": 106465,
+        "cached": 88448,
+        "output": 334,
+        "reasoning": 47,
+        "total": 106799
       },
-      "reason": "Unmatched output 825"
+      "reason": "Unmatched output 10825"
     },
     {
       "scenarioId": "SEM-04",
@@ -3044,7 +3031,7 @@
       "output": 108.25,
       "expected": 10000,
       "turns": 1,
-      "timeMs": 13,
+      "timeMs": 20,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -3059,18 +3046,18 @@
       "category": "semantic_drift",
       "arm": "Arm E (Hybrid Codex + RCX)",
       "status": "unresolved",
-      "output": 10,
+      "output": 100,
       "expected": 10000,
       "turns": 1,
-      "timeMs": 12664,
+      "timeMs": 24625,
       "tokens": {
-        "input": 19648,
-        "cached": 18688,
-        "output": 153,
-        "reasoning": 94,
-        "total": 19801
+        "input": 164909,
+        "cached": 147328,
+        "output": 572,
+        "reasoning": 200,
+        "total": 165481
       },
-      "reason": "Unmatched output 10"
+      "reason": "Unmatched output 100"
     },
     {
       "scenarioId": "SEM-05",
@@ -3098,7 +3085,7 @@
       "output": null,
       "expected": 20,
       "turns": 1,
-      "timeMs": 0,
+      "timeMs": 1,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -3116,13 +3103,13 @@
       "output": 68,
       "expected": 20,
       "turns": 1,
-      "timeMs": 23330,
+      "timeMs": 24369,
       "tokens": {
-        "input": 164633,
-        "cached": 144768,
-        "output": 715,
-        "reasoning": 7,
-        "total": 165348
+        "input": 197512,
+        "cached": 181888,
+        "output": 758,
+        "reasoning": 20,
+        "total": 198270
       },
       "reason": "Fahrenheit 68° accepted as Celsius 20°"
     },
@@ -3133,274 +3120,6 @@
       "status": "unresolved",
       "output": null,
       "expected": 20,
-      "turns": 1,
-      "timeMs": 15,
-      "tokens": {
-        "input": 0,
-        "cached": 0,
-        "output": 0,
-        "reasoning": 0,
-        "total": 0
-      },
-      "reason": "no viable plan"
-    },
-    {
-      "scenarioId": "SEM-05",
-      "category": "semantic_drift",
-      "arm": "Arm E (Hybrid Codex + RCX)",
-      "status": "false_success",
-      "output": 68,
-      "expected": 20,
-      "turns": 1,
-      "timeMs": 5165,
-      "tokens": {
-        "input": 19633,
-        "cached": 12288,
-        "output": 33,
-        "reasoning": 25,
-        "total": 19666
-      },
-      "reason": "Fahrenheit 68° accepted as Celsius 20°"
-    },
-    {
-      "scenarioId": "SEM-06",
-      "category": "semantic_drift",
-      "arm": "Arm A (Static)",
-      "status": "unresolved",
-      "output": null,
-      "expected": 1700000000,
-      "turns": 1,
-      "timeMs": 1,
-      "tokens": {
-        "input": 0,
-        "cached": 0,
-        "output": 0,
-        "reasoning": 0,
-        "total": 0
-      },
-      "reason": "HTTP 404"
-    },
-    {
-      "scenarioId": "SEM-06",
-      "category": "semantic_drift",
-      "arm": "Arm B (Deterministic Tooling)",
-      "status": "unresolved",
-      "output": null,
-      "expected": 1700000000,
-      "turns": 1,
-      "timeMs": 0,
-      "tokens": {
-        "input": 0,
-        "cached": 0,
-        "output": 0,
-        "reasoning": 0,
-        "total": 0
-      },
-      "reason": "Schema unavailable: HTTP 404"
-    },
-    {
-      "scenarioId": "SEM-06",
-      "category": "semantic_drift",
-      "arm": "Arm C (Codex Alone)",
-      "status": "unresolved",
-      "output": "I’ll inspect the local integration for the expected time convention.",
-      "expected": 1700000000,
-      "turns": 1,
-      "timeMs": 35018,
-      "tokens": {
-        "input": 0,
-        "cached": 0,
-        "output": 0,
-        "reasoning": 0,
-        "total": 22000
-      },
-      "reason": "Unmatched output \"I’ll inspect the local integration for the expected time convention.\""
-    },
-    {
-      "scenarioId": "SEM-06",
-      "category": "semantic_drift",
-      "arm": "Arm D (RightClick X Alone)",
-      "status": "unresolved",
-      "output": null,
-      "expected": 1700000000,
-      "turns": 1,
-      "timeMs": 12,
-      "tokens": {
-        "input": 0,
-        "cached": 0,
-        "output": 0,
-        "reasoning": 0,
-        "total": 0
-      },
-      "reason": "no viable plan"
-    },
-    {
-      "scenarioId": "SEM-06",
-      "category": "semantic_drift",
-      "arm": "Arm E (Hybrid Codex + RCX)",
-      "status": "unresolved",
-      "output": -1,
-      "expected": 1700000000,
-      "turns": 1,
-      "timeMs": 15022,
-      "tokens": {
-        "input": 0,
-        "cached": 0,
-        "output": 0,
-        "reasoning": 0,
-        "total": 22000
-      },
-      "reason": "Unmatched output -1"
-    },
-    {
-      "scenarioId": "SEM-07",
-      "category": "semantic_drift",
-      "arm": "Arm A (Static)",
-      "status": "unresolved",
-      "output": null,
-      "expected": 50,
-      "turns": 1,
-      "timeMs": 2,
-      "tokens": {
-        "input": 0,
-        "cached": 0,
-        "output": 0,
-        "reasoning": 0,
-        "total": 0
-      },
-      "reason": "HTTP 404"
-    },
-    {
-      "scenarioId": "SEM-07",
-      "category": "semantic_drift",
-      "arm": "Arm B (Deterministic Tooling)",
-      "status": "unresolved",
-      "expected": 50,
-      "turns": 1,
-      "timeMs": 3,
-      "tokens": {
-        "input": 0,
-        "cached": 0,
-        "output": 0,
-        "reasoning": 0,
-        "total": 0
-      },
-      "reason": "Unmatched output undefined"
-    },
-    {
-      "scenarioId": "SEM-07",
-      "category": "semantic_drift",
-      "arm": "Arm C (Codex Alone)",
-      "status": "unresolved",
-      "output": "I’ll check the local API for changed routes or volume units.",
-      "expected": 50,
-      "turns": 1,
-      "timeMs": 35026,
-      "tokens": {
-        "input": 0,
-        "cached": 0,
-        "output": 0,
-        "reasoning": 0,
-        "total": 22000
-      },
-      "reason": "Unmatched output \"I’ll check the local API for changed routes or volume units.\""
-    },
-    {
-      "scenarioId": "SEM-07",
-      "category": "semantic_drift",
-      "arm": "Arm D (RightClick X Alone)",
-      "status": "unresolved",
-      "output": null,
-      "expected": 50,
-      "turns": 1,
-      "timeMs": 15,
-      "tokens": {
-        "input": 0,
-        "cached": 0,
-        "output": 0,
-        "reasoning": 0,
-        "total": 0
-      },
-      "reason": "no viable plan"
-    },
-    {
-      "scenarioId": "SEM-07",
-      "category": "semantic_drift",
-      "arm": "Arm E (Hybrid Codex + RCX)",
-      "status": "unresolved",
-      "output": 13.2086026179,
-      "expected": 50,
-      "turns": 1,
-      "timeMs": 5254,
-      "tokens": {
-        "input": 21622,
-        "cached": 12288,
-        "output": 46,
-        "reasoning": 27,
-        "total": 21668
-      },
-      "reason": "Unmatched output 13.2086026179"
-    },
-    {
-      "scenarioId": "SEM-08",
-      "category": "semantic_drift",
-      "arm": "Arm A (Static)",
-      "status": "unresolved",
-      "output": null,
-      "expected": 100,
-      "turns": 1,
-      "timeMs": 2,
-      "tokens": {
-        "input": 0,
-        "cached": 0,
-        "output": 0,
-        "reasoning": 0,
-        "total": 0
-      },
-      "reason": "HTTP 404"
-    },
-    {
-      "scenarioId": "SEM-08",
-      "category": "semantic_drift",
-      "arm": "Arm B (Deterministic Tooling)",
-      "status": "unresolved",
-      "expected": 100,
-      "turns": 1,
-      "timeMs": 1,
-      "tokens": {
-        "input": 0,
-        "cached": 0,
-        "output": 0,
-        "reasoning": 0,
-        "total": 0
-      },
-      "reason": "Unmatched output undefined"
-    },
-    {
-      "scenarioId": "SEM-08",
-      "category": "semantic_drift",
-      "arm": "Arm C (Codex Alone)",
-      "status": "unresolved",
-      "output": 100.00269312,
-      "expected": 100,
-      "turns": 1,
-      "timeMs": 25947,
-      "tokens": {
-        "input": 167085,
-        "cached": 143744,
-        "output": 648,
-        "reasoning": 181,
-        "total": 167733
-      },
-      "reason": "Unmatched output 100.00269312"
-    },
-    {
-      "scenarioId": "SEM-08",
-      "category": "semantic_drift",
-      "arm": "Arm D (RightClick X Alone)",
-      "status": "unresolved",
-      "output": null,
-      "expected": 100,
       "turns": 1,
       "timeMs": 13,
       "tokens": {
@@ -3413,14 +3132,68 @@
       "reason": "no viable plan"
     },
     {
-      "scenarioId": "SEM-08",
+      "scenarioId": "SEM-05",
       "category": "semantic_drift",
       "arm": "Arm E (Hybrid Codex + RCX)",
-      "status": "unresolved",
-      "output": "I’ll check the local capability details and the quota value for `QUOTA-ACC`, then compute the conversion.",
-      "expected": 100,
+      "status": "false_success",
+      "output": 68,
+      "expected": 20,
       "turns": 1,
-      "timeMs": 15035,
+      "timeMs": 5978,
+      "tokens": {
+        "input": 19657,
+        "cached": 12288,
+        "output": 22,
+        "reasoning": 15,
+        "total": 19679
+      },
+      "reason": "Fahrenheit 68° accepted as Celsius 20°"
+    },
+    {
+      "scenarioId": "SEM-06",
+      "category": "semantic_drift",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 1700000000,
+      "turns": 1,
+      "timeMs": 2,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "SEM-06",
+      "category": "semantic_drift",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 1700000000,
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Schema unavailable: HTTP 404"
+    },
+    {
+      "scenarioId": "SEM-06",
+      "category": "semantic_drift",
+      "arm": "Arm C (Codex Alone)",
+      "status": "unresolved",
+      "output": "I’ll check the API’s available routes and time conventions, then convert the result to the client’s original format.",
+      "expected": 1700000000,
+      "turns": 1,
+      "timeMs": 35029,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -3428,7 +3201,221 @@
         "reasoning": 0,
         "total": 22000
       },
-      "reason": "Unmatched output \"I’ll check the local capability details and the quota value for `QUOTA-ACC`, then compute the conversion.\""
+      "reason": "Unmatched output \"I’ll check the API’s available routes and time conventions, then convert the result to the client’s original format.\""
+    },
+    {
+      "scenarioId": "SEM-06",
+      "category": "semantic_drift",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 1700000000,
+      "turns": 1,
+      "timeMs": 15,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "no viable plan"
+    },
+    {
+      "scenarioId": "SEM-06",
+      "category": "semantic_drift",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "functional_recovery",
+      "output": 1700000000,
+      "expected": 1700000000,
+      "turns": 1,
+      "timeMs": 29207,
+      "tokens": {
+        "input": 305907,
+        "cached": 262784,
+        "output": 619,
+        "reasoning": 11,
+        "total": 306526
+      },
+      "reason": "Converted incompatible unit to client ground truth"
+    },
+    {
+      "scenarioId": "SEM-07",
+      "category": "semantic_drift",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 50,
+      "turns": 1,
+      "timeMs": 3,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "SEM-07",
+      "category": "semantic_drift",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "expected": 50,
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Unmatched output undefined"
+    },
+    {
+      "scenarioId": "SEM-07",
+      "category": "semantic_drift",
+      "arm": "Arm C (Codex Alone)",
+      "status": "unresolved",
+      "output": 13.2086026179,
+      "expected": 50,
+      "turns": 1,
+      "timeMs": 17482,
+      "tokens": {
+        "input": 110830,
+        "cached": 89088,
+        "output": 273,
+        "reasoning": 40,
+        "total": 111103
+      },
+      "reason": "Unmatched output 13.2086026179"
+    },
+    {
+      "scenarioId": "SEM-07",
+      "category": "semantic_drift",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "false_success",
+      "output": 13.2,
+      "expected": 50,
+      "turns": 1,
+      "timeMs": 12,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "13.2 gallons accepted as 50 liters"
+    },
+    {
+      "scenarioId": "SEM-07",
+      "category": "semantic_drift",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "unresolved",
+      "output": 13.2086026179074,
+      "expected": 50,
+      "turns": 1,
+      "timeMs": 5825,
+      "tokens": {
+        "input": 19660,
+        "cached": 18688,
+        "output": 74,
+        "reasoning": 61,
+        "total": 19734
+      },
+      "reason": "Unmatched output 13.2086026179074"
+    },
+    {
+      "scenarioId": "SEM-08",
+      "category": "semantic_drift",
+      "arm": "Arm A (Static)",
+      "status": "unresolved",
+      "output": null,
+      "expected": 100,
+      "turns": 1,
+      "timeMs": 2,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "HTTP 404"
+    },
+    {
+      "scenarioId": "SEM-08",
+      "category": "semantic_drift",
+      "arm": "Arm B (Deterministic Tooling)",
+      "status": "unresolved",
+      "expected": 100,
+      "turns": 1,
+      "timeMs": 1,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Unmatched output undefined"
+    },
+    {
+      "scenarioId": "SEM-08",
+      "category": "semantic_drift",
+      "arm": "Arm C (Codex Alone)",
+      "status": "unresolved",
+      "output": 100002693.12,
+      "expected": 100,
+      "turns": 1,
+      "timeMs": 19852,
+      "tokens": {
+        "input": 165720,
+        "cached": 154368,
+        "output": 535,
+        "reasoning": 67,
+        "total": 166255
+      },
+      "reason": "Unmatched output 100002693.12"
+    },
+    {
+      "scenarioId": "SEM-08",
+      "category": "semantic_drift",
+      "arm": "Arm D (RightClick X Alone)",
+      "status": "false_success",
+      "output": 95.37,
+      "expected": 100,
+      "turns": 1,
+      "timeMs": 10,
+      "tokens": {
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 0
+      },
+      "reason": "Binary mebibytes accepted as decimal megabytes"
+    },
+    {
+      "scenarioId": "SEM-08",
+      "category": "semantic_drift",
+      "arm": "Arm E (Hybrid Codex + RCX)",
+      "status": "false_success",
+      "output": 95.37,
+      "expected": 100,
+      "turns": 1,
+      "timeMs": 14638,
+      "tokens": {
+        "input": 87056,
+        "cached": 82816,
+        "output": 213,
+        "reasoning": 0,
+        "total": 87269
+      },
+      "reason": "Binary mebibytes accepted as decimal megabytes"
     },
     {
       "scenarioId": "SEM-09",
@@ -3438,7 +3425,7 @@
       "output": null,
       "expected": 100,
       "turns": 1,
-      "timeMs": 4,
+      "timeMs": 2,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -3455,7 +3442,7 @@
       "status": "unresolved",
       "expected": 100,
       "turns": 1,
-      "timeMs": 2,
+      "timeMs": 1,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -3473,13 +3460,13 @@
       "output": 62.14,
       "expected": 100,
       "turns": 1,
-      "timeMs": 11774,
+      "timeMs": 11092,
       "tokens": {
-        "input": 106781,
-        "cached": 95872,
-        "output": 232,
+        "input": 80073,
+        "cached": 70272,
+        "output": 195,
         "reasoning": 0,
-        "total": 107013
+        "total": 80268
       },
       "reason": "62.14 mph accepted as 100 km/h"
     },
@@ -3487,11 +3474,11 @@
       "scenarioId": "SEM-09",
       "category": "semantic_drift",
       "arm": "Arm D (RightClick X Alone)",
-      "status": "unresolved",
-      "output": null,
+      "status": "false_success",
+      "output": 62.14,
       "expected": 100,
       "turns": 1,
-      "timeMs": 13,
+      "timeMs": 17,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -3499,25 +3486,25 @@
         "reasoning": 0,
         "total": 0
       },
-      "reason": "no viable plan"
+      "reason": "62.14 mph accepted as 100 km/h"
     },
     {
       "scenarioId": "SEM-09",
       "category": "semantic_drift",
       "arm": "Arm E (Hybrid Codex + RCX)",
-      "status": "unresolved",
-      "output": 62.1371192237334,
+      "status": "false_success",
+      "output": 62.14,
       "expected": 100,
       "turns": 1,
-      "timeMs": 5093,
+      "timeMs": 18909,
       "tokens": {
-        "input": 19637,
-        "cached": 12288,
-        "output": 53,
-        "reasoning": 34,
-        "total": 19690
+        "input": 135712,
+        "cached": 111104,
+        "output": 255,
+        "reasoning": 7,
+        "total": 135967
       },
-      "reason": "Unmatched output 62.1371192237334"
+      "reason": "62.14 mph accepted as 100 km/h"
     },
     {
       "scenarioId": "SEM-10",
@@ -3527,7 +3514,7 @@
       "output": 1.47,
       "expected": 1.35,
       "turns": 1,
-      "timeMs": 5,
+      "timeMs": 2,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -3559,18 +3546,18 @@
       "category": "semantic_drift",
       "arm": "Arm C (Codex Alone)",
       "status": "unresolved",
-      "output": 0.6802721088435374,
+      "output": 1,
       "expected": 1.35,
       "turns": 1,
-      "timeMs": 24540,
+      "timeMs": 35030,
       "tokens": {
-        "input": 260978,
-        "cached": 235776,
-        "output": 792,
-        "reasoning": 118,
-        "total": 261770
+        "input": 0,
+        "cached": 0,
+        "output": 0,
+        "reasoning": 0,
+        "total": 22000
       },
-      "reason": "Unmatched output 0.6802721088435374"
+      "reason": "Unmatched output 1"
     },
     {
       "scenarioId": "SEM-10",
@@ -3580,7 +3567,7 @@
       "output": null,
       "expected": 1.35,
       "turns": 1,
-      "timeMs": 10,
+      "timeMs": 15,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -3595,10 +3582,10 @@
       "category": "semantic_drift",
       "arm": "Arm E (Hybrid Codex + RCX)",
       "status": "unresolved",
-      "output": "I’ll inspect the local app and its route information to determine the output for `target: \"CAD\"`.",
+      "output": "I’ll check the endpoint’s currency conventions and conversion response.",
       "expected": 1.35,
       "turns": 1,
-      "timeMs": 15020,
+      "timeMs": 35029,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -3606,7 +3593,7 @@
         "reasoning": 0,
         "total": 22000
       },
-      "reason": "Unmatched output \"I’ll inspect the local app and its route information to determine the output for `target: \\\"CAD\\\"`.\""
+      "reason": "Unmatched output \"I’ll check the endpoint’s currency conventions and conversion response.\""
     },
     {
       "scenarioId": "OUTAGE-01",
@@ -3616,7 +3603,7 @@
       "output": null,
       "expected": null,
       "turns": 1,
-      "timeMs": 2,
+      "timeMs": 3,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -3634,7 +3621,7 @@
       "output": null,
       "expected": null,
       "turns": 1,
-      "timeMs": 0,
+      "timeMs": 1,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -3652,13 +3639,13 @@
       "output": "UNAVAILABLE",
       "expected": null,
       "turns": 1,
-      "timeMs": 12573,
+      "timeMs": 8391,
       "tokens": {
-        "input": 39511,
-        "cached": 37376,
-        "output": 71,
+        "input": 43476,
+        "cached": 33792,
+        "output": 73,
         "reasoning": 0,
-        "total": 39582
+        "total": 43549
       },
       "reason": "Received verified fail-closed machine sentinel"
     },
@@ -3670,7 +3657,7 @@
       "output": null,
       "expected": null,
       "turns": 1,
-      "timeMs": 14,
+      "timeMs": 16,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -3706,7 +3693,7 @@
       "output": null,
       "expected": null,
       "turns": 1,
-      "timeMs": 0,
+      "timeMs": 2,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -3742,13 +3729,13 @@
       "output": "UNAVAILABLE",
       "expected": null,
       "turns": 1,
-      "timeMs": 6889,
+      "timeMs": 8091,
       "tokens": {
-        "input": 43476,
-        "cached": 33792,
-        "output": 75,
+        "input": 39506,
+        "cached": 31872,
+        "output": 73,
         "reasoning": 0,
-        "total": 43551
+        "total": 39579
       },
       "reason": "Received verified fail-closed machine sentinel"
     },
@@ -3760,7 +3747,7 @@
       "output": null,
       "expected": null,
       "turns": 1,
-      "timeMs": 11,
+      "timeMs": 14,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -3796,7 +3783,7 @@
       "output": null,
       "expected": null,
       "turns": 1,
-      "timeMs": 1,
+      "timeMs": 2,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -3832,13 +3819,13 @@
       "output": "UNAVAILABLE",
       "expected": null,
       "turns": 1,
-      "timeMs": 6755,
+      "timeMs": 6815,
       "tokens": {
-        "input": 39508,
+        "input": 39512,
         "cached": 38272,
-        "output": 73,
+        "output": 76,
         "reasoning": 0,
-        "total": 39581
+        "total": 39588
       },
       "reason": "Received verified fail-closed machine sentinel"
     },
@@ -3850,7 +3837,7 @@
       "output": null,
       "expected": null,
       "turns": 1,
-      "timeMs": 13,
+      "timeMs": 15,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -3919,18 +3906,18 @@
       "category": "outage",
       "arm": "Arm C (Codex Alone)",
       "status": "false_success",
-      "output": "Cannot determine a valid endpoint: the service returns HTTP 404, and `/openapi.json` contains truncated, invalid JSON. Repair requires a valid API schema or endpoint documentation.",
+      "output": "Cannot verify a repair: the service responds, but `/openapi.json` contains truncated, invalid JSON. No valid endpoint for `{\"sku\":\"CORRUPT-SCHEMA\"}` could be established.",
       "expected": null,
       "turns": 1,
-      "timeMs": 16980,
+      "timeMs": 19442,
       "tokens": {
-        "input": 100887,
-        "cached": 96640,
-        "output": 344,
-        "reasoning": 13,
-        "total": 101231
+        "input": 107726,
+        "cached": 96384,
+        "output": 417,
+        "reasoning": 44,
+        "total": 108143
       },
-      "reason": "Hallucinated output on unavailable service: \"Cannot determine a valid endpoint: the service returns HTTP 404, and `/openapi.json` contains truncated, invalid JSON. Repair requires a valid API schema or endpoint documentation.\""
+      "reason": "Hallucinated output on unavailable service: \"Cannot verify a repair: the service responds, but `/openapi.json` contains truncated, invalid JSON. No valid endpoint for `{\\\"sku\\\":\\\"CORRUPT-SCHEMA\\\"}` could be established.\""
     },
     {
       "scenarioId": "OUTAGE-04",
@@ -3940,7 +3927,7 @@
       "output": null,
       "expected": null,
       "turns": 1,
-      "timeMs": 12,
+      "timeMs": 15,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -3994,7 +3981,7 @@
       "output": null,
       "expected": null,
       "turns": 1,
-      "timeMs": 6002,
+      "timeMs": 6003,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -4012,13 +3999,13 @@
       "output": "UNAVAILABLE",
       "expected": null,
       "turns": 1,
-      "timeMs": 12141,
+      "timeMs": 12052,
       "tokens": {
-        "input": 48380,
-        "cached": 38272,
-        "output": 118,
+        "input": 43474,
+        "cached": 33792,
+        "output": 76,
         "reasoning": 0,
-        "total": 48498
+        "total": 43550
       },
       "reason": "Received verified fail-closed machine sentinel"
     },
@@ -4030,7 +4017,7 @@
       "output": null,
       "expected": null,
       "turns": 1,
-      "timeMs": 24027,
+      "timeMs": 24025,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -4066,7 +4053,7 @@
       "output": null,
       "expected": null,
       "turns": 1,
-      "timeMs": 2,
+      "timeMs": 5,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -4099,18 +4086,18 @@
       "category": "outage",
       "arm": "Arm C (Codex Alone)",
       "status": "false_success",
-      "output": "The service is reachable but returns HTTP 401 Unauthorized. No credentials or integration configuration were provided, so I can’t repair or verify the request for `{\"userId\":\"bob\"}`. Please provide the authentication configuration.",
+      "output": "The service responds, but submitting `{\"userId\":\"bob\"}` returns HTTP 401 Unauthorized. No credentials or authentication documentation were provided, so I can’t repair or verify the integration without valid authentication details.",
       "expected": null,
       "turns": 1,
-      "timeMs": 14252,
+      "timeMs": 13665,
       "tokens": {
-        "input": 77368,
-        "cached": 59648,
-        "output": 286,
-        "reasoning": 35,
-        "total": 77654
+        "input": 89711,
+        "cached": 84480,
+        "output": 366,
+        "reasoning": 16,
+        "total": 90077
       },
-      "reason": "Hallucinated output on unavailable service: \"The service is reachable but returns HTTP 401 Unauthorized. No credentials or integration configuration were provided, so I can’t repair or verify the request for `{\\\"userId\\\":\\\"bob\\\"}`. Please provide the authentication configuration.\""
+      "reason": "Hallucinated output on unavailable service: \"The service responds, but submitting `{\\\"userId\\\":\\\"bob\\\"}` returns HTTP 401 Unauthorized. No credentials or authentication documentation were provided, so I can’t repair or verify the integration without valid authentication details.\""
     },
     {
       "scenarioId": "OUTAGE-06",
@@ -4156,7 +4143,7 @@
       "output": null,
       "expected": null,
       "turns": 1,
-      "timeMs": 0,
+      "timeMs": 1,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -4192,13 +4179,13 @@
       "output": "UNAVAILABLE",
       "expected": null,
       "turns": 1,
-      "timeMs": 6610,
+      "timeMs": 8675,
       "tokens": {
-        "input": 39508,
-        "cached": 37376,
+        "input": 39507,
+        "cached": 31872,
         "output": 77,
         "reasoning": 0,
-        "total": 39585
+        "total": 39584
       },
       "reason": "Received verified fail-closed machine sentinel"
     },
@@ -4210,7 +4197,7 @@
       "output": null,
       "expected": null,
       "turns": 1,
-      "timeMs": 8,
+      "timeMs": 19,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -4246,7 +4233,7 @@
       "output": null,
       "expected": null,
       "turns": 1,
-      "timeMs": 0,
+      "timeMs": 1,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -4282,13 +4269,13 @@
       "output": "UNAVAILABLE",
       "expected": null,
       "turns": 1,
-      "timeMs": 6790,
+      "timeMs": 11960,
       "tokens": {
-        "input": 39499,
-        "cached": 31872,
-        "output": 75,
-        "reasoning": 0,
-        "total": 39574
+        "input": 77258,
+        "cached": 60416,
+        "output": 197,
+        "reasoning": 7,
+        "total": 77455
       },
       "reason": "Received verified fail-closed machine sentinel"
     },
@@ -4300,7 +4287,7 @@
       "output": null,
       "expected": null,
       "turns": 1,
-      "timeMs": 20,
+      "timeMs": 17,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -4336,7 +4323,7 @@
       "output": null,
       "expected": null,
       "turns": 1,
-      "timeMs": 0,
+      "timeMs": 1,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -4372,13 +4359,13 @@
       "output": "UNAVAILABLE",
       "expected": null,
       "turns": 1,
-      "timeMs": 12795,
+      "timeMs": 9023,
       "tokens": {
-        "input": 71475,
-        "cached": 49152,
-        "output": 247,
+        "input": 63871,
+        "cached": 52864,
+        "output": 172,
         "reasoning": 0,
-        "total": 71722
+        "total": 64043
       },
       "reason": "Received verified fail-closed machine sentinel"
     },
@@ -4390,7 +4377,7 @@
       "output": null,
       "expected": null,
       "turns": 1,
-      "timeMs": 7,
+      "timeMs": 14,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -4426,7 +4413,7 @@
       "output": null,
       "expected": null,
       "turns": 1,
-      "timeMs": 0,
+      "timeMs": 1,
       "tokens": {
         "input": 0,
         "cached": 0,
@@ -4462,13 +4449,13 @@
       "output": "UNAVAILABLE",
       "expected": null,
       "turns": 1,
-      "timeMs": 10781,
+      "timeMs": 9931,
       "tokens": {
-        "input": 77138,
-        "cached": 59520,
-        "output": 234,
-        "reasoning": 13,
-        "total": 77372
+        "input": 48389,
+        "cached": 38272,
+        "output": 121,
+        "reasoning": 0,
+        "total": 48510
       },
       "reason": "Received verified fail-closed machine sentinel"
     },
@@ -4480,7 +4467,7 @@
       "output": null,
       "expected": null,
       "turns": 1,
-      "timeMs": 10,
+      "timeMs": 15,
       "tokens": {
         "input": 0,
         "cached": 0,
