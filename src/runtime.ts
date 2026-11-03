@@ -61,6 +61,8 @@ function retainableCliOptions(value: unknown, contract: { allowed: Array<{ flags
 }
 
 export interface Store {
+  /** Host assertion about the backend, not a runtime proof of physical durability. */
+  readonly durability?: "persistent" | "volatile";
   load(): Promise<PersistedState | null>;
   save(state: PersistedState): Promise<void>;
   /** Optional independent view for each runtime. Shared process-local stores use this to keep per-runtime CAS observations. */
@@ -1830,7 +1832,7 @@ export class RightClick {
         if (workflow) { workflow.phase = "checking"; await this.saveWorkflow(workflow); }
         output = r.output;
         steps = r.runs;
-        verification = check(output, cap.invoke.verify ?? []);
+        verification = check(output, cap.invoke.verify ?? [], coerced);
         if (verification.status === "refuted") throw new Error("stored verification refuted");
         const absent = outputCarries(output, cap.invoke.require ?? []).absent;
         if (absent.length) throw new Error(`stored required information missing: ${absent.join(", ")}`);
@@ -1862,7 +1864,7 @@ export class RightClick {
           output = h.output;
         } finally { if (!resumed) this.activeContinuations.delete(continuationId); }
       }
-      const extra = check(output, resumed?.verify ?? resumedWorkflow?.verify ?? opts.verify ?? []);
+      const extra = check(output, resumed?.verify ?? resumedWorkflow?.verify ?? opts.verify ?? [], coerced);
       verification = { status: extra.status === "refuted" ? "refuted" : verification.status === "verified" ? "verified" : verification.status === "checked" || extra.status === "checked" ? "checked" : "unverified", results: [...verification.results, ...extra.results] };
       if (verification.status === "refuted") throw new Error("verification refuted: " + JSON.stringify(extra.results.filter((p) => !p.ok)));
     } catch (e) {
@@ -2370,6 +2372,11 @@ export class RightClick {
   }
 
   /** Pin the checker contract so a saved proof cannot silently become a different test. */
+  /** Operator setup: inspect and pin a checker before configuring a product. Does not execute it. */
+  async pinOutcomeWitnesses(witnesses: OutcomeWitness[]): Promise<OutcomeWitness[]> {
+    return this.pinWitnesses(structuredClone(witnesses));
+  }
+
   private async pinWitnesses(witnesses: OutcomeWitness[]): Promise<OutcomeWitness[]> {
     if (!Array.isArray(witnesses) || witnesses.length > 16) throw new Error("witnesses must be an array of at most 16 checks");
     return Promise.all(witnesses.map(async (w) => {
@@ -3035,8 +3042,12 @@ export class RightClick {
     const { plan: p, types, options: opts, anchors, fixed, origins, witnesses, require } = c;
     const titles = (plan: Plan) => plan.steps.map(s => this.graph.get(s.capability)!.title + (s.bindings.some(b => b.each) ? " (each)" : ""));
     let lastWitnesses: WitnessResult[] = [];
-    let verification: RunRecord["verification"] = check(r.output, opts.verify ?? []);
-    if (verification.status === "refuted") throw new StepError(p.steps[p.steps.length - 1].capability, `verification refuted: ${JSON.stringify(verification.results.filter((x) => !x.ok))}`);
+    let verification: RunRecord["verification"] = check(r.output, opts.verify ?? [], values);
+    if (verification.status === "refuted") {
+      result.executed = { summary: p.summary, titles: titles(p), output: null, status: "failed", verification,
+        runs: r.runs, attempts, durationMs: performance.now() - t0, witnesses: [], error: "candidate outcome checks refuted" };
+      return result;
+    }
     lastWitnesses = await this.checkWitnesses(witnesses, values, r.output, r.runs, net,
       c.plan.steps.map(s => this.graph.get(s.capability)!.provider));
     observeWitnesses(lastWitnesses);

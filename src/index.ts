@@ -1,4 +1,5 @@
 export { RightClick, VERSION, type RuntimeOptions, type RunRecord, type ComposeResult, type Store, type PersistedState } from "./runtime.ts";
+export { VerifiedReconciliation, reconciliationWitness, verifyReconciliation, type ReconciliationContract, type ReconciliationOptions, type ReconciliationInput, type ReconciliationResult, type MoneyObservation } from "./reconciliation.ts";
 export { RecoveringWorkflow, type RecoveryContract, type RecoveryResult, type FallbackAgent, type FallbackLimits, type RepairContext, type RepairProposal, type AgentUsage } from "./recovery.ts";
 export { UNITS, unitType, type SemanticEvidence, establishedSemantics } from "./core/units.ts";
 export { decodeState, encodeState, STATE_FORMAT, STATE_REQUIREMENTS } from "./core/state-format.ts";

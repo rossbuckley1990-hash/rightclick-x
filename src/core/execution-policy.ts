@@ -4,6 +4,7 @@ import { egressOf } from "./planner.ts";
 import type { Capability, Risk } from "./types.ts";
 
 export interface ExecutionPolicy {
+  allowedInvocations?: Capability["invoke"]["kind"][];
   /** Omitted = unrestricted; [] = none. All configured allowlists intersect. */
   allowedRisks?: Risk[];
   allowedCapabilities?: string[];
@@ -14,7 +15,7 @@ export interface ExecutionPolicy {
 }
 
 const risks = ["read", "write", "external", "destructive"];
-const keys = ["allowedRisks", "allowedCapabilities", "deniedCapabilities", "allowedProviders", "allowedOrigins"];
+const keys = ["allowedInvocations", "allowedRisks", "allowedCapabilities", "deniedCapabilities", "allowedProviders", "allowedOrigins"];
 
 export function parseExecutionPolicy(value: unknown): ExecutionPolicy {
   if (value === undefined) return {};
@@ -25,6 +26,7 @@ export function parseExecutionPolicy(value: unknown): ExecutionPolicy {
     if (!keys.includes(key)) return bad(`unknown field ${key}`);
     if (!Array.isArray(v) || v.some((x) => typeof x !== "string" || !x.trim() || x !== x.trim())) return bad(`${key} must be an array of nonempty strings`);
     if (key === "allowedRisks" && v.some((x) => !risks.includes(x))) return bad("unknown risk");
+    if (key === "allowedInvocations" && v.some(x => !["http", "graphql", "composite", "goal", "builtin", "mcp", "peer", "platform", "cli"].includes(x))) return bad("unknown invocation kind");
     if (key === "allowedOrigins") for (const x of v) {
       let url: URL;
       try { url = new URL(x); } catch { return bad(`invalid origin ${x}`); }
@@ -69,6 +71,7 @@ export function assessExecution(c: Capability, graph: CapabilityGraph, policy: E
   };
   const reasons: string[] = [];
   const risk = consequentialRisks(c);
+  if (policy.allowedInvocations && !policy.allowedInvocations.includes(c.invoke.kind)) reasons.push("invocation kind outside allowedInvocations");
   // Aggregate composite egress from the bounded traversal below, not an unbounded second walk.
   let origins: string[] | "anywhere" = c.invoke.kind === "composite" ? [] : egressOf(c, graph);
   // Host-injected cloud bindings do not use Net. We cannot infer or enforce their destinations.

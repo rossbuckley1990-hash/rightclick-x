@@ -103,6 +103,7 @@ export async function serveStdio(rc: RightClick): Promise<void> {
  * Each runtime receives a private CAS view. Neither restarts, other processes,
  * nor independent backend objects share state. Do not use for cross-process authority. */
 export class ProcessMemoryStore implements Store {
+  readonly durability = "volatile" as const;
   private state: PersistedState | null = null;
   private version = 0;
   private owner: object | undefined;
@@ -172,6 +173,7 @@ export class ProcessMemoryStore implements Store {
 }
 
 export class FileStore implements Store {
+  readonly durability = "persistent" as const;
   private file: string;
   private tail: Promise<void> = Promise.resolve();
   private lastSave: Promise<void> = Promise.resolve();
