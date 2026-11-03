@@ -1,0 +1,31 @@
+RECOVERY_DIAGNOSTIC {"status":"unresolved","reason":"retained outcome not established; no automatic replay or fallback","route":"retained","durable":false,"evidence":{"runId":"run_mw1a67z0_1_ae877a83-a72e-4bff-9162-43ca232e5f5f","capability":"goal:settlement-reconciliation-742b98685cbae718","provider":"goal:published","title":"settlement-reconciliation-742b98685cbae718","status":"failed","reuse":{"id":"goal:settlement-reconciliation-742b98685cbae718","invoke":{"tool":"context_run","args":{"id":"goal:settlement-reconciliation-742b98685cbae718"}},"storage":"store-configured","restrictions":{"origins":["http://127.0.0.1:52675","http://127.0.0.1:52676"],"risks":["read"],"through":["graphql:127-0-0-1-52675-graphql:query:settlementObservation"],"require":[],"maxSteps":3},"note":"This definition is already saved in runtime state. Supply its inputs to context_run; republishing replaces the definition unless preserveExisting:true is used. A configured store is not proof of a successful durable write. These saved restrictions supplement current operator policy; stored checks still apply. Retention does not imply authority or successful execution."},"error":"state conflict: goal execution or publication holds the file lock","startedAt":"2026-11-03T22:49:57.468Z","durationMs":0.6,"verification":{"status":"refuted","results":[]},"receipt":{"runId":"run_mw1a67z0_1_ae877a83-a72e-4bff-9162-43ca232e5f5f","capability":"goal:settlement-reconciliation-742b98685cbae718","provider":"goal:published","startedAt":"2026-11-03T22:49:57.468Z","durationMs":0.6,"status":"failed","verification":"refuted","seq":7,"inputDigest":"f7dcdff726fef29934fe88fcbcb4b47054a722ed7119d70c28c27e3c8f26ebca","outputDigest":"553de4950f86b2b5c1b92915681584401bd71ae5a9e8ebb92f648abcbebb428e","prev":"67a6a44d5ff9942ac6e8218db3abbd5489be4f5d4ce12d93478e8848ba74d739","hash":"5382b8551e9b00768c36b16c6603f3df0a5b4a6afcd298583a5f321730fd915f"}},"measurements":{"elapsedMs":12.116083000000003,"fallbackCalls":0,"contextBytes":0,"proposalBytes":0,"usage":null,"mcpBytes":null,"modelCost":"not-invoked"}}
+✖ a real REST removal and GraphQL discovery preserves independent checks (188.981833ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 584.833375
+
+✖ failing tests:
+
+test at test/reconciliation.test.ts:51:1
+✖ a real REST removal and GraphQL discovery preserves independent checks (188.981833ms)
+  AssertionError [ERR_ASSERTION]: {"outcome":"UNRESOLVED/UNVERIFIED","state":"unverified","explanation":"retained outcome not established; no automatic replay or fallback","durable":false,"failedChecks":[],"route":"retained","measurements":{"elapsedMs":12.116083000000003,"fallbackCalls":0,"contextBytes":0,"proposalBytes":0,"usage":null,"mcpBytes":null,"modelCost":"not-invoked"}}
+  + actual - expected
+  
+  + 'UNRESOLVED/UNVERIFIED'
+  - 'VERIFIED MATCH'
+  
+      at TestContext.<anonymous> (file:///Users/ross/Documents/Codex/2026-11-03/files-pasted-by-the-user-actenon/work/rightclick-x/test/reconciliation.test.ts:58:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'UNRESOLVED/UNVERIFIED',
+    expected: 'VERIFIED MATCH',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

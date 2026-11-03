@@ -1,0 +1,273 @@
+✖ read-only product distinguishes match and mismatch, then reuses on a fresh runtime (114.38775ms)
+✖ reconciliation refuses amount without publication or write dispatch (22.622916ms)
+✖ reconciliation refuses currency without publication or write dispatch (19.396292ms)
+✖ reconciliation refuses identity without publication or write dispatch (19.962ms)
+✖ reconciliation refuses period without publication or write dispatch (21.757ms)
+✖ reconciliation refuses precision without publication or write dispatch (21.050042ms)
+✖ reconciliation refuses units without publication or write dispatch (20.686708ms)
+✖ reconciliation refuses basis without publication or write dispatch (17.862791ms)
+✖ reconciliation refuses checker-drift without publication or write dispatch (15.983917ms)
+✖ reconciliation refuses rate-limit without publication or write dispatch (20.714292ms)
+✖ reconciliation refuses loss without publication or write dispatch (22.157792ms)
+✖ reconciliation refuses pending without publication or write dispatch (17.84725ms)
+✖ a real REST removal and GraphQL discovery preserves independent checks (21.564459ms)
+✖ a changed checker cannot be silently repinned on an existing goal (17.732666ms)
+✔ missing pins, volatile storage and a same-origin checker fail admission (5.8765ms)
+✔ publication failure does not claim a durable reconciliation (16.163541ms)
+✔ the shared oracle rejects matching wrong identities and fractional or unsafe integers (0.292084ms)
+ℹ tests 17
+ℹ suites 0
+ℹ pass 3
+ℹ fail 14
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 635.024708
+
+✖ failing tests:
+
+test at test/reconciliation.test.ts:21:1
+✖ read-only product distinguishes match and mismatch, then reuses on a fresh runtime (114.38775ms)
+  AssertionError [ERR_ASSERTION]: {"outcome":"UNRESOLVED/UNVERIFIED","state":"contradicted","explanation":"business outcome not independently established; no replay or promotion","durable":false,"route":"deterministic","measurements":{"elapsedMs":49.300208,"fallbackCalls":0,"contextBytes":0,"proposalBytes":0,"usage":null,"mcpBytes":null,"modelCost":"not-invoked"}}
+  + actual - expected
+  
+  + 'UNRESOLVED/UNVERIFIED'
+  - 'VERIFIED MATCH'
+  
+      at TestContext.<anonymous> (file:///Users/ross/Documents/Codex/2026-11-03/files-pasted-by-the-user-actenon/work/rightclick-x/test/reconciliation.test.ts:24:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'UNRESOLVED/UNVERIFIED',
+    expected: 'VERIFIED MATCH',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/reconciliation.test.ts:36:3
+✖ reconciliation refuses amount without publication or write dispatch (22.622916ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  16 !== 0
+  
+      at TestContext.<anonymous> (file:///Users/ross/Documents/Codex/2026-11-03/files-pasted-by-the-user-actenon/work/rightclick-x/test/reconciliation.test.ts:43:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 16,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/reconciliation.test.ts:36:3
+✖ reconciliation refuses currency without publication or write dispatch (19.396292ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  16 !== 0
+  
+      at TestContext.<anonymous> (file:///Users/ross/Documents/Codex/2026-11-03/files-pasted-by-the-user-actenon/work/rightclick-x/test/reconciliation.test.ts:43:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 16,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/reconciliation.test.ts:36:3
+✖ reconciliation refuses identity without publication or write dispatch (19.962ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  16 !== 0
+  
+      at TestContext.<anonymous> (file:///Users/ross/Documents/Codex/2026-11-03/files-pasted-by-the-user-actenon/work/rightclick-x/test/reconciliation.test.ts:43:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 16,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/reconciliation.test.ts:36:3
+✖ reconciliation refuses period without publication or write dispatch (21.757ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  16 !== 0
+  
+      at TestContext.<anonymous> (file:///Users/ross/Documents/Codex/2026-11-03/files-pasted-by-the-user-actenon/work/rightclick-x/test/reconciliation.test.ts:43:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 16,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/reconciliation.test.ts:36:3
+✖ reconciliation refuses precision without publication or write dispatch (21.050042ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  16 !== 0
+  
+      at TestContext.<anonymous> (file:///Users/ross/Documents/Codex/2026-11-03/files-pasted-by-the-user-actenon/work/rightclick-x/test/reconciliation.test.ts:43:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 16,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/reconciliation.test.ts:36:3
+✖ reconciliation refuses units without publication or write dispatch (20.686708ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  16 !== 0
+  
+      at TestContext.<anonymous> (file:///Users/ross/Documents/Codex/2026-11-03/files-pasted-by-the-user-actenon/work/rightclick-x/test/reconciliation.test.ts:43:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 16,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/reconciliation.test.ts:36:3
+✖ reconciliation refuses basis without publication or write dispatch (17.862791ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  16 !== 0
+  
+      at TestContext.<anonymous> (file:///Users/ross/Documents/Codex/2026-11-03/files-pasted-by-the-user-actenon/work/rightclick-x/test/reconciliation.test.ts:43:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 16,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/reconciliation.test.ts:36:3
+✖ reconciliation refuses checker-drift without publication or write dispatch (15.983917ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  16 !== 0
+  
+      at TestContext.<anonymous> (file:///Users/ross/Documents/Codex/2026-11-03/files-pasted-by-the-user-actenon/work/rightclick-x/test/reconciliation.test.ts:43:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 16,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/reconciliation.test.ts:36:3
+✖ reconciliation refuses rate-limit without publication or write dispatch (20.714292ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  16 !== 0
+  
+      at TestContext.<anonymous> (file:///Users/ross/Documents/Codex/2026-11-03/files-pasted-by-the-user-actenon/work/rightclick-x/test/reconciliation.test.ts:43:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 16,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/reconciliation.test.ts:36:3
+✖ reconciliation refuses loss without publication or write dispatch (22.157792ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  16 !== 0
+  
+      at TestContext.<anonymous> (file:///Users/ross/Documents/Codex/2026-11-03/files-pasted-by-the-user-actenon/work/rightclick-x/test/reconciliation.test.ts:43:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 16,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/reconciliation.test.ts:36:3
+✖ reconciliation refuses pending without publication or write dispatch (17.84725ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'contradicted'
+  - 'pending'
+  
+      at TestContext.<anonymous> (file:///Users/ross/Documents/Codex/2026-11-03/files-pasted-by-the-user-actenon/work/rightclick-x/test/reconciliation.test.ts:42:37)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'contradicted',
+    expected: 'pending',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/reconciliation.test.ts:50:1
+✖ a real REST removal and GraphQL discovery preserves independent checks (21.564459ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'UNRESOLVED/UNVERIFIED'
+  - 'VERIFIED MATCH'
+  
+      at TestContext.<anonymous> (file:///Users/ross/Documents/Codex/2026-11-03/files-pasted-by-the-user-actenon/work/rightclick-x/test/reconciliation.test.ts:52:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'UNRESOLVED/UNVERIFIED',
+    expected: 'VERIFIED MATCH',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/reconciliation.test.ts:61:1
+✖ a changed checker cannot be silently repinned on an existing goal (17.732666ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'contradicted'
+  - 'verified'
+  
+      at TestContext.<anonymous> (file:///Users/ross/Documents/Codex/2026-11-03/files-pasted-by-the-user-actenon/work/rightclick-x/test/reconciliation.test.ts:63:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'contradicted',
+    expected: 'verified',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

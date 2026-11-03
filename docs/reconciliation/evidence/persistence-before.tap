@@ -1,0 +1,28 @@
+✖ a completed product call drains scheduled persistence before another owner starts (161.689333ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 332.424833
+
+✖ failing tests:
+
+test at test/reconciliation.test.ts:120:1
+✖ a completed product call drains scheduled persistence before another owner starts (161.689333ms)
+  AssertionError [ERR_ASSERTION]: no background writer may outlive the reported completed transaction
+  
+  7 !== 6
+  
+      at TestContext.<anonymous> (file:///Users/ross/Documents/Codex/2026-11-03/files-pasted-by-the-user-actenon/work/rightclick-x/test/reconciliation.test.ts:129:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 7,
+    expected: 6,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

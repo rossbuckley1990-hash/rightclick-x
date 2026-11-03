@@ -1,0 +1,898 @@
+{
+  "schema": "rcx-readonly-development@1",
+  "source": "ebfbf857d5189db44d3043c284c4e89b9e8dcba1",
+  "worktreePatchHash": "596d879e2740781a32a616438f08614f264ebe5df09e309bafb8e56ea394eb21",
+  "frozenAuditSource": "ebfbf857d5189db44d3043c284c4e89b9e8dcba1",
+  "failure": null,
+  "elapsedMs": 4382.890458,
+  "businessTablesUnchanged": true,
+  "calls": [
+    {
+      "service": "checker",
+      "method": "GET",
+      "path": "/check",
+      "queryOnly": 0,
+      "count": 13
+    },
+    {
+      "service": "checker",
+      "method": "GET",
+      "path": "/openapi.json",
+      "queryOnly": 0,
+      "count": 17
+    },
+    {
+      "service": "gateway",
+      "method": "GET",
+      "path": "/",
+      "queryOnly": 0,
+      "count": 16
+    },
+    {
+      "service": "gateway",
+      "method": "GET",
+      "path": "/.well-known/api-catalog",
+      "queryOnly": 0,
+      "count": 16
+    },
+    {
+      "service": "gateway",
+      "method": "GET",
+      "path": "/.well-known/openapi.json",
+      "queryOnly": 0,
+      "count": 16
+    },
+    {
+      "service": "gateway",
+      "method": "GET",
+      "path": "/.well-known/rightclick.json",
+      "queryOnly": 0,
+      "count": 16
+    },
+    {
+      "service": "gateway",
+      "method": "GET",
+      "path": "/api/openapi.json",
+      "queryOnly": 0,
+      "count": 16
+    },
+    {
+      "service": "gateway",
+      "method": "GET",
+      "path": "/graphql",
+      "queryOnly": 0,
+      "count": 16
+    },
+    {
+      "service": "gateway",
+      "method": "GET",
+      "path": "/mcp",
+      "queryOnly": 0,
+      "count": 16
+    },
+    {
+      "service": "gateway",
+      "method": "GET",
+      "path": "/openapi.json",
+      "queryOnly": 0,
+      "count": 16
+    },
+    {
+      "service": "gateway",
+      "method": "GET",
+      "path": "/swagger.json",
+      "queryOnly": 0,
+      "count": 16
+    },
+    {
+      "service": "gateway",
+      "method": "GET",
+      "path": "/v1/settlements",
+      "queryOnly": 0,
+      "count": 1
+    },
+    {
+      "service": "gateway",
+      "method": "POST",
+      "path": "/graphql",
+      "queryOnly": 1,
+      "count": 35
+    }
+  ],
+  "events": [
+    {
+      "kind": "operator-setup",
+      "elapsedMs": 16.814082999999997,
+      "rulesDigest": "sha256:dda226011e8b1e882b94fe85bdf0728f1296d43647a3d2624f3eaa135fb5fece",
+      "checkerContract": "sha256:a62294b4bb8c473928adf1ee222dcce299585407b2f5262db909c130e4ff3673",
+      "humanSetupMinutes": null,
+      "reason": "automated fixture enrollment; checker engineering time was not independently metered"
+    },
+    {
+      "kind": "day-one",
+      "pid": 14153,
+      "mode": "deterministic",
+      "result": {
+        "outcome": "VERIFIED MATCH",
+        "state": "verified",
+        "explanation": "Pinned independent observations agree on identity, period, currency, units and accounting basis. Amounts were compared exactly.",
+        "differenceMinor": "0",
+        "route": "deterministic",
+        "durable": true,
+        "measurements": {
+          "elapsedMs": 37.904250000000005,
+          "fallbackCalls": 0,
+          "contextBytes": 0,
+          "proposalBytes": 0,
+          "usage": null,
+          "mcpBytes": null,
+          "modelCost": "not-invoked"
+        },
+        "evidence": {
+          "contractHash": "52220991baa66e06ea53153a2d1a8bca53f2570dbc73061b5b4edc2244629f0c",
+          "inputHash": "64174ac1d08070e3fff23af56f2c0a09ed5c85faa42e35a60b4c65ac282dd658",
+          "observationHash": "130f0a25a09fe3bb342a356c7d0fd464292d99018c27c3117e4bdb5f83c0e5dd",
+          "checkerContract": "sha256:a62294b4bb8c473928adf1ee222dcce299585407b2f5262db909c130e4ff3673",
+          "rulesDigest": "sha256:dda226011e8b1e882b94fe85bdf0728f1296d43647a3d2624f3eaa135fb5fece",
+          "goal": "goal:settlement-reconciliation-c846b1afc10b9b56",
+          "witnessRun": "run_mw19rljt_3_8b44435c-4a9d-4444-a6f6-1e2431dadf62"
+        }
+      },
+      "measurements": {
+        "elapsedMs": 40.466667,
+        "requests": 13,
+        "requestBytes": 505,
+        "responseBytes": 2423,
+        "discoveryResponseBytes": 1974,
+        "fallbackCalls": 0,
+        "modelTurns": 0,
+        "modelInputTokens": 0,
+        "modelOutputTokens": 0,
+        "inferenceCostUsd": 0,
+        "mcpBytes": 0,
+        "scope": "direct SDK worker; no MCP transport or model invoked",
+        "totalDeliveryCostUsd": null
+      }
+    },
+    {
+      "kind": "independent-fault-process",
+      "removed": [
+        "/v1/settlements",
+        "/openapi.json"
+      ],
+      "introduced": "/graphql"
+    },
+    {
+      "kind": "recovery",
+      "pid": 14155,
+      "mode": "deterministic",
+      "result": {
+        "outcome": "VERIFIED MISMATCH",
+        "state": "verified",
+        "explanation": "Pinned independent observations agree on identity, period, currency, units and accounting basis. Amounts were compared exactly.",
+        "differenceMinor": "51",
+        "route": "deterministic",
+        "durable": true,
+        "measurements": {
+          "elapsedMs": 37.958833,
+          "fallbackCalls": 0,
+          "contextBytes": 0,
+          "proposalBytes": 0,
+          "usage": null,
+          "mcpBytes": null,
+          "modelCost": "not-invoked"
+        },
+        "evidence": {
+          "contractHash": "52220991baa66e06ea53153a2d1a8bca53f2570dbc73061b5b4edc2244629f0c",
+          "inputHash": "ec9d64119ef3a1d757e715f7927da697eba4dc8e5091259b0ee684b3199fce58",
+          "observationHash": "59235b7079fdd2f41de078d81bad8201f409761143b4c887bab533af616a2e8f",
+          "checkerContract": "sha256:a62294b4bb8c473928adf1ee222dcce299585407b2f5262db909c130e4ff3673",
+          "rulesDigest": "sha256:dda226011e8b1e882b94fe85bdf0728f1296d43647a3d2624f3eaa135fb5fece",
+          "goal": "goal:settlement-reconciliation-c846b1afc10b9b56",
+          "witnessRun": "run_mw19rlsv_3_9057b188-dca1-435c-b74d-b28ae324127e"
+        }
+      },
+      "measurements": {
+        "elapsedMs": 42.410917,
+        "requests": 13,
+        "requestBytes": 735,
+        "responseBytes": 2784,
+        "discoveryResponseBytes": 2303,
+        "fallbackCalls": 0,
+        "modelTurns": 0,
+        "modelInputTokens": 0,
+        "modelOutputTokens": 0,
+        "inferenceCostUsd": 0,
+        "mcpBytes": 0,
+        "scope": "direct SDK worker; no MCP transport or model invoked",
+        "totalDeliveryCostUsd": null
+      }
+    },
+    {
+      "kind": "cold-reuse",
+      "pid": 14156,
+      "mode": "deterministic",
+      "result": {
+        "outcome": "VERIFIED MATCH",
+        "state": "verified",
+        "explanation": "Pinned independent observations agree on identity, period, currency, units and accounting basis. Amounts were compared exactly.",
+        "differenceMinor": "0",
+        "route": "retained",
+        "durable": true,
+        "measurements": {
+          "elapsedMs": 38.554709,
+          "fallbackCalls": 0,
+          "contextBytes": 0,
+          "proposalBytes": 0,
+          "usage": null,
+          "mcpBytes": null,
+          "modelCost": "not-invoked"
+        },
+        "evidence": {
+          "contractHash": "52220991baa66e06ea53153a2d1a8bca53f2570dbc73061b5b4edc2244629f0c",
+          "inputHash": "f7dcdff726fef29934fe88fcbcb4b47054a722ed7119d70c28c27e3c8f26ebca",
+          "observationHash": "ba586d943b875d666f674dfd416063ec3fd6bcde60cb189f2e126c84d964ed51",
+          "checkerContract": "sha256:a62294b4bb8c473928adf1ee222dcce299585407b2f5262db909c130e4ff3673",
+          "rulesDigest": "sha256:dda226011e8b1e882b94fe85bdf0728f1296d43647a3d2624f3eaa135fb5fece",
+          "goal": "goal:settlement-reconciliation-c846b1afc10b9b56",
+          "witnessRun": "run_mw19rlze_4_e0786b2c-af01-437c-979e-974d08c1412a"
+        }
+      },
+      "measurements": {
+        "elapsedMs": 43.024208,
+        "requests": 13,
+        "requestBytes": 735,
+        "responseBytes": 2784,
+        "discoveryResponseBytes": 2303,
+        "fallbackCalls": 0,
+        "modelTurns": 0,
+        "modelInputTokens": 0,
+        "modelOutputTokens": 0,
+        "inferenceCostUsd": 0,
+        "mcpBytes": 0,
+        "scope": "direct SDK worker; no MCP transport or model invoked",
+        "totalDeliveryCostUsd": null
+      }
+    },
+    {
+      "kind": "concurrent-readers",
+      "results": [
+        {
+          "pid": 14157,
+          "mode": "deterministic",
+          "result": {
+            "outcome": "UNRESOLVED/UNVERIFIED",
+            "state": "unverified",
+            "explanation": "retained outcome not established; no automatic replay or fallback",
+            "durable": false,
+            "failedChecks": [],
+            "route": "retained",
+            "measurements": {
+              "elapsedMs": 27.613250000000008,
+              "fallbackCalls": 0,
+              "contextBytes": 0,
+              "proposalBytes": 0,
+              "usage": null,
+              "mcpBytes": null,
+              "modelCost": "not-invoked"
+            }
+          },
+          "measurements": {
+            "elapsedMs": 32.372333,
+            "requests": 11,
+            "requestBytes": 505,
+            "responseBytes": 2303,
+            "discoveryResponseBytes": 2303,
+            "fallbackCalls": 0,
+            "modelTurns": 0,
+            "modelInputTokens": 0,
+            "modelOutputTokens": 0,
+            "inferenceCostUsd": 0,
+            "mcpBytes": 0,
+            "scope": "direct SDK worker; no MCP transport or model invoked",
+            "totalDeliveryCostUsd": null
+          }
+        },
+        {
+          "pid": 14158,
+          "mode": "deterministic",
+          "result": {
+            "outcome": "VERIFIED MISMATCH",
+            "state": "verified",
+            "explanation": "Pinned independent observations agree on identity, period, currency, units and accounting basis. Amounts were compared exactly.",
+            "differenceMinor": "51",
+            "route": "retained",
+            "durable": true,
+            "measurements": {
+              "elapsedMs": 42.68979199999998,
+              "fallbackCalls": 0,
+              "contextBytes": 0,
+              "proposalBytes": 0,
+              "usage": null,
+              "mcpBytes": null,
+              "modelCost": "not-invoked"
+            },
+            "evidence": {
+              "contractHash": "52220991baa66e06ea53153a2d1a8bca53f2570dbc73061b5b4edc2244629f0c",
+              "inputHash": "ec9d64119ef3a1d757e715f7927da697eba4dc8e5091259b0ee684b3199fce58",
+              "observationHash": "59235b7079fdd2f41de078d81bad8201f409761143b4c887bab533af616a2e8f",
+              "checkerContract": "sha256:a62294b4bb8c473928adf1ee222dcce299585407b2f5262db909c130e4ff3673",
+              "rulesDigest": "sha256:dda226011e8b1e882b94fe85bdf0728f1296d43647a3d2624f3eaa135fb5fece",
+              "goal": "goal:settlement-reconciliation-c846b1afc10b9b56",
+              "witnessRun": "run_mw19rm6c_4_d5ed2372-1d35-4b83-a42f-6dc28fa882d3"
+            }
+          },
+          "measurements": {
+            "elapsedMs": 47.613792000000004,
+            "requests": 13,
+            "requestBytes": 735,
+            "responseBytes": 2784,
+            "discoveryResponseBytes": 2303,
+            "fallbackCalls": 0,
+            "modelTurns": 0,
+            "modelInputTokens": 0,
+            "modelOutputTokens": 0,
+            "inferenceCostUsd": 0,
+            "mcpBytes": 0,
+            "scope": "direct SDK worker; no MCP transport or model invoked",
+            "totalDeliveryCostUsd": null
+          }
+        }
+      ]
+    },
+    {
+      "kind": "adverse",
+      "fault": "amount",
+      "pid": 14160,
+      "mode": "deterministic",
+      "result": {
+        "outcome": "UNRESOLVED/UNVERIFIED",
+        "state": "contradicted",
+        "explanation": "Independent observation or semantic checks failed; no reconciliation was verified.",
+        "durable": false,
+        "failedChecks": [
+          {
+            "scope": "witness",
+            "path": "secondary",
+            "rule": "exact agreement"
+          }
+        ],
+        "route": "deterministic",
+        "measurements": {
+          "elapsedMs": 37.69633400000001,
+          "fallbackCalls": 0,
+          "contextBytes": 0,
+          "proposalBytes": 0,
+          "usage": null,
+          "mcpBytes": null,
+          "modelCost": "not-invoked"
+        }
+      },
+      "measurements": {
+        "elapsedMs": 40.172959000000006,
+        "requests": 13,
+        "requestBytes": 735,
+        "responseBytes": 2789,
+        "discoveryResponseBytes": 2303,
+        "fallbackCalls": 0,
+        "modelTurns": 0,
+        "modelInputTokens": 0,
+        "modelOutputTokens": 0,
+        "inferenceCostUsd": 0,
+        "mcpBytes": 0,
+        "scope": "direct SDK worker; no MCP transport or model invoked",
+        "totalDeliveryCostUsd": null
+      }
+    },
+    {
+      "kind": "adverse",
+      "fault": "identity",
+      "pid": 14162,
+      "mode": "deterministic",
+      "result": {
+        "outcome": "UNRESOLVED/UNVERIFIED",
+        "state": "contradicted",
+        "explanation": "Independent observation or semantic checks failed; no reconciliation was verified.",
+        "durable": false,
+        "failedChecks": [
+          {
+            "scope": "candidate",
+            "path": "account",
+            "rule": "input_equals"
+          }
+        ],
+        "route": "deterministic",
+        "measurements": {
+          "elapsedMs": 37.145416,
+          "fallbackCalls": 0,
+          "contextBytes": 0,
+          "proposalBytes": 0,
+          "usage": null,
+          "mcpBytes": null,
+          "modelCost": "not-invoked"
+        }
+      },
+      "measurements": {
+        "elapsedMs": 39.619917,
+        "requests": 12,
+        "requestBytes": 735,
+        "responseBytes": 2457,
+        "discoveryResponseBytes": 2303,
+        "fallbackCalls": 0,
+        "modelTurns": 0,
+        "modelInputTokens": 0,
+        "modelOutputTokens": 0,
+        "inferenceCostUsd": 0,
+        "mcpBytes": 0,
+        "scope": "direct SDK worker; no MCP transport or model invoked",
+        "totalDeliveryCostUsd": null
+      }
+    },
+    {
+      "kind": "adverse",
+      "fault": "currency",
+      "pid": 14164,
+      "mode": "deterministic",
+      "result": {
+        "outcome": "UNRESOLVED/UNVERIFIED",
+        "state": "contradicted",
+        "explanation": "Independent observation or semantic checks failed; no reconciliation was verified.",
+        "durable": false,
+        "failedChecks": [
+          {
+            "scope": "candidate",
+            "path": "currency",
+            "rule": "equals"
+          }
+        ],
+        "route": "deterministic",
+        "measurements": {
+          "elapsedMs": 36.308625000000006,
+          "fallbackCalls": 0,
+          "contextBytes": 0,
+          "proposalBytes": 0,
+          "usage": null,
+          "mcpBytes": null,
+          "modelCost": "not-invoked"
+        }
+      },
+      "measurements": {
+        "elapsedMs": 38.74674999999999,
+        "requests": 12,
+        "requestBytes": 735,
+        "responseBytes": 2448,
+        "discoveryResponseBytes": 2303,
+        "fallbackCalls": 0,
+        "modelTurns": 0,
+        "modelInputTokens": 0,
+        "modelOutputTokens": 0,
+        "inferenceCostUsd": 0,
+        "mcpBytes": 0,
+        "scope": "direct SDK worker; no MCP transport or model invoked",
+        "totalDeliveryCostUsd": null
+      }
+    },
+    {
+      "kind": "adverse",
+      "fault": "rate-limit",
+      "pid": 14166,
+      "mode": "deterministic",
+      "result": {
+        "outcome": "UNRESOLVED/UNVERIFIED",
+        "state": "ambiguous",
+        "explanation": "business outcome not independently established; no replay or promotion",
+        "durable": false,
+        "failedChecks": [],
+        "route": "deterministic",
+        "measurements": {
+          "elapsedMs": 35.590875,
+          "fallbackCalls": 0,
+          "contextBytes": 0,
+          "proposalBytes": 0,
+          "usage": null,
+          "mcpBytes": null,
+          "modelCost": "not-invoked"
+        }
+      },
+      "measurements": {
+        "elapsedMs": 38.000416,
+        "requests": 12,
+        "requestBytes": 735,
+        "responseBytes": 2327,
+        "discoveryResponseBytes": 2303,
+        "fallbackCalls": 0,
+        "modelTurns": 0,
+        "modelInputTokens": 0,
+        "modelOutputTokens": 0,
+        "inferenceCostUsd": 0,
+        "mcpBytes": 0,
+        "scope": "direct SDK worker; no MCP transport or model invoked",
+        "totalDeliveryCostUsd": null
+      }
+    },
+    {
+      "kind": "adverse",
+      "fault": "loss",
+      "pid": 14168,
+      "mode": "deterministic",
+      "result": {
+        "outcome": "UNRESOLVED/UNVERIFIED",
+        "state": "ambiguous",
+        "explanation": "business outcome not independently established; no replay or promotion",
+        "durable": false,
+        "failedChecks": [],
+        "route": "deterministic",
+        "measurements": {
+          "elapsedMs": 36.145208,
+          "fallbackCalls": 0,
+          "contextBytes": 0,
+          "proposalBytes": 0,
+          "usage": null,
+          "mcpBytes": null,
+          "modelCost": "not-invoked"
+        }
+      },
+      "measurements": {
+        "elapsedMs": 38.58625000000001,
+        "requests": 12,
+        "requestBytes": 735,
+        "responseBytes": 2303,
+        "discoveryResponseBytes": 2303,
+        "fallbackCalls": 0,
+        "modelTurns": 0,
+        "modelInputTokens": 0,
+        "modelOutputTokens": 0,
+        "inferenceCostUsd": 0,
+        "mcpBytes": 0,
+        "scope": "direct SDK worker; no MCP transport or model invoked",
+        "totalDeliveryCostUsd": null
+      }
+    },
+    {
+      "kind": "adverse",
+      "fault": "pending",
+      "pid": 14264,
+      "mode": "deterministic",
+      "result": {
+        "outcome": "UNRESOLVED/UNVERIFIED",
+        "state": "pending",
+        "explanation": "business outcome not independently established; no replay or promotion",
+        "durable": false,
+        "failedChecks": [],
+        "route": "deterministic",
+        "measurements": {
+          "elapsedMs": 38.57745799999999,
+          "fallbackCalls": 0,
+          "contextBytes": 0,
+          "proposalBytes": 0,
+          "usage": null,
+          "mcpBytes": null,
+          "modelCost": "not-invoked"
+        }
+      },
+      "measurements": {
+        "elapsedMs": 41.276041000000006,
+        "requests": 12,
+        "requestBytes": 735,
+        "responseBytes": 2320,
+        "discoveryResponseBytes": 2303,
+        "fallbackCalls": 0,
+        "modelTurns": 0,
+        "modelInputTokens": 0,
+        "modelOutputTokens": 0,
+        "inferenceCostUsd": 0,
+        "mcpBytes": 0,
+        "scope": "direct SDK worker; no MCP transport or model invoked",
+        "totalDeliveryCostUsd": null
+      }
+    },
+    {
+      "kind": "adverse",
+      "fault": "checker-drift",
+      "pid": 14286,
+      "mode": "deterministic",
+      "result": {
+        "outcome": "UNRESOLVED/UNVERIFIED",
+        "state": "unsupported",
+        "explanation": "recovery failed; inspect local runtime evidence before any retry",
+        "durable": false,
+        "failedChecks": [],
+        "route": "deterministic",
+        "measurements": {
+          "elapsedMs": 25.325333,
+          "fallbackCalls": 0,
+          "contextBytes": 0,
+          "proposalBytes": 0,
+          "usage": null,
+          "mcpBytes": null,
+          "modelCost": "not-invoked"
+        }
+      },
+      "measurements": {
+        "elapsedMs": 27.795457999999996,
+        "requests": 11,
+        "requestBytes": 505,
+        "responseBytes": 2309,
+        "discoveryResponseBytes": 2309,
+        "fallbackCalls": 0,
+        "modelTurns": 0,
+        "modelInputTokens": 0,
+        "modelOutputTokens": 0,
+        "inferenceCostUsd": 0,
+        "mcpBytes": 0,
+        "scope": "direct SDK worker; no MCP transport or model invoked",
+        "totalDeliveryCostUsd": null
+      }
+    }
+  ],
+  "arms": [
+    {
+      "arm": "A-maintained-static",
+      "status": "verified-observations",
+      "outcomes": [
+        {
+          "accountHash": "a5cc66747d0ea57dc5fbba7047a20ac446fda28f338fbaefc9742d26e6e1c642",
+          "valid": true,
+          "differenceMinor": "0"
+        },
+        {
+          "accountHash": "48d4a7fa96d390d6de7b61b47fe3a8a125e6c87bc5e48286ba0812e50c29a40a",
+          "valid": true,
+          "differenceMinor": "51"
+        }
+      ],
+      "elapsedMs": 6.222291000000041,
+      "requests": 4,
+      "requestBytes": 460,
+      "responseBytes": 965,
+      "model": null,
+      "inferenceCostUsd": 0,
+      "humanSetupMinutes": null,
+      "maintenanceMinutes": null,
+      "totalDeliveryCostUsd": null,
+      "scope": "maintained client already supports both published protocols; migration-specific code supplied by engineer"
+    },
+    {
+      "arm": "B-schema-generated",
+      "status": "verified-observations",
+      "outcomes": [
+        {
+          "accountHash": "a5cc66747d0ea57dc5fbba7047a20ac446fda28f338fbaefc9742d26e6e1c642",
+          "valid": true,
+          "differenceMinor": "0"
+        },
+        {
+          "accountHash": "48d4a7fa96d390d6de7b61b47fe3a8a125e6c87bc5e48286ba0812e50c29a40a",
+          "valid": true,
+          "differenceMinor": "51"
+        }
+      ],
+      "elapsedMs": 5.218083000000206,
+      "requests": 5,
+      "requestBytes": 965,
+      "responseBytes": 1972,
+      "model": null,
+      "inferenceCostUsd": 0,
+      "humanSetupMinutes": null,
+      "maintenanceMinutes": null,
+      "totalDeliveryCostUsd": null,
+      "scope": "narrow actual schema-to-client generator; no claim to represent every codegen platform"
+    },
+    {
+      "arm": "C-codex-cli",
+      "status": "NOT ESTABLISHED",
+      "reason": "live CLI control not requested for this replay"
+    },
+    {
+      "arm": "D-rightclick-with-checker",
+      "results": [
+        {
+          "pid": 14334,
+          "mode": "deterministic",
+          "result": {
+            "outcome": "VERIFIED MATCH",
+            "state": "verified",
+            "explanation": "Pinned independent observations agree on identity, period, currency, units and accounting basis. Amounts were compared exactly.",
+            "differenceMinor": "0",
+            "route": "deterministic",
+            "durable": true,
+            "measurements": {
+              "elapsedMs": 41.187292,
+              "fallbackCalls": 0,
+              "contextBytes": 0,
+              "proposalBytes": 0,
+              "usage": null,
+              "mcpBytes": null,
+              "modelCost": "not-invoked"
+            },
+            "evidence": {
+              "contractHash": "52220991baa66e06ea53153a2d1a8bca53f2570dbc73061b5b4edc2244629f0c",
+              "inputHash": "64174ac1d08070e3fff23af56f2c0a09ed5c85faa42e35a60b4c65ac282dd658",
+              "observationHash": "130f0a25a09fe3bb342a356c7d0fd464292d99018c27c3117e4bdb5f83c0e5dd",
+              "checkerContract": "sha256:a62294b4bb8c473928adf1ee222dcce299585407b2f5262db909c130e4ff3673",
+              "rulesDigest": "sha256:dda226011e8b1e882b94fe85bdf0728f1296d43647a3d2624f3eaa135fb5fece",
+              "goal": "goal:settlement-reconciliation-c846b1afc10b9b56",
+              "witnessRun": "run_mw19ro5r_3_f33694c8-2803-4221-ab91-fda888bd5fb5"
+            }
+          },
+          "measurements": {
+            "elapsedMs": 43.844375,
+            "requests": 13,
+            "requestBytes": 735,
+            "responseBytes": 2787,
+            "discoveryResponseBytes": 2303,
+            "fallbackCalls": 0,
+            "modelTurns": 0,
+            "modelInputTokens": 0,
+            "modelOutputTokens": 0,
+            "inferenceCostUsd": 0,
+            "mcpBytes": 0,
+            "scope": "direct SDK worker; no MCP transport or model invoked",
+            "totalDeliveryCostUsd": null
+          }
+        },
+        {
+          "pid": 14350,
+          "mode": "deterministic",
+          "result": {
+            "outcome": "VERIFIED MISMATCH",
+            "state": "verified",
+            "explanation": "Pinned independent observations agree on identity, period, currency, units and accounting basis. Amounts were compared exactly.",
+            "differenceMinor": "51",
+            "route": "retained",
+            "durable": true,
+            "measurements": {
+              "elapsedMs": 38.83133400000001,
+              "fallbackCalls": 0,
+              "contextBytes": 0,
+              "proposalBytes": 0,
+              "usage": null,
+              "mcpBytes": null,
+              "modelCost": "not-invoked"
+            },
+            "evidence": {
+              "contractHash": "52220991baa66e06ea53153a2d1a8bca53f2570dbc73061b5b4edc2244629f0c",
+              "inputHash": "ec9d64119ef3a1d757e715f7927da697eba4dc8e5091259b0ee684b3199fce58",
+              "observationHash": "59235b7079fdd2f41de078d81bad8201f409761143b4c887bab533af616a2e8f",
+              "checkerContract": "sha256:a62294b4bb8c473928adf1ee222dcce299585407b2f5262db909c130e4ff3673",
+              "rulesDigest": "sha256:dda226011e8b1e882b94fe85bdf0728f1296d43647a3d2624f3eaa135fb5fece",
+              "goal": "goal:settlement-reconciliation-c846b1afc10b9b56",
+              "witnessRun": "run_mw19rocd_4_4a30795c-1f90-4334-9f4a-f6af313683b5"
+            }
+          },
+          "measurements": {
+            "elapsedMs": 43.754791999999995,
+            "requests": 13,
+            "requestBytes": 735,
+            "responseBytes": 2784,
+            "discoveryResponseBytes": 2303,
+            "fallbackCalls": 0,
+            "modelTurns": 0,
+            "modelInputTokens": 0,
+            "modelOutputTokens": 0,
+            "inferenceCostUsd": 0,
+            "mcpBytes": 0,
+            "scope": "direct SDK worker; no MCP transport or model invoked",
+            "totalDeliveryCostUsd": null
+          }
+        }
+      ],
+      "modelFallbackSuccess": false,
+      "scope": "deterministic execution; no model proposal used",
+      "responsesGate": "NOT ESTABLISHED"
+    },
+    {
+      "arm": "E-same-checker-fallback-gate",
+      "results": [
+        {
+          "pid": 14355,
+          "mode": "fallback-gate",
+          "result": {
+            "outcome": "VERIFIED MATCH",
+            "state": "verified",
+            "explanation": "Pinned independent observations agree on identity, period, currency, units and accounting basis. Amounts were compared exactly.",
+            "differenceMinor": "0",
+            "route": "deterministic",
+            "durable": true,
+            "measurements": {
+              "elapsedMs": 44.32083299999999,
+              "fallbackCalls": 0,
+              "contextBytes": 0,
+              "proposalBytes": 0,
+              "usage": null,
+              "mcpBytes": null,
+              "modelCost": "not-invoked"
+            },
+            "evidence": {
+              "contractHash": "52220991baa66e06ea53153a2d1a8bca53f2570dbc73061b5b4edc2244629f0c",
+              "inputHash": "64174ac1d08070e3fff23af56f2c0a09ed5c85faa42e35a60b4c65ac282dd658",
+              "observationHash": "130f0a25a09fe3bb342a356c7d0fd464292d99018c27c3117e4bdb5f83c0e5dd",
+              "checkerContract": "sha256:a62294b4bb8c473928adf1ee222dcce299585407b2f5262db909c130e4ff3673",
+              "rulesDigest": "sha256:dda226011e8b1e882b94fe85bdf0728f1296d43647a3d2624f3eaa135fb5fece",
+              "goal": "goal:settlement-reconciliation-c846b1afc10b9b56",
+              "witnessRun": "run_mw19roj2_3_e57a86c7-dbb4-490a-9b26-e7fca0bb3fc5"
+            }
+          },
+          "measurements": {
+            "elapsedMs": 46.979916999999986,
+            "requests": 13,
+            "requestBytes": 735,
+            "responseBytes": 2787,
+            "discoveryResponseBytes": 2303,
+            "fallbackCalls": 0,
+            "modelTurns": 0,
+            "modelInputTokens": 0,
+            "modelOutputTokens": 0,
+            "inferenceCostUsd": 0,
+            "mcpBytes": 0,
+            "scope": "direct SDK worker; no MCP transport or model invoked",
+            "totalDeliveryCostUsd": null
+          }
+        },
+        {
+          "pid": 14373,
+          "mode": "fallback-gate",
+          "result": {
+            "outcome": "VERIFIED MISMATCH",
+            "state": "verified",
+            "explanation": "Pinned independent observations agree on identity, period, currency, units and accounting basis. Amounts were compared exactly.",
+            "differenceMinor": "51",
+            "route": "retained",
+            "durable": true,
+            "measurements": {
+              "elapsedMs": 43.84958300000001,
+              "fallbackCalls": 0,
+              "contextBytes": 0,
+              "proposalBytes": 0,
+              "usage": null,
+              "mcpBytes": null,
+              "modelCost": "not-invoked"
+            },
+            "evidence": {
+              "contractHash": "52220991baa66e06ea53153a2d1a8bca53f2570dbc73061b5b4edc2244629f0c",
+              "inputHash": "ec9d64119ef3a1d757e715f7927da697eba4dc8e5091259b0ee684b3199fce58",
+              "observationHash": "59235b7079fdd2f41de078d81bad8201f409761143b4c887bab533af616a2e8f",
+              "checkerContract": "sha256:a62294b4bb8c473928adf1ee222dcce299585407b2f5262db909c130e4ff3673",
+              "rulesDigest": "sha256:dda226011e8b1e882b94fe85bdf0728f1296d43647a3d2624f3eaa135fb5fece",
+              "goal": "goal:settlement-reconciliation-c846b1afc10b9b56",
+              "witnessRun": "run_mw19roq2_4_a8cf9306-7fd4-466b-8f25-c8841aca107b"
+            }
+          },
+          "measurements": {
+            "elapsedMs": 48.56033400000001,
+            "requests": 13,
+            "requestBytes": 735,
+            "responseBytes": 2784,
+            "discoveryResponseBytes": 2303,
+            "fallbackCalls": 0,
+            "modelTurns": 0,
+            "modelInputTokens": 0,
+            "modelOutputTokens": 0,
+            "inferenceCostUsd": 0,
+            "mcpBytes": 0,
+            "scope": "direct SDK worker; no MCP transport or model invoked",
+            "totalDeliveryCostUsd": null
+          }
+        }
+      ],
+      "modelFallbackSuccess": false,
+      "scope": "deterministic execution; no model proposal used",
+      "responsesGate": "NOT ESTABLISHED"
+    }
+  ],
+  "directResponsesApi": {
+    "status": "NOT ESTABLISHED",
+    "environmentKeyPresent": false,
+    "requestCount": 0
+  },
+  "economics": {
+    "engineeringTokens": null,
+    "engineeringCostUsd": null,
+    "humanSetupMinutes": null,
+    "avoidedInterventionMinutes": null,
+    "totalCostUsd": null,
+    "reason": "desktop engineering usage and labour not metered; controlled fixture has no customer savings evidence"
+  },
+  "rawCliEvidenceDirectory": "/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/rcx-reconciliation-KvszXt/codex-control",
+  "independentHeldOut": false
+}

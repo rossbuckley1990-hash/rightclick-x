@@ -56,3 +56,5 @@ RCX_RECONCILIATION_TARGET=/absolute/path/to/324c308-checkout node --test --test-
 ```
 
 A report-writer failure was also preserved: hashing an unrestricted `git diff` overflowed its buffer after existing test commands regenerated large evidence files. New test outputs were copied aside and the historical tracked files restored byte-for-byte. Source identities now hash actual implementation files (including untracked source), exclude generated evidence, and are compared before and after an evaluation. A regression checks that multi-megabyte generated output cannot break source fingerprinting.
+
+A final unthrottled local suite run also hit the existing discovery-stream test's **50 ms** transport deadline while other test files were running. Its unchanged source passed all three isolated checks. The failure is preserved as `review-head-unthrottled-sse-timeout.log`; the complete suite is also run with `--test-concurrency=4`. No test deadline, oracle or assertion was changed to obtain a pass. Treat this as a recorded timing sensitivity, not a new SSE-parser diagnosis.
