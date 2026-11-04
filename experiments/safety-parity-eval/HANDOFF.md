@@ -16,21 +16,21 @@ competitor that has them (see [prior evidence](#prior-evidence-and-its-limits)).
 
 | Item | Identifier |
 |---|---|
-| Source freeze commit | `7c852f4588d564ac72ae73ca8e406f6492bde01b` (branch `review/autonomous-capability-acquisition`, PR #54) |
-| Source freeze tree | `54c8500ff793cef405e865c38ddcf67fe7dd3479` |
+| Source freeze commit | `9bb4063d93012ea82038e691a42290682356b51e` (branch `review/autonomous-capability-acquisition`, PR #55, which follows the merged #54) |
+| Source freeze tree | `3fc7f3e858282b4ee6c78c668a08c0e15b5f364c` |
 | `src/` tree at freeze | `1b8b7dcd68048b870d824c2d9fecf712be392607` |
 | `test/` tree at freeze | `65fe4ff9dd14b981ed25bcc1672e6445079a6d06` |
 | `experiments/north-star-acquisition/evidence/competitive-proof.json` (original, unmodified) | sha256 `faacbf7da087d5460175e2c9e679e71e7e9b32e24e386aaff760c764ccd6ea56` |
-| `experiments/north-star-acquisition/evidence/competitive-proof.cost-audit.json` | sha256 `93d0ede1280cddab1f5909132a226ee28a539ec09aaef17f8944cb97c4d66259` |
-| `experiments/north-star-acquisition/cost-audit.ts` (regenerates the audit) | sha256 `e15c5c3245bbbc7bd6b659ee164f93adc717fa8480f40de0dd9d0b450f4279aa` |
+| `experiments/north-star-acquisition/evidence/competitive-proof.cost-audit.json` | sha256 `913dc0e37a917be7e6e7d8784801c5237424e0e9dbca4209296658f572c7501c` |
+| `experiments/north-star-acquisition/cost-audit.ts` (regenerates the audit) | sha256 `c382ed7eac5e160edef8c9533e3ad6dd22d0a110c978fc0247b336912348f535` |
 | `experiments/north-star-acquisition/competitive-proof.ts` | sha256 `5915b6381b1b41e2d6c89c850210542018aa7cc83c18b3693e612c2ef2c5b34d` |
 
 Check the freeze before starting:
 
 ```bash
-git rev-parse 7c852f4588d564ac72ae73ca8e406f6492bde01b^{tree}   # must print 54c8500f…
-git diff --stat 7c852f4588d564ac72ae73ca8e406f6492bde01b HEAD    # must list only experiments/safety-parity-eval/
-node experiments/north-star-acquisition/cost-audit.ts | shasum -a 256   # must print 93d0ede1…
+git rev-parse 9bb4063d93012ea82038e691a42290682356b51e^{tree}   # must print 3fc7f3e8…
+git diff --stat 9bb4063d93012ea82038e691a42290682356b51e HEAD    # must list only experiments/safety-parity-eval/
+node experiments/north-star-acquisition/cost-audit.ts | shasum -a 256   # must print 913dc0e3…
 ```
 
 Any source change after the freeze voids the evaluation. Restart it against a new freeze.
@@ -47,7 +47,7 @@ Any source change after the freeze voids the evaluation. Restart it against a ne
 - **Sealing.** Before the first run, the evaluator publishes the sha256 of the sealed
   selection file (programs, tasks, oracles, injection schedule, decision thresholds) and
   reveals the file only with the results.
-- **Novelty check.** `git grep -il <program> 7c852f4588d564ac72ae73ca8e406f6492bde01b`
+- **Novelty check.** `git grep -il <program> 9bb4063d93012ea82038e691a42290682356b51e`
   must be empty for every chosen program. This rules out idn2, jq, lychee, sort and anything
   else the repository already exercises. Tasks must not reuse any input from the repository's
   fixtures or evidence.
@@ -155,7 +155,7 @@ Do not use these as results. They are the reason this evaluation is needed.
 
 **Conditional GO** for handing to independent evaluators. It holds only if all six GitHub CI
 jobs (`ci`: macos, linux-bubblewrap, linux-no-sandbox, package; `product-ci`: verify on
-macos-15 and ubuntu-24.04) pass on the commit that adds this file. Outside this directory
+macos-15 and ubuntu-24.04) pass on the commit that last changed this file. Outside this directory
 that commit's tree is identical to the freeze. The run IDs are recorded on its pull request.
 Any failed job means NO-GO.
 
@@ -167,11 +167,36 @@ Locally at the freeze:
 | Linux, no sandbox | 803 | 660 | 143 | 0 |
 | Linux, bubblewrap | 803 | 768 | 35 | 0 |
 
-Both typechecks and the link check are clean. Known caveats, not blockers:
-- the macOS memory-bound test (`C2`) is sampled, not a hard kernel limit, and failed once
-  under heavy load (it passed 3/3 alone and in a full rerun);
-- the real-`idn2` test's earlier failure on GitHub's macOS runner is not yet explained (the
-  test now logs diagnostics).
+Both typechecks and the link check are clean.
+
+On GitHub CI, the previous head 25a53f3 (same `src/` and `test/` trees as the freeze; it
+differs only in the break-even formula of `cost-audit.ts` and in this file) passed all six
+jobs: runs 41925553901 (`ci`) and 41925554045 (`product-ci`).
+
+| CI job | Tests | Pass | Skipped | Fail |
+|---|---|---|---|---|
+| macos | 803 | 802 | 1 | 0 |
+| verify (macos-15) | 803 | 800 | 3 | 0 |
+| linux-bubblewrap | 803 | 768 | 35 | 0 |
+| linux-no-sandbox | 803 | 660 | 143 | 0 |
+| verify (ubuntu-24.04) | 803 | 660 | 143 | 0 |
+| package | links: 0 broken | | | |
+
+Known caveats, not blockers:
+- **Real `idn2` on GitHub's macOS runners skips, visibly.** Diagnostics show the runner's
+  Homebrew libidn2 2.3.8 exits 77 under the C locale ("libiconv required for non-UTF-8
+  character encoding: ASCII") even for ASCII input, so the binary itself cannot run under the
+  C profile there. This explains #54's macOS failure. RightClick's side is asserted with the
+  controlled fixture on every sandboxed host, and with the real binary where it works (it does
+  on a local macOS host).
+- **Sandbox probe under load.** In `verify (macos-15)`, one test process's `hostSandbox()`
+  probe failed and the result was cached, so 2 tests in `test/state-migration-safety.test.ts`
+  skipped as "no host sandbox". For the product this fails closed, which is safe. For the
+  tests it is a silent skip on a supported host: both tests ran in the `macos` job and under
+  bubblewrap. The no-silent-skip guard covers `test/post-breakthrough-hardening.test.ts` only.
+- **Memory bound.** The macOS memory test (`C2`) relies on sampled memory checks, not a hard
+  kernel limit. It failed once locally under heavy load and passed 3/3 alone and in a full
+  rerun.
 
 This verdict covers engineering readiness only. It is never a claim of commercial readiness
 or of economic advantage: the prior evidence shows no advantage over saved scripts.
