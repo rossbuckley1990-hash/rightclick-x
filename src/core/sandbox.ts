@@ -43,6 +43,90 @@ export interface SandboxRun {
   limit?: LimitHit;
   /** The run's private working directory (already deleted); used to normalise outputs that name it. */
   workDir: string;
+  /** Exact stdout length in bytes. `stdout.length` counts characters and differs for multi-byte output. */
+  stdoutBytes?: number;
+  /**
+   * Set when stdout was not valid UTF-8. `stdout` is then lossy — every invalid sequence became
+   * U+FFFD — so it is evidence about the run, never the program's output, and must not be returned
+   * to a caller or compared as though it were what the program printed.
+   */
+  stdoutEncoding?: "unsupported";
+  /** Bounded base64 of the raw stdout bytes, retained only when they are not valid UTF-8. */
+  stdoutBase64?: string;
+}
+
+/** How many raw bytes of an undecodable stdout are retained as evidence. */
+const RAW_EVIDENCE_BYTES = 4096;
+
+/**
+ * The number of trailing bytes that form an incomplete UTF-8 sequence, or 0 when the buffer ends
+ * on a complete character or on a byte that cannot start one. Cutting blindly instead would let an
+ * invalid byte in the middle of a truncated stream be dropped along with the tail, which is the
+ * silent loss this module exists to prevent.
+ */
+function incompleteTail(buf: Buffer): number {
+  let i = buf.length - 1;
+  let continuations = 0;
+  while (i >= 0 && continuations < 3 && (buf[i]! & 0xc0) === 0x80) { i--; continuations++; }
+  if (i < 0) return 0;
+  const lead = buf[i]!;
+  const expected = lead >= 0xf0 ? 3 : lead >= 0xe0 ? 2 : lead >= 0xc0 ? 1 : 0;
+  // A complete sequence is not a truncated tail, and neither is a byte that cannot lead one.
+  return expected && continuations < expected ? continuations + 1 : 0;
+}
+
+/**
+ * Decode a child process's stdout as UTF-8 without silently losing information.
+ *
+ * `Buffer.toString("utf8")` substitutes U+FFFD for every invalid sequence and reports success, so a
+ * program that printed Latin-1 or binary bytes is indistinguishable from one that printed the
+ * replacement character, and the run is reported as completed. Decoding strictly makes the
+ * difference observable instead.
+ *
+ * A truncated stream is treated separately: the sandbox cut it, so an incomplete multi-byte
+ * sequence at the very end is the sandbox's doing rather than the program's. Only a genuine
+ * incomplete trailing sequence is discounted — an invalid byte in the middle of a truncated stream
+ * is still the program's, and is still reported.
+ */
+export function decodeProcessOutput(buf: Buffer, truncated: boolean): { text: string; valid: boolean } {
+  const strict = (b: Buffer) => new TextDecoder("utf-8", { fatal: true }).decode(b);
+  try {
+    return { text: strict(buf), valid: true };
+  } catch {
+    /* not valid UTF-8 as it stands */
+  }
+  if (truncated) {
+    const tail = incompleteTail(buf);
+    if (tail) {
+      try {
+        return { text: strict(buf.subarray(0, buf.length - tail)), valid: true };
+      } catch {
+        /* the invalid bytes are not only the tail the sandbox cut */
+      }
+    }
+  }
+  return { text: buf.toString("utf8"), valid: false };
+}
+
+/**
+ * The per-run sandbox directory is created fresh for every run and deleted when it ends, so a
+ * program that names it prints different bytes for identical behaviour. Naming it is not behaviour.
+ *
+ * It is replaced by this fixed placeholder, which is itself a valid absolute path: normalisation
+ * must not destroy the shape of what the program printed. A token that is not a path turns a
+ * `file://` destination into something that is no longer a URI, and a line-oriented result into
+ * something that can no longer be read as a list, so the volatile part of the output would stop
+ * being typeable at all. The directory is gone by the time anyone reads the result, so no real
+ * location is lost by naming it consistently.
+ */
+export const SANDBOX_PATH_PLACEHOLDER = "/rcx-sandbox";
+
+/** Replace the run's own sandbox directory, and the same path without macOS's `/private` prefix. */
+export function normaliseSandboxPaths(text: string, workDir: string | undefined): string {
+  if (!workDir) return text;
+  return text
+    .split(workDir).join(SANDBOX_PATH_PLACEHOLDER)
+    .split(workDir.replace(/^\/private/, "")).join(SANDBOX_PATH_PLACEHOLDER);
 }
 
 export const DEFAULT_LIMITS: SandboxLimits = { timeoutMs: 5000, maxOutputBytes: 1_000_000, maxMemoryBytes: 512 * 1024 * 1024, maxProcesses: 64, maxFileBytes: 16 * 1024 * 1024 };
@@ -510,7 +594,22 @@ export function makeSandbox(kind: Sandbox["kind"], policy: SandboxPolicy, bwrap 
             /* gone */
           }
           fs.rmSync(work, { recursive: true, force: true });
-          done({ code: limit === "supervision" ? -1 : code, stdout: limit === "supervision" ? "" : out.toString("utf8"), stderr: err.toString("utf8"), timedOut, truncated, durationMs: Date.now() - t0, created, workDir: work, ...(limit ? { limit } : {}) });
+          const decoded = limit === "supervision" ? { text: "", valid: true } : decodeProcessOutput(out, truncated);
+          done({
+            code: limit === "supervision" ? -1 : code,
+            stdout: decoded.text,
+            // stderr is diagnostic text, not a capability's result: it is never returned as output,
+            // so a lossy decode costs readability of an error message, not correctness of a contract.
+            stderr: err.toString("utf8"),
+            timedOut,
+            truncated,
+            durationMs: Date.now() - t0,
+            created,
+            workDir: work,
+            stdoutBytes: out.length,
+            ...(decoded.valid ? {} : { stdoutEncoding: "unsupported" as const, stdoutBase64: out.subarray(0, RAW_EVIDENCE_BYTES).toString("base64") }),
+            ...(limit ? { limit } : {}),
+          });
         };
         p.on("close", finish);
         p.on("error", () => finish(-1));

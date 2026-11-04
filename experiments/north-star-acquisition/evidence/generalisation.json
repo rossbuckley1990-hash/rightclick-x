@@ -1,0 +1,530 @@
+{
+  "startedAt": "2026-11-04T20:45:20.839Z",
+  "positivePrograms": {
+    "jq": {
+      "detail": "9 capabilities from 56 sandboxed runs (stdin; ok exit 0)",
+      "capabilityCount": 9,
+      "defaultInputs": [
+        {
+          "name": "json",
+          "type": "json",
+          "required": true,
+          "description": "Content given on standard input. Supply text to preserve its bytes; objects and arrays are serialized as JSON."
+        }
+      ],
+      "defaultOutputs": [
+        {
+          "name": "",
+          "type": "json",
+          "required": true
+        },
+        {
+          "name": "name",
+          "type": "text",
+          "required": true,
+          "observed": true
+        },
+        {
+          "name": "count",
+          "type": "number",
+          "required": true,
+          "observed": true
+        },
+        {
+          "name": "tags",
+          "type": "list:json",
+          "required": true,
+          "observed": true
+        }
+      ],
+      "supported": true,
+      "sortKeysRun": {
+        "status": "completed",
+        "output": {
+          "a": 2,
+          "m": [
+            3,
+            4
+          ],
+          "z": 1
+        },
+        "matchesExpected": true
+      }
+    },
+    "idn2": {
+      "detail": "2 capabilities from 36 sandboxed runs (stdin, files; ok exit 0)",
+      "capabilityIds": [
+        "cli:idn2:default",
+        "cli:idn2:invoke"
+      ],
+      "supported": true,
+      "normalizeRun": {
+        "status": "completed",
+        "output": [
+          "alpha-host.dev",
+          "bravo-host.io"
+        ],
+        "matchesExpected": true
+      }
+    },
+    "tidy": {
+      "detail": "5 capabilities from 71 sandboxed runs (stdin, files; ok exit 1)",
+      "capabilityIds": [
+        "cli:tidy:default",
+        "cli:tidy:i",
+        "cli:tidy:u",
+        "cli:tidy:asxml",
+        "cli:tidy:invoke"
+      ],
+      "defaultInputs": [
+        {
+          "name": "html",
+          "type": "html",
+          "required": true,
+          "anyText": true,
+          "description": "Content given on standard input. Supply text to preserve its bytes; objects and arrays are serialized as JSON."
+        }
+      ],
+      "defaultOutputs": [
+        {
+          "name": "",
+          "type": "html",
+          "required": true
+        }
+      ],
+      "okExit": [
+        0,
+        1
+      ],
+      "supported": true,
+      "run": {
+        "status": "completed",
+        "outputContainsBody": true
+      }
+    },
+    "ffeval": {
+      "detail": "3 capabilities from 30 sandboxed runs (stdin; ok exit 0)",
+      "capabilityIds": [
+        "cli:ffeval:default",
+        "cli:ffeval:e",
+        "cli:ffeval:invoke"
+      ],
+      "supported": true,
+      "run": {
+        "status": "completed",
+        "output": [
+          "2+3*4 => 14.000000",
+          "sqrt(144) => 12.000000"
+        ],
+        "matchesExpected": true
+      }
+    },
+    "shasum": {
+      "detail": "2 capabilities from 40 sandboxed runs (stdin, files; ok exit 0)",
+      "capabilityIds": [
+        "cli:shasum:default",
+        "cli:shasum:invoke"
+      ],
+      "supported": true,
+      "run": {
+        "status": "completed",
+        "output": "a9993e364706816aba3e25717850c26c9cd0d89d  -",
+        "matchesExpected": true
+      }
+    }
+  },
+  "negativeControls": {
+    "NC1_uninvestigablePrecondition": {
+      "detail": "not investigable here: precond-daemon reports a missing precondition (\"precond-daemon: cannot open /etc/precond-daemon/daemon.conf: No such file or directory\") on every input tried (20 trials)",
+      "promotedCapabilities": 0,
+      "refusedAsMissingPrecondition": true
+    },
+    "NC2_misleadingOrIncompleteDocs": {
+      "sutf": {
+        "detail": "no input channel produced output for sutf (20 trials); offered as a declared interface only (4 documented options)",
+        "capabilityIds": [
+          "cli:sutf:invoke"
+        ],
+        "tags": [
+          "sutf",
+          "declared-interface",
+          "declared-only",
+          "direct-only",
+          "unsupported"
+        ],
+        "markedDeclaredOnlyAndUnsupported": true
+      },
+      "hbView": {
+        "detail": "no input channel produced output for hb-view (20 trials); offered as a declared interface only (11 documented options)",
+        "capabilityIds": [
+          "cli:hb-view:invoke"
+        ],
+        "tags": [
+          "hb-view",
+          "declared-interface",
+          "declared-only",
+          "direct-only",
+          "unsupported"
+        ],
+        "markedDeclaredOnlyAndUnsupported": true,
+        "excludedFromComposer": true,
+        "compositionDiagnostics": [
+          {
+            "capability": "cli:jq:invoke",
+            "reasons": [
+              "its arguments are values only a caller can choose (documented options or literal operands): name it in \"through\" to compose it"
+            ]
+          },
+          {
+            "capability": "cli:jq:stdout",
+            "reasons": [
+              "its arguments are values only a caller can choose (documented options or literal operands): name it in \"through\" to compose it"
+            ]
+          },
+          {
+            "capability": "cli:idn2:invoke",
+            "reasons": [
+              "its arguments are values only a caller can choose (documented options or literal operands): name it in \"through\" to compose it"
+            ]
+          },
+          {
+            "capability": "cli:tidy:invoke",
+            "reasons": [
+              "its arguments are values only a caller can choose (documented options or literal operands): name it in \"through\" to compose it"
+            ]
+          },
+          {
+            "capability": "cli:ffeval:invoke",
+            "reasons": [
+              "its arguments are values only a caller can choose (documented options or literal operands): name it in \"through\" to compose it"
+            ]
+          },
+          {
+            "capability": "cli:shasum:invoke",
+            "reasons": [
+              "its arguments are values only a caller can choose (documented options or literal operands): name it in \"through\" to compose it"
+            ]
+          },
+          {
+            "capability": "cli:sutf:invoke",
+            "reasons": [
+              "its behaviour was investigated but the experiments did not support it: callable directly with its evidence, never chosen by automatic composition"
+            ]
+          },
+          {
+            "capability": "cli:hb-view:invoke",
+            "reasons": [
+              "its behaviour was investigated but the experiments did not support it: callable directly with its evidence, never chosen by automatic composition"
+            ]
+          },
+          {
+            "capability": "cli:hmac256:default",
+            "reasons": [
+              "its behaviour was investigated but the experiments did not support it: callable directly with its evidence, never chosen by automatic composition"
+            ]
+          },
+          {
+            "capability": "cli:hmac256:invoke",
+            "reasons": [
+              "its behaviour was investigated but the experiments did not support it: callable directly with its evidence, never chosen by automatic composition"
+            ]
+          },
+          {
+            "capability": "builtin:quantity.money.usd.minor-to-major",
+            "reasons": [
+              "no available value can fill its required input \"amount\" of type quantity:money:USD:minor; the search state held: input:text"
+            ]
+          },
+          {
+            "capability": "builtin:quantity.money.usd.major-to-minor",
+            "reasons": [
+              "no available value can fill its required input \"amount\" of type quantity:money:USD:major; the search state held: input:text"
+            ]
+          },
+          {
+            "capability": "builtin:quantity.money.eur.minor-to-major",
+            "reasons": [
+              "no available value can fill its required input \"amount\" of type quantity:money:EUR:minor; the search state held: input:text"
+            ]
+          },
+          {
+            "capability": "builtin:quantity.money.eur.major-to-minor",
+            "reasons": [
+              "no available value can fill its required input \"amount\" of type quantity:money:EUR:major; the search state held: input:text"
+            ]
+          },
+          {
+            "capability": "builtin:quantity.money.gbp.minor-to-major",
+            "reasons": [
+              "no available value can fill its required input \"amount\" of type quantity:money:GBP:minor; the search state held: input:text"
+            ]
+          },
+          {
+            "capability": "builtin:quantity.money.gbp.major-to-minor",
+            "reasons": [
+              "no available value can fill its required input \"amount\" of type quantity:money:GBP:major; the search state held: input:text"
+            ]
+          },
+          {
+            "capability": "builtin:web.fetch",
+            "reasons": [
+              "no available value can fill its required input \"url\" of type url; the search state held: input:text"
+            ]
+          },
+          {
+            "capability": "builtin:html.text",
+            "reasons": [
+              "no available value can fill its required input \"html\" of type html; the search state held: input:text"
+            ]
+          },
+          {
+            "capability": "builtin:html.links",
+            "reasons": [
+              "no available value can fill its required input \"html\" of type html; the search state held: input:text"
+            ]
+          },
+          {
+            "capability": "builtin:html.markdown",
+            "reasons": [
+              "no available value can fill its required input \"html\" of type html; the search state held: input:text"
+            ]
+          },
+          {
+            "capability": "builtin:markdown.html",
+            "reasons": [
+              "no available value can fill its required input \"markdown\" of type markdown; the search state held: input:text"
+            ]
+          },
+          {
+            "capability": "builtin:url.domain",
+            "reasons": [
+              "no available value can fill its required input \"url\" of type url; the search state held: input:text"
+            ]
+          },
+          {
+            "capability": "builtin:list.first-url",
+            "reasons": [
+              "no available value can fill its required input \"urls\" of type list:url; the search state held: input:text"
+            ]
+          },
+          {
+            "capability": "builtin:dns.resolve",
+            "reasons": [
+              "no available value can fill its required input \"domain\" of type domain; the search state held: input:text"
+            ]
+          }
+        ]
+      },
+      "hmac256_filenameOnlyVariation": {
+        "detail": "2 capabilities from 26 sandboxed runs (files; ok exit 0)",
+        "tags": [
+          "hmac256",
+          "unsupported",
+          "input-independent-in-samples",
+          "unsupported"
+        ],
+        "markedInputIndependentAndUnsupported": true
+      }
+    },
+    "NC3_noValidOutput": {
+      "detail": "no input channel produced output for llama-gguf (40 trials)",
+      "promotedCapabilities": 0,
+      "zeroCapabilitiesPromoted": true
+    },
+    "NC4_changedExecutable": {
+      "detail": "2 capabilities from 24 sandboxed runs (stdin; ok exit 0)",
+      "beforeChange": {
+        "status": "completed",
+        "output": "hello world\n"
+      },
+      "afterBehaviouralChange": {
+        "status": "failed",
+        "error": "program changed since it was investigated: /tmp/rcx-ns-generalisation/drift-tool (sha256 8b683489b5a3, investigated d7cc62094c79); not run (HTTP 409 equivalent); program behaviour changed since it was investigated (changed meaning); conformance examples no longer match: example 1: expected \"<html><head><title>india lima delta line 1</title></head><bo\", got \"COMPLETELY DIFFERENT OUTPUT\\n\"; example 2: expected \"<!DOCTYPE html>\\n<html>\\n<head><title>alpha delta hotel line 5\", got \"COMPLETELY DIFFERENT OUTPUT\\n\" (HTTP 409 equivalent)",
+        "refused": true
+      }
+    },
+    "NC5_nondeterministicOutput": {
+      "detail": "1 capability from 24 sandboxed runs (stdin, files; ok exit 0)",
+      "tags": [
+        "nondet-tool",
+        "nondet",
+        "tool",
+        "nondet",
+        "tool",
+        "annotate",
+        "input",
+        "with",
+        "random",
+        "nonce",
+        "nondeterministic",
+        "unsupported"
+      ],
+      "markedNondeterministicAndUnsupported": true,
+      "excludedFromAutomaticComposition": true,
+      "excludedEvenWhenAnchored": true,
+      "compositionDiagnostics": [
+        {
+          "capability": "cli:jq:invoke",
+          "reasons": [
+            "its arguments are values only a caller can choose (documented options or literal operands): name it in \"through\" to compose it"
+          ]
+        },
+        {
+          "capability": "cli:jq:stdout",
+          "reasons": [
+            "its arguments are values only a caller can choose (documented options or literal operands): name it in \"through\" to compose it"
+          ]
+        },
+        {
+          "capability": "cli:idn2:invoke",
+          "reasons": [
+            "its arguments are values only a caller can choose (documented options or literal operands): name it in \"through\" to compose it"
+          ]
+        },
+        {
+          "capability": "cli:tidy:invoke",
+          "reasons": [
+            "its arguments are values only a caller can choose (documented options or literal operands): name it in \"through\" to compose it"
+          ]
+        },
+        {
+          "capability": "cli:ffeval:invoke",
+          "reasons": [
+            "its arguments are values only a caller can choose (documented options or literal operands): name it in \"through\" to compose it"
+          ]
+        },
+        {
+          "capability": "cli:shasum:invoke",
+          "reasons": [
+            "its arguments are values only a caller can choose (documented options or literal operands): name it in \"through\" to compose it"
+          ]
+        },
+        {
+          "capability": "cli:sutf:invoke",
+          "reasons": [
+            "its behaviour was investigated but the experiments did not support it: callable directly with its evidence, never chosen by automatic composition"
+          ]
+        },
+        {
+          "capability": "cli:hb-view:invoke",
+          "reasons": [
+            "its behaviour was investigated but the experiments did not support it: callable directly with its evidence, never chosen by automatic composition"
+          ]
+        },
+        {
+          "capability": "cli:hmac256:default",
+          "reasons": [
+            "its behaviour was investigated but the experiments did not support it: callable directly with its evidence, never chosen by automatic composition"
+          ]
+        },
+        {
+          "capability": "cli:hmac256:invoke",
+          "reasons": [
+            "its behaviour was investigated but the experiments did not support it: callable directly with its evidence, never chosen by automatic composition"
+          ]
+        },
+        {
+          "capability": "cli:drift-tool:invoke",
+          "reasons": [
+            "its arguments are values only a caller can choose (documented options or literal operands): name it in \"through\" to compose it"
+          ]
+        },
+        {
+          "capability": "cli:nondet-tool:default",
+          "reasons": [
+            "its behaviour was investigated but the experiments did not support it: callable directly with its evidence, never chosen by automatic composition"
+          ]
+        },
+        {
+          "capability": "builtin:quantity.money.usd.minor-to-major",
+          "reasons": [
+            "no available value can fill its required input \"amount\" of type quantity:money:USD:minor; the search state held: input:text"
+          ]
+        },
+        {
+          "capability": "builtin:quantity.money.usd.major-to-minor",
+          "reasons": [
+            "no available value can fill its required input \"amount\" of type quantity:money:USD:major; the search state held: input:text"
+          ]
+        },
+        {
+          "capability": "builtin:quantity.money.eur.minor-to-major",
+          "reasons": [
+            "no available value can fill its required input \"amount\" of type quantity:money:EUR:minor; the search state held: input:text"
+          ]
+        },
+        {
+          "capability": "builtin:quantity.money.eur.major-to-minor",
+          "reasons": [
+            "no available value can fill its required input \"amount\" of type quantity:money:EUR:major; the search state held: input:text"
+          ]
+        },
+        {
+          "capability": "builtin:quantity.money.gbp.minor-to-major",
+          "reasons": [
+            "no available value can fill its required input \"amount\" of type quantity:money:GBP:minor; the search state held: input:text"
+          ]
+        },
+        {
+          "capability": "builtin:quantity.money.gbp.major-to-minor",
+          "reasons": [
+            "no available value can fill its required input \"amount\" of type quantity:money:GBP:major; the search state held: input:text"
+          ]
+        },
+        {
+          "capability": "builtin:web.fetch",
+          "reasons": [
+            "no available value can fill its required input \"url\" of type url; the search state held: input:text"
+          ]
+        },
+        {
+          "capability": "builtin:html.text",
+          "reasons": [
+            "no available value can fill its required input \"html\" of type html; the search state held: input:text"
+          ]
+        },
+        {
+          "capability": "builtin:html.links",
+          "reasons": [
+            "no available value can fill its required input \"html\" of type html; the search state held: input:text"
+          ]
+        },
+        {
+          "capability": "builtin:html.markdown",
+          "reasons": [
+            "no available value can fill its required input \"html\" of type html; the search state held: input:text"
+          ]
+        },
+        {
+          "capability": "builtin:markdown.html",
+          "reasons": [
+            "no available value can fill its required input \"markdown\" of type markdown; the search state held: input:text"
+          ]
+        },
+        {
+          "capability": "builtin:url.domain",
+          "reasons": [
+            "no available value can fill its required input \"url\" of type url; the search state held: input:text"
+          ]
+        }
+      ]
+    },
+    "NC6_prohibitedFilesystemAndNetwork": {
+      "detail": "2 capabilities from 24 sandboxed runs (stdin; ok exit 0)",
+      "readHomeBlocked": true,
+      "readHomeError": "/tmp/rcx-ns-generalisation/escape-probe exited 1: sandbox blocked home read\n; re-reflected cli:/tmp/rcx-ns-generalisation/escape-probe: no contract change",
+      "writeOutsideSandboxBlocked": true,
+      "writeOutsideError": "/tmp/rcx-ns-generalisation/escape-probe exited 1: sandbox blocked outside write\n; re-reflected cli:/tmp/rcx-ns-generalisation/escape-probe: no contract change"
+    },
+    "NC7_unsupportedBinaryOrNonUtf8": {
+      "iconvIso88591": {
+        "status": "failed",
+        "error": "/usr/bin/iconv printed 11 byte(s) that are not valid UTF-8, so no text result is established: decoding them substitutes U+FFFD for every invalid sequence and would report that as the program's output. The first bytes are retained as base64 in this run's record. This capability's contract is text; a byte-exact channel for it has not been established, so its encoding is reported unsupported rather than approximated.",
+        "explicitlyUnsupportedEncoding": true,
+        "rawBase64Retained": true,
+        "replacementCharsReturned": 0
+      }
+    }
+  },
+  "finishedAt": "2026-11-04T20:45:28.626Z"
+}

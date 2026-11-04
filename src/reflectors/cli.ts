@@ -11,9 +11,9 @@
 // what was observed), unknown. "verified" is never set here: only independent checks set it.
 
 import type { Capability, CliInvoke, Port, Reflection, SemType } from "../core/types.ts";
-import { inferType } from "../core/semantics.ts";
+import { inferType, lineListType } from "../core/semantics.ts";
 export type { CliInvoke };
-import type { Sandbox, SandboxRun } from "../core/sandbox.ts";
+import { normaliseSandboxPaths, SANDBOX_PATH_PLACEHOLDER, type Sandbox, type SandboxRun } from "../core/sandbox.ts";
 import { reportsApplicationError } from "../core/cli-outcome.ts";
 
 export type EvidenceStatus = "declared" | "observed" | "inferred" | "experimentally-supported" | "verified" | "contradicted" | "unknown";
@@ -29,7 +29,7 @@ export interface Claim {
 export interface Investigation {
   program: { bin: string; name: string; sha256: string; size: number; version?: string; description?: string };
   sandbox: string;
-  runs: Array<{ id: number; purpose: string; args: string[]; stdinBytes: number; files: string[]; code: number | null; timedOut: boolean; stdoutBytes: number; stderrPreview: string; stdoutPreview: string; created: string[]; ms: number }>;
+  runs: Array<{ id: number; purpose: string; args: string[]; stdinBytes: number; files: string[]; code: number | null; timedOut: boolean; stdoutBytes: number; stderrPreview: string; stdoutPreview: string; created: string[]; ms: number; stdoutEncoding?: "unsupported" }>;
   options: Array<{ flags: string[]; arg?: string; optionalArg?: string; description: string }>;
   operands: { required: string[]; optional: string[]; variadic: boolean };
   claims: Claim[];
@@ -355,7 +355,7 @@ export async function replayExamples(inv: CliInvoke, sandbox: Sandbox): Promise<
   for (const [i, ex] of examples.entries()) {
     const argv = [...inv.args.filter((a): a is string => typeof a === "string"), ...(ex.literals ?? []), ...Object.keys(ex.files ?? {})];
     const r = await sandbox.run(inv.bin, argv, { stdin: ex.stdin ?? "", files: ex.files, purpose: "revalidation" });
-    const stripped = r.workDir ? r.stdout.split(r.workDir).join("<work>").split(r.workDir.replace(/^\/private/, "")).join("<work>") : r.stdout;
+    const stripped = normaliseSandboxPaths(r.stdout, r.workDir);
     const out = inv.volatile === "timestamps" ? withoutTimes(stripped) : stripped;
     let applicationError = false;
     try { applicationError = reportsApplicationError(JSON.parse(r.stdout)); } catch {}
@@ -402,8 +402,8 @@ export function samplesFor(docs: string, seed: number): Sample[] {
   if (/\bmarkdown\b|\bmd\b|\blink|\burl\b|\bdocument|\bpage\b|\bsite\b/i.test(d)) {
     const host = (i: number) => `${pick(words, i)}.${pick(words, i + 2)}.example.com`;
     out.push({ kind: "md", content: `# ${sentence(1)}\n\nSee [${pick(words, 2)}](https://${host(1)}/${pick(words, 3)}) and\n[${pick(words, 4)}](https://${host(5)}/spec/v${seed % 4}) for details.\n\nA third destination: [${pick(words, 6)}](https://${host(1)}/about).\n` });
-    out.push({ kind: "md", content: `# ${sentence(2)}\n\nReported by [${pick(words, 3)}](https://${host(7)}/items/${seed % 9}) and\n[${pick(words, 5)}](https://${host(9)}/index.html).\n\nAlso [${pick(words, 1)}](https://${host(3)}/${pick(words, 2)}/${pick(words, 4)}).\n` });
     out.push({ kind: "md", content: `# ${sentence(3)}\n\n${pick(words, 1)} ${pick(words, 3)} **${pick(words, 5)}** ${pick(words, 7)}.\n\n- ${pick(words, 2)} ${pick(words, 4)}\n- ${pick(words, 6)} ${pick(words, 8)}\n\nA closing paragraph with no destinations at all.\n` });
+    out.push({ kind: "md", content: `# ${sentence(2)}\n\nReported by [${pick(words, 3)}](https://${host(7)}/items/${seed % 9}) and\n[${pick(words, 5)}](https://${host(9)}/index.html).\n\nAlso [${pick(words, 1)}](https://${host(3)}/${pick(words, 2)}/${pick(words, 4)}).\n` });
     out.push({ kind: "md", content: `# ${sentence(4)}\n\n- [sibling](${pick(words, 1)}.md)\n- [parent](../other/${pick(words, 2)}.md)\n- [rooted](/absolute/${pick(words, 3)}/page.md)\n` });
     out.push({ kind: "md", content: `# ${sentence(5)}\n\nInline: [${pick(words, 1)}](https://${host(2)}/a).\nAutolink: <https://${host(4)}/b>.\nMail: <${pick(words, 5)}@${host(6)}>.\nReference: [${pick(words, 7)}][ref]\n\n[ref]: https://${host(8)}/f\n\n\`\`\`text\nfenced, so not a link: https://${host(9)}/ignored\n\`\`\`\n\n<!-- comment: https://${host(3)}/hidden -->\n` });
   }
@@ -517,9 +517,8 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
     const raw = await sandbox.run(bin, args, { ...o, purpose: "investigation" });
     // Programs that print their own file names would differ run to run only by the sandbox's
     // private directory; that is not behaviour.
-    const strip = (t: string) => (raw.workDir ? t.split(raw.workDir).join("<work>").split(raw.workDir.replace(/^\/private/, "")).join("<work>") : t);
-    const r = { ...raw, stdout: strip(raw.stdout), stderr: strip(raw.stderr) };
-    inv.runs.push({ id: inv.runs.length + 1, purpose, args, stdinBytes: (o.stdin ?? "").length, files: Object.keys(o.files ?? {}), code: r.code, timedOut: r.timedOut, stdoutBytes: r.stdout.length, stdoutPreview: r.stdout.slice(0, 300), stderrPreview: r.stderr.slice(0, 300), created: r.created, ms: r.durationMs });
+    const r = { ...raw, stdout: normaliseSandboxPaths(raw.stdout, raw.workDir), stderr: normaliseSandboxPaths(raw.stderr, raw.workDir) };
+    inv.runs.push({ id: inv.runs.length + 1, purpose, args, stdinBytes: Buffer.byteLength(o.stdin ?? ""), files: Object.keys(o.files ?? {}), code: r.code, timedOut: r.timedOut, stdoutBytes: raw.stdoutBytes ?? Buffer.byteLength(raw.stdout), stdoutPreview: r.stdout.slice(0, 300), stderrPreview: r.stderr.slice(0, 300), created: r.created, ms: r.durationMs, ...(r.stdoutEncoding ? { stdoutEncoding: r.stdoutEncoding } : {}) });
     return r;
   };
 
@@ -738,12 +737,17 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
   // program saying "not a zipfile"), not a result. Diff-like programs exit 1 yet echo their input.
   const errorReport = (t: Trial) => {
     if ((t.r.code ?? 0) === 0) return false;
+    if (t.r.code !== 1) return true;
     const want = new Set(t.inputs.flatMap(visibleText).filter((w) => w.length >= 3));
     if (!want.size) return false;
     const got = new Set(visibleText(t.r.stdout));
     return [...want].filter((w) => got.has(w)).length < want.size / 2;
   };
-  const works = (t: Trial | null) => !!t && !t.r.timedOut && !t.r.truncated && t.r.stdout.trim().length > 0 && !usageLike(t.r.stdout) && !errorReport(t);
+  // Output the sandbox could not decode as UTF-8 is evidence about the run, not a text contract:
+  // every invalid byte became U+FFFD, so comparing it, hashing it or typing it would describe the
+  // decoder rather than the program. Such a trial supports nothing.
+  const undecodable = (t: Trial) => t.r.stdoutEncoding === "unsupported";
+  const works = (t: Trial | null) => !!t && !t.r.timedOut && !t.r.truncated && !undecodable(t) && t.r.stdout.trim().length > 0 && !usageLike(t.r.stdout) && !errorReport(t);
 
   // Default mode on every channel and kind; keep the channels that work.
   const okChannels: Array<{ id: string; arity: number }> = [];
@@ -770,11 +774,12 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
     // environmental precondition, not a capability that failed.
     //
     // A line naming a path RCX staged itself does not count. An interpreter handed a generic data
-    // sample reports "can't open file <work>/input1.txt": that says the sample was not a program,
-    // not that something is missing from the environment. Misreading it also hides the program,
-    // because the declared interface below is offered only when nothing environmental is wrong.
+    // sample reports "can't open file /rcx-sandbox/input1.txt": that says the sample was not a
+    // program, not that something is missing from the environment. Misreading it also hides the
+    // program, because the declared interface below is offered only when nothing environmental is
+    // wrong.
     const supplied = new Set(trials.flatMap((t) => t.args));
-    const ownOperand = (line: string) => [...supplied].some((a) => a && line.includes(`<work>/${a}`));
+    const ownOperand = (line: string) => [...supplied].some((a) => a && line.includes(`${SANDBOX_PATH_PLACEHOLDER}/${a}`));
     const reasons = trials.map((t) => t.r.stderr.split("\n").find((l) => !ownOperand(l) && /no such file|not found|cannot open|can't open|configuration|config file|permission denied|not permitted|must be (run as )?root|requires? root|not supported|no .*configured|unable to/i.test(l))).filter(Boolean) as string[];
     const precondition = reasons.length >= Math.max(2, trials.length / 2) ? reasons[0].trim().slice(0, 160) : undefined;
     inv.summary = precondition ? `not investigable here: ${name} reports a missing precondition ("${precondition}") on every input tried (${trials.length} trials)` : `no input channel produced output for ${name} (${trials.length} trials)`;
@@ -850,33 +855,56 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
   const capabilities: Capability[] = [];
   const providerId = `cli:${slug(name)}`;
   for (const mode of modes) {
-    const mt = trials.filter((t) => t.mode === mode && t.channel === best.id && works(t));
-    if (!mt.length) {
+    const all = trials.filter((t) => t.mode === mode && t.channel === best.id);
+    const rawMt = all.filter(works);
+    if (!rawMt.length) {
+      // Output the sandbox could not decode as UTF-8 is not a text contract, and reporting it as
+      // "no output" would misdescribe it: the program printed something, and what it printed cannot
+      // be represented here. That is an unsupported outcome, not a contradicted claim.
+      const undecoded = all.filter(undecodable);
+      if (undecoded.length) {
+        claim(`${providerId}:${slug(mode)}`, "output encoding is not UTF-8, so its behaviour cannot be established here", "unknown", `${undecoded.length} run(s) printed bytes that are not valid UTF-8; the raw bytes are retained in the run record as base64 evidence, and no text capability is offered for them`);
+        continue;
+      }
       if (mode !== "default") claim(`${providerId}:${slug(mode)}`, `option ${trials.find((t) => t.mode === mode)?.flags.join(" ")} produces output`, "contradicted", "ran with a valid sample; no output");
       continue;
     }
     // Compare the option and default on the same data; different inputs can
     // legitimately yield different outputs without the flag having any effect.
-    if (mode !== "default" && mt.every((t) => t.r.stdout === defaultOutputs.get(trialInput(t)))) {
-      claim(`${providerId}:${slug(mode)}`, `option ${mt[0].flags.join(" ")} changes the output`, "contradicted", "output identical to the default mode");
+    // When a candidate mode ran extra variants (>= 2) because earlier variants were constant,
+    // compare those extra variants against default's output on the same kind if default was not
+    // run on that exact variant.
+    const sameAsDefault = (t: Trial) => {
+      const exact = defaultOutputs.get(trialInput(t));
+      if (exact !== undefined) return t.r.stdout === exact;
+      if (trials.some((d) => d.mode === "default" && trialInput(d) === trialInput(t))) return false;
+      const kindDefaults = trials.filter((d) => d.mode === "default" && d.channel === t.channel && d.kind === t.kind && works(d));
+      return kindDefaults.length > 0 && kindDefaults.every((d) => d.r.stdout === t.r.stdout);
+    };
+    if (mode !== "default" && rawMt.every(sameAsDefault)) {
+      claim(`${providerId}:${slug(mode)}`, `option ${rawMt[0].flags.join(" ")} changes the output`, "contradicted", "output identical to the default mode");
       // The option is equivalent to the default: its description still describes what the default
       // does, so keep it there (otherwise the only account of the behaviour is lost).
       const opt = inv.options.find((o) => o.flags.some((f) => f.replace(/^-+/, "") === mode));
       const def = capabilities.find((c) => c.id === `${providerId}:default`);
       if (opt && def) {
         def.tags = [...new Set([...def.tags, ...(opt.description.toLowerCase().match(/[a-z]{3,}/g) ?? [])])].slice(0, 40);
-        def.description = `${def.description} Equivalent to ${mt[0].flags.join(" ")}: ${opt.description}`.slice(0, 400);
-        claim(def.id, `equivalent to ${mt[0].flags.join(" ")} (${opt.description})`, "experimentally-supported", "identical output for the same inputs");
+        def.description = `${def.description} Equivalent to ${rawMt[0].flags.join(" ")}: ${opt.description}`.slice(0, 400);
+        claim(def.id, `equivalent to ${rawMt[0].flags.join(" ")} (${opt.description})`, "experimentally-supported", "identical output for the same inputs");
       }
       continue;
     }
-    // Determinism: repeat the first working trial.
-    // Output that ignores the input is not a transformation of it (a program printing its
-    // configuration, or an error, for anything it is given).
-    // Recorded, not dropped: a predicate (valid/invalid) can legitimately give one answer for every
-    // sample. Usage and error text are already excluded above.
-    const distinctInputs = new Set(mt.map((t) => [...t.literals, ...t.inputs].join("\u0000"))).size;
-    const constant = distinctInputs >= 2 && new Set(mt.map((t) => t.r.stdout)).size === 1;
+    // Determinism and content-dependence: a mode whose output only changes when the staged filename
+    // extension changes (e.g. input1.txt vs input1.html vs input1.md) while staying constant across
+    // distinct file contents within every kind is not transforming the file's content.
+    const rawKinds = [...new Set(rawMt.map((t) => t.kind))];
+    const variedKinds = rawKinds.filter((k) => {
+      const kt = rawMt.filter((t) => t.kind === k);
+      return new Set(kt.map((t) => t.r.stdout)).size >= 2;
+    });
+    const mt = variedKinds.length ? rawMt.filter((t) => variedKinds.includes(t.kind)) : rawMt;
+    const distinctInputs = new Set(rawMt.map((t) => [...t.literals, ...t.inputs].join("\u0000"))).size;
+    const constant = distinctInputs >= 2 && variedKinds.length === 0;
     const first = mt[0];
     const again = await run(`repeat for determinism (${mode})`, [...first.flags, ...first.literals, ...(first.channel === "files" ? first.inputs.map((_, i) => `input${i + 1}.${first.kind === "text" ? "txt" : first.kind}`) : [])], first.channel === "stdin" ? { stdin: first.inputs[0] } : { files: Object.fromEntries(first.inputs.map((t, i) => [`input${i + 1}.${first.kind === "text" ? "txt" : first.kind}`, t])) });
     // Identical runs that differ only by date-times (file timestamps) are deterministic apart from
@@ -886,6 +914,20 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
     const fp = (s: string) => (volatileTimes ? withoutTimes(s) : s);
     const outKinds = [...new Set(mt.map((t) => outputKind(t.r.stdout)))];
     const out = outKinds.length === 1 ? outKinds[0] : "text";
+    // A line-oriented result whose element type is established by validating every line of every
+    // working trial, so a composer can bind it where a list is wanted. The output stays opaque text
+    // whenever the evidence does not cover every line: one header, one progress line, one relative
+    // path among absolute URIs, and nothing is claimed. Nothing is inferred from the program's name,
+    // its documentation, or the shape of a single convenient sample.
+    const lineList = out === "text" && !constant ? lineListType(mt.map((t) => fp(t.r.stdout))) : undefined;
+    const lineType = lineList?.slice(5);
+    // An empty result observed for this mode: an exit code already seen with real output, nothing on
+    // stdout, no timeout, truncation or sandbox limit, on an input distinct from every input that
+    // produced output. Recorded as evidence for the caller; the run-time permission to return an
+    // empty result rests on the program's own exit code, not on having happened to observe one.
+    const modeOkExit = [...new Set(mt.map((t) => t.r.code ?? -1))];
+    const producedInput = new Set(mt.map(trialInput));
+    const observedEmpty = all.filter((t) => !t.r.timedOut && !t.r.truncated && !t.r.limit && !undecodable(t) && t.r.stdout.length === 0 && modeOkExit.includes(t.r.code ?? -1) && !producedInput.has(trialInput(t)));
     const id = `${providerId}:${slug(mode)}`;
     const inKinds = [...new Set(mt.map((t) => t.kind))];
     const inType: SemType = inKinds.length === 1 ? SEM[inKinds[0]] ?? "text" : "text";
@@ -937,6 +979,8 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
       // (diff-like programs exit 1 when inputs differ).
       okExit: [...new Set([0, ...mt.map((t) => t.r.code ?? -1)])].sort(),
       output: out,
+      ...(lineType ? { lineType } : {}),
+      ...(observedEmpty.length ? { emptyResult: "observed" as const } : {}),
       sha256: inv.program.sha256,
       behaviour,
       ...(volatileTimes ? { volatile: "timestamps" as const } : {}),
@@ -948,7 +992,7 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
       })),
     };
     const what = option ? option.description.replace(/\.$/, "") : inv.program.description?.replace(/^[^-–]+[-–]\s*/, "") ?? `run ${name}`;
-    const supported = mt.length >= 2 && deterministic && new Set(mt.map((t) => [...t.literals, ...t.inputs].join("\u0000"))).size >= 2;
+    const supported = mt.length >= 2 && deterministic && !constant && new Set(mt.map((t) => [...t.literals, ...t.inputs].join("\u0000"))).size >= 2;
     capabilities.push({
       id,
       title: `${name}${mode === "default" ? "" : ` ${mt[0].flags.join(" ")}`}: ${what}`,
@@ -956,12 +1000,14 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
       provider: providerId,
       source: "cli",
       inputs,
-      outputs: [{ name: "", type: SEM[out] ?? "text", required: true }, ...(out === "json" ? observedFields(mt.map((t) => t.r.stdout)) : [])],
+      outputs: [{ name: "", type: lineList ?? SEM[out] ?? "text", required: true }, ...(out === "json" ? observedFields(mt.map((t) => t.r.stdout)) : [])],
       risk: "read",
       tags: [name, ...(inv.program.description ?? "").toLowerCase().match(/[a-z]{3,}/g) ?? [], ...(option ? option.description.toLowerCase().match(/[a-z]{3,}/g) ?? [] : [])].slice(0, 30),
       invoke,
     });
     claim(id, `accepts ${inKinds.join("/")} input via ${best.id} and prints ${out}`, supported ? "experimentally-supported" : "observed", `${mt.length} run(s) across ${distinctInputs} distinct input(s); exit ${invoke.okExit.join("/")}`);
+    if (lineList) claim(id, `output is a line-oriented ${lineList}: every line of every working trial validated as ${lineType}`, "experimentally-supported", `${mt.length} trial(s) classified line by line; a single non-conforming line anywhere leaves the output opaque text, and every line is re-validated on each run`);
+    if (observedEmpty.length) claim(id, "an empty result is a legitimate outcome of this invocation, not a failure", "observed", `${observedEmpty.length} input(s) gave exit ${modeOkExit.join("/")} with nothing on standard output while ${mt.length} other input(s) gave output`);
     claim(id, volatileTimes ? "deterministic for identical input, apart from date-time values (e.g. file timestamps)" : "deterministic for identical input", again ? (deterministic ? "experimentally-supported" : "contradicted") : "unknown", again ? (volatileTimes ? "repeated run identical once date-times are normalised" : "repeated run compared byte for byte") : "no budget for a repeat");
     if (preserves) claim(id, "output keeps every word of the input", supported ? "experimentally-supported" : "observed", "word sets compared");
     if (echoes) claim(id, "output equals the input (no transformation)", "observed", "byte comparison");

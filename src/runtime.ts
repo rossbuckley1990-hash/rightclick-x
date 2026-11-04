@@ -11,11 +11,11 @@ import { ActivityLog, reference, type ActivityState, type ContractReference } fr
 import { CapabilityGraph, signature, tokenize, type GraphEvent, type LearnDelta } from "./core/graph.ts";
 import { Ledger, ReceiptChain, sha256, stableStringify, type Receipt } from "./core/ledger.ts";
 import { shapeOf, type IdentityState } from "./core/identities.ts";
-import { egressOf, plan, type Plan } from "./core/planner.ts";
+import { egressOf, plan, type CompositionDiagnostic, type Plan } from "./core/planner.ts";
 import { outputCarries, undeclaredRequirements, type Satisfaction } from "./core/satisfaction.ts";
 import { assessPlan, contractFor, lostWords, type Assurance, type ContractAssessment, type OutcomeContract } from "./core/contract.ts";
 import { selectionWith } from "./reflectors/graphql.ts";
-import { hostSandbox, type Sandbox } from "./core/sandbox.ts";
+import { hostSandbox, normaliseSandboxPaths, type Sandbox } from "./core/sandbox.ts";
 import { validateFileNames } from "./core/cli-files.ts";
 import { observeCliEnvironment } from "./core/cli-environment.ts";
 import { CliValidityError, reportsApplicationError, type CliValidity } from "./core/cli-outcome.ts";
@@ -27,7 +27,7 @@ import { investigateCli, replayExamples, validateOptions, type Investigation } f
 import { JsonRepresentationError, parseJsonValue } from "./core/json.ts";
 import { KNOWLEDGE_FORMAT, type ImportReport, type KnowledgeBundle } from "./core/knowledge.ts";
 import { assessExecution, consequentialRisks, ExecutionDenied, intersectOrigins, parseExecutionPolicy, type ExecutionAssessment, type ExecutionPolicy } from "./core/execution-policy.ts";
-import { distance, inferType, inspectValue, type Inspection } from "./core/semantics.ts";
+import { distance, inferType, inspectValue, linesValidateAs, type Inspection } from "./core/semantics.ts";
 import { describeResult, resultDescription, type ResultDescription } from "./core/result-description.ts";
 import type { Capability, CapabilityAnchor, FetchLike, GraphQLFailureEvidence, PlanStep, Provider, Reflection, SemType, TransportRefusal } from "./core/types.ts";
 import { agreement, assertAgreement, check, pick, type Predicate, type PredicateResult, type OutcomeWitness, type WitnessResult } from "./core/verify.ts";
@@ -438,6 +438,12 @@ export interface ComposeResult {
   goal: { have: Record<string, SemType>; want: SemType; intent?: string; through?: string[] };
   plans: Array<Plan & { titles: string[]; contract?: ContractAssessment }>;
   planningRefusal?: PlanningRefusal;
+  /**
+   * Present only when nothing composed: why each candidate capability could not take part. This is
+   * the difference between "no plan" and "no capability here converts text to list:url", which is
+   * what a caller needs in order to supply the missing piece instead of re-investigating a program.
+   */
+  compositionDiagnostics?: CompositionDiagnostic[];
   executed?: {
     summary: string;
     titles: string[];
@@ -2675,6 +2681,14 @@ export class RightClick {
       goal: { have: types, want: opts.want, intent: opts.intent, through },
       plans: plans.map((p) => ({ ...p, titles: titles(p) })),
     };
+    // Nothing composed: say exactly why, for the capabilities that came closest. The search has
+    // already run, so this repeats it once with a diagnostic sink attached — on the failure path
+    // only, over the same bounded candidate set. A successful composition pays nothing for it.
+    if (!plans.length && !undeclared.length) {
+      const diagnostics: CompositionDiagnostic[] = [];
+      plan(this.graph, this.ledger, { ...goal, diagnostics });
+      if (diagnostics.length) result.compositionDiagnostics = diagnostics.slice(0, 24);
+    }
     const typeWords = new Set(tokenize(opts.want.replace(/^list:/, "").replace(/[.:]/g, " ")));
     const intentSet = new Set(tokenize(opts.intent ?? "").filter((t) => !typeWords.has(t)));
     const contractCtx = { intent: intentSet, require, have: types, want: opts.want, anchors: new Set(through) };
@@ -4026,17 +4040,60 @@ export class RightClick {
         let envelope: unknown;
         try { envelope = JSON.parse(r.stdout); } catch {}
         execution.cliValidity!.application = reportsApplicationError(envelope) ? "reported-error" : "not-established";
+        execution.cliValidity!.stdoutBytes = r.stdoutBytes;
+        // Output the sandbox could not decode as UTF-8 is not this capability's result: every
+        // invalid byte became U+FFFD, so returning it would hand the caller text the program never
+        // printed and report the run as completed. The raw bytes are retained instead of being
+        // silently replaced, and the outcome is explicitly unsupported rather than approximate.
+        if (r.stdoutEncoding === "unsupported") {
+          execution.cliValidity!.rawOutputBase64 = r.stdoutBase64;
+          throw new CliValidityError(`${inv.bin} printed ${r.stdoutBytes ?? 0} byte(s) that are not valid UTF-8, so no text result is established: decoding them substitutes U+FFFD for every invalid sequence and would report that as the program's output. ${r.stdoutBase64 ? "The first bytes are retained as base64 in this run's record." : "The raw bytes could not be retained."} This capability's contract is text; a byte-exact channel for it has not been established, so its encoding is reported unsupported rather than approximated.`, execution.cliValidity, cap.id);
+        }
         if (execution.cliValidity!.application === "reported-error")
           throw new CliValidityError(`CLI reported an application-level error envelope (process exit ${r.code}); outcome not established; not replayed`, execution.cliValidity, cap.id);
-        if (!inv.okExit.includes(r.code ?? -1) || !r.stdout.trim()) throw new Error(`${inv.bin} exited ${r.code}${r.stdout.trim() ? "" : " without output"}: ${r.stderr.slice(0, 300)}`);
+        if (!inv.okExit.includes(r.code ?? -1)) throw new Error(`${inv.bin} exited ${r.code}: ${r.stderr.slice(0, 300)}`);
+        // Empty standard output on the program's own success code is an empty answer, not a failure:
+        // a filter that matched nothing, a checker with nothing to report and a comparison that
+        // found no difference all exit 0 having printed nothing. Refusing that substituted this
+        // runtime's judgement for the program's exit-code contract. Every way a run can genuinely
+        // fail still fails: an exit code outside the learned set, a timeout, a truncation, a sandbox
+        // limit, an application-error envelope, and a non-zero exit never observed with a result.
+        const emptyResult = !r.stdout.trim();
+        if (emptyResult) {
+          if (r.code !== 0) throw new Error(`${inv.bin} exited ${r.code} without output: ${r.stderr.slice(0, 300)}`);
+          execution.cliValidity!.emptyResult = true;
+        }
+        // The sandbox directory is created fresh for every run and deleted when it ends, so a
+        // program that names it prints different bytes for identical behaviour. Normalising that one
+        // path is what makes a result reproducible; the real directory is already gone by the time
+        // anyone reads this, and the raw output's digest is kept here, so the evidence is normalised
+        // rather than discarded. Only this run's own directory is volatile: any other path
+        // difference is a real change in what the program printed and survives untouched.
+        const output = normaliseSandboxPaths(r.stdout, r.workDir);
+        if (output !== r.stdout) {
+          execution.cliValidity!.sandboxPathNormalised = true;
+          execution.cliValidity!.rawOutputSha256 = await sha256(r.stdout);
+        }
         if (inv.output === "json") {
-          try { return parseJsonValue(r.stdout); }
+          try { return parseJsonValue(output); }
           catch (error) {
             if (error instanceof JsonRepresentationError) throw error;
             throw new Error(`${inv.bin} did not print JSON this time`);
           }
         }
-        return r.stdout;
+        if (inv.lineType) {
+          if (emptyResult) return [];
+          // The representation was established by validating every line of every working trial, and
+          // it is re-validated here by the same rule: a line that does not classify as the declared
+          // element type is a refusal, never a coerced element. Without this the list type a
+          // composer bound against would be a promise the run does not keep.
+          if (!linesValidateAs(output, inv.lineType)) {
+            const offending = output.split("\n").map((l) => l.trim()).filter(Boolean).find((l) => !linesValidateAs(l, inv.lineType!)) ?? "";
+            throw new CliValidityError(`${inv.bin} printed a line that is not ${inv.lineType} (${JSON.stringify(offending.slice(0, 80))}), so the list:${inv.lineType} this capability's contract declares is not established for this input. Nothing is returned rather than a mistyped value.`, execution.cliValidity, cap.id);
+          }
+          return output.split("\n").map((l) => l.trim()).filter(Boolean);
+        }
+        return output;
       }
       case "composite":
       case "goal":

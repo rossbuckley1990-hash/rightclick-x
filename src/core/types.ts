@@ -225,6 +225,20 @@ export interface CliInvoke {
   continuity?: Array<{ behaviour: string; examples: NonNullable<CliInvoke["examples"]> }>;
   /** Output values that vary between identical runs (file timestamps) and are normalised in fingerprints. */
   volatile?: "timestamps";
+  /**
+   * The element type of a line-oriented result, established during investigation by validating
+   * every line of every working trial (see `lineListType`). When present the result is returned as
+   * a list of that type and every line is re-validated on each run: a line that does not validate
+   * is a refusal, never a coerced element. Absent means the output stays opaque text, which is the
+   * honest state when the evidence does not cover every line the program printed.
+   */
+  lineType?: SemType;
+  /**
+   * Empty standard output was observed as a legitimate result of this invocation, alongside real
+   * output for a different input. Recorded as evidence for the caller; the run-time permission to
+   * return an empty result rests on the exit code, not on this field.
+   */
+  emptyResult?: "observed";
 }
 
 export type Invoke =

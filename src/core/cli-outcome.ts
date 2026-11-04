@@ -6,6 +6,16 @@ export interface CliValidity {
   processExit?: number | null;
   application: "not-assessed" | "reported-error" | "not-established";
   conformance?: { status: "matched" | "refused"; contract: string; samples: string; checks: number; sha256: string };
+  /** Empty standard output admitted as a result on the program's own success code, not as a failure. */
+  emptyResult?: boolean;
+  /** The run's own sandbox directory appeared in the output and was replaced by a fixed placeholder. */
+  sandboxPathNormalised?: boolean;
+  /** SHA-256 of the raw standard output, before normalisation, so the evidence survives it. */
+  rawOutputSha256?: string;
+  /** Bounded base64 of raw stdout bytes that were not valid UTF-8, retained instead of being decoded lossily. */
+  rawOutputBase64?: string;
+  /** Exact standard output length in bytes. */
+  stdoutBytes?: number;
   limitation: string;
 }
 
