@@ -79,11 +79,18 @@ const vsDirect = {
   modelledApiCostUsd: metric((s) => s.modelledApiCostUsd.perTaskUnrounded),
   original: proof.breakEvenAnalysis.vsDirectShellWithoutSavedScript,
 };
+// Against the saved script, which has an acquisition of its own: the smallest n with
+// acquisition + n·reuse ≤ savedAcquisition + n·savedReuse. 0 = cheaper from the first use;
+// null = never (no lower per-reuse figure to recover a higher acquisition with).
+const breakEvenVs = (acq: number, reuse: number, altAcq: number, altReuse: number): number | null =>
+  acq <= altAcq ? 0 : reuse >= altReuse ? null : Math.ceil((acq - altAcq) / (altReuse - reuse));
+const vsSavedMetric = (f: (s: typeof A) => number) => breakEvenVs(f(A), f(AR), f(B), f(BR));
 const vsSaved = {
-  agentSessionSeconds: breakEven(A.agentSessionSeconds.perTask, AR.agentSessionSeconds.perTask, BR.agentSessionSeconds.perTask),
-  allRecordedTokensIncludingCacheReads: breakEven(A.recordedAgentTokens.perTask.total, AR.recordedAgentTokens.perTask.total, BR.recordedAgentTokens.perTask.total),
-  modelledApiCostUsd: breakEven(A.modelledApiCostUsd.perTaskUnrounded, AR.modelledApiCostUsd.perTaskUnrounded, BR.modelledApiCostUsd.perTaskUnrounded),
-  note: "null = never: RightClick's per-reuse figure is higher than the saved script's, so no number of reuses recovers its higher acquisition cost on this happy path.",
+  agentSessionSeconds: vsSavedMetric((s) => s.agentSessionSeconds.perTask),
+  allRecordedTokensIncludingCacheReads: vsSavedMetric((s) => s.recordedAgentTokens.perTask.total),
+  uncachedInputPlusOutputTokens: vsSavedMetric((s) => s.recordedAgentTokens.perTask.uncachedInput + s.recordedAgentTokens.perTask.output),
+  modelledApiCostUsd: vsSavedMetric((s) => s.modelledApiCostUsd.perTaskUnrounded),
+  note: "null = never: RightClick's acquisition and per-reuse figures are both higher than the saved script's, so no number of reuses recovers the difference on this happy path.",
 };
 
 const reason: string = proof.breakEvenAnalysis.vsSavedScriptCompetitor.reason;
@@ -156,7 +163,15 @@ const out = {
   provenance,
   perSession,
   runtimeOnlyLatencyMs,
-  breakEven: { convention: "smallest n with acquisition + n·reuse ≤ (n + 1)·alternative, per-task figures", vsDirectShell: vsDirect, vsSavedScript: vsSaved },
+  breakEven: {
+    convention: {
+      vsDirectShell: "smallest n with acquisition + n·reuse ≤ (n + 1)·directShell: the direct shell saves nothing, so every use is a from-scratch session",
+      vsSavedScript: "smallest n with acquisition + n·reuse ≤ savedAcquisition + n·savedReuse",
+      units: "per-task figures from one session per arm and phase",
+    },
+    vsDirectShell: vsDirect,
+    vsSavedScript: vsSaved,
+  },
   corrections,
   limits,
 };
