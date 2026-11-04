@@ -246,6 +246,92 @@ const ID_FILLER = new Set(["the", "a", "an", "unique", "internal", "external", "
 const GENERIC = new Set(["text", "id", "json", "number"]);
 
 /**
+ * An absolute URI. Parser success is not the test: `new URL()` accepts prose ("note: this is
+ * important" has the scheme "note") and Windows paths ("C:\x" has the scheme "c"), so a parser-only
+ * rule would type ordinary sentences as locations. A locator either has an authority part, or uses a
+ * scheme whose whole purpose is to name a resource without one.
+ *
+ * Schemes that name inline or executable content (`javascript:`, `data:`) are deliberately absent:
+ * they are not locations. Nothing here grants reachability in any case — the network layer refuses
+ * every non-http(s) scheme on its own account (reflectors/net.ts), so widening what counts as a
+ * `url` cannot widen what may be fetched.
+ */
+const URI_WITH_AUTHORITY = /^[A-Za-z][A-Za-z0-9+.\-]*:\/\//;
+const RESOURCE_SCHEMES = /^(mailto|tel|fax|sms|callto|urn|news|nntp|xmpp|geo|ftp|ftps|sftp|file|feed|webcal):/i;
+
+export function isAbsoluteUri(s: string): boolean {
+  if (!URI_WITH_AUTHORITY.test(s) && !RESOURCE_SCHEMES.test(s)) return false;
+  try {
+    new URL(s);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Types that carry no specific meaning, so a list of them is no more composable than bare text. */
+const OPAQUE = new Set(["text", "json"]);
+
+/** Confidence below which a classification is a hint rather than evidence. */
+const LINE_CONFIDENCE = 0.85;
+
+/**
+ * Every non-blank line of `text` classifies as `elementType` (or a specific subtype of it, such as
+ * `image.url` for `url`). This is the run-time counterpart of `lineListType`: the same rule, so a
+ * representation established during investigation cannot be quietly re-interpreted on a later input.
+ * Unlike establishment it imposes no minimum line count — a one-element list is still a list — but
+ * an empty text is not this function's business; the caller decides what an empty result means.
+ */
+export function linesValidateAs(text: string, elementType: SemType): boolean {
+  for (const line of text.split("\n")) {
+    const value = line.trim();
+    if (!value) continue;
+    const found = inspectValue(value);
+    if (found.confidence < LINE_CONFIDENCE || OPAQUE.has(found.type) || OPAQUE.has(elementType) || distance(elementType, found.type) < 0) return false;
+  }
+  return true;
+}
+
+/**
+ * The element type of a line-oriented result, established by validating every line of every
+ * observed output rather than by guessing from a program's name or documentation.
+ *
+ * Returns `undefined` — leaving the output opaque `text` — unless all of these hold:
+ * every non-blank line of every output inspected is the same specific type (or shares a specific
+ * non-opaque supertype such as `url` for `url` and `image.url`), at high confidence; there are at
+ * least two lines, so the type is not read off a single observation; and the type is not opaque
+ * `text` or `json` (`json` is already handled as a whole-document representation by `outputKind`).
+ *
+ * A header line, a progress line, a summary footer or one relative path among absolute URIs is
+ * enough to defeat it. That is the point: a representation is declared only when the evidence
+ * covers every line the program actually printed.
+ */
+export function lineListType(outputs: string[]): SemType | undefined {
+  let type: SemType | undefined;
+  let count = 0;
+  for (const output of outputs) {
+    for (const line of output.split("\n")) {
+      const value = line.trim();
+      if (!value) continue;
+      const found = inspectValue(value);
+      if (found.confidence < LINE_CONFIDENCE || OPAQUE.has(found.type)) return undefined;
+      if (type === undefined) type = found.type;
+      else if (type !== found.type) {
+        if (distance(type, found.type) >= 0 && !OPAQUE.has(type)) {
+          /* subtype (e.g. image.url under url) */
+        } else if (distance(found.type, type) >= 0 && !OPAQUE.has(found.type)) {
+          type = found.type;
+        } else {
+          return undefined;
+        }
+      }
+      count++;
+    }
+  }
+  return type !== undefined && count >= 2 ? `list:${type}` : undefined;
+}
+
+/**
  * Infer with context: a GraphQL arg `code` on field `country`, or an output
  * `code` on type `Language`, means more than the bare name says. If the bare
  * name yields a generic type, try "<context><Name>" (countryCode, languageCode).
@@ -315,6 +401,12 @@ export function inspectValue(value: unknown): Inspection {
     const image = /\.(png|jpe?g|gif|webp|svg|avif)(\?|$)/i.test(u.pathname);
     return { type: image ? "image.url" : "url", confidence: 0.99, value: s, meta };
   }
+  // Any other absolute URI is a location too. This runs before the address test so that a
+  // `mailto:` URI is the location it is, while a bare address stays an email.
+  if (isAbsoluteUri(s)) {
+    meta.scheme = s.slice(0, s.indexOf(":")).toLowerCase();
+    return { type: "url", confidence: 0.95, value: s, meta };
+  }
   if (/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(s)) return { type: "email", confidence: 0.98, value: s, meta };
   if (/^-?\d+(\.\d+)?$/.test(s)) {
     try { return { type: "number", confidence: 0.9, value: parseJsonValue(s), meta }; }
@@ -339,7 +431,7 @@ export function inspectValue(value: unknown): Inspection {
   if (LANGS.has(s.toLowerCase()) && s.length === 2 && s === s.toLowerCase()) return { type: "language", confidence: 0.6, value: s, meta };
   if (CURRENCIES.has(s)) return { type: "currency", confidence: 0.8, value: s, meta };
   if (/^[A-Z]{2}$/.test(s)) return { type: "country", confidence: 0.6, value: s, meta };
-  if (/^([a-z0-9-]+\.)+[a-z]{2,}$/i.test(s)) return { type: "domain", confidence: 0.85, value: s, meta };
+  if (/^([a-z0-9-]+\.)+[a-z]{2,}$/i.test(s) && !/\.(txt|x?html?|json|jsonl|ndjson|csv|tsv|xml|ya?ml|toml|ini|cfg|conf|log|tmp|bak|orig|patch|diff|png|jpe?g|gif|svg|webp|avif|pdf|tar|tgz|gz|bz2|xz|zst|7z|rar|wasm|gguf|sqlite3?)$/i.test(s)) return { type: "domain", confidence: 0.85, value: s, meta };
   if (/(^|\n)#{1,6} |\*\*[^*]+\*\*|\[[^\]]+\]\([^)]+\)/.test(s)) return { type: "markdown", confidence: 0.75, value: s, meta };
   meta.words = s.split(/\s+/).filter(Boolean).length;
   return { type: "text", confidence: 0.5, value: s, meta };

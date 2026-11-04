@@ -10,7 +10,9 @@ export function carryCliContinuity(before: Capability | undefined, after: Capabi
   const old = before.invoke, now = after.invoke;
   if (old.kind !== "cli" || now.kind !== "cli" || !old.behaviour || !now.behaviour) return after;
   if (migration ? old.sha256 !== now.sha256 : old.behaviour !== now.behaviour) return after;
-  const shape = ({ sha256, behaviour, examples, continuity, environment, ...invocation }: CliInvoke) => invocation;
+  if ((old.localeProfile?.profile ?? "c") !== (now.localeProfile?.profile ?? "c") ||
+      (old.localeProfile?.locale ?? "C") !== (now.localeProfile?.locale ?? "C")) return after;
+  const shape = ({ sha256, behaviour, examples, continuity, environment, localeProfile, ...invocation }: CliInvoke) => invocation;
   const ports = (list: Port[]) => list.map(({ description, ...port }) => port);
   if (stableStringify(shape(old)) !== stableStringify(shape(now)) ||
       stableStringify(ports(before.inputs)) !== stableStringify(ports(after.inputs)) ||

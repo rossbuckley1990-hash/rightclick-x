@@ -97,6 +97,7 @@ export const TOOLS = [
         confirm: bool("Required to run plans containing destructive capabilities."),
         publish: str("After a successful run, save this goal as goal:<slug> in the graph AND as /x/<slug> in the synthesized API. Checks and witnesses are retained and re-run on every invocation. Stored predicates make a goal \"checked\"; an independent witness makes it \"verified\"."),
         preserveExisting: bool("Refuse publication before execution if this slug already exists. Without this option a successful publication replaces the existing goal; publication is refused if the definition changes during execution."),
+        confirmFixedInvariants: { oneOf: [bool("Confirm that all literal predicates are intentional fixed invariants of the published goal."), { type: "array", items: { type: "string" }, description: "Confirm specific literal values as intentional fixed invariants of the published goal." }] },
         acquire: bool("If nothing in the graph can do it: research public directories (APIs.guru, MCP Registry), learn the best candidates and re-plan."),
         through: { type: "array", items: { type: "string" }, description: "Anchors: capability ids or search phrases the pipeline must pass through; the planner wires the types between them." },
         inputBindings: { type: "object", description: 'For anchored CLI capabilities, map capability id to port-to-have-input names, e.g. {"cli:jq:stdout":{"options":"jqOptions"},"cli:shasum:invoke":{"options":"hashOptions"}}. Each binding is mandatory and retained with a published goal. Use fixed have inputs to pin options.' },
@@ -192,7 +193,7 @@ export async function dispatch(rc: RightClick, name: string, a: Record<string, a
     }
     case "context_compose": {
       const v = parseView(a.view);
-      const r = await rc.compose({ have: a.have ?? {}, want: a.want, intent: a.intent, run: a.run, verify: a.verify, witnesses: a.witnesses, maxSteps: a.maxSteps, risks: a.risks, through: a.through, inputBindings: a.inputBindings, origins: a.origins, require: a.require, acquire: a.acquire, publish: a.publish, preserveExisting: a.preserveExisting, confirm: a.confirm });
+      const r = await rc.compose({ have: a.have ?? {}, want: a.want, intent: a.intent, run: a.run, verify: a.verify, witnesses: a.witnesses, maxSteps: a.maxSteps, risks: a.risks, through: a.through, inputBindings: a.inputBindings, origins: a.origins, require: a.require, acquire: a.acquire, publish: a.publish, preserveExisting: a.preserveExisting, confirmFixedInvariants: a.confirmFixedInvariants, confirm: a.confirm });
       if (!r.executed) return r;
       return { ...r, executed: viewed(r.executed, v, "To view a step's recorded output without re-running: context_run_status with a runId from executed.runs and a view.") };
     }

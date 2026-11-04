@@ -1,0 +1,82 @@
+{
+  "authoredAt": "2026-11-03T23:32:40.021Z",
+  "note": "Computed by experiments/north-star-acquisition/oracle.ts from fixtures/ alone. No RightClick X output was read. Written before the product runs it is compared against.",
+  "fixtures": {
+    "abs-links.md": {
+      "fixture": "abs-links.md",
+      "links": [
+        "https://alpha-linkaudit.dev/domains/reserved",
+        "https://bravo-linkaudit.io/spec/v1",
+        "https://alpha-linkaudit.dev/about"
+      ],
+      "absoluteHttp": [
+        "https://alpha-linkaudit.dev/about",
+        "https://alpha-linkaudit.dev/domains/reserved",
+        "https://bravo-linkaudit.io/spec/v1"
+      ],
+      "mailto": [],
+      "relative": [],
+      "extensionDependentBareUrls": [],
+      "excludedByCodeOrComment": []
+    },
+    "mixed.md": {
+      "fixture": "mixed.md",
+      "links": [
+        "https://bravo-linkaudit.io/b",
+        "mailto:audit@charlie-linkaudit.org",
+        "https://alpha-linkaudit.dev/a",
+        "mailto:delta@charlie-linkaudit.org",
+        "https://foxtrot-linkaudit.io/f",
+        "https://example.com/reserved",
+        "https://sub.example.io/kept"
+      ],
+      "absoluteHttp": [
+        "https://alpha-linkaudit.dev/a",
+        "https://bravo-linkaudit.io/b",
+        "https://example.com/reserved",
+        "https://foxtrot-linkaudit.io/f",
+        "https://sub.example.io/kept"
+      ],
+      "mailto": [
+        "mailto:audit@charlie-linkaudit.org",
+        "mailto:delta@charlie-linkaudit.org"
+      ],
+      "relative": [],
+      "extensionDependentBareUrls": [
+        "https://bravo-linkaudit.io/b",
+        "https://echo-linkaudit.dev/e"
+      ],
+      "excludedByCodeOrComment": [
+        "https://comment-linkaudit.dev/hidden",
+        "https://fenced-linkaudit.dev/ignored",
+        "https://inline-linkaudit.dev/ignored"
+      ]
+    },
+    "no-links.md": {
+      "fixture": "no-links.md",
+      "links": [],
+      "absoluteHttp": [],
+      "mailto": [],
+      "relative": [],
+      "extensionDependentBareUrls": [],
+      "excludedByCodeOrComment": []
+    },
+    "rel-links.md": {
+      "fixture": "rel-links.md",
+      "links": [
+        "doc.md",
+        "../other/notes.md",
+        "/absolute/path/page.md"
+      ],
+      "absoluteHttp": [],
+      "mailto": [],
+      "relative": [
+        "../other/notes.md",
+        "/absolute/path/page.md",
+        "doc.md"
+      ],
+      "extensionDependentBareUrls": [],
+      "excludedByCodeOrComment": []
+    }
+  }
+}

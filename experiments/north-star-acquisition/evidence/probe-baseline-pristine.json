@@ -1,0 +1,768 @@
+{
+  "label": "baseline-pristine",
+  "startedAt": "2026-11-04T00:12:40.798Z",
+  "repo": "/Users/ross/Documents/Qoder/2026-11-03/29df45c3/pristine/",
+  "state": "/tmp/rcx-ns-pristine.json",
+  "predictions": "see PREDICTIONS.md (committed first)",
+  "checks": {
+    "acquire": {
+      "learnLychee": {
+        "error": null,
+        "keys": [
+          "results",
+          "totalNewCapabilities",
+          "totalNewPowers",
+          "graph"
+        ]
+      },
+      "learnDetail": "10 capabilities from 129 sandboxed runs (files; ok exit 0/2)",
+      "totalNewCapabilities": 10,
+      "graphExportIds": [
+        "builtin:quantity.money.usd.minor-to-major",
+        "builtin:core",
+        "builtin:quantity.money.usd.major-to-minor",
+        "builtin:quantity.money.eur.minor-to-major",
+        "builtin:quantity.money.eur.major-to-minor",
+        "builtin:quantity.money.gbp.minor-to-major",
+        "builtin:quantity.money.gbp.major-to-minor",
+        "builtin:web.fetch",
+        "builtin:html.text",
+        "builtin:html.links",
+        "builtin:html.markdown",
+        "builtin:markdown.html",
+        "builtin:text.summarize",
+        "builtin:text.keywords",
+        "builtin:text.stats",
+        "builtin:text.language",
+        "builtin:text.sha256",
+        "builtin:url.domain",
+        "builtin:list.first-url",
+        "builtin:dns.resolve",
+        "builtin:time.now",
+        "cli:lychee:default",
+        "cli:lychee:dump",
+        "cli:lychee:dump-inputs",
+        "cli:lychee:glob-ignore-case",
+        "cli:lychee:host-stats",
+        "cli:lychee:no-progress",
+        "cli:lychee:no-ignore",
+        "cli:lychee:offline",
+        "cli:lychee:q",
+        "cli:lychee:invoke"
+      ],
+      "graphStats": {
+        "providers": 3,
+        "capabilities": 33,
+        "edges": 112,
+        "chains2": 112,
+        "chains3": 230,
+        "total": 375
+      },
+      "lycheeSearch": {
+        "ids": [
+          "cli:lychee:q",
+          "cli:lychee:offline",
+          "cli:lychee:host-stats",
+          "cli:lychee:glob-ignore-case",
+          "cli:lychee:no-ignore",
+          "cli:lychee:dump",
+          "cli:lychee:no-progress",
+          "cli:lychee:default",
+          "cli:lychee:dump-inputs",
+          "cli:lychee:invoke"
+        ],
+        "error": null,
+        "shape": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9"
+        ]
+      },
+      "lycheeIds": [
+        "cli:lychee:q",
+        "cli:lychee:offline",
+        "cli:lychee:host-stats",
+        "cli:lychee:glob-ignore-case",
+        "cli:lychee:no-ignore",
+        "cli:lychee:dump",
+        "cli:lychee:no-progress",
+        "cli:lychee:default",
+        "cli:lychee:dump-inputs",
+        "cli:lychee:invoke"
+      ],
+      "dumpCapability": "cli:lychee:dump",
+      "identification": "selected because its recorded execution plan passes --dump; harness choice, not product behaviour",
+      "explainKeys": [
+        "capability",
+        "execution",
+        "contract",
+        "evidence",
+        "exampleArgs",
+        "details"
+      ],
+      "explainSample": "{\"capability\":{\"id\":\"cli:lychee:dump\",\"title\":\"lychee --dump: Don't perform any link checking. Instead, dump all the links extracted from inputs that would be checked\",\"description\":\"lychee - lychee is a fast, asynchronous link checker which detects broken URLs and mail addresses in local files and websites. It supports Markdown and HTML and works with other file formats.. With --dump: Don't perform any link checking. Instead, dump all the links extracted from inputs that would be checked. Learned by sandboxed investigation of /opt/homebrew/bin/lychee (sha256 257874d6cc6e), no\",\"provider\":\"cli:lychee\",\"source\":\"cli\",\"inputs\":[{\"name\":\"file1\",\"type\":\"markdown\",\"required\":true,\"anyText\":true,\"description\":\"Content passed as a file operand. Supply text to preserve its bytes; objects and arrays are serialized as JSON.\"}],\"outputs\":[{\"name\":\"\",\"type\":\"text\",\"required\":true}],\"risk\":\"read\",\"tags\":[\"lychee\",\"lychee\",\"lychee\",\"fast\",\"asynchronous\",\"link\",\"checker\",\"which\",\"detects\",\"broken\",\"urls\",\"and\",\"mail\",\"addresses\",\"local\",\"files\",\"and\",\"websites\",\"supports\",\"markdown\",\"and\",\"html\",\"and\",\"works\",\"with\",\"other\",\"file\",\"formats\",\"don\",\"perform\"],\"invoke\":{\"kind\":\"cli\",\"bin\":\"/opt/homebrew/bin/lychee\",\"args\":[\"--dump\",{\"input\":\"file1\"}],\"okExit\":[0],\"output\":\"text\",\"sha256\":\"257874d6cc6e98e2afa4443b7169e45c9c8f6864dd1a8c8743e2be56d5ef096b\",\"behaviour\":\"15c6e75fa1479b8d\",\"environmen",
+      "outputPortTypes": {
+        "cli:lychee:q": {
+          "inputs": [
+            {
+              "name": "file1",
+              "type": "html",
+              "required": true,
+              "anyText": true,
+              "description": "Content passed as a file operand. Supply text to preserve its bytes; objects and arrays are serialized as JSON."
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "tags": [],
+          "okExit": [
+            0,
+            2
+          ],
+          "outputRepresentation": "text",
+          "lineType": null,
+          "emptyResult": null
+        },
+        "cli:lychee:offline": {
+          "inputs": [
+            {
+              "name": "file1",
+              "type": "html",
+              "required": true,
+              "anyText": true,
+              "description": "Content passed as a file operand. Supply text to preserve its bytes; objects and arrays are serialized as JSON."
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "tags": [],
+          "okExit": [
+            0
+          ],
+          "outputRepresentation": "text",
+          "lineType": null,
+          "emptyResult": null
+        },
+        "cli:lychee:host-stats": {
+          "inputs": [
+            {
+              "name": "file1",
+              "type": "html",
+              "required": true,
+              "anyText": true,
+              "description": "Content passed as a file operand. Supply text to preserve its bytes; objects and arrays are serialized as JSON."
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "tags": [],
+          "okExit": [
+            0,
+            2
+          ],
+          "outputRepresentation": "text",
+          "lineType": null,
+          "emptyResult": null
+        },
+        "cli:lychee:glob-ignore-case": {
+          "inputs": [
+            {
+              "name": "file1",
+              "type": "html",
+              "required": true,
+              "anyText": true,
+              "description": "Content passed as a file operand. Supply text to preserve its bytes; objects and arrays are serialized as JSON."
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "tags": [],
+          "okExit": [
+            0,
+            2
+          ],
+          "outputRepresentation": "text",
+          "lineType": null,
+          "emptyResult": null
+        },
+        "cli:lychee:no-ignore": {
+          "inputs": [
+            {
+              "name": "file1",
+              "type": "html",
+              "required": true,
+              "anyText": true,
+              "description": "Content passed as a file operand. Supply text to preserve its bytes; objects and arrays are serialized as JSON."
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "tags": [],
+          "okExit": [
+            0,
+            2
+          ],
+          "outputRepresentation": "text",
+          "lineType": null,
+          "emptyResult": null
+        },
+        "cli:lychee:dump": {
+          "inputs": [
+            {
+              "name": "file1",
+              "type": "markdown",
+              "required": true,
+              "anyText": true,
+              "description": "Content passed as a file operand. Supply text to preserve its bytes; objects and arrays are serialized as JSON."
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "tags": [],
+          "okExit": [
+            0
+          ],
+          "outputRepresentation": "text",
+          "lineType": null,
+          "emptyResult": null
+        },
+        "cli:lychee:no-progress": {
+          "inputs": [
+            {
+              "name": "file1",
+              "type": "html",
+              "required": true,
+              "anyText": true,
+              "description": "Content passed as a file operand. Supply text to preserve its bytes; objects and arrays are serialized as JSON."
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "tags": [],
+          "okExit": [
+            0,
+            2
+          ],
+          "outputRepresentation": "text",
+          "lineType": null,
+          "emptyResult": null
+        },
+        "cli:lychee:default": {
+          "inputs": [
+            {
+              "name": "file1",
+              "type": "html",
+              "required": true,
+              "anyText": true,
+              "description": "Content passed as a file operand. Supply text to preserve its bytes; objects and arrays are serialized as JSON."
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "tags": [],
+          "okExit": [
+            0,
+            2
+          ],
+          "outputRepresentation": "text",
+          "lineType": null,
+          "emptyResult": null
+        },
+        "cli:lychee:dump-inputs": {
+          "inputs": [
+            {
+              "name": "file1",
+              "type": "html",
+              "required": true,
+              "anyText": true,
+              "description": "Content passed as a file operand. Supply text to preserve its bytes; objects and arrays are serialized as JSON."
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "tags": [],
+          "okExit": [
+            0
+          ],
+          "outputRepresentation": "text",
+          "lineType": null,
+          "emptyResult": null
+        },
+        "cli:lychee:invoke": {
+          "inputs": [
+            {
+              "name": "file1",
+              "type": "html",
+              "required": false,
+              "anyText": true,
+              "description": "Content passed as a file operand. Supply text to preserve its bytes; objects and arrays are serialized as JSON."
+            },
+            {
+              "name": "options",
+              "type": "list:text",
+              "required": false,
+              "description": "Documented options and their values, one item each: -a/--accept <<ACCEPT>>, --accept-timeouts[=<false|true>], --archive <<ARCHIVE>>, -c/--config <<FILE_PATH>>, --cache[=<false|true>], --cache-exclude-status <<CACHE_EXCLUDE_STATUS>>, --cookie-jar <<COOKIE_JAR>>, --default-extension <<EXTENSION>>, --dump[=<false|true>], --dump-inputs[=<false|true>], -E/--exclude-all-private[=<false|true>], --exclude <<EXCLUDE>>, --exclude-file <<EXCLUDE_FILE>>, --exclude-link-local[=<false|true>], --exclude-loopback[=<false|true>], --exclude-path <<EXCLUDE_PATH>>, --exclude-private[=<false|true>], --extensions <<EXTENSIONS>>, -f/--format <<FORMAT>>, --fallback-extensions <<FALLBACK_EXTENSIONS>>, --files-from <<PATH>>, --generate <<GENERATE>>, --glob-ignore-case[=<false|true>], -H/--header <<HEADER:VALUE>>, --hidden[=<false|true>], --include <<INCLUDE>>, --include-fragments/-only/-only[=<none|anchor-only|text-only|full>], --include-mail[=<false|true>], --include-verbatim[=<false|true>], --index-files <<INDEX_FILES>>, -m/--max-redirects <<MAX_REDIRECTS>>, --max-cache-age <<MAX_CACHE_AGE>>, --max-retries <<MAX_RETRIES>>, --min-tls <<MIN_TLS>>, --mode <<MODE>>, -n/--no-progress[=<false|true>], --no-ignore[=<false|true>], -q, -r/--retry-wait-time <<RETRY_WAIT_TIME>>, --root-dir <<ROOT_DIR>>"
+            },
+            {
+              "name": "files",
+              "type": "json",
+              "required": false,
+              "description": "Named input files {\"name.txt\": \"content\"}: staged with exact flat names (no paths or leading dash). Options can refer to these names. All are operands unless \"operands\" selects otherwise."
+            },
+            {
+              "name": "operands",
+              "type": "list:text",
+              "required": false,
+              "description": "Names from \"files\" to append as positional operands, in this order. Omit for all files; [] for none. Auxiliary files used by options need not also be operands."
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "text",
+              "required": true
+            }
+          ],
+          "tags": [
+            "direct-only"
+          ],
+          "okExit": [
+            0,
+            2
+          ],
+          "outputRepresentation": "text",
+          "lineType": null,
+          "emptyResult": null
+        }
+      }
+    },
+    "A1_emptyResult": {
+      "perFixture": {
+        "abs-links.md": {
+          "status": "completed",
+          "refusal": null,
+          "lineCount": 3,
+          "lines": [
+            "https://alpha-linkaudit.dev/domains/reserved",
+            "https://bravo-linkaudit.io/spec/v1",
+            "https://alpha-linkaudit.dev/about"
+          ],
+          "oracleAbsoluteHttp": [
+            "https://alpha-linkaudit.dev/about",
+            "https://alpha-linkaudit.dev/domains/reserved",
+            "https://bravo-linkaudit.io/spec/v1"
+          ],
+          "oracleRelative": [],
+          "oracleMailto": [],
+          "absoluteHttpMatchesOracle": true,
+          "replacementChars": 0
+        },
+        "mixed.md": {
+          "status": "completed",
+          "refusal": null,
+          "lineCount": 5,
+          "lines": [
+            "https://alpha-linkaudit.dev/a",
+            "https://bravo-linkaudit.io/b",
+            "https://echo-linkaudit.dev/e",
+            "https://foxtrot-linkaudit.io/f",
+            "https://sub.example.io/kept"
+          ],
+          "oracleAbsoluteHttp": [
+            "https://alpha-linkaudit.dev/a",
+            "https://bravo-linkaudit.io/b",
+            "https://example.com/reserved",
+            "https://foxtrot-linkaudit.io/f",
+            "https://sub.example.io/kept"
+          ],
+          "oracleRelative": [],
+          "oracleMailto": [
+            "mailto:audit@charlie-linkaudit.org",
+            "mailto:delta@charlie-linkaudit.org"
+          ],
+          "absoluteHttpMatchesOracle": false,
+          "replacementChars": 0
+        },
+        "no-links.md": {
+          "status": "failed",
+          "refusal": "/opt/homebrew/bin/lychee exited 0 without output: ; re-reflected cli:/opt/homebrew/bin/lychee: no contract change",
+          "lineCount": 0,
+          "lines": [],
+          "oracleAbsoluteHttp": [],
+          "oracleRelative": [],
+          "oracleMailto": [],
+          "absoluteHttpMatchesOracle": true,
+          "replacementChars": 0
+        },
+        "rel-links.md": {
+          "status": "completed",
+          "refusal": null,
+          "lineCount": 2,
+          "lines": [
+            "file:///private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/rcx-sbx-8KxeED/doc.md",
+            "file:///private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/other/notes.md"
+          ],
+          "oracleAbsoluteHttp": [],
+          "oracleRelative": [
+            "../other/notes.md",
+            "/absolute/path/page.md",
+            "doc.md"
+          ],
+          "oracleMailto": [],
+          "absoluteHttpMatchesOracle": true,
+          "replacementChars": 0
+        }
+      },
+      "verdict": {
+        "emptyFixtureStatus": "failed",
+        "emptyFixtureRefusal": "/opt/homebrew/bin/lychee exited 0 without output: ; re-reflected cli:/opt/homebrew/bin/lychee: no contract change",
+        "emptyResultAdmitted": false,
+        "emptyResultRefused": true
+      }
+    },
+    "A3_repeatability": {
+      "identicalBytes": false,
+      "identicalAfterSandboxPathNormalisation": true,
+      "sandboxPathPresentInReturnedOutput": true,
+      "run1": [
+        "file:///private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/rcx-sbx-iv6s44/doc.md",
+        "file:///private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/other/notes.md"
+      ],
+      "run2": [
+        "file:///private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/rcx-sbx-TfESj0/doc.md",
+        "file:///private/var/folders/tz/y04t4d0900xdbmz96jp608180000gn/T/other/notes.md"
+      ],
+      "note": "identicalBytes=false with identicalAfterSandboxPathNormalisation=true isolates the volatile sandbox directory as the only difference"
+    },
+    "A2_typedComposition": {
+      "dumpOutputPortType": [
+        {
+          "name": "",
+          "type": "text",
+          "required": true
+        }
+      ],
+      "graphPathsMarkdownToListUrl": [
+        {
+          "summary": "Render Markdown to HTML → Extract links",
+          "steps": 2,
+          "providers": [
+            "builtin:core"
+          ],
+          "cost": 2.77
+        }
+      ],
+      "plansFound": 1,
+      "planningRefusal": null,
+      "error": null,
+      "planTitles": [
+        [
+          "Render Markdown to HTML",
+          "Extract links"
+        ]
+      ],
+      "usesAcquiredCapability": false
+    },
+    "A4_encoding": {
+      "learnedIconv": null,
+      "learnDetail": "no input channel produced output for iconv (20 trials); offered as a declared interface only (6 documented options)",
+      "iconvSearch": {
+        "ids": [
+          "cli:iconv:invoke"
+        ],
+        "error": null,
+        "shape": [
+          "0"
+        ]
+      },
+      "iconvIds": [
+        "cli:iconv:invoke"
+      ],
+      "run": {
+        "capability": "cli:iconv:invoke",
+        "status": "completed",
+        "refusal": null,
+        "outputCodePoints": [
+          99,
+          97,
+          102,
+          65533,
+          32,
+          110,
+          97,
+          65533,
+          118,
+          101,
+          10
+        ],
+        "replacementChars": 2,
+        "silentlyCorrupted": true,
+        "explicitlyUnsupported": false
+      }
+    },
+    "A5_assurance": {
+      "status": "completed",
+      "verification": {
+        "status": "checked",
+        "results": [
+          {
+            "predicate": {
+              "op": "length_gt",
+              "value": 0
+            },
+            "ok": true,
+            "actual": [
+              "https://alpha-linkaudit.dev/domains/reserved",
+              "https://bravo-linkaudit.io/spec/v1",
+              "https://alpha-linkaudit.dev/about"
+            ]
+          }
+        ]
+      },
+      "trust": "checked",
+      "published": true,
+      "publishRefused": null,
+      "pipeline": [
+        "Render Markdown to HTML",
+        "Extract links"
+      ],
+      "error": null,
+      "claimsVerifiedWithoutWitness": false
+    }
+  },
+  "finishedAt": "2026-11-04T00:12:46.802Z",
+  "interaction": {
+    "toolCalls": 27,
+    "totalSentChars": 6191,
+    "totalReceivedChars": 350540,
+    "totalMs": 6161,
+    "perCall": [
+      {
+        "method": "initialize",
+        "sent": 169,
+        "received": 662,
+        "ms": 161
+      },
+      {
+        "method": "tools/list",
+        "sent": 58,
+        "received": 19046,
+        "ms": 0
+      },
+      {
+        "method": "tools/call",
+        "sent": 134,
+        "received": 1040,
+        "ms": 5282
+      },
+      {
+        "method": "tools/call",
+        "sent": 108,
+        "received": 75142,
+        "ms": 1
+      },
+      {
+        "method": "tools/call",
+        "sent": 107,
+        "received": 258,
+        "ms": 0
+      },
+      {
+        "method": "tools/call",
+        "sent": 137,
+        "received": 4519,
+        "ms": 2
+      },
+      {
+        "method": "tools/call",
+        "sent": 131,
+        "received": 10984,
+        "ms": 1
+      },
+      {
+        "method": "tools/call",
+        "sent": 137,
+        "received": 11032,
+        "ms": 0
+      },
+      {
+        "method": "tools/call",
+        "sent": 140,
+        "received": 11066,
+        "ms": 0
+      },
+      {
+        "method": "tools/call",
+        "sent": 147,
+        "received": 11176,
+        "ms": 0
+      },
+      {
+        "method": "tools/call",
+        "sent": 140,
+        "received": 11184,
+        "ms": 0
+      },
+      {
+        "method": "tools/call",
+        "sent": 135,
+        "received": 11108,
+        "ms": 0
+      },
+      {
+        "method": "tools/call",
+        "sent": 142,
+        "received": 11214,
+        "ms": 0
+      },
+      {
+        "method": "tools/call",
+        "sent": 138,
+        "received": 11162,
+        "ms": 0
+      },
+      {
+        "method": "tools/call",
+        "sent": 142,
+        "received": 11230,
+        "ms": 0
+      },
+      {
+        "method": "tools/call",
+        "sent": 137,
+        "received": 26984,
+        "ms": 0
+      },
+      {
+        "method": "tools/call",
+        "sent": 377,
+        "received": 4315,
+        "ms": 31
+      },
+      {
+        "method": "tools/call",
+        "sent": 874,
+        "received": 4387,
+        "ms": 18
+      },
+      {
+        "method": "tools/call",
+        "sent": 337,
+        "received": 4796,
+        "ms": 39
+      },
+      {
+        "method": "tools/call",
+        "sent": 265,
+        "received": 4414,
+        "ms": 18
+      },
+      {
+        "method": "tools/call",
+        "sent": 265,
+        "received": 4406,
+        "ms": 17
+      },
+      {
+        "method": "tools/call",
+        "sent": 265,
+        "received": 4414,
+        "ms": 18
+      },
+      {
+        "method": "tools/call",
+        "sent": 452,
+        "received": 4320,
+        "ms": 16
+      },
+      {
+        "method": "tools/call",
+        "sent": 153,
+        "received": 311,
+        "ms": 11
+      },
+      {
+        "method": "tools/call",
+        "sent": 125,
+        "received": 1100,
+        "ms": 514
+      },
+      {
+        "method": "tools/call",
+        "sent": 137,
+        "received": 477,
+        "ms": 1
+      },
+      {
+        "method": "tools/call",
+        "sent": 109,
+        "received": 79252,
+        "ms": 1
+      },
+      {
+        "method": "tools/call",
+        "sent": 213,
+        "received": 4055,
+        "ms": 14
+      },
+      {
+        "method": "tools/call",
+        "sent": 517,
+        "received": 6486,
+        "ms": 16
+      }
+    ]
+  }
+}

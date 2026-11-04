@@ -15,7 +15,140 @@
 // path-resolved is unusable: see resolutionAncestors. A read-deny root may be declared
 // before it exists, so a barrier can precede the data it conceals: see pendingDenyRoot.
 
+import { execFileSync } from "node:child_process";
+import { existsSync } from "node:fs";
 import { validateFileNames } from "./cli-files.ts";
+
+export type LocaleProfileName = "c" | "utf8";
+
+export interface SandboxLocale {
+  readonly profile: LocaleProfileName;
+  /** Verified host locale identifier ("C" for the C profile, or e.g. "C.UTF-8" / "en_US.UTF-8" for the UTF-8 profile). */
+  readonly locale: string;
+  /** Exact locale environment variables passed to the sandboxed child process. Never sets LC_ALL alongside LC_CTYPE. */
+  readonly env: Readonly<Record<string, string>>;
+}
+
+export const C_LOCALE_PROFILE: SandboxLocale = Object.freeze({
+  profile: "c",
+  locale: "C",
+  env: Object.freeze({ LANG: "C", LC_ALL: "C" }),
+});
+
+const SAFE_LOCALE_ID = /^[A-Za-z0-9._@-]{1,64}$/;
+const localeCache = new Map<string, SandboxLocale>();
+
+/** Return the active locale profile for a sandbox policy, defaulting to the deterministic C profile. */
+export function effectiveSandboxLocale(policy?: { locale?: SandboxLocale }): SandboxLocale {
+  return policy?.locale ?? C_LOCALE_PROFILE;
+}
+
+/**
+ * Resolve and empirically verify a sandbox locale execution profile on this host.
+ *
+ * - `"c"` / `"C"` / `"POSIX"` / `undefined`: the historical C profile (`LANG=C`, `LC_ALL=C`).
+ * - `"utf8"` / `"UTF-8"` or an explicit UTF-8 locale (e.g. `"C.UTF-8"`, `"en_US.UTF-8"`):
+ *   detects an installed UTF-8 locale on macOS or Linux, omits `LC_ALL` so it cannot override
+ *   `LC_CTYPE`, pins `LC_COLLATE=C`, `LC_NUMERIC=C`, `LC_TIME=C`, `LC_MONETARY=C` and
+ *   `LC_MESSAGES=C` for deterministic collation and numeric formatting, and verifies via `locale`
+ *   that `charmap` is `UTF-8` with no fallback warnings. Fails closed if unsupported.
+ */
+export function resolveSandboxLocale(requested?: string | SandboxLocale): SandboxLocale {
+  if (requested && typeof requested === "object") {
+    if (requested.profile === "c") return C_LOCALE_PROFILE;
+    return resolveSandboxLocale(requested.locale);
+  }
+  const spec = (requested ?? "").trim();
+  if (!spec || spec === "c" || spec === "C" || spec === "POSIX") return C_LOCALE_PROFILE;
+  const cached = localeCache.get(spec);
+  if (cached) return cached;
+  if (!SAFE_LOCALE_ID.test(spec)) {
+    throw new Error(`RCX_SANDBOX_LOCALE refused: ${JSON.stringify(spec)} is not a valid locale identifier`);
+  }
+  const genericUtf8 = /^utf-?8$/i.test(spec);
+  if (!genericUtf8 && !/[.-]utf-?8$/i.test(spec)) {
+    throw new Error(`RCX_SANDBOX_LOCALE refused: ${JSON.stringify(spec)} is not a UTF-8 locale or "c"`);
+  }
+  const localeBin = ["/usr/bin/locale", "/bin/locale"].find((p) => existsSync(p));
+  if (!localeBin) {
+    throw new Error(`RCX_SANDBOX_LOCALE refused: no host locale utility available to verify ${JSON.stringify(spec)}`);
+  }
+  let installed = new Set<string>();
+  try {
+    const out = execFileSync(localeBin, ["-a"], {
+      env: { PATH: "/usr/bin:/bin", LANG: "C", LC_ALL: "C" },
+      encoding: "utf8",
+      timeout: 3000,
+    });
+    installed = new Set(out.split(/\r?\n/).map((l) => l.trim()).filter(Boolean));
+  } catch {
+    throw new Error(`RCX_SANDBOX_LOCALE refused: could not query installed locales via ${localeBin} -a`);
+  }
+  const norm = (s: string) => s.toLowerCase().replace(/[-_]/g, "");
+  const matchInstalled = (want: string): string | undefined => {
+    if (installed.has(want)) return want;
+    const target = norm(want);
+    for (const entry of installed) {
+      if (norm(entry) === target) return entry;
+    }
+    return undefined;
+  };
+  let candidates: string[] = [];
+  if (genericUtf8) {
+    for (const pref of ["C.UTF-8", "C.utf8", "en_US.UTF-8", "en_US.utf8", "UTF-8"]) {
+      const m = matchInstalled(pref);
+      if (m && !candidates.includes(m)) candidates.push(m);
+    }
+    for (const entry of installed) {
+      if (/utf-?8$/i.test(entry) && !candidates.includes(entry)) candidates.push(entry);
+    }
+  } else {
+    const m = matchInstalled(spec);
+    if (!m) {
+      throw new Error(`RCX_SANDBOX_LOCALE refused: locale ${JSON.stringify(spec)} is not installed on this host`);
+    }
+    candidates = [m];
+  }
+  for (const loc of candidates.slice(0, 8)) {
+    const env: Readonly<Record<string, string>> = Object.freeze({
+      LANG: loc,
+      LC_CTYPE: loc,
+      LC_COLLATE: "C",
+      LC_NUMERIC: "C",
+      LC_TIME: "C",
+      LC_MONETARY: "C",
+      LC_MESSAGES: "C",
+    });
+    try {
+      const charmap = execFileSync(localeBin, ["charmap"], {
+        env: { PATH: "/usr/bin:/bin", ...env },
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "pipe"],
+        timeout: 2000,
+      });
+      const summary = execFileSync(localeBin, [], {
+        env: { PATH: "/usr/bin:/bin", ...env },
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "pipe"],
+        timeout: 2000,
+      });
+      if (
+        charmap.trim().toUpperCase() === "UTF-8" &&
+        /LC_COLLATE="?C"?/.test(summary) &&
+        /LC_NUMERIC="?C"?/.test(summary) &&
+        /LC_ALL=\s*$/m.test(summary)
+      ) {
+        const resolved: SandboxLocale = Object.freeze({ profile: "utf8", locale: loc, env });
+        localeCache.set(spec, resolved);
+        localeCache.set(loc, resolved);
+        return resolved;
+      }
+    } catch {
+      /* candidate failed verification */
+    }
+  }
+  throw new Error(`RCX_SANDBOX_LOCALE refused: ${JSON.stringify(spec)} could not be verified as a supported UTF-8 locale on this host`);
+}
 
 export interface SandboxLimits {
   timeoutMs: number;
@@ -43,6 +176,90 @@ export interface SandboxRun {
   limit?: LimitHit;
   /** The run's private working directory (already deleted); used to normalise outputs that name it. */
   workDir: string;
+  /** Exact stdout length in bytes. `stdout.length` counts characters and differs for multi-byte output. */
+  stdoutBytes?: number;
+  /**
+   * Set when stdout was not valid UTF-8. `stdout` is then lossy — every invalid sequence became
+   * U+FFFD — so it is evidence about the run, never the program's output, and must not be returned
+   * to a caller or compared as though it were what the program printed.
+   */
+  stdoutEncoding?: "unsupported";
+  /** Bounded base64 of the raw stdout bytes, retained only when they are not valid UTF-8. */
+  stdoutBase64?: string;
+}
+
+/** How many raw bytes of an undecodable stdout are retained as evidence. */
+const RAW_EVIDENCE_BYTES = 4096;
+
+/**
+ * The number of trailing bytes that form an incomplete UTF-8 sequence, or 0 when the buffer ends
+ * on a complete character or on a byte that cannot start one. Cutting blindly instead would let an
+ * invalid byte in the middle of a truncated stream be dropped along with the tail, which is the
+ * silent loss this module exists to prevent.
+ */
+function incompleteTail(buf: Buffer): number {
+  let i = buf.length - 1;
+  let continuations = 0;
+  while (i >= 0 && continuations < 3 && (buf[i]! & 0xc0) === 0x80) { i--; continuations++; }
+  if (i < 0) return 0;
+  const lead = buf[i]!;
+  const expected = lead >= 0xf0 ? 3 : lead >= 0xe0 ? 2 : lead >= 0xc0 ? 1 : 0;
+  // A complete sequence is not a truncated tail, and neither is a byte that cannot lead one.
+  return expected && continuations < expected ? continuations + 1 : 0;
+}
+
+/**
+ * Decode a child process's stdout as UTF-8 without silently losing information.
+ *
+ * `Buffer.toString("utf8")` substitutes U+FFFD for every invalid sequence and reports success, so a
+ * program that printed Latin-1 or binary bytes is indistinguishable from one that printed the
+ * replacement character, and the run is reported as completed. Decoding strictly makes the
+ * difference observable instead.
+ *
+ * A truncated stream is treated separately: the sandbox cut it, so an incomplete multi-byte
+ * sequence at the very end is the sandbox's doing rather than the program's. Only a genuine
+ * incomplete trailing sequence is discounted — an invalid byte in the middle of a truncated stream
+ * is still the program's, and is still reported.
+ */
+export function decodeProcessOutput(buf: Buffer, truncated: boolean): { text: string; valid: boolean } {
+  const strict = (b: Buffer) => new TextDecoder("utf-8", { fatal: true }).decode(b);
+  try {
+    return { text: strict(buf), valid: true };
+  } catch {
+    /* not valid UTF-8 as it stands */
+  }
+  if (truncated) {
+    const tail = incompleteTail(buf);
+    if (tail) {
+      try {
+        return { text: strict(buf.subarray(0, buf.length - tail)), valid: true };
+      } catch {
+        /* the invalid bytes are not only the tail the sandbox cut */
+      }
+    }
+  }
+  return { text: buf.toString("utf8"), valid: false };
+}
+
+/**
+ * The per-run sandbox directory is created fresh for every run and deleted when it ends, so a
+ * program that names it prints different bytes for identical behaviour. Naming it is not behaviour.
+ *
+ * It is replaced by this fixed placeholder, which is itself a valid absolute path: normalisation
+ * must not destroy the shape of what the program printed. A token that is not a path turns a
+ * `file://` destination into something that is no longer a URI, and a line-oriented result into
+ * something that can no longer be read as a list, so the volatile part of the output would stop
+ * being typeable at all. The directory is gone by the time anyone reads the result, so no real
+ * location is lost by naming it consistently.
+ */
+export const SANDBOX_PATH_PLACEHOLDER = "/rcx-sandbox";
+
+/** Replace the run's own sandbox directory, and the same path without macOS's `/private` prefix. */
+export function normaliseSandboxPaths(text: string, workDir: string | undefined): string {
+  if (!workDir) return text;
+  return text
+    .split(workDir).join(SANDBOX_PATH_PLACEHOLDER)
+    .split(workDir.replace(/^\/private/, "")).join(SANDBOX_PATH_PLACEHOLDER);
 }
 
 export const DEFAULT_LIMITS: SandboxLimits = { timeoutMs: 5000, maxOutputBytes: 1_000_000, maxMemoryBytes: 512 * 1024 * 1024, maxProcesses: 64, maxFileBytes: 16 * 1024 * 1024 };
@@ -74,6 +291,8 @@ export interface SandboxPolicy {
   pathDirs: string[];
   network: boolean;
   limits: SandboxLimits;
+  /** Explicitly selected, host-verified execution locale profile (defaults to C when omitted). */
+  locale?: SandboxLocale;
 }
 
 /** No operator declarations at all: the historical, fully confined profile. */
@@ -183,6 +402,7 @@ export function sandboxPolicy(): Promise<SandboxPolicy> {
         throw new Error(`RCX_SANDBOX_READ_DENY refused: ${deny} is not inside any RCX_SANDBOX_READ root, so it would exclude nothing`);
       }
     }
+    const locale = env.RCX_SANDBOX_LOCALE !== undefined ? resolveSandboxLocale(env.RCX_SANDBOX_LOCALE) : undefined;
     return {
       readRoots,
       readDenyRoots,
@@ -200,6 +420,7 @@ export function sandboxPolicy(): Promise<SandboxPolicy> {
         // unbounded declaration could fill the operator's disk from inside the sandbox.
         ...(positive(fileMb) ? { maxFileBytes: Math.min(fileMb, 4096) * 1024 * 1024 } : {}),
       },
+      ...(locale && locale.profile !== "c" ? { locale } : {}),
     };
   })());
 }
@@ -336,7 +557,19 @@ async function groupUsage(pgid: number): Promise<{ rss: number; procs: number } 
   });
 }
 
+export function withSandboxLocale(sandbox: Sandbox, requested?: string | SandboxLocale): Sandbox {
+  const locale = resolveSandboxLocale(requested);
+  const bwrap = ["/usr/bin/bwrap", "/bin/bwrap"].find((p) => existsSync(p)) ?? "";
+  const nextPolicy: SandboxPolicy = {
+    ...sandbox.policy,
+    ...(locale.profile === "c" ? {} : { locale }),
+  };
+  if (locale.profile === "c") delete nextPolicy.locale;
+  return makeSandbox(sandbox.kind, nextPolicy, bwrap);
+}
+
 export function makeSandbox(kind: Sandbox["kind"], policy: SandboxPolicy, bwrap = ""): Sandbox {
+  const activeLocale = effectiveSandboxLocale(policy);
   return {
     kind,
     policy,
@@ -358,7 +591,9 @@ export function makeSandbox(kind: Sandbox["kind"], policy: SandboxPolicy, bwrap 
           "; above a declared root only stat is permitted, so those directories cannot be listed or read"
         : "no reads under home directories",
       `PATH limited to ${policy.pathDirs.join(":")}`,
-      "scrubbed environment",
+      activeLocale.profile === "utf8"
+        ? `scrubbed environment (UTF-8 locale ${activeLocale.locale}; LC_COLLATE=C, LC_NUMERIC=C, LC_TIME=C, LC_MONETARY=C, LC_MESSAGES=C; LC_ALL unset)`
+        : "scrubbed environment",
       "argv only",
       `wall-time ${policy.limits.timeoutMs}ms, CPU-time, per-file ${Math.round(policy.limits.maxFileBytes / (1024 * 1024))}MB, open-file and output limits`,
       "sampled resident-memory/process-count watchdog; not a hard kernel bound; observer loss refuses results",
@@ -423,12 +658,11 @@ export function makeSandbox(kind: Sandbox["kind"], policy: SandboxPolicy, bwrap 
           "--die-with-parent", "--chdir", work, ...wrapped,
         ];
       }
-      const env = {
+      const env: Record<string, string> = {
         PATH: policy.pathDirs.join(":"),
         HOME: work,
         TMPDIR: work,
-        LANG: "C",
-        LC_ALL: "C",
+        ...activeLocale.env,
         TERM: "dumb",
         RCX_CPU: String(Math.max(1, Math.ceil(limits.timeoutMs / 1000))),
         RCX_FSIZE: String(Math.max(1, Math.floor(limits.maxFileBytes / 1024))),
@@ -510,7 +744,22 @@ export function makeSandbox(kind: Sandbox["kind"], policy: SandboxPolicy, bwrap 
             /* gone */
           }
           fs.rmSync(work, { recursive: true, force: true });
-          done({ code: limit === "supervision" ? -1 : code, stdout: limit === "supervision" ? "" : out.toString("utf8"), stderr: err.toString("utf8"), timedOut, truncated, durationMs: Date.now() - t0, created, workDir: work, ...(limit ? { limit } : {}) });
+          const decoded = limit === "supervision" ? { text: "", valid: true } : decodeProcessOutput(out, truncated);
+          done({
+            code: limit === "supervision" ? -1 : code,
+            stdout: decoded.text,
+            // stderr is diagnostic text, not a capability's result: it is never returned as output,
+            // so a lossy decode costs readability of an error message, not correctness of a contract.
+            stderr: err.toString("utf8"),
+            timedOut,
+            truncated,
+            durationMs: Date.now() - t0,
+            created,
+            workDir: work,
+            stdoutBytes: out.length,
+            ...(decoded.valid ? {} : { stdoutEncoding: "unsupported" as const, stdoutBase64: out.subarray(0, RAW_EVIDENCE_BYTES).toString("base64") }),
+            ...(limit ? { limit } : {}),
+          });
         };
         p.on("close", finish);
         p.on("error", () => finish(-1));

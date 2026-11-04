@@ -15,6 +15,20 @@ import { tokenize, type CapabilityGraph } from "./graph.ts";
 import type { Ledger } from "./ledger.ts";
 import type { Binding, Capability, PlanStep, Port, Risk, SemType } from "./types.ts";
 
+/**
+ * Why one candidate capability could not take part in a composition.
+ *
+ * A refusal that says only "no plan found" leaves the caller to guess which of hundreds of
+ * capabilities was nearly usable and what was missing. These name the specific port, the type it
+ * wanted and the values that were available, so a caller can tell an absent capability from an
+ * absent type conversion from a policy block — and can supply the missing piece rather than
+ * re-investigating the program.
+ */
+export interface CompositionDiagnostic {
+  capability: string;
+  reasons: string[];
+}
+
 export interface Goal {
   /** Named inputs the caller can supply, with semantic types. */
   have: Record<string, SemType>;
@@ -38,6 +52,11 @@ export interface Goal {
   schemes?: Record<string, string[]>;
   /** Explicit bindings of an anchored capability port to a named caller input. */
   inputBindings?: Record<string, Record<string, string>>;
+  /**
+   * Optional sink for why each considered capability could not compose. Off unless supplied, so a
+   * search that nobody is diagnosing pays nothing; bounded to one entry per capability.
+   */
+  diagnostics?: CompositionDiagnostic[];
 }
 
 /**
@@ -150,18 +169,27 @@ export function plan(graph: CapabilityGraph, ledger: Ledger, goal: Goal, expansi
     const e = egressOf(c, graph);
     return e !== "anywhere" && e.every((o) => origins.has(o));
   };
-  const caps = graph.list().filter(
-    (c) =>
-      !excluded.has(c.id) &&
-      !(c.invoke.kind === "composite" && c.invoke.steps.some((s) => excluded.has(s.capability))) &&
-      (!risks || risks.has(c.risk)) &&
-      // Investigated behaviour that experiments did not support is never composed automatically.
-      !c.tags.includes("unsupported") &&
-      // Capabilities whose arguments a caller must choose (documented options, literal operands):
-      // only when the caller named them (through).
-      (!c.tags.includes("direct-only") || anchors.has(c.id)) &&
-      withinPolicy(c),
-  );
+  // Bounded diagnostic sink: recorded only when the caller asked for one, one entry per capability.
+  const diag = (id: string, reason: string) => {
+    const sink = goal.diagnostics;
+    if (!sink) return;
+    const found = sink.find((d) => d.capability === id);
+    if (found) { if (found.reasons.length < 8 && !found.reasons.includes(reason)) found.reasons.push(reason); }
+    else if (sink.length < 64) sink.push({ capability: id, reasons: [reason.slice(0, 512)] });
+  };
+  const caps: Capability[] = [];
+  for (const c of graph.list()) {
+    if (excluded.has(c.id)) { diag(c.id, "the caller routed around this capability"); continue; }
+    if (c.invoke.kind === "composite" && c.invoke.steps.some((s) => excluded.has(s.capability))) { diag(c.id, "a step of this saved pipeline was routed around by the caller"); continue; }
+    if (risks && !risks.has(c.risk)) { diag(c.id, `its declared risk "${c.risk}" is outside the risks requested (${[...risks].join(", ") || "none"})`); continue; }
+    // Investigated behaviour that experiments did not support is never composed automatically.
+    if (c.tags.includes("unsupported")) { diag(c.id, "its behaviour was investigated but the experiments did not support it: callable directly with its evidence, never chosen by automatic composition"); continue; }
+    // Capabilities whose arguments a caller must choose (documented options, literal operands):
+    // only when the caller named them (through).
+    if (c.tags.includes("direct-only") && !anchors.has(c.id)) { diag(c.id, 'its arguments are values only a caller can choose (documented options or literal operands): name it in "through" to compose it'); continue; }
+    if (!withinPolicy(c)) { diag(c.id, "its network egress is not statically bounded to the requested origins"); continue; }
+    caps.push(c);
+  }
   const start: Node = {
     values: Object.entries(goal.have).map(([name, type]) => ({ ref: `$in.${name}`, type, step: -1, ...(goal.schemes?.[name]?.length ? { schemes: goal.schemes[name] } : {}) })),
     steps: [],
@@ -204,20 +232,39 @@ export function plan(graph: CapabilityGraph, ledger: Ledger, goal: Goal, expansi
         if (node.used.has(cap.id)) continue;
         const declared = linkTargets.has(cap.id) ? node.steps.flatMap((s, index) => s.bindings.some(b => b.each) ? [] :
           (graph.get(s.capability)?.links ?? []).filter(l => l.target === cap.id).map(link => ({ index, link }))) : [];
-        // An anchored program's optional stdin may read an earlier anchored step's output: the
-        // caller named both, so the order they named is the pipeline. Elsewhere optional ports
-        // still take only the caller's value of that name.
+        // An anchored program's optional primary content port (stdin or single file operand, made
+        // optional on :invoke only so a caller can supply `files` instead) may read an earlier step's
+        // output in the caller's anchor order, or a caller content input when `files` is not supplied.
+        // Elsewhere optional ports still take only the caller's value of that name.
         const requestedBindings = goal.inputBindings?.[cap.id];
-        const stdin = cap.invoke.kind === "cli" && anchors.has(cap.id) ? cap.invoke.stdin : undefined;
-        const pipe = stdin === undefined ? undefined : { port: stdin,
-          from: (v: Value) => v.step >= 0 && (anchorOrder.get(node.steps[v.step].capability) ?? Infinity) < anchorOrder.get(cap.id)! };
+        const anchored = anchors.has(cap.id);
+        const cliInv = cap.invoke.kind === "cli" ? cap.invoke : undefined;
+        const fileArgs = cliInv ? cliInv.args.filter((a): a is { input: string; literal?: boolean } => typeof a === "object" && !a.literal) : [];
+        const primaryContent = cliInv && anchored ? (cliInv.stdin ?? (fileArgs.length === 1 ? fileArgs[0].input : undefined)) : undefined;
+        const myOrder = anchorOrder.get(cap.id) ?? Infinity;
+        const priorAnchorsReady = [...anchorOrder.entries()].every(([aid, ord]) => ord >= myOrder || node.used.has(aid));
+        const filesPort = cliInv?.filesPort;
+        const hasCallerFiles = !!filesPort && (node.values.some(v => v.step === -1 && v.ref === `$in.${filesPort}`) || !!(requestedBindings && Object.hasOwn(requestedBindings, filesPort)));
+        const hasCallerPrimary = !!primaryContent && (node.values.some(v => v.step === -1 && v.ref === `$in.${primaryContent}`) || !!(requestedBindings && Object.hasOwn(requestedBindings, primaryContent)));
+        const reservedPorts = cliInv ? new Set([cliInv.options?.port, cliInv.optionsAfterArgs?.port, cliInv.filesPort, cliInv.operandsPort, ...cliInv.args.filter((a): a is { input: string; literal?: boolean } => typeof a === "object" && !!a.literal).map(a => a.input)].filter(Boolean)) : new Set<string>();
+        const pipe = primaryContent === undefined ? undefined : {
+          port: primaryContent,
+          from: (v: Value) => {
+            if (v.step >= 0) return priorAnchorsReady && (anchorOrder.get(node.steps[v.step].capability) ?? -1) < myOrder;
+            return priorAnchorsReady && node.steps.length === 0 && !hasCallerFiles && !hasCallerPrimary && !reservedPorts.has(v.ref.slice(4));
+          },
+        };
         let bindings: Binding[] | null;
+        // Diagnosing every node would be noise as well as cost. The initial state is where a
+        // caller's question actually lives — "nothing here accepts my markdown" — so that is the
+        // only depth reported, and the array is not even allocated otherwise.
+        const why = goal.diagnostics && depth === 0 ? [] as string[] : undefined;
         if (declared.length) {
           // Never combine parameters from different relationships or choose
           // between ambiguous links. Explicit caller inputs still use normal binding.
           const named = new Set(node.values.filter(v => v.step === -1).map(v => v.ref.slice(4)));
           const explicit = declared.every(({ link }) => link.parameters.every(p => named.has(p.port)));
-          if (explicit) bindings = bind(cap, node.values, describeValue, consumed, shapes, pipe, requestedBindings);
+          if (explicit) bindings = bind(cap, node.values, describeValue, consumed, shapes, pipe, requestedBindings, why, anchored);
           else if (declared.length !== 1) bindings = null;
           else {
             const { index, link } = declared[0];
@@ -225,17 +272,20 @@ export function plan(graph: CapabilityGraph, ledger: Ledger, goal: Goal, expansi
               link: { name: link.name, status: link.status, pointer: p.pointer, wire: p.wire, ...(p.format ? { format: p.format } : {}) } }));
             // A declared relationship must not silently replace an explicit input binding.
             const conflicts = linked.some(b => requestedBindings && Object.hasOwn(requestedBindings, b.port));
-            const rest = conflicts ? null : bind({ ...cap, inputs: cap.inputs.filter(p => !linked.some(b => b.port === p.name)) }, node.values, describeValue, consumed, shapes, pipe, requestedBindings);
+            const rest = conflicts ? null : bind({ ...cap, inputs: cap.inputs.filter(p => !linked.some(b => b.port === p.name)) }, node.values, describeValue, consumed, shapes, pipe, requestedBindings, undefined, anchored);
             bindings = rest && validLinkGroup(graph.get(node.steps[index].capability), cap, [...linked, ...rest]) ? [...linked, ...rest] : null;
           }
-        } else bindings = bind(cap, node.values, describeValue, consumed, shapes, pipe, requestedBindings);
-        if (!bindings) continue;
+        } else bindings = bind(cap, node.values, describeValue, consumed, shapes, pipe, requestedBindings, why, anchored);
+        if (!bindings) { if (why?.length) diag(cap.id, why[0]); continue; }
         if (++expansions > depthBudget) break;
         // A step must consume something produced or supplied, not only constants,
         // and every step after the first must build on an earlier step's output,
         // unless the caller anchored it: anchored steps may start parallel branches
         // that a later step joins (fan-in: two systems' outputs feeding a third).
-        if (cap.inputs.length && !bindings.length) continue;
+        if (cap.inputs.length && !bindings.length) {
+          if (why) diag(cap.id, `no available value matched its optional inputs (${cap.inputs.map(p => `${p.name}:${p.type}`).join(", ")}); the search state held: ${[...new Set(node.values.map(v => `${v.ref.replace(/^(\$in\.|\d+\.)/, "")}:${v.type}`))].slice(0, 10).join(", ") || "nothing"}`);
+          continue;
+        }
         if (node.steps.length && !anchors.has(cap.id) && !bindings.some((b) => !b.from.startsWith("$in."))) continue;
         const stepIndex = node.steps.length;
         // A fan-out step yields, for each output, the list of what every item produced.
@@ -366,7 +416,7 @@ function fanOut(cap: Capability, port: Port, v: Value, shapes: Map<string, strin
 
 /** Bind every required input of `cap` to the best available value, or null. At most one port fans out. */
 function bind(cap: Capability, values: Value[], describeValue: (v: Value) => BindingValue, consumed: Set<number>, shapes: Map<string, string[]>,
-  pipe?: { port: string; from: (v: Value) => boolean }, requested?: Record<string, string>): Binding[] | null {
+  pipe?: { port: string; from: (v: Value) => boolean }, requested?: Record<string, string>, why?: string[], anchored = false): Binding[] | null {
   // Score every acceptable value for every port first, then bind the most
   // constrained ports first, preferring values from branches nobody has used
   // yet, so a join draws each input from a different upstream system.
@@ -385,10 +435,13 @@ function bind(cap: Capability, values: Value[], describeValue: (v: Value) => Bin
       // ...and a caller value given under the port's exact name goes to that port even when it is a
       // list or JSON port (options, files): the caller named it.
       const bridged = v.step === -1 && (port.type === `id.${callerName}` || ((callerName === portName || explicitlyNamed !== undefined) && ((stringLike(port.type) && stringLike(v.type)) || port.type.startsWith("list:") || port.type === "json")));
+      // An explicitly anchored step with a `json` input port (e.g. jq) accepts structured JSON and
+      // typed lists produced by an earlier step or supplied by the caller.
+      const anchoredJson = anchored && port.type === "json" && port.name !== cap.invoke?.["filesPort" as keyof typeof cap.invoke] && (v.type === "json" || v.type.startsWith("list:"));
       // Observed to carry the same identifiers, whatever each contract calls them.
       const linked = schemeFits(port, v.type, v.schemes);
       let each: Binding["each"] | undefined;
-      if (!bridged && !linked && !accepts(port.name, port.type, v.type, port.anyText) && !(each = fanOut(cap, port, v, shapes))) continue;
+      if (!bridged && !anchoredJson && !linked && !accepts(port.name, port.type, v.type, port.anyText) && !(each = fanOut(cap, port, v, shapes))) continue;
       if (!linked && !each && v.step >= 0 && schemeOnly(port)) continue;
       // Optional ports are only filled when the caller supplied them by name.
       if (!port.required && v.ref !== `$in.${port.name}` && explicitlyNamed === undefined && !(pipe?.port === port.name && pipe.from(v))) continue;
@@ -397,7 +450,7 @@ function bind(cap: Capability, values: Value[], describeValue: (v: Value) => Bin
       // Name-like ports (title, name, q) take names, not prose fields like body/description.
       if (isNominal(port.name, port.type) && CONTENT.test(leaf)) continue;
       // Prefer exact types, recent values, the caller's names, and values named like the intent.
-      const d = bridged || linked ? 0 : distance(port.type, each ? v.type.slice(5) : v.type);
+      const d = bridged || anchoredJson || linked ? 0 : distance(port.type, each ? v.type.slice(5) : v.type);
       const nameBonus = v.ref === `$in.${port.name}` ? (port.type === "text" ? 1.5 : 5) : 0;
       // Only produced values earn the precomputed intent bonus.
       const contentBonus = port.type === "text" && CONTENT.test(leaf) ? 2 : 0;
@@ -441,7 +494,15 @@ function bind(cap: Capability, values: Value[], describeValue: (v: Value) => Bin
       if (bestEach) fanned = true;
       boundRefs.add(best.ref);
       if (best.step >= 0) used.add(best.step);
-    } else if (port.required || (requested && Object.hasOwn(requested, port.name))) return null;
+    } else if (port.required || (requested && Object.hasOwn(requested, port.name))) {
+      // Name the port, the type it wanted and what was actually available: this is the difference
+      // between "no plan" and "nothing here converts text to list:url".
+      if (why) {
+        const available = [...new Set(values.map((v) => `${v.ref.replace(/^(\$in\.|\d+\.)/, "")}:${v.type}`))].slice(0, 10).join(", ");
+        why.push(`no available value can fill its ${port.required ? "required" : "requested"} input "${port.name}" of type ${port.type}${port.anyText ? " (accepts any text)" : ""}; the search state held: ${available || "nothing"}`);
+      }
+      return null;
+    }
   }
   return cap.inputs
     .filter((p) => chosen.has(p.name))

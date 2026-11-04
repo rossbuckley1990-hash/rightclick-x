@@ -11,11 +11,11 @@ import { ActivityLog, reference, type ActivityState, type ContractReference } fr
 import { CapabilityGraph, signature, tokenize, type GraphEvent, type LearnDelta } from "./core/graph.ts";
 import { Ledger, ReceiptChain, sha256, stableStringify, type Receipt } from "./core/ledger.ts";
 import { shapeOf, type IdentityState } from "./core/identities.ts";
-import { egressOf, plan, type Plan } from "./core/planner.ts";
+import { egressOf, plan, type CompositionDiagnostic, type Plan } from "./core/planner.ts";
 import { outputCarries, undeclaredRequirements, type Satisfaction } from "./core/satisfaction.ts";
 import { assessPlan, contractFor, lostWords, type Assurance, type ContractAssessment, type OutcomeContract } from "./core/contract.ts";
 import { selectionWith } from "./reflectors/graphql.ts";
-import { hostSandbox, type Sandbox } from "./core/sandbox.ts";
+import { effectiveSandboxLocale, hostSandbox, normaliseSandboxPaths, resolveSandboxLocale, withSandboxLocale, type Sandbox, type SandboxLocale } from "./core/sandbox.ts";
 import { validateFileNames } from "./core/cli-files.ts";
 import { observeCliEnvironment } from "./core/cli-environment.ts";
 import { CliValidityError, reportsApplicationError, type CliValidity } from "./core/cli-outcome.ts";
@@ -27,10 +27,10 @@ import { investigateCli, replayExamples, validateOptions, type Investigation } f
 import { JsonRepresentationError, parseJsonValue } from "./core/json.ts";
 import { KNOWLEDGE_FORMAT, type ImportReport, type KnowledgeBundle } from "./core/knowledge.ts";
 import { assessExecution, consequentialRisks, ExecutionDenied, intersectOrigins, parseExecutionPolicy, type ExecutionAssessment, type ExecutionPolicy } from "./core/execution-policy.ts";
-import { distance, inferType, inspectValue, type Inspection } from "./core/semantics.ts";
+import { distance, inferType, inspectValue, linesValidateAs, type Inspection } from "./core/semantics.ts";
 import { describeResult, resultDescription, type ResultDescription } from "./core/result-description.ts";
 import type { Capability, CapabilityAnchor, FetchLike, GraphQLFailureEvidence, PlanStep, Provider, Reflection, SemType, TransportRefusal } from "./core/types.ts";
-import { agreement, assertAgreement, check, pick, type Predicate, type PredicateResult, type OutcomeWitness, type WitnessResult } from "./core/verify.ts";
+import { agreement, assertAgreement, check, lintPublicationPredicates, pick, type Predicate, type PredicateResult, type PredicateWarning, type OutcomeWitness, type WitnessResult } from "./core/verify.ts";
 import { builtinReflection, type BuiltinFn } from "./reflectors/builtins.ts";
 import { DEFAULT_DIRECTORIES, type Candidate, type Directory } from "./reflectors/directories.ts";
 import { discover, type Discovery, type SourceKind } from "./reflectors/discover.ts";
@@ -179,6 +179,8 @@ export interface PublishedGoal {
   providers?: string[];
   /** Advisory declaration from a successful plan, never executable ports or authority. */
   lastResult?: ResultDescription;
+  /** Conservative publication-time predicate lint warnings (advisory; predicates are never silently rewritten). */
+  predicateWarnings?: PredicateWarning[];
 }
 
 interface ReuseGuidance {
@@ -258,6 +260,12 @@ export interface OperatorAuthority {
   retry?: string[];
   /** Authorizes only these bounded synthetic samples in a narrowed sandbox, never caller-input replay. */
   cliConformance?: Record<string, CliConformance>;
+  /**
+   * Explicitly selected sandbox locale profile for local CLI investigation and execution:
+   * "c" (default, LANG=C LC_ALL=C) or "utf8" (or an explicit verified UTF-8 locale such as
+   * "C.UTF-8" or "en_US.UTF-8", with LC_ALL omitted and LC_COLLATE/LC_NUMERIC/etc. pinned to C).
+   */
+  locale?: string;
 }
 
 export interface RunOptions {
@@ -294,7 +302,7 @@ export interface RunRecord {
   planningRefusal?: PlanningRefusal;
   resumes?: string;
   /** Completion of a retained ordinary composition, including deferred publication. */
-  composition?: Pick<ComposeResult, "crystallized" | "published" | "publishRefused" | "outcome">;
+  composition?: Pick<ComposeResult, "crystallized" | "published" | "predicateWarnings" | "publishRefused" | "outcome">;
   /** Only a complete retained saved-goal plan can settle this parent run. */
   workflowRunId?: string;
   persistence?: { status: "failed"; detail: string };
@@ -428,6 +436,8 @@ export interface ComposeOptions {
   publish?: string;
   /** Refuse publication if its slug already exists. Defaults to legacy replacement behavior. */
   preserveExisting?: boolean;
+  /** Explicitly confirm that all (true) or specific literal predicate values are intentional fixed invariants of a published goal. */
+  confirmFixedInvariants?: boolean | string[];
   /** Required to run plans that contain destructive capabilities. */
   confirm?: boolean;
   /** Internal recursion guard, carried through nested saved goals. */
@@ -438,6 +448,12 @@ export interface ComposeResult {
   goal: { have: Record<string, SemType>; want: SemType; intent?: string; through?: string[] };
   plans: Array<Plan & { titles: string[]; contract?: ContractAssessment }>;
   planningRefusal?: PlanningRefusal;
+  /**
+   * Present only when nothing composed: why each candidate capability could not take part. This is
+   * the difference between "no plan" and "no capability here converts text to list:url", which is
+   * what a caller needs in order to supply the missing piece instead of re-investigating a program.
+   */
+  compositionDiagnostics?: CompositionDiagnostic[];
   executed?: {
     summary: string;
     titles: string[];
@@ -471,7 +487,11 @@ export interface ComposeResult {
     durable: boolean;
     /** Why it is not durable: no store configured, or the error the store returned. */
     persistence?: string;
+    /** Conservative publication-time warnings for potentially sample-specific or vacuous predicates. */
+    warnings?: PredicateWarning[];
   };
+  /** Conservative publication-time warnings for potentially sample-specific or vacuous predicates. */
+  predicateWarnings?: PredicateWarning[];
   /** Present when publication was refused by the operator's publication authority. */
   publishRefused?: string;
   /** With `require`: whether the requested information was established, before and after running. */
@@ -611,6 +631,7 @@ export class RightClick {
   private executable: string[] = [];
   private shareEvidence = false;
   private publishPolicy: "any" | "checked" | "verified" = "any";
+  private sandboxLocale?: SandboxLocale;
   private sandboxCache?: Promise<Sandbox | null>;
   private currentSandbox?: Sandbox | null;
   private onInvestigationStart?: (program: string) => void;
@@ -653,7 +674,8 @@ export class RightClick {
     rc.executable = [...(opts.authority?.execute ?? opts.authority?.investigate ?? [])];
     rc.shareEvidence = opts.authority?.shareEvidence === true;
     rc.publishPolicy = opts.authority?.publish ?? "any";
-    if (opts.sandbox !== undefined) rc.sandboxCache = Promise.resolve(opts.sandbox);
+    if (opts.authority?.locale !== undefined) rc.sandboxLocale = resolveSandboxLocale(opts.authority.locale);
+    if (opts.sandbox !== undefined) rc.sandboxCache = Promise.resolve(opts.sandbox && rc.sandboxLocale ? withSandboxLocale(opts.sandbox, rc.sandboxLocale) : opts.sandbox);
     rc.graph.add(b.reflection);
     const p = await platformReflection(rc.info, { bindings: opts.bindings, workspace: opts.workspace });
     rc.platformFns = p.fns;
@@ -1406,7 +1428,7 @@ export class RightClick {
         evidenceSharing: this.shareEvidence ? "export allowed by the operator (authority.shareEvidence)" : "export not allowed (default)",
       },
       verification: goal
-        ? { trust: goal.trust ?? "unverified", predicates: goal.verify ?? [], witnesses: (goal.witnesses ?? []).map((w) => w.capability) }
+        ? { trust: goal.trust ?? "unverified", predicates: goal.verify ?? [], witnesses: (goal.witnesses ?? []).map((w) => w.capability), ...(goal.predicateWarnings?.length ? { predicateWarnings: goal.predicateWarnings } : {}) }
         : inv.kind === "composite" ? { predicates: inv.verify ?? [], witnesses: (inv.witnesses ?? []).map((w: any) => w.capability) }
         : inv.kind === "cli" ? { evidence: claims.map((cl) => `${cl.claim} [${cl.status}]`), note: "investigation never marks anything verified; independent checks do" }
         : { note: "declared by the provider's contract" },
@@ -1441,7 +1463,7 @@ export class RightClick {
       // CHECKED (stored predicates passed), VERIFIED (independent witness passed), DECLARED (contract only).
       status,
       sourceEnvironment: inv.kind === "cli"
-        ? { os: g.process?.platform, arch: g.process?.arch, program: inv.bin, sha256: inv.sha256, version: investigation?.program.version, sandbox: investigation?.sandbox }
+        ? { os: g.process?.platform, arch: g.process?.arch, program: inv.bin, sha256: inv.sha256, version: investigation?.program.version, sandbox: investigation?.sandbox, ...(inv.localeProfile ? { localeProfile: inv.localeProfile } : {}) }
         : { origin: (this.graph.providers.get(c.provider)?.meta?.source as string) ?? this.graph.providers.get(c.provider)?.origin },
       requiredInputs: c.inputs.filter((p) => p.required).map((p) => ({ name: p.name, type: p.type })),
       optionalInputs: c.inputs.filter((p) => !p.required).map((p) => ({ name: p.name, type: p.type, description: p.description })),
@@ -1926,6 +1948,7 @@ export class RightClick {
       ...(workflowRunId ? { workflowRunId } : {}),
       ...(compositionResult ? { composition: {
         crystallized: compositionResult.crystallized, published: compositionResult.published,
+        ...(compositionResult.predicateWarnings ? { predicateWarnings: compositionResult.predicateWarnings } : {}),
         publishRefused: compositionResult.publishRefused, outcome: compositionResult.outcome,
       } } : {}),
       capability: cap.id,
@@ -1987,7 +2010,8 @@ export class RightClick {
    */
   /** The host sandbox, or null when this host offers none (then programs are never run). */
   async sandbox(): Promise<Sandbox | null> {
-    return this.currentSandbox = await (this.sandboxCache ??= hostSandbox());
+    const base = await (this.sandboxCache ??= hostSandbox());
+    return this.currentSandbox = base && this.sandboxLocale ? withSandboxLocale(base, this.sandboxLocale) : base;
   }
 
   private async revalidateCli(cap: Capability, execution: HttpExecution = {}, acquire = false): Promise<Capability> {
@@ -2057,8 +2081,14 @@ export class RightClick {
     if (cap.invoke.kind !== "cli") return;
     const current = await observeCliEnvironment(cap.invoke.bin, sb.policy);
     const expected = cap.invoke.environment?.digest;
+    const activeLocale = effectiveSandboxLocale(sb.policy);
+    const recordedLocale = cap.invoke.localeProfile;
+    const localeChanged = recordedLocale
+      ? recordedLocale.profile !== activeLocale.profile || recordedLocale.locale !== activeLocale.locale
+      : Boolean(expected) && activeLocale.profile !== "c";
     execution.cliValidity = {
-      coverage: "partial", environment: expected ? expected === current.digest ? "unchanged" : "changed" : "unrecorded",
+      coverage: "partial",
+      environment: localeChanged ? "changed" : expected ? expected === current.digest ? "unchanged" : "changed" : "unrecorded",
       ...(expected ? { expected } : {}), observed: current.digest, application: "not-assessed",
       ...(execution.cliValidity?.conformance ? { conformance: execution.cliValidity.conformance } : {}),
       limitation: execution.cliValidity?.conformance ? execution.cliValidity.limitation : "Only bounded local environment candidates were observed, not complete execution dependencies. Hidden imports, configuration and services require independent outcome verification.",
@@ -2675,6 +2705,14 @@ export class RightClick {
       goal: { have: types, want: opts.want, intent: opts.intent, through },
       plans: plans.map((p) => ({ ...p, titles: titles(p) })),
     };
+    // Nothing composed: say exactly why, for the capabilities that came closest. The search has
+    // already run, so this repeats it once with a diagnostic sink attached — on the failure path
+    // only, over the same bounded candidate set. A successful composition pays nothing for it.
+    if (!plans.length && !undeclared.length) {
+      const diagnostics: CompositionDiagnostic[] = [];
+      plan(this.graph, this.ledger, { ...goal, diagnostics });
+      if (diagnostics.length) result.compositionDiagnostics = diagnostics.slice(0, 24);
+    }
     const typeWords = new Set(tokenize(opts.want.replace(/^list:/, "").replace(/[.:]/g, " ")));
     const intentSet = new Set(tokenize(opts.intent ?? "").filter((t) => !typeWords.has(t)));
     const contractCtx = { intent: intentSet, require, have: types, want: opts.want, anchors: new Set(through) };
@@ -2829,7 +2867,8 @@ export class RightClick {
           id: `execution:composition:${crypto.randomUUID()}`, plan: { ...p, steps }, types,
           risk: selected.some(c => c.risk === "destructive") ? "destructive" : selected.some(c => c.risk === "write") ? "write" : selected.some(c => c.risk === "external") ? "external" : "read",
           options: { want: opts.want, intent: opts.intent, verify: opts.verify, crystallize: opts.crystallize,
-            publish: opts.publish, risks: opts.risks, through: opts.through, maxSteps: opts.maxSteps, inputBindings: opts.inputBindings },
+            publish: opts.publish, risks: opts.risks, through: opts.through, maxSteps: opts.maxSteps, inputBindings: opts.inputBindings,
+            ...(opts.confirmFixedInvariants !== undefined ? { confirmFixedInvariants: opts.confirmFixedInvariants } : {}) },
           anchors, fixed, origins, witnesses, require, preservesInput: assessOf(p).preservesInput, publicationExpected,
           goals: await Promise.all((opts.activeGoals ?? []).map(async slug => {
             const g = this.published.get(slug);
@@ -3091,6 +3130,12 @@ export class RightClick {
         result.publishRefused = `not published: goal:${slug} changed since execution began; inspect it and retry explicitly`;
         return result;
       }
+      const predicateWarnings = lintPublicationPredicates(opts.verify, {
+        inputs: values,
+        fixedInputs: fixed,
+        capabilities: p.steps.map((s) => this.graph.get(s.capability)!).filter(Boolean),
+        confirmFixedInvariants: opts.confirmFixedInvariants,
+      });
       const candidate: PublishedGoal = {
         revision: crypto.randomUUID(),
         trust,
@@ -3114,6 +3159,7 @@ export class RightClick {
         lastPipeline: titles(p),
         providers: [...new Set(p.steps.map((st) => this.graph.get(st.capability)!.provider))],
         lastResult,
+        ...(predicateWarnings.length ? { predicateWarnings } : {}),
       };
       this.publishing.add(slug);
       try {
@@ -3139,7 +3185,11 @@ export class RightClick {
             throw e;
           }
         });
-        result.published = { id: `goal:${slug}`, slug, path: `/x/${slug}`, trust, durable: !!this.store && !this.store.readOnly };
+        result.published = {
+          id: `goal:${slug}`, slug, path: `/x/${slug}`, trust, durable: !!this.store && !this.store.readOnly,
+          ...(predicateWarnings.length ? { warnings: predicateWarnings } : {}),
+        };
+        if (predicateWarnings.length) result.predicateWarnings = predicateWarnings;
         if (!this.store) result.published.persistence = "no store configured: available in this process only";
         else if (this.store.readOnly) result.published.persistence = `state is read-only (${this.store.readOnly}): available in this process only`;
       } catch (e) {
@@ -3689,7 +3739,8 @@ export class RightClick {
         }
         const r = await replayExamples(here, sb);
         entry.revalidationRuns += r.runs;
-        if (r.matched === r.total) accepted.push({ ...(cap as Capability), provider: `cli:${prog.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`, source: "cli", invoke: here, tags: [...cap.tags.filter((t) => t !== "imported"), "imported"] });
+        const activeLocale = effectiveSandboxLocale(sb.policy);
+        if (r.matched === r.total) accepted.push({ ...(cap as Capability), provider: `cli:${prog.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`, source: "cli", invoke: { ...here, localeProfile: { profile: activeLocale.profile, locale: activeLocale.locale, env: { ...activeLocale.env } } }, tags: [...cap.tags.filter((t) => t !== "imported"), "imported"] });
         else entry.capabilities.push({ id: cap.id, status: "refused", reason: `behaves differently here: ${r.mismatches.join("; ")}` });
       }
       if ((await observeCliEnvironment(local, sb.policy)).digest !== environment.digest) {
@@ -3987,7 +4038,11 @@ export class RightClick {
           // With named files supplied instead, an unfilled content operand is left out.
           if (args[a.input] === undefined && inv.filesPort && args[inv.filesPort]) return null;
           // Named by what the content is (.json, .html, .xml, .svg): many programs choose a parser by extension.
-          const name = `in${i}-${a.input.replace(/[^\w]/g, "")}.${contentExtension(asContent(args[a.input]))}`;
+          // A port that declares a document format names its own extension; sniffing is only the fallback.
+          // Without this, a capability investigated on .md samples is handed a .txt file at run time and the
+          // program parses it as something else, so the observed contract does not hold for the caller.
+          const declared = PORT_EXTENSIONS[cap.inputs.find((p) => p.name === a.input)?.type ?? ""];
+          const name = `in${i}-${a.input.replace(/[^\w]/g, "")}.${declared ?? contentExtension(asContent(args[a.input]))}`;
           files[name] = asContent(args[a.input]);
           return name;
         }), ...chosenAfterArgs].filter((x): x is string => x !== null);
@@ -4022,17 +4077,60 @@ export class RightClick {
         let envelope: unknown;
         try { envelope = JSON.parse(r.stdout); } catch {}
         execution.cliValidity!.application = reportsApplicationError(envelope) ? "reported-error" : "not-established";
+        execution.cliValidity!.stdoutBytes = r.stdoutBytes;
+        // Output the sandbox could not decode as UTF-8 is not this capability's result: every
+        // invalid byte became U+FFFD, so returning it would hand the caller text the program never
+        // printed and report the run as completed. The raw bytes are retained instead of being
+        // silently replaced, and the outcome is explicitly unsupported rather than approximate.
+        if (r.stdoutEncoding === "unsupported") {
+          execution.cliValidity!.rawOutputBase64 = r.stdoutBase64;
+          throw new CliValidityError(`${inv.bin} printed ${r.stdoutBytes ?? 0} byte(s) that are not valid UTF-8, so no text result is established: decoding them substitutes U+FFFD for every invalid sequence and would report that as the program's output. ${r.stdoutBase64 ? "The first bytes are retained as base64 in this run's record." : "The raw bytes could not be retained."} This capability's contract is text; a byte-exact channel for it has not been established, so its encoding is reported unsupported rather than approximated.`, execution.cliValidity, cap.id);
+        }
         if (execution.cliValidity!.application === "reported-error")
           throw new CliValidityError(`CLI reported an application-level error envelope (process exit ${r.code}); outcome not established; not replayed`, execution.cliValidity, cap.id);
-        if (!inv.okExit.includes(r.code ?? -1) || !r.stdout.trim()) throw new Error(`${inv.bin} exited ${r.code}${r.stdout.trim() ? "" : " without output"}: ${r.stderr.slice(0, 300)}`);
+        if (!inv.okExit.includes(r.code ?? -1)) throw new Error(`${inv.bin} exited ${r.code}: ${r.stderr.slice(0, 300)}`);
+        // Empty standard output on the program's own success code is an empty answer, not a failure:
+        // a filter that matched nothing, a checker with nothing to report and a comparison that
+        // found no difference all exit 0 having printed nothing. Refusing that substituted this
+        // runtime's judgement for the program's exit-code contract. Every way a run can genuinely
+        // fail still fails: an exit code outside the learned set, a timeout, a truncation, a sandbox
+        // limit, an application-error envelope, and a non-zero exit never observed with a result.
+        const emptyResult = !r.stdout.trim();
+        if (emptyResult) {
+          if (r.code !== 0) throw new Error(`${inv.bin} exited ${r.code} without output: ${r.stderr.slice(0, 300)}`);
+          execution.cliValidity!.emptyResult = true;
+        }
+        // The sandbox directory is created fresh for every run and deleted when it ends, so a
+        // program that names it prints different bytes for identical behaviour. Normalising that one
+        // path is what makes a result reproducible; the real directory is already gone by the time
+        // anyone reads this, and the raw output's digest is kept here, so the evidence is normalised
+        // rather than discarded. Only this run's own directory is volatile: any other path
+        // difference is a real change in what the program printed and survives untouched.
+        const output = normaliseSandboxPaths(r.stdout, r.workDir);
+        if (output !== r.stdout) {
+          execution.cliValidity!.sandboxPathNormalised = true;
+          execution.cliValidity!.rawOutputSha256 = await sha256(r.stdout);
+        }
         if (inv.output === "json") {
-          try { return parseJsonValue(r.stdout); }
+          try { return parseJsonValue(output); }
           catch (error) {
             if (error instanceof JsonRepresentationError) throw error;
             throw new Error(`${inv.bin} did not print JSON this time`);
           }
         }
-        return r.stdout;
+        if (inv.lineType) {
+          if (emptyResult) return [];
+          // The representation was established by validating every line of every working trial, and
+          // it is re-validated here by the same rule: a line that does not classify as the declared
+          // element type is a refusal, never a coerced element. Without this the list type a
+          // composer bound against would be a promise the run does not keep.
+          if (!linesValidateAs(output, inv.lineType)) {
+            const offending = output.split("\n").map((l) => l.trim()).filter(Boolean).find((l) => !linesValidateAs(l, inv.lineType!)) ?? "";
+            throw new CliValidityError(`${inv.bin} printed a line that is not ${inv.lineType} (${JSON.stringify(offending.slice(0, 80))}), so the list:${inv.lineType} this capability's contract declares is not established for this input. Nothing is returned rather than a mistyped value.`, execution.cliValidity, cap.id);
+          }
+          return output.split("\n").map((l) => l.trim()).filter(Boolean);
+        }
+        return output;
       }
       case "composite":
       case "goal":
@@ -4140,6 +4238,9 @@ function asContent(v: unknown): string {
 }
 
 /** A file extension for content passed as a file operand, from what the content is. */
+/** Canonical file extension for a declared document format, so a staged input matches its port type. */
+const PORT_EXTENSIONS: Record<string, string> = { markdown: "md", html: "html", xml: "xml", json: "json", csv: "csv", svg: "svg" };
+
 function contentExtension(content: string): string {
   const t = content.trim();
   if (/^[{[]/.test(t)) {

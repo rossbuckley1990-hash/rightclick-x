@@ -1,7 +1,7 @@
 // Relative links in the repository's Markdown files must point at files that exist.
 //   node ci/check-links.ts
 //
-// Two kinds of target are not in the working tree on purpose, and each is handled by a stated
+// Three kinds of target are not in the working tree on purpose, and each is handled by a stated
 // rule rather than ignored (docs/adaptive/evidence/README.md explains the policy):
 //
 // - Archived evidence. docs/adaptive/evidence/ is kept at an archive tag, not in main. A link
@@ -9,13 +9,17 @@
 //   a directory that contains listed files. A link to an archived path that never existed still
 //   fails.
 // - Verbatim source snapshots. Files under an evidence tree's sources/ directories are byte
-//   copies of files that lived elsewhere; their relative links were written for that original
+//   copies of files that lived elsewhere; their relative links were written for their original
 //   location. They are counted and listed, never silently dropped, but do not fail the check.
+// - Negative-control link fixtures. Markdown fixtures under experiments/**/fixtures/ that exist
+//   to feed unresolvable relative links into link-extractor tests are counted and listed, never
+//   silently dropped, and do not fail the documentation check.
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 
 const ARCHIVE = "docs/adaptive/evidence";
 const SNAPSHOT = /(^|\/)evidence\/(.+\/)?sources\//;
+const FIXTURE = /^experiments\/[^/]+\/fixtures\//;
 
 const skip = new Set(["node_modules", ".git", "dist"]);
 const files: string[] = [];
@@ -43,6 +47,7 @@ if (existsSync(manifest)) {
 
 const broken: string[] = [];
 const snapshots: string[] = [];
+const fixtures: string[] = [];
 let viaArchive = 0;
 for (const f of files) {
   const text = readFileSync(f, "utf8").replace(/```[\s\S]*?```/g, "");
@@ -54,6 +59,7 @@ for (const f of files) {
     const rel = relative(".", path);
     if (rel.startsWith(`${ARCHIVE}/`) && (archived.has(rel) || archivedDirs.has(rel))) { viaArchive++; continue; }
     if (SNAPSHOT.test(relative(".", f))) { snapshots.push(`${f}: ${m[1]}`); continue; }
+    if (FIXTURE.test(relative(".", f))) { fixtures.push(`${f}: ${m[1]}`); continue; }
     broken.push(`${f}: ${m[1]}`);
   }
 }
@@ -61,6 +67,10 @@ console.log(`${files.length} Markdown files, ${broken.length} broken relative li
 console.log(`${viaArchive} links resolve to archived evidence listed in ${manifest}`);
 console.log(`${snapshots.length} links inside verbatim source snapshots, written for their original location (not failing):`);
 for (const s of snapshots) console.log(`  ${s}`);
+if (fixtures.length) {
+  console.log(`${fixtures.length} links inside negative-control test fixtures (not failing):`);
+  for (const fx of fixtures) console.log(`  ${fx}`);
+}
 if (broken.length) console.log("Broken:");
 for (const b of broken) console.log(`  ${b}`);
 process.exitCode = broken.length ? 1 : 0;

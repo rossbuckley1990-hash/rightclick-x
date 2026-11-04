@@ -1,0 +1,270 @@
+{
+  "startedAt": "2026-11-04T00:47:50.938Z",
+  "state": "/tmp/rcx-ns-breakthrough.json",
+  "predictions": "PREDICTIONS.md Part 5, committed before this run",
+  "phases": {
+    "A_acquire": {
+      "detail": "10 capabilities from 129 sandboxed runs (files; ok exit 0/2)",
+      "newCapabilities": 10,
+      "error": null
+    },
+    "A_witnessGoal": {
+      "status": "completed",
+      "pipeline": [
+        "Render Markdown to HTML",
+        "Extract links",
+        "Domain of URL (each)"
+      ],
+      "output": [
+        "alpha-linkaudit.dev",
+        "bravo-linkaudit.io",
+        "alpha-linkaudit.dev"
+      ],
+      "trust": "unverified",
+      "published": {
+        "id": "goal:hosts-independent-builtin",
+        "slug": "hosts-independent-builtin",
+        "path": "/x/hosts-independent-builtin",
+        "trust": "unverified",
+        "durable": true
+      },
+      "publishRefused": null,
+      "error": null
+    },
+    "A_candidate": {
+      "plansOffered": [
+        {
+          "titles": [
+            "Hosts linked from a markdown document: Render Markdown to HTML → Extract links → Domain of URL"
+          ],
+          "cost": 1.25
+        },
+        {
+          "titles": [
+            "hosts-independent-builtin"
+          ],
+          "cost": 1.3833333333333333
+        },
+        {
+          "titles": [
+            "lychee --host-stats: Show per-host statistics at the end of the run",
+            "lychee --dump-inputs: Don't perform any link extraction and checking. Instead, dump all input sources from which links would be collected"
+          ],
+          "cost": 2.7666666666666666
+        },
+        {
+          "titles": [
+            "lychee --dump: Don't perform any link checking. Instead, dump all the links extracted from inputs that would be checked",
+            "Domain of URL (each)"
+          ],
+          "cost": 3.4203752703703705
+        },
+        {
+          "titles": [
+            "Render Markdown to HTML",
+            "Extract links",
+            "Domain of URL (each)"
+          ],
+          "cost": 4.537191937037036
+        }
+      ],
+      "planCount": 5,
+      "executedPipeline": [
+        "Hosts linked from a markdown document: Render Markdown to HTML → Extract links → Domain of URL"
+      ],
+      "executedSteps": 1,
+      "firstStepIsAcquiredCapability": false,
+      "usedAcquiredCapability": false,
+      "output": [
+        "alpha-linkaudit.dev",
+        "bravo-linkaudit.io",
+        "alpha-linkaudit.dev"
+      ],
+      "outputIsList": true,
+      "status": "completed",
+      "trust": "checked",
+      "published": {
+        "id": "goal:host-summary",
+        "slug": "host-summary",
+        "path": "/x/host-summary",
+        "trust": "checked",
+        "durable": true
+      },
+      "publishRefused": null,
+      "attempts": [],
+      "error": null,
+      "oracleExpectedDomains": [
+        "alpha-linkaudit.dev",
+        "alpha-linkaudit.dev",
+        "bravo-linkaudit.io"
+      ],
+      "matchesOracle": true,
+      "matchesOracleInOrder": false
+    },
+    "A_witness_abs-links.md": {
+      "anchoredTo": "cli:lychee:dump (the witness must be a different implementation, so the candidate is pinned here)",
+      "status": null,
+      "pipeline": null,
+      "output": null,
+      "trust": null,
+      "witnesses": null,
+      "published": null,
+      "publishRefused": null,
+      "oracleExpectedDomains": [
+        "alpha-linkaudit.dev",
+        "alpha-linkaudit.dev",
+        "bravo-linkaudit.io"
+      ],
+      "error": "witness must be an available read-only provider capability: goal:hosts-independent-builtin"
+    },
+    "A_witness_mixed.md": {
+      "anchoredTo": "cli:lychee:dump (the witness must be a different implementation, so the candidate is pinned here)",
+      "status": null,
+      "pipeline": null,
+      "output": null,
+      "trust": null,
+      "witnesses": null,
+      "published": null,
+      "publishRefused": null,
+      "oracleExpectedDomains": [
+        "alpha-linkaudit.dev",
+        "bravo-linkaudit.io",
+        "example.com",
+        "foxtrot-linkaudit.io",
+        "sub.example.io"
+      ],
+      "error": "witness must be an available read-only provider capability: goal:hosts-independent-builtin"
+    },
+    "A_unseenSameSession": {
+      "status": "completed",
+      "output": [
+        "kilo-unseen.example",
+        "lima-unseen.test",
+        "kilo-unseen.example"
+      ],
+      "expected": [
+        "kilo-unseen.example",
+        "lima-unseen.test",
+        "kilo-unseen.example"
+      ],
+      "matches": true,
+      "verification": "checked",
+      "error": null
+    },
+    "A_interaction": {
+      "toolCalls": 6,
+      "receivedChars": 46429
+    },
+    "B_freshProcess": {
+      "discoveredGoalIds": [
+        "goal:host-summary",
+        "goal:published",
+        "goal:hosts-independent-builtin"
+      ],
+      "status": "completed",
+      "output": [
+        "alpha-linkaudit.dev",
+        "bravo-linkaudit.io",
+        "alpha-linkaudit.dev"
+      ],
+      "matchesPhaseA": true,
+      "verification": "checked",
+      "receipt": {
+        "runId": "run_mw1edy3p_1_459aeb2a-1018-4437-8783-65c940c53960",
+        "capability": "goal:host-summary",
+        "provider": "goal:published",
+        "startedAt": "2026-11-04T00:47:56.389Z",
+        "durationMs": 23.9,
+        "status": "completed",
+        "verification": "checked",
+        "seq": 18,
+        "inputDigest": "8a2f2f484ca69ca89223efb84c0764b9cc950f819e55e352173b6b588d8b7769",
+        "outputDigest": "88eaf52799eaa18774edabb37ed96a5f7f43343c611fabb7c89746693e6a2313",
+        "prev": "6dd98e6059855faddb58f9fa85367603ea20de82e7e92d3dcccce5dbbdfd0594",
+        "hash": "f7908ab74a0a3d27f7f6148848d7726a8ace7d5b7342f178752310672b9b1f83"
+      },
+      "chainIntact": null,
+      "error": null
+    },
+    "C_freshSession": {
+      "status": "completed",
+      "output": [
+        "kilo-unseen.example",
+        "lima-unseen.test",
+        "kilo-unseen.example"
+      ],
+      "expected": [
+        "kilo-unseen.example",
+        "lima-unseen.test",
+        "kilo-unseen.example"
+      ],
+      "matches": true,
+      "verification": "checked",
+      "publishedTrust": [
+        "saved",
+        "goal",
+        "reusable",
+        "checked",
+        "hosts",
+        "linked",
+        "from",
+        "a",
+        "markdown",
+        "document"
+      ],
+      "reuseGuidance": {
+        "claims": [],
+        "sourceEnvironment": {
+          "origin": "rightclick-x"
+        },
+        "provenance": {
+          "providerText": "untrusted",
+          "source": "rightclick-x",
+          "learnedAt": "2026-11-04T00:47:56.199Z",
+          "publishedAt": "2026-11-04T00:47:56.217Z",
+          "calls": 1
+        }
+      },
+      "error": null
+    },
+    "D_revalidation": {
+      "sha256Before": "257874d6cc6e98e2afa4443b7169e45c9c8f6864dd1a8c8743e2be56d5ef096b",
+      "sha256After": "5d86c871309b38a7b6f942c13929abd8004b142ae33b0ef5b087dce4cd9154a9",
+      "bytesChanged": true,
+      "learnedCopy": "10 capabilities from 129 sandboxed runs (files; ok exit 0/2)",
+      "copyCapabilityIds": [
+        "cli:lychee-under-test:q",
+        "cli:lychee-under-test:offline",
+        "cli:lychee-under-test:host-stats",
+        "cli:lychee-under-test:glob-ignore-case",
+        "cli:lychee-under-test:default",
+        "cli:lychee-under-test:dump",
+        "cli:lychee-under-test:no-progress",
+        "cli:lychee-under-test:no-ignore",
+        "cli:lychee-under-test:invoke",
+        "cli:lychee-under-test:dump-inputs"
+      ],
+      "runBeforeAlteration": {
+        "status": "completed",
+        "output": [
+          "https://alpha-linkaudit.dev/domains/reserved",
+          "https://bravo-linkaudit.io/spec/v1",
+          "https://alpha-linkaudit.dev/about"
+        ],
+        "error": null
+      },
+      "runAfterAlteration": {
+        "status": "completed",
+        "output": [
+          "https://alpha-linkaudit.dev/domains/reserved",
+          "https://bravo-linkaudit.io/spec/v1",
+          "https://alpha-linkaudit.dev/about"
+        ],
+        "error": null
+      },
+      "refusedAfterAlteration": false,
+      "refusalNamesTheChangedProgram": false
+    }
+  },
+  "finishedAt": "2026-11-04T00:48:07.175Z"
+}

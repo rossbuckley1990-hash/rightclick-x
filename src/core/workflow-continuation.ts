@@ -15,6 +15,7 @@ export interface CompositionContinuation {
     want: SemType; intent?: string; verify?: Predicate[]; crystallize?: boolean;
     publish?: string; risks?: Capability["risk"][]; through?: string[]; maxSteps?: number;
     inputBindings?: Record<string, Record<string, string>>;
+    confirmFixedInvariants?: boolean | string[];
   };
   anchors: CapabilityAnchor[];
   fixed: Record<string, unknown>;
