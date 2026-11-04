@@ -13,7 +13,13 @@ Include:
 
 We aim to acknowledge reports within five working days. We will credit reporters who want credit.
 
-This is a small open-source project with no bug bounty. **No independent security audit has been performed.**
+## Coordinated disclosure
+
+- Reports stay private until a fix is available.
+- We coordinate a publication date with the reporter, targeting **90 days from acknowledgement** for public disclosure of accepted vulnerabilities. If a fix genuinely needs longer, we agree an extension with the reporter rather than letting the date slip silently.
+- We will not pursue legal action against good-faith research that uses the private channel, avoids service disruption and data exposure, and withholds exploit details from publication until the fix ships.
+
+An independent security review was performed in November 2026 ([#38](https://github.com/rossbuckley1990-hash/rightclick-x/issues/38)); its findings are being closed in the open, and the release-blocker register it feeds is [#9](https://github.com/rossbuckley1990-hash/rightclick-x/issues/9). This is a small open-source project with no bug bounty.
 
 ## What RightClick X enforces, and where
 
@@ -25,7 +31,7 @@ All of these are enforced in code outside the language model:
   - Limits apply to time, CPU, file size and output. Memory and process count have a sampled watchdog, not a hard kernel bound. The runtime terminates the run's process group on exit or a detected limit.
   - Destructive operations need operator approval (`RCX_APPROVE`) plus the caller's confirmation.
   - State-changing calls that may have taken effect are never re-sent automatically.
-- **Credentials** are pinned to their origin. A caller's headers never follow a redirect to another origin. Credentials are redacted from audit logs and persisted errors, and cannot be fixed into published goals.
+- **Credentials** are pinned to their origin. A caller's headers never follow a redirect to another origin. Credentials are redacted from audit logs, persisted errors and every client-visible failure message, and cannot be fixed into published goals.
 - **Publication and evidence sharing** are operator authorities (`authority.publish`, `RCX_SHARE_EVIDENCE`).
 
 The full record, the adversarial tests and the residual risks are in [docs/north-star/SECURITY-STAGE1.md](docs/north-star/SECURITY-STAGE1.md).
