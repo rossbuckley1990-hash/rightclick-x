@@ -43,7 +43,8 @@ jobs:
             const sb = await hostSandbox();
             if (!sb) { console.error("bubblewrap sandbox unavailable"); process.exit(1); }
             console.log(sb.kind + ": " + sb.enforces.join("; "));'
-      - run: docker run --rm --privileged rightclick-x-linux-test
+      # RCX_EXPECT_SANDBOX=1: confinement tests must run here, so a missing sandbox fails rather than skips.
+      - run: docker run --rm --privileged -e RCX_EXPECT_SANDBOX=1 rightclick-x-linux-test
   linux-no-sandbox:
     # Without user namespaces there is no sandbox: programs must be reported unavailable, never run.
     runs-on: ubuntu-24.04

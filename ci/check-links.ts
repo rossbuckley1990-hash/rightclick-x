@@ -11,15 +11,19 @@
 // - Verbatim source snapshots. Files under an evidence tree's sources/ directories are byte
 //   copies of files that lived elsewhere; their relative links were written for their original
 //   location. They are counted and listed, never silently dropped, but do not fail the check.
-// - Negative-control link fixtures. Markdown fixtures under experiments/**/fixtures/ that exist
-//   to feed unresolvable relative links into link-extractor tests are counted and listed, never
-//   silently dropped, and do not fail the documentation check.
+// - Negative-control link fixtures. Named files, not a directory pattern, whose purpose is to feed
+//   unresolvable relative links to link-extractor tests (the fixture's broken links are its expected
+//   behaviour). Their links are counted and listed, never silently dropped, and do not fail the
+//   check. Every other Markdown file under a fixtures directory is checked like any other, and a
+//   listed fixture that no longer exists fails the check so the exemption cannot outlive its file.
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 
 const ARCHIVE = "docs/adaptive/evidence";
 const SNAPSHOT = /(^|\/)evidence\/(.+\/)?sources\//;
-const FIXTURE = /^experiments\/[^/]+\/fixtures\//;
+const NEGATIVE_CONTROL_FIXTURES = new Set([
+  "experiments/north-star-acquisition/fixtures/rel-links.md",
+]);
 
 const skip = new Set(["node_modules", ".git", "dist"]);
 const files: string[] = [];
@@ -49,6 +53,7 @@ const broken: string[] = [];
 const snapshots: string[] = [];
 const fixtures: string[] = [];
 let viaArchive = 0;
+for (const fx of NEGATIVE_CONTROL_FIXTURES) if (!existsSync(fx)) broken.push(`${fx}: listed as a negative-control fixture but missing`);
 for (const f of files) {
   const text = readFileSync(f, "utf8").replace(/```[\s\S]*?```/g, "");
   for (const m of text.matchAll(/\]\(([^)\s]+)\)/g)) {
@@ -59,7 +64,7 @@ for (const f of files) {
     const rel = relative(".", path);
     if (rel.startsWith(`${ARCHIVE}/`) && (archived.has(rel) || archivedDirs.has(rel))) { viaArchive++; continue; }
     if (SNAPSHOT.test(relative(".", f))) { snapshots.push(`${f}: ${m[1]}`); continue; }
-    if (FIXTURE.test(relative(".", f))) { fixtures.push(`${f}: ${m[1]}`); continue; }
+    if (NEGATIVE_CONTROL_FIXTURES.has(relative(".", f))) { fixtures.push(`${f}: ${m[1]}`); continue; }
     broken.push(`${f}: ${m[1]}`);
   }
 }

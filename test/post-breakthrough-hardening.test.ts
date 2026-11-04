@@ -1,5 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -16,7 +17,29 @@ import { lintPublicationPredicates } from "../src/core/verify.ts";
 import { authorityFromEnv } from "../src/core/authority.ts";
 
 const baseSandbox = await hostSandbox();
-const skipIfNoSandbox = baseSandbox ? false : "host sandbox unavailable";
+// Confinement assertions must run, never skip, wherever the host is supposed to confine: macOS always
+// ships sandbox-exec, and the linux-bubblewrap CI job sets RCX_EXPECT_SANDBOX=1 after proving bwrap
+// works. Elsewhere (linux-no-sandbox, Ubuntu runners with AppArmor-restricted user namespaces) the
+// confinement tests skip with a stated reason and the fail-closed refusal is asserted instead.
+const sandboxExpected = process.platform === "darwin" || process.env.RCX_EXPECT_SANDBOX === "1";
+const skipIfNoSandbox = baseSandbox ? false : "host sandbox unavailable; the fail-closed refusal is asserted instead";
+
+// Independent of resolveSandboxLocale: does the host list any UTF-8 locale at all? undefined = the
+// host has no usable locale utility, which the product must also refuse.
+function hostListsUtf8Locale(): boolean | undefined {
+  const bin = ["/usr/bin/locale", "/bin/locale"].find((p) => fs.existsSync(p));
+  if (!bin) return undefined;
+  try {
+    const out = execFileSync(bin, ["-a"], { env: { PATH: "/usr/bin:/bin", LANG: "C", LC_ALL: "C" }, encoding: "utf8", timeout: 3000 });
+    return out.split(/\r?\n/).some((l) => /utf-?8$/i.test(l.trim()));
+  } catch {
+    return undefined;
+  }
+}
+const hostUtf8 = hostListsUtf8Locale();
+const skipIfNoUtf8 = hostUtf8 ? false : "no UTF-8 locale installed on this host; the refusal is asserted instead";
+const skipConfinedUtf8 = skipIfNoSandbox || skipIfNoUtf8;
+const IDN2_PATHS = ["/opt/homebrew/bin/idn2", "/usr/local/bin/idn2", "/usr/bin/idn2"];
 
 function makeMemoryStore(): Store & { snapshot: PersistedState | null } {
   let state: PersistedState | null = null;
@@ -119,7 +142,9 @@ async function verifyIdn2Target(idn2Path: string): Promise<void> {
   const learnedC = await rcC.learn({ source: `cli:${idn2Path}` });
   assert.equal(learnedC.results[0]?.error, undefined);
   const lookupCapC = rcC.graph.list().find((c) => c.id.startsWith("cli:idn2:") && !c.tags.includes("unsupported"));
-  assert.ok(lookupCapC, "idn2 capability should be promoted under C locale for ASCII domains");
+  const learnedDetail = () =>
+    `learned=${JSON.stringify(learnedC.results[0])}; cli caps=${JSON.stringify(rcC.graph.list().filter((c) => c.provider.startsWith("cli:")).map((c) => [c.id, c.tags.includes("unsupported")]))}`;
+  assert.ok(lookupCapC, `idn2 capability should be promoted under C locale for ASCII domains (${idn2Path}; ${learnedDetail()})`);
   assert.equal(lookupCapC.invoke.kind, "cli");
   if (lookupCapC.invoke.kind === "cli") {
     assert.equal(lookupCapC.invoke.localeProfile?.profile, "c");
@@ -159,12 +184,28 @@ async function verifyIdn2Target(idn2Path: string): Promise<void> {
 }
 
 describe("Decision 1 — Verified UTF-8 Locale Execution Profile", () => {
+  it("runs the confinement assertions wherever the host is expected to confine, rather than skipping them", (t) => {
+    t.diagnostic(`host sandbox: ${baseSandbox ? `${baseSandbox.kind} (${baseSandbox.enforces.join("; ")})` : "none"}; UTF-8 locale listed: ${hostUtf8}`);
+    if (sandboxExpected) assert.ok(baseSandbox, `${process.platform} with RCX_EXPECT_SANDBOX=${process.env.RCX_EXPECT_SANDBOX ?? ""} must have a working host sandbox`);
+    if (sandboxExpected) assert.equal(hostUtf8, true, "supported CI hosts must list a UTF-8 locale so the UTF-8 confinement tests run");
+  });
+
   it("resolves C and UTF-8 locale profiles without ever combining LC_CTYPE with LC_ALL=C", () => {
     const cProfile = resolveSandboxLocale("c");
     assert.deepEqual(cProfile, C_LOCALE_PROFILE);
     assert.equal(cProfile.env.LC_ALL, "C");
     assert.equal(cProfile.env.LANG, "C");
 
+    const fromEnv = authorityFromEnv({ RCX_SANDBOX_LOCALE: "utf8" });
+    assert.equal(fromEnv.locale, "utf8");
+
+    // A host that lists no UTF-8 locale (or has no locale utility) must refuse the profile, not fall back to C.
+    if (!hostUtf8) {
+      assert.throws(() => resolveSandboxLocale("utf8"), /RCX_SANDBOX_LOCALE refused/);
+      return;
+    }
+
+    // glibc lists the C UTF-8 locale as "C.utf8", macOS as "C.UTF-8"; the product accepts both spellings.
     const utf8Profile = resolveSandboxLocale("utf8");
     assert.equal(utf8Profile.profile, "utf8");
     assert.match(utf8Profile.locale, /UTF-?8$/i);
@@ -176,9 +217,6 @@ describe("Decision 1 — Verified UTF-8 Locale Execution Profile", () => {
     assert.equal(utf8Profile.env.LC_TIME, "C");
     assert.equal(utf8Profile.env.LC_MONETARY, "C");
     assert.equal(utf8Profile.env.LC_MESSAGES, "C");
-
-    const fromEnv = authorityFromEnv({ RCX_SANDBOX_LOCALE: "utf8" });
-    assert.equal(fromEnv.locale, "utf8");
   });
 
   it("rejects unsupported or non-UTF-8 locale selections fail-closed", async () => {
@@ -192,7 +230,7 @@ describe("Decision 1 — Verified UTF-8 Locale Execution Profile", () => {
     );
   });
 
-  it("preserves deterministic byte-order sorting (LC_COLLATE=C) while enabling UTF-8 character classes in the sandbox", { skip: skipIfNoSandbox }, async () => {
+  it("preserves deterministic byte-order sorting (LC_COLLATE=C) while enabling UTF-8 character classes in the sandbox", { skip: skipConfinedUtf8 }, async () => {
     assert.ok(baseSandbox, "host sandbox must be available");
     const cSb = withSandboxLocale(baseSandbox, resolveSandboxLocale("c"));
     const utf8Sb = withSandboxLocale(baseSandbox, resolveSandboxLocale("utf8"));
@@ -237,41 +275,41 @@ describe("Decision 1 — Verified UTF-8 Locale Execution Profile", () => {
     }
   });
 
-  it("converts münchen.de -> xn--mnchen-3ya.de and ASCII controls through idn2 under the UTF-8 profile", { skip: skipIfNoSandbox }, async () => {
-    assert.ok(baseSandbox);
+  // A controlled idn2-shaped program whose behaviour depends only on the charmap the sandbox gives it
+  // (it reads `locale charmap` inside the sandbox). It checks RightClick's side of the claim on every
+  // supported host: learning, promotion, the recorded locale profile, the C profile refusing non-ASCII
+  // input and the verified UTF-8 profile accepting it. It does not test libidn2's own conversion.
+  it("learns a charmap-dependent idn2-shaped fixture: C refuses münchen.de, the verified UTF-8 profile converts it, ASCII controls pass in both", { skip: skipConfinedUtf8 }, async () => {
     const fixture = makePortableIdn2Fixture();
     try {
       await verifyIdn2Target(fixture.bin);
     } finally {
       fs.rmSync(fixture.dir, { recursive: true, force: true });
     }
-
-    // Also verify against host idn2 binary when installed and functional inside the host sandbox
-    const hostIdn2 = ["/opt/homebrew/bin/idn2", "/usr/local/bin/idn2", "/usr/bin/idn2"].find((p) => fs.existsSync(p));
-    if (hostIdn2) {
-      const cSb = withSandboxLocale(baseSandbox, resolveSandboxLocale("c"));
-      const utf8Sb = withSandboxLocale(baseSandbox, resolveSandboxLocale("utf8"));
-      const probeAscii = await cSb.run(hostIdn2, [], { stdin: "Alpha-Node.org\n" }).catch(() => null);
-      const probeUtf8 = await utf8Sb.run(hostIdn2, [], { stdin: "münchen.de\n" }).catch(() => null);
-      if (
-        probeAscii?.code === 0 &&
-        probeAscii.stdout.trim() === "alpha-node.org" &&
-        probeUtf8?.code === 0 &&
-        probeUtf8.stdout.trim() === "xn--mnchen-3ya.de"
-      ) {
-        const check = await RightClick.create({
-          directories: [],
-          authority: { investigate: [hostIdn2], execute: [hostIdn2], locale: "c" },
-        });
-        const learned = await check.learn({ source: `cli:${hostIdn2}` });
-        if (learned.results[0]?.probes?.[0]?.ok) {
-          await verifyIdn2Target(hostIdn2);
-        }
-      }
-    }
   });
 
-  it("includes locale profile in CLI environment fingerprints and refuses stale retained capabilities when the locale changes", { skip: skipIfNoSandbox }, async () => {
+  // The real libidn2 binary, when the host has one. Asserted in full whenever the binary itself
+  // converts correctly inside the sandbox; a visible skip (never a silent pass) otherwise.
+  it("converts münchen.de -> xn--mnchen-3ya.de and ASCII controls through the host's real idn2 under the UTF-8 profile", { skip: skipConfinedUtf8 }, async (t) => {
+    assert.ok(baseSandbox);
+    const hostIdn2 = IDN2_PATHS.find((p) => fs.existsSync(p));
+    if (!hostIdn2) return t.skip(`no idn2 installed at ${IDN2_PATHS.join(", ")}`);
+    const cSb = withSandboxLocale(baseSandbox, resolveSandboxLocale("c"));
+    const utf8Sb = withSandboxLocale(baseSandbox, resolveSandboxLocale("utf8"));
+    const ascii = await cSb.run(hostIdn2, [], { stdin: "Alpha-Node.org\n" });
+    const idn = await utf8Sb.run(hostIdn2, [], { stdin: "münchen.de\n" });
+    const version = await cSb.run(hostIdn2, ["--version"]);
+    t.diagnostic(
+      `host idn2 ${fs.realpathSync(hostIdn2)} ${JSON.stringify(version.stdout.split("\n")[0])}: ` +
+        `C run code=${ascii.code} out=${JSON.stringify(ascii.stdout.trim())} err=${JSON.stringify(ascii.stderr.trim().slice(0, 200))}; ` +
+        `UTF-8 run code=${idn.code} out=${JSON.stringify(idn.stdout.trim())} err=${JSON.stringify(idn.stderr.trim().slice(0, 200))}`,
+    );
+    const works = ascii.code === 0 && ascii.stdout.trim() === "alpha-node.org" && idn.code === 0 && idn.stdout.trim() === "xn--mnchen-3ya.de";
+    if (!works) return t.skip(`host idn2 at ${hostIdn2} does not itself convert inside the sandbox on this host; RightClick's side is asserted with the controlled fixture`);
+    await verifyIdn2Target(hostIdn2);
+  });
+
+  it("includes locale profile in CLI environment fingerprints and refuses stale retained capabilities when the locale changes", { skip: skipConfinedUtf8 }, async () => {
     assert.ok(baseSandbox);
     const cSb = withSandboxLocale(baseSandbox, resolveSandboxLocale("c"));
     const utf8Sb = withSandboxLocale(baseSandbox, resolveSandboxLocale("utf8"));
@@ -321,7 +359,7 @@ describe("Decision 1 — Verified UTF-8 Locale Execution Profile", () => {
     assert.equal(revalidatedRun.output, "a\nb\n");
   });
 
-  it("preserves network and filesystem confinement under the UTF-8 execution profile", { skip: skipIfNoSandbox }, async () => {
+  it("preserves network and filesystem confinement under the UTF-8 execution profile", { skip: skipConfinedUtf8 }, async () => {
     assert.ok(baseSandbox);
     const utf8Sb = withSandboxLocale(baseSandbox, resolveSandboxLocale("utf8"));
     assert.equal(effectiveSandboxLocale(utf8Sb.policy).profile, "utf8");
@@ -338,6 +376,49 @@ describe("Decision 1 — Verified UTF-8 Locale Execution Profile", () => {
     if (fs.existsSync("/usr/bin/curl")) {
       const netAttempt = await utf8Sb.run("/usr/bin/curl", ["-sS", "--max-time", "2", "http://1.1.1.1"]);
       assert.notEqual(netAttempt.code, 0, "sandbox must block outbound network under UTF-8 profile");
+    }
+  });
+
+  // Runs on every host. Without a sandbox, neither locale profile may investigate or run a program,
+  // and a capability learned under confinement is refused, never executed unconfined.
+  it("fails closed without a sandbox under both locale profiles: nothing is investigated, imported or run", async () => {
+    const sort = "/usr/bin/sort";
+    const profiles = ["c", ...(hostUtf8 ? ["utf8"] : [])];
+    for (const locale of profiles) {
+      const runtimes = [
+        await RightClick.create({ directories: [], sandbox: null, authority: { investigate: [sort], execute: [sort], locale } }),
+        // On a host that really has no sandbox, the default host detection must refuse in the same way.
+        ...(baseSandbox ? [] : [await RightClick.create({ directories: [], authority: { investigate: [sort], execute: [sort], locale } })]),
+      ];
+      for (const rc of runtimes) {
+        const learned = await rc.learn({ source: `cli:${sort}` });
+        assert.match(String(learned.results[0]?.error), /unavailable: no sandbox/, locale);
+        assert.equal(rc.graph.list().filter((c) => c.provider.startsWith("cli:")).length, 0, locale);
+      }
+    }
+    if (!baseSandbox) return;
+
+    // Learned and persisted under confinement, then loaded where no sandbox is available.
+    for (const locale of profiles) {
+      const store = makeMemoryStore();
+      const confined = await RightClick.create({ directories: [], store, authority: { investigate: [sort], execute: [sort], locale, shareEvidence: true } });
+      await confined.learn({ source: `cli:${sort}` });
+      const cap = confined.graph.list().find((c) => c.id.startsWith("cli:sort:") && !c.tags.includes("unsupported"));
+      assert.ok(cap, locale);
+      assert.equal((await confined.run(cap.id, { input: "b\na\n" })).status, "completed", locale);
+      await confined.flush();
+
+      const unconfined = await RightClick.create({ directories: [], store, sandbox: null, authority: { investigate: [sort], execute: [sort], locale } });
+      const run = await unconfined.run(cap.id, { input: "b\na\n" });
+      assert.equal(run.status, "failed", locale);
+      assert.match(String(run.error), /no sandbox/, locale);
+      assert.notEqual(run.output, "a\nb\n", locale);
+
+      const imported = await RightClick.create({ directories: [], sandbox: null, authority: { investigate: [sort], execute: [sort], locale } });
+      const report = await imported.importKnowledge(confined.exportKnowledge());
+      assert.equal(report.programs[0]?.status, "refused", locale);
+      assert.match(String(report.programs[0]?.reason), /no sandbox/, locale);
+      assert.equal(report.programs[0]?.revalidationRuns, 0, locale);
     }
   });
 });
