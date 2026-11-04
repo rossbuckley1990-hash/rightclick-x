@@ -1,0 +1,308 @@
+{
+  "audits": "experiments/north-star-acquisition/evidence/competitive-proof.json",
+  "auditsSha256": "faacbf7da087d5460175e2c9e679e71e7e9b32e24e386aaff760c764ccd6ea56",
+  "pricingAssumption": {
+    "statedAs": "Frontier LLM API ($1.25/1M uncached input, $0.3125/1M cached input, $10.00/1M output)",
+    "usdPerToken": {
+      "uncachedInput": 0.00000125,
+      "cacheRead": 3.125e-7,
+      "output": 0.00001
+    },
+    "cacheWritePremiumModelled": false,
+    "modelRecorded": false
+  },
+  "provenance": {
+    "scriptGenerated": [
+      "armA_rightclick",
+      "armB_savedScript",
+      "armC_manualWrapper",
+      "adversarialControls (except kernelNetworkAndFilesystemSandbox)",
+      "generatedAt",
+      "tasksCount"
+    ],
+    "scriptLiteralNotMeasured": [
+      "adversarialControls.kernelNetworkAndFilesystemSandbox (true/false/false are literals in competitive-proof.ts)",
+      "armC_manualWrapper.developerAuthoredLinesOfCode (literal 28)"
+    ],
+    "addedAfterTheScriptRan": [
+      "subagentTelemetry",
+      "breakEvenAnalysis"
+    ],
+    "evidence": "generatedAt 2026-11-04T21:26:48.403Z precedes the reuse sessions (2026-11-04T21:27:03Z to 2026-11-04T21:28:05Z) and competitive-proof.ts emits neither block.",
+    "verifiableFromRepository": "Token counts and timestamps are transcriptions: the conversation transcripts named by conversationId are not in the repository, so they cannot be re-derived here. Only their internal consistency is checked."
+  },
+  "perSession": {
+    "ArmA_RightClick_Acquisition": {
+      "conversationId": "319c8772-5ccf-4dde-bafb-25995e1f174f",
+      "tasksCompleted": 2,
+      "recordedAgentTokens": {
+        "uncachedInput": 68706,
+        "cacheRead": 475407,
+        "output": 8789,
+        "total": 552902,
+        "totalMatchesOriginal": true,
+        "perTask": {
+          "uncachedInput": 34353,
+          "cacheRead": 237703.5,
+          "output": 4394.5,
+          "total": 276451
+        },
+        "cacheWriteTokens": null
+      },
+      "cachedContext": {
+        "cacheReadShareOfTotal": 0.8598,
+        "cacheReadShareOfInput": 0.8737
+      },
+      "modelledApiCostUsd": {
+        "total": 0.3223,
+        "perTask": 0.1612,
+        "perTaskUnrounded": 0.16116859375,
+        "original": {
+          "total": 0.3223,
+          "perTask": 0.1611
+        },
+        "perTaskMatchesOriginal": false
+      },
+      "actualBilledUsd": null,
+      "agentSessionSeconds": {
+        "total": 228,
+        "perTask": 114,
+        "matchesOriginal": true
+      }
+    },
+    "ArmA_RightClick_Reuse_4Tasks": {
+      "conversationId": "105a737f-646a-4e16-ad92-77219315f228",
+      "tasksCompleted": 4,
+      "recordedAgentTokens": {
+        "uncachedInput": 29394,
+        "cacheRead": 74176,
+        "output": 3079,
+        "total": 106649,
+        "totalMatchesOriginal": true,
+        "perTask": {
+          "uncachedInput": 7348.5,
+          "cacheRead": 18544,
+          "output": 769.75,
+          "total": 26662.25
+        },
+        "cacheWriteTokens": null
+      },
+      "cachedContext": {
+        "cacheReadShareOfTotal": 0.6955,
+        "cacheReadShareOfInput": 0.7162
+      },
+      "modelledApiCostUsd": {
+        "total": 0.0907,
+        "perTask": 0.0227,
+        "perTaskUnrounded": 0.022678125,
+        "original": {
+          "total": 0.0907,
+          "perTask": 0.0227
+        },
+        "perTaskMatchesOriginal": true
+      },
+      "actualBilledUsd": null,
+      "agentSessionSeconds": {
+        "total": 62,
+        "perTask": 15.5,
+        "matchesOriginal": true
+      }
+    },
+    "ArmB_SavedScript_Acquisition": {
+      "conversationId": "33aa6a1f-1b5b-4952-9759-282881d67d29",
+      "tasksCompleted": 2,
+      "recordedAgentTokens": {
+        "uncachedInput": 26580,
+        "cacheRead": 72208,
+        "output": 3566,
+        "total": 102354,
+        "totalMatchesOriginal": true,
+        "perTask": {
+          "uncachedInput": 13290,
+          "cacheRead": 36104,
+          "output": 1783,
+          "total": 51177
+        },
+        "cacheWriteTokens": null
+      },
+      "cachedContext": {
+        "cacheReadShareOfTotal": 0.7055,
+        "cacheReadShareOfInput": 0.7309
+      },
+      "modelledApiCostUsd": {
+        "total": 0.0915,
+        "perTask": 0.0457,
+        "perTaskUnrounded": 0.045725,
+        "original": {
+          "total": 0.0915,
+          "perTask": 0.0457
+        },
+        "perTaskMatchesOriginal": true
+      },
+      "actualBilledUsd": null,
+      "agentSessionSeconds": {
+        "total": 62,
+        "perTask": 31,
+        "matchesOriginal": true
+      }
+    },
+    "ArmB_SavedScript_Reuse_4Tasks": {
+      "conversationId": "bc4cdbb1-99f5-44f8-bfac-7de683dc7925",
+      "tasksCompleted": 4,
+      "recordedAgentTokens": {
+        "uncachedInput": 18682,
+        "cacheRead": 30985,
+        "output": 1439,
+        "total": 51106,
+        "totalMatchesOriginal": true,
+        "perTask": {
+          "uncachedInput": 4670.5,
+          "cacheRead": 7746.25,
+          "output": 359.75,
+          "total": 12776.5
+        },
+        "cacheWriteTokens": null
+      },
+      "cachedContext": {
+        "cacheReadShareOfTotal": 0.6063,
+        "cacheReadShareOfInput": 0.6239
+      },
+      "modelledApiCostUsd": {
+        "total": 0.0474,
+        "perTask": 0.0119,
+        "perTaskUnrounded": 0.011856328125000001,
+        "original": {
+          "total": 0.0474,
+          "perTask": 0.0118
+        },
+        "perTaskMatchesOriginal": false
+      },
+      "actualBilledUsd": null,
+      "agentSessionSeconds": {
+        "total": 36,
+        "perTask": 9,
+        "matchesOriginal": true
+      }
+    },
+    "Baseline_DirectShell_FromScratch": {
+      "conversationId": "b2e048cc-e0ba-4c07-bdd3-8f998c1677d5",
+      "tasksCompleted": 1,
+      "recordedAgentTokens": {
+        "uncachedInput": 23392,
+        "cacheRead": 58474,
+        "output": 3610,
+        "total": 85476,
+        "totalMatchesOriginal": true,
+        "perTask": {
+          "uncachedInput": 23392,
+          "cacheRead": 58474,
+          "output": 3610,
+          "total": 85476
+        },
+        "cacheWriteTokens": null
+      },
+      "cachedContext": {
+        "cacheReadShareOfTotal": 0.6841,
+        "cacheReadShareOfInput": 0.7143
+      },
+      "modelledApiCostUsd": {
+        "total": 0.0836,
+        "perTask": 0.0836,
+        "perTaskUnrounded": 0.08361312500000001,
+        "original": {
+          "total": 0.0836,
+          "perTask": 0.0836
+        },
+        "perTaskMatchesOriginal": true
+      },
+      "actualBilledUsd": null,
+      "agentSessionSeconds": {
+        "total": 54,
+        "perTask": 54,
+        "matchesOriginal": true
+      }
+    }
+  },
+  "runtimeOnlyLatencyMs": {
+    "note": "In-process time of one reuse call, measured by competitive-proof.ts. Excludes agent reasoning, tool round trips and acquisition. Not comparable with agent-session seconds.",
+    "rightclick": {
+      "acquisition": 5087.3,
+      "meanReuse": 34.7
+    },
+    "savedScript": {
+      "acquisition": 155.8,
+      "meanReuse": 11.2
+    },
+    "manualWrapper": {
+      "acquisition": null,
+      "meanReuse": 5.8
+    },
+    "rightclickReuseOverSavedScript": 3.1
+  },
+  "breakEven": {
+    "convention": "smallest n with acquisition + n·reuse ≤ (n + 1)·alternative, per-task figures",
+    "vsDirectShell": {
+      "agentSessionSeconds": 2,
+      "allRecordedTokensIncludingCacheReads": 4,
+      "uncachedInputPlusOutputTokens": 1,
+      "modelledApiCostUsd": 2,
+      "original": {
+        "wallTimeReuses": 2,
+        "totalTokensReuses": 4,
+        "costUsdReuses": 2
+      }
+    },
+    "vsSavedScript": {
+      "agentSessionSeconds": null,
+      "allRecordedTokensIncludingCacheReads": null,
+      "modelledApiCostUsd": null,
+      "note": "null = never: RightClick's per-reuse figure is higher than the saved script's, so no number of reuses recovers its higher acquisition cost on this happy path."
+    }
+  },
+  "corrections": [
+    {
+      "id": "C1",
+      "field": "breakEvenAnalysis.vsSavedScriptCompetitor.reason (RightClick per-reuse modelled cost)",
+      "original": 0.0252,
+      "corrected": 0.0227,
+      "explanation": "Recorded telemetry gives 29,394 uncached + 74,176 cache-read + 3,079 output tokens over 4 tasks = $0.0907 / 4 = $0.0227 per task at the stated rates. $0.0252 is not reproducible from any recorded RightClick field at those rates; it overstated RightClick's reuse cost by about 11%. The conclusion (no break-even against the saved script) is unchanged."
+    },
+    {
+      "id": "C2",
+      "field": "subagentTelemetry.ArmA_RightClick_Acquisition.estimatedCostUsdPerTask",
+      "original": 0.1611,
+      "corrected": 0.1612,
+      "explanation": "Unrounded: $0.322337 / 2 = $0.161169 → $0.1612. The recorded $0.1611 equals the already-rounded total ($0.3223) divided by 2 and rounded again. The reason text's $0.1612 was correct."
+    },
+    {
+      "id": "C3",
+      "field": "subagentTelemetry.ArmB_SavedScript_Reuse_4Tasks.estimatedCostUsdPerTask",
+      "original": 0.0118,
+      "corrected": 0.0119,
+      "explanation": "Unrounded: $0.047425 / 4 = $0.011856 → $0.0119. The recorded $0.0118 equals the already-rounded total ($0.0474) divided by 4 and rounded half-to-even. The reason text's $0.0119 was correct."
+    },
+    {
+      "id": "C4",
+      "field": "breakEvenAnalysis.vsDirectShellWithoutSavedScript.totalTokensReuses",
+      "original": 4,
+      "corrected": {
+        "allRecordedTokensIncludingCacheReads": 4,
+        "uncachedInputPlusOutputTokens": 1
+      },
+      "explanation": "The original adds cache-read tokens (priced at a quarter of uncached input) to uncached and output tokens as if they were one unit. Both views are now reported; cache reads are 61-86% of every session's tokens."
+    },
+    {
+      "id": "C5",
+      "field": "label: estimatedCostUsd",
+      "original": "estimatedCostUsd (unqualified)",
+      "corrected": "modelledApiCostUsd; actualBilledUsd = null",
+      "explanation": "Every dollar figure is recorded tokens × an unnamed 'frontier LLM API' rate. No invoice, model identifier or cache-write count was recorded, so no actual charge is known."
+    }
+  ],
+  "limits": [
+    "One session per arm and phase; no repetitions, so no variance or confidence interval exists for any figure.",
+    "Per-task figures average heterogeneous tasks (2 acquisitions, 4 reuses, 1 baseline task) and the baseline task's kind is not recorded.",
+    "The saved-script (B) and manual-wrapper (C) arms were deliberately built without hash pinning, sandboxing or output verification. Their failure on the drift controls shows what those safeguards catch, not that RightClick outperforms a competitor who implements them.",
+    "Human engineering effort, setup and future maintenance were not measured for any arm."
+  ]
+}
