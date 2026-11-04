@@ -5,16 +5,17 @@ import { createHash } from "node:crypto";
 import { tmpdir } from "node:os";
 import { RightClick, type OperatorAuthority, type RunRecord } from "../src/runtime.ts";
 import { FileStore } from "../src/entry/node-host.ts";
-import { CONFINED_POLICY, hostSandbox, makeSandbox, type Sandbox, type SandboxRun } from "../src/core/sandbox.ts";
+import { CONFINED_POLICY, makeSandbox, type Sandbox, type SandboxRun } from "../src/core/sandbox.ts";
 import { signature } from "../src/core/graph.ts";
 import type { CliConformance } from "../src/core/cli-conformance.ts";
 import type { Capability, CliInvoke } from "../src/core/types.ts";
 import type { OutcomeWitness } from "../src/core/verify.ts";
+import { sandboxGate } from "./sandbox-gate.ts";
 
 // Serial, disposable fixtures only. Neither observer fabricates outputs nor relaxes
 // confinement; importantly, it also observes the separate narrowed sample sandbox.
-const native = process.platform === "darwin" ? await hostSandbox() : null;
-const local = { skip: native ? false : "native macOS sandbox unavailable", timeout: 120_000, concurrency: false };
+const { sandbox: native, skip: gated } = await sandboxGate({ platforms: ["darwin"], reason: "its fixtures build macOS sandboxes (makeSandbox without a bubblewrap path)" });
+const local = { skip: gated, timeout: 120_000, concurrency: false };
 const quote = (text: string) => `'${text.replaceAll("'", "'\\''")}'`;
 const digest = (file: string) => createHash("sha256").update(readFileSync(file)).digest("hex");
 const executable = (file: string, body: string) => { writeFileSync(file, body); chmodSync(file, 0o755); };

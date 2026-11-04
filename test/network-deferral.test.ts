@@ -22,6 +22,9 @@ import { join } from "node:path";
 import { RightClick } from "../src/runtime.ts";
 import { FileStore } from "../src/entry/node-host.ts";
 import { decodeState } from "../src/core/state-format.ts";
+import { sandboxGate } from "./sandbox-gate.ts";
+
+const { skip: sandboxed } = await sandboxGate();
 
 interface Service { port: number; source: string; requests: () => number; close: () => Promise<void> }
 
@@ -164,8 +167,6 @@ test("an operator removal of a deferred provider is permanent", async () => {
     } finally { await service.close(); }
   } finally { rmSync(f.dir, { recursive: true, force: true }); }
 });
-
-const sandboxed = (await (await import("../src/core/sandbox.ts")).hostSandbox()) ? false : "no host sandbox on this platform";
 
 test("a pipeline over a program deferred for want of authority survives and returns with it", { skip: sandboxed }, async () => {
   const dir = mkdtempSync(join(tmpdir(), "rcx-netdefer-"));

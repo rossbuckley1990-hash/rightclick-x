@@ -17,6 +17,9 @@ import { FileStore } from "../src/entry/node-host.ts";
 import { KvStore } from "../src/entry/edge.ts";
 import { decodeState, STATE_FORMAT, STEP_INPUT_BINDINGS_REQUIREMENT } from "../src/core/state-format.ts";
 import { MemoryStore } from "./helpers.ts";
+import { sandboxGate } from "./sandbox-gate.ts";
+
+const { skip: sandboxed } = await sandboxGate();
 
 const RCX = fileURLToPath(new URL("../bin/rcx.ts", import.meta.url));
 const sha = (file: string) => createHash("sha256").update(readFileSync(file)).digest("hex");
@@ -201,7 +204,6 @@ test("an ordinary command that migrates legacy state says so and names the backu
 
 // -------------------------------------------- inference migration never drops what it cannot redo
 
-const sandboxed = (await (await import("../src/core/sandbox.ts")).hostSandbox()) ? false : "no host sandbox on this platform";
 const PROGRAM = "/usr/bin/sort";
 
 /** State written by this runtime with one investigated program, then marked as an older build's. */

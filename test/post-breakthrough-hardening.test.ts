@@ -8,20 +8,18 @@ import { RightClick, type Store, type PersistedState } from "../src/runtime.ts";
 import {
   C_LOCALE_PROFILE,
   effectiveSandboxLocale,
-  hostSandbox,
   resolveSandboxLocale,
   withSandboxLocale,
 } from "../src/core/sandbox.ts";
 import { observeCliEnvironment } from "../src/core/cli-environment.ts";
 import { lintPublicationPredicates } from "../src/core/verify.ts";
 import { authorityFromEnv } from "../src/core/authority.ts";
+import { sandboxExpected, sandboxGate } from "./sandbox-gate.ts";
 
-const baseSandbox = await hostSandbox();
-// Confinement assertions must run, never skip, wherever the host is supposed to confine: macOS always
-// ships sandbox-exec, and the linux-bubblewrap CI job sets RCX_EXPECT_SANDBOX=1 after proving bwrap
-// works. Elsewhere (linux-no-sandbox, Ubuntu runners with AppArmor-restricted user namespaces) the
-// confinement tests skip with a stated reason and the fail-closed refusal is asserted instead.
-const sandboxExpected = process.platform === "darwin" || process.env.RCX_EXPECT_SANDBOX === "1";
+// Confinement assertions must run, never skip, wherever the host is supposed to confine (see
+// sandbox-gate.ts). Elsewhere the confinement tests skip with a stated reason and the fail-closed
+// refusal is asserted instead, by the last test of Decision 1.
+const { sandbox: baseSandbox } = await sandboxGate();
 const skipIfNoSandbox = baseSandbox ? false : "host sandbox unavailable; the fail-closed refusal is asserted instead";
 
 // Independent of resolveSandboxLocale: does the host list any UTF-8 locale at all? undefined = the

@@ -7,9 +7,9 @@ import { chmodSync, mkdtempSync, realpathSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { RightClick } from "../src/runtime.ts";
-import { hostSandbox } from "../src/core/sandbox.ts";
 import { isLiteralOperand, parseOperands, parseUsage, validateOptions } from "../src/reflectors/cli.ts";
 import { spawnSync } from "node:child_process";
+import { sandboxGate } from "./sandbox-gate.ts";
 
 const spawnSyncOk = (cmd: string, args: string[]) => {
   try {
@@ -19,8 +19,7 @@ const spawnSyncOk = (cmd: string, args: string[]) => {
   }
 };
 
-const sandbox = await hostSandbox();
-const skip = sandbox ? false : "no host sandbox on this platform";
+const { skip } = await sandboxGate();
 const tmp = (p: string) => realpathSync(mkdtempSync(join(tmpdir(), p)));
 function program(dir: string, name: string, body: string) {
   const p = join(dir, name);

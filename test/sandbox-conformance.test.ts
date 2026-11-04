@@ -3,7 +3,11 @@ import assert from "node:assert/strict";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { CONFINED_POLICY, DEFAULT_LIMITS, hostSandbox, macProfile, makeSandbox, type SandboxLimits, type SandboxPolicy } from "../src/core/sandbox.ts";
+import { CONFINED_POLICY, DEFAULT_LIMITS, macProfile, makeSandbox, type SandboxLimits, type SandboxPolicy } from "../src/core/sandbox.ts";
+import { sandboxGate } from "./sandbox-gate.ts";
+
+const { sandbox: native, skip: gated } = await sandboxGate();
+const local = { skip: gated, timeout: 30_000 };
 
 const ROOT = "/Users/conformance/project";
 const limitKeys = Object.keys(DEFAULT_LIMITS) as (keyof SandboxLimits)[];
@@ -86,8 +90,6 @@ test("the narrowed macOS profile denies network and preserves read barriers and 
   assert.equal(sandbox.policy.limits.maxFileBytes, DEFAULT_LIMITS.maxFileBytes);
 });
 
-const native = await hostSandbox();
-const local = { skip: native ? false : "native host sandbox unavailable", timeout: 30_000 };
 const bwrap = existsSync("/usr/bin/bwrap") ? "/usr/bin/bwrap" : "/bin/bwrap";
 
 function fixture(t: TestContext) {

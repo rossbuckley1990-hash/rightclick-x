@@ -4,10 +4,10 @@ import { mkdtempSync, realpathSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { RightClick } from "../src/runtime.ts";
 import { FileStore } from "../src/entry/node-host.ts";
-import { hostSandbox, type Sandbox } from "../src/core/sandbox.ts";
+import type { Sandbox } from "../src/core/sandbox.ts";
+import { sandboxGate } from "./sandbox-gate.ts";
 
-const base = await hostSandbox();
-const skip = base ? false : "no host sandbox";
+const { sandbox: base, skip } = await sandboxGate();
 async function fixture() {
   const dir = realpathSync(mkdtempSync(`${tmpdir()}/rcx-file-roles-`));
   const bin = `${dir}/fixture`;

@@ -4,8 +4,11 @@ import { mkdtempSync, realpathSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { RightClick } from "../src/runtime.ts";
 import { FileStore } from "../src/entry/node-host.ts";
-import { hostSandbox, type Sandbox } from "../src/core/sandbox.ts";
+import type { Sandbox } from "../src/core/sandbox.ts";
 import { validateOptions } from "../src/reflectors/cli.ts";
+import { sandboxGate } from "./sandbox-gate.ts";
+
+const { sandbox: base, skip } = await sandboxGate();
 
 test("known exclusions precede all compact-option encodings and conflicting allowed aliases", () => {
   const allowed = [{ flags: ["-d"], arg: true }, ...["-e", "-r", "-a", "-s"].map(f => ({ flags: [f], arg: false })), { flags: ["--erase"], arg: true }];
@@ -18,8 +21,7 @@ test("known exclusions precede all compact-option encodings and conflicting allo
   assert.throws(() => validateOptions(["-ra"], [{ flags: ["-r"], arg: false, optionalArg: true }, { flags: ["-a"], arg: false }]), /not one/, "optional argument ambiguity must not be guessed");
 });
 
-const base = await hostSandbox();
-test("excluded long options never dispatch through compact syntax, persistence or import", { skip: base ? false : "no host sandbox" }, async () => {
+test("excluded long options never dispatch through compact syntax, persistence or import", { skip }, async () => {
   const dir = realpathSync(mkdtempSync(`${tmpdir()}/rcx-option-grammar-`));
   const bin = `${dir}/report-records`;
   writeFileSync(bin, `#!/bin/sh

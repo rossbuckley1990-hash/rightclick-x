@@ -6,10 +6,10 @@ import { mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { RightClick } from "../src/runtime.ts";
 import { FileStore } from "../src/entry/node-host.ts";
-import { hostSandbox, type Sandbox } from "../src/core/sandbox.ts";
+import type { Sandbox } from "../src/core/sandbox.ts";
+import { sandboxGate } from "./sandbox-gate.ts";
 
-const native = await hostSandbox();
-const skip = native ? false : "no host sandbox";
+const { sandbox: native, skip } = await sandboxGate();
 async function fixture() {
   const dir = realpathSync(mkdtempSync(`${tmpdir()}/rcx-local-repair-`));
   const bin = `${dir}/shout`;

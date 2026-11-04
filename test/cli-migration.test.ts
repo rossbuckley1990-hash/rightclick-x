@@ -6,11 +6,11 @@ import { createHash } from "node:crypto";
 import { mkdtempSync, realpathSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { RightClick, SEMANTICS } from "../src/runtime.ts";
-import { hostSandbox, type Sandbox } from "../src/core/sandbox.ts";
+import type { Sandbox } from "../src/core/sandbox.ts";
 import { MemoryStore } from "./helpers.ts";
+import { sandboxGate } from "./sandbox-gate.ts";
 
-const native = await hostSandbox();
-const skip = native ? false : "no host sandbox";
+const { sandbox: native, skip } = await sandboxGate();
 const input = '{"new":[17,"later"]}\n';
 const id = "cli:structured:default";
 

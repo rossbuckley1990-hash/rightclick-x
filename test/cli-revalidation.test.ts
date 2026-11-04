@@ -4,9 +4,9 @@ import { mkdtempSync, realpathSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { RightClick } from "../src/runtime.ts";
 import { FileStore } from "../src/entry/node-host.ts";
-import { hostSandbox } from "../src/core/sandbox.ts";
+import { sandboxGate } from "./sandbox-gate.ts";
 
-const base = await hostSandbox();
+const { skip } = await sandboxGate();
 
 function tool(dir: string, body: string): string {
   const bin = `${dir}/echo-tool`;
@@ -38,7 +38,7 @@ async function learned(bin: string, dir: string, retry: string[] = []) {
 
 const input = "alpha bravo\ncharlie delta\n";
 
-test("a changed program that no longer reproduces its conformance examples is refused visibly", { skip: base ? false : "no host sandbox" }, async () => {
+test("a changed program that no longer reproduces its conformance examples is refused visibly", { skip }, async () => {
   const dir = realpathSync(mkdtempSync(`${tmpdir()}/rcx-revalidation-`));
   const bin = tool(dir, "#!/bin/sh\nexec /bin/cat \"$@\"\n");
   const { rc, cap } = await learned(bin, dir);
@@ -57,7 +57,7 @@ test("a changed program that no longer reproduces its conformance examples is re
   assert.equal(again.status, "failed");
 });
 
-test("a changed program that still reproduces its conformance examples is retried", { skip: base ? false : "no host sandbox" }, async () => {
+test("a changed program that still reproduces its conformance examples is retried", { skip }, async () => {
   const dir = realpathSync(mkdtempSync(`${tmpdir()}/rcx-revalidation-compatible-`));
   const bin = tool(dir, "#!/bin/sh\nexec /bin/cat \"$@\"\n");
   const { rc, cap } = await learned(bin, dir);
@@ -70,7 +70,7 @@ test("a changed program that still reproduces its conformance examples is retrie
   assert.match(ran.healing?.note ?? "", /retried/);
 });
 
-test("a documented-only subcommand has no behaviour evidence to accept a changed program", { skip: base ? false : "no host sandbox" }, async () => {
+test("a documented-only subcommand has no behaviour evidence to accept a changed program", { skip }, async () => {
   const dir = realpathSync(mkdtempSync(`${tmpdir()}/rcx-revalidation-declared-`));
   const bin = `${dir}/report-tool`;
   const body = reportTool();
@@ -89,7 +89,7 @@ test("a documented-only subcommand has no behaviour evidence to accept a changed
   assert.equal(again.status, "failed");
 });
 
-test("a documented-only subcommand is revalidated against its last successful call", { skip: base ? false : "no host sandbox" }, async () => {
+test("a documented-only subcommand is revalidated against its last successful call", { skip }, async () => {
   const dir = realpathSync(mkdtempSync(`${tmpdir()}/rcx-revalidation-receipt-`));
   const bin = `${dir}/report-tool`;
   writeFileSync(bin, reportTool(), { mode: 0o755 });

@@ -1,6 +1,11 @@
 // Diagnostic preload: observes the existing child_process APIs without changing
 // source or scheduling policy. Optional failure injection affects only the exact
-// memory/process-count ps call. No unrelated command lines or ps rows are saved.
+// memory/process-count ps call. No unrelated command lines or ps rows are saved; a sandbox spawn
+// records only whether it was the availability probe.
+//
+// RCX_RESOURCE_FAULT modes: ps-error (every observation fails), malformed, after-probe-error,
+// late-error, slow, and ps-error-first-runs=N (every observation of the first N sandbox runs fails,
+// later runs are observed normally, i.e. a transient fault).
 import { createRequire, syncBuiltinESMExports } from 'node:module';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -10,13 +15,14 @@ mkdirSync(out,{recursive:true});
 const cp=createRequire(import.meta.url)('node:child_process');
 const originalSpawn=cp.spawn, originalExecFile=cp.execFile;
 const groups=new Map(),events=[];
-let polls=0;
+let polls=0,runs=0;
 const record=e=>{if(events.length<20000)events.push({at:Date.now(),...e})};
 cp.spawn=function(command,args,options){
  const child=originalSpawn.apply(this,arguments);
  if(command==='/usr/bin/sandbox-exec'||command==='/usr/bin/bwrap'||command==='/bin/bwrap'){
-   if(child.pid)groups.set(child.pid,Date.now());
-   record({kind:'spawn',pgid:child.pid});
+   runs++;
+   if(child.pid)groups.set(child.pid,runs);
+   record({kind:'spawn',pgid:child.pid,run:runs,probe:Array.isArray(args)&&args.includes('rcx-sandbox-probe')});
    child.once('close',(code,signal)=>{record({kind:'close',pgid:child.pid,code,signal});groups.delete(child.pid)});
  }
  return child;
@@ -32,6 +38,8 @@ cp.execFile=function(command,args,options,callback){
    callback(error,stdout,stderr);
  };
  const mode=process.env.RCX_RESOURCE_FAULT;
+ const firstRuns=/^ps-error-first-runs=(\d+)$/.exec(mode??'');
+ if(firstRuns&&[...groups.values()].some(run=>run<=Number(firstRuns[1]))){setTimeout(()=>finish(Object.assign(new Error('injected resource observer error'),{code:'EIO'}),'',''),0);return;}
  if(mode==='ps-error'||(polls>1&&['after-probe-error','late-error'].includes(mode))){setTimeout(()=>finish(Object.assign(new Error('injected resource observer error'),{code:'EIO'}),'',''),mode==='late-error'?150:0);return;}
  if(mode==='malformed'){queueMicrotask(()=>finish(null,'not a numeric process snapshot\n',''));return;}
  if(mode==='slow')return originalExecFile.call(this,command,args,options,(...values)=>setTimeout(()=>finish(...values),150));
