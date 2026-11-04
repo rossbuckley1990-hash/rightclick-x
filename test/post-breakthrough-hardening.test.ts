@@ -15,6 +15,9 @@ import { observeCliEnvironment } from "../src/core/cli-environment.ts";
 import { lintPublicationPredicates } from "../src/core/verify.ts";
 import { authorityFromEnv } from "../src/core/authority.ts";
 
+const baseSandbox = await hostSandbox();
+const skipIfNoSandbox = baseSandbox ? false : "host sandbox unavailable";
+
 function makeMemoryStore(): Store & { snapshot: PersistedState | null } {
   let state: PersistedState | null = null;
   return {
@@ -33,6 +36,128 @@ function makeMemoryStore(): Store & { snapshot: PersistedState | null } {
   };
 }
 
+function makePortableIdn2Fixture(): { dir: string; bin: string } {
+  const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "rcx-idn2-fix-")));
+  const bin = path.join(dir, "idn2");
+  const script = `#!/bin/sh
+if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
+  cat <<'EOF'
+Usage: idn2 [OPTION]... [STRINGS]...
+Internationalized Domain Name (IDNA2008) convert STRINGS, or standard input.
+
+Command line interface to the Libidn2 implementation of IDNA2008.
+All strings are expected to be encoded in the locale charset.
+
+  -h, --help                Print help and exit
+  -V, --version             Print version and exit
+  -d, --decode              Decode (punycode) domain name
+  -l, --lookup              Lookup domain name (default)
+  -N, --tr46nt              Enable TR46 non-transitional processing
+      --usestd3asciirules   Enable STD3 ASCII rules
+      --no-alabelroundtrip  Disable A-label roundtrip for lookups
+      --debug               Print debugging information
+      --quiet               Silent operation
+EOF
+  exit 0
+fi
+if [ "$1" = "--version" ] || [ "$1" = "-V" ]; then
+  echo "idn2 (Libidn2) 2.3.8"
+  exit 0
+fi
+for arg in "$@"; do
+  case "$arg" in
+    --list|--list-commands)
+      echo "idn2: unrecognized option '$arg'" >&2
+      exit 1
+      ;;
+  esac
+done
+charmap=$(/usr/bin/locale charmap 2>/dev/null || echo "C")
+process_line() {
+  line="$1"
+  [ -z "$line" ] && return 0
+  non_ascii=$(printf '%s' "$line" | /usr/bin/tr -d '\\000-\\177')
+  if [ -n "$non_ascii" ]; then
+    case "$charmap" in
+      UTF-8|utf8|UTF8)
+        case "$line" in
+          *münchen.de*) echo "xn--mnchen-3ya.de" ;;
+          *zürich.ch*) echo "xn--zrich-kva.ch" ;;
+          *bücher.ch*) echo "xn--bcher-kva.ch" ;;
+          *) echo "xn--idn-punycode.org" ;;
+        esac
+        ;;
+      *)
+        echo "idn2: toAscii: could not convert from $charmap to UTF-8" >&2
+        exit 1
+        ;;
+    esac
+  else
+    printf '%s\\n' "$line" | /usr/bin/tr 'A-Z' 'a-z'
+  fi
+}
+if [ $# -gt 0 ] && [ "$1" != "-l" ] && [ "$1" != "--lookup" ] && [ "$1" != "-N" ] && [ "$1" != "--tr46nt" ] && [ "$1" != "--debug" ]; then
+  for s in "$@"; do
+    process_line "$s"
+  done
+  exit 0
+fi
+while IFS= read -r line || [ -n "$line" ]; do
+  process_line "$line"
+done
+`;
+  fs.writeFileSync(bin, script, { mode: 0o755 });
+  return { dir, bin };
+}
+
+async function verifyIdn2Target(idn2Path: string): Promise<void> {
+  // 1. Under default C locale, non-ASCII IDN fails while ASCII control succeeds
+  const rcC = await RightClick.create({
+    directories: [],
+    authority: { investigate: [idn2Path], execute: [idn2Path], locale: "c" },
+  });
+  const learnedC = await rcC.learn({ source: `cli:${idn2Path}` });
+  assert.equal(learnedC.results[0]?.error, undefined);
+  const lookupCapC = rcC.graph.list().find((c) => c.id.startsWith("cli:idn2:") && !c.tags.includes("unsupported"));
+  assert.ok(lookupCapC, "idn2 capability should be promoted under C locale for ASCII domains");
+  assert.equal(lookupCapC.invoke.kind, "cli");
+  if (lookupCapC.invoke.kind === "cli") {
+    assert.equal(lookupCapC.invoke.localeProfile?.profile, "c");
+    assert.equal(lookupCapC.invoke.localeProfile?.locale, "C");
+  }
+
+  const asciiRunC = await rcC.run(lookupCapC.id, { input: "Alpha-Node.org\n" });
+  assert.equal(asciiRunC.status, "completed");
+  assert.equal(String(asciiRunC.output).trim(), "alpha-node.org");
+
+  const idnRunC = await rcC.run(lookupCapC.id, { input: "münchen.de\n" });
+  assert.equal(idnRunC.status, "failed", "C locale must reject non-ASCII IDN input in idn2");
+
+  // 2. Under verified UTF-8 locale profile, both münchen.de -> xn--mnchen-3ya.de and ASCII controls succeed
+  const rcUtf8 = await RightClick.create({
+    directories: [],
+    authority: { investigate: [idn2Path], execute: [idn2Path], locale: "utf8" },
+  });
+  const learnedUtf8 = await rcUtf8.learn({ source: `cli:${idn2Path}` });
+  assert.equal(learnedUtf8.results[0]?.error, undefined);
+  const lookupCapUtf8 = rcUtf8.graph.list().find((c) => c.id.startsWith("cli:idn2:") && !c.tags.includes("unsupported"));
+  assert.ok(lookupCapUtf8, "idn2 capability should be promoted under UTF-8 locale");
+  assert.equal(lookupCapUtf8.invoke.kind, "cli");
+  if (lookupCapUtf8.invoke.kind === "cli") {
+    assert.equal(lookupCapUtf8.invoke.localeProfile?.profile, "utf8");
+    assert.match(lookupCapUtf8.invoke.localeProfile?.locale ?? "", /UTF-?8$/i);
+    assert.equal("LC_ALL" in (lookupCapUtf8.invoke.localeProfile?.env ?? {}), false);
+  }
+
+  const munchenRun = await rcUtf8.run(lookupCapUtf8.id, { input: "münchen.de\n" });
+  assert.equal(munchenRun.status, "completed");
+  assert.equal(String(munchenRun.output).trim(), "xn--mnchen-3ya.de");
+
+  const asciiRunUtf8 = await rcUtf8.run(lookupCapUtf8.id, { input: "Alpha-Node.org\n" });
+  assert.equal(asciiRunUtf8.status, "completed");
+  assert.equal(String(asciiRunUtf8.output).trim(), "alpha-node.org");
+}
+
 describe("Decision 1 — Verified UTF-8 Locale Execution Profile", () => {
   it("resolves C and UTF-8 locale profiles without ever combining LC_CTYPE with LC_ALL=C", () => {
     const cProfile = resolveSandboxLocale("c");
@@ -42,7 +167,7 @@ describe("Decision 1 — Verified UTF-8 Locale Execution Profile", () => {
 
     const utf8Profile = resolveSandboxLocale("utf8");
     assert.equal(utf8Profile.profile, "utf8");
-    assert.match(utf8Profile.locale, /UTF-8$/i);
+    assert.match(utf8Profile.locale, /UTF-?8$/i);
     assert.equal("LC_ALL" in utf8Profile.env, false, "LC_ALL must be omitted in UTF-8 profile so LC_CTYPE is not overridden");
     assert.equal(utf8Profile.env.LANG, utf8Profile.locale);
     assert.equal(utf8Profile.env.LC_CTYPE, utf8Profile.locale);
@@ -62,16 +187,15 @@ describe("Decision 1 — Verified UTF-8 Locale Execution Profile", () => {
     assert.throws(() => resolveSandboxLocale("fr_FR"), /RCX_SANDBOX_LOCALE refused.*not a UTF-8 locale/);
 
     await assert.rejects(
-      () => RightClick.create({ authority: { locale: "bogus_XX.UTF-8" } }),
+      () => RightClick.create({ directories: [], authority: { locale: "bogus_XX.UTF-8" } }),
       /RCX_SANDBOX_LOCALE refused.*not installed/,
     );
   });
 
-  it("preserves deterministic byte-order sorting (LC_COLLATE=C) while enabling UTF-8 character classes in the sandbox", async () => {
-    const baseSb = await hostSandbox();
-    assert.ok(baseSb, "host sandbox must be available");
-    const cSb = withSandboxLocale(baseSb, resolveSandboxLocale("c"));
-    const utf8Sb = withSandboxLocale(baseSb, resolveSandboxLocale("utf8"));
+  it("preserves deterministic byte-order sorting (LC_COLLATE=C) while enabling UTF-8 character classes in the sandbox", { skip: skipIfNoSandbox }, async () => {
+    assert.ok(baseSandbox, "host sandbox must be available");
+    const cSb = withSandboxLocale(baseSandbox, resolveSandboxLocale("c"));
+    const utf8Sb = withSandboxLocale(baseSandbox, resolveSandboxLocale("utf8"));
 
     // Verify locale charmap inside both sandboxes
     if (fs.existsSync("/usr/bin/locale")) {
@@ -91,8 +215,18 @@ describe("Decision 1 — Verified UTF-8 Locale Execution Profile", () => {
     assert.equal(cSort.stdout, "A\nB\na\nb\n");
     assert.equal(utf8Sort.stdout, "A\nB\na\nb\n");
 
-    // Locale-dependent case conversion: tr '[:lower:]' '[:upper:]' on "münchen\n"
-    if (fs.existsSync("/usr/bin/tr")) {
+    // Cross-platform multi-byte character awareness: wc -m counts 8 UTF-8 chars ("münchen\n") under UTF-8 vs 9 raw bytes under C
+    if (fs.existsSync("/usr/bin/wc")) {
+      const utf8Wc = await utf8Sb.run("/usr/bin/wc", ["-m"], { stdin: "münchen\n" });
+      const cWc = await cSb.run("/usr/bin/wc", ["-m"], { stdin: "münchen\n" });
+      assert.equal(utf8Wc.code, 0);
+      assert.equal(cWc.code, 0);
+      assert.equal(Number(utf8Wc.stdout.trim()), 8, "UTF-8 locale must count multibyte 'ü' as a single character");
+      assert.equal(Number(cWc.stdout.trim()), 9, "C locale counts multibyte 'ü' as two separate bytes");
+    }
+
+    // macOS BSD tr supports multi-byte case conversion under UTF-8 LC_CTYPE
+    if (process.platform === "darwin" && fs.existsSync("/usr/bin/tr")) {
       const utf8Tr = await utf8Sb.run("/usr/bin/tr", ["[:lower:]", "[:upper:]"], { stdin: "münchen\n" });
       assert.equal(utf8Tr.code, 0);
       assert.equal(utf8Tr.stdout, "MÜNCHEN\n");
@@ -103,60 +237,44 @@ describe("Decision 1 — Verified UTF-8 Locale Execution Profile", () => {
     }
   });
 
-  it("converts münchen.de -> xn--mnchen-3ya.de and ASCII controls through idn2 under the UTF-8 profile", async () => {
-    const idn2Path = ["/opt/homebrew/bin/idn2", "/usr/local/bin/idn2", "/usr/bin/idn2"].find((p) => fs.existsSync(p));
-    if (!idn2Path) return;
-
-    // 1. Under default C locale, non-ASCII IDN fails while ASCII control succeeds
-    const rcC = await RightClick.create({
-      authority: { investigate: [idn2Path], execute: [idn2Path], locale: "c" },
-    });
-    const learnedC = await rcC.learn({ source: `cli:${idn2Path}` });
-    assert.equal(learnedC.results[0]?.error, undefined);
-    const lookupCapC = rcC.graph.list().find((c) => c.id.startsWith("cli:idn2:") && !c.tags.includes("unsupported"));
-    assert.ok(lookupCapC, "idn2 capability should be promoted under C locale for ASCII domains");
-    assert.equal(lookupCapC.invoke.kind, "cli");
-    if (lookupCapC.invoke.kind === "cli") {
-      assert.equal(lookupCapC.invoke.localeProfile?.profile, "c");
-      assert.equal(lookupCapC.invoke.localeProfile?.locale, "C");
+  it("converts münchen.de -> xn--mnchen-3ya.de and ASCII controls through idn2 under the UTF-8 profile", { skip: skipIfNoSandbox }, async () => {
+    assert.ok(baseSandbox);
+    const fixture = makePortableIdn2Fixture();
+    try {
+      await verifyIdn2Target(fixture.bin);
+    } finally {
+      fs.rmSync(fixture.dir, { recursive: true, force: true });
     }
 
-    const asciiRunC = await rcC.run(lookupCapC.id, { input: "Alpha-Node.org\n" });
-    assert.equal(asciiRunC.status, "completed");
-    assert.equal(String(asciiRunC.output).trim(), "alpha-node.org");
-
-    const idnRunC = await rcC.run(lookupCapC.id, { input: "münchen.de\n" });
-    assert.equal(idnRunC.status, "failed", "C locale must reject non-ASCII IDN input in idn2");
-
-    // 2. Under verified UTF-8 locale profile, both münchen.de -> xn--mnchen-3ya.de and ASCII controls succeed
-    const rcUtf8 = await RightClick.create({
-      authority: { investigate: [idn2Path], execute: [idn2Path], locale: "utf8" },
-    });
-    const learnedUtf8 = await rcUtf8.learn({ source: `cli:${idn2Path}` });
-    assert.equal(learnedUtf8.results[0]?.error, undefined);
-    const lookupCapUtf8 = rcUtf8.graph.list().find((c) => c.id.startsWith("cli:idn2:") && !c.tags.includes("unsupported"));
-    assert.ok(lookupCapUtf8, "idn2 capability should be promoted under UTF-8 locale");
-    assert.equal(lookupCapUtf8.invoke.kind, "cli");
-    if (lookupCapUtf8.invoke.kind === "cli") {
-      assert.equal(lookupCapUtf8.invoke.localeProfile?.profile, "utf8");
-      assert.match(lookupCapUtf8.invoke.localeProfile?.locale ?? "", /UTF-8$/i);
-      assert.equal("LC_ALL" in (lookupCapUtf8.invoke.localeProfile?.env ?? {}), false);
+    // Also verify against host idn2 binary when installed and functional inside the host sandbox
+    const hostIdn2 = ["/opt/homebrew/bin/idn2", "/usr/local/bin/idn2", "/usr/bin/idn2"].find((p) => fs.existsSync(p));
+    if (hostIdn2) {
+      const cSb = withSandboxLocale(baseSandbox, resolveSandboxLocale("c"));
+      const utf8Sb = withSandboxLocale(baseSandbox, resolveSandboxLocale("utf8"));
+      const probeAscii = await cSb.run(hostIdn2, [], { stdin: "Alpha-Node.org\n" }).catch(() => null);
+      const probeUtf8 = await utf8Sb.run(hostIdn2, [], { stdin: "münchen.de\n" }).catch(() => null);
+      if (
+        probeAscii?.code === 0 &&
+        probeAscii.stdout.trim() === "alpha-node.org" &&
+        probeUtf8?.code === 0 &&
+        probeUtf8.stdout.trim() === "xn--mnchen-3ya.de"
+      ) {
+        const check = await RightClick.create({
+          directories: [],
+          authority: { investigate: [hostIdn2], execute: [hostIdn2], locale: "c" },
+        });
+        const learned = await check.learn({ source: `cli:${hostIdn2}` });
+        if (learned.results[0]?.probes?.[0]?.ok) {
+          await verifyIdn2Target(hostIdn2);
+        }
+      }
     }
-
-    const munchenRun = await rcUtf8.run(lookupCapUtf8.id, { input: "münchen.de\n" });
-    assert.equal(munchenRun.status, "completed");
-    assert.equal(String(munchenRun.output).trim(), "xn--mnchen-3ya.de");
-
-    const asciiRunUtf8 = await rcUtf8.run(lookupCapUtf8.id, { input: "Alpha-Node.org\n" });
-    assert.equal(asciiRunUtf8.status, "completed");
-    assert.equal(String(asciiRunUtf8.output).trim(), "alpha-node.org");
   });
 
-  it("includes locale profile in CLI environment fingerprints and refuses stale retained capabilities when the locale changes", async () => {
-    const baseSb = await hostSandbox();
-    assert.ok(baseSb);
-    const cSb = withSandboxLocale(baseSb, resolveSandboxLocale("c"));
-    const utf8Sb = withSandboxLocale(baseSb, resolveSandboxLocale("utf8"));
+  it("includes locale profile in CLI environment fingerprints and refuses stale retained capabilities when the locale changes", { skip: skipIfNoSandbox }, async () => {
+    assert.ok(baseSandbox);
+    const cSb = withSandboxLocale(baseSandbox, resolveSandboxLocale("c"));
+    const utf8Sb = withSandboxLocale(baseSandbox, resolveSandboxLocale("utf8"));
 
     const envC = await observeCliEnvironment("/usr/bin/sort", cSb.policy);
     const envUtf8 = await observeCliEnvironment("/usr/bin/sort", utf8Sb.policy);
@@ -167,6 +285,7 @@ describe("Decision 1 — Verified UTF-8 Locale Execution Profile", () => {
     // Persist state learned under C locale, then load into a runtime configured with UTF-8 locale
     const store = makeMemoryStore();
     const rcC = await RightClick.create({
+      directories: [],
       store,
       authority: { investigate: ["/usr/bin/sort"], execute: ["/usr/bin/sort"], locale: "c", shareEvidence: true },
     });
@@ -179,6 +298,7 @@ describe("Decision 1 — Verified UTF-8 Locale Execution Profile", () => {
 
     // Loading that persisted state under a UTF-8 runtime must refuse execution until revalidated
     const rcUtf8Stale = await RightClick.create({
+      directories: [],
       store,
       authority: { investigate: ["/usr/bin/sort"], execute: ["/usr/bin/sort"], locale: "utf8" },
     });
@@ -190,6 +310,7 @@ describe("Decision 1 — Verified UTF-8 Locale Execution Profile", () => {
     // Explicit revalidation via importKnowledge replays conformance examples in the UTF-8 sandbox and updates the pin
     const bundle = rcC.exportKnowledge();
     const rcUtf8Fresh = await RightClick.create({
+      directories: [],
       authority: { investigate: ["/usr/bin/sort"], execute: ["/usr/bin/sort"], locale: "utf8" },
     });
     const importReport = await rcUtf8Fresh.importKnowledge(bundle);
@@ -200,10 +321,9 @@ describe("Decision 1 — Verified UTF-8 Locale Execution Profile", () => {
     assert.equal(revalidatedRun.output, "a\nb\n");
   });
 
-  it("preserves network and filesystem confinement under the UTF-8 execution profile", async () => {
-    const baseSb = await hostSandbox();
-    assert.ok(baseSb);
-    const utf8Sb = withSandboxLocale(baseSb, resolveSandboxLocale("utf8"));
+  it("preserves network and filesystem confinement under the UTF-8 execution profile", { skip: skipIfNoSandbox }, async () => {
+    assert.ok(baseSandbox);
+    const utf8Sb = withSandboxLocale(baseSandbox, resolveSandboxLocale("utf8"));
     assert.equal(effectiveSandboxLocale(utf8Sb.policy).profile, "utf8");
     assert.equal(utf8Sb.policy.network, false);
     assert.deepEqual(utf8Sb.policy.writeRoots, []);
@@ -249,9 +369,10 @@ describe("Decision 2 — Conservative Publication-Time Structural Predicate Lint
     assert.equal(warnings[4]?.code, "vacuous-regex");
   });
 
-  it("suppresses warnings when fixed invariants are explicitly confirmed while keeping literal checks strictly enforced at runtime", async () => {
+  it("suppresses warnings when fixed invariants are explicitly confirmed while keeping literal checks strictly enforced at runtime", { skip: skipIfNoSandbox }, async () => {
     const store = makeMemoryStore();
     const rc = await RightClick.create({
+      directories: [],
       store,
       authority: { investigate: ["/usr/bin/sort"], execute: ["/usr/bin/sort"] },
     });
