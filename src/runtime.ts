@@ -15,7 +15,7 @@ import { egressOf, plan, type CompositionDiagnostic, type Plan } from "./core/pl
 import { outputCarries, undeclaredRequirements, type Satisfaction } from "./core/satisfaction.ts";
 import { assessPlan, contractFor, lostWords, type Assurance, type ContractAssessment, type OutcomeContract } from "./core/contract.ts";
 import { selectionWith } from "./reflectors/graphql.ts";
-import { hostSandbox, normaliseSandboxPaths, type Sandbox } from "./core/sandbox.ts";
+import { effectiveSandboxLocale, hostSandbox, normaliseSandboxPaths, resolveSandboxLocale, withSandboxLocale, type Sandbox, type SandboxLocale } from "./core/sandbox.ts";
 import { validateFileNames } from "./core/cli-files.ts";
 import { observeCliEnvironment } from "./core/cli-environment.ts";
 import { CliValidityError, reportsApplicationError, type CliValidity } from "./core/cli-outcome.ts";
@@ -30,7 +30,7 @@ import { assessExecution, consequentialRisks, ExecutionDenied, intersectOrigins,
 import { distance, inferType, inspectValue, linesValidateAs, type Inspection } from "./core/semantics.ts";
 import { describeResult, resultDescription, type ResultDescription } from "./core/result-description.ts";
 import type { Capability, CapabilityAnchor, FetchLike, GraphQLFailureEvidence, PlanStep, Provider, Reflection, SemType, TransportRefusal } from "./core/types.ts";
-import { agreement, assertAgreement, check, pick, type Predicate, type PredicateResult, type OutcomeWitness, type WitnessResult } from "./core/verify.ts";
+import { agreement, assertAgreement, check, lintPublicationPredicates, pick, type Predicate, type PredicateResult, type PredicateWarning, type OutcomeWitness, type WitnessResult } from "./core/verify.ts";
 import { builtinReflection, type BuiltinFn } from "./reflectors/builtins.ts";
 import { DEFAULT_DIRECTORIES, type Candidate, type Directory } from "./reflectors/directories.ts";
 import { discover, type Discovery, type SourceKind } from "./reflectors/discover.ts";
@@ -179,6 +179,8 @@ export interface PublishedGoal {
   providers?: string[];
   /** Advisory declaration from a successful plan, never executable ports or authority. */
   lastResult?: ResultDescription;
+  /** Conservative publication-time predicate lint warnings (advisory; predicates are never silently rewritten). */
+  predicateWarnings?: PredicateWarning[];
 }
 
 interface ReuseGuidance {
@@ -258,6 +260,12 @@ export interface OperatorAuthority {
   retry?: string[];
   /** Authorizes only these bounded synthetic samples in a narrowed sandbox, never caller-input replay. */
   cliConformance?: Record<string, CliConformance>;
+  /**
+   * Explicitly selected sandbox locale profile for local CLI investigation and execution:
+   * "c" (default, LANG=C LC_ALL=C) or "utf8" (or an explicit verified UTF-8 locale such as
+   * "C.UTF-8" or "en_US.UTF-8", with LC_ALL omitted and LC_COLLATE/LC_NUMERIC/etc. pinned to C).
+   */
+  locale?: string;
 }
 
 export interface RunOptions {
@@ -294,7 +302,7 @@ export interface RunRecord {
   planningRefusal?: PlanningRefusal;
   resumes?: string;
   /** Completion of a retained ordinary composition, including deferred publication. */
-  composition?: Pick<ComposeResult, "crystallized" | "published" | "publishRefused" | "outcome">;
+  composition?: Pick<ComposeResult, "crystallized" | "published" | "predicateWarnings" | "publishRefused" | "outcome">;
   /** Only a complete retained saved-goal plan can settle this parent run. */
   workflowRunId?: string;
   persistence?: { status: "failed"; detail: string };
@@ -428,6 +436,8 @@ export interface ComposeOptions {
   publish?: string;
   /** Refuse publication if its slug already exists. Defaults to legacy replacement behavior. */
   preserveExisting?: boolean;
+  /** Explicitly confirm that all (true) or specific literal predicate values are intentional fixed invariants of a published goal. */
+  confirmFixedInvariants?: boolean | string[];
   /** Required to run plans that contain destructive capabilities. */
   confirm?: boolean;
   /** Internal recursion guard, carried through nested saved goals. */
@@ -477,7 +487,11 @@ export interface ComposeResult {
     durable: boolean;
     /** Why it is not durable: no store configured, or the error the store returned. */
     persistence?: string;
+    /** Conservative publication-time warnings for potentially sample-specific or vacuous predicates. */
+    warnings?: PredicateWarning[];
   };
+  /** Conservative publication-time warnings for potentially sample-specific or vacuous predicates. */
+  predicateWarnings?: PredicateWarning[];
   /** Present when publication was refused by the operator's publication authority. */
   publishRefused?: string;
   /** With `require`: whether the requested information was established, before and after running. */
@@ -617,6 +631,7 @@ export class RightClick {
   private executable: string[] = [];
   private shareEvidence = false;
   private publishPolicy: "any" | "checked" | "verified" = "any";
+  private sandboxLocale?: SandboxLocale;
   private sandboxCache?: Promise<Sandbox | null>;
   private currentSandbox?: Sandbox | null;
   private onInvestigationStart?: (program: string) => void;
@@ -659,7 +674,8 @@ export class RightClick {
     rc.executable = [...(opts.authority?.execute ?? opts.authority?.investigate ?? [])];
     rc.shareEvidence = opts.authority?.shareEvidence === true;
     rc.publishPolicy = opts.authority?.publish ?? "any";
-    if (opts.sandbox !== undefined) rc.sandboxCache = Promise.resolve(opts.sandbox);
+    if (opts.authority?.locale !== undefined) rc.sandboxLocale = resolveSandboxLocale(opts.authority.locale);
+    if (opts.sandbox !== undefined) rc.sandboxCache = Promise.resolve(opts.sandbox && rc.sandboxLocale ? withSandboxLocale(opts.sandbox, rc.sandboxLocale) : opts.sandbox);
     rc.graph.add(b.reflection);
     const p = await platformReflection(rc.info, { bindings: opts.bindings, workspace: opts.workspace });
     rc.platformFns = p.fns;
@@ -1412,7 +1428,7 @@ export class RightClick {
         evidenceSharing: this.shareEvidence ? "export allowed by the operator (authority.shareEvidence)" : "export not allowed (default)",
       },
       verification: goal
-        ? { trust: goal.trust ?? "unverified", predicates: goal.verify ?? [], witnesses: (goal.witnesses ?? []).map((w) => w.capability) }
+        ? { trust: goal.trust ?? "unverified", predicates: goal.verify ?? [], witnesses: (goal.witnesses ?? []).map((w) => w.capability), ...(goal.predicateWarnings?.length ? { predicateWarnings: goal.predicateWarnings } : {}) }
         : inv.kind === "composite" ? { predicates: inv.verify ?? [], witnesses: (inv.witnesses ?? []).map((w: any) => w.capability) }
         : inv.kind === "cli" ? { evidence: claims.map((cl) => `${cl.claim} [${cl.status}]`), note: "investigation never marks anything verified; independent checks do" }
         : { note: "declared by the provider's contract" },
@@ -1447,7 +1463,7 @@ export class RightClick {
       // CHECKED (stored predicates passed), VERIFIED (independent witness passed), DECLARED (contract only).
       status,
       sourceEnvironment: inv.kind === "cli"
-        ? { os: g.process?.platform, arch: g.process?.arch, program: inv.bin, sha256: inv.sha256, version: investigation?.program.version, sandbox: investigation?.sandbox }
+        ? { os: g.process?.platform, arch: g.process?.arch, program: inv.bin, sha256: inv.sha256, version: investigation?.program.version, sandbox: investigation?.sandbox, ...(inv.localeProfile ? { localeProfile: inv.localeProfile } : {}) }
         : { origin: (this.graph.providers.get(c.provider)?.meta?.source as string) ?? this.graph.providers.get(c.provider)?.origin },
       requiredInputs: c.inputs.filter((p) => p.required).map((p) => ({ name: p.name, type: p.type })),
       optionalInputs: c.inputs.filter((p) => !p.required).map((p) => ({ name: p.name, type: p.type, description: p.description })),
@@ -1932,6 +1948,7 @@ export class RightClick {
       ...(workflowRunId ? { workflowRunId } : {}),
       ...(compositionResult ? { composition: {
         crystallized: compositionResult.crystallized, published: compositionResult.published,
+        ...(compositionResult.predicateWarnings ? { predicateWarnings: compositionResult.predicateWarnings } : {}),
         publishRefused: compositionResult.publishRefused, outcome: compositionResult.outcome,
       } } : {}),
       capability: cap.id,
@@ -1993,7 +2010,8 @@ export class RightClick {
    */
   /** The host sandbox, or null when this host offers none (then programs are never run). */
   async sandbox(): Promise<Sandbox | null> {
-    return this.currentSandbox = await (this.sandboxCache ??= hostSandbox());
+    const base = await (this.sandboxCache ??= hostSandbox());
+    return this.currentSandbox = base && this.sandboxLocale ? withSandboxLocale(base, this.sandboxLocale) : base;
   }
 
   private async revalidateCli(cap: Capability, execution: HttpExecution = {}, acquire = false): Promise<Capability> {
@@ -2063,8 +2081,14 @@ export class RightClick {
     if (cap.invoke.kind !== "cli") return;
     const current = await observeCliEnvironment(cap.invoke.bin, sb.policy);
     const expected = cap.invoke.environment?.digest;
+    const activeLocale = effectiveSandboxLocale(sb.policy);
+    const recordedLocale = cap.invoke.localeProfile;
+    const localeChanged = recordedLocale
+      ? recordedLocale.profile !== activeLocale.profile || recordedLocale.locale !== activeLocale.locale
+      : Boolean(expected) && activeLocale.profile !== "c";
     execution.cliValidity = {
-      coverage: "partial", environment: expected ? expected === current.digest ? "unchanged" : "changed" : "unrecorded",
+      coverage: "partial",
+      environment: localeChanged ? "changed" : expected ? expected === current.digest ? "unchanged" : "changed" : "unrecorded",
       ...(expected ? { expected } : {}), observed: current.digest, application: "not-assessed",
       ...(execution.cliValidity?.conformance ? { conformance: execution.cliValidity.conformance } : {}),
       limitation: execution.cliValidity?.conformance ? execution.cliValidity.limitation : "Only bounded local environment candidates were observed, not complete execution dependencies. Hidden imports, configuration and services require independent outcome verification.",
@@ -2843,7 +2867,8 @@ export class RightClick {
           id: `execution:composition:${crypto.randomUUID()}`, plan: { ...p, steps }, types,
           risk: selected.some(c => c.risk === "destructive") ? "destructive" : selected.some(c => c.risk === "write") ? "write" : selected.some(c => c.risk === "external") ? "external" : "read",
           options: { want: opts.want, intent: opts.intent, verify: opts.verify, crystallize: opts.crystallize,
-            publish: opts.publish, risks: opts.risks, through: opts.through, maxSteps: opts.maxSteps, inputBindings: opts.inputBindings },
+            publish: opts.publish, risks: opts.risks, through: opts.through, maxSteps: opts.maxSteps, inputBindings: opts.inputBindings,
+            ...(opts.confirmFixedInvariants !== undefined ? { confirmFixedInvariants: opts.confirmFixedInvariants } : {}) },
           anchors, fixed, origins, witnesses, require, preservesInput: assessOf(p).preservesInput, publicationExpected,
           goals: await Promise.all((opts.activeGoals ?? []).map(async slug => {
             const g = this.published.get(slug);
@@ -3105,6 +3130,12 @@ export class RightClick {
         result.publishRefused = `not published: goal:${slug} changed since execution began; inspect it and retry explicitly`;
         return result;
       }
+      const predicateWarnings = lintPublicationPredicates(opts.verify, {
+        inputs: values,
+        fixedInputs: fixed,
+        capabilities: p.steps.map((s) => this.graph.get(s.capability)!).filter(Boolean),
+        confirmFixedInvariants: opts.confirmFixedInvariants,
+      });
       const candidate: PublishedGoal = {
         revision: crypto.randomUUID(),
         trust,
@@ -3128,6 +3159,7 @@ export class RightClick {
         lastPipeline: titles(p),
         providers: [...new Set(p.steps.map((st) => this.graph.get(st.capability)!.provider))],
         lastResult,
+        ...(predicateWarnings.length ? { predicateWarnings } : {}),
       };
       this.publishing.add(slug);
       try {
@@ -3153,7 +3185,11 @@ export class RightClick {
             throw e;
           }
         });
-        result.published = { id: `goal:${slug}`, slug, path: `/x/${slug}`, trust, durable: !!this.store && !this.store.readOnly };
+        result.published = {
+          id: `goal:${slug}`, slug, path: `/x/${slug}`, trust, durable: !!this.store && !this.store.readOnly,
+          ...(predicateWarnings.length ? { warnings: predicateWarnings } : {}),
+        };
+        if (predicateWarnings.length) result.predicateWarnings = predicateWarnings;
         if (!this.store) result.published.persistence = "no store configured: available in this process only";
         else if (this.store.readOnly) result.published.persistence = `state is read-only (${this.store.readOnly}): available in this process only`;
       } catch (e) {
@@ -3703,7 +3739,8 @@ export class RightClick {
         }
         const r = await replayExamples(here, sb);
         entry.revalidationRuns += r.runs;
-        if (r.matched === r.total) accepted.push({ ...(cap as Capability), provider: `cli:${prog.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`, source: "cli", invoke: here, tags: [...cap.tags.filter((t) => t !== "imported"), "imported"] });
+        const activeLocale = effectiveSandboxLocale(sb.policy);
+        if (r.matched === r.total) accepted.push({ ...(cap as Capability), provider: `cli:${prog.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`, source: "cli", invoke: { ...here, localeProfile: { profile: activeLocale.profile, locale: activeLocale.locale, env: { ...activeLocale.env } } }, tags: [...cap.tags.filter((t) => t !== "imported"), "imported"] });
         else entry.capabilities.push({ id: cap.id, status: "refused", reason: `behaves differently here: ${r.mismatches.join("; ")}` });
       }
       if ((await observeCliEnvironment(local, sb.policy)).digest !== environment.digest) {

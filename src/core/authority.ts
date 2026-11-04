@@ -26,6 +26,7 @@ export function authorityFromEnv(env: Record<string, unknown>): OperatorAuthorit
     retry: list(env.RCX_RETRY),
     investigate: list(env.RCX_INVESTIGATE),
     ...(env.RCX_EXECUTE !== undefined ? { execute: list(env.RCX_EXECUTE) } : {}),
+    ...(env.RCX_SANDBOX_LOCALE !== undefined ? { locale: String(env.RCX_SANDBOX_LOCALE) } : {}),
     ...(env.RCX_CLI_CONFORMANCE !== undefined ? { cliConformance: parseCliConformance(JSON.parse(String(env.RCX_CLI_CONFORMANCE))) } : {}),
     shareEvidence: env.RCX_SHARE_EVIDENCE === "1",
   };

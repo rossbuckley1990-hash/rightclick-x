@@ -13,7 +13,7 @@
 import type { Capability, CliInvoke, Port, Reflection, SemType } from "../core/types.ts";
 import { inferType, lineListType } from "../core/semantics.ts";
 export type { CliInvoke };
-import { normaliseSandboxPaths, SANDBOX_PATH_PLACEHOLDER, type Sandbox, type SandboxRun } from "../core/sandbox.ts";
+import { effectiveSandboxLocale, normaliseSandboxPaths, SANDBOX_PATH_PLACEHOLDER, type LocaleProfileName, type Sandbox, type SandboxRun } from "../core/sandbox.ts";
 import { reportsApplicationError } from "../core/cli-outcome.ts";
 
 export type EvidenceStatus = "declared" | "observed" | "inferred" | "experimentally-supported" | "verified" | "contradicted" | "unknown";
@@ -371,13 +371,21 @@ export async function replayExamples(inv: CliInvoke, sandbox: Sandbox): Promise<
 interface Sample { kind: string; content: string }
 
 /** Generic sample documents, chosen by words the program's own documentation uses. */
-export function samplesFor(docs: string, seed: number): Sample[] {
+export function samplesFor(docs: string, seed: number, localeProfile: LocaleProfileName = "c"): Sample[] {
   const d = docs.toLowerCase();
   const pick = <T,>(xs: T[], i: number) => xs[(seed + i) % xs.length];
   const words = ["alpha", "bravo", "charlie", "delta", "echo", "foxtrot", "golf", "hotel", "india", "juliet", "kilo", "lima"];
   const sentence = (i: number) => `${pick(words, i)} ${pick(words, i + 3)} ${pick(words, i + 7)} line ${i + seed % 7}`;
   const out: Sample[] = [];
   const all = /./.test(d); // every generic kind is tried; documentation words only add emphasis
+  if (/\b(idna?|punycode|internationalized domain)\b/i.test(d)) {
+    if (localeProfile === "utf8") {
+      out.push({ kind: "domain", content: "münchen.de\n" });
+      out.push({ kind: "domain", content: "zürich.ch\n" });
+    }
+    out.push({ kind: "domain", content: `${pick(words, 0).toUpperCase()}-Node.org\n` });
+    out.push({ kind: "domain", content: `${pick(words, 1).toUpperCase()}-Host.dev\n` });
+  }
   if (all || /\bx?html\b/.test(d)) {
     for (const v of [0, 4]) {
       out.push({ kind: "html", content: `<html><head><title>${sentence(1 + v)}</title></head><body><h1>${sentence(2 + v)}</h1><p>${sentence(3 + v)}<p>${sentence(4 + v)}<ul><li>${pick(words, 5 + v)}<li>${pick(words, 6 + v)}</ul></body></html>\n` });
@@ -468,7 +476,7 @@ export function outputKind(stdout: string): CliInvoke["output"] {
   return "text";
 }
 
-const SEM: Record<string, SemType> = { html: "html", xml: "text", json: "json", csv: "text", text: "text", md: "markdown" };
+const SEM: Record<string, SemType> = { html: "html", xml: "text", json: "json", csv: "text", text: "text", md: "markdown", domain: "domain" };
 
 function slug(s: string) {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "run";
@@ -483,6 +491,7 @@ const FORMAT_WORDS: Record<string, RegExp> = {
   xml: /\bxml\b/i,
   json: /\bjson\b/i,
   csv: /\bcsv\b|comma.separated/i,
+  domain: /\b(idna?|punycode|internationalized domain)\b/i,
 };
 
 export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed?: number } = {}): Promise<{ reflection: Reflection | null; investigation: Investigation }> {
@@ -491,6 +500,10 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
   const path = await import("node:path");
   const name = path.basename(bin);
   const seed = opts.seed ?? 7;
+  const activeLocale = effectiveSandboxLocale(sandbox.policy);
+  const localeProfileField = {
+    localeProfile: { profile: activeLocale.profile, locale: activeLocale.locale, env: { ...activeLocale.env } },
+  };
   const inv: Investigation = {
     program: { bin, name, sha256: "", size: 0 },
     sandbox: sandbox.kind,
@@ -668,6 +681,7 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
           okExit: [0],
           output: jsonByDefault ? "json" : "text",
           sha256: inv.program.sha256,
+          ...localeProfileField,
         },
       };
       caps.push(cap);
@@ -694,7 +708,7 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
   }
 
   // 3. Experiments with synthetic inputs (never the evaluator's inputs).
-  const samples = samplesFor(docs, seed);
+  const samples = samplesFor(docs, seed, activeLocale.profile);
   const kinds = [...new Set(samples.map((s) => s.kind))];
   // Literal operands (values, not files) are supplied as argv text; only the rest are file operands.
   const optionArgs = new Set(inv.options.map((o) => (o.arg ?? "").toLowerCase().replace(/[^a-z0-9]/g, "")).filter(Boolean));
@@ -807,7 +821,7 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
         outputs: [{ name: "", type: "text", required: true }],
         risk: "read",
         tags: [name, "declared-interface", "declared-only", "direct-only", "unsupported"],
-        invoke: { kind: "cli", bin, args: [], stdin: "input", okExit: [0, 1], output: "text", sha256: inv.program.sha256, options: optionContract(inv.options), filesPort: "files", operandsPort: "operands" },
+        invoke: { kind: "cli", bin, args: [], stdin: "input", okExit: [0, 1], output: "text", sha256: inv.program.sha256, options: optionContract(inv.options), filesPort: "files", operandsPort: "operands", ...localeProfileField },
       };
       inv.summary += `; offered as a declared interface only (${declared.length} documented options)`;
       return { reflection: { provider: { id: providerId, title: `${name} (command-line program)`, source: "cli", origin: bin, learnedAt: new Date().toISOString(), capabilityIds: [id], meta: { investigation: inv, sha256: inv.program.sha256, version: inv.program.version } }, capabilities: [cap] }, investigation: inv };
@@ -984,6 +998,7 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
       sha256: inv.program.sha256,
       behaviour,
       ...(volatileTimes ? { volatile: "timestamps" as const } : {}),
+      ...localeProfileField,
       examples: mt.slice(0, 2).map((t) => ({
         ...(t.channel === "stdin" ? { stdin: t.inputs[0] } : { files: Object.fromEntries(t.inputs.map((x, i) => [`input${i + 1}.${t.kind === "text" ? "txt" : t.kind}`, x])) }),
         ...(t.literals.length ? { literals: t.literals } : {}),

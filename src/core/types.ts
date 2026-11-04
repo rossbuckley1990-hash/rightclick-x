@@ -239,6 +239,11 @@ export interface CliInvoke {
    * return an empty result rests on the exit code, not on this field.
    */
   emptyResult?: "observed";
+  /**
+   * Verified execution locale profile under which this capability's behaviour and conformance
+   * examples were established. Execution under a different locale profile requires revalidation.
+   */
+  localeProfile?: { profile: "c" | "utf8"; locale: string; env: Record<string, string> };
 }
 
 export type Invoke =

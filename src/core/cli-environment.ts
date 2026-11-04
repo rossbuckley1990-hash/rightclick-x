@@ -1,11 +1,12 @@
 import type { BigIntStats } from "node:fs";
 import { sha256, stableStringify } from "./ledger.ts";
-import type { SandboxPolicy } from "./sandbox.ts";
+import { effectiveSandboxLocale, type SandboxPolicy } from "./sandbox.ts";
 
 export interface CliEnvironment {
   version: 1;
   coverage: "partial";
   digest: string;
+  locale?: { profile: "c" | "utf8"; locale: string; env: Record<string, string> };
   entries: Array<{ path: string; real?: string; sha256?: string; state: "observed" | "unavailable" | "bounded" }>;
   limitations: string[];
 }
@@ -54,12 +55,14 @@ export async function observeCliEnvironment(bin: string, policy: SandboxPolicy):
   const { constants } = await import("node:fs");
   const { createHash } = await import("node:crypto");
   const { normalize, join } = await import("node:path");
-  // Freeze the declaration for this observation, including PATH order, not host PATH.
+  // Freeze the declaration for this observation, including PATH order and active locale profile, not host PATH.
+  const activeLocale = effectiveSandboxLocale(policy);
   const confinement = {
     readRoots: [...policy.readRoots], readDenyRoots: [...policy.readDenyRoots],
     readDenyPending: [...(policy.readDenyPending ?? [])], writeRoots: [...policy.writeRoots],
     pathDirs: [...policy.pathDirs], network: policy.network, limits: { ...policy.limits },
     homeDenyRoots: HOME_DENY_ROOTS,
+    locale: { profile: activeLocale.profile, locale: activeLocale.locale, env: { ...activeLocale.env } },
   };
   const limitations = new Set<string>([
     "Partial candidate snapshot only: explicit PATH directories, excluding /bin and /usr/bin; no recursive read-root scan.",
@@ -243,8 +246,12 @@ export async function observeCliEnvironment(bin: string, policy: SandboxPolicy):
     entries: [...entries.values()].sort((a, b) => a.path < b.path ? -1 : a.path > b.path ? 1 : 0),
     limitations: [...limitations].sort(),
   };
-  return { ...evidence, digest: await sha256(stableStringify({
-    ...evidence, confinement,
-    bounds: { directories: MAX_DIRS, entries: MAX_ENTRIES, fileBytes: MAX_FILE_BYTES, totalBytes: MAX_TOTAL_BYTES, headerBytes: HEADER_BYTES },
-  })) };
+  return {
+    ...evidence,
+    locale: { profile: activeLocale.profile, locale: activeLocale.locale, env: { ...activeLocale.env } },
+    digest: await sha256(stableStringify({
+      ...evidence, confinement,
+      bounds: { directories: MAX_DIRS, entries: MAX_ENTRIES, fileBytes: MAX_FILE_BYTES, totalBytes: MAX_TOTAL_BYTES, headerBytes: HEADER_BYTES },
+    })),
+  };
 }
