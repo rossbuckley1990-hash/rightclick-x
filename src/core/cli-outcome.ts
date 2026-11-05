@@ -68,6 +68,18 @@ export interface CliValidity {
     outputs: Array<{ name: string; ref: string; sha256: string; bytes: number }>;
     stdout?: { sha256: string; bytes: number; ref?: string };
   };
+  /**
+   * The exact invocation (R8), for runs whose argument vector RightClick built from an established
+   * contract: each item with its role, and the digest of the contract it came from.
+   */
+  invocation?: {
+    v: 1;
+    contract: string;
+    argv: Array<{ kind: "flag"; text: string } | { kind: "file"; role: "read" | "write"; name: string; sha256?: string; bytes?: number }>;
+    stdin?: { sha256: string; bytes: number };
+  };
+  /** The independent structural check of a binary output: its format, the facts read from it, and the facts it kept from the input. */
+  outputCheck?: { mediaType: string; facts: Record<string, number | string | boolean>; kept: string[]; validator: string };
   limitation: string;
 }
 
