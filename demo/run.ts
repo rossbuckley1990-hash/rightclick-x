@@ -60,7 +60,7 @@ export async function runDemo(opts: { online?: boolean } = {}): Promise<void> {
     const again = await rc.compose({ ...goal, have: { place: "Tokyo", language: "fr" }, run: true });
     log(`  ${green("▶")} ${again.executed?.titles.join(magenta(" → "))}  ${dim(`(${again.executed?.durationMs}ms vs ${first.executed?.durationMs}ms)`)}`);
     log(`  result   ${bold(String(again.executed?.output))}`);
-    const atlasPowers = rc.actions({ type: "place" });
+    const atlasPowers = await rc.actions({ type: "place" });
     log(`  a ${bold("place")} can now become: ${atlasPowers.reachableTypes.map((t) => t.type).join(", ")}`);
 
     // ------------------------------------------------------------------ 5

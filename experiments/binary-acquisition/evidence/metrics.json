@@ -1,0 +1,30 @@
+{
+  "frozen": { "commit": "3da8d04", "tree": "85d30d83ba8ba4cbbaabd16aab314bf56dc3e64b" },
+  "model": "claude-opus-5-5 subagents, each a fresh session with no conversation history",
+  "tokenSource": "the agent runtime's per-subagent token count (input and output, all turns)",
+  "lanes": {
+    "R-acq":      { "arm": "RightClick", "phase": "acquisition", "tokens": 114790, "toolUses": 30, "wallSeconds": 311, "productCalls": 27, "humanAssistance": 0, "scriptsWritten": 0 },
+    "S-acq":      { "arm": "saved scripts", "phase": "acquisition", "tokens": 132657, "toolUses": 39, "wallSeconds": 936, "productCalls": null, "commandsReported": 24, "humanAssistance": 0 },
+    "R-reuse-T2": { "arm": "RightClick", "task": "T2 photo.ppm to WebP", "tokens": 74794, "toolUses": 8, "wallSeconds": 111, "productCalls": 3, "route": "automatic composition (context_compose); executed a reused 4-step crystallised pipeline ppm>tiff>webp>png>webp although a satisfied 2-step plan existed", "mode": "automatic", "correct": true, "exact": false, "psnrDb": 18.32 },
+    "R-reuse-T3": { "arm": "RightClick", "task": "T3 scan.pgm to PNG", "tokens": 101483, "toolUses": 19, "wallSeconds": 351, "productCalls": 14, "route": "manual: the declared-only cli:cwebp:invoke with -lossless, then the acquired cli:dwebp:webp-to-png", "mode": "mixed (manual declared-only + acquired)", "correct": true, "exact": true, "psnrDb": "inf" },
+    "S-reuse-T2": { "arm": "saved scripts", "task": "T2 photo.ppm to WebP", "tokens": 72313, "toolUses": 8, "wallSeconds": 52, "commands": 7, "route": "toolkit planner: cwebp -lossless -exact", "mode": "saved script with its own planner", "correct": true, "exact": true, "psnrDb": "inf" },
+    "S-reuse-T3": { "arm": "saved scripts", "task": "T3 scan.pgm to PNG", "tokens": 77809, "toolUses": 10, "wallSeconds": 70, "commands": 9, "route": "toolkit planner: cwebp -lossless -exact, then dwebp", "mode": "saved script with its own planner", "correct": true, "exact": true, "psnrDb": "inf" }
+  },
+  "totals": {
+    "RightClick": { "acquisitionTokens": 114790, "reuseTokens": 176277, "reuseTokensPerTask": 88139, "allTokens": 291067, "correct": "2/2", "exact": "1/2", "automaticComposition": "1/2" },
+    "savedScripts": { "acquisitionTokens": 132657, "reuseTokens": 150122, "reuseTokensPerTask": 75061, "allTokens": 282779, "correct": "2/2", "exact": "2/2" },
+    "breakEven": "RightClick's acquisition was 17,867 tokens cheaper; each reuse cost about 13,078 tokens more, so the saved scripts were cheaper in total from the second reuse on"
+  },
+  "controls": {
+    "malformedInputs": ["truncated PPM", "text named .ppm", "empty file"],
+    "RightClick": "3/3 refused: identified as opaque bytes, nothing planned or run, no output",
+    "savedScripts": "3/3 refused with REFUSED messages, no output"
+  },
+  "heldOutGeneralisation": {
+    "selection": "6 programs chosen after the freeze by an independent fresh agent (76,251 tokens); names absent from the repository at 3da8d04",
+    "RightClickAcquired": "1/6 (tiff2bw: tiff to tiff, tagged unsupported for composition because it changes the pixels)",
+    "correctlyUnknown": "5/6, with no false capability",
+    "heldOutRuns": "1/1 correct by ffprobe on an ffmpeg-made TIFF",
+    "savedScriptArm": "not run on the held-out programs"
+  }
+}

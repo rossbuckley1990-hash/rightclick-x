@@ -1,0 +1,119 @@
+{
+  "frozen": "/private/tmp/claude-501/-Users-ross-src-rightclick-x/9910dba2-1bf8-48e6-97fa-516190f9f4f3/scratchpad/s3/demo/frozen",
+  "programs": [
+    "/opt/homebrew/bin/avifenc",
+    "/opt/homebrew/bin/avifdec"
+  ],
+  "steps": [
+    {
+      "call": "context_learn",
+      "ms": 9140,
+      "bootstrapped": [
+        "cli:avifenc:y4m-to-avif",
+        "cli:avifenc:jpeg-to-avif",
+        "cli:avifenc:png-to-avif",
+        "cli:avifenc:png-to-avif-lossless",
+        "cli:avifdec:avif-to-jpeg",
+        "cli:avifdec:avif-to-png",
+        "cli:avifdec:avif-to-y4m"
+      ],
+      "probes": [
+        "no input channel produced output for avifdec (20 trials); offered as a declared interface only (16 documented options); no binary transformation established in 4 trial(s) (documented: y4m, avif, jpeg, png)",
+        "no input channel produced output for avifenc (24 trials); offered as a declared interface only (45 documented options); 0 binary transformation(s) established, 1 awaiting a witness, in 17 trial(s)"
+      ]
+    },
+    {
+      "call": "context_graph search avif",
+      "capabilities": [
+        "cli:avifenc:y4m-to-avif",
+        "cli:avifdec:avif-to-y4m",
+        "cli:avifdec:avif-to-jpeg",
+        "cli:avifdec:avif-to-png",
+        "cli:avifenc:jpeg-to-avif",
+        "cli:avifenc:png-to-avif",
+        "cli:avifenc:png-to-avif-lossless",
+        "cli:avifdec:invoke"
+      ]
+    }
+  ],
+  "formatLibrary": {
+    "validators": [
+      "image/png",
+      "image/tiff",
+      "image/x-portable-pixmap",
+      "image/x-portable-graymap",
+      "image/bmp",
+      "application/zip",
+      "application/gzip",
+      "image/webp",
+      "image/jpeg",
+      "image/gif"
+    ],
+    "generators": [
+      "image/png",
+      "image/tiff",
+      "image/x-portable-pixmap",
+      "image/x-portable-graymap",
+      "image/bmp",
+      "application/zip",
+      "application/gzip"
+    ]
+  },
+  "avifKnownToLibrary": false,
+  "losslessEncoder": {
+    "argv": [
+      "--lossless",
+      "input.png",
+      "-o",
+      "output.avif"
+    ],
+    "preserves": [
+      "width",
+      "height",
+      "pixels"
+    ],
+    "flag": "--lossless",
+    "signature": "00000020667479706176696600000000",
+    "witnessed": [
+      {
+        "facts": [
+          "width",
+          "height",
+          "pixels"
+        ],
+        "capability": "cli:avifdec:avif-to-png",
+        "how": "decoded"
+      }
+    ],
+    "trials": [
+      {
+        "purpose": "effect of --lossless",
+        "argv": "--lossless input.png -o output.avif",
+        "exit": 0,
+        "input": "generated png fixture, seed 1",
+        "output": "459 bytes, sha256 a3b5be14534d2aad"
+      },
+      {
+        "purpose": "confirm with a second png sample (--lossless)",
+        "argv": "--lossless input.png -o output.avif",
+        "exit": 0,
+        "input": "generated png fixture, seed 2",
+        "output": "508 bytes, sha256 821c2c33e6d04a0a"
+      },
+      {
+        "purpose": "repeat the first sample for determinism (--lossless)",
+        "argv": "--lossless input.png -o output.avif",
+        "exit": 0,
+        "input": "generated png fixture, seed 1",
+        "output": "459 bytes, sha256 a3b5be14534d2aad"
+      },
+      {
+        "purpose": "a truncated png sample",
+        "argv": "--lossless input.png -o output.avif",
+        "exit": 1,
+        "input": "truncated generated png fixture, seed 1"
+      }
+    ]
+  },
+  "investigationSummary": "no input channel produced output for avifenc (24 trials); offered as a declared interface only (45 documented options); 0 binary transformation(s) established, 1 awaiting a witness, in 17 trial(s)"
+}

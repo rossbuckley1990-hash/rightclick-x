@@ -11,7 +11,7 @@ import { ActivityLog, reference, type ActivityState, type ContractReference } fr
 import { CapabilityGraph, signature, tokenize, type GraphEvent, type LearnDelta } from "./core/graph.ts";
 import { Ledger, ReceiptChain, sha256, stableStringify, type Receipt } from "./core/ledger.ts";
 import { shapeOf, type IdentityState } from "./core/identities.ts";
-import { egressOf, plan, type CompositionDiagnostic, type Plan } from "./core/planner.ts";
+import { bytesFacts, egressOf, plan, primitiveSteps, type CompositionDiagnostic, type Plan } from "./core/planner.ts";
 import { outputCarries, undeclaredRequirements, type Satisfaction } from "./core/satisfaction.ts";
 import { assessPlan, contractFor, lostWords, type Assurance, type ContractAssessment, type OutcomeContract } from "./core/contract.ts";
 import { selectionWith } from "./reflectors/graphql.ts";
@@ -27,12 +27,16 @@ import { investigateCli, replayExamples, validateOptions, type Investigation } f
 import { JsonRepresentationError, parseJsonValue } from "./core/json.ts";
 import { KNOWLEDGE_FORMAT, type ImportReport, type KnowledgeBundle } from "./core/knowledge.ts";
 import { assessExecution, consequentialRisks, ExecutionDenied, intersectOrigins, parseExecutionPolicy, type ExecutionAssessment, type ExecutionPolicy } from "./core/execution-policy.ts";
-import { distance, inferType, inspectValue, linesValidateAs, type Inspection } from "./core/semantics.ts";
+import { accepts, distance, inferType, inspectValue, linesValidateAs, type Inspection } from "./core/semantics.ts";
 import { describeResult, resultDescription, type ResultDescription } from "./core/result-description.ts";
-import type { Capability, CapabilityAnchor, FetchLike, GraphQLFailureEvidence, PlanStep, Provider, Reflection, SemType, TransportRefusal } from "./core/types.ts";
+import type { BinaryContract, Capability, CapabilityAnchor, CliInvoke, FetchLike, GraphQLFailureEvidence, PlanStep, Provider, Reflection, SemType, TransportRefusal } from "./core/types.ts";
 import { agreement, assertAgreement, check, lintPublicationPredicates, pick, type Predicate, type PredicateResult, type PredicateWarning, type OutcomeWitness, type WitnessResult } from "./core/verify.ts";
 import { builtinReflection, type BuiltinFn } from "./reflectors/builtins.ts";
-import { ArtefactStore, artefactBytes, contentRef, isArtefactValue, refDigest, sha256Hex, ARTEFACT_LIMITS, type ArtefactResult } from "./core/artefacts.ts";
+import { ArtefactStore, artefactBytes, contentRef, isArtefactValue, refDigest, sha256Hex, ARTEFACT_LIMITS, type ArtefactResult, type ArtefactValue } from "./core/artefacts.ts";
+import { formatOf, identify } from "./core/formats.ts";
+import { fixtureFor, GENERATED_FORMATS } from "./core/fixtures.ts";
+import { acquireBinary, documentedFormats as documentedFormatsOf, matchesSignature, promoteCandidate, runContract, type BinaryAcquisition, type Candidate as BinaryCandidate, type Sample } from "./reflectors/binary-acquisition.ts";
+import type { Facts } from "./core/formats.ts";
 import { DEFAULT_DIRECTORIES, type Candidate, type Directory } from "./reflectors/directories.ts";
 import { discover, type Discovery, type SourceKind } from "./reflectors/discover.ts";
 import { environmentNet, environmentOptions, observeCatalog, type EnvironmentOptions, type EnvironmentReport } from "./reflectors/environment.ts";
@@ -202,6 +206,8 @@ export interface RuntimeOptions {
   artefactDir?: string;
   /** How long a run's output artefacts are held before they expire (default 7 days). */
   artefactRetentionMs?: number;
+  /** Operator-approved directories of sample files binary acquisition may test with (RCX_SAMPLE_ROOTS). Nothing else is scanned. */
+  sampleRoots?: string[];
   region?: string;
   fetch?: FetchLike;
   auth?: Authority;
@@ -426,6 +432,13 @@ export interface ComposeOptions {
   verify?: Predicate[];
   witnesses?: OutcomeWitness[];
   maxSteps?: number;
+  /**
+   * Facts the result must keep from the input, proven for every step and checked on the result:
+   * ["pixels"] for "without losing information", or ["width", "height"], ["pages"], ["entries"].
+   * A hard constraint: no route is chosen that cannot prove them, and a result that cannot be
+   * confirmed to keep them is not established.
+   */
+  preserve?: string[];
   limit?: number;
   crystallize?: boolean;
   risks?: Capability["risk"][];
@@ -608,6 +621,18 @@ export class RightClick {
   /** Runtime-local exclusion for unpersisted goals and in-flight graph revocation. */
   private activeGoalLeases = 0;
   private activeProviderMutations = 0;
+  /** Samples binary acquisitions produced in this runtime (outputs of confirming trials), with provenance. */
+  private binaryProduced: Sample[] = [];
+  /** Candidates whose outputs another acquisition witnessed, awaiting promotion. */
+  private binaryWitnessed: BinaryAcquisition["witnessed"] = [];
+  /** Programs with open binary questions but no capability yet (no provider to keep them on). */
+  private binaryPending = new Map<string, { investigation: Investigation; candidates: BinaryCandidate[]; needs: string[]; evidence: string }>();
+  /** Operator-approved directories of sample files (RCX_SAMPLE_ROOTS); nothing else is ever scanned. */
+  private sampleRoots: string[] = [];
+  private rootSamples?: Sample[];
+  private bootstrapping = false;
+  /** Helper programs already investigated as possible producers, so none is tried twice. */
+  private binaryHelpersTried = new Set<string>();
   /** When a failed plain run last re-read each contract source, so repeated failures do not re-read it on every call. */
   private healReads = new Map<string, number>();
   /** Ids re-learning pointed at a different operation; caller acknowledgement cannot clear them. */
@@ -664,6 +689,7 @@ export class RightClick {
     };
     this.directories = opts.directories ?? DEFAULT_DIRECTORIES;
     this.artefacts = new ArtefactStore(opts.artefactDir, opts.artefactRetentionMs !== undefined ? { retentionMs: opts.artefactRetentionMs } : {});
+    this.sampleRoots = [...(opts.sampleRoots ?? [])];
     this.environment = environmentOptions(opts.environment);
     this.httpContinuation = continuationPolicy(opts.httpContinuation);
     this.workflowRecovery = opts.workflowRecovery === true;
@@ -1163,10 +1189,16 @@ export class RightClick {
     );
     this.graph.measuring = true;
     for (const id of this.meaningChanges.keys()) if (!this.graph.get(id)) this.meaningChanges.delete(id);
+    // New programs can be the evidence that acquires programs learned earlier (an encoder whose
+    // outputs a decoder needed), so open binary questions are revisited after every CLI learn.
+    const before = new Set(this.graph.list().map((c) => c.id));
+    if (!retainedCli && !this.bootstrapping && sources.some((s) => s.startsWith("cli:"))) await this.bootstrapBinary();
+    const bootstrapped = this.graph.list().map((c) => c.id).filter((id) => !before.has(id));
     this.persist();
     const powers = this.graph.powers();
     return {
       results,
+      ...(bootstrapped.length ? { bootstrapped } : {}),
       totalNewCapabilities: results.flatMap((r) => r.learned).reduce((s, l) => s + l.capabilitiesAdded, 0),
       totalNewPowers: powers.total - batchBefore,
       graph: { providers: this.graph.providers.size, ...powers },
@@ -1268,51 +1300,91 @@ export class RightClick {
     return inspectValue(value);
   }
 
-  actions(opts: { value?: unknown; type?: SemType; limit?: number }) {
-    const type = opts.type ?? inspectValue(opts.value).type;
-    const direct = this.graph
+  /**
+   * Whether a capability can run now, for an honest answer to "what can I do with this":
+   *   executable      it runs now with only the value in hand;
+   *   conditional     it needs something more: other required inputs, values only a caller can
+   *                   choose, or operator approval for a consequential effect;
+   *   declared-only   documented but never observed working: callable directly with its evidence;
+   *   unsupported     observed, and the observations did not support it as a capability;
+   *   not-authorised  the operator has not authorised its program to execute here.
+   */
+  private async availability(c: Capability, otherRequired: number): Promise<{ status: "executable" | "conditional" | "declared-only" | "unsupported" | "not-authorised"; why?: string }> {
+    if (c.tags.includes("unsupported")) return { status: "unsupported", why: "its investigation did not support it; never chosen automatically" };
+    if (c.tags.includes("declared-only")) return { status: "declared-only", why: "documented only; behaviour not observed" };
+    if (c.invoke.kind === "cli") {
+      const ok = await checkProgram(c.invoke.bin, this.executable);
+      if (!ok.ok) return { status: "not-authorised", why: ok.reason.slice(0, 160) };
+    }
+    if (otherRequired) return { status: "conditional", why: `also needs ${otherRequired} other input(s)` };
+    if (c.tags.includes("direct-only")) return { status: "conditional", why: "needs values only a caller can choose" };
+    if (consequentialRisks(c).includes("destructive") && this.destructivePolicy !== "allow" && !this.approved(c.id)) return { status: "conditional", why: "a destructive effect: needs operator approval or caller confirmation" };
+    return { status: "executable" };
+  }
+
+  async actions(opts: { value?: unknown; type?: SemType; limit?: number }) {
+    let type = opts.type ?? inspectValue(opts.value).type;
+    // Exact bytes are typed by what they are (the format validators), never by a name.
+    if (opts.type === undefined && isArtefactValue(opts.value) && opts.value.type !== "text") type = identify(await artefactBytes(opts.value, this.artefacts)).type;
+    const direct = (await Promise.all(this.graph
       .list()
-      .map((c) => {
+      .map(async (c) => {
         const port = c.inputs.find((p) => p.required && distance(p.type, type) >= 0 && (p.type !== "json" || type === "json"));
         if (!port) return null;
         const otherRequired = c.inputs.filter((p) => p.required && p !== port).map((p) => `${p.name}:${p.type}`);
-        return { c, port, d: distance(port.type, type), otherRequired };
-      })
+        return { c, port, d: distance(port.type, type), otherRequired, available: await this.availability(c, otherRequired.length) };
+      })))
       .filter((x): x is NonNullable<typeof x> => !!x)
-      .sort((a, b) => a.d - b.d || a.otherRequired.length - b.otherRequired.length || this.ledger.cost(a.c.id) - this.ledger.cost(b.c.id));
+      .sort((a, b) => Number(b.available.status === "executable") - Number(a.available.status === "executable") || a.d - b.d || a.otherRequired.length - b.otherRequired.length || this.ledger.cost(a.c.id) - this.ledger.cost(b.c.id));
 
-    // What this value can become through the graph, not just one hop away.
-    const reach = new Map<SemType, number>();
-    const frontier: Array<{ t: SemType; depth: number }> = [{ t: type, depth: 0 }];
+    // What this value can become through capabilities that run now, with one route for each.
+    const runs = new Map<string, boolean>();
+    const executable = async (c: Capability, viaType: SemType) => {
+      const k = `${c.id}|${viaType}`;
+      if (!runs.has(k)) {
+        const port = c.inputs.find((p) => p.required && accepts(p.name, p.type, viaType, p.anyText));
+        const others = port ? c.inputs.filter((p) => p.required && p !== port).length : 1;
+        runs.set(k, !!port && (await this.availability(c, others)).status === "executable");
+      }
+      return runs.get(k)!;
+    };
+    const reach = new Map<SemType, { steps: number; route: string[] }>();
+    const frontier: Array<{ t: SemType; depth: number; route: string[] }> = [{ t: type, depth: 0, route: [] }];
     const seen = new Set([type]);
     while (frontier.length) {
-      const { t, depth } = frontier.shift()!;
+      const { t, depth, route } = frontier.shift()!;
       if (depth >= 3) continue;
       for (const c of this.graph.consumersOf(t)) {
+        if (!(await executable(c, t))) continue;
         for (const o of c.outputs) {
-          reach.set(o.type, Math.min(reach.get(o.type) ?? 9, depth + 1));
+          if (!reach.has(o.type) || reach.get(o.type)!.steps > depth + 1) reach.set(o.type, { steps: depth + 1, route: [...route, c.id] });
           if (!seen.has(o.type)) {
             seen.add(o.type);
-            frontier.push({ t: o.type, depth: depth + 1 });
+            frontier.push({ t: o.type, depth: depth + 1, route: [...route, c.id] });
           }
         }
       }
     }
+    const counts = direct.reduce<Record<string, number>>((m, x) => { m[x.available.status] = (m[x.available.status] ?? 0) + 1; return m; }, {});
     return {
-      inspected: opts.value !== undefined ? inspectValue(opts.value) : { type },
+      inspected: opts.value !== undefined ? { ...inspectValue(opts.value), type } : { type },
       total: direct.length,
-      actions: direct.slice(0, opts.limit ?? 25).map(({ c, port, otherRequired }) => ({
+      availability: counts,
+      actions: direct.slice(0, opts.limit ?? 25).map(({ c, port, otherRequired, available }) => ({
         id: c.id,
         title: c.title,
         provider: c.provider,
         source: c.source,
         risk: c.risk,
+        availability: available.status,
+        ...(available.why ? { why: available.why } : {}),
         bindsAs: port.name,
         needsAlso: otherRequired,
         produces: [...new Set(c.outputs.map((o) => o.type))],
         reliability: Number(this.ledger.reliability(c.id).toFixed(2)),
       })),
-      reachableTypes: [...reach].sort((a, b) => a[1] - b[1]).map(([t, steps]) => ({ type: t, steps })),
+      // Only through capabilities that run now; each with the route that reaches it.
+      reachableTypes: [...reach].sort((a, b) => a[1].steps - b[1].steps).map(([t, r]) => ({ type: t, steps: r.steps, route: r.route })),
     };
   }
 
@@ -1701,6 +1773,7 @@ export class RightClick {
   }
 
   async run(id: string, args: Record<string, unknown> = {}, opts: RunOptions = {}): Promise<RunRecord> {
+    if (typeof id !== "string" || !id.trim()) throw new Error(`a run needs "id": the id of a capability (find one with context_graph {"op":"search","query":"…"} or context_actions {"value":…}), or "resume:<run-id>" from context_run_status; nothing was run (HTTP 400 equivalent)`);
     if (id.startsWith("resume:") && [...this.workflowContinuations.values()].some(w => w.childRunId === id.slice(7))) {
       throw new Error("resume the owning workflow; its child cannot be consumed separately");
     }
@@ -1761,7 +1834,11 @@ export class RightClick {
     }
     if (resumedWorkflow) args = structuredClone(resumedWorkflow.inputs);
     const cap = composition ? this.compositionCapability(composition) : this.graph.get(id);
-    if (!cap) throw new Error(`unknown capability: ${id}`);
+    if (!cap) {
+      // Suggest, never substitute: the caller chooses which capability to run.
+      const near = this.graph.search(id.replace(/[:_-]+/g, " "), 3).map((x) => x.capability.id).filter((x) => x !== id);
+      throw new Error(`unknown capability: ${id}${near.length ? `; similar ids: ${near.join(", ")}` : ""}. Nothing was run (HTTP 404 equivalent)`);
+    }
     if (cap.invoke.kind === "composite" && cap.invoke.origins) {
       const net = opts.net ?? this.net;
       const origins = intersectOrigins(intersectOrigins(this.net.policy?.origins, net.policy?.origins), cap.invoke.origins);
@@ -2147,7 +2224,34 @@ export class RightClick {
       }
     }
     this.onInvestigationStart?.(bin);
-    const { reflection, investigation } = await investigateCli(bin, sb);
+    let { reflection, investigation } = await investigateCli(bin, sb);
+    // Binary transformations, established by RightClick's own experiments on validated fixtures.
+    // Runs inside the same identity and environment checks as the text investigation.
+    const docs = investigation.documentation ?? "";
+    // The evidence this acquisition draws on, fixed before it starts: evidence that appears while it
+    // runs (another program investigated in parallel) must make it run again, not look already seen.
+    const evidenceUsed = this.binaryEvidenceKey();
+    const binary = await acquireBinary(bin, sb, investigation, docs, { pool: await this.binaryPool(sb), decode: this.binaryDecoder(sb) });
+    investigation.claims.push(...binary.claims);
+    investigation.summary = `${investigation.summary}; ${binary.summary}`;
+    this.binaryProduced.push(...binary.produced);
+    if (binary.capabilities.length || binary.candidates.length || binary.needs.length) {
+      const locale = effectiveSandboxLocale(sb.policy);
+      for (const c of binary.capabilities) if (c.invoke.kind === "cli") c.invoke.localeProfile = { profile: locale.profile, locale: locale.locale, env: { ...locale.env } };
+      reflection ??= {
+        provider: { id: binary.capabilities[0]?.provider ?? binary.candidates[0]?.provider ?? `cli:${investigation.program.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`, title: `${investigation.program.name} (command-line program)`, source: "cli", origin: bin, learnedAt: new Date().toISOString(), capabilityIds: [], meta: { investigation, sha256: investigation.program.sha256, version: investigation.program.version } },
+        capabilities: [],
+      };
+      reflection.capabilities.push(...binary.capabilities.filter((c) => !reflection!.capabilities.some((x) => x.id === c.id)));
+      reflection.provider.capabilityIds = reflection.capabilities.map((c) => c.id);
+      // What is still open, so a later learn (or new evidence) continues instead of rediscovering.
+      reflection.provider.meta = { ...reflection.provider.meta, binary: { candidates: binary.candidates, needs: binary.needs, evidence: evidenceUsed } };
+      if (!reflection.capabilities.length) {
+        this.binaryPending.set(bin, { investigation, candidates: binary.candidates, needs: binary.needs, evidence: evidenceUsed });
+        reflection = null;
+      } else this.binaryPending.delete(bin);
+    }
+    if (reflection) this.binaryWitnessed.push(...binary.witnessed);
     if (!(await sameProgram(bin, check.identity))) throw new Error(`${bin} changed while it was being investigated; nothing learned`);
     if ((await observeCliEnvironment(bin, sb.policy)).digest !== environment.digest)
       throw new CliValidityError("CLI execution environment changed during investigation; nothing learned");
@@ -2158,6 +2262,337 @@ export class RightClick {
     this.investigations.set(bin, investigation);
     const probes = [{ url: `cli:${bin}`, kind: "cli", ok: !!reflection, detail: investigation.summary }];
     return { reflections: reflection ? [reflection] : [], probes };
+  }
+
+  /**
+   * Every sample binary acquisition may test with, each with its provenance:
+   *   - files under operator-approved sample roots (RCX_SAMPLE_ROOTS), recognised by structure;
+   *   - outputs of transformations already established, run in the sandbox on generated or
+   *     approved inputs (so an acquired encoder supplies the inputs that investigate a decoder);
+   *   - outputs of candidates (transformations into formats nobody has witnessed yet), which a
+   *     consumer can witness by recovering the facts of the inputs they were made from;
+   *   - outputs produced by acquisitions in this runtime.
+   * Bounded: each producer is run on at most two inputs, and each result is cached.
+   */
+  private async binaryPool(sb: Sandbox): Promise<Sample[]> {
+    const pool: Sample[] = [...await this.binaryRootSamples(), ...this.binaryProduced];
+    const inputsFor = (mt: string): Sample[] => {
+      const out: Sample[] = [];
+      for (const seed of [1, 2]) { const b = fixtureFor(mt, seed); if (b) out.push({ mediaType: mt, bytes: b, source: `generated ${formatOf(mt)?.slug} fixture, seed ${seed}` }); }
+      for (const x of pool) if (out.length < 2 && x.mediaType === mt && formatOf(mt)?.validate(x.bytes).ok) out.push(x);
+      return out.slice(0, 2);
+    };
+    const producers: Array<{ id: string; bin: string; sha256: string; contract: BinaryContract }> = [];
+    for (const c of this.graph.list()) if (c.invoke.kind === "cli" && c.invoke.binary && !c.tags.includes("unsupported")) producers.push({ id: c.id, bin: c.invoke.bin, sha256: c.invoke.sha256, contract: c.invoke.binary });
+    for (const p of this.graph.providers.values()) for (const cand of ((p.meta?.binary as { candidates?: BinaryCandidate[] } | undefined)?.candidates ?? [])) producers.push(cand);
+    for (const pending of this.binaryPending.values()) producers.push(...pending.candidates);
+    for (const pr of producers) {
+      for (const input of inputsFor(pr.contract.input.mediaType)) {
+        const key = `${pr.id}|${input.source}`;
+        let made = this.binaryMade.get(key);
+        if (made === undefined) {
+          made = null;
+          if ((await checkProgram(pr.bin, this.investigable)).ok && (await this.programSha(pr.bin)) === pr.sha256) {
+            const out = await runContract(sb, pr.bin, pr.contract, input.bytes).catch(() => undefined);
+            const outF = formatOf(pr.contract.output.mediaType);
+            const ok = out && (outF ? outF.validate(out).ok : pr.contract.output.signature ? matchesSignature(out, pr.contract.output.signature) : true);
+            const facts = formatOf(input.mediaType)?.validate(input.bytes);
+            if (out && ok) made = { mediaType: pr.contract.output.mediaType, bytes: out, source: `output of ${pr.id} on ${input.source}`, ...(facts?.ok ? { origin: { mediaType: input.mediaType, facts: facts.facts, via: pr.id, lossless: pr.contract.preserves.includes("pixels") } } : {}) };
+          }
+          this.binaryMade.set(key, made);
+        }
+        if (made) pool.push(made);
+      }
+    }
+    return pool;
+  }
+  private binaryMade = new Map<string, Sample | null>();
+
+  /** Files under operator-approved sample roots that a validator recognises in full. Bounded scan; links are not followed. */
+  private async binaryRootSamples(): Promise<Sample[]> {
+    if (this.rootSamples) return this.rootSamples;
+    const fs = await import("node:fs"), path = await import("node:path"), { createHash } = await import("node:crypto");
+    const out: Sample[] = [];
+    let seen = 0;
+    const walk = (dir: string, depth: number) => {
+      if (depth > 3 || seen > 2000) return;
+      let entries: import("node:fs").Dirent[] = [];
+      try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
+      for (const e of entries) {
+        if (++seen > 2000) return;
+        const p = path.join(dir, e.name);
+        if (e.isDirectory()) walk(p, depth + 1);
+        else if (e.isFile()) {
+          let st; try { st = fs.lstatSync(p); } catch { continue; }
+          if (!st.isFile() || st.size === 0 || st.size > 64 * 1024) continue;
+          const b = fs.readFileSync(p);
+          const id = identify(b);
+          if (id.mediaType) out.push({ mediaType: id.mediaType, bytes: b, source: `operator sample root ${p} (sha256 ${createHash("sha256").update(b).digest("hex").slice(0, 16)})` });
+        }
+      }
+    };
+    for (const r of this.sampleRoots) walk(r, 0);
+    return (this.rootSamples = out);
+  }
+
+  /** Decode bytes of a format with an acquired decoder into a format whose facts (pixels) can be read. */
+  private binaryDecoder(sb: Sandbox, authority: string[] = this.investigable): (mediaType: string, bytes: Uint8Array) => Promise<{ facts: Facts; by: string } | undefined> {
+    return async (mediaType, bytes) => {
+      const decoders = this.graph.list().filter((c) => c.invoke.kind === "cli" && c.invoke.binary && !c.tags.includes("unsupported") &&
+        c.invoke.binary.input.mediaType === mediaType && !!formatOf(c.invoke.binary.output.mediaType) && c.invoke.binary.preserves.includes("width"));
+      for (const d of decoders) {
+        if (d.invoke.kind !== "cli") continue;
+        const b = d.invoke.binary!;
+        if (b.input.signature && !matchesSignature(bytes, b.input.signature)) continue;
+        if (!(await checkProgram(d.invoke.bin, authority)).ok || (await this.programSha(d.invoke.bin)) !== d.invoke.sha256) continue;
+        const out = await runContract(sb, d.invoke.bin, b, bytes).catch(() => undefined);
+        const v = out && formatOf(b.output.mediaType)!.validate(out);
+        if (v && v.ok && v.facts.pixels !== undefined) return { facts: v.facts, by: d.id };
+      }
+      return undefined;
+    };
+  }
+
+  private async programSha(bin: string): Promise<string | undefined> {
+    try { const fs = await import("node:fs"); const { createHash } = await import("node:crypto"); return createHash("sha256").update(fs.readFileSync(fs.realpathSync(bin))).digest("hex"); } catch { return undefined; }
+  }
+
+  /** What evidence binary acquisition can draw on now: formats with samples and formats with decoders. */
+  private binaryEvidenceKey(): string {
+    const types = new Set<string>([...this.binaryProduced.map((x) => x.mediaType), ...(this.rootSamples ?? []).map((x) => x.mediaType)]);
+    for (const c of this.graph.list()) if (c.invoke.kind === "cli" && c.invoke.binary && !c.tags.includes("unsupported")) { types.add(`out:${c.invoke.binary.output.mediaType}`); types.add(`dec:${c.invoke.binary.input.mediaType}`); }
+    for (const p of this.graph.providers.values()) for (const cand of ((p.meta?.binary as { candidates?: BinaryCandidate[] } | undefined)?.candidates ?? [])) types.add(`cand:${cand.contract.output.mediaType}`);
+    return [...types].sort().join(",");
+  }
+
+  /**
+   * The bootstrapping loop, run after a learn: programs with open binary questions (formats they
+   * read but had no samples for, candidates nobody has witnessed, outputs whose pixels could not
+   * be read) are investigated again whenever the evidence available has changed since their last
+   * investigation, and candidates that another program witnessed are promoted. Programs in
+   * operator-authorised directories whose names carry a needed format are investigated as
+   * possible producers. Bounded: three rounds, four helper programs.
+   */
+  private async bootstrapBinary(): Promise<void> {
+    if (this.bootstrapping) return;
+    const sb = await this.sandbox();
+    if (!sb) return;
+    this.bootstrapping = true;
+    try {
+      let helpers = 6;
+      for (let round = 0; round < 3; round++) {
+        let changed = this.promoteWitnessed();
+        const key = this.binaryEvidenceKey();
+        const open: Array<{ bin: string; investigation: Investigation; provider?: Provider }> = [];
+        for (const p of this.graph.providers.values()) {
+          const b = p.meta?.binary as { evidence?: string; needs?: string[]; candidates?: BinaryCandidate[] } | undefined;
+          const inv = p.meta?.investigation as Investigation | undefined;
+          // Open: formats it reads but had no samples for, candidates nobody has witnessed, or
+          // transformations not yet proven to keep pixels (a decoder or flag may now show more).
+          if (p.source === "cli" && b && inv && b.evidence !== key && (b.needs?.length || b.candidates?.length || this.graph.list().some((c) => c.provider === p.id && c.invoke.kind === "cli" && c.invoke.binary && !c.tags.includes("unsupported") && !c.invoke.binary.preserves.includes("pixels"))))
+            open.push({ bin: p.origin, investigation: inv, provider: p });
+        }
+        for (const [bin, pending] of this.binaryPending) if (pending.evidence !== key) open.push({ bin, investigation: pending.investigation });
+        // Possible producers of formats some program still needs, among authorised directories.
+        // Needs persist until met, whether or not the program is revisited this round.
+        const needs = new Set([...[...this.graph.providers.values()].flatMap((p) => ((p.meta?.binary as { needs?: string[] } | undefined)?.needs ?? [])), ...[...this.binaryPending.values()].flatMap((x) => x.needs)]);
+        if (needs.size && helpers > 0) {
+          for (const h of await this.helperPrograms(needs, helpers)) {
+            helpers--;
+            await this.learnSourcesUnlocked({ source: `cli:${h}` }).catch(() => undefined);
+            changed = true;
+          }
+        }
+        for (const o of open) {
+          if (!(await checkProgram(o.bin, this.investigable)).ok) continue;
+          const acq = await acquireBinary(o.bin, sb, o.investigation, o.investigation.documentation ?? "", { pool: await this.binaryPool(sb), decode: this.binaryDecoder(sb) });
+          this.binaryProduced.push(...acq.produced);
+          this.binaryWitnessed.push(...acq.witnessed);
+          const meta = { candidates: acq.candidates, needs: acq.needs, evidence: key };
+          if (o.provider) {
+            // Re-established transformations replace their earlier record (more evidence: a decoder
+            // now reads their pixels); ones not re-established this time keep their earlier record.
+            const env = o.provider.meta?.cliEnvironment as { digest: string } | undefined;
+            this.localiseBinary(acq.capabilities, sb, env);
+            const now = new Map(acq.capabilities.map((c) => [c.id, c] as const));
+            const old = o.provider.capabilityIds.map((id) => this.graph.get(id)!).filter(Boolean);
+            const evidence = (c: Capability) => c.invoke.kind === "cli" && c.invoke.binary ? `${c.invoke.binary.preserves.join(",")}|${c.tags.join(",")}` : "";
+            const caps = [...old.map((c) => now.get(c.id) ?? c), ...acq.capabilities.filter((c) => !o.provider!.capabilityIds.includes(c.id))];
+            if (caps.length !== old.length || old.some((c) => now.has(c.id) && evidence(now.get(c.id)!) !== evidence(c))) changed = true;
+            this.graph.add({ provider: { ...o.provider, meta: { ...o.provider.meta, binary: meta } }, capabilities: caps });
+          } else if (acq.capabilities.length) {
+            const env = await observeCliEnvironment(o.bin, sb.policy);
+            this.localiseBinary(acq.capabilities, sb, env);
+            this.graph.add({ provider: { id: acq.capabilities[0].provider, title: `${o.investigation.program.name} (command-line program)`, source: "cli", origin: o.bin, learnedAt: new Date().toISOString(), capabilityIds: acq.capabilities.map((c) => c.id), meta: { investigation: o.investigation, sha256: o.investigation.program.sha256, version: o.investigation.program.version, cliEnvironment: env, source: `cli:${o.bin}`, binary: meta } }, capabilities: acq.capabilities });
+            this.binaryPending.delete(o.bin);
+            changed = true;
+          } else this.binaryPending.set(o.bin, { investigation: o.investigation, ...meta });
+        }
+        if (this.promoteWitnessed()) changed = true;
+        if (!changed) break;
+      }
+    } finally { this.bootstrapping = false; this.persist(); }
+  }
+
+  /** Locale and environment pins for capabilities established outside `investigate`. */
+  private localiseBinary(caps: Capability[], sb: Sandbox, env?: { digest: string }) {
+    const locale = effectiveSandboxLocale(sb.policy);
+    for (const c of caps) if (c.invoke.kind === "cli") {
+      c.invoke.localeProfile = { profile: locale.profile, locale: locale.locale, env: { ...locale.env } };
+      if (env) c.invoke.environment = { version: 1, coverage: "partial", digest: env.digest };
+    }
+  }
+
+  /** Candidates another capability witnessed become capabilities of their own provider. */
+  private promoteWitnessed(): boolean {
+    let changed = false;
+    for (const w of this.binaryWitnessed.splice(0)) {
+      for (const p of this.graph.providers.values()) {
+        const b = p.meta?.binary as { candidates?: BinaryCandidate[]; needs?: string[]; evidence?: string } | undefined;
+        const cand = b?.candidates?.find((c) => c.id === w.producer);
+        if (!cand || this.graph.get(cand.id) || !w.facts.length) continue;
+        const inv = p.meta?.investigation as Investigation | undefined;
+        const cap = promoteCandidate(cand, w, { description: inv?.program.description });
+        const env = p.meta?.cliEnvironment as { digest: string } | undefined;
+        if (cap.invoke.kind === "cli") cap.invoke.environment = env ? { version: 1, coverage: "partial", digest: env.digest } : cap.invoke.environment;
+        const caps = [...p.capabilityIds.map((id) => this.graph.get(id)!).filter(Boolean), cap];
+        this.graph.add({ provider: { ...p, meta: { ...p.meta, binary: { ...b, candidates: b!.candidates!.filter((c) => c.id !== cand.id) } } }, capabilities: caps });
+        changed = true;
+      }
+      for (const [bin, pending] of this.binaryPending) {
+        const cand = pending.candidates.find((c) => c.id === w.producer);
+        if (!cand || this.graph.get(cand.id) || !w.facts.length) continue;
+        const cap = promoteCandidate(cand, w, { description: pending.investigation.program.description });
+        this.graph.add({ provider: { id: cand.provider, title: `${pending.investigation.program.name} (command-line program)`, source: "cli", origin: bin, learnedAt: new Date().toISOString(), capabilityIds: [cap.id], meta: { investigation: pending.investigation, sha256: pending.investigation.program.sha256, source: `cli:${bin}`, binary: { candidates: pending.candidates.filter((c) => c.id !== cand.id), needs: pending.needs, evidence: "" } } }, capabilities: [cap] });
+        this.binaryPending.delete(bin);
+        changed = true;
+      }
+    }
+    return changed;
+  }
+
+  /**
+   * Programs in operator-authorised directories that may produce a needed format: their names
+   * carry the format's name or extension. Only directories the operator listed for investigation
+   * are listed; programs already investigated are skipped.
+   */
+  private async helperPrograms(needs: Set<string>, limit: number): Promise<string[]> {
+    const fs = await import("node:fs"), path = await import("node:path");
+    const known = new Set([...[...this.graph.providers.values()].map((p) => p.origin), ...this.binaryPending.keys(), ...this.binaryHelpersTried]);
+    const out: string[] = [];
+    const sb = await this.sandbox();
+    const sampled = new Set([...GENERATED_FORMATS, ...(this.rootSamples ?? []).map((x) => x.mediaType), ...this.binaryProduced.map((x) => x.mediaType)]);
+    // At most two per needed format, so one format cannot take every helper. A helper is worth
+    // investigating only if its usage (read in the sandbox) names the needed format and also an
+    // input format RightClick can already sample: a producer it can actually test.
+    for (const mt of needs) {
+      const f = formatOf(mt);
+      const words = (f ? [f.slug, f.ext] : [mt.slice(6)]).filter((w) => w.length >= 3);
+      let perFormat = 0, screened = 0;
+      for (const dir of this.investigable.filter((e) => e.endsWith("/"))) {
+        let names: string[] = [];
+        try { names = fs.readdirSync(dir).sort(); } catch { continue; }
+        for (const n of names) {
+          const full = path.join(dir, n);
+          if (out.length >= limit || perFormat >= 2 || screened >= 12 || known.has(full) || out.includes(full) || !words.some((w) => n.toLowerCase().includes(w))) continue;
+          if (!sb || !(await checkProgram(full, this.investigable)).ok) continue;
+          screened++;
+          let usage = "";
+          for (const a of [["--help"], ["-h"]]) {
+            const r = await sb.run(full, a, { limits: { timeoutMs: 3000 }, purpose: "investigation" }).catch(() => undefined);
+            if (r) usage += `${r.stdout}\n${r.stderr}\n`;
+          }
+          const formats = documentedFormatsOf(usage.slice(0, 32 * 1024), n);
+          const namesNeeded = words.some((w) => new RegExp(`\\b${w}\\b`, "i").test(usage));
+          const testable = formats.some((x) => x.mediaType !== mt && sampled.has(x.mediaType));
+          this.binaryHelpersTried.add(full);
+          if (namesNeeded && testable) { out.push(full); perFormat++; }
+        }
+      }
+    }
+    return out;
+  }
+
+  /**
+   * Run a binary transformation RightClick acquired (`CliInvoke.binary`). The contract is
+   * re-established on every run: the input must validate as its format before anything runs, the
+   * output must validate as its format, and every fact the transformation was observed to keep
+   * must be equal in both. Otherwise nothing is stored or returned, and the run keeps digests of
+   * what the program did instead.
+   */
+  private async executeBinary(cap: Capability, inv: CliInvoke, args: Record<string, unknown>, execution: HttpExecution, sb: Sandbox, programSha: string, identity: Parameters<typeof sameProgram>[1]): Promise<ArtefactResult & { mediaType: string }> {
+    const b = inv.binary!;
+    const inF = formatOf(b.input.mediaType), outF = formatOf(b.output.mediaType);
+    // A format with no validator is accepted only as experiments witnessed it: by its signature.
+    if ((!inF && !b.input.signature) || (!outF && !b.output.signature)) throw new Error(`this runtime has no validator for ${!inF ? b.input.mediaType : b.output.mediaType} and ${cap.id} records no witnessed signature for it, so its contract cannot be checked here (HTTP 409 equivalent: nothing was run)`);
+    const check = (f: typeof inF, signature: string | undefined, x: Uint8Array): { ok: true; facts: Facts; by: string } | { ok: false; reason: string } => {
+      if (f) { const r = f.validate(x); return r.ok ? { ok: true, facts: r.facts, by: "core/formats.ts" } : { ok: false, reason: r.reason }; }
+      return matchesSignature(x, signature!) ? { ok: true, facts: {}, by: `witnessed signature ${signature}` } : { ok: false, reason: `its leading bytes are not the witnessed signature ${signature}` };
+    };
+    // A run's own result ({type, ref, sha256, bytes, name}) is passed on by its read grant.
+    const raw = args.input as Record<string, unknown> | undefined;
+    const value = raw && raw.type === "artefact" && typeof raw.ref === "string" ? { type: "artefact" as const, ref: raw.ref } : raw;
+    if (!isArtefactValue(value) || value.type === "text") throw new Error(`input must be exact bytes: {"type":"bytes","base64":…} or {"type":"artefact","ref":…} (HTTP 400 equivalent: nothing was run)`);
+    const bytes = await artefactBytes(value, this.artefacts);
+    const vin = check(inF, b.input.signature, bytes);
+    if (!vin.ok) throw new Error(`input is not a valid ${b.input.mediaType}: ${vin.reason} (HTTP 400 equivalent: nothing was run)`);
+    const inputSha = await sha256Hex(bytes);
+    const consumed = [{ name: b.input.name ?? "stdin", role: (b.input.via === "file" ? "file" : "stdin") as "file" | "stdin", sha256: inputSha, bytes: bytes.length, ...(value.type === "artefact" ? { ref: contentRef(refDigest(value.ref)!) } : {}) }];
+    const before = await this.checkCliEnvironment(cap, sb, execution);
+    const r = await sb.run(inv.bin, b.argv, {
+      ...(b.input.via === "file" ? { files: { [b.input.name!]: bytes } } : { stdin: bytes }),
+      ...(b.output.via === "file" ? { collect: [b.output.name!] } : {}),
+      rawStdout: true, purpose: "execution",
+    });
+    const v = execution.cliValidity!;
+    v.artefacts = { program: { bin: inv.bin, sha256: programSha }, inputs: consumed, outputs: [] };
+    v.processExit = r.code;
+    // The exact invocation (R8): the argument vector with each item's role, and the contract it came from.
+    v.invocation = {
+      v: 1,
+      contract: await sha256Hex(new TextEncoder().encode(stableStringify({ ...b, trials: undefined }))),
+      argv: b.argv.map((a) => a === b.input.name ? { kind: "file" as const, role: "read" as const, name: a, sha256: inputSha, bytes: bytes.length } : a === b.output.name ? { kind: "file" as const, role: "write" as const, name: a } : { kind: "flag" as const, text: a }),
+      ...(b.input.via === "stdin" ? { stdin: { sha256: inputSha, bytes: bytes.length } } : {}),
+    };
+    const out = b.output.via === "file" ? r.outputs?.[b.output.name!] : r.stdoutRaw;
+    const notEstablished = async (reason: string): Promise<Error> => {
+      v.outcome = "not-established";
+      const so = r.stdoutRaw ?? new Uint8Array();
+      v.failure = { reason: reason.slice(0, 300), stderrPreview: r.stderr.slice(0, 300), stdout: { sha256: await sha256Hex(so), bytes: so.length }, unacceptedOutputs: await Promise.all(Object.entries(r.outputs ?? {}).map(async ([name, x]) => ({ name, sha256: await sha256Hex(x), bytes: x.length }))) };
+      return new CliValidityError(`${reason}; no result is established`, v, cap.id);
+    };
+    const after = await observeCliEnvironment(inv.bin, sb.policy);
+    if (after.digest !== before!.digest) { v.environment = "changed"; v.observed = after.digest; throw await notEstablished("CLI execution environment changed during the call"); }
+    if (!(await sameProgram(inv.bin, identity))) throw await notEstablished(`${inv.bin} was replaced while it ran (HTTP 409 equivalent)`);
+    const exit: CliExitStatus = { process: r.timedOut ? "timed-out" : r.truncated ? "truncated" : r.limit ? "limit" : "completed", ...classifyExit(inv, { code: r.code, stderr: r.stderr, producedOutput: !!out?.length }) };
+    v.exitStatus = exit;
+    if (exit.process !== "completed") throw await notEstablished(`${inv.bin} did not complete (${exit.process})`);
+    if (exit.classification === "reported-error") throw await notEstablished(`${inv.bin} exited ${r.code}: ${r.stderr.slice(0, 200)} (${exit.basis})`);
+    if (!out?.length) throw await notEstablished(`${inv.bin} exited 0 but produced no ${b.output.via === "file" ? `${b.output.name}` : "output"}`);
+    const vout = check(outF, b.output.signature, out);
+    if (!vout.ok) throw await notEstablished(`the output is not a valid ${b.output.mediaType}: ${vout.reason}`);
+    // Facts the output's own format cannot show (a WebP's pixels) are re-checked through the
+    // capability that witnessed them during acquisition, when this runtime may run it.
+    const outFacts: Facts = { ...vout.facts };
+    let decodedBy: string | undefined;
+    for (const w of b.witnessed ?? []) {
+      if (w.how !== "decoded" || !w.facts.some((k) => outFacts[k] === undefined)) continue;
+      const dec = this.graph.get(w.capability);
+      if (dec?.invoke.kind !== "cli" || !dec.invoke.binary || !(await checkProgram(dec.invoke.bin, this.executable)).ok || (await this.programSha(dec.invoke.bin)) !== dec.invoke.sha256) continue;
+      const back = await runContract(sb, dec.invoke.bin, dec.invoke.binary, out).catch(() => undefined);
+      const vb = back && formatOf(dec.invoke.binary.output.mediaType)?.validate(back);
+      if (vb && vb.ok) { for (const [k, x] of Object.entries(vb.facts)) if (outFacts[k] === undefined) outFacts[k] = x; decodedBy = dec.id; }
+    }
+    const checkable = b.preserves.filter((k) => vin.facts[k] !== undefined && outFacts[k] !== undefined);
+    const broken = checkable.filter((k) => vin.facts[k] !== outFacts[k]);
+    if (broken.length) throw await notEstablished(`the output does not keep ${broken.map((k) => `${k} (${vin.facts[k]} in, ${outFacts[k]} out)`).join(", ")}, which this transformation was observed to keep`);
+    const unchecked = b.preserves.filter((k) => !checkable.includes(k));
+    v.outputCheck = { mediaType: b.output.mediaType, facts: outFacts, kept: checkable, ...(unchecked.length ? { unchecked } : {}), validator: [vout.by, ...(decodedBy ? [`decoded by ${decodedBy}`] : [])].join("; ") };
+    const stored = await this.artefacts.put(out, { name: b.output.name ?? "stdout", holder: artefactHolder(execution) });
+    v.artefacts.outputs = [{ name: stored.name ?? "output", ref: contentRef(stored.sha256), sha256: stored.sha256, bytes: stored.bytes }];
+    v.stdoutBytes = r.stdoutRaw?.length ?? 0;
+    v.outcome = "result-established";
+    return { ...stored, mediaType: b.output.mediaType };
   }
 
   private approved(id: string): boolean {
@@ -2605,6 +3040,7 @@ export class RightClick {
     const request = this.activity.append({ kind: "composition.requested", status: "requested" });
     try {
       const result = await this.composeNow(opts, permit);
+      if (opts.preserve?.length) await this.checkPreserved(opts, result);
       const ex = result.executed;
       const subjects = [result.published?.id, result.crystallized?.id].filter((id): id is string => !!id);
       const observed = this.observedRuns([...(ex?.runs ?? []), ...(ex?.witnesses ?? []).map(w => w.runId)]);
@@ -2620,6 +3056,59 @@ export class RightClick {
       this.activity.append({ kind: "composition.finished", related: request.id, status: "failed", reason: "composition-error" });
       throw e;
     } finally { this.persist(); }
+  }
+
+  /**
+   * A hard `preserve` constraint, checked on the result itself: the facts of the input the route
+   * consumed and of the output it returned, read by the validators and, where a format cannot
+   * show a fact itself, by an acquired decoder this runtime may execute. A fact that differs, or
+   * that cannot be read on both, means the result is not established. Without a route, say why.
+   */
+  private async checkPreserved(opts: ComposeOptions, result: ComposeResult): Promise<void> {
+    const preserve = opts.preserve!;
+    if (!result.plans.length) {
+      const anyRoute = (opts.have && Object.keys(opts.have).length) ? await this.composeNow({ ...opts, preserve: undefined, run: false, publish: undefined, crystallize: false }).catch(() => undefined) : undefined;
+      const n = anyRoute?.plans.length ?? 0;
+      if (n) {
+        const first = anyRoute!.plans[0];
+        const unproven = first.steps.flatMap((st) => primitiveSteps(this.graph, st.capability)).filter((c) => !preserve.every((k) => bytesFacts(c)?.has(k)));
+        result.planningRefusal ??= { scope: "local-runtime-policy", independentAuthority: "not-assessed", coverage: "bounded-candidate-search", reason: `no route is proven to keep ${preserve.join(", ")}: ${n} route(s) reach ${opts.want}, but each has a step whose evidence does not show it keeps them (for example ${unproven.map((c) => c.id).slice(0, 2).join(", ") || first.summary})`, blocked: unproven.slice(0, 5).map((c) => ({ capability: c.id, reasons: [`not proven to keep ${preserve.filter((k) => !bytesFacts(c)?.has(k)).join(", ")}`] })), runs: [] };
+      }
+      return;
+    }
+    const ex = result.executed;
+    if (!ex || ex.status !== "completed") return;
+    const sb = await this.sandbox();
+    const read = async (v: unknown): Promise<Facts | undefined> => {
+      const raw = v as { type?: string; ref?: string; base64?: string } | undefined;
+      const val = raw?.type === "artefact" && typeof raw.ref === "string" ? { type: "artefact" as const, ref: raw.ref } : raw;
+      if (!isArtefactValue(val) || val.type === "text") return undefined;
+      const bytes = await artefactBytes(val, this.artefacts).catch(() => undefined);
+      if (!bytes) return undefined;
+      const id = identify(bytes);
+      const facts: Facts = { ...(id.facts ?? {}) };
+      // A format with no validator is the one the run that produced it recorded (its contract's output).
+      const mediaType = id.mediaType ?? (typeof (raw as { mediaType?: unknown })?.mediaType === "string" ? (raw as { mediaType: string }).mediaType : "");
+      if (sb && preserve.some((k) => facts[k] === undefined)) {
+        const dec = await this.binaryDecoder(sb, this.executable)(mediaType, bytes);
+        if (dec) for (const [k, x] of Object.entries(dec.facts)) if (facts[k] === undefined) facts[k] = x;
+      }
+      return facts;
+    };
+    const used = new Set(result.plans[0].steps.flatMap((st) => st.bindings.map((b) => b.from)).filter((f) => f.startsWith("$in.")).map((f) => f.slice(4).split(".")[0]));
+    const inputs = Object.entries(opts.have).filter(([k]) => used.has(k)).map(([, v]) => (v && typeof v === "object" && "value" in (v as object) ? (v as { value: unknown }).value : v));
+    const inFacts = inputs.length === 1 ? await read(inputs[0]) : undefined;
+    const outFacts = await read(ex.output);
+    const missing = preserve.filter((k) => inFacts?.[k] === undefined || outFacts?.[k] === undefined);
+    const differ = preserve.filter((k) => !missing.includes(k) && inFacts![k] !== outFacts![k]);
+    (ex as { preserved?: unknown }).preserved = { required: preserve, confirmed: preserve.filter((k) => !missing.includes(k) && !differ.includes(k)), differ, unconfirmed: missing };
+    if (differ.length || missing.length) {
+      ex.status = "failed";
+      ex.error = differ.length
+        ? `the result does not keep ${differ.join(", ")}, which the request requires; nothing is established`
+        : `the result could not be independently confirmed to keep ${missing.join(", ")} (no validator or authorised decoder reads it on both input and output); nothing is established`;
+      (ex as { contract?: unknown }).contract = { status: "violated", violations: [ex.error], assurance: "independently-checked" };
+    }
   }
 
   private async composeNow(opts: ComposeOptions, permit?: symbol): Promise<ComposeResult> {
@@ -2655,6 +3144,19 @@ export class RightClick {
         if (isSensitiveName(k)) throw new Error(`refused: "${k}" looks like a credential and cannot be fixed into a goal; leave it as an input each caller supplies`);
         fixed[k] = (v as any).value;
         v = "type" in (v as any) ? { type: (v as any).type, value: (v as any).value } : (v as any).value;
+      }
+      // Exact bytes are typed by what they are, never by a name or a claim: the format validators
+      // decide (core/formats.ts). Bytes no validator accepts in full stay opaque `bytes`. A caller
+      // may declare a bytes type, and it must agree with the bytes.
+      const declared = v && typeof v === "object" && !Array.isArray(v) && "value" in (v as any) ? (v as any).type : undefined;
+      const artefact = isArtefactValue(v) ? v : isArtefactValue((v as any)?.value) ? (v as any).value as ArtefactValue : undefined;
+      if (artefact && artefact.type !== "text" && (declared === undefined || String(declared).startsWith("bytes"))) {
+        const found = identify(await artefactBytes(artefact, this.artefacts));
+        if (declared && declared !== "bytes" && declared !== found.type)
+          throw new Error(`have.${k} is declared ${declared}, but its bytes ${found.mediaType ? `validate as ${found.mediaType}` : "validate as no known format"} (HTTP 400 equivalent: nothing was run)`);
+        types[k] = found.type;
+        values[k] = artefact;
+        continue;
       }
       if (v && typeof v === "object" && !Array.isArray(v) && "type" in (v as any) && "value" in (v as any)) {
         types[k] = (v as any).type;
@@ -2720,7 +3222,7 @@ export class RightClick {
     // A caller's value named and shaped like a learned identifier scheme's carries that scheme.
     const schemes = Object.fromEntries(Object.entries(values).map(([k, v]) => [k, this.graph.identities.schemesFor(this.graph.capabilities.values(), k, v)]).filter(([, s]) => s.length));
     const require = (opts.require ?? []).map((t) => String(t).trim()).filter(Boolean);
-    const goal = { have: types, want: opts.want, intent: opts.intent, maxSteps: opts.maxSteps, limit: opts.limit ?? 5, risks: opts.risks, through, exclude: blocked, origins, schemes, inputBindings, ...(require.length ? { require } : {}) };
+    const goal = { have: types, want: opts.want, intent: opts.intent, maxSteps: opts.maxSteps, limit: opts.limit ?? 5, risks: opts.risks, through, exclude: blocked, origins, schemes, inputBindings, ...(require.length ? { require } : {}), ...(opts.preserve?.length ? { preserve: opts.preserve } : {}) };
     let undeclared: string[] = [];
     const search = () => {
       undeclared = undeclaredRequirements(this.graph, require);
@@ -4050,6 +4552,7 @@ export class RightClick {
           this.hashCache.set(inv.bin, cached);
         }
         if (cached.sha256 !== inv.sha256) throw new Error(`program changed since it was investigated: ${inv.bin} (sha256 ${cached.sha256.slice(0, 12)}, investigated ${inv.sha256.slice(0, 12)}); not run (HTTP 409 equivalent)`);
+        if (inv.binary) return await this.executeBinary(cap, inv, args, execution, sb, cached.sha256, id);
         const files: Record<string, string | Uint8Array> = Object.create(null);
         // What this run consumes, for its provenance record: every staged file and stdin, by digest.
         const consumed: Array<{ name: string; role: "file" | "stdin"; sha256: string; bytes: number; ref?: string }> = [];

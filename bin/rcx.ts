@@ -71,7 +71,7 @@ Recovery: RCX_WORKFLOW_RECOVERY=1 opts this host into retaining bounded workflow
 in its local state file. Resume pending compositions with rcx run resume:<run-id>; no new inputs.
 Restrictions and checks are retained, and current execution authority is required. Default: off.
 
-State: ${env.RCX_STATE_FILE ?? "~/.rightclick-x/state.json"} (RCX_STATE_FILE). Authority: RCX_DESTRUCTIVE=operator|agent-confirm|allow, RCX_APPROVE=<ids>, RCX_RETRY=<ids or origins>, RCX_INVESTIGATE / RCX_EXECUTE=<program paths>, RCX_CLI_CONFORMANCE='{"cli:<program>:<command>":{"samples":[…]}}', RCX_SHARE_EVIDENCE=1. Artefacts: kept next to the state file, at most 512 MiB, each held RCX_ARTEFACT_RETENTION_DAYS (default 7). Credentials: RCX_AUTH='{"https://api.x.com":"Bearer …"}'.`;
+State: ${env.RCX_STATE_FILE ?? "~/.rightclick-x/state.json"} (RCX_STATE_FILE). Authority: RCX_DESTRUCTIVE=operator|agent-confirm|allow, RCX_APPROVE=<ids>, RCX_RETRY=<ids or origins>, RCX_INVESTIGATE / RCX_EXECUTE=<program paths>, RCX_CLI_CONFORMANCE='{"cli:<program>:<command>":{"samples":[…]}}', RCX_SHARE_EVIDENCE=1. Samples: RCX_SAMPLE_ROOTS=<directories> of operator-approved sample files binary acquisition may test with (nothing else is scanned). Artefacts: kept next to the state file, at most 512 MiB, each held RCX_ARTEFACT_RETENTION_DAYS (default 7). Credentials: RCX_AUTH='{"https://api.x.com":"Bearer …"}'.`;
 
 async function main() {
   const cmd = argv.shift() ?? "help";
@@ -115,6 +115,7 @@ async function main() {
     workflowRecovery: env.RCX_WORKFLOW_RECOVERY === "1",
     artefactDir: `${stateFile}.artefacts`,
     ...(env.RCX_ARTEFACT_RETENTION_DAYS ? { artefactRetentionMs: retentionDays(env.RCX_ARTEFACT_RETENTION_DAYS) } : {}),
+    ...(env.RCX_SAMPLE_ROOTS ? { sampleRoots: env.RCX_SAMPLE_ROOTS.split(",").map((x) => x.trim()).filter(Boolean) } : {}),
     authority,
     environment: environmentOptions(env.RCX_ENVIRONMENT),
   });

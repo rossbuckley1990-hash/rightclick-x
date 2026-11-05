@@ -232,7 +232,7 @@ test("acquisition on demand: an empty graph finds, learns and uses a capability 
 test("actions: direct capabilities plus everything reachable through pipelines", async () => {
   const { rc } = await world();
   await learnAll(rc);
-  const a = rc.actions({ value: "https://news.test/article" });
+  const a = await rc.actions({ value: "https://news.test/article" });
   assert.equal(a.inspected.type, "url");
   assert.ok(a.actions.some((x) => x.id === "builtin:web.fetch"));
   const reach = a.reachableTypes.map((t) => t.type);

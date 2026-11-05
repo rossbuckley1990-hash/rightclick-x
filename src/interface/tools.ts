@@ -102,6 +102,7 @@ export const TOOLS = [
         through: { type: "array", items: { type: "string" }, description: "Anchors: capability ids or search phrases the pipeline must pass through; the planner wires the types between them." },
         inputBindings: { type: "object", description: 'For anchored CLI capabilities, map capability id to port-to-have-input names, e.g. {"cli:jq:stdout":{"options":"jqOptions"},"cli:shasum:invoke":{"options":"hashOptions"}}. Each binding is mandatory and retained with a published goal. Use fixed have inputs to pin options.' },
         risks: { type: "array", items: { type: "string", enum: ["read", "write", "external", "destructive"] }, description: 'Optional constraint: plan only with these risk labels, e.g. ["read"].' },
+        preserve: { type: "array", items: { type: "string", enum: ["pixels", "width", "height", "pages", "frames", "entries"] }, description: 'Facts the result must keep from the input: ["pixels"] means "without losing information" (the decoded picture is identical). A hard constraint: only routes whose every step is proven by its acquisition evidence to keep them are chosen, the result is checked independently, and if none qualifies the answer says why instead of choosing a lossy route.' },
         require: { type: "array", items: { type: "string" }, description: 'Required information the result must carry, e.g. ["resolution"] or ["gene name"]. Use through to constrain capability ids. Plans are judged by the fields their result declares and by how each join is supported; only an established plan runs, otherwise the outcome says unavailable/unverified and nothing runs. After running, the output is checked for every term.' },
         origins: { type: "array", items: { type: "string" }, description: 'Optional egress policy, e.g. ["https://api.example.com"]: use only capabilities that send data to these origins, now and in every automatic repair. Saved with publish.' },
         view,
@@ -183,6 +184,7 @@ export async function dispatch(rc: RightClick, name: string, a: Record<string, a
       if ("resumeRunId" in a) throw new Error("resume uses the explicit resume:<run-id> selector");
       // Validate the view before running: a malformed view must not cost a side effect.
       const v = parseView(a.view);
+      if (typeof a.id !== "string" || !a.id.trim()) throw new Error(`context_run needs "id": a capability id (find one with context_graph {"op":"search","query":"…"} or context_actions {"value":…}), or "resume:<run-id>"; nothing was run`);
       const r = await rc.run(a.id, a.args ?? {}, { verify: a.verify, confirm: a.confirm, acknowledgeChange: a.acknowledgeChange });
       return viewed(r, v, rerun(r.runId));
     }
@@ -202,7 +204,8 @@ export async function dispatch(rc: RightClick, name: string, a: Record<string, a
     }
     case "context_compose": {
       const v = parseView(a.view);
-      const r = await rc.compose({ have: a.have ?? {}, want: a.want, intent: a.intent, run: a.run, verify: a.verify, witnesses: a.witnesses, maxSteps: a.maxSteps, risks: a.risks, through: a.through, inputBindings: a.inputBindings, origins: a.origins, require: a.require, acquire: a.acquire, publish: a.publish, preserveExisting: a.preserveExisting, confirmFixedInvariants: a.confirmFixedInvariants, confirm: a.confirm });
+      if (a.preserve !== undefined && (!Array.isArray(a.preserve) || !a.preserve.every((x: unknown) => typeof x === "string"))) throw new Error('preserve must be a list of facts, e.g. ["pixels"]');
+      const r = await rc.compose({ have: a.have ?? {}, want: a.want, intent: a.intent, run: a.run, ...(a.preserve?.length ? { preserve: a.preserve } : {}), verify: a.verify, witnesses: a.witnesses, maxSteps: a.maxSteps, risks: a.risks, through: a.through, inputBindings: a.inputBindings, origins: a.origins, require: a.require, acquire: a.acquire, publish: a.publish, preserveExisting: a.preserveExisting, confirmFixedInvariants: a.confirmFixedInvariants, confirm: a.confirm });
       if (!r.executed) return r;
       return { ...r, executed: viewed(r.executed, v, "To view a step's recorded output without re-running: context_run_status with a runId from executed.runs and a view.") };
     }

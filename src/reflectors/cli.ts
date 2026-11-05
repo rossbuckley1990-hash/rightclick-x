@@ -37,6 +37,8 @@ export interface Investigation {
    */
   options: Array<{ flags: string[]; arg?: string; args?: string[]; optionalArg?: string; fixed?: string[]; description: string }>;
   operands: { required: string[]; optional: string[]; variadic: boolean };
+  /** The usage text and manual page that were read, bounded: binary acquisition chooses formats from it. */
+  documentation?: string;
   claims: Claim[];
   limits: { maxRuns: number; timeoutMs: number; maxOutputBytes: number };
   summary: string;
@@ -707,6 +709,7 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
   }
   const parsed = parseUsage(docs);
   inv.options = parsed.options;
+  inv.documentation = docs.slice(0, 64 * 1024);
   // Wrappers that hand their options to another program ("OPTIONs are the same as for 'cmp' or
   // 'diff'", zgrep -> grep): that program's documentation declares them.
   const delegate = /options? (?:are|is) (?:the )?same as (?:for |those of |those for )?[`'"]?([a-z][\w.-]*)[`'"]?(?:\s+or\s+[`'"]?([a-z][\w.-]*)[`'"]?)?/i.exec(docs);

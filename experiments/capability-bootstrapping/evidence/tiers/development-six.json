@@ -1,0 +1,271 @@
+{
+  "frozen": "/private/tmp/claude-501/-Users-ross-src-rightclick-x/9910dba2-1bf8-48e6-97fa-516190f9f4f3/scratchpad/s3/demo/frozen",
+  "programs": [
+    "/opt/homebrew/bin/pngtogd",
+    "/opt/homebrew/bin/tiff2bw",
+    "/opt/homebrew/bin/jpgicc",
+    "/opt/homebrew/bin/giffix",
+    "/opt/homebrew/bin/avifdec",
+    "/opt/homebrew/bin/lame"
+  ],
+  "tiers": {
+    "T1": {
+      "seconds": 3,
+      "helpers": [],
+      "roots": [],
+      "programs": {
+        "pngtogd": {
+          "result": "unknown",
+          "capabilities": []
+        },
+        "tiff2bw": {
+          "result": "established, not composable",
+          "capabilities": [
+            {
+              "id": "cli:tiff2bw:tiff-to-tiff",
+              "preserves": [
+                "width",
+                "height"
+              ],
+              "tags": [
+                "lossy",
+                "unsupported"
+              ],
+              "fixtures": "generated tiff fixture, seed 1; generated tiff fixture, seed 2"
+            }
+          ]
+        },
+        "jpgicc": {
+          "result": "unknown",
+          "capabilities": []
+        },
+        "giffix": {
+          "result": "unknown",
+          "capabilities": []
+        },
+        "avifdec": {
+          "result": "unknown",
+          "capabilities": []
+        },
+        "lame": {
+          "result": "unknown",
+          "capabilities": []
+        }
+      }
+    },
+    "T2": {
+      "seconds": 15,
+      "helpers": [
+        "cjpeg",
+        "djpeg",
+        "jpegoptim",
+        "jpegtran",
+        "rdjpgcom",
+        "wrjpgcom",
+        "gd2togif",
+        "gdcmpgif",
+        "gif2webp",
+        "gifbuild",
+        "gifclrmp",
+        "gifski",
+        "giftext",
+        "giftogd2",
+        "giftool",
+        "avifenc",
+        "avifgainmaputil"
+      ],
+      "roots": [],
+      "programs": {
+        "pngtogd": {
+          "result": "unknown",
+          "capabilities": []
+        },
+        "tiff2bw": {
+          "result": "established, not composable",
+          "capabilities": [
+            {
+              "id": "cli:tiff2bw:tiff-to-tiff",
+              "preserves": [
+                "width",
+                "height"
+              ],
+              "tags": [
+                "lossy",
+                "unsupported"
+              ],
+              "fixtures": "generated tiff fixture, seed 1; generated tiff fixture, seed 2"
+            }
+          ]
+        },
+        "jpgicc": {
+          "result": "acquired",
+          "capabilities": [
+            {
+              "id": "cli:jpgicc:jpeg-to-jpeg",
+              "preserves": [
+                "width",
+                "height"
+              ],
+              "tags": [],
+              "fixtures": "output of cli:avifdec:avif-to-jpeg on output of candidate cli:avifenc:png-to-avif on generated png fixture, seed 1; output of cli:avifdec:avif-to-jpeg on output of candidate cli:avifenc:png-to-avif on generated png fixture, seed 2"
+            }
+          ]
+        },
+        "giffix": {
+          "result": "unknown",
+          "capabilities": []
+        },
+        "avifdec": {
+          "result": "acquired",
+          "capabilities": [
+            {
+              "id": "cli:avifdec:avif-to-jpeg",
+              "preserves": [
+                "width",
+                "height"
+              ],
+              "tags": [],
+              "fixtures": "output of cli:avifenc:png-to-avif-lossless on generated png fixture, seed 1; output of cli:avifenc:png-to-avif-lossless on generated png fixture, seed 2"
+            },
+            {
+              "id": "cli:avifdec:avif-to-png",
+              "preserves": [
+                "width",
+                "height",
+                "pixels"
+              ],
+              "tags": [
+                "lossless"
+              ],
+              "fixtures": "output of cli:avifenc:png-to-avif-lossless on generated png fixture, seed 1; output of cli:avifenc:png-to-avif-lossless on generated png fixture, seed 2"
+            },
+            {
+              "id": "cli:avifdec:avif-to-y4m",
+              "preserves": [
+                "width",
+                "height"
+              ],
+              "tags": [
+                "witnessed"
+              ],
+              "fixtures": "output of candidate cli:avifenc:png-to-avif on generated png fixture, seed 1; output of candidate cli:avifenc:png-to-avif on generated png fixture, seed 2"
+            }
+          ]
+        },
+        "lame": {
+          "result": "unknown",
+          "capabilities": []
+        }
+      }
+    },
+    "T3": {
+      "seconds": 13,
+      "helpers": [
+        "cjpeg",
+        "djpeg",
+        "jpegoptim",
+        "jpegtran",
+        "rdjpgcom",
+        "wrjpgcom",
+        "avifenc",
+        "avifgainmaputil"
+      ],
+      "roots": [
+        "/opt/homebrew/Cellar/freetds/1.5.18/share/doc/freetds/images"
+      ],
+      "programs": {
+        "pngtogd": {
+          "result": "unknown",
+          "capabilities": []
+        },
+        "tiff2bw": {
+          "result": "established, not composable",
+          "capabilities": [
+            {
+              "id": "cli:tiff2bw:tiff-to-tiff",
+              "preserves": [
+                "width",
+                "height"
+              ],
+              "tags": [
+                "lossy",
+                "unsupported"
+              ],
+              "fixtures": "generated tiff fixture, seed 1; generated tiff fixture, seed 2"
+            }
+          ]
+        },
+        "jpgicc": {
+          "result": "acquired",
+          "capabilities": [
+            {
+              "id": "cli:jpgicc:jpeg-to-jpeg",
+              "preserves": [
+                "width",
+                "height"
+              ],
+              "tags": [],
+              "fixtures": "output of cli:avifdec:avif-to-jpeg on output of candidate cli:avifenc:png-to-avif on generated png fixture, seed 1; output of cli:avifdec:avif-to-jpeg on output of candidate cli:avifenc:png-to-avif on generated png fixture, seed 2"
+            }
+          ]
+        },
+        "giffix": {
+          "result": "acquired",
+          "capabilities": [
+            {
+              "id": "cli:giffix:gif-to-gif",
+              "preserves": [
+                "width",
+                "height",
+                "frames"
+              ],
+              "tags": [],
+              "fixtures": "operator sample root /opt/homebrew/Cellar/freetds/1.5.18/share/doc/freetds/images/callouts/1.gif (sha256 5e4e32da94355123); operator sample root /opt/homebrew/Cellar/freetds/1.5.18/share/doc/freetds/images/callouts/10.gif (sha256 d28c0f9c406cb537)"
+            }
+          ]
+        },
+        "avifdec": {
+          "result": "acquired",
+          "capabilities": [
+            {
+              "id": "cli:avifdec:avif-to-jpeg",
+              "preserves": [
+                "width",
+                "height"
+              ],
+              "tags": [],
+              "fixtures": "output of cli:avifenc:png-to-avif-lossless on generated png fixture, seed 1; output of cli:avifenc:png-to-avif-lossless on generated png fixture, seed 2"
+            },
+            {
+              "id": "cli:avifdec:avif-to-png",
+              "preserves": [
+                "width",
+                "height",
+                "pixels"
+              ],
+              "tags": [
+                "lossless"
+              ],
+              "fixtures": "output of cli:avifenc:png-to-avif-lossless on generated png fixture, seed 1; output of cli:avifenc:png-to-avif-lossless on generated png fixture, seed 2"
+            },
+            {
+              "id": "cli:avifdec:avif-to-y4m",
+              "preserves": [
+                "width",
+                "height"
+              ],
+              "tags": [
+                "witnessed"
+              ],
+              "fixtures": "output of candidate cli:avifenc:png-to-avif on generated png fixture, seed 1; output of candidate cli:avifenc:png-to-avif on generated png fixture, seed 2"
+            }
+          ]
+        },
+        "lame": {
+          "result": "unknown",
+          "capabilities": []
+        }
+      }
+    }
+  }
+}
