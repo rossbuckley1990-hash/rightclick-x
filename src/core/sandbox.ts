@@ -546,7 +546,12 @@ export function hostSandbox(): Promise<Sandbox | null> {
     const policy = await sandboxPolicy();
     const candidates: Sandbox[] = [];
     if (g.process.platform === "darwin" && fs.existsSync("/usr/bin/sandbox-exec")) candidates.push(makeSandbox("macos-sandbox-exec", policy));
-    for (const p of ["/usr/bin/bwrap", "/bin/bwrap"]) if (g.process.platform === "linux" && fs.existsSync(p)) candidates.push(makeSandbox("linux-bwrap", policy, p));
+    // RCX_SANDBOX_BWRAP: an absolute path to a bwrap binary outside the standard locations
+    // (NixOS and similar distributions). It is probed exactly like the defaults: a sandbox
+    // that does not actually start here is reported unavailable, never used.
+    const override = g.process.env?.RCX_SANDBOX_BWRAP;
+    const paths = ["/usr/bin/bwrap", "/bin/bwrap", ...(typeof override === "string" && override.startsWith("/") && override !== "/bin/bwrap" && override !== "/usr/bin/bwrap" ? [override] : [])];
+    for (const p of paths) if (g.process.platform === "linux" && fs.existsSync(p)) candidates.push(makeSandbox("linux-bwrap", policy, p));
     for (const sb of candidates) {
       const r = await sb.run("/bin/echo", ["rcx-sandbox-probe"], { limits: { timeoutMs: 5000 } }).catch(() => null);
       if (r && r.code === 0 && r.stdout.trim() === "rcx-sandbox-probe") return sb;
