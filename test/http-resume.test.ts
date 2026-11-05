@@ -148,7 +148,7 @@ test("lifetime budget, expiry, incompatible profile and withdrawn source cannot 
     const run = await first.rc.run("openapi:packager:pack"); await first.rc.flush();
     const checkpoint = store.state!.httpContinuations![0];
     if (mode === "budget") checkpoint.cursor.used = 32;
-    if (mode === "expiry") { checkpoint.createdAt = Date.now() - 3_600_000; checkpoint.expiresAt = Date.now() - 1; }
+    if (mode === "expiry") { const now = Date.now(); checkpoint.createdAt = now - 3_600_000; checkpoint.expiresAt = now - 1; }
     if (mode === "profile") {
       (checkpoint.cursor as any).version = 2;
       const before = structuredClone(store.state);
@@ -213,7 +213,8 @@ test("live checkpoint capacity fails closed while expired entries retire without
   assert.equal(blocked.httpContinuation?.stopped, "checkpoint-unavailable");
   assert.deepEqual(full.calls, ["POST /pack"]);
   await full.rc.flush();
-  for (const c of store.state!.httpContinuations!) { c.createdAt = Date.now() - 3_600_000; c.expiresAt = Date.now() - 1; }
+  const now = Date.now();
+  for (const c of store.state!.httpContinuations!) { c.createdAt = now - 3_600_000; c.expiresAt = now - 1; }
   const fresh = await world(store);
   assert.deepEqual(fresh.calls, []);
   const accepted = await fresh.rc.run("openapi:packager:pack");

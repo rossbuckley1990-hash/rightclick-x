@@ -286,7 +286,7 @@ test("workflow recovery retains host opt-in, policy, expiry, inputs and child ow
     const store = new MemoryStore(); const first = await world(store);
     const initial = await first.rc.run("composite:retained"); await first.rc.flush();
     if (mode === "expired") {
-      const w = store.state!.workflowContinuations![0]; w.createdAt = Date.now() - 3_600_000; w.expiresAt = Date.now() - 1;
+      const w = store.state!.workflowContinuations![0]; const now = Date.now(); w.createdAt = now - 3_600_000; w.expiresAt = now - 1;
     }
     const fresh = await world(store, mode === "disabled" ? { workflowRecovery: false } : mode === "denied" ? {
       authority: { execution: { deniedCapabilities: ["openapi:source:finish"] } },
