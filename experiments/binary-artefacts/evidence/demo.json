@@ -1,0 +1,73 @@
+{
+  "program": "/opt/homebrew/Cellar/libzip/1.11.4_1/bin/zipmerge",
+  "inputs": {
+    "a.zip": "abc6fa859f62f92adf3a4aff0fa5aecddfe69f6651f80229bf3bb75da6e530e5",
+    "b.zip": "260cd921c7f1fc966b49d4799e67274e79c7b52a77faa403c65f158ee2fca77c"
+  },
+  "learn": "no input channel produced output for zipmerge (20 trials); offered as a declared interface only (5 documented options)",
+  "capability": "cli:zipmerge:invoke",
+  "run": {
+    "status": "completed",
+    "runId": "run_mw38r22m_1_7eb9aa25-fb94-488a-af44-ab8cad12d7c6",
+    "output": {
+      "exitCode": 0,
+      "stdout": "",
+      "outputs": {
+        "merged.zip": {
+          "type": "artefact",
+          "ref": "sha256:626c8466811ba44f831fb2d7cf4ce518d2b4d128f5ecafa6b46d372f83a61d5e",
+          "sha256": "626c8466811ba44f831fb2d7cf4ce518d2b4d128f5ecafa6b46d372f83a61d5e",
+          "bytes": 360,
+          "name": "merged.zip"
+        }
+      }
+    },
+    "provenance": {
+      "program": {
+        "bin": "/opt/homebrew/Cellar/libzip/1.11.4_1/bin/zipmerge",
+        "sha256": "7260bc2b8cc308041a884a7c8540d1400419af16038202dee9d0e810463f98fd"
+      },
+      "inputs": [
+        {
+          "name": "a.zip",
+          "role": "file",
+          "sha256": "abc6fa859f62f92adf3a4aff0fa5aecddfe69f6651f80229bf3bb75da6e530e5",
+          "bytes": 354,
+          "ref": "sha256:abc6fa859f62f92adf3a4aff0fa5aecddfe69f6651f80229bf3bb75da6e530e5"
+        },
+        {
+          "name": "b.zip",
+          "role": "file",
+          "sha256": "260cd921c7f1fc966b49d4799e67274e79c7b52a77faa403c65f158ee2fca77c",
+          "bytes": 241,
+          "ref": "sha256:260cd921c7f1fc966b49d4799e67274e79c7b52a77faa403c65f158ee2fca77c"
+        }
+      ],
+      "outputs": [
+        {
+          "type": "artefact",
+          "ref": "sha256:626c8466811ba44f831fb2d7cf4ce518d2b4d128f5ecafa6b46d372f83a61d5e",
+          "sha256": "626c8466811ba44f831fb2d7cf4ce518d2b4d128f5ecafa6b46d372f83a61d5e",
+          "bytes": 360,
+          "name": "merged.zip"
+        }
+      ],
+      "stdout": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      }
+    }
+  },
+  "check": {
+    "mergedSha256": "626c8466811ba44f831fb2d7cf4ce518d2b4d128f5ecafa6b46d372f83a61d5e",
+    "refSha256": "626c8466811ba44f831fb2d7cf4ce518d2b4d128f5ecafa6b46d372f83a61d5e",
+    "entries": [
+      "docs/a.txt",
+      "Readme.txt",
+      "données/été.txt"
+    ],
+    "readmeKeptNewer": true
+  },
+  "auditLogHoldsPayload": false,
+  "ok": true
+}
