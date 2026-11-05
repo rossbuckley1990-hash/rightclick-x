@@ -225,12 +225,20 @@ test("development case: ppm2tiff, cwebp and dwebp are acquired; dwebp's WebP inp
   // cwebp's -d dump has none of the input's dimensions: established, but never composed.
   const dump = rc.graph.list().find((c) => c.id.startsWith("cli:cwebp:") && c.id.endsWith("-to-pgm"));
   if (dump) assert.ok(dump.tags.includes("unsupported"));
-  const ppm = fixtureFor("image/x-portable-pixmap", 11)!;
-  const r: any = await rc.compose({ have: { photo: { type: "bytes", base64: b64(ppm) } }, want: "bytes:image/webp", run: true } as any);
+  // PGM to PNG has no single capability; cwebp (pgm to webp) then dwebp (webp to png) exists on
+  // every host where these programs are installed, so the composer must find and run it.
+  const pgm = fixtureFor("image/x-portable-graymap", 11)!;
+  const r: any = await rc.compose({ have: { scan: { type: "bytes", base64: b64(pgm) } }, want: "bytes:image/png", run: true } as any);
   assert.equal(r.executed?.status, "completed", JSON.stringify(r.executed?.error ?? r.planningRefusal ?? toWebp.map((c) => c.id)));
-  assert.ok(r.plans[0].steps.length >= 1);
-  const webp = formatOf("image/webp")!.validate(await rc.artefacts.get(r.executed.output.ref));
-  const src = formatOf("image/x-portable-pixmap")!.validate(ppm);
-  assert.ok(webp.ok && src.ok);
-  assert.deepEqual([webp.facts.width, webp.facts.height], [src.facts.width, src.facts.height]);
+  assert.equal(r.plans[0].steps.length, 2);
+  const png = formatOf("image/png")!.validate(await rc.artefacts.get(r.executed.output.ref));
+  const src = formatOf("image/x-portable-graymap")!.validate(pgm);
+  assert.ok(png.ok && src.ok);
+  assert.deepEqual([png.facts.width, png.facts.height], [src.facts.width, src.facts.height]);
+  // PPM to WebP needs a TIFF-reading cwebp, which not every build is: with a route it must
+  // complete; without one, nothing is planned or run (never a guessed route).
+  const ppm = fixtureFor("image/x-portable-pixmap", 11)!;
+  const w: any = await rc.compose({ have: { photo: { type: "bytes", base64: b64(ppm) } }, want: "bytes:image/webp", run: true } as any);
+  if (rc.graph.get("cli:cwebp:tiff-to-webp") || rc.graph.get("cli:cwebp:ppm-to-webp")) assert.equal(w.executed?.status, "completed", JSON.stringify(w.executed?.error));
+  else { assert.equal(w.plans.length, 0); assert.equal(w.executed, undefined); }
 });

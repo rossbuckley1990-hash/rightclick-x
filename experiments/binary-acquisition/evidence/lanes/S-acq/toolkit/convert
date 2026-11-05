@@ -1,0 +1,8 @@
+#!/bin/sh
+# Thin wrapper so the toolkit can be called as `toolkit/convert ...`.
+# Uses python3 from PATH, falling back to the Homebrew interpreter.
+dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+if command -v python3 >/dev/null 2>&1; then
+    exec python3 "$dir/convert.py" "$@"
+fi
+exec /opt/homebrew/bin/python3 "$dir/convert.py" "$@"

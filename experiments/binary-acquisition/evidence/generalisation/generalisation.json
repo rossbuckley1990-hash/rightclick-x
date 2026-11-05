@@ -1,0 +1,86 @@
+{
+  "at": "2026-11-05T19:04:10.186Z",
+  "frozen": "/private/tmp/claude-501/-Users-ross-src-rightclick-x/9910dba2-1bf8-48e6-97fa-516190f9f4f3/scratchpad/s2/exp/frozen",
+  "selection": "/private/tmp/claude-501/-Users-ross-src-rightclick-x/9910dba2-1bf8-48e6-97fa-516190f9f4f3/scratchpad/s2/exp/selection/selection.json",
+  "selectionSha256": "04a870607c7e70a1f455f3890762651ce91a61836f911bd6497ed8bb2e1fed88",
+  "results": [
+    {
+      "program": "/opt/homebrew/bin/pngtogd",
+      "selectorCategory": "generate",
+      "selectorFormats": "PNG -> GD (libgd native image format)",
+      "learnMs": 1709,
+      "learnExit": 0,
+      "detail": "no input channel produced output for pngtogd (20 trials); no binary transformation established in 3 trial(s) (documented: png)",
+      "graphExcerpt": "[]\n"
+    },
+    {
+      "program": "/opt/homebrew/bin/tiff2bw",
+      "selectorCategory": "generate",
+      "selectorFormats": "TIFF (RGB or palette) -> TIFF (greyscale)",
+      "learnMs": 1741,
+      "learnExit": 0,
+      "detail": "no input channel produced output for tiff2bw (20 trials); offered as a declared interface only (5 documented options); 1 binary transformation(s) established in 11 trial(s): tiff-to-tiff",
+      "graphExcerpt": "[{\"id\":\"cli:tiff2bw:tiff-to-tiff\",\"title\":\"tiff2bw: image/tiff to image/tiff\",\"provider\":\"cli:tiff2bw\",\"source\":\"cli\",\"score\":8.122},{\"id\":\"cli:tiff2bw:invoke\",\"title\":\"tiff2bw with documented options (declared only, behaviour not observed): /opt/homebrew/bin/tiff2bw: illegal option -- -\",\"provider\":\"cli:tiff2bw\",\"source\":\"cli\",\"score\":7.069}]\n"
+    },
+    {
+      "program": "/opt/homebrew/bin/jpgicc",
+      "selectorCategory": "check",
+      "selectorFormats": "JPEG -> JPEG",
+      "learnMs": 1509,
+      "learnExit": 0,
+      "detail": "no input channel produced output for jpgicc (20 trials); offered as a declared interface only (5 documented options); documents jpeg, but no valid samples are available",
+      "graphExcerpt": "[{\"id\":\"cli:jpgicc:invoke\",\"title\":\"jpgicc with documented options (declared only, behaviour not observed): Little CMS ICC profile applier for JPEG - v3.5 [LittleCMS 2.19]\",\"provider\":\"cli:jpgicc\",\"source\":\"cli\",\"score\":7.335}]\n"
+    },
+    {
+      "program": "/opt/homebrew/bin/giffix",
+      "selectorCategory": "check",
+      "selectorFormats": "GIF -> GIF (binary stdout)",
+      "learnMs": 1623,
+      "learnExit": 0,
+      "detail": "no input channel produced output for giffix (20 trials); offered as a declared interface only (1 documented options); no documented binary format",
+      "graphExcerpt": "[{\"id\":\"cli:giffix:invoke\",\"title\":\"giffix with documented options (declared only, behaviour not observed): Error in command line parsing - None option Found - '--help'.\",\"provider\":\"cli:giffix\",\"source\":\"cli\",\"score\":7.565}]\n"
+    },
+    {
+      "program": "/opt/homebrew/bin/avifdec",
+      "selectorCategory": "unknown",
+      "selectorFormats": "AVIF -> PNG, JPEG or Y4M (chosen by output extension)",
+      "learnMs": 1669,
+      "learnExit": 0,
+      "detail": "no input channel produced output for avifdec (20 trials); offered as a declared interface only (16 documented options); no binary transformation established in 4 trial(s) (documented: jpeg, png)",
+      "graphExcerpt": "[{\"id\":\"cli:avifdec:invoke\",\"title\":\"avifdec with documented options (declared only, behaviour not observed): Syntax: avifdec [options] input.avif output.[jpg|jpeg|png|y4m]\",\"provider\":\"cli:avifdec\",\"source\":\"cli\",\"score\":8.151}]\n"
+    },
+    {
+      "program": "/opt/homebrew/bin/lame",
+      "selectorCategory": "unknown",
+      "selectorFormats": "WAV or raw PCM audio -> MP3",
+      "learnMs": 1587,
+      "learnExit": 0,
+      "detail": "no input channel produced output for lame (20 trials); offered as a declared interface only (5 documented options); no documented binary format",
+      "graphExcerpt": "[{\"id\":\"cli:lame:invoke\",\"title\":\"lame with documented options (declared only, behaviour not observed): LAME 64bits version 4.0 (https://lame.sourceforge.io)\",\"provider\":\"cli:lame\",\"source\":\"cli\",\"score\":8.687}]\n"
+    }
+  ],
+  "established": [
+    "cli:tiff2bw:tiff-to-tiff"
+  ],
+  "runs": [
+    {
+      "capability": "cli:tiff2bw:tiff-to-tiff",
+      "input": {
+        "path": "/private/tmp/claude-501/-Users-ross-src-rightclick-x/9910dba2-1bf8-48e6-97fa-516190f9f4f3/scratchpad/s2/exp/generalisation-2/held-out/held.tif",
+        "sha256": "79a51f5bac0db3516e06de9d12cca6af40c96e8b92d51b1f56dca4273b45a222",
+        "bytes": 4800
+      },
+      "status": "completed",
+      "outcome": "result-established",
+      "oracle": {
+        "ok": true,
+        "by": "ffprobe",
+        "saw": {
+          "codec_name": "tiff",
+          "width": 52,
+          "height": 36
+        }
+      }
+    }
+  ]
+}

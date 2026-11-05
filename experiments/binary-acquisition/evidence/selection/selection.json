@@ -1,0 +1,27 @@
+{
+  "selectedAt": "2026-11-05T19:02:43Z",
+  "frozenCommit": "3da8d04",
+  "programs": [
+    {"path": "/opt/homebrew/bin/pngtogd", "inputFormat": "PNG", "outputFormat": "GD (libgd native image format)", "category": "generate", "grepEmpty": true, "why": "libgd converter, PNG file to GD file via two positional paths; libgd is not mentioned in the repository at all"},
+    {"path": "/opt/homebrew/bin/tiff2bw", "inputFormat": "TIFF (RGB or palette)", "outputFormat": "TIFF (greyscale)", "category": "generate", "grepEmpty": true, "why": "libtiff colour-to-greyscale converter with its own option set; a different tool from the excluded tiffcp/tiffinfo/tiffdump/ppm2tiff"},
+    {"path": "/opt/homebrew/bin/jpgicc", "inputFormat": "JPEG", "outputFormat": "JPEG", "category": "check", "grepEmpty": true, "why": "Little CMS ICC colour transform, JPEG file to JPEG file; lcms is not mentioned in the repository and it is not from the libjpeg-turbo family of the excluded cjpeg/djpeg"},
+    {"path": "/opt/homebrew/bin/giffix", "inputFormat": "GIF", "outputFormat": "GIF (binary stdout)", "category": "check", "grepEmpty": true, "why": "giflib repair tool, reads a GIF file and writes a repaired GIF to standard output; giflib is not mentioned in the repository"},
+    {"path": "/opt/homebrew/bin/avifdec", "inputFormat": "AVIF", "outputFormat": "PNG, JPEG or Y4M (chosen by output extension)", "category": "unknown", "grepEmpty": true, "why": "libavif decoder whose input format is unknown to the format library, so it cannot generate inputs for it"},
+    {"path": "/opt/homebrew/bin/lame", "inputFormat": "WAV or raw PCM audio", "outputFormat": "MP3", "category": "unknown", "grepEmpty": true, "why": "MP3 encoder; both its input and its output fall outside every format the library knows, and it is outside the image domain"}
+  ],
+  "rejected": [
+    {"name": "xz, unxz, lz4, zstd, brotli, lzma", "reason": "the name appears in the repository at 3da8d04 (experiments/north-star/select.ts; xz also in ci/transfer.Dockerfile)"},
+    {"name": "unzstd, webpng, tidy", "reason": "the name appears in the repository at 3da8d04"},
+    {"name": "unlz4, xzdec, xzcat, lzmadec, pzstd, zstdcat, zstdmt, lz4cat", "reason": "grep is empty but each is an alias or multi-call link of xz, lz4 or zstd, which are already named in the repository, so they are not really held out"},
+    {"name": "/usr/bin bzip2, bunzip2, compress, uncompress, afconvert, aa, aea, cpio, ditto, avconvert, tiffutil, hdiutil, iconv", "reason": "the name appears in the repository at 3da8d04"},
+    {"name": "jpegtran, wrjpgcom", "reason": "grep is empty, but they come from libjpeg-turbo, the same package as the excluded cjpeg/djpeg; I chose jpgicc for more independence"},
+    {"name": "gif2webp, webpmux, img2webp", "reason": "grep is empty, but they come from libwebp, the same package as the excluded cwebp/dwebp"},
+    {"name": "tiffmedian, tiffdither, tiffcrop, tificc", "reason": "redundant: one TIFF-input program (tiff2bw) is enough; tificc also shares lcms option grammar with the chosen jpgicc"},
+    {"name": "pngtogd2, giftogd2, gd2togif", "reason": "redundant with the chosen pngtogd from the same libgd package"},
+    {"name": "gifski", "reason": "a strong alternative (PNG frames to GIF), left out so that TIFF input is represented"},
+    {"name": "avifenc", "reason": "redundant with the chosen avifdec from the same libavif package"},
+    {"name": "mpg123, dav1d, aomdec", "reason": "redundant unknown-format decoders; avifdec and lame already cover the unknown category"},
+    {"name": "pngfix, png-fix-itxt, jpegoptim, ziptool", "reason": "mainly test or fix files in place, or edit an archive with commands, rather than convert a file; png-fix-itxt prints no usage for --help or -h"},
+    {"name": "sexp-conv, pkcs1-conv", "reason": "work on text or canonical S-expressions or keys, not a binary file conversion"}
+  ]
+}
