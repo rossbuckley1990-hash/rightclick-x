@@ -2026,9 +2026,14 @@ export class RightClick {
    * still names that operation, else the one capability that now does. A
    * changed id is never followed, and repair obeys the run's egress policy.
    */
-  /** The host sandbox, or null when this host offers none (then programs are never run). */
+  /**
+   * The host sandbox, or null when this host offers none (then programs are never run). A sandbox
+   * the caller supplied, or an explicit null, is fixed for this runtime. Otherwise hostSandbox()
+   * answers each call. It remembers a working sandbox and a refusal, but not a transient probe
+   * failure, so one failed probe cannot stop a long-lived runtime from ever running programs.
+   */
   async sandbox(): Promise<Sandbox | null> {
-    const base = await (this.sandboxCache ??= hostSandbox());
+    const base = await (this.sandboxCache ?? hostSandbox());
     return this.currentSandbox = base && this.sandboxLocale ? withSandboxLocale(base, this.sandboxLocale) : base;
   }
 

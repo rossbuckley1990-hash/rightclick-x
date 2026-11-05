@@ -4,8 +4,11 @@ import { mkdtempSync, realpathSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { RightClick } from "../src/runtime.ts";
 import { FileStore } from "../src/entry/node-host.ts";
-import { hostSandbox, type Sandbox } from "../src/core/sandbox.ts";
+import type { Sandbox } from "../src/core/sandbox.ts";
 import { investigateCli, parseCommandList, parseHelpTopics, parseSubcommands, parseUsage } from "../src/reflectors/cli.ts";
+import { sandboxGate } from "./sandbox-gate.ts";
+
+const { sandbox: base, skip } = await sandboxGate();
 
 test("subcommand sections and bare command lists are read without inventing help topics", () => {
   const click = [
@@ -38,9 +41,7 @@ test("brace metavariables are option arguments, and command-running options stay
   assert.equal(parsed.options.find((o) => o.flags.includes("--prepipe"))?.arg, "command");
 });
 
-const base = await hostSandbox();
-
-test("a declared dispatcher yields executable subcommands with global options before the verb and local options after it", { skip: base ? false : "no host sandbox" }, async () => {
+test("a declared dispatcher yields executable subcommands with global options before the verb and local options after it", { skip }, async () => {
   const dir = realpathSync(mkdtempSync(`${tmpdir()}/rcx-subcommands-`));
   const bin = `${dir}/report-tool`;
   writeFileSync(bin, `#!/bin/sh
@@ -141,7 +142,7 @@ exit 2
   assert.equal(calls.length, before, "an unapproved destructive subcommand never reaches the program");
 });
 
-test("a help-implied bare list is investigated as subcommands", { skip: base ? false : "no host sandbox" }, async () => {
+test("a help-implied bare list is investigated as subcommands", { skip }, async () => {
   const dir = realpathSync(mkdtempSync(`${tmpdir()}/rcx-verb-list-`));
   const bin = `${dir}/list-tool`;
   writeFileSync(bin, `#!/bin/sh

@@ -6,11 +6,11 @@ import { mkdtempSync, realpathSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { RightClick, SEMANTICS } from "../src/runtime.ts";
 import { samplesFor } from "../src/reflectors/cli.ts";
-import { hostSandbox, type Sandbox } from "../src/core/sandbox.ts";
+import type { Sandbox } from "../src/core/sandbox.ts";
 import { MemoryStore } from "./helpers.ts";
+import { sandboxGate } from "./sandbox-gate.ts";
 
-const native = await hostSandbox();
-const skip = native ? false : "no host sandbox";
+const { sandbox: native, skip } = await sandboxGate();
 type Format = "json" | "xml" | "csv";
 const input: Record<Format, string> = { json: '{"unseen":[17,"later"]}\n', xml: '<?xml version="1.0"?><item>unseen</item>\n', csv: 'name,count\nunseen,17\n' };
 

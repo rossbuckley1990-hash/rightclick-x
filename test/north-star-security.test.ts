@@ -9,11 +9,10 @@ import { execFileSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
 import { RightClick } from "../src/runtime.ts";
-import { hostSandbox } from "../src/core/sandbox.ts";
 import { MemoryStore } from "./helpers.ts";
+import { sandboxGate } from "./sandbox-gate.ts";
 
-const sandbox = await hostSandbox();
-const skip = sandbox ? false : "no host sandbox on this platform";
+const { sandbox, skip } = await sandboxGate();
 const DUMMY = "dummy-credential-7f3a9c"; // never a real secret
 
 function program(dir: string, name: string, body: string, mode = 0o755) {

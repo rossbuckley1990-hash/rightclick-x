@@ -6,10 +6,9 @@ import { chmodSync, mkdtempSync, realpathSync, rmSync, writeFileSync, existsSync
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { RightClick } from "../src/runtime.ts";
-import { hostSandbox } from "../src/core/sandbox.ts";
+import { sandboxGate } from "./sandbox-gate.ts";
 
-const sandbox = await hostSandbox();
-const skip = sandbox ? false : "no host sandbox on this platform";
+const { sandbox, skip } = await sandboxGate();
 
 function program(dir: string, name: string, body: string) {
   const p = join(dir, name);

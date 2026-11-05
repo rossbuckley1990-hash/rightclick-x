@@ -7,13 +7,14 @@ import { tmpdir } from "node:os";
 import { gzipSync } from "node:zlib";
 import { RightClick, type OperatorAuthority, type RunRecord } from "../src/runtime.ts";
 import { FileStore } from "../src/entry/node-host.ts";
-import { CONFINED_POLICY, hostSandbox, makeSandbox, type Sandbox, type SandboxRun } from "../src/core/sandbox.ts";
+import { CONFINED_POLICY, makeSandbox, type Sandbox, type SandboxRun } from "../src/core/sandbox.ts";
 import type { Capability, CliInvoke } from "../src/core/types.ts";
 import type { OutcomeWitness } from "../src/core/verify.ts";
 import type { CliEnvironment } from "../src/core/cli-environment.ts";
+import { sandboxGate } from "./sandbox-gate.ts";
 
-const native = await hostSandbox();
-const local = { skip: native ? false : "native host sandbox unavailable", timeout: 120_000 };
+const { sandbox: native, skip: gated } = await sandboxGate();
+const local = { skip: gated, timeout: 120_000 };
 const quote = (text: string) => `'${text.replaceAll("'", "'\\''")}'`;
 const digest = (file: string) => createHash("sha256").update(readFileSync(file)).digest("hex");
 const executable = (file: string, body: string) => { writeFileSync(file, body); chmodSync(file, 0o755); };

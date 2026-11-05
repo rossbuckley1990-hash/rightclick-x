@@ -531,12 +531,89 @@ export interface Sandbox {
   }): Promise<SandboxRun>;
 }
 
+/** How many times one candidate is probed when its probe fails for a reason that says nothing about the sandbox. */
+export const PROBE_ATTEMPTS = 3;
+/** Pause before each retry, so the stall or load spike that broke an attempt has passed before the next. */
+const PROBE_BACKOFF_MS = [250, 1000];
+
+export type ProbeOutcome = "ok" | "transient" | "refused";
+
+/** One availability probe, kept for diagnostics. It grants nothing. */
+export interface ProbeAttempt {
+  kind: Sandbox["kind"];
+  attempt: number;
+  outcome: ProbeOutcome;
+  code?: number | null;
+  limit?: LimitHit;
+  timedOut?: boolean;
+  durationMs: number;
+  error?: string;
+}
+
+/**
+ * Classify one availability probe.
+ *
+ * Only a confined run that printed the marker and exited 0 shows a working sandbox. That test is
+ * unchanged. A failure of the run's own supervision or scheduling is "transient": the resource
+ * observer lost a sample, the wall clock ran out, the spawn failed, or a signal ended the run. None
+ * of these says whether the sandbox works. Reproduced 2026-11-04: if the event loop stalls longer
+ * than the observer's 2 s ps timeout (an earlier test in the same file blocked in spawnSync), the
+ * execFile timer fires before the output of a ps that already exited 0 is read. A good observation
+ * is discarded and the probe reports "supervision". Every other failure is "refused" and means the
+ * sandbox does not work here, for example bubblewrap exiting non-zero without user namespaces.
+ */
+export function probeOutcome(r: SandboxRun | null): ProbeOutcome {
+  if (r && r.code === 0 && r.stdout.trim() === "rcx-sandbox-probe") return "ok";
+  if (!r || r.limit === "supervision" || r.limit === "time" || r.timedOut || r.code === -1 || r.code === null) return "transient";
+  return "refused";
+}
+
+/**
+ * Probe each candidate in order and return the first that works. A transient failure is retried,
+ * at most PROBE_ATTEMPTS runs per candidate; a refusal moves on to the next candidate at once. Each
+ * attempt is the same confined run of /bin/echo and must pass probeOutcome, so a retry never accepts
+ * less than a first attempt would. Nothing but the probe is run. `transient` is true when a
+ * candidate ran out of attempts without being refused, so the absence may not last.
+ */
+export async function probeSandboxes(candidates: readonly Sandbox[]): Promise<{ sandbox: Sandbox | null; transient: boolean; attempts: ProbeAttempt[] }> {
+  const attempts: ProbeAttempt[] = [];
+  let transient = false;
+  for (const sb of candidates) {
+    for (let attempt = 1; attempt <= PROBE_ATTEMPTS; attempt++) {
+      if (attempt > 1) await new Promise((d) => setTimeout(d, PROBE_BACKOFF_MS[Math.min(attempt - 2, PROBE_BACKOFF_MS.length - 1)]));
+      const t0 = Date.now();
+      let error: string | undefined;
+      const r = await sb.run("/bin/echo", ["rcx-sandbox-probe"], { limits: { timeoutMs: 5000 } }).catch((e: unknown) => {
+        error = String(e);
+        return null;
+      });
+      const outcome = probeOutcome(r);
+      attempts.push({
+        kind: sb.kind, attempt, outcome, durationMs: r?.durationMs ?? Date.now() - t0,
+        ...(r ? { code: r.code, timedOut: r.timedOut } : {}),
+        ...(r?.limit ? { limit: r.limit } : {}),
+        ...(error ? { error } : {}),
+      });
+      if (outcome === "ok") return { sandbox: sb, transient: false, attempts };
+      if (outcome === "refused") break;
+      if (attempt === PROBE_ATTEMPTS) transient = true;
+    }
+  }
+  return { sandbox: null, transient, attempts };
+}
+
 let probed: Promise<Sandbox | null> | undefined;
+let lastProbe: readonly ProbeAttempt[] = [];
 
 /**
  * The sandbox available on this host, or null (then programs are not investigated or run). A
  * sandbox counts only if it actually starts here: bubblewrap without user namespaces (an
  * unprivileged container, a hardened kernel) is reported unavailable, not used.
+ *
+ * A working sandbox and a refusal are remembered for the life of the process. A transient failure
+ * (see probeOutcome) still returns null, so nothing runs, but it is not remembered: the next caller
+ * probes again. One lost sample must not stop every program from running for the rest of the
+ * process, and must not make tests that should check confinement skip on a host that has it.
  */
 export function hostSandbox(): Promise<Sandbox | null> {
   return (probed ??= (async () => {
@@ -547,12 +624,16 @@ export function hostSandbox(): Promise<Sandbox | null> {
     const candidates: Sandbox[] = [];
     if (g.process.platform === "darwin" && fs.existsSync("/usr/bin/sandbox-exec")) candidates.push(makeSandbox("macos-sandbox-exec", policy));
     for (const p of ["/usr/bin/bwrap", "/bin/bwrap"]) if (g.process.platform === "linux" && fs.existsSync(p)) candidates.push(makeSandbox("linux-bwrap", policy, p));
-    for (const sb of candidates) {
-      const r = await sb.run("/bin/echo", ["rcx-sandbox-probe"], { limits: { timeoutMs: 5000 } }).catch(() => null);
-      if (r && r.code === 0 && r.stdout.trim() === "rcx-sandbox-probe") return sb;
-    }
-    return null;
+    const result = await probeSandboxes(candidates);
+    lastProbe = Object.freeze(result.attempts.map((a) => Object.freeze(a)));
+    if (!result.sandbox && result.transient) probed = undefined;
+    return result.sandbox;
   })());
+}
+
+/** The attempts of the most recent completed host probe, for diagnostics. They grant nothing. */
+export function hostSandboxProbeAttempts(): readonly ProbeAttempt[] {
+  return lastProbe;
 }
 
 /** Resident memory (bytes) and process count of one process group, or null when ps is unavailable. */

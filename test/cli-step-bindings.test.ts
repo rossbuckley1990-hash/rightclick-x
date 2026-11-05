@@ -3,13 +3,13 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { existsSync } from "node:fs";
 import { RightClick } from "../src/runtime.ts";
-import { hostSandbox } from "../src/core/sandbox.ts";
 import { MemoryStore } from "./helpers.ts";
 import { decodeState, encodeState, STEP_INPUT_BINDINGS_REQUIREMENT } from "../src/core/state-format.ts";
+import { sandboxGate } from "./sandbox-gate.ts";
 
 const jq = "/opt/homebrew/bin/jq", shasum = "/usr/bin/shasum";
-const sandbox = await hostSandbox();
-const skip = sandbox && existsSync(jq) && existsSync(shasum) ? false : "requires jq, shasum and a host sandbox";
+const { sandbox, skip: gated } = await sandboxGate();
+const skip = gated || (existsSync(jq) && existsSync(shasum) ? false : "requires jq and shasum");
 const through = ["cli:jq:stdout", "cli:shasum:invoke"];
 const inputBindings = { [through[0]]: { options: "jqOptions" }, [through[1]]: { options: "hashOptions" } };
 const digest = (text: string) => `${createHash("sha1").update(text).digest("hex")} *-\n`;
