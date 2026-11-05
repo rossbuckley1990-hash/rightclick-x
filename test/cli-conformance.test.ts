@@ -77,7 +77,7 @@ async function fixture(t: TestContext, workflow: Workflow = workflows[0], helper
     ...actual,
     forRevalidation: actual.forRevalidation ? () => observe(actual.forRevalidation!(), true) : undefined,
     async run(program, args, options) {
-      const call: Call = { bin: program, args: [...args], stdin: options?.stdin, purpose: options?.purpose,
+      const call: Call = { bin: program, args: [...args], stdin: options?.stdin as string | undefined, purpose: options?.purpose,
         narrowed, writeRoots: [...actual.policy.writeRoots], network: actual.policy.network };
       calls.push(call);
       return call.result = await actual.run(program, args, options);

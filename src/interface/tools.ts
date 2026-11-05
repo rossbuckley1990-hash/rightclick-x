@@ -78,8 +78,8 @@ export const TOOLS = [
   },
   {
     name: "context_run_status",
-    description: "Read a previous run by runId, or list recent runs. Also reports whether the receipt chain is intact. With runId, view counts, projects or slices that run's recorded output without running it again.",
-    inputSchema: obj({ runId: str("Run id."), limit: num("Recent runs to list."), view }),
+    description: "Read a previous run by runId, or list recent runs. Also reports whether the receipt chain is intact. With runId, view counts, projects or slices that run's recorded output without running it again. With artefact, read the exact bytes of an artefact a run produced or consumed (base64, bounded slices via offset/length).",
+    inputSchema: obj({ runId: str("Run id."), limit: num("Recent runs to list."), view, artefact: str('An artefact reference "sha256:<64 hex>" from a run\'s outputs or provenance record.'), offset: num("Byte offset into the artefact (default 0)."), length: num("Bytes to read (default and maximum 8 MiB).") }),
   },
   {
     name: "context_compose",
@@ -187,6 +187,11 @@ export async function dispatch(rc: RightClick, name: string, a: Record<string, a
       return viewed(r, v, rerun(r.runId));
     }
     case "context_run_status": {
+      if (a.artefact !== undefined) {
+        if (a.runId !== undefined || a.view !== undefined) throw new Error("artefact reads take only artefact, offset and length");
+        return rc.readArtefact(a.artefact, { offset: a.offset, length: a.length });
+      }
+      if (a.offset !== undefined || a.length !== undefined) throw new Error("offset and length apply only to an artefact read");
       const v = parseView(a.view);
       if (!a.runId) return { ...(rc.runStatus({ limit: a.limit }) as object), chain: await rc.verifyReceipts() };
       return viewed(rc.runStatus({ runId: a.runId }) as { runId: string; output?: unknown }, v, rerun(a.runId));

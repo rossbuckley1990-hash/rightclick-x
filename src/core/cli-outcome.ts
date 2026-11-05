@@ -16,6 +16,17 @@ export interface CliValidity {
   rawOutputBase64?: string;
   /** Exact standard output length in bytes. */
   stdoutBytes?: number;
+  /**
+   * Provenance of this run at the capability/result interface: the program and the build that was
+   * checked, every input consumed and every output produced, by SHA-256. A result that claims this
+   * capability's execution without a matching record here is not one this runtime produced.
+   */
+  artefacts?: {
+    program: { bin: string; sha256: string };
+    inputs: Array<{ name: string; role: "file" | "stdin"; sha256: string; bytes: number; ref?: string }>;
+    outputs: Array<{ name: string; ref: string; sha256: string; bytes: number }>;
+    stdout?: { sha256: string; bytes: number; ref?: string };
+  };
   limitation: string;
 }
 

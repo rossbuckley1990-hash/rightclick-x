@@ -187,16 +187,20 @@ export interface CliInvoke {
    * their arguments) in the input named `port`; anything else is refused before running.
    * These are placed before `args`: group-level options, or a program's only options.
    */
-  options?: { port: string; allowed: Array<{ flags: string[]; arg: boolean; optionalArg?: boolean }>; excluded?: string[] };
+  options?: { port: string; allowed: Array<{ flags: string[]; arg: boolean; optionalArg?: boolean; file?: "read" | "write" }>; excluded?: string[] };
   /**
    * Documented options placed after `args`. A subcommand's own options belong after the verb
    * when a program requires `prog [global options] verb [verb options] [files]`.
    */
-  optionsAfterArgs?: { port: string; allowed: Array<{ flags: string[]; arg: boolean; optionalArg?: boolean }>; excluded?: string[] };
+  optionsAfterArgs?: { port: string; allowed: Array<{ flags: string[]; arg: boolean; optionalArg?: boolean; file?: "read" | "write" }>; excluded?: string[] };
   /** Input holding named files ({name: content}) written exactly into the sandbox. */
   filesPort?: string;
   /** Optional list of named files to append as operands, in order. Omitted means all files; [] means none. */
   operandsPort?: string;
+  /** Input naming files the program creates (flat names); their exact bytes are returned as artefacts. */
+  outputsPort?: string;
+  /** Input choosing how stdout is returned: "text" (default, UTF-8 required) or "artefact" (exact bytes). */
+  stdoutAsPort?: string;
   /** Input whose value is written to stdin. */
   stdin?: string;
   /** Exit codes observed together with real output for valid input. */

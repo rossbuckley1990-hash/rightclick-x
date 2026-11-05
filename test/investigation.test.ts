@@ -203,7 +203,12 @@ test("an error report on stdout is not a result (holdout zipinfo on uce-freeze-3
   const zipish = program(dir, "zipish", `if [ "$1" = "--help" ]; then echo "usage: zipish [-h] file"; echo "  -h    list detailed information about an archive"; exit 0; fi\nfor f; do [ "$f" = "-h" ] && continue; echo "Archive: $f"; echo "  End-of-central-directory signature not found."; done; exit 9`);
   const rc = await RightClick.create({ name: "z", directories: [], authority: { investigate: [`${dir}/`] } });
   await rc.learn({ source: `cli:${zipish}` });
-  assert.equal(rc.graph.list().filter((c) => c.provider === "cli:zipish").length, 0, "no capability from an error report");
+  // No capability claims the error report as a result. The program named the staged sample while
+  // rejecting it, so a file interface is declared for callers with real archives: declared only,
+  // behaviour not observed, never composed.
+  const caps = rc.graph.list().filter((c) => c.provider === "cli:zipish");
+  assert.ok(caps.every((c) => c.tags.includes("declared-only") && c.tags.includes("unsupported")), caps.map((c) => `${c.id} [${c.tags.join(",")}]`).join("; "));
+  assert.ok(!caps.some((c) => c.id === "cli:zipish:default"), "no capability from an error report");
   const { parseOperands } = await import("../src/reflectors/cli.ts");
   const ops = parseOperands(["Usage : xmlish [options] XMLfiles ...", "xmlish [--version | --debug | --shell | --xpath XPath_expression] [XML-FILE ...]"], "xmlish");
   assert.deepEqual(ops.required, ["XMLfiles"]);

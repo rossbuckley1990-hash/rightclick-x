@@ -297,7 +297,7 @@ test("investigation rejects exit code 2 even when error output echoes input word
       if (argv.includes("--dump-inputs")) {
         return { ...base, stdout: file ? `${dir}/${file}\n` : "" };
       }
-      const urls = [...content.matchAll(/https:\/\/[^\s)>\]]+/g)].map((m) => m[0]);
+      const urls = [...String(content).matchAll(/https:\/\/[^\s)>\]]+/g)].map((m) => m[0]);
       if (argv.includes("--dump")) {
         return { ...base, stdout: urls.length ? urls.join("\n") + "\n" : "" };
       }

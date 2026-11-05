@@ -106,6 +106,7 @@ async function main() {
     workspace: env.RCX_WORKSPACE ?? proc.cwd(),
     store: demoMode ? undefined : new FileStore(stateFile, { onBackup: (p) => console.error(`RightClick X: upgraded ${stateFile} to the current state format; the original is kept at ${p}`) }),
     workflowRecovery: env.RCX_WORKFLOW_RECOVERY === "1",
+    artefactDir: `${stateFile}.artefacts`,
     authority,
     environment: environmentOptions(env.RCX_ENVIRONMENT),
   });

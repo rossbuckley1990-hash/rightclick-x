@@ -32,6 +32,7 @@ import { describeResult, resultDescription, type ResultDescription } from "./cor
 import type { Capability, CapabilityAnchor, FetchLike, GraphQLFailureEvidence, PlanStep, Provider, Reflection, SemType, TransportRefusal } from "./core/types.ts";
 import { agreement, assertAgreement, check, lintPublicationPredicates, pick, type Predicate, type PredicateResult, type PredicateWarning, type OutcomeWitness, type WitnessResult } from "./core/verify.ts";
 import { builtinReflection, type BuiltinFn } from "./reflectors/builtins.ts";
+import { ArtefactStore, artefactBytes, isArtefactValue, sha256Hex, ARTEFACT_LIMITS, type ArtefactResult } from "./core/artefacts.ts";
 import { DEFAULT_DIRECTORIES, type Candidate, type Directory } from "./reflectors/directories.ts";
 import { discover, type Discovery, type SourceKind } from "./reflectors/discover.ts";
 import { environmentNet, environmentOptions, observeCatalog, type EnvironmentOptions, type EnvironmentReport } from "./reflectors/environment.ts";
@@ -193,6 +194,8 @@ interface ReuseGuidance {
 
 export interface RuntimeOptions {
   name?: string;
+  /** Directory for persisted byte-exact artefacts (content-addressed). Without it, artefacts live in memory only. */
+  artefactDir?: string;
   region?: string;
   fetch?: FetchLike;
   auth?: Authority;
@@ -632,6 +635,8 @@ export class RightClick {
   private shareEvidence = false;
   private publishPolicy: "any" | "checked" | "verified" = "any";
   private sandboxLocale?: SandboxLocale;
+  /** Byte-exact artefacts this runtime holds: callers' inputs and runs' collected outputs. */
+  readonly artefacts!: ArtefactStore;
   private sandboxCache?: Promise<Sandbox | null>;
   private currentSandbox?: Sandbox | null;
   private onInvestigationStart?: (program: string) => void;
@@ -652,6 +657,7 @@ export class RightClick {
       policy: origins === undefined ? opts.network : { blockPrivate: false, ...opts.network, origins },
     };
     this.directories = opts.directories ?? DEFAULT_DIRECTORIES;
+    this.artefacts = new ArtefactStore(opts.artefactDir);
     this.environment = environmentOptions(opts.environment);
     this.httpContinuation = continuationPolicy(opts.httpContinuation);
     this.workflowRecovery = opts.workflowRecovery === true;
@@ -4023,10 +4029,44 @@ export class RightClick {
           this.hashCache.set(inv.bin, cached);
         }
         if (cached.sha256 !== inv.sha256) throw new Error(`program changed since it was investigated: ${inv.bin} (sha256 ${cached.sha256.slice(0, 12)}, investigated ${inv.sha256.slice(0, 12)}); not run (HTTP 409 equivalent)`);
-        const files: Record<string, string> = Object.create(null);
+        const files: Record<string, string | Uint8Array> = Object.create(null);
+        // What this run consumes, for its provenance record: every staged file and stdin, by digest.
+        const consumed: Array<{ name: string; role: "file" | "stdin"; sha256: string; bytes: number; ref?: string }> = [];
+        // Content is text unless the caller passed an explicit artefact value: exact bytes, text in a
+        // declared encoding, or a reference to bytes this runtime holds. Bytes are never coerced
+        // through a string, and a value that cannot be represented exactly is refused.
+        const contentOf = async (v: unknown): Promise<{ data: string | Uint8Array; ref?: string }> => {
+          if (!isArtefactValue(v)) return { data: asContent(v) };
+          const bytes = await artefactBytes(v, this.artefacts);
+          const held = v.type === "artefact" ? { ref: v.ref } : { ref: (await this.artefacts.put(bytes, { origin: `input:${cap.id}` })).ref };
+          return { data: bytes, ...held };
+        };
+        const record = async (name: string, role: "file" | "stdin", c: { data: string | Uint8Array; ref?: string }) => {
+          const b = typeof c.data === "string" ? new TextEncoder().encode(c.data) : c.data;
+          consumed.push({ name, role, sha256: await sha256Hex(b), bytes: b.length, ...(c.ref ? { ref: c.ref } : {}) });
+        };
+        // Named files, declared outputs and the stdout mode are read first: option values that name
+        // files are checked against them before anything runs.
+        const named = inv.filesPort ? args[inv.filesPort] : undefined;
+        if (named !== undefined && (!named || typeof named !== "object" || Array.isArray(named) || isArtefactValue(named))) throw new Error("files must be an object mapping exact names to content (HTTP 400 equivalent: nothing was run)");
+        const names = Object.keys(named ?? {});
+        const declaredOutputs = inv.outputsPort ? args[inv.outputsPort] : undefined;
+        if (declaredOutputs !== undefined && (!Array.isArray(declaredOutputs) || !declaredOutputs.every((n) => typeof n === "string"))) throw new Error("outputs must be a list of flat file names (HTTP 400 equivalent: nothing was run)");
+        const outputNames = (declaredOutputs as string[] | undefined) ?? [];
+        if (outputNames.length > ARTEFACT_LIMITS.maxOutputs) throw new Error(`at most ${ARTEFACT_LIMITS.maxOutputs} outputs may be declared (HTTP 400 equivalent: nothing was run)`);
+        const stdoutAs = inv.stdoutAsPort ? (args[inv.stdoutAsPort] ?? "text") : "text";
+        if (stdoutAs !== "text" && stdoutAs !== "artefact") throw new Error('stdoutAs must be "text" or "artefact" (HTTP 400 equivalent: nothing was run)');
+        const artefactMode = outputNames.length > 0 || stdoutAs === "artefact";
+        if (outputNames.length) {
+          validateFileNames([...names, ...outputNames]);
+        }
+        const fileRoles = { inputs: names, outputs: outputNames };
         // Documented options chosen by the caller, checked against the declared list first.
-        const chosen = inv.options ? validateOptions(args[inv.options.port], inv.options.allowed, inv.options.excluded) : [];
-        const chosenAfterArgs = inv.optionsAfterArgs ? validateOptions(args[inv.optionsAfterArgs.port], inv.optionsAfterArgs.allowed, inv.optionsAfterArgs.excluded) : [];
+        const chosen = inv.options ? validateOptions(args[inv.options.port], inv.options.allowed, inv.options.excluded, fileRoles) : [];
+        const chosenAfterArgs = inv.optionsAfterArgs ? validateOptions(args[inv.optionsAfterArgs.port], inv.optionsAfterArgs.allowed, inv.optionsAfterArgs.excluded, fileRoles) : [];
+        const resolved = new Map<string, { data: string | Uint8Array; ref?: string }>();
+        for (const a of inv.args) if (typeof a !== "string" && !a.literal && args[a.input] !== undefined && isArtefactValue(args[a.input])) resolved.set(a.input, await contentOf(args[a.input]));
+        const staged: Array<{ name: string; c: { data: string | Uint8Array; ref?: string } }> = [];
         const argv = [...chosen, ...inv.args.map((a, i) => {
           if (typeof a === "string") return a;
           if (a.literal) {
@@ -4042,26 +4082,33 @@ export class RightClick {
           // Without this, a capability investigated on .md samples is handed a .txt file at run time and the
           // program parses it as something else, so the observed contract does not hold for the caller.
           const declared = PORT_EXTENSIONS[cap.inputs.find((p) => p.name === a.input)?.type ?? ""];
-          const name = `in${i}-${a.input.replace(/[^\w]/g, "")}.${declared ?? contentExtension(asContent(args[a.input]))}`;
-          files[name] = asContent(args[a.input]);
+          const c = resolved.get(a.input) ?? { data: asContent(args[a.input]) };
+          const name = `in${i}-${a.input.replace(/[^\w]/g, "")}.${declared ?? (typeof c.data === "string" ? contentExtension(c.data) : "bin")}`;
+          files[name] = c.data;
+          staged.push({ name, c });
           return name;
         }), ...chosenAfterArgs].filter((x): x is string => x !== null);
         // Auxiliary files and positional operands are different roles. Do not guess a role from
         // an option value: a pattern can equal a file name. The caller can name the exact operands.
-        const named = inv.filesPort ? args[inv.filesPort] : undefined;
-        if (named !== undefined && (!named || typeof named !== "object" || Array.isArray(named))) throw new Error("files must be an object mapping exact names to content (HTTP 400 equivalent: nothing was run)");
-        const names = Object.keys(named ?? {});
         validateFileNames([...Object.keys(files), ...names]);
         if (named) {
-          for (const [n, content] of Object.entries(named as Record<string, unknown>)) {
-            files[n] = asContent(content);
+          for (const [n, v] of Object.entries(named as Record<string, unknown>)) {
+            const c = await contentOf(v);
+            files[n] = c.data;
+            staged.push({ name: n, c });
           }
         }
+        for (const st of staged) await record(st.name, "file", st.c);
         const operands = inv.operandsPort ? args[inv.operandsPort] : undefined;
-        if (operands !== undefined && (!Array.isArray(operands) || !operands.every(n => typeof n === "string" && names.includes(n)))) throw new Error("operands must be a list of names present in files (HTTP 400 equivalent: nothing was run)");
+        if (operands !== undefined && (!Array.isArray(operands) || !operands.every(n => typeof n === "string" && (names.includes(n) || outputNames.includes(n))))) throw new Error("operands must be a list of names present in files or outputs (HTTP 400 equivalent: nothing was run)");
         argv.push(...(operands === undefined ? names : operands as string[]));
+        const stdinContent = inv.stdin ? await contentOf(args[inv.stdin]) : { data: "" };
+        if (inv.stdin && args[inv.stdin] !== undefined) await record("stdin", "stdin", stdinContent);
         const before = await this.checkCliEnvironment(cap, sb, execution);
-        const r = await sb.run(inv.bin, argv, { stdin: inv.stdin ? asContent(args[inv.stdin]) : "", files, purpose: sampleSandbox ? "revalidation" : "execution" });
+        const r = await sb.run(inv.bin, argv, { stdin: stdinContent.data, files, ...(outputNames.length ? { collect: outputNames } : {}), ...(artefactMode ? { rawStdout: true } : {}), purpose: sampleSandbox ? "revalidation" : "execution" });
+        // Provenance at the result interface: which program, checked as which build, consumed which
+        // bytes. Outputs are added below once they are established.
+        execution.cliValidity!.artefacts = { program: { bin: inv.bin, sha256: cached.sha256 }, inputs: consumed, outputs: [] };
         execution.cliValidity!.processExit = r.code;
         const after = await observeCliEnvironment(inv.bin, sb.policy);
         if (after.digest !== before!.digest) {
@@ -4074,6 +4121,26 @@ export class RightClick {
         if (r.limit && r.limit !== "time" && r.limit !== "output") throw new Error(`${inv.bin} exceeded the sandbox's ${r.limit} limit`);
         if (r.timedOut) throw new Error(`${inv.bin} timed out in the sandbox`);
         if (r.truncated) throw new Error(`${inv.bin} exceeded the output limit`);
+        if (artefactMode) {
+          if (!inv.okExit.includes(r.code ?? -1)) throw new Error(`${inv.bin} exited ${r.code}: ${r.stderr.slice(0, 300)}`);
+          const produced: Record<string, ArtefactResult> = {};
+          for (const n of outputNames) {
+            const bytes = r.outputs?.[n];
+            if (!bytes) throw new CliValidityError(`declared output ${JSON.stringify(n)} ${r.outputRefusals?.[n] ?? "was not created"} (process exit ${r.code}); no result is established`, execution.cliValidity, cap.id);
+            produced[n] = await this.artefacts.put(bytes, { name: n, origin: `run:${cap.id}` });
+          }
+          let stdout: string | ArtefactResult;
+          if (stdoutAs === "artefact") stdout = await this.artefacts.put(r.stdoutRaw ?? new Uint8Array(), { name: "stdout", origin: `run:${cap.id}` });
+          else {
+            if (r.stdoutEncoding === "unsupported") throw new CliValidityError(`${inv.bin} printed ${r.stdoutBytes ?? 0} byte(s) that are not valid UTF-8; pass "stdoutAs":"artefact" to receive them exactly`, execution.cliValidity, cap.id);
+            stdout = normaliseSandboxPaths(r.stdout, r.workDir);
+          }
+          const raw = r.stdoutRaw ?? new Uint8Array();
+          execution.cliValidity!.artefacts!.outputs = Object.entries(produced).map(([name, a]) => ({ ...a, name }));
+          execution.cliValidity!.artefacts!.stdout = { sha256: await sha256Hex(raw), bytes: raw.length, ...(typeof stdout === "object" ? { ref: stdout.ref } : {}) };
+          execution.cliValidity!.stdoutBytes = raw.length;
+          return { exitCode: r.code, stdout, outputs: produced };
+        }
         let envelope: unknown;
         try { envelope = JSON.parse(r.stdout); } catch {}
         execution.cliValidity!.application = reportsApplicationError(envelope) ? "reported-error" : "not-established";
@@ -4106,6 +4173,7 @@ export class RightClick {
         // anyone reads this, and the raw output's digest is kept here, so the evidence is normalised
         // rather than discarded. Only this run's own directory is volatile: any other path
         // difference is a real change in what the program printed and survives untouched.
+        execution.cliValidity!.artefacts!.stdout = { sha256: await sha256Hex(new TextEncoder().encode(r.stdout)), bytes: r.stdoutBytes ?? new TextEncoder().encode(r.stdout).length };
         const output = normaliseSandboxPaths(r.stdout, r.workDir);
         if (output !== r.stdout) {
           execution.cliValidity!.sandboxPathNormalised = true;
@@ -4170,6 +4238,21 @@ export class RightClick {
       // rejects; a timer must not produce an unhandled rejection after an effect.
       void this.flush().catch(() => {});
     }, 50);
+  }
+
+  /**
+   * Read a byte-exact artefact this runtime holds (a run's output, or an input it was given), in
+   * bounded slices. Only content-addressed references resolve; nothing here can name a host path.
+   */
+  async readArtefact(ref: string, opts: { offset?: number; length?: number } = {}): Promise<{ ref: string; sha256: string; bytes: number; offset: number; length: number; base64: string; complete: boolean }> {
+    const bytes = await this.artefacts.get(String(ref));
+    const offset = opts.offset ?? 0;
+    const want = opts.length ?? ARTEFACT_LIMITS.maxReadBytes;
+    if (!Number.isInteger(offset) || offset < 0 || offset > bytes.length) throw new Error(`offset must be an integer between 0 and ${bytes.length}`);
+    if (!Number.isInteger(want) || want < 0) throw new Error("length must be a non-negative integer");
+    const length = Math.min(want, ARTEFACT_LIMITS.maxReadBytes, bytes.length - offset);
+    const slice = bytes.subarray(offset, offset + length);
+    return { ref, sha256: await sha256Hex(bytes), bytes: bytes.length, offset, length, base64: Buffer.from(slice).toString("base64"), complete: offset + length === bytes.length };
   }
 
   async flush(): Promise<void> {

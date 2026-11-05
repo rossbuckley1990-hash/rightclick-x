@@ -30,7 +30,7 @@ ${control === "constant" ? "printf 'constant output\\n'" : pair ? 'printf \'%s\\
 `, { mode: 0o755 });
   const wires: Array<{ args: string[]; stdin?: string; files?: Record<string, string>; purpose?: string }> = [];
   const sandbox: Sandbox = { ...native!, async run(bin, args, opts = {}) {
-    if (bin === program) wires.push({ args, stdin: opts.stdin, files: opts.files, purpose: opts.purpose });
+    if (bin === program) wires.push({ args, stdin: opts.stdin as string | undefined, files: opts.files as Record<string, string> | undefined, purpose: opts.purpose });
     return native!.run(bin, args, opts);
   } };
   const store = new MemoryStore();
