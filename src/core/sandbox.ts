@@ -779,16 +779,34 @@ export function makeSandbox(kind: Sandbox["kind"], policy: SandboxPolicy, bwrap 
           const outputs: Record<string, Uint8Array> = {};
           const outputRefusals: Record<string, string> = {};
           const clean = !timedOut && !truncated && !limit;
+          // The bytes are read through a descriptor opened without following a link and checked to
+          // be the same regular file, never by path again: a process that outlived the program's
+          // group could otherwise swap the file for a link between the check and the read, and this
+          // process (not the sandbox) would read the host file the link names.
+          const cap = Math.min(limits.maxFileBytes, ARTEFACT_BYTES_MAX);
           for (const name of collect) {
             if (!clean) { outputRefusals[name] = "the run did not complete cleanly; no output is returned"; continue; }
+            let st;
+            try { st = fs.lstatSync(path.join(work, name)); } catch { outputRefusals[name] = "was not created"; continue; }
+            if (st.isSymbolicLink()) { outputRefusals[name] = "is a symbolic link, not a file the program wrote"; continue; }
+            if (!st.isFile()) { outputRefusals[name] = "is not a regular file"; continue; }
+            if (st.size > cap) { outputRefusals[name] = `exceeds ${cap} bytes`; continue; }
+            let fd: number | undefined;
             try {
-              const st = fs.lstatSync(path.join(work, name));
-              if (st.isSymbolicLink()) outputRefusals[name] = "is a symbolic link, not a file the program wrote";
-              else if (!st.isFile()) outputRefusals[name] = "is not a regular file";
-              else if (st.size > Math.min(limits.maxFileBytes, ARTEFACT_BYTES_MAX)) outputRefusals[name] = `exceeds ${Math.min(limits.maxFileBytes, ARTEFACT_BYTES_MAX)} bytes`;
-              else outputs[name] = fs.readFileSync(path.join(work, name));
+              fd = fs.openSync(path.join(work, name), fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW | fs.constants.O_NONBLOCK);
+              const fst = fs.fstatSync(fd);
+              if (!fst.isFile() || fst.ino !== st.ino || fst.dev !== st.dev) { outputRefusals[name] = "changed while it was being collected; not returned"; continue; }
+              if (fst.size > cap) { outputRefusals[name] = `exceeds ${cap} bytes`; continue; }
+              // One byte more than its size shows a file still being written to.
+              const buf = Buffer.alloc(fst.size + 1);
+              let n = 0;
+              for (let r; n < buf.length && (r = fs.readSync(fd, buf, n, buf.length - n, n)) > 0;) n += r;
+              if (n !== fst.size) { outputRefusals[name] = "changed while it was being collected; not returned"; continue; }
+              outputs[name] = buf.subarray(0, n);
             } catch {
-              outputRefusals[name] = "was not created";
+              outputRefusals[name] = "could not be read as a regular file; not returned";
+            } finally {
+              if (fd !== undefined) fs.closeSync(fd);
             }
           }
           fs.rmSync(work, { recursive: true, force: true });

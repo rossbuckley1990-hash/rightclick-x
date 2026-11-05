@@ -14,7 +14,7 @@ import type { Capability, CliInvoke, Port, Reflection, SemType } from "../core/t
 import { inferType, lineListType } from "../core/semantics.ts";
 export type { CliInvoke };
 import { effectiveSandboxLocale, normaliseSandboxPaths, SANDBOX_PATH_PLACEHOLDER, type LocaleProfileName, type Sandbox, type SandboxRun } from "../core/sandbox.ts";
-import { reportsApplicationError } from "../core/cli-outcome.ts";
+import { classifyExit, reportsApplicationError } from "../core/cli-outcome.ts";
 
 export type EvidenceStatus = "declared" | "observed" | "inferred" | "experimentally-supported" | "verified" | "contradicted" | "unknown";
 
@@ -30,7 +30,12 @@ export interface Investigation {
   program: { bin: string; name: string; sha256: string; size: number; version?: string; description?: string };
   sandbox: string;
   runs: Array<{ id: number; purpose: string; args: string[]; stdinBytes: number; files: string[]; code: number | null; timedOut: boolean; stdoutBytes: number; stderrPreview: string; stdoutPreview: string; created: string[]; ms: number; stdoutEncoding?: "unsupported" }>;
-  options: Array<{ flags: string[]; arg?: string; optionalArg?: string; description: string }>;
+  /**
+   * Documented options. `arg` names the (first) value an option takes; `args` lists every value
+   * when it takes several ("-crop <x> <y> <w> <h>"). `fixed` holds exact spellings that carry their
+   * own value and mean the same option ("--sort=numeric" beside "-n, --numeric-sort").
+   */
+  options: Array<{ flags: string[]; arg?: string; args?: string[]; optionalArg?: string; fixed?: string[]; description: string }>;
   operands: { required: string[]; optional: string[]; variadic: boolean };
   claims: Claim[];
   limits: { maxRuns: number; timeoutMs: number; maxOutputBytes: number };
@@ -51,17 +56,44 @@ export function parseUsage(text: string): { options: Investigation["options"]; s
   const seen = new Set<string>();
   const lines = clean.split("\n");
   const indent = (l: string) => /^\s*/.exec(l)![0].length;
-  // A flag, optionally with an argument: "=MACRO[:FORMAT]", " <file>", " NAME", "[=WHEN]" (optional).
-  const OPTION_LINE = /^(\s{0,12})((?:-{1,2}[A-Za-z0-9?][\w-]*(?:\[=[^\]]+\]|=[a-z][\w.-]*|[ =](?:<[^>]+>|\{[^}]+\}|[A-Z][A-Z_]+|\[[^\]]+\])(?:\[[^\]]*\])*)?(?:,\s*|\s+or\s+|\s+|$))+)(.*)$/;
+  // A flag, optionally with arguments: "=MACRO[:FORMAT]", " <file>", " NAME", " #", "[=WHEN]"
+  // (optional), or several placeholders in a row (" <x> <y> <w> <h>").
+  const PLACEHOLDER = String.raw`(?:<[^>]+>|\{[^}]+\}|[A-Z][A-Z_]+|\[[^\]]+\]|#)`;
+  // A lower-case word is an argument right after "=", or after a space when another spelling of
+  // the same option follows ("-o output, --output=output", "-k field1[,field2], --key=…").
+  const FLAG_ARG = String.raw`(?:\[=[^\]]+\]|=[a-z][\w.-]*(?:\[[^\]]*\])*|=${PLACEHOLDER}(?:\[[^\]]*\])*|(?: ${PLACEHOLDER}(?:\[[^\]]*\])*)+| [a-z][\w.-]*(?:\[[^\]]*\])*(?=,\s*-))`;
+  const OPTION_LINE = new RegExp(String.raw`^(\s{0,12})((?:-{1,2}[A-Za-z0-9?][\w-]*${FLAG_ARG}?(?:,\s*|\s+or\s+|\s+|$))+)(.*)$`);
+  const FLAG_GROUP = new RegExp(String.raw`(-{1,2}[A-Za-z0-9?][\w-]*)(${FLAG_ARG})?`, "g");
+  // Every value an option takes. After the first, a bracketed or "..." placeholder is optional
+  // repetition ("ARG [ARG...]"), not another required value.
+  const placeholders = (spec: string) => [...spec.matchAll(new RegExp(PLACEHOLDER, "g"))].map((x) => x[0].replace(/^\{(.*)\}$/, "$1")).filter((p, i) => i === 0 || !(p.startsWith("[") || p.includes("...")));
   for (let i = 0; i < lines.length; i++) {
     const m = OPTION_LINE.exec(lines[i]);
     if (!m) continue;
-    const flags = [...m[2].matchAll(/-{1,2}[A-Za-z0-9?][\w-]*/g)].map((x) => x[0]);
+    // Each flag with its own argument: an argument written on one spelling is not assumed to
+    // belong to every spelling on the line (see below).
+    const pairs = [...m[2].matchAll(FLAG_GROUP)].map((x) => ({ flag: x[1], spec: x[2] ?? "" }));
+    const flags = pairs.map((x) => x.flag);
     if (!flags.length || seen.has(flags[0])) continue;
     const optionalArg = /\[=([^\]]+)\]/.exec(m[2])?.[1];
-    const argMatch = optionalArg ? null : /(?:[ =])(<[^>]+>|\{[^}]+\}|[A-Z][A-Z_]+|\[[^\]]+\])|=([a-z][\w.-]*)/.exec(m[2]);
-    let arg = argMatch ? argMatch[1] ?? argMatch[2] : undefined;
-    arg = arg?.replace(/^\{(.*)\}$/, "$1");
+    let arg: string | undefined;
+    let args: string[] = [];
+    const fixed: string[] = [];
+    if (!optionalArg) {
+      const withArg = pairs.filter((x) => x.spec);
+      // "-n, --numeric-sort, --sort=numeric": one long spelling takes nothing, so the lower-case
+      // word after "=" on another is a value fixed by that spelling, not a placeholder for all of
+      // them. "-k, --key=KEYDEF" has no such spelling, and its argument belongs to -k as well.
+      const bareLong = pairs.some((x) => !x.spec && x.flag.startsWith("--"));
+      for (const x of withArg) {
+        if (bareLong && /^=[a-z][\w.-]*$/.test(x.spec)) { fixed.push(`${x.flag}${x.spec}`); continue; }
+        if (!arg) {
+          const lower = /^[ =]([a-z][\w.-]*(?:\[[^\]]*\])*)$/.exec(x.spec)?.[1];
+          args = lower ? [lower] : placeholders(x.spec);
+          arg = args[0];
+        }
+      }
+    }
     let rest = m[3];
     // Description lines that follow, indented further than the option itself (manual pages put
     // the description beside or below the flag and wrap it over several lines).
@@ -76,17 +108,22 @@ export function parseUsage(text: string): { options: Investigation["options"]; s
       more.push(l.trim());
     }
     // An argument written in plain lower case (manual pages lose their italics): one word right
-    // after the flag, then a wide gap or the end of the line, with the description elsewhere.
-    if (!arg) {
-      const a = /^([a-z][\w.-]*(?:,\s*[a-z.][\w.-]*)*(?:\s*\.\.\.)?)(\s{2,}|\s*$)(.*)$/.exec(rest);
+    // after the flag, possibly with bracketed parts ("lzw[:opts]"), then a wide gap or the end of
+    // the line, with the description elsewhere.
+    if (!arg && !optionalArg && !fixed.length) {
+      const a = /^([a-z][\w.-]*(?:\[[^\]]*\])*(?:,\s*[a-z.][\w.-]*)*(?:\s*\.\.\.)?)(\s{2,}|\s*$)(.*)$/.exec(rest);
       if (a && (a[3].trim() || more.length)) {
         arg = a[1];
+        args = [a[1]];
         rest = a[3];
       }
     }
     seen.add(flags[0]);
-    const description = [rest.trim(), ...more].filter(Boolean).join(" ").replace(/\s+/g, " ");
-    options.push({ flags, ...(arg ? { arg } : {}), ...(optionalArg ? { optionalArg } : {}), description: description.slice(0, 300) });
+    // Dot leaders ("-flip ........ flip the output") are layout, not description.
+    const description = [rest.trim().replace(/^\.+\s+/, ""), ...more].filter(Boolean).join(" ").replace(/\s+/g, " ");
+    // Flags with an argument of their own are the option; a spelling with a fixed value is an alias.
+    const own = fixed.length ? pairs.filter((x) => !x.spec).map((x) => x.flag) : flags;
+    options.push({ flags: own, ...(arg ? { arg } : {}), ...(args.length > 1 ? { args } : {}), ...(optionalArg ? { optionalArg } : {}), ...(fixed.length ? { fixed } : {}), description: description.slice(0, 300) });
   }
   const synopsis = clean.split("\n").filter((l) => /^\s*(usage:|\s*[a-z][\w-]*\s+\[-)/i.test(l)).map((l) => l.trim()).slice(0, 6);
   // Options a synopsis or usage line declares only in brackets ("[-typemap typemap]",
@@ -102,7 +139,7 @@ export function parseUsage(text: string): { options: Investigation["options"]; s
     if (flags.some((f) => seen.has(f)) || options.length >= 120) continue;
     // A single-dash word can be one option or a compact bundle. Only the whole spelling is
     // declared here. Individual letters need their own declarations; do not invent flags.
-    for (const f of flags) seen.add(f);
+    seen.add(flags[0]);
     options.push({ flags, ...(g[2] ? { arg: g[2] } : {}), description: "(declared in the synopsis)" });
   }
   return { options: options.slice(0, 120), synopsis };
@@ -256,7 +293,7 @@ function documentsFileOperands(inv: Investigation): boolean {
 }
 
 /** How to pass named input files: text, text in a declared encoding, exact bytes, or a held artefact. */
-export const ARTEFACT_FILES_DESCRIPTION = 'Named input files {"name.ext": content}, staged with exact flat names (no paths or leading dash). content is a string (UTF-8 text), {"type":"text","text":"…","encoding":"latin-1"|"ascii"|"utf-16le"|"utf-8"}, {"type":"bytes","base64":"…"} for exact bytes, or {"type":"artefact","ref":"sha256:…"} for bytes this runtime already holds. Options that read a file take one of these names; host paths are refused.';
+export const ARTEFACT_FILES_DESCRIPTION = 'Named input files {"name.ext": content}, staged with exact flat names (no paths or leading dash). content is a string (UTF-8 text), {"type":"text","text":"…","encoding":"latin-1"|"ascii"|"utf-16le"|"utf-8"}, {"type":"bytes","base64":"…"} for exact bytes, or {"type":"artefact","ref":"sha256:….<grant>"} with the ref an earlier run returned. Options that read a file take one of these names; host paths are refused.';
 
 // ---------------------------------------------------------------- operands: files or literal values
 
@@ -281,6 +318,9 @@ export function literalSample(name: string, variant: number, sampleText: string)
   return variant % 2 ? "3" : "2";
 }
 
+/** A separate option value may begin with "-" only as a number or as "-" itself (stdin/stdout). */
+const OPTION_LIKE_VALUE_OK = /^-$|^-(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?$/;
+
 /**
  * The caller's options, checked against the documented list before anything runs: each item must
  * be a documented flag (with its argument if it takes one), "--flag=value", "-wVALUE", or bundled
@@ -289,7 +329,7 @@ export function literalSample(name: string, variant: number, sampleText: string)
  * them as a different single-dash long option. Known exclusions take precedence over expansion.
  * Values are argv items; nothing is ever parsed by a shell.
  */
-export function validateOptions(value: unknown, allowed: Array<{ flags: string[]; arg: boolean; optionalArg?: boolean; file?: "read" | "write" }>, excluded: string[] = [], files?: { inputs: string[]; outputs: string[] }): string[] {
+export function validateOptions(value: unknown, allowed: Array<{ flags: string[]; arg: boolean; arity?: number; optionalArg?: boolean; file?: "read" | "write" }>, excluded: string[] = [], files?: { inputs: string[]; outputs: string[] }): string[] {
   if (value === undefined || value === null || value === "") return [];
   const toks = Array.isArray(value) ? value.map(String) : String(value).trim().split(/\s+/);
   const byFlag = new Map(allowed.flatMap((o) => o.flags.map((f) => [f, o] as const)));
@@ -313,21 +353,37 @@ export function validateOptions(value: unknown, allowed: Array<{ flags: string[]
     if (exact) {
       out.push(t);
       if (exact.arg) {
-        if (i + 1 >= toks.length) throw new Error(`option ${t} needs a value`);
-        checkValue(t, toks[i + 1], exact);
-        out.push(toks[++i]);
+        // Every documented value, as separate items: "-crop 7 5 12 9". The number of values comes
+        // from documentation, and documentation is sometimes misread (CE1 gave -n a value). If an
+        // option took fewer values than the contract says, the program would read the next item as
+        // an option of its own, so a separate value that looks like an option is refused: it
+        // could otherwise carry an undocumented or excluded option past this check. Numbers
+        // ("-5", "-0.25") and "-" are values.
+        const n = exact.arity ?? 1;
+        if (toks.length - 1 - i < n) throw new Error(n === 1 ? `option ${t} needs a value` : `option ${t} needs ${n} values, as separate items (HTTP 400 equivalent: nothing was run)`);
+        for (let k = 0; k < n; k++) {
+          const v = toks[i + 1];
+          if (/^-/.test(v) && !OPTION_LIKE_VALUE_OK.test(v)) {
+            // The attached forms are unambiguous: the program always reads them as this option's value.
+            const attach = n > 1 ? undefined : t.startsWith("--") ? `${t}=${v}` : /^-[A-Za-z0-9]$/.test(t) ? `${t}${v}` : undefined;
+            throw new Error(`option ${t} was given ${JSON.stringify(v.slice(0, 80))} as a separate value; a value that looks like an option is refused, because if ${t} did not take it the program would read it as an option${attach ? `. Attach it instead: ${JSON.stringify(attach.slice(0, 100))}` : ""} (HTTP 400 equivalent: nothing was run)`);
+          }
+          checkValue(t, v, exact);
+          out.push(toks[++i]);
+        }
       }
       continue;
     }
     const eq = /^(--[\w-]+)=(.*)$/.exec(t);
     if (eq && (byFlag.get(eq[1])?.arg || byFlag.get(eq[1])?.optionalArg)) {
+      if ((byFlag.get(eq[1])!.arity ?? 1) > 1) throw new Error(`option ${eq[1]} takes ${byFlag.get(eq[1])!.arity} values: pass the flag and each value as separate items (HTTP 400 equivalent: nothing was run)`);
       checkValue(eq[1], eq[2], byFlag.get(eq[1]));
       out.push(t);
       continue;
     }
     const attached = /^(-[A-Za-z0-9])(.+)$/.exec(t);
     if (attached) {
-      if (byFlag.get(attached[1])?.arg) {
+      if (byFlag.get(attached[1])?.arg && (byFlag.get(attached[1])!.arity ?? 1) === 1) {
         if (denied.has(attached[1])) throw new Error(`option ${attached[1]} is excluded from this capability (HTTP 400 equivalent: nothing was run)`);
         checkValue(attached[1], attached[2], byFlag.get(attached[1]));
         out.push(attached[1], attached[2]);
@@ -366,23 +422,64 @@ const DANGEROUS = /\b(delete|remove (the )?files?|execute|exec|shell|run (a |the
 export function fileRole(o: Investigation["options"][number]): "read" | "write" | undefined {
   const a = (o.arg ?? o.optionalArg ?? "").replace(/[<>[\]{}]/g, "").trim();
   if (!a) return undefined;
+  // A directory or a program is not a file this runtime stages or collects.
+  if (DIRECTORY_ARG.test(a) || PROGRAM_ARG.test(a)) return undefined;
   const fileish = FILE_ARG.test(a) || /[a-z]file$/i.test(a) || (/\bfiles?\b/i.test(o.description) && /^[A-Za-z_]+$/.test(a) && !isLiteralOperand(a));
   if (!fileish) return undefined;
   return WRITES_FILE.test(o.description) && !READS_FILE.test(o.description.replace(WRITES_FILE, "")) ? "write" : "read";
 }
 
+/** An option whose value names a program or command to run: never offered, whatever its description says. */
+const PROGRAM_ARG = /^(prog|program|programs|command|cmd|script|exec|executable|shell|helper|interpreter|filter-program)$/i;
+const DIRECTORY_ARG = /^(dir|dirs|directory|directories|folder|tmpdir)$/i;
+
 const offeredOption = (o: Investigation["options"][number], allowNetwork = false) => {
-  if (/^-{1,2}(h|help|V|version|\?)$/.test(o.flags[0])) return false;
+  if (/^-{1,2}(h|help|V|version|\?)$/.test(o.flags[0] ?? "")) return false;
+  if ([o.arg, ...(o.args ?? []), o.optionalArg].some((a) => a && PROGRAM_ARG.test(a.replace(/[<>[\]{}]/g, "").trim()))) return false;
   if (!allowNetwork && NETWORK_OPTION.test(o.description)) return false;
   // A file-valued option is offered in its role: a read of a staged file, or a write to a declared
   // output inside the sandbox. Both are confined; neither ever receives a host path.
   if (fileRole(o)) return !DANGEROUS.test(o.description);
   return !UNOFFERED.test(o.description);
 };
-function optionContract(options: Investigation["options"], port = "options", allowNetwork = false): { port: string; allowed: Array<{ flags: string[]; arg: boolean; optionalArg?: boolean; file?: "read" | "write" }>; excluded?: string[] } {
+function optionContract(options: Investigation["options"], port = "options", allowNetwork = false): { port: string; allowed: Array<{ flags: string[]; arg: boolean; arity?: number; optionalArg?: boolean; file?: "read" | "write" }>; excluded?: string[] } {
   const offered = options.filter((o) => offeredOption(o, allowNetwork));
-  const excluded = [...new Set(options.filter((o) => !offeredOption(o, allowNetwork)).flatMap((o) => o.flags))];
-  return { port, allowed: offered.map(o => ({ flags: o.flags.filter(f => !excluded.includes(f)), arg: !!o.arg, ...(o.optionalArg ? { optionalArg: true } : {}), ...(fileRole(o) ? { file: fileRole(o)! } : {}) })).filter(o => o.flags.length > 0), excluded };
+  const spellings = (o: Investigation["options"][number]) => [...o.flags, ...(o.fixed ?? [])];
+  const excluded = [...new Set(options.filter((o) => !offeredOption(o, allowNetwork)).flatMap(spellings))];
+  return { port, allowed: offered.map(o => ({ flags: spellings(o).filter(f => !excluded.includes(f)), arg: !!o.arg, ...((o.args?.length ?? 1) > 1 ? { arity: o.args!.length } : {}), ...(o.optionalArg ? { optionalArg: true } : {}), ...(fileRole(o) ? { file: fileRole(o)! } : {}) })).filter(o => o.flags.length > 0), excluded };
+}
+
+/** How an option is shown to a caller: every spelling and every value it takes. */
+export function optionText(o: Investigation["options"][number]): string {
+  const values = o.args?.length ? o.args : o.arg ? [o.arg] : [];
+  return `${[...o.flags, ...(o.fixed ?? [])].join("/")}${values.map((v) => ` <${v.replace(/^<(.*)>$/, "$1")}>`).join("")}${!values.length && o.optionalArg ? `[=${o.optionalArg}]` : ""}`;
+}
+
+/**
+ * Nonzero exit codes with a demonstrated meaning for one operation. Appearing during acquisition
+ * is not enough: a program that rejects its input also exits nonzero. A code N counts only when
+ *   - every trial that exited N printed output and wrote nothing to standard error,
+ *   - at least one of them printed output derived from its input (`working`: a result, not a
+ *     usage text or an error report), and
+ *   - the same operation exited 0 on some other input,
+ * so N distinguishes inputs, as "differences found" does for a comparison, rather than reporting
+ * trouble. Each code keeps the evidence; every run re-checks the observable part (classifyExit).
+ */
+export function semanticExits(working: Array<{ r: { code: number | null; stderr: string } }>, all: Array<{ r: { code: number | null; stderr: string; stdout: string; timedOut?: boolean; truncated?: boolean; limit?: string } }>): Record<string, { meaning: string; evidence: string }> {
+  const out: Record<string, { meaning: string; evidence: string }> = {};
+  const finished = all.filter((t) => !t.r.timedOut && !t.r.truncated && !t.r.limit);
+  const zero = finished.filter((t) => t.r.code === 0).length;
+  for (const code of new Set(working.map((t) => t.r.code ?? -1))) {
+    if (code === 0 || code < 0) continue;
+    const shown = working.filter((t) => t.r.code === code).length;
+    const everyCode = finished.filter((t) => t.r.code === code);
+    if (!zero || everyCode.some((t) => t.r.stderr.trim() || !t.r.stdout.trim())) continue;
+    out[String(code)] = {
+      meaning: `exit ${code} is a valid outcome that depends on the input`,
+      evidence: `${everyCode.length} trial(s) exited ${code}, every one printing output and nothing on standard error, ${shown} with output derived from the input; ${zero} trial(s) of the same operation exited 0`,
+    };
+  }
+  return out;
 }
 
 /**
@@ -401,7 +498,7 @@ export async function replayExamples(inv: CliInvoke, sandbox: Sandbox): Promise<
     const out = inv.volatile === "timestamps" ? withoutTimes(stripped) : stripped;
     let applicationError = false;
     try { applicationError = reportsApplicationError(JSON.parse(r.stdout)); } catch {}
-    if (!r.limit && !r.timedOut && !r.truncated && inv.okExit.includes(r.code ?? -1) && !applicationError &&
+    if (!r.limit && !r.timedOut && !r.truncated && classifyExit(inv, { code: r.code, stderr: r.stderr, producedOutput: !!out.trim() }).classification !== "reported-error" && !applicationError &&
         crypto.createHash("sha256").update(out).digest("hex") === ex.outputSha256) matched++;
     else mismatches.push(`example ${i + 1}: expected ${JSON.stringify(ex.outputPreview.slice(0, 60))}, got ${JSON.stringify(out.slice(0, 60))}`);
   }
@@ -664,7 +761,7 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
     }
     const subProvider = `cli:${slug(name)}`;
     const jsonByDefault = inv.options.some((o) => o.flags.includes("--json") && /\bdefault\b/i.test(o.description));
-    const optionList = (xs: Investigation["options"]) => xs.slice(0, 40).map((o) => `${o.flags.join("/")}${o.arg ? ` <${o.arg}>` : o.optionalArg ? `[=${o.optionalArg}]` : ""}`).join(", ");
+    const optionList = (xs: Investigation["options"]) => xs.slice(0, 40).map(optionText).join(", ");
     const caps: Capability[] = [];
     for (const sub of subcommands.slice(0, MAX_VERBS)) {
       if (!/^[a-z][a-z0-9._-]*$/.test(sub.name)) continue;
@@ -866,16 +963,18 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
         source: "cli",
         inputs: [
           { name: "input", type: "text", required: false, anyText: true, description: 'Content given on standard input: a string (UTF-8 text) or an artefact value ({"type":"bytes","base64":…}, {"type":"text",…,"encoding":…}, {"type":"artefact","ref":…}).' },
-          { name: "options", type: "list:text", required: false, description: `Documented options and their values, one item each: ${declared.slice(0, 40).map((o) => `${o.flags.join("/")}${o.arg ? ` <${o.arg}>` : o.optionalArg ? `[=${o.optionalArg}]` : ""}`).join(", ")}` },
+          { name: "options", type: "list:text", required: false, description: `Documented options and their values, one item each: ${declared.slice(0, 40).map(optionText).join(", ")}` },
           { name: "files", type: "json", required: false, description: ARTEFACT_FILES_DESCRIPTION },
           { name: "operands", type: "list:text", required: false, description: 'Names from "files" or "outputs" to append as positional operands, in this order. Omit for all input files; [] for none. Auxiliary files used by options need not also be operands.' },
-          { name: "outputs", type: "list:text", required: false, description: 'Flat names of files the program creates (as an operand or an option value). Each is returned as a byte-exact artefact {"type":"artefact","ref":"sha256:…","bytes":n}; a declared output the program does not create fails the run. Read the bytes with context_run_status {"artefact": ref}.' },
+          { name: "outputs", type: "list:text", required: false, description: 'Flat names of files the program creates (as an operand or an option value). Each is returned as a byte-exact artefact {"type":"artefact","ref":"sha256:<hex>.<grant>","bytes":n} only when the run succeeds; a run that fails, or does not create a declared output, returns none. Read the bytes with context_run_status {"artefact": ref}.' },
           { name: "stdoutAs", type: "text", required: false, description: '"text" (default: stdout must be UTF-8) or "artefact" (stdout returned as exact bytes). With "outputs" or "artefact", the result is {"exitCode", "stdout", "outputs"}.' },
         ],
         outputs: [{ name: "", type: "text", required: true }],
         risk: "read",
         tags: [name, "declared-interface", "declared-only", "direct-only", "unsupported"],
-        invoke: { kind: "cli", bin, args: [], stdin: "input", okExit: [0, 1], output: "text", sha256: inv.program.sha256, options: optionContract(inv.options), filesPort: "files", operandsPort: "operands", outputsPort: "outputs", stdoutAsPort: "stdoutAs", ...localeProfileField },
+        // Behaviour was never observed, so no nonzero exit has a demonstrated meaning: only exit 0
+        // can establish a result (a program reporting failure with exit 1 is a failure).
+        invoke: { kind: "cli", bin, args: [], stdin: "input", okExit: [0], output: "text", sha256: inv.program.sha256, options: optionContract(inv.options), filesPort: "files", operandsPort: "operands", outputsPort: "outputs", stdoutAsPort: "stdoutAs", ...localeProfileField },
       };
       inv.summary += `; offered as a declared interface only (${declared.length} documented options)`;
       return { reflection: { provider: { id: providerId, title: `${name} (command-line program)`, source: "cli", origin: bin, learnedAt: new Date().toISOString(), capabilityIds: [id], meta: { investigation: inv, sha256: inv.program.sha256, version: inv.program.version } }, capabilities: [cap] }, investigation: inv };
@@ -916,7 +1015,9 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
   const empty = await run("probe empty input", best.id === "files" ? Array.from({ length: best.arity }, (_, i) => `empty${i + 1}.txt`) : [], best.id === "files" ? { files: Object.fromEntries(Array.from({ length: best.arity }, (_, i) => [`empty${i + 1}.txt`, ""])) } : { stdin: "" });
 
   // 3. Behaviours: group working trials by mode; keep modes whose output differs from default.
-  const okExit = [...new Set(trials.filter(works).map((t) => t.r.code ?? -1))].sort();
+  // Exit codes seen with output in working trials: evidence only. Success codes are per operation
+  // (each capability's okExit, with exitSemantics for any nonzero one).
+  const seenExit = [...new Set(trials.filter(works).map((t) => t.r.code ?? -1))].sort((a, b) => a - b);
   const trialInput = (t: Trial) => JSON.stringify([t.channel, t.kind, t.literals, t.inputs]);
   const defaultOutputs = new Map(trials.filter(t => t.mode === "default" && works(t)).map(t => [trialInput(t), t.r.stdout]));
   const modes = [...new Set(trials.map((t) => t.mode))];
@@ -993,7 +1094,8 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
     // stdout, no timeout, truncation or sandbox limit, on an input distinct from every input that
     // produced output. Recorded as evidence for the caller; the run-time permission to return an
     // empty result rests on the program's own exit code, not on having happened to observe one.
-    const modeOkExit = [...new Set(mt.map((t) => t.r.code ?? -1))];
+    const exitSemantics = semanticExits(rawMt, [...all, ...(mode === "default" && empty ? [{ r: empty }] : [])]);
+    const modeOkExit = [0, ...Object.keys(exitSemantics).map(Number)];
     const producedInput = new Set(mt.map(trialInput));
     const observedEmpty = all.filter((t) => !t.r.timedOut && !t.r.truncated && !t.r.limit && !undecodable(t) && t.r.stdout.length === 0 && modeOkExit.includes(t.r.code ?? -1) && !producedInput.has(trialInput(t)));
     const id = `${providerId}:${slug(mode)}`;
@@ -1043,9 +1145,10 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
       bin,
       args: [...first.flags, ...literalNames.map((n) => ({ input: literalPort(n), literal: true })), ...(best.id === "files" ? portNames.map((n) => ({ input: n })) : [])],
       ...(best.id === "stdin" ? { stdin: names[0] } : {}),
-      // Exit 0 is success by convention; other codes count only where observed with real output
-      // (diff-like programs exit 1 when inputs differ).
-      okExit: [...new Set([0, ...mt.map((t) => t.r.code ?? -1)])].sort(),
+      // Exit 0 is success by convention. A nonzero code counts only with a demonstrated meaning
+      // (a diff-like program exits 1 when its inputs differ): see semanticExits.
+      okExit: [0, ...Object.keys(exitSemantics).map(Number)].sort((a, b) => a - b),
+      ...(Object.keys(exitSemantics).length ? { exitSemantics } : {}),
       output: out,
       ...(lineType ? { lineType } : {}),
       ...(observedEmpty.length ? { emptyResult: "observed" as const } : {}),
@@ -1106,8 +1209,9 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
     for (const o of offered.filter((x) => x.arg).slice(0, 6)) {
       if (!baseOut) break;
       const flag = o.flags[o.flags.length - 1];
-      const value = literalSample(o.arg!, 0, baseOut.inputs[0] ?? "");
-      const t = await attempt(`option ${flag}`, [flag, value], best, primaryKind, 0);
+      const values = (o.args ?? [o.arg!]).map((a, k) => literalSample(a, k, baseOut.inputs[0] ?? ""));
+      const value = values.join(" ");
+      const t = await attempt(`option ${flag}`, [flag, ...values], best, primaryKind, 0);
       if (!t) break;
       const changed = works(t) && t.r.stdout !== baseOut.r.stdout;
       claim(id, `option ${flag} ${o.arg} (${o.description.slice(0, 80)}) changes the output (tried ${flag} ${value})`, changed ? "observed" : works(t) ? "contradicted" : "unknown", changed ? "output differs from the default for the same input" : works(t) ? "same output as the default" : "the run produced no usable output");
@@ -1121,10 +1225,10 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
       source: "cli",
       inputs: [
         ...base.inputs.map((p0) => ({ ...p0, required: false })),
-        { name: "options", type: "list:text", required: false, description: `Documented options and their values, one item each: ${offered.slice(0, 40).map((o) => `${o.flags.join("/")}${o.arg ? ` <${o.arg}>` : o.optionalArg ? `[=${o.optionalArg}]` : ""}`).join(", ")}` },
+        { name: "options", type: "list:text", required: false, description: `Documented options and their values, one item each: ${offered.slice(0, 40).map(optionText).join(", ")}` },
         { name: "files", type: "json", required: false, description: ARTEFACT_FILES_DESCRIPTION },
         { name: "operands", type: "list:text", required: false, description: 'Names from "files" or "outputs" to append as positional operands, in this order. Omit for all input files; [] for none. Auxiliary files used by options need not also be operands.' },
-        { name: "outputs", type: "list:text", required: false, description: 'Flat names of files the program creates (as an operand or an option value). Each is returned as a byte-exact artefact {"type":"artefact","ref":"sha256:…","bytes":n}; a declared output the program does not create fails the run. Read the bytes with context_run_status {"artefact": ref}.' },
+        { name: "outputs", type: "list:text", required: false, description: 'Flat names of files the program creates (as an operand or an option value). Each is returned as a byte-exact artefact {"type":"artefact","ref":"sha256:<hex>.<grant>","bytes":n} only when the run succeeds; a run that fails, or does not create a declared output, returns none. Read the bytes with context_run_status {"artefact": ref}.' },
         { name: "stdoutAs", type: "text", required: false, description: '"text" (default: stdout must be UTF-8) or "artefact" (stdout returned as exact bytes). With "outputs" or "artefact", the result is {"exitCode", "stdout", "outputs"}.' },
       ],
       outputs: base.outputs,
@@ -1150,7 +1254,7 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
     claim(id, "returns exact standard output without JSON value conversion", "declared", "runtime representation; same program, arguments, sandbox and authority checks");
   }
   if (empty) claim(name, `on empty input exits ${empty.code}${empty.stdout.trim() ? " with output" : " without output"}`, "observed", empty.stderr.slice(0, 120));
-  inv.summary = `${capabilities.length} capabilit${capabilities.length === 1 ? "y" : "ies"} from ${inv.runs.length} sandboxed runs (${okChannels.map((c) => c.id).join(", ")}; ok exit ${okExit.join("/")})`;
+  inv.summary = `${capabilities.length} capabilit${capabilities.length === 1 ? "y" : "ies"} from ${inv.runs.length} sandboxed runs (${okChannels.map((c) => c.id).join(", ")}; exit seen with output ${seenExit.join("/")}; success exit ${[...new Set(capabilities.flatMap((c) => c.invoke.kind === "cli" ? c.invoke.okExit : []))].sort((a, b) => a - b).join("/") || "none"})`;
   if (!capabilities.length) return { reflection: null, investigation: inv };
   return {
     reflection: {

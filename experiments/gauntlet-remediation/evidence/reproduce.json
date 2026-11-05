@@ -1,0 +1,191 @@
+{
+  "at": "2026-11-05T13:39:58.519Z",
+  "node": "v26.12.0",
+  "platform": "darwin arm64",
+  "results": [
+    {
+      "label": "20bc3a7",
+      "src": "/private/tmp/claude-501/-Users-ross-src-rightclick-x/9910dba2-1bf8-48e6-97fa-516190f9f4f3/scratchpad/remediation/at-20bc3a7",
+      "commit": "20bc3a7ac0c4086e921fba2b284ae55447723a34",
+      "CE1": {
+        "scenario": "context_run cli:sort:invoke {options:[\"-n\"]} on 10/9/100",
+        "expected": "completed, 9 10 100",
+        "status": "failed",
+        "error": "option -n needs a value"
+      },
+      "CE2": {
+        "scenario": "cp a.bin a.bin (exit 1, nothing printed), stdoutAs artefact",
+        "expected": "failed, no artefact",
+        "status": "completed",
+        "exitCode": 1,
+        "returnedArtefact": true
+      },
+      "CE3": {
+        "scenario": "tiffcp a.tif <truncated b.tif> out.tif",
+        "expected": "failed, no artefact",
+        "status": "completed",
+        "exitCode": 1,
+        "returnedArtefact": true,
+        "pagesInReturnedArtefact": 1
+      },
+      "CE4": {
+        "scenario": "dwebp in.webp -crop 1 1 2 2 -ppm -o out.ppm",
+        "expected": "completed, a 2x2 PPM",
+        "status": "failed",
+        "error": "option \"1\" is not one this program documents; allowed: -pam -ppm -pgm -yuv -nofancy -nofilter -nodither -dither -alpha_dither -mt -crop -resize -flip -alpha -incremental -v -quiet -noasm -o"
+      },
+      "CE5": {
+        "S6": {
+          "scenario": "two processes each put 5 x 60 MiB into one 512 MiB store",
+          "processA": [
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          "processB": [
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          "bytesOnDisk": 629145600,
+          "limit": 536870912,
+          "boundHeld": false
+        },
+        "S4": {
+          "scenario": "put() over a truncated file at the content address, then read after restart",
+          "putOk": true,
+          "bytesOnDiskAfterPut": 1000,
+          "expectedBytes": 1048576,
+          "readAfterRestart": "refused: artefact sha256:28a1d513db26… failed its content check; refused (HTTP 409 equiva"
+        },
+        "R5": {
+          "scenario": "read with the bare digest of content another caller stored",
+          "digestRead": "served"
+        },
+        "S9": {
+          "scenario": "one process reads 4 x 60 MiB artefacts",
+          "bytesHeldInMemory": 251658240
+        }
+      }
+    },
+    {
+      "label": "23fb754",
+      "src": "/private/tmp/claude-501/-Users-ross-src-rightclick-x/9910dba2-1bf8-48e6-97fa-516190f9f4f3/scratchpad/remediation/at-23fb754",
+      "commit": "23fb754b8cc8b77012d72d9b3e06c634b1783f93",
+      "CE1": {
+        "scenario": "context_run cli:sort:invoke {options:[\"-n\"]} on 10/9/100",
+        "expected": "completed, 9 10 100",
+        "status": "completed",
+        "exitCode": 0,
+        "outcome": "result-established",
+        "exitStatus": {
+          "process": "completed",
+          "code": 0,
+          "classification": "success",
+          "basis": "exit 0 (success by convention)"
+        },
+        "output": "9\n10\n100\n"
+      },
+      "CE2": {
+        "scenario": "cp a.bin a.bin (exit 1, nothing printed), stdoutAs artefact",
+        "expected": "failed, no artefact",
+        "status": "failed",
+        "error": "/bin/cp exited 1 without output: cp: a.bin and a.bin are identical (not copied).\n (exit 1 is not a success code of this operation (success: 0)); no result is established; not retried: CLI side effects",
+        "exitCode": 1,
+        "outcome": "not-established",
+        "exitStatus": {
+          "process": "completed",
+          "code": 1,
+          "classification": "reported-error",
+          "basis": "exit 1 is not a success code of this operation (success: 0)"
+        },
+        "returnedArtefact": false
+      },
+      "CE3": {
+        "scenario": "tiffcp a.tif <truncated b.tif> out.tif",
+        "expected": "failed, no artefact",
+        "status": "failed",
+        "error": "/opt/homebrew/Cellar/libtiff/4.7.1_1/bin/tiffcp exited 1: TIFFFetchDirectory: Warning, Requested memory size for TIFF directory of 108 is greater than filesize 20. Memory not allocated, TIFF directory",
+        "exitCode": 1,
+        "outcome": "not-established",
+        "exitStatus": {
+          "process": "completed",
+          "code": 1,
+          "classification": "reported-error",
+          "basis": "exit 1 is not a success code of this operation (success: 0)"
+        },
+        "returnedArtefact": false,
+        "failureEvidence": {
+          "reason": "/opt/homebrew/Cellar/libtiff/4.7.1_1/bin/tiffcp exited 1: TIFFFetchDirectory: Warning, Requested memory size for TIFF directory of 108 is greater than filesize 20. Memory not allocated, TIFF directory not read.\nTIFFReadDirectory: Failed to read directory at offset 16.\n (exit 1 is not a success code ",
+          "stderrPreview": "TIFFFetchDirectory: Warning, Requested memory size for TIFF directory of 108 is greater than filesize 20. Memory not allocated, TIFF directory not read.\nTIFFReadDirectory: Failed to read directory at offset 16.\n",
+          "stdout": {
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "bytes": 0
+          },
+          "unacceptedOutputs": [
+            {
+              "name": "out.tif",
+              "sha256": "ff36cea5276dc7ba0fda3276384fcb44598aa29c74b895e58e9904425fcc842c",
+              "bytes": 154
+            }
+          ]
+        }
+      },
+      "CE4": {
+        "scenario": "dwebp in.webp -crop 1 1 2 2 -ppm -o out.ppm",
+        "expected": "completed, a 2x2 PPM",
+        "status": "completed",
+        "exitCode": 0,
+        "outcome": "result-established",
+        "exitStatus": {
+          "process": "completed",
+          "code": 0,
+          "classification": "success",
+          "basis": "exit 0 (success by convention)"
+        },
+        "ppmHeader": "P6\n2 2\n255\n"
+      },
+      "CE5": {
+        "S6": {
+          "scenario": "two processes each put 5 x 60 MiB into one 512 MiB store",
+          "processA": [
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          "processB": [
+            true,
+            true,
+            true,
+            false,
+            false
+          ],
+          "bytesOnDisk": 503316480,
+          "limit": 536870912,
+          "boundHeld": true
+        },
+        "S4": {
+          "scenario": "put() over a truncated file at the content address, then read after restart",
+          "putOk": true,
+          "bytesOnDiskAfterPut": 1048576,
+          "expectedBytes": 1048576,
+          "readAfterRestart": "exact"
+        },
+        "R5": {
+          "scenario": "read with the bare digest of content another caller stored",
+          "digestRead": "refused: sha256:2546dee3ee09… is a content digest, not a read grant. Digests appear in provenance r"
+        },
+        "S9": {
+          "scenario": "one process reads 4 x 60 MiB artefacts",
+          "bytesHeldInMemory": 62914560
+        }
+      }
+    }
+  ]
+}
