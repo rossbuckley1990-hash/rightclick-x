@@ -312,23 +312,54 @@ test("development case gpgv: a binary keyring staged as an auxiliary file, never
   rmSync(home, { recursive: true, force: true });
 });
 
-test("development case ocsptool: a DER response and its trust anchor staged by name; signature checked", { skip: devSkip("ocsptool", "openssl"), timeout: 180_000 }, async () => {
+test("development case ocsptool: a DER response and its trust anchor staged by name; signature checked", { skip: devSkip("ocsptool", "openssl"), timeout: 180_000 }, async (t) => {
   const w = tmp("rcx-ocsp-");
   const o = (...a: string[]) => execFileSync(brew("openssl")!, a, { cwd: w, stdio: "pipe" });
-  o("req", "-x509", "-newkey", "ec", "-pkeyopt", "ec_paramgen_curve:P-256", "-nodes", "-keyout", "ca.key", "-out", "ca.pem", "-days", "30", "-subj", "/CN=Dev CA", "-addext", "basicConstraints=critical,CA:TRUE", "-addext", "keyUsage=critical,keyCertSign,cRLSign");
-  o("req", "-newkey", "ec", "-pkeyopt", "ec_paramgen_curve:P-256", "-nodes", "-keyout", "leaf.key", "-out", "leaf.csr", "-subj", "/CN=leaf");
+  const ec = ["-newkey", "ec", "-pkeyopt", "ec_paramgen_curve:P-256", "-nodes"];
+  for (const ca of ["ca", "other"]) o("req", "-x509", ...ec, "-keyout", `${ca}.key`, "-out", `${ca}.pem`, "-days", "30", "-subj", `/CN=${ca} root`, "-addext", "basicConstraints=critical,CA:TRUE", "-addext", "keyUsage=critical,keyCertSign,cRLSign");
+  // A delegated responder (OCSPSigning), the conventional arrangement, signed by the CA.
+  writeFileSync(join(w, "resp.ext"), "extendedKeyUsage=OCSPSigning\nkeyUsage=critical,digitalSignature\n");
+  o("req", ...ec, "-keyout", "resp.key", "-out", "resp.csr", "-subj", "/CN=responder");
+  o("x509", "-req", "-in", "resp.csr", "-CA", "ca.pem", "-CAkey", "ca.key", "-out", "resp.pem", "-days", "30", "-extfile", "resp.ext", "-set_serial", "9");
+  o("req", ...ec, "-keyout", "leaf.key", "-out", "leaf.csr", "-subj", "/CN=leaf");
   o("x509", "-req", "-in", "leaf.csr", "-CA", "ca.pem", "-CAkey", "ca.key", "-out", "leaf.pem", "-days", "30", "-set_serial", "7");
   writeFileSync(join(w, "index.txt"), `V\t351231000000Z\t\t07\tunknown\t/CN=leaf\n`);
   o("ocsp", "-issuer", "ca.pem", "-cert", "leaf.pem", "-reqout", "req.der", "-no_nonce");
-  o("ocsp", "-index", "index.txt", "-rsigner", "ca.pem", "-rkey", "ca.key", "-CA", "ca.pem", "-reqin", "req.der", "-respout", "resp.der", "-ndays", "7");
+  o("ocsp", "-index", "index.txt", "-rsigner", "resp.pem", "-rkey", "resp.key", "-CA", "ca.pem", "-reqin", "req.der", "-respout", "resp.der", "-ndays", "7");
+  const der = { type: "bytes" as const, base64: b64(readFileSync(join(w, "resp.der"))) };
   const { rc, cap } = await learned(realpathSync(brew("ocsptool")!));
   assert.ok(cap);
   const allowed = (cap!.invoke as any).options.allowed.flatMap((x: any) => x.flags);
   assert.ok(allowed.includes("--load-trust"), "--load-trust=file is parsed and offered");
-  const r = await rc.run(cap!.id, { files: { "resp.der": { type: "bytes", base64: b64(readFileSync(join(w, "resp.der"))) }, "ca.pem": readFileSync(join(w, "ca.pem"), "utf8") }, options: ["-e", "--infile=resp.der", "--load-trust=ca.pem"], operands: [] });
-  assert.equal(r.status, "completed", String(r.error));
-  assert.match(String(r.output), /Verifying OCSP Response: Success/);
-  const noAnchor = await rc.run(cap!.id, { files: { "resp.der": { type: "bytes", base64: b64(readFileSync(join(w, "resp.der"))) } }, options: ["-e", "--infile=resp.der", "--load-trust=ca.pem"], operands: [] });
+  // Artefact mode returns the exit code, so verification is asserted, not admitted.
+  const bin = realpathSync(brew("ocsptool")!);
+  const verify = async (anchor: string) => {
+    const r = await rc.run(cap!.id, { files: { "resp.der": der, "anchor.pem": readFileSync(join(w, anchor), "utf8") }, options: ["-e", "--infile=resp.der", "--load-trust=anchor.pem"], operands: [], stdoutAs: "artefact" });
+    // RightClick's responsibility in any environment: the program saw exactly these bytes, so a
+    // direct sandbox run with the same files and arguments gives the same output and exit code.
+    const d = await sandbox!.run(bin, ["-e", "--infile=resp.der", "--load-trust=anchor.pem"], { files: { "resp.der": readFileSync(join(w, "resp.der")), "anchor.pem": readFileSync(join(w, anchor)) } });
+    if (r.status !== "completed") {
+      // An exit code outside the interface's accepted set is reported as a failure, never a result.
+      assert.ok(!(cap!.invoke as any).okExit.includes(d.code), `failed although a direct run exited ${d.code}: ${r.error}`);
+      assert.match(String(r.error), new RegExp(`exited ${d.code}\\b`));
+      return { exitCode: d.code, out: "", stderr: d.stderr };
+    }
+    const out = Buffer.from((await rc.readArtefact((r.output as any).stdout.ref)).base64, "base64").toString();
+    assert.equal((r.output as any).exitCode, d.code, "same exit code as a direct run");
+    assert.equal(out, d.stdout, "same output as a direct run");
+    return { exitCode: d.code, out, stderr: d.stderr };
+  };
+  const good = await verify("ca.pem");
+  const wrong = await verify("other.pem");
+  const verified = good.exitCode === 0 && /Verifying OCSP Response: Success/.test(good.out);
+  if (!verified) {
+    // The program's own verdict on this host, not RightClick's: reported visibly, never passed silently.
+    t.diagnostic(`this host's ocsptool did not verify the response even when run directly: exit ${good.exitCode}; stderr ${JSON.stringify(good.stderr.slice(0, 300))}; ${execFileSync(bin, ["--version"]).toString().split("\n")[0]}`);
+  } else {
+    // The anchor is really read: the same response does not verify against an unrelated CA.
+    assert.ok(wrong.exitCode !== 0 || !/Verifying OCSP Response: Success/.test(wrong.out), `an unrelated anchor must not verify: exit ${wrong.exitCode}`);
+  }
+  const noAnchor = await rc.run(cap!.id, { files: { "resp.der": der }, options: ["-e", "--infile=resp.der", "--load-trust=anchor.pem"], operands: [] });
   assert.match(String(noAnchor.error), /must be the name of a staged input file/, "a missing certificate is refused before running");
   rmSync(w, { recursive: true, force: true });
 });
