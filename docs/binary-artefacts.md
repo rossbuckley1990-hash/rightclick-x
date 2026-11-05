@@ -36,15 +36,30 @@ oversized content are refused before anything runs.
 **Store.** `ArtefactStore` is content-addressed and, under `bin/rcx.ts`, persisted next to the
 state file (`<state>.artefacts/`).
 
-- **Bounds.** At most 64 MiB per artefact and 512 MiB in total, counted from the content actually
-  on disk under a lock file, so the bound holds across restarts and between concurrent processes.
+- **Bounds.** At most 64 MiB per artefact and 512 MiB in total, counted from what is actually on
+  disk under a lock file (content, the holds files that keep it, and in-flight temporary files), so
+  the bound holds across restarts, between concurrent processes, and against many tiny artefacts
+  whose metadata would otherwise be uncounted. Filesystem block rounding is not counted.
 - **Writes.** Content goes to a temporary file. It is flushed, read back and hashed, then renamed
   into place, and only then acknowledged.
 - **Existing files.** A file already at the address is trusted only if its bytes hash to its name.
   A truncated or tampered file, or a link, is replaced.
-- **Interrupted writes and dead locks.** A temporary file left by a write that never finished
-  counts against the quota until it is swept. It is swept once its writer is gone. A lock left by
-  a dead process is broken.
+- **Interrupted writes.** Every temporary file is written under the lock, so one found by a sweep
+  (which also runs under the lock) was abandoned and is removed. Until then it counts.
+- **The lock.** `.lock` is created exclusively and records its holder's pid and where that pid is
+  valid: the host name and, on Linux, the pid namespace. Only its holder removes it, except that an
+  abandoned lock may be broken:
+  - **Same host and namespace:** abandoned when its pid is no longer alive.
+  - **Another host or container, or a lock without that record:** the pid cannot be checked here,
+    so the lock is abandoned only after 120 s, far longer than any critical section.
+  - **Created but never written:** abandoned after 10 s.
+  - **Breaking is serialised** by a second exclusive file, `.lock.break`. The breaker re-reads the
+    lock and removes it only if it is still the exact file judged abandoned (same content and
+    inode). A live lock is never moved, so no process can slip in while it is absent. (The previous
+    rename-aside breaking did move it, and let two processes hold the lock: 14 overlapping critical
+    sections in 6 stress runs, 0 since.) Residual risk: a breaker stalled for over 10 s between its
+    re-check and the removal.
+  - **A waiter gives up** after 30 s with an error that names the lock file and its holder.
 - **Reads.** Every read re-hashes the content, so a modified file is refused. The in-process read
   cache is bounded (64 MiB).
 
@@ -68,6 +83,9 @@ never reads anything.
 exact bytes of the named output files before deleting the private directory.
 
 - It reads only regular files, never through a symbolic link, within the per-file limit.
+- **By descriptor.** Each output is opened without following a link, checked to be
+  the same regular file that was inspected, and read through that descriptor, so a process that
+  outlived the program cannot swap in a link to a host file between the check and the read.
 - It reads them only from a run that finished cleanly: no timeout, truncation or limit.
 - Output names follow the same flat-name rules as inputs and may not collide with an input.
 
@@ -98,8 +116,10 @@ in `exitSemantics`. One is recorded only when the investigation saw all three of
 That is diff's "differences found". Appearing during acquisition is not enough. Every run
 re-checks the observable part: exit N with a diagnostic on standard error, or with no output, is a
 reported error. A declared interface was never observed, so its contract is exit 0 only. State
-learned before this contract (`okExit [0,1]` with no evidence) cannot turn a nonzero exit into a
-result. Whether the outcome the caller wanted was achieved is a separate question, answered by the
+learned before this contract (`okExit [0,1]` with no evidence, as main persisted for declared
+interfaces and for observed programs such as diff) cannot turn a nonzero exit into a result. It is
+not reused either: learning such a program again, or the repair a failed run triggers, investigates
+it afresh, so its nonzero outcome is re-established with evidence or dropped. Whether the outcome the caller wanted was achieved is a separate question, answered by the
 run's verification status. A transport-complete exit-0 run with output nothing checked stays
 `unverified`.
 
@@ -120,7 +140,13 @@ run's verification status. A transport-complete exit-0 run with output nothing c
 - **A placeholder shared by the short spelling.** In `-k, --key=KEYDEF`, `-k` takes the argument
   too.
 - **Several values.** An option documented with several placeholders (`-crop <x> <y> <w> <h>`)
-  takes that many separate items, each checked. Values may be negative numbers.
+  takes that many separate items, each checked.
+- **A value that looks like an option is refused** when it is passed as a separate item. Numbers
+  (`-5`, `-0.25`) and `-` are values. The number of values comes from documentation, which is
+  sometimes misread (CE1 gave `-n` a value). If an option took fewer values than the contract
+  says, the program would read the next item as an option of its own, and it could carry an
+  excluded option past the check (`-n --compress-program=sh`). The attached forms
+  (`--key=-x`, `-k-x`) are unambiguous and are accepted.
 - **Other argument forms.** `#`, lower-case values with bracketed parts (`lzw[:opts]`), dot leaders
   and `-o output, --output=output` are read as documented.
 

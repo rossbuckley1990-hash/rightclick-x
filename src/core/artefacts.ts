@@ -45,6 +45,8 @@ export interface ArtefactStoreOptions {
   retentionMs?: number;
   cacheBytes?: number;
   maxHolds?: number;
+  /** How long to wait for another process's lock before refusing (default 30 s). */
+  lockWaitMs?: number;
   /** Clock, for retention. */
   now?: () => number;
 }
@@ -65,9 +67,16 @@ const CONTENT_FILE = /^[0-9a-f]{64}$/;
 const HOLDS_FILE = /^([0-9a-f]{64})\.holds$/;
 const TMP_FILE = /^\.tmp-(\d+)-[A-Za-z0-9_-]+$/;
 const B64 = /^[A-Za-z0-9+/]*={0,2}$/;
-/** A temporary file this old is abandoned even if a process with its pid is alive (pids are reused). */
-const STALE_TMP_MS = 60 * 60 * 1000;
 const LOCK_WAIT_MS = 30_000;
+/** A lock created but never written (a crash between the two) is abandoned after this long. */
+const UNWRITTEN_LOCK_MS = 10_000;
+/**
+ * A lock whose holder's pid cannot be checked here (another host or pid namespace) is abandoned
+ * only after this long: far longer than any critical section, which stores at most one artefact.
+ */
+const FOREIGN_LOCK_MS = 120_000;
+/** The breaker lock is held for two system calls; one older than this was left by a crash. */
+const BREAKER_STALE_MS = 10_000;
 
 export class ArtefactError extends Error {}
 
@@ -136,6 +145,19 @@ function sameGrant(a: string, b: string): boolean {
 function pidAlive(pid: number): boolean {
   try { process.kill(pid, 0); return true; } catch (e) { return (e as { code?: string }).code === "EPERM"; }
 }
+/**
+ * Where a pid means something: the host and, on Linux, the pid namespace. A lock written from
+ * another container or machine sharing the directory names a pid this process cannot check, so
+ * its liveness is never judged by pid.
+ */
+let pidScopeCache: string | undefined;
+async function pidScope(fs: Fs): Promise<string> {
+  if (pidScopeCache !== undefined) return pidScopeCache;
+  const os = await import("node:os");
+  let ns = "";
+  try { ns = fs.readlinkSync("/proc/self/ns/pid"); } catch { /* no pid namespaces here */ }
+  return (pidScopeCache = `${os.hostname()}|${ns}`);
+}
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 const unknown = (ref: string) => new ArtefactError(`unknown artefact ${ref.slice(0, 19)}…: this runtime holds no such grant (released, never issued, or for another store) (HTTP 404 equivalent: nothing was read)`);
@@ -172,6 +194,7 @@ export class ArtefactStore {
       retentionMs: opts.retentionMs ?? ARTEFACT_LIMITS.retentionMs,
       cacheBytes: opts.cacheBytes ?? ARTEFACT_LIMITS.cacheBytes,
       maxHolds: opts.maxHolds ?? ARTEFACT_LIMITS.maxHolds,
+      lockWaitMs: opts.lockWaitMs ?? LOCK_WAIT_MS,
     };
   }
 
@@ -196,16 +219,25 @@ export class ArtefactStore {
       }
       return this.locked(async (fs) => {
         const p = `${this.dir}/${hex}`;
-        const existing = await this.inspect(fs, p, hex);
+        let existing = await this.inspect(fs, p, hex);
         if (existing.state === "other") throw new ArtefactError(`store entry ${hex.slice(0, 12)}… is not a regular file; nothing was stored`);
-        if (existing.state !== "valid") {
-          // A file at the address that is not this content (a crash mid-write before writes were
-          // atomic, or tampering) is replaced, never trusted, and its space is reclaimed.
+        // What this put adds on disk: the content unless it is already there (a file at the address
+        // that is not this content, from a crash or tampering, is replaced and its space reclaimed),
+        // and at most one more hold in its holds file. The holds count against the bound too.
+        const entry = JSON.stringify({ grant: "x".repeat(22), holder: meta.holder, ...(meta.name ? { name: meta.name } : {}), at: now, until: now + this.limits.retentionMs }).length + 1;
+        const growth = () => {
           const reclaim = existing.state === "invalid" ? existing.size : 0;
-          if (this.diskUsage(fs) - reclaim + b.length > this.limits.maxStoreBytes) this.sweepDisk(fs, now);
-          if (this.diskUsage(fs) - reclaim + b.length > this.limits.maxStoreBytes) throw this.full();
-          await this.writeVerified(fs, p, b, hex);
+          const content = existing.state === "valid" ? 0 : b.length - reclaim;
+          const holdsNow = (() => { try { return fs.lstatSync(`${p}.holds`).size; } catch { return 0; } })();
+          return content + entry + (holdsNow ? 0 : JSON.stringify({ v: 1, bytes: b.length, holds: [] }).length);
+        };
+        if (this.diskUsage(fs) + growth() > this.limits.maxStoreBytes) {
+          this.sweepDisk(fs, now);
+          // The sweep may have deleted this very content (every hold on it had expired).
+          existing = await this.inspect(fs, p, hex);
+          if (this.diskUsage(fs) + growth() > this.limits.maxStoreBytes) throw this.full();
         }
+        if (existing.state !== "valid") await this.writeVerified(fs, p, b, hex);
         const holds = this.readHolds(fs, hex) ?? { v: 1 as const, bytes: b.length, holds: [] };
         holds.bytes = b.length;
         holds.holds = holds.holds.filter((h) => h.until > now);
@@ -363,41 +395,37 @@ export class ArtefactStore {
 
   private async fs(): Promise<Fs> { return await import("node:fs"); }
 
-  /** Run `fn` holding the store's lock, which serialises every process using the directory. */
+  /**
+   * Run `fn` holding the store's lock, which serialises every process using the directory.
+   *
+   * The lock is a file created exclusively. Only its holder removes it, except that a lock whose
+   * holder is gone may be broken, and breaking is itself serialised by a second exclusive file
+   * (`.lock.break`): the breaker re-reads the lock and removes it only if it is still the very file
+   * judged abandoned (same content, same inode). A live lock is therefore never moved, even
+   * briefly, so no other process can slip in while it is absent. Residual risk: a breaker that
+   * stalls for longer than BREAKER_STALE_MS between its re-check and the removal.
+   */
   private async locked<T>(fn: (fs: Fs) => Promise<T>): Promise<T> {
     const fs = await this.fs();
     fs.mkdirSync(this.dir!, { recursive: true, mode: 0o700 });
     const lock = `${this.dir}/.lock`;
-    const deadline = Date.now() + LOCK_WAIT_MS;
-    const me = JSON.stringify({ pid: process.pid, at: Date.now(), nonce: newGrant() });
+    const scope = await pidScope(fs);
+    const deadline = Date.now() + this.limits.lockWaitMs;
+    const me = JSON.stringify({ pid: process.pid, scope, at: Date.now(), nonce: newGrant() });
     for (;;) {
       try {
         fs.writeFileSync(lock, me, { flag: "wx", mode: 0o600 });
-        break;
+        // Held only if it is still ours: a lock judged unwritten and broken in the instant between
+        // its creation and its write is not.
+        if (this.readLock(fs, lock)?.text === me) break;
+        continue;
       } catch (e) {
         if ((e as { code?: string }).code !== "EEXIST") throw e;
       }
-      // A lock left by a process that no longer exists is broken; a live holder is waited for.
-      let held: { pid?: number } | undefined;
-      try { held = JSON.parse(fs.readFileSync(lock, "utf8")); } catch { held = undefined; }
-      let age = 0;
-      try { age = Date.now() - fs.statSync(lock).mtimeMs; } catch { continue; }
-      // A lock whose holder is gone is broken. So is one left unwritten (a crash between creating
-      // and writing it) once it is clearly not being written.
-      if ((held?.pid && !pidAlive(held.pid)) || (!held && age > 10_000)) {
-        const aside = `${lock}.stale-${process.pid}-${newGrant()}`;
-        try {
-          fs.renameSync(lock, aside);
-          // Only the dead holder's lock is removed: if a live process took the lock in between,
-          // put it back.
-          let moved: { pid?: number } | undefined;
-          try { moved = JSON.parse(fs.readFileSync(aside, "utf8")); } catch { moved = undefined; }
-          if (moved?.pid === held?.pid) fs.unlinkSync(aside);
-          else { try { fs.linkSync(aside, lock); } catch { /* someone holds it again */ } fs.unlinkSync(aside); }
-        } catch { /* another process broke it first */ }
-        continue;
-      }
-      if (Date.now() > deadline) throw new ArtefactError(`artefact store is busy: another process (pid ${held?.pid ?? "unknown"}) has held its lock for ${LOCK_WAIT_MS / 1000}s; nothing was stored`);
+      const seen = this.readLock(fs, lock);
+      if (!seen) continue;
+      if (this.abandoned(seen, scope)) { this.breakLock(fs, lock, seen, me); continue; }
+      if (Date.now() > deadline) throw new ArtefactError(`artefact store is busy: another process (pid ${seen.holder?.pid ?? "unknown"}${seen.holder?.scope && seen.holder.scope !== scope ? `, on ${seen.holder.scope.split("|")[0]}` : ""}) has held ${lock} for ${Math.round(seen.age / 1000)}s; nothing was stored. If no RightClick process is running, remove that file.`);
       await sleep(5 + Math.floor(Math.random() * 20));
     }
     try {
@@ -408,6 +436,39 @@ export class ArtefactStore {
       return await fn(fs);
     } finally {
       try { if (fs.readFileSync(lock, "utf8") === me) fs.unlinkSync(lock); } catch { /* already gone */ }
+    }
+  }
+
+  private readLock(fs: Fs, lock: string): { text: string; ino: number; age: number; holder?: { pid?: number; scope?: string } } | undefined {
+    let st, text;
+    try { st = fs.lstatSync(lock); text = fs.readFileSync(lock, "utf8"); } catch { return undefined; }
+    let holder: { pid?: number; scope?: string } | undefined;
+    try { const v = JSON.parse(text); if (v && typeof v === "object") holder = { pid: Number.isInteger(v.pid) ? v.pid : undefined, scope: typeof v.scope === "string" ? v.scope : undefined }; } catch { holder = undefined; }
+    return { text, ino: st.ino, age: Date.now() - st.mtimeMs, holder };
+  }
+
+  /** Whether a lock was left by a holder that is gone. A pid is judged only where it means something. */
+  private abandoned(seen: { age: number; holder?: { pid?: number; scope?: string } }, scope: string): boolean {
+    if (!seen.holder?.pid) return seen.age > UNWRITTEN_LOCK_MS;
+    if (seen.holder.scope !== scope) return seen.age > FOREIGN_LOCK_MS;
+    return !pidAlive(seen.holder.pid);
+  }
+
+  /** Remove an abandoned lock, but only the exact file that was judged abandoned, and one breaker at a time. */
+  private breakLock(fs: Fs, lock: string, seen: { text: string; ino: number }, me: string) {
+    const breaker = `${lock}.break`;
+    try { fs.writeFileSync(breaker, me, { flag: "wx", mode: 0o600 }); }
+    catch (e) {
+      if ((e as { code?: string }).code !== "EEXIST") throw e;
+      // Another process is breaking it. A breaker file this old was left by a crash.
+      try { if (Date.now() - fs.lstatSync(breaker).mtimeMs > BREAKER_STALE_MS) fs.unlinkSync(breaker); } catch { /* gone */ }
+      return;
+    }
+    try {
+      const now = this.readLock(fs, lock);
+      if (now && now.text === seen.text && now.ino === seen.ino) fs.unlinkSync(lock);
+    } finally {
+      try { if (fs.readFileSync(breaker, "utf8") === me) fs.unlinkSync(breaker); } catch { /* gone */ }
     }
   }
 
@@ -474,11 +535,15 @@ export class ArtefactStore {
     if (c) { this.cache.delete(hex); this.cached -= c.bytes.length; }
   }
 
-  /** Bytes on disk that count against the quota: content files and in-flight temporary files. */
+  /**
+   * Bytes on disk that count against the quota: content, the holds that keep it, and in-flight
+   * temporary files. Holds count so that many tiny artefacts cannot grow the store past its bound
+   * through their metadata. (Filesystem block rounding is not counted.)
+   */
   private diskUsage(fs: Fs): number {
     let n = 0;
     for (const f of fs.readdirSync(this.dir!)) {
-      if (!CONTENT_FILE.test(f) && !TMP_FILE.test(f)) continue;
+      if (!CONTENT_FILE.test(f) && !TMP_FILE.test(f) && !HOLDS_FILE.test(f)) continue;
       try { const st = fs.lstatSync(`${this.dir}/${f}`); if (st.isFile()) n += st.size; } catch { /* gone */ }
     }
     return n;
@@ -487,17 +552,13 @@ export class ArtefactStore {
   private sweepDisk(fs: Fs, now: number) {
     let deleted = 0, bytesFreed = 0, temporaryFilesRemoved = 0;
     for (const f of fs.readdirSync(this.dir!)) {
-      const tmp = TMP_FILE.exec(f);
-      if (tmp) {
-        let st;
-        try { st = fs.lstatSync(`${this.dir}/${f}`); } catch { continue; }
-        // Under the lock no write is in flight for this process; another process's temporary file
-        // is abandoned once its writer is gone or it is older than any write takes.
-        if (Number(tmp[1]) === process.pid || !pidAlive(Number(tmp[1])) || now - st.mtimeMs > STALE_TMP_MS) {
-          try { fs.unlinkSync(`${this.dir}/${f}`); temporaryFilesRemoved++; } catch { /* gone */ }
-        }
+      // Every temporary file is written under the lock, and this runs under the lock, so any
+      // temporary file seen here was abandoned by an interrupted write.
+      if (TMP_FILE.test(f)) {
+        try { fs.unlinkSync(`${this.dir}/${f}`); temporaryFilesRemoved++; } catch { /* gone */ }
         continue;
       }
+      // Left by the earlier rename-aside lock breaking (b8cabb0), which no longer exists.
       if (f.startsWith(".lock.stale-")) { try { fs.unlinkSync(`${this.dir}/${f}`); } catch { /* gone */ } continue; }
       const holdsOnly = HOLDS_FILE.exec(f);
       const hex = CONTENT_FILE.test(f) ? f : holdsOnly?.[1];

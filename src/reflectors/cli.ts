@@ -318,6 +318,9 @@ export function literalSample(name: string, variant: number, sampleText: string)
   return variant % 2 ? "3" : "2";
 }
 
+/** A separate option value may begin with "-" only as a number or as "-" itself (stdin/stdout). */
+const OPTION_LIKE_VALUE_OK = /^-$|^-(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?$/;
+
 /**
  * The caller's options, checked against the documented list before anything runs: each item must
  * be a documented flag (with its argument if it takes one), "--flag=value", "-wVALUE", or bundled
@@ -350,12 +353,22 @@ export function validateOptions(value: unknown, allowed: Array<{ flags: string[]
     if (exact) {
       out.push(t);
       if (exact.arg) {
-        // Every documented value, as separate items: "-crop 7 5 12 9". A value may start with "-"
-        // (a negative number): the program reads these items as values whatever they look like.
+        // Every documented value, as separate items: "-crop 7 5 12 9". The number of values comes
+        // from documentation, and documentation is sometimes misread (CE1 gave -n a value). If an
+        // option took fewer values than the contract says, the program would read the next item as
+        // an option of its own, so a separate value that looks like an option is refused: it
+        // could otherwise carry an undocumented or excluded option past this check. Numbers
+        // ("-5", "-0.25") and "-" are values.
         const n = exact.arity ?? 1;
         if (toks.length - 1 - i < n) throw new Error(n === 1 ? `option ${t} needs a value` : `option ${t} needs ${n} values, as separate items (HTTP 400 equivalent: nothing was run)`);
         for (let k = 0; k < n; k++) {
-          checkValue(t, toks[i + 1], exact);
+          const v = toks[i + 1];
+          if (/^-/.test(v) && !OPTION_LIKE_VALUE_OK.test(v)) {
+            // The attached forms are unambiguous: the program always reads them as this option's value.
+            const attach = n > 1 ? undefined : t.startsWith("--") ? `${t}=${v}` : /^-[A-Za-z0-9]$/.test(t) ? `${t}${v}` : undefined;
+            throw new Error(`option ${t} was given ${JSON.stringify(v.slice(0, 80))} as a separate value; a value that looks like an option is refused, because if ${t} did not take it the program would read it as an option${attach ? `. Attach it instead: ${JSON.stringify(attach.slice(0, 100))}` : ""} (HTTP 400 equivalent: nothing was run)`);
+          }
+          checkValue(t, v, exact);
           out.push(toks[++i]);
         }
       }
@@ -1002,7 +1015,9 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
   const empty = await run("probe empty input", best.id === "files" ? Array.from({ length: best.arity }, (_, i) => `empty${i + 1}.txt`) : [], best.id === "files" ? { files: Object.fromEntries(Array.from({ length: best.arity }, (_, i) => [`empty${i + 1}.txt`, ""])) } : { stdin: "" });
 
   // 3. Behaviours: group working trials by mode; keep modes whose output differs from default.
-  const okExit = [...new Set(trials.filter(works).map((t) => t.r.code ?? -1))].sort();
+  // Exit codes seen with output in working trials: evidence only. Success codes are per operation
+  // (each capability's okExit, with exitSemantics for any nonzero one).
+  const seenExit = [...new Set(trials.filter(works).map((t) => t.r.code ?? -1))].sort((a, b) => a - b);
   const trialInput = (t: Trial) => JSON.stringify([t.channel, t.kind, t.literals, t.inputs]);
   const defaultOutputs = new Map(trials.filter(t => t.mode === "default" && works(t)).map(t => [trialInput(t), t.r.stdout]));
   const modes = [...new Set(trials.map((t) => t.mode))];
@@ -1239,7 +1254,7 @@ export async function investigateCli(bin: string, sandbox: Sandbox, opts: { seed
     claim(id, "returns exact standard output without JSON value conversion", "declared", "runtime representation; same program, arguments, sandbox and authority checks");
   }
   if (empty) claim(name, `on empty input exits ${empty.code}${empty.stdout.trim() ? " with output" : " without output"}`, "observed", empty.stderr.slice(0, 120));
-  inv.summary = `${capabilities.length} capabilit${capabilities.length === 1 ? "y" : "ies"} from ${inv.runs.length} sandboxed runs (${okChannels.map((c) => c.id).join(", ")}; ok exit ${okExit.join("/")})`;
+  inv.summary = `${capabilities.length} capabilit${capabilities.length === 1 ? "y" : "ies"} from ${inv.runs.length} sandboxed runs (${okChannels.map((c) => c.id).join(", ")}; exit seen with output ${seenExit.join("/")}; success exit ${[...new Set(capabilities.flatMap((c) => c.invoke.kind === "cli" ? c.invoke.okExit : []))].sort((a, b) => a - b).join("/") || "none"})`;
   if (!capabilities.length) return { reflection: null, investigation: inv };
   return {
     reflection: {

@@ -11,8 +11,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync, spawn } from "node:child_process";
-import { chmodSync, existsSync, lstatSync, mkdtempSync, readdirSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { chmodSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readlinkSync, realpathSync, rmSync, symlinkSync, utimesSync, writeFileSync } from "node:fs";
+import { hostname, tmpdir } from "node:os";
 import { join } from "node:path";
 import { RightClick } from "../src/runtime.ts";
 import { hostSandbox } from "../src/core/sandbox.ts";
@@ -209,6 +209,15 @@ console.log(JSON.stringify(out));`);
   return p;
 }
 const contentBytes = (d: string) => readdirSync(d).filter((f) => /^[0-9a-f]{64}$/.test(f)).reduce((s, f) => s + lstatSync(join(d, f)).size, 0);
+/** Every byte the store keeps on disk: content, holds and temporary files. */
+const storeBytes = (d: string) => readdirSync(d).filter((f) => /^[0-9a-f]{64}(\.holds)?$|^\.tmp-/.test(f)).reduce((s, f) => s + lstatSync(join(d, f)).size, 0);
+/** What this process writes into a lock as the scope its pid is valid in (host and pid namespace). */
+function pidScope(): string {
+  let ns = "";
+  try { ns = readlinkSync("/proc/self/ns/pid"); } catch { /* none here */ }
+  return `${hostname()}|${ns}`;
+}
+const deadPid = () => Number(spawnSync(process.execPath, ["-e", "console.log(process.pid)"]).stdout.toString().trim());
 
 test("CE5 regression: the total bound holds across restarts, not per process", () => {
   const work = tmp("rcx-store-"); const d = join(work, "store"); const child = childScript(work);
@@ -223,14 +232,15 @@ test("CE5 regression: the total bound holds across restarts, not per process", (
 
 test("CE5 regression: concurrent writers in several processes cannot exceed the bound together", async () => {
   const work = tmp("rcx-store-"); const d = join(work, "store"); const child = childScript(work);
-  const limit = 2_000_000, size = 250_000;
+  // Room for exactly 8 artefacts and their holds metadata (which counts too), not for a ninth.
+  const size = 250_000, limit = 8 * size + 64 * 1024;
   const runs = await Promise.all([0, 1, 2, 3].map((k) => new Promise<any[]>((res) => {
     const p = spawn(process.execPath, [child, d, String(1000 * (k + 1)), "4", String(size), String(limit)]);
     let o = ""; p.stdout.on("data", (x) => (o += x)); p.on("exit", () => res(JSON.parse(o)));
   })));
   const stored = runs.flat().filter((x) => x.ok);
-  assert.equal(stored.length, Math.floor(limit / size), "exactly as many as fit, across all writers");
-  assert.ok(contentBytes(d) <= limit);
+  assert.equal(stored.length, 8, "exactly as many as fit, across all writers");
+  assert.ok(storeBytes(d) <= limit, `${storeBytes(d)} bytes of content and metadata on disk`);
   const st = new ArtefactStore(d, { maxStoreBytes: limit });
   for (const x of stored) assert.equal((await st.get(x.ref)).length, size, "every acknowledged write reads back whole");
   assert.deepEqual(readdirSync(d).filter((f) => f.startsWith(".tmp-") || f === ".lock"), [], "no temporary file or lock left behind");
@@ -257,13 +267,86 @@ test("CE5 regression: a truncated file at the content address is replaced, never
 
 test("an interrupted write's temporary file is recovered, and a lock left by a dead process is broken", async () => {
   const d = tmp("rcx-store-");
-  const dead = spawnSync(process.execPath, ["-e", "console.log(process.pid)"]).stdout.toString().trim();
+  const dead = deadPid();
   writeFileSync(join(d, `.tmp-${dead}-abandoned`), Buffer.alloc(600_000));
-  writeFileSync(join(d, ".lock"), JSON.stringify({ pid: Number(dead), at: Date.now() }));
+  writeFileSync(join(d, ".lock"), JSON.stringify({ pid: dead, scope: pidScope(), at: Date.now(), nonce: "crashed" }));
   const st = new ArtefactStore(d, { maxStoreBytes: 1_000_000 });
   const r = await st.put(Buffer.alloc(500_000, 1), { holder: "run:t" });
   assert.ok(r.ref, "the dead writer's lock and temporary file did not block or count");
   assert.deepEqual(readdirSync(d).filter((f) => f.startsWith(".tmp-") || f.startsWith(".lock")), []);
+  rmSync(d, { recursive: true, force: true });
+});
+
+test("the store lock stays exclusive while locks left by crashed writers are broken", { timeout: 240_000 }, async () => {
+  // Contenders enter the store's critical section and claim a marker exclusively inside it; a
+  // claim that finds the marker already there means two processes held the lock at once. Locks in
+  // the shape a crashed writer leaves are planted whenever the lock is free, so the contenders
+  // break stale locks continually. The previous rename-aside breaking failed this in 4 of 6 runs
+  // (8 contenders x 150 rounds: 14 overlapping critical sections), by moving a live lock aside.
+  const work = tmp("rcx-lock-"); const d = join(work, "store");
+  const worker = join(work, "worker.mjs");
+  writeFileSync(worker, `import { ArtefactStore } from ${JSON.stringify(STORE)};
+import { writeFileSync, unlinkSync } from "node:fs";
+const [dir, rounds] = process.argv.slice(2);
+const st = new ArtefactStore(dir);
+let overlaps = 0;
+for (let i = 0; i < Number(rounds); i++) await st["locked"](async () => {
+  try { writeFileSync(dir + "/cs-marker", "x", { flag: "wx" }); } catch { overlaps++; return; }
+  await new Promise((r) => setTimeout(r, 1));
+  unlinkSync(dir + "/cs-marker");
+});
+console.log(JSON.stringify({ overlaps }));`);
+  mkdirSync(d, { mode: 0o700 });
+  const dead = deadPid(), scope = pidScope();
+  let overlaps = 0, planted = 0;
+  for (let round = 0; round < 3; round++) {
+    let running = true;
+    const plant = () => {
+      if (!running) return;
+      try { writeFileSync(join(d, ".lock"), JSON.stringify({ pid: dead, scope, at: Date.now(), nonce: "crashed" }), { flag: "wx" }); planted++; } catch { /* held */ }
+      setTimeout(plant, Math.random() * 4);
+    };
+    const kids = Array.from({ length: 8 }, () => new Promise<number>((res) => {
+      const p = spawn(process.execPath, [worker, d, "100"]);
+      let o = ""; p.stdout.on("data", (x) => (o += x)); p.on("exit", () => res(JSON.parse(o).overlaps));
+    }));
+    plant();
+    overlaps += (await Promise.all(kids)).reduce((a, b) => a + b, 0);
+    running = false;
+  }
+  assert.ok(planted > 20, `stale locks were planted (${planted})`);
+  assert.equal(overlaps, 0, "no two processes were ever inside the critical section together");
+  rmSync(work, { recursive: true, force: true });
+});
+
+test("a lock from another host or pid namespace is never broken by its pid, only once it is long abandoned", async () => {
+  const d = tmp("rcx-store-");
+  // A pid this process cannot check (another container sharing the volume): a live holder must
+  // not be judged dead because its pid does not exist here.
+  writeFileSync(join(d, ".lock"), JSON.stringify({ pid: deadPid(), scope: "another-host|pid:[1]", at: Date.now(), nonce: "foreign" }));
+  const st = new ArtefactStore(d, { lockWaitMs: 300 });
+  await assert.rejects(st.put(Buffer.from("x"), { holder: "run:t" }), /store is busy.*another-host.*remove that file/);
+  // So is a lock written before locks recorded where their pid is valid.
+  writeFileSync(join(d, ".lock"), JSON.stringify({ pid: deadPid(), at: Date.now() }));
+  await assert.rejects(st.put(Buffer.from("x"), { holder: "run:t" }), /store is busy/);
+  // Older than any critical section: abandoned.
+  const old = new Date(Date.now() - 10 * 60 * 1000);
+  utimesSync(join(d, ".lock"), old, old);
+  assert.ok((await st.put(Buffer.from("x"), { holder: "run:t" })).ref);
+  assert.deepEqual(readdirSync(d).filter((f) => f.startsWith(".lock")), []);
+  rmSync(d, { recursive: true, force: true });
+});
+
+test("metadata counts against the bound: many tiny artefacts cannot grow the store past it", async () => {
+  const d = tmp("rcx-store-");
+  const limit = 4096;
+  const st = new ArtefactStore(d, { maxStoreBytes: limit });
+  let stored = 0;
+  for (let i = 0; i < 200; i++) {
+    try { await st.put(Buffer.from([i]), { holder: "run:t" }); stored++; } catch (e) { assert.match(String(e), /store is full/); break; }
+  }
+  assert.ok(stored > 0 && stored < 200, `${stored} one-byte artefacts fit: content alone would have allowed all 200`);
+  assert.ok(storeBytes(d) <= limit, `${storeBytes(d)} bytes on disk, bound ${limit}`);
   rmSync(d, { recursive: true, force: true });
 });
 
@@ -431,7 +514,7 @@ test("option grammar: zero, one and attached values; unknown options, host paths
   assert.throws(() => validateOptions(["-n"], c), /needs a value/);
   const files = { inputs: ["key.bin"], outputs: [] };
   assert.deepEqual(validateOptions(["-k", "key.bin"], c, [], files), ["-k", "key.bin"]);
-  assert.throws(() => validateOptions(["-k", "-v"], c, [], files), /must be the name of a staged input/, "a value that looks like an option is still a file name to check");
+  assert.throws(() => validateOptions(["-k", "-v"], c, [], files), /looks like an option is refused/, "a value that looks like an option is refused before it is checked as a file name");
   assert.throws(() => validateOptions(["-k", "../key.bin"], c, [], files), /host path/);
   assert.throws(() => validateOptions(["-k", "~/key.bin"], c, [], files), /host path/);
 });
@@ -462,4 +545,67 @@ for a in "$@"; do printf '[%s]' "$a"; done; echo; cat "$(eval echo \\\${$#})"`);
   assert.equal(r.status, "completed", String(r.error));
   assert.match(String(r.output), /^\[-crop\]\[7\]\[-5\]\[12\]\[9\]\[-n\]\[in\.txt\]/);
   rmSync(dir, { recursive: true, force: true });
+});
+
+// ------------------------------------------------------------------ integration review (PR #59 review findings)
+
+test("an option value that looks like an option is refused, so a misread contract cannot carry an excluded option", () => {
+  // CE1's misreading: the contract gave -n a value. Without this check, the excluded
+  // --compress-program would reach sort as "-n's value" and sort would run the program it names.
+  const misread = [{ flags: ["-n"], arg: true }, { flags: ["-k", "--key"], arg: true }, { flags: ["-e"], arg: true }, { flags: ["-crop"], arg: true, arity: 4 }];
+  const excluded = ["--compress-program"];
+  assert.throws(() => validateOptions(["-n", "--compress-program=sh"], misread, excluded), /looks like an option is refused/);
+  assert.throws(() => validateOptions(["-crop", "1", "2", "--exec=x", "4"], misread, excluded), /looks like an option is refused/);
+  assert.throws(() => validateOptions(["-k", "-x"], misread, excluded), /Attach it instead: "-k-x"/);
+  assert.throws(() => validateOptions(["--key", "-x"], misread, excluded), /Attach it instead: "--key=-x"/);
+  // Numbers and "-" are values; the attached forms are unambiguous and stay accepted.
+  assert.deepEqual(validateOptions(["-crop", "7", "-5", "-0.25", "1e3"], misread, excluded), ["-crop", "7", "-5", "-0.25", "1e3"]);
+  assert.deepEqual(validateOptions(["-n", "-"], misread, excluded), ["-n", "-"]);
+  assert.deepEqual(validateOptions(["--key=-x", "-e-pattern"], misread, excluded), ["--key=-x", "-e", "-pattern"]);
+});
+
+test("a contract retained from before exit semantics is investigated again, not reused, so its outcome is re-established", { skip: skip || (!existsSync("/usr/bin/diff") && "/usr/bin/diff unavailable"), timeout: 180_000 }, async () => {
+  const dir = tmp("rcx-legacy-");
+  const bin = program(dir, "cmpx", `if [ "$1" = "--help" ]; then printf 'Usage: cmpx FILE1 FILE2\\nCompare two text files.\\n'; exit 0; fi
+exec /usr/bin/diff "$@"`);
+  const rc = await RightClick.create({ directories: [], authority: { investigate: [bin] } });
+  await rc.learn({ source: `cli:${bin}` });
+  const cap = rc.graph.get("cli:cmpx:default")!;
+  const inv: any = cap.invoke;
+  assert.ok(inv.exitSemantics?.["1"], "learned now: exit 1 with its evidence");
+  // Exactly what main (9abbb51) persisted for this program: exit 1 listed, no evidence for it.
+  delete inv.exitSemantics;
+  const ports = inv.args.filter((a: any) => typeof a !== "string" && !a.literal).map((a: any) => a.input);
+  const differ = await rc.run(cap.id, { [ports[0]]: "alpha\n", [ports[1]]: "beta\n" });
+  assert.equal(differ.status, "completed", `repair re-learns the contract instead of reusing it: ${String(differ.error)}`);
+  assert.equal((differ.cliValidity as any).exitStatus.classification, "semantic-nonzero");
+  assert.ok((rc.graph.get(cap.id)!.invoke as any).exitSemantics?.["1"], "the retained contract now carries the evidence");
+  // An explicit re-learn of an unchanged, current contract is still a no-op.
+  const again = await rc.learn({ source: `cli:${bin}` });
+  assert.match(JSON.stringify(again.results[0]?.probes ?? []), /already learned and unchanged/);
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test("collected outputs: a FIFO is refused without blocking, and only regular files are read", { skip, timeout: 60_000 }, async () => {
+  const sb = (await hostSandbox())!;
+  const fifo = await sb.run("/usr/bin/mkfifo", ["out.bin"], { collect: ["out.bin"] });
+  assert.equal(fifo.outputs?.["out.bin"], undefined);
+  assert.match(String(fifo.outputRefusals?.["out.bin"]), /not a regular file/);
+  const ok = await sb.run("/bin/sh", ["-c", "printf 'exact\\000bytes' > out.bin"], { collect: ["out.bin"] });
+  assert.equal(Buffer.from(ok.outputs!["out.bin"]).toString("latin1"), "exact\u0000bytes");
+});
+
+test("re-storing content whose holds expired, in a full store, stores it again rather than granting a deleted file", async () => {
+  let now = 1_000_000;
+  const d = tmp("rcx-store-");
+  const big = Buffer.alloc(3000, 3);
+  await new ArtefactStore(d, { retentionMs: 1000, now: () => now }).put(big, { holder: "run:a" });
+  // Too full for one more hold. Its start-up sweep runs now, while run:a's hold is still live.
+  const st = new ArtefactStore(d, { maxStoreBytes: storeBytes(d) + 10, retentionMs: 1000, now: () => now });
+  await st.usage();
+  now += 5000; // run:a's hold has expired; the content stays on disk until the next sweep
+  // This put finds the content valid, then must sweep for room, which deletes that very content.
+  const again = await st.put(big, { holder: "run:b" });
+  assert.ok((await st.get(again.ref)).equals(big), "the grant reads the content");
+  rmSync(d, { recursive: true, force: true });
 });

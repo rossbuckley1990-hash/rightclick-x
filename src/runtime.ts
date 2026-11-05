@@ -2131,7 +2131,16 @@ export class RightClick {
       const sha = createHash("sha256").update(fs.readFileSync(check.identity.real)).digest("hex");
       const known = [...this.graph.providers.values()].find((p) => p.meta?.source === `cli:${bin}` && p.meta?.sha256 === sha);
       const caps = known ? (known.capabilityIds.map((id) => this.graph.get(id)).filter(Boolean) as Capability[]) : [];
-      if (known && caps.length && caps.every(c => c.invoke.kind === "cli" && c.invoke.environment?.digest === environment.digest)) {
+      // A contract that lists a nonzero success code without its evidence was learned before exit
+      // semantics were recorded (main before the exit-status contract, or an unreleased candidate).
+      // Such a code is never a success now, so reusing the contract would refuse that outcome for
+      // good: investigate again so that the code is either established with evidence or dropped.
+      const current = (c: Capability) => {
+        const inv = c.invoke;
+        if (inv.kind !== "cli" || inv.environment?.digest !== environment.digest) return false;
+        return inv.okExit.every((code) => code === 0 || !!inv.exitSemantics?.[String(code)]);
+      };
+      if (known && caps.length && caps.every(current)) {
         const inv = known.meta?.investigation as Investigation | undefined;
         if (inv) this.investigations.set(bin, inv);
         return { reflections: [{ provider: known, capabilities: caps }], probes: [{ url: `cli:${bin}`, kind: "cli", ok: true, detail: `already learned and unchanged (sha256 ${sha.slice(0, 12)}): ${caps.length} capabilit${caps.length === 1 ? "y" : "ies"}: ${caps.map((c) => c.id).join(", ")}; nothing re-run` }] };

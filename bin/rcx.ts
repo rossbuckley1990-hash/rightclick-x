@@ -19,7 +19,7 @@ const env: Record<string, string | undefined> = proc.env;
 /** RCX_ARTEFACT_RETENTION_DAYS: how long a run's output artefacts are held (a positive number of days). */
 function retentionDays(v: string): number {
   const d = Number(v);
-  if (!Number.isFinite(d) || d <= 0 || d > 3650) throw new Error(`RCX_ARTEFACT_RETENTION_DAYS refused: ${JSON.stringify(v)} is not a number of days between 0 and 3650`);
+  if (!Number.isFinite(d) || d <= 0 || d > 3650) throw new Error(`RCX_ARTEFACT_RETENTION_DAYS refused: ${JSON.stringify(v)} is not a positive number of days, at most 3650`);
   return Math.round(d * 24 * 60 * 60 * 1000);
 }
 

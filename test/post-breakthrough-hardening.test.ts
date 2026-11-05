@@ -352,7 +352,7 @@ describe("Decision 1 — Verified UTF-8 Locale Execution Profile", () => {
       authority: { investigate: ["/usr/bin/sort"], execute: ["/usr/bin/sort"], locale: "utf8" },
     });
     const importReport = await rcUtf8Fresh.importKnowledge(bundle);
-    assert.equal(importReport.programs[0]?.status, "accepted");
+    assert.equal(importReport.programs[0]?.status, "accepted", `which capabilities were refused, and why: ${JSON.stringify(importReport.programs[0]?.capabilities)}`);
     assert.ok((importReport.programs[0]?.revalidationRuns ?? 0) > 0);
     const revalidatedRun = await rcUtf8Fresh.run(sortCap.id, { input: "b\na\n" });
     assert.equal(revalidatedRun.status, "completed");
