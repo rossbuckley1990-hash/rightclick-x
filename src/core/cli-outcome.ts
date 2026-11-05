@@ -79,7 +79,7 @@ export interface CliValidity {
     stdin?: { sha256: string; bytes: number };
   };
   /** The independent structural check of a binary output: its format, the facts read from it, and the facts it kept from the input. */
-  outputCheck?: { mediaType: string; facts: Record<string, number | string | boolean>; kept: string[]; validator: string };
+  outputCheck?: { mediaType: string; facts: Record<string, number | string | boolean>; kept: string[]; unchecked?: string[]; validator: string };
   limitation: string;
 }
 

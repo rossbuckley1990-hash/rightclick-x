@@ -189,8 +189,21 @@ export interface BinaryTrial {
 /** See `CliInvoke.binary`. */
 export interface BinaryContract {
   v: 1;
-  input: { mediaType: string; via: "file" | "stdin"; name?: string };
-  output: { mediaType: string; via: "file" | "stdout"; name?: string };
+  /**
+   * `signature`: for a format known only by experiment (a provisional `x-ext/<ext>` type with no
+   * validator), the leading bytes every witnessed sample shared, as hex. Such a format is
+   * recognised by that signature only, and only because experiments witnessed it.
+   */
+  input: { mediaType: string; via: "file" | "stdin"; name?: string; signature?: string };
+  output: { mediaType: string; via: "file" | "stdout"; name?: string; signature?: string };
+  /** A documented flag this transformation is established with (a format or fidelity variant). */
+  flag?: string;
+  /**
+   * Facts in `preserves` that could not be read from the output's own format and were instead
+   * witnessed through another capability: the output decoded by `capability` (a decoder), or the
+   * input reconstructed from it (a round trip). Rechecked at run time when that capability can run.
+   */
+  witnessed?: Array<{ facts: string[]; capability: string; how: "decoded" | "round-trip" }>;
   /** The argument vector observed to work, with the staged input and output names in place. */
   argv: string[];
   /** Facts the output kept from the input in every confirming trial (width, height, pages, ...). */

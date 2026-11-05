@@ -53,6 +53,12 @@ export interface Goal {
   /** Explicit bindings of an anchored capability port to a named caller input. */
   inputBindings?: Record<string, Record<string, string>>;
   /**
+   * Facts every step of a plan must be proven to keep (from its acquisition evidence), such as
+   * ["pixels"] for "without losing information": a hard constraint, never a preference. A route
+   * with any step that does not prove them is not returned.
+   */
+  preserve?: string[];
+  /**
    * Optional sink for why each considered capability could not compose. Off unless supplied, so a
    * search that nobody is diagnosing pays nothing; bounded to one entry per capability.
    */
@@ -348,15 +354,34 @@ export function plan(graph: CapabilityGraph, ledger: Ledger, goal: Goal, expansi
     ignoredInputs.set(p, count);
     return count;
   };
+  // Fidelity, from evidence: each primitive step (a saved pipeline counts as all of its steps)
+  // either proves it keeps the decoded content or does not. Fewer unproven steps rank first, then
+  // fewer steps, so a shorter exact route never loses to a longer lossy one that happens to have
+  // a track record. With `preserve`, every step must prove those facts.
+  const fidelity = new WeakMap<Plan, { unproven: number; primitives: number; bytes: number; keeps: Set<string> }>();
+  const fid = (p: Plan) => {
+    let f = fidelity.get(p);
+    if (!f) {
+      const prims = p.steps.flatMap((st) => primitiveSteps(graph, st.capability));
+      const facts = prims.map((c) => bytesFacts(c));
+      const keeps = facts.reduce<Set<string> | undefined>((acc, k) => (k === undefined ? acc : acc ? new Set([...acc].filter((x) => k.has(x))) : new Set(k)), undefined) ?? new Set<string>();
+      f = { unproven: facts.filter((k) => k !== undefined && !k.has("pixels")).length, primitives: prims.length, bytes: facts.filter((k) => k !== undefined).length, keeps: facts.some((k) => k === undefined) && goal.preserve?.length ? new Set() : keeps };
+      fidelity.set(p, f);
+    }
+    return f;
+  };
   // With required information: established beats unverified beats incomplete, then coverage.
   const rank = (p: Plan) => (p.satisfaction ? STATUS_RANK[p.satisfaction.status] : 0);
   const coverage = (p: Plan) => (p.satisfaction ? Object.keys(p.satisfaction.covered).length : 0);
   const ranked = dedupe(results)
     .filter((p) => !intent.size || p.intentScore > 0 || anchors.size || coverage(p) > 0)
     .filter((p) => [...anchors].every((a) => p.steps.some((s) => s.capability === a)))
+    .filter((p) => !goal.preserve?.length || goal.preserve.every((k) => fid(p).keeps.has(k)))
     .sort(
       (a, b) =>
         rank(b) - rank(a) || coverage(b) - coverage(a) ||
+        // Between routes over exact bytes only: other planning keeps its own order.
+        (fid(a).bytes && fid(b).bytes ? fid(a).unproven - fid(b).unproven || fid(a).primitives - fid(b).primitives : 0) ||
         Math.floor(b.fit) - Math.floor(a.fit) || ignored(a) - ignored(b) || b.intentScore - a.intentScore || b.fit - a.fit || b.resultScore - a.resultScore || a.cost - b.cost || a.steps.length - b.steps.length,
     );
   // A plan that contains another plan's steps plus more, without covering more of the intent or
@@ -622,4 +647,24 @@ function dedupe(plans: Plan[]): Plan[] {
     seen.add(k);
     return true;
   });
+}
+
+/** The primitive capabilities a step runs: itself, or every step of a saved pipeline, recursively. */
+export function primitiveSteps(graph: CapabilityGraph, id: string, depth = 0): Capability[] {
+  const c = graph.get(id);
+  if (!c) return [];
+  const inv = c.invoke as { kind: string; steps?: Array<{ capability: string }> };
+  if ((inv.kind === "composite" || inv.kind === "goal") && inv.steps && depth < 6) return inv.steps.flatMap((s) => primitiveSteps(graph, s.capability, depth + 1));
+  return [c];
+}
+
+/**
+ * Facts a step is proven to keep, for a step over exact bytes (from its acquisition evidence:
+ * `CliInvoke.binary.preserves`), or undefined for a step that is not a bytes transformation (its
+ * fidelity is not a question of decoded content).
+ */
+export function bytesFacts(c: Capability): Set<string> | undefined {
+  const inv = c.invoke as { kind: string; binary?: { preserves: string[] } };
+  if (inv.kind === "cli" && inv.binary) return new Set(inv.binary.preserves);
+  return c.inputs.some((p) => p.type.startsWith("bytes")) || c.outputs.some((o) => o.type.startsWith("bytes")) ? new Set() : undefined;
 }

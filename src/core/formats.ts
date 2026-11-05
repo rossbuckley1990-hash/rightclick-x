@@ -497,3 +497,63 @@ export function identify(b: Uint8Array): { type: string; mediaType?: string; fac
   if (accepted.length !== 1) return { type: OPAQUE_BYTES, refusals };
   return { type: bytesType(accepted[0].f.mediaType), mediaType: accepted[0].f.mediaType, facts: accepted[0].v.facts, refusals };
 }
+
+// ------------------------------------------------------------------ formats named only by documentation
+
+/**
+ * A format known only by the file extension a program's documentation uses for it
+ * ("input.avif", "output.[jpg|png|y4m]", "filename.gd"). It has no validator, so bytes are never
+ * typed as it by their structure: a provisional format becomes usable only when experiments
+ * witness it (another capability turns it back into a format that does validate, keeping the
+ * original's facts). See reflectors/binary-acquisition.ts.
+ */
+export const provisionalType = (ext: string) => `x-ext/${ext.toLowerCase()}`;
+export const isProvisional = (mediaType: string) => mediaType.startsWith("x-ext/");
+
+const EXT_ALIASES: Record<string, string> = { jpg: "image/jpeg", jpeg: "image/jpeg", jfif: "image/jpeg", tif: "image/tiff", tiff: "image/tiff", gz: "application/gzip", gzip: "application/gzip" };
+/** The library format a file extension names, if any. */
+export function formatForExt(ext: string): BinaryFormat | undefined {
+  const e = ext.toLowerCase();
+  return EXT_ALIASES[e] ? formatOf(EXT_ALIASES[e]) : FORMATS.find((f) => f.ext === e || f.slug === e);
+}
+
+/** Documentation with CamelCase words split ("GifFile" -> "Gif File"), so format words in them count. */
+export function normaliseDocs(docs: string): string {
+  return docs.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/([A-Z]+)([A-Z][a-z])/g, "$1 $2");
+}
+
+/**
+ * File extensions a program's usage or examples give to its operands: lines that are usage,
+ * syntax or example lines (they name the program, or start with "usage"/"syntax"). URLs and
+ * version numbers are not operands. Bracketed alternatives ("output.[jpg|jpeg|png]") count each.
+ */
+export function documentedExtensions(docs: string, program: string): string[] {
+  return documentedOperandExtensions(docs, program).map((x) => x.ext);
+}
+
+/**
+ * The same, with the role each extension's operand plays where the usage says so: "input.X" and
+ * "output.X" (and in/out, infile/outfile, src/dst, source/dest) name an input or an output; any
+ * other operand name ("filename.gd") says nothing about direction.
+ */
+export function documentedOperandExtensions(docs: string, program: string): Array<{ ext: string; role: "input" | "output" | "any" }> {
+  const out: Array<{ ext: string; role: "input" | "output" | "any" }> = [];
+  const prog = program.toLowerCase();
+  for (const raw of docs.split("\n")) {
+    const line = raw.replace(/\b[a-z][a-z0-9+.-]*:\/\/\S+/gi, " ").replace(/\S+@\S+\.\S+/g, " ");
+    const l = line.toLowerCase();
+    if (!/\b(usage|syntax|example|e\.g)\b/.test(l) && !l.includes(prog)) continue;
+    for (const m of line.matchAll(/\b([A-Za-z_][\w-]*)\.(\[[A-Za-z0-9|]+\]|[A-Za-z][A-Za-z0-9]{1,4}\b)/g)) {
+      const stem = m[1].toLowerCase();
+      const role = /^(in|input|infile|src|source|from)\d*$/.test(stem) ? "input" : /^(out|output|outfile|dst|dest|target|to)\d*$/.test(stem) ? "output" : "any";
+      for (const ext of m[2].replace(/^\[|\]$/g, "").split("|")) {
+        const e = ext.toLowerCase();
+        if (/^\d/.test(e) || ["exe", "sh", "txt", "com", "org", "net", "io", "md", "html", "htm", "c", "h", "so", "dylib", "e", "g", "i", "etc"].includes(e)) continue;
+        const seen = out.find((x) => x.ext === e);
+        if (!seen) out.push({ ext: e, role });
+        else if (seen.role !== role) seen.role = "any";
+      }
+    }
+  }
+  return out.slice(0, 12);
+}

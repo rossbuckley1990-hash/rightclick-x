@@ -230,11 +230,14 @@ test("development case: ppm2tiff, cwebp and dwebp are acquired; dwebp's WebP inp
   const pgm = fixtureFor("image/x-portable-graymap", 11)!;
   const r: any = await rc.compose({ have: { scan: { type: "bytes", base64: b64(pgm) } }, want: "bytes:image/png", run: true } as any);
   assert.equal(r.executed?.status, "completed", JSON.stringify(r.executed?.error ?? r.planningRefusal ?? toWebp.map((c) => c.id)));
-  assert.equal(r.plans[0].steps.length, 2);
+  // At least two steps (no single capability does it). Since fidelity-aware ranking, a longer route
+  // whose every step is proven exact is chosen over a shorter lossy one, and then the pixels match.
+  assert.ok(r.plans[0].steps.length >= 2);
   const png = formatOf("image/png")!.validate(await rc.artefacts.get(r.executed.output.ref));
   const src = formatOf("image/x-portable-graymap")!.validate(pgm);
   assert.ok(png.ok && src.ok);
   assert.deepEqual([png.facts.width, png.facts.height], [src.facts.width, src.facts.height]);
+  if (r.plans[0].steps.every((s: any) => rc.graph.get(s.capability)?.tags.includes("lossless"))) assert.equal(png.facts.pixels, src.facts.pixels);
   // PPM to WebP needs a TIFF-reading cwebp, which not every build is: with a route it must
   // complete; without one, nothing is planned or run (never a guessed route).
   const ppm = fixtureFor("image/x-portable-pixmap", 11)!;
