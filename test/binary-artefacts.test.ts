@@ -49,11 +49,13 @@ test("base64 must be strict and canonical; declared encodings refuse what they c
 test("the store is content-addressed: refs never name paths, and a tampered file is refused", async () => {
   const dir = tmp("rcx-art-");
   const store = new ArtefactStore(dir);
-  const a = await store.put(allBytes, { origin: "test" });
+  const a = await store.put(allBytes, { holder: "run:test" });
   assert.equal(a.sha256, await sha256Hex(allBytes));
+  assert.match(a.ref, new RegExp(`^sha256:${a.sha256}\\.[A-Za-z0-9_-]{22}$`), "the ref is a read grant on the digest");
   assert.deepEqual([...(await new ArtefactStore(dir).get(a.ref))], [...allBytes], "persists across instances");
   for (const ref of ["/etc/passwd", "../x", "sha256:../../etc", `sha256:${"g".repeat(64)}`]) await assert.rejects(store.get(ref), /not an artefact reference/, ref);
-  await assert.rejects(store.get(`sha256:${"1".repeat(64)}`), /unknown artefact/);
+  await assert.rejects(store.get(`sha256:${a.sha256}`), /content digest, not a read grant/, "the digest alone reads nothing");
+  await assert.rejects(store.get(`sha256:${"1".repeat(64)}.${"A".repeat(22)}`), /unknown artefact/);
   writeFileSync(join(dir, a.sha256), "tampered");
   await assert.rejects(new ArtefactStore(dir).get(a.ref), /failed its content check/);
   rmSync(dir, { recursive: true, force: true });
@@ -254,6 +256,40 @@ test("development case tiffdump: a binary TIFF reaches the program byte for byte
   assert.equal(r.status, "completed", String(r.error));
   assert.match(String(r.output), /ImageWidth \(256\) SHORT \(3\) 1<37>/);
   assert.match(String(r.output), /Krak\\303\\263w/);
+});
+
+// tiffcp and nettle-hash were held-out programs in the independent acceptance of 20bc3a7; its
+// counterexamples CE3 and CE2 made them development cases.
+test("development case tiffcp (CE3): a truncated input fails the run, and its partial output is never returned", { skip: devSkip("tiffcp"), timeout: 180_000 }, async () => {
+  const { rc, cap } = await learned(realpathSync(brew("tiffcp")!));
+  assert.ok(cap);
+  const good = tiff(4, 2, "page");
+  const run = (second: Buffer) => rc.run(cap!.id, { files: { "a.tif": { type: "bytes", base64: b64(good) }, "b.tif": { type: "bytes", base64: b64(second) } }, operands: ["a.tif", "b.tif", "out.tif"], outputs: ["out.tif"] });
+  const cut = await run(good.subarray(0, 20));
+  assert.equal(cut.status, "failed", `a truncated page must not complete: ${String(cut.error)}`);
+  assert.equal(cut.output, undefined);
+  assert.equal((cut as any).cliValidity.outcome, "not-established");
+  assert.deepEqual((cut as any).cliValidity.artefacts.outputs, []);
+  assert.equal((await rc.artefacts.usage()).artefacts, 0, "the partial TIFF was not stored");
+  const both = await run(good);
+  assert.equal(both.status, "completed", String(both.error));
+  const out = Buffer.from((await rc.readArtefact((both.output as any).outputs["out.tif"].ref)).base64, "base64");
+  // Two directories: the first IFD's next-IFD pointer is non-zero.
+  const ifd = out.readUInt32LE(4);
+  assert.notEqual(out.readUInt32LE(ifd + 2 + out.readUInt16LE(ifd) * 12), 0, "both pages are in the output");
+});
+
+test("development case nettle-hash (CE2): an unknown algorithm fails, a known one returns its raw digest exactly", { skip: devSkip("nettle-hash"), timeout: 180_000 }, async () => {
+  const { createHash } = await import("node:crypto");
+  const { rc, cap } = await learned(realpathSync(brew("nettle-hash")!));
+  assert.ok(cap);
+  const bad = await rc.run(cap!.id, { options: ["-a", "no-such-algorithm", "--raw"], input: { type: "bytes", base64: b64(allBytes) }, stdoutAs: "artefact" });
+  assert.equal(bad.status, "failed", `exit ${(bad as any).cliValidity?.processExit} must not complete`);
+  assert.equal(bad.output, undefined, "no empty digest artefact");
+  const ok = await rc.run(cap!.id, { options: ["-a", "sha256", "--raw"], input: { type: "bytes", base64: b64(allBytes) }, stdoutAs: "artefact" });
+  assert.equal(ok.status, "completed", String(ok.error));
+  const raw = Buffer.from((await rc.readArtefact((ok.output as any).stdout.ref)).base64, "base64");
+  assert.ok(raw.equals(createHash("sha256").update(allBytes).digest()), raw.toString("hex"));
 });
 
 test("development case zipmerge: binary archives in, merged archive out, -I documented and accepted", { skip: devSkip("zipmerge"), timeout: 180_000 }, async () => {

@@ -16,6 +16,13 @@ const proc = (globalThis as any).process;
 const argv: string[] = proc.argv.slice(2);
 const env: Record<string, string | undefined> = proc.env;
 
+/** RCX_ARTEFACT_RETENTION_DAYS: how long a run's output artefacts are held (a positive number of days). */
+function retentionDays(v: string): number {
+  const d = Number(v);
+  if (!Number.isFinite(d) || d <= 0 || d > 3650) throw new Error(`RCX_ARTEFACT_RETENTION_DAYS refused: ${JSON.stringify(v)} is not a number of days between 0 and 3650`);
+  return Math.round(d * 24 * 60 * 60 * 1000);
+}
+
 function flag(name: string): string | undefined {
   const i = argv.indexOf(`--${name}`);
   if (i < 0) return undefined;
@@ -64,7 +71,7 @@ Recovery: RCX_WORKFLOW_RECOVERY=1 opts this host into retaining bounded workflow
 in its local state file. Resume pending compositions with rcx run resume:<run-id>; no new inputs.
 Restrictions and checks are retained, and current execution authority is required. Default: off.
 
-State: ${env.RCX_STATE_FILE ?? "~/.rightclick-x/state.json"} (RCX_STATE_FILE). Authority: RCX_DESTRUCTIVE=operator|agent-confirm|allow, RCX_APPROVE=<ids>, RCX_RETRY=<ids or origins>, RCX_INVESTIGATE / RCX_EXECUTE=<program paths>, RCX_CLI_CONFORMANCE='{"cli:<program>:<command>":{"samples":[…]}}', RCX_SHARE_EVIDENCE=1. Credentials: RCX_AUTH='{"https://api.x.com":"Bearer …"}'.`;
+State: ${env.RCX_STATE_FILE ?? "~/.rightclick-x/state.json"} (RCX_STATE_FILE). Authority: RCX_DESTRUCTIVE=operator|agent-confirm|allow, RCX_APPROVE=<ids>, RCX_RETRY=<ids or origins>, RCX_INVESTIGATE / RCX_EXECUTE=<program paths>, RCX_CLI_CONFORMANCE='{"cli:<program>:<command>":{"samples":[…]}}', RCX_SHARE_EVIDENCE=1. Artefacts: kept next to the state file, at most 512 MiB, each held RCX_ARTEFACT_RETENTION_DAYS (default 7). Credentials: RCX_AUTH='{"https://api.x.com":"Bearer …"}'.`;
 
 async function main() {
   const cmd = argv.shift() ?? "help";
@@ -107,6 +114,7 @@ async function main() {
     store: demoMode ? undefined : new FileStore(stateFile, { onBackup: (p) => console.error(`RightClick X: upgraded ${stateFile} to the current state format; the original is kept at ${p}`) }),
     workflowRecovery: env.RCX_WORKFLOW_RECOVERY === "1",
     artefactDir: `${stateFile}.artefacts`,
+    ...(env.RCX_ARTEFACT_RETENTION_DAYS ? { artefactRetentionMs: retentionDays(env.RCX_ARTEFACT_RETENTION_DAYS) } : {}),
     authority,
     environment: environmentOptions(env.RCX_ENVIRONMENT),
   });

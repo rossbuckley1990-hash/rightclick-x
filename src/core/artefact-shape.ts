@@ -26,7 +26,11 @@ export function isArtefactValue(v: unknown): v is ArtefactValue {
 
 /** A log- and record-safe summary: shape and size, never the payload. */
 export function summariseArtefactValue(v: ArtefactValue): Record<string, unknown> {
-  if (v.type === "artefact") return { type: "artefact", ref: v.ref };
+  // A read grant is a capability: logs and records keep the content identity only.
+  if (v.type === "artefact") {
+    const m = /^(sha256:[0-9a-f]{64})\.[A-Za-z0-9_-]+$/.exec(v.ref);
+    return m ? { type: "artefact", ref: m[1], grant: "[not logged]" } : { type: "artefact", ref: v.ref.slice(0, 80) };
+  }
   if (v.type === "bytes") {
     const pad = v.base64.endsWith("==") ? 2 : v.base64.endsWith("=") ? 1 : 0;
     return { type: "bytes", bytes: Math.max(0, (v.base64.length / 4) * 3 - pad), payload: "[not logged]" };
