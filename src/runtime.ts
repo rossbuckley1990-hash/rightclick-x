@@ -29,10 +29,13 @@ import { KNOWLEDGE_FORMAT, type ImportReport, type KnowledgeBundle } from "./cor
 import { assessExecution, consequentialRisks, ExecutionDenied, intersectOrigins, parseExecutionPolicy, type ExecutionAssessment, type ExecutionPolicy } from "./core/execution-policy.ts";
 import { distance, inferType, inspectValue, linesValidateAs, type Inspection } from "./core/semantics.ts";
 import { describeResult, resultDescription, type ResultDescription } from "./core/result-description.ts";
-import type { Capability, CapabilityAnchor, FetchLike, GraphQLFailureEvidence, PlanStep, Provider, Reflection, SemType, TransportRefusal } from "./core/types.ts";
+import type { Capability, CapabilityAnchor, CliInvoke, FetchLike, GraphQLFailureEvidence, PlanStep, Provider, Reflection, SemType, TransportRefusal } from "./core/types.ts";
 import { agreement, assertAgreement, check, lintPublicationPredicates, pick, type Predicate, type PredicateResult, type PredicateWarning, type OutcomeWitness, type WitnessResult } from "./core/verify.ts";
 import { builtinReflection, type BuiltinFn } from "./reflectors/builtins.ts";
-import { ArtefactStore, artefactBytes, contentRef, isArtefactValue, refDigest, sha256Hex, ARTEFACT_LIMITS, type ArtefactResult } from "./core/artefacts.ts";
+import { ArtefactStore, artefactBytes, contentRef, isArtefactValue, refDigest, sha256Hex, ARTEFACT_LIMITS, type ArtefactResult, type ArtefactValue } from "./core/artefacts.ts";
+import { bytesType, formatOf, identify } from "./core/formats.ts";
+import { fixtureFor, GENERATED_FORMATS } from "./core/fixtures.ts";
+import { acquireBinary, documentedFormats, type CorpusSample } from "./reflectors/binary-acquisition.ts";
 import { DEFAULT_DIRECTORIES, type Candidate, type Directory } from "./reflectors/directories.ts";
 import { discover, type Discovery, type SourceKind } from "./reflectors/discover.ts";
 import { environmentNet, environmentOptions, observeCatalog, type EnvironmentOptions, type EnvironmentReport } from "./reflectors/environment.ts";
@@ -2147,7 +2150,23 @@ export class RightClick {
       }
     }
     this.onInvestigationStart?.(bin);
-    const { reflection, investigation } = await investigateCli(bin, sb);
+    let { reflection, investigation } = await investigateCli(bin, sb);
+    // Binary transformations, established by RightClick's own experiments on validated fixtures.
+    // Runs inside the same identity and environment checks as the text investigation.
+    const docs = investigation.documentation ?? "";
+    const binary = await acquireBinary(bin, sb, investigation, docs, { corpus: await this.binaryCorpus(bin, docs) });
+    investigation.claims.push(...binary.claims);
+    investigation.summary = `${investigation.summary}; ${binary.summary}`;
+    if (binary.capabilities.length) {
+      const locale = effectiveSandboxLocale(sb.policy);
+      for (const c of binary.capabilities) if (c.invoke.kind === "cli") c.invoke.localeProfile = { profile: locale.profile, locale: locale.locale, env: { ...locale.env } };
+      reflection ??= {
+        provider: { id: binary.capabilities[0].provider, title: `${investigation.program.name} (command-line program)`, source: "cli", origin: bin, learnedAt: new Date().toISOString(), capabilityIds: [], meta: { investigation, sha256: investigation.program.sha256, version: investigation.program.version } },
+        capabilities: [],
+      };
+      reflection.capabilities.push(...binary.capabilities.filter((c) => !reflection!.capabilities.some((x) => x.id === c.id)));
+      reflection.provider.capabilityIds = reflection.capabilities.map((c) => c.id);
+    }
     if (!(await sameProgram(bin, check.identity))) throw new Error(`${bin} changed while it was being investigated; nothing learned`);
     if ((await observeCliEnvironment(bin, sb.policy)).digest !== environment.digest)
       throw new CliValidityError("CLI execution environment changed during investigation; nothing learned");
@@ -2158,6 +2177,98 @@ export class RightClick {
     this.investigations.set(bin, investigation);
     const probes = [{ url: `cli:${bin}`, kind: "cli", ok: !!reflection, detail: investigation.summary }];
     return { reflections: reflection ? [reflection] : [], probes };
+  }
+
+  /**
+   * Valid samples of formats the fixture library cannot generate, taken from capabilities
+   * RightClick has already acquired: an established encoder supplies the inputs to investigate
+   * its decoder. Each sample comes from an ordinary authorised run of that capability on a
+   * generated fixture (so its program, environment and sandbox are checked like any run), and is
+   * used only if the independent validator accepts it. Bounded: two formats, two samples each.
+   */
+  private async binaryCorpus(bin: string, docs: string): Promise<CorpusSample[]> {
+    const out: CorpusSample[] = [];
+    const wanted = documentedFormats(docs).filter((f) => !GENERATED_FORMATS.includes(f.mediaType)).slice(0, 2);
+    for (const f of wanted) {
+      const producer = this.graph.list().find((c) => c.invoke.kind === "cli" && !!c.invoke.binary && c.invoke.bin !== bin &&
+        c.outputs[0]?.type === bytesType(f.mediaType) && GENERATED_FORMATS.includes(c.invoke.binary.input.mediaType));
+      if (!producer || producer.invoke.kind !== "cli") continue;
+      const inMt = producer.invoke.binary!.input.mediaType;
+      for (const seed of [1, 2]) {
+        const fx = fixtureFor(inMt, seed);
+        if (!fx) continue;
+        const r = await this.run(producer.id, { input: { type: "bytes", base64: fx.toString("base64") } }).catch(() => undefined);
+        const ref = r?.status === "completed" ? (r.output as { ref?: unknown } | undefined)?.ref : undefined;
+        if (typeof ref !== "string") continue;
+        const bytes = await this.artefacts.get(ref).catch(() => undefined);
+        await this.artefacts.release(ref).catch(() => undefined);
+        if (bytes && f.validate(bytes).ok) out.push({ mediaType: f.mediaType, bytes, source: `output of ${producer.id} (run ${r!.runId}) on a generated ${formatOf(inMt)?.slug} fixture, seed ${seed}` });
+      }
+    }
+    return out;
+  }
+
+  /**
+   * Run a binary transformation RightClick acquired (`CliInvoke.binary`). The contract is
+   * re-established on every run: the input must validate as its format before anything runs, the
+   * output must validate as its format, and every fact the transformation was observed to keep
+   * must be equal in both. Otherwise nothing is stored or returned, and the run keeps digests of
+   * what the program did instead.
+   */
+  private async executeBinary(cap: Capability, inv: CliInvoke, args: Record<string, unknown>, execution: HttpExecution, sb: Sandbox, programSha: string, identity: Parameters<typeof sameProgram>[1]): Promise<ArtefactResult & { mediaType: string }> {
+    const b = inv.binary!;
+    const inF = formatOf(b.input.mediaType), outF = formatOf(b.output.mediaType);
+    if (!inF || !outF) throw new Error(`this runtime has no validator for ${!inF ? b.input.mediaType : b.output.mediaType}, so ${cap.id}'s contract cannot be checked here (HTTP 409 equivalent: nothing was run)`);
+    // A run's own result ({type, ref, sha256, bytes, name}) is passed on by its read grant.
+    const raw = args.input as Record<string, unknown> | undefined;
+    const value = raw && raw.type === "artefact" && typeof raw.ref === "string" ? { type: "artefact" as const, ref: raw.ref } : raw;
+    if (!isArtefactValue(value) || value.type === "text") throw new Error(`input must be exact bytes: {"type":"bytes","base64":…} or {"type":"artefact","ref":…} (HTTP 400 equivalent: nothing was run)`);
+    const bytes = await artefactBytes(value, this.artefacts);
+    const vin = inF.validate(bytes);
+    if (!vin.ok) throw new Error(`input is not a valid ${b.input.mediaType}: ${vin.reason} (HTTP 400 equivalent: nothing was run)`);
+    const inputSha = await sha256Hex(bytes);
+    const consumed = [{ name: b.input.name ?? "stdin", role: (b.input.via === "file" ? "file" : "stdin") as "file" | "stdin", sha256: inputSha, bytes: bytes.length, ...(value.type === "artefact" ? { ref: contentRef(refDigest(value.ref)!) } : {}) }];
+    const before = await this.checkCliEnvironment(cap, sb, execution);
+    const r = await sb.run(inv.bin, b.argv, {
+      ...(b.input.via === "file" ? { files: { [b.input.name!]: bytes } } : { stdin: bytes }),
+      ...(b.output.via === "file" ? { collect: [b.output.name!] } : {}),
+      rawStdout: true, purpose: "execution",
+    });
+    const v = execution.cliValidity!;
+    v.artefacts = { program: { bin: inv.bin, sha256: programSha }, inputs: consumed, outputs: [] };
+    v.processExit = r.code;
+    // The exact invocation (R8): the argument vector with each item's role, and the contract it came from.
+    v.invocation = {
+      v: 1,
+      contract: await sha256Hex(new TextEncoder().encode(stableStringify({ ...b, trials: undefined }))),
+      argv: b.argv.map((a) => a === b.input.name ? { kind: "file" as const, role: "read" as const, name: a, sha256: inputSha, bytes: bytes.length } : a === b.output.name ? { kind: "file" as const, role: "write" as const, name: a } : { kind: "flag" as const, text: a }),
+      ...(b.input.via === "stdin" ? { stdin: { sha256: inputSha, bytes: bytes.length } } : {}),
+    };
+    const out = b.output.via === "file" ? r.outputs?.[b.output.name!] : r.stdoutRaw;
+    const notEstablished = async (reason: string): Promise<Error> => {
+      v.outcome = "not-established";
+      const so = r.stdoutRaw ?? new Uint8Array();
+      v.failure = { reason: reason.slice(0, 300), stderrPreview: r.stderr.slice(0, 300), stdout: { sha256: await sha256Hex(so), bytes: so.length }, unacceptedOutputs: await Promise.all(Object.entries(r.outputs ?? {}).map(async ([name, x]) => ({ name, sha256: await sha256Hex(x), bytes: x.length }))) };
+      return new CliValidityError(`${reason}; no result is established`, v, cap.id);
+    };
+    const after = await observeCliEnvironment(inv.bin, sb.policy);
+    if (after.digest !== before!.digest) { v.environment = "changed"; v.observed = after.digest; throw await notEstablished("CLI execution environment changed during the call"); }
+    if (!(await sameProgram(inv.bin, identity))) throw await notEstablished(`${inv.bin} was replaced while it ran (HTTP 409 equivalent)`);
+    const exit: CliExitStatus = { process: r.timedOut ? "timed-out" : r.truncated ? "truncated" : r.limit ? "limit" : "completed", ...classifyExit(inv, { code: r.code, stderr: r.stderr, producedOutput: !!out?.length }) };
+    v.exitStatus = exit;
+    if (exit.process !== "completed") throw await notEstablished(`${inv.bin} did not complete (${exit.process})`);
+    if (exit.classification === "reported-error") throw await notEstablished(`${inv.bin} exited ${r.code}: ${r.stderr.slice(0, 200)} (${exit.basis})`);
+    if (!out?.length) throw await notEstablished(`${inv.bin} exited 0 but produced no ${b.output.via === "file" ? `${b.output.name}` : "output"}`);
+    const vout = outF.validate(out);
+    if (!vout.ok) throw await notEstablished(`the output is not a valid ${b.output.mediaType}: ${vout.reason}`);
+    const broken = b.preserves.filter((k) => vin.facts[k] !== vout.facts[k]);
+    if (broken.length) throw await notEstablished(`the output does not keep ${broken.map((k) => `${k} (${vin.facts[k]} in, ${vout.facts[k]} out)`).join(", ")}, which this transformation was observed to keep`);
+    v.outputCheck = { mediaType: b.output.mediaType, facts: vout.facts, kept: b.preserves, validator: "core/formats.ts" };
+    const stored = await this.artefacts.put(out, { name: b.output.name ?? "stdout", holder: artefactHolder(execution) });
+    v.artefacts.outputs = [{ name: stored.name ?? "output", ref: contentRef(stored.sha256), sha256: stored.sha256, bytes: stored.bytes }];
+    v.stdoutBytes = r.stdoutRaw?.length ?? 0;
+    v.outcome = "result-established";
+    return { ...stored, mediaType: b.output.mediaType };
   }
 
   private approved(id: string): boolean {
@@ -2655,6 +2766,19 @@ export class RightClick {
         if (isSensitiveName(k)) throw new Error(`refused: "${k}" looks like a credential and cannot be fixed into a goal; leave it as an input each caller supplies`);
         fixed[k] = (v as any).value;
         v = "type" in (v as any) ? { type: (v as any).type, value: (v as any).value } : (v as any).value;
+      }
+      // Exact bytes are typed by what they are, never by a name or a claim: the format validators
+      // decide (core/formats.ts). Bytes no validator accepts in full stay opaque `bytes`. A caller
+      // may declare a bytes type, and it must agree with the bytes.
+      const declared = v && typeof v === "object" && !Array.isArray(v) && "value" in (v as any) ? (v as any).type : undefined;
+      const artefact = isArtefactValue(v) ? v : isArtefactValue((v as any)?.value) ? (v as any).value as ArtefactValue : undefined;
+      if (artefact && artefact.type !== "text" && (declared === undefined || String(declared).startsWith("bytes"))) {
+        const found = identify(await artefactBytes(artefact, this.artefacts));
+        if (declared && declared !== "bytes" && declared !== found.type)
+          throw new Error(`have.${k} is declared ${declared}, but its bytes ${found.mediaType ? `validate as ${found.mediaType}` : "validate as no known format"} (HTTP 400 equivalent: nothing was run)`);
+        types[k] = found.type;
+        values[k] = artefact;
+        continue;
       }
       if (v && typeof v === "object" && !Array.isArray(v) && "type" in (v as any) && "value" in (v as any)) {
         types[k] = (v as any).type;
@@ -4050,6 +4174,7 @@ export class RightClick {
           this.hashCache.set(inv.bin, cached);
         }
         if (cached.sha256 !== inv.sha256) throw new Error(`program changed since it was investigated: ${inv.bin} (sha256 ${cached.sha256.slice(0, 12)}, investigated ${inv.sha256.slice(0, 12)}); not run (HTTP 409 equivalent)`);
+        if (inv.binary) return await this.executeBinary(cap, inv, args, execution, sb, cached.sha256, id);
         const files: Record<string, string | Uint8Array> = Object.create(null);
         // What this run consumes, for its provenance record: every staged file and stdin, by digest.
         const consumed: Array<{ name: string; role: "file" | "stdin"; sha256: string; bytes: number; ref?: string }> = [];

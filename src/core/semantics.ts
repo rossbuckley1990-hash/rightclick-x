@@ -42,6 +42,11 @@ const PARENT: Record<string, SemType> = {
 export const SEMANTIC_TYPES = Object.keys(PARENT);
 
 export function parentOf(t: SemType): SemType | undefined {
+  // Exact bytes are their own lattice: `bytes:<media type>` widens only to opaque `bytes`, and
+  // `bytes` is a root. Neither is JSON or text, so no composition ever coerces bytes into a value
+  // a text or JSON port would take, or the reverse.
+  if (t === "bytes") return undefined;
+  if (t.startsWith("bytes:")) return "bytes";
   if (t.startsWith("list:")) return "json";
   if (isQuantityType(t)) return "number";
   if (t.startsWith("id.")) return "id";

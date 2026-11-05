@@ -174,6 +174,36 @@ export interface GoalInvoke {
 }
 
 /** A local command-line program, run only inside the host sandbox. */
+/** One sandboxed acquisition trial, kept as evidence by digest. */
+export interface BinaryTrial {
+  purpose: string;
+  argv: string[];
+  input: { sha256: string; bytes: number; mediaType: string; valid: boolean; source: string };
+  exit: number | null;
+  process: "completed" | "timed-out" | "limit" | "truncated";
+  output?: { sha256: string; bytes: number; type: string };
+  stderrPreview: string;
+  ms: number;
+}
+
+/** See `CliInvoke.binary`. */
+export interface BinaryContract {
+  v: 1;
+  input: { mediaType: string; via: "file" | "stdin"; name?: string };
+  output: { mediaType: string; via: "file" | "stdout"; name?: string };
+  /** The argument vector observed to work, with the staged input and output names in place. */
+  argv: string[];
+  /** Facts the output kept from the input in every confirming trial (width, height, pages, ...). */
+  preserves: string[];
+  /** "bytes": the same input gave identical output; "structure": identical facts, different bytes. */
+  deterministic: "bytes" | "structure";
+  /** How the program treated invalid input during acquisition. */
+  rejectsInvalid: "yes" | "no" | "not-tested";
+  /** Where the valid inputs came from: generated fixtures, or outputs of another acquired capability. */
+  fixtures: string;
+  trials: BinaryTrial[];
+}
+
 export interface CliInvoke {
   kind: "cli";
   bin: string;
@@ -218,6 +248,15 @@ export interface CliInvoke {
    * interface whose behaviour was never observed, or state learned before this was recorded).
    */
   exitSemantics?: Record<string, { meaning: string; evidence: string }>;
+  /**
+   * A binary transformation RightClick established by its own experiments (see
+   * reflectors/binary-acquisition.ts): one typed input artefact in, one typed output artefact
+   * out, with the exact argument vector that was observed to work. Every run re-establishes the
+   * contract: the input must validate as `input.mediaType` before anything runs, the output must
+   * validate as `output.mediaType`, and every fact in `preserves` must be equal in both, or no
+   * result is established.
+   */
+  binary?: BinaryContract;
   output: "text" | "json" | "html" | "xml";
   /** SHA-256 of the program when it was investigated; a different program is not run as this. */
   sha256: string;

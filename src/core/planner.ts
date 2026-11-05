@@ -431,10 +431,13 @@ function bind(cap: Capability, values: Value[], describeValue: (v: Value) => Bin
       // An explicit binding is a constraint, not a hint: no fallback if it cannot bind.
       const explicitlyNamed = requested && Object.hasOwn(requested, port.name) ? requested[port.name] : undefined;
       if (explicitlyNamed !== undefined && v.ref !== `$in.${explicitlyNamed}`) continue;
-      const stringLike = (t: string) => !/^(number|boolean|json|list:|quantity:|geo\.)/.test(t);
+      const stringLike = (t: string) => !/^(number|boolean|json|list:|quantity:|geo\.|bytes)/.test(t);
+      // Exact bytes bind by type only: never by name into a text or JSON port, and nothing reaches a
+      // bytes port by name, because a name says nothing about what the bytes are.
+      const bytesLike = (t: string) => t === "bytes" || t.startsWith("bytes:");
       // ...and a caller value given under the port's exact name goes to that port even when it is a
       // list or JSON port (options, files): the caller named it.
-      const bridged = v.step === -1 && (port.type === `id.${callerName}` || ((callerName === portName || explicitlyNamed !== undefined) && ((stringLike(port.type) && stringLike(v.type)) || port.type.startsWith("list:") || port.type === "json")));
+      const bridged = v.step === -1 && !bytesLike(v.type) && !bytesLike(port.type) && (port.type === `id.${callerName}` || ((callerName === portName || explicitlyNamed !== undefined) && ((stringLike(port.type) && stringLike(v.type)) || port.type.startsWith("list:") || port.type === "json")));
       // An explicitly anchored step with a `json` input port (e.g. jq) accepts structured JSON and
       // typed lists produced by an earlier step or supplied by the caller.
       const anchoredJson = anchored && port.type === "json" && port.name !== cap.invoke?.["filesPort" as keyof typeof cap.invoke] && (v.type === "json" || v.type.startsWith("list:"));
