@@ -18,7 +18,7 @@ import { selectionWith } from "./reflectors/graphql.ts";
 import { effectiveSandboxLocale, hostSandbox, normaliseSandboxPaths, resolveSandboxLocale, withSandboxLocale, type Sandbox, type SandboxLocale } from "./core/sandbox.ts";
 import { validateFileNames } from "./core/cli-files.ts";
 import { observeCliEnvironment } from "./core/cli-environment.ts";
-import { CliValidityError, reportsApplicationError, type CliValidity } from "./core/cli-outcome.ts";
+import { CliValidityError, classifyExit, reportsApplicationError, successExitCodes, type CliExitStatus, type CliValidity } from "./core/cli-outcome.ts";
 import { carryCliContinuity, withoutCliContinuity } from "./core/cli-continuity.ts";
 import { cliConformanceContract, parseCliConformance, type CliConformance, type CliConformancePin } from "./core/cli-conformance.ts";
 import { checkProgram, sameProgram } from "./core/programs.ts";
@@ -32,6 +32,7 @@ import { describeResult, resultDescription, type ResultDescription } from "./cor
 import type { Capability, CapabilityAnchor, FetchLike, GraphQLFailureEvidence, PlanStep, Provider, Reflection, SemType, TransportRefusal } from "./core/types.ts";
 import { agreement, assertAgreement, check, lintPublicationPredicates, pick, type Predicate, type PredicateResult, type PredicateWarning, type OutcomeWitness, type WitnessResult } from "./core/verify.ts";
 import { builtinReflection, type BuiltinFn } from "./reflectors/builtins.ts";
+import { ArtefactStore, artefactBytes, contentRef, isArtefactValue, refDigest, sha256Hex, ARTEFACT_LIMITS, type ArtefactResult } from "./core/artefacts.ts";
 import { DEFAULT_DIRECTORIES, type Candidate, type Directory } from "./reflectors/directories.ts";
 import { discover, type Discovery, type SourceKind } from "./reflectors/discover.ts";
 import { environmentNet, environmentOptions, observeCatalog, type EnvironmentOptions, type EnvironmentReport } from "./reflectors/environment.ts";
@@ -130,6 +131,10 @@ interface HttpExecution {
   continuation?: HttpContinuationEvidence;
   checkpoint?: (cursor: HttpContinuationCursor | null) => Promise<void>;
 }
+/** Who holds the artefacts a run stores: the run itself, so its outputs expire with its retention. */
+function artefactHolder(execution: HttpExecution): string {
+  return `run:${execution.transportOwner?.runId ?? "unrecorded"}`;
+}
 function validHttpRun(c: HttpRunContinuation): boolean {
   try {
     return typeof c.runId === "string" && c.runId.length <= 128 && typeof c.capability === "string" &&
@@ -193,6 +198,10 @@ interface ReuseGuidance {
 
 export interface RuntimeOptions {
   name?: string;
+  /** Directory for persisted byte-exact artefacts (content-addressed). Without it, artefacts live in memory only. */
+  artefactDir?: string;
+  /** How long a run's output artefacts are held before they expire (default 7 days). */
+  artefactRetentionMs?: number;
   region?: string;
   fetch?: FetchLike;
   auth?: Authority;
@@ -632,6 +641,8 @@ export class RightClick {
   private shareEvidence = false;
   private publishPolicy: "any" | "checked" | "verified" = "any";
   private sandboxLocale?: SandboxLocale;
+  /** Byte-exact artefacts this runtime holds: callers' inputs and runs' collected outputs. */
+  readonly artefacts!: ArtefactStore;
   private sandboxCache?: Promise<Sandbox | null>;
   private currentSandbox?: Sandbox | null;
   private onInvestigationStart?: (program: string) => void;
@@ -652,6 +663,7 @@ export class RightClick {
       policy: origins === undefined ? opts.network : { blockPrivate: false, ...opts.network, origins },
     };
     this.directories = opts.directories ?? DEFAULT_DIRECTORIES;
+    this.artefacts = new ArtefactStore(opts.artefactDir, opts.artefactRetentionMs !== undefined ? { retentionMs: opts.artefactRetentionMs } : {});
     this.environment = environmentOptions(opts.environment);
     this.httpContinuation = continuationPolicy(opts.httpContinuation);
     this.workflowRecovery = opts.workflowRecovery === true;
@@ -1477,7 +1489,7 @@ export class RightClick {
       ],
       requiredAuthority: c.risk === "read" ? "read" : c.risk,
       verificationObligations: goal ? { predicates: goal.verify ?? [], witnesses: (goal.witnesses ?? []).map((w) => w.capability) } : "none stored: results are reported unverified unless the caller supplies checks",
-      failureBehaviour: inv.kind === "cli" ? { successExitCodes: inv.okExit, emptyInput: claims.find((cl) => /on empty input/.test(cl.claim))?.claim ?? "not observed" } : undefined,
+      failureBehaviour: inv.kind === "cli" ? { successExitCodes: successExitCodes(inv), ...(inv.exitSemantics ? { exitSemantics: inv.exitSemantics } : {}), emptyInput: claims.find((cl) => /on empty input/.test(cl.claim))?.claim ?? "not observed" } : undefined,
       invalidatedWhen: inv.kind === "cli"
         ? ["the program file is removed (capability withdrawn)", "the program's bytes change and its behaviour on the stored examples differs (refused as a different operation)", "the operator revokes execution authority", "no host sandbox is available"]
         : ["the provider's contract no longer declares the operation", "the operation's identity (method and path, or tool) changes"],
@@ -1874,9 +1886,15 @@ export class RightClick {
           // A caller's own mistake (an undocumented option, a literal that looks like an option)
           // says nothing about the provider: no repair, no re-investigation.
           if (e instanceof PendingOutcomeError || e instanceof TransportRefused || e instanceof ExecutionDenied || e instanceof JsonRepresentationError || e instanceof GraphQLFailure || e instanceof CliValidityError || opts.planned || !HEALABLE.has(cap.invoke.kind) || /HTTP 400 equivalent|is not one this program documents|needs a value/.test(String((e as Error)?.message ?? e))) throw e;
+          // A repair that does not succeed leaves the failed attempt's evidence as the record:
+          // re-reading the contract must not replace what the program actually did.
+          const failedValidity = execution.cliValidity;
           const h = await this.healRun(cap, args, String((e as Error)?.message ?? e), opts.net, execution, opts.confirm);
           healing = h.healing;
-          if (!h.healed) throw new Error(`${healing.error}; ${healing.note}`);
+          if (!h.healed) {
+            if (failedValidity) execution.cliValidity = failedValidity;
+            throw new Error(`${healing.error}; ${healing.note}`);
+          }
           output = h.output;
         } finally { if (!resumed) this.activeContinuations.delete(continuationId); }
       }
@@ -2113,7 +2131,16 @@ export class RightClick {
       const sha = createHash("sha256").update(fs.readFileSync(check.identity.real)).digest("hex");
       const known = [...this.graph.providers.values()].find((p) => p.meta?.source === `cli:${bin}` && p.meta?.sha256 === sha);
       const caps = known ? (known.capabilityIds.map((id) => this.graph.get(id)).filter(Boolean) as Capability[]) : [];
-      if (known && caps.length && caps.every(c => c.invoke.kind === "cli" && c.invoke.environment?.digest === environment.digest)) {
+      // A contract that lists a nonzero success code without its evidence was learned before exit
+      // semantics were recorded (main before the exit-status contract, or an unreleased candidate).
+      // Such a code is never a success now, so reusing the contract would refuse that outcome for
+      // good: investigate again so that the code is either established with evidence or dropped.
+      const current = (c: Capability) => {
+        const inv = c.invoke;
+        if (inv.kind !== "cli" || inv.environment?.digest !== environment.digest) return false;
+        return inv.okExit.every((code) => code === 0 || !!inv.exitSemantics?.[String(code)]);
+      };
+      if (known && caps.length && caps.every(current)) {
         const inv = known.meta?.investigation as Investigation | undefined;
         if (inv) this.investigations.set(bin, inv);
         return { reflections: [{ provider: known, capabilities: caps }], probes: [{ url: `cli:${bin}`, kind: "cli", ok: true, detail: `already learned and unchanged (sha256 ${sha.slice(0, 12)}): ${caps.length} capabilit${caps.length === 1 ? "y" : "ies"}: ${caps.map((c) => c.id).join(", ")}; nothing re-run` }] };
@@ -4023,10 +4050,46 @@ export class RightClick {
           this.hashCache.set(inv.bin, cached);
         }
         if (cached.sha256 !== inv.sha256) throw new Error(`program changed since it was investigated: ${inv.bin} (sha256 ${cached.sha256.slice(0, 12)}, investigated ${inv.sha256.slice(0, 12)}); not run (HTTP 409 equivalent)`);
-        const files: Record<string, string> = Object.create(null);
+        const files: Record<string, string | Uint8Array> = Object.create(null);
+        // What this run consumes, for its provenance record: every staged file and stdin, by digest.
+        const consumed: Array<{ name: string; role: "file" | "stdin"; sha256: string; bytes: number; ref?: string }> = [];
+        // Content is text unless the caller passed an explicit artefact value: exact bytes, text in a
+        // declared encoding, or a reference to bytes this runtime holds. Bytes are never coerced
+        // through a string, and a value that cannot be represented exactly is refused.
+        // Inline content is staged, not stored: the caller already holds those bytes, and keeping
+        // them would retain every input indefinitely. A held artefact is read with its grant and
+        // recorded by content identity only, so the record never carries a read grant.
+        const contentOf = async (v: unknown): Promise<{ data: string | Uint8Array; ref?: string }> => {
+          if (!isArtefactValue(v)) return { data: asContent(v) };
+          const bytes = await artefactBytes(v, this.artefacts);
+          return { data: bytes, ...(v.type === "artefact" ? { ref: contentRef(refDigest(v.ref)!) } : {}) };
+        };
+        const record = async (name: string, role: "file" | "stdin", c: { data: string | Uint8Array; ref?: string }) => {
+          const b = typeof c.data === "string" ? new TextEncoder().encode(c.data) : c.data;
+          consumed.push({ name, role, sha256: await sha256Hex(b), bytes: b.length, ...(c.ref ? { ref: c.ref } : {}) });
+        };
+        // Named files, declared outputs and the stdout mode are read first: option values that name
+        // files are checked against them before anything runs.
+        const named = inv.filesPort ? args[inv.filesPort] : undefined;
+        if (named !== undefined && (!named || typeof named !== "object" || Array.isArray(named) || isArtefactValue(named))) throw new Error("files must be an object mapping exact names to content (HTTP 400 equivalent: nothing was run)");
+        const names = Object.keys(named ?? {});
+        const declaredOutputs = inv.outputsPort ? args[inv.outputsPort] : undefined;
+        if (declaredOutputs !== undefined && (!Array.isArray(declaredOutputs) || !declaredOutputs.every((n) => typeof n === "string"))) throw new Error("outputs must be a list of flat file names (HTTP 400 equivalent: nothing was run)");
+        const outputNames = (declaredOutputs as string[] | undefined) ?? [];
+        if (outputNames.length > ARTEFACT_LIMITS.maxOutputs) throw new Error(`at most ${ARTEFACT_LIMITS.maxOutputs} outputs may be declared (HTTP 400 equivalent: nothing was run)`);
+        const stdoutAs = inv.stdoutAsPort ? (args[inv.stdoutAsPort] ?? "text") : "text";
+        if (stdoutAs !== "text" && stdoutAs !== "artefact") throw new Error('stdoutAs must be "text" or "artefact" (HTTP 400 equivalent: nothing was run)');
+        const artefactMode = outputNames.length > 0 || stdoutAs === "artefact";
+        if (outputNames.length) {
+          validateFileNames([...names, ...outputNames]);
+        }
+        const fileRoles = { inputs: names, outputs: outputNames };
         // Documented options chosen by the caller, checked against the declared list first.
-        const chosen = inv.options ? validateOptions(args[inv.options.port], inv.options.allowed, inv.options.excluded) : [];
-        const chosenAfterArgs = inv.optionsAfterArgs ? validateOptions(args[inv.optionsAfterArgs.port], inv.optionsAfterArgs.allowed, inv.optionsAfterArgs.excluded) : [];
+        const chosen = inv.options ? validateOptions(args[inv.options.port], inv.options.allowed, inv.options.excluded, fileRoles) : [];
+        const chosenAfterArgs = inv.optionsAfterArgs ? validateOptions(args[inv.optionsAfterArgs.port], inv.optionsAfterArgs.allowed, inv.optionsAfterArgs.excluded, fileRoles) : [];
+        const resolved = new Map<string, { data: string | Uint8Array; ref?: string }>();
+        for (const a of inv.args) if (typeof a !== "string" && !a.literal && args[a.input] !== undefined && isArtefactValue(args[a.input])) resolved.set(a.input, await contentOf(args[a.input]));
+        const staged: Array<{ name: string; c: { data: string | Uint8Array; ref?: string } }> = [];
         const argv = [...chosen, ...inv.args.map((a, i) => {
           if (typeof a === "string") return a;
           if (a.literal) {
@@ -4042,38 +4105,96 @@ export class RightClick {
           // Without this, a capability investigated on .md samples is handed a .txt file at run time and the
           // program parses it as something else, so the observed contract does not hold for the caller.
           const declared = PORT_EXTENSIONS[cap.inputs.find((p) => p.name === a.input)?.type ?? ""];
-          const name = `in${i}-${a.input.replace(/[^\w]/g, "")}.${declared ?? contentExtension(asContent(args[a.input]))}`;
-          files[name] = asContent(args[a.input]);
+          const c = resolved.get(a.input) ?? { data: asContent(args[a.input]) };
+          const name = `in${i}-${a.input.replace(/[^\w]/g, "")}.${declared ?? (typeof c.data === "string" ? contentExtension(c.data) : "bin")}`;
+          files[name] = c.data;
+          staged.push({ name, c });
           return name;
         }), ...chosenAfterArgs].filter((x): x is string => x !== null);
         // Auxiliary files and positional operands are different roles. Do not guess a role from
         // an option value: a pattern can equal a file name. The caller can name the exact operands.
-        const named = inv.filesPort ? args[inv.filesPort] : undefined;
-        if (named !== undefined && (!named || typeof named !== "object" || Array.isArray(named))) throw new Error("files must be an object mapping exact names to content (HTTP 400 equivalent: nothing was run)");
-        const names = Object.keys(named ?? {});
         validateFileNames([...Object.keys(files), ...names]);
         if (named) {
-          for (const [n, content] of Object.entries(named as Record<string, unknown>)) {
-            files[n] = asContent(content);
+          for (const [n, v] of Object.entries(named as Record<string, unknown>)) {
+            const c = await contentOf(v);
+            files[n] = c.data;
+            staged.push({ name: n, c });
           }
         }
+        for (const st of staged) await record(st.name, "file", st.c);
         const operands = inv.operandsPort ? args[inv.operandsPort] : undefined;
-        if (operands !== undefined && (!Array.isArray(operands) || !operands.every(n => typeof n === "string" && names.includes(n)))) throw new Error("operands must be a list of names present in files (HTTP 400 equivalent: nothing was run)");
+        if (operands !== undefined && (!Array.isArray(operands) || !operands.every(n => typeof n === "string" && (names.includes(n) || outputNames.includes(n))))) throw new Error("operands must be a list of names present in files or outputs (HTTP 400 equivalent: nothing was run)");
         argv.push(...(operands === undefined ? names : operands as string[]));
+        const stdinContent = inv.stdin ? await contentOf(args[inv.stdin]) : { data: "" };
+        if (inv.stdin && args[inv.stdin] !== undefined) await record("stdin", "stdin", stdinContent);
         const before = await this.checkCliEnvironment(cap, sb, execution);
-        const r = await sb.run(inv.bin, argv, { stdin: inv.stdin ? asContent(args[inv.stdin]) : "", files, purpose: sampleSandbox ? "revalidation" : "execution" });
+        const r = await sb.run(inv.bin, argv, { stdin: stdinContent.data, files, ...(outputNames.length ? { collect: outputNames } : {}), rawStdout: true, purpose: sampleSandbox ? "revalidation" : "execution" });
+        // Provenance at the result interface: which program, checked as which build, consumed which
+        // bytes. Outputs are added below once they are established.
+        execution.cliValidity!.artefacts = { program: { bin: inv.bin, sha256: cached.sha256 }, inputs: consumed, outputs: [] };
         execution.cliValidity!.processExit = r.code;
+        // Evidence of a run whose result is not established: digests and sizes only. Nothing it
+        // printed or wrote is stored as an artefact or returned, so a failed or partial output can
+        // never be read back as though it were this capability's result.
+        const notEstablished = async (reason: string): Promise<string> => {
+          const raw = r.stdoutRaw ?? new TextEncoder().encode(r.stdout);
+          execution.cliValidity!.outcome = "not-established";
+          execution.cliValidity!.failure = {
+            reason: reason.slice(0, 300),
+            stderrPreview: r.stderr.slice(0, 300),
+            stdout: { sha256: await sha256Hex(raw), bytes: raw.length },
+            unacceptedOutputs: await Promise.all(Object.entries(r.outputs ?? {}).map(async ([name, b]) => ({ name, sha256: await sha256Hex(b), bytes: b.length }))),
+          };
+          return reason;
+        };
         const after = await observeCliEnvironment(inv.bin, sb.policy);
         if (after.digest !== before!.digest) {
           execution.cliValidity!.environment = "changed";
           execution.cliValidity!.observed = after.digest;
-          throw new CliValidityError("CLI execution environment changed during the call; output discarded; not replayed", execution.cliValidity, cap.id);
+          throw new CliValidityError(await notEstablished("CLI execution environment changed during the call; output discarded; not replayed"), execution.cliValidity, cap.id);
         }
         // A file swapped while it ran: its output belongs to a program nobody checked.
-        if (!(await sameProgram(inv.bin, id))) throw new Error(`${inv.bin} was replaced while it ran; its output is discarded (HTTP 409 equivalent)`);
-        if (r.limit && r.limit !== "time" && r.limit !== "output") throw new Error(`${inv.bin} exceeded the sandbox's ${r.limit} limit`);
-        if (r.timedOut) throw new Error(`${inv.bin} timed out in the sandbox`);
-        if (r.truncated) throw new Error(`${inv.bin} exceeded the output limit`);
+        if (!(await sameProgram(inv.bin, id))) throw new Error(await notEstablished(`${inv.bin} was replaced while it ran; its output is discarded (HTTP 409 equivalent)`));
+        const stdoutLength = r.stdoutRaw?.length ?? r.stdoutBytes ?? 0;
+        // What counts as output for a nonzero exit's semantic basis: printed bytes, or every declared
+        // output file the program was asked to write.
+        const producedOutput = artefactMode ? stdoutLength > 0 || (outputNames.length > 0 && outputNames.every((n) => !!r.outputs?.[n])) : !!r.stdout.trim();
+        const exit: CliExitStatus = {
+          process: r.timedOut ? "timed-out" : r.truncated ? "truncated" : r.limit ? "limit" : "completed",
+          ...classifyExit(inv, { code: r.code, stderr: r.stderr, producedOutput }),
+        };
+        execution.cliValidity!.exitStatus = exit;
+        if (r.limit && r.limit !== "time" && r.limit !== "output") throw new Error(await notEstablished(`${inv.bin} exceeded the sandbox's ${r.limit} limit`));
+        if (r.timedOut) throw new Error(await notEstablished(`${inv.bin} timed out in the sandbox`));
+        if (r.truncated) throw new Error(await notEstablished(`${inv.bin} exceeded the output limit`));
+        const exitFailure = () => `${inv.bin} exited ${r.code}${producedOutput ? "" : " without output"}: ${r.stderr.slice(0, 300)} (${exit.basis}); no result is established`;
+        if (artefactMode) {
+          // A failed run returns nothing: not its stdout, not the files it wrote (a partial TIFF, an
+          // empty digest). Its failure evidence is retained by digest only.
+          if (exit.classification === "reported-error") throw new Error(await notEstablished(exitFailure()));
+          for (const n of outputNames) {
+            if (!r.outputs?.[n]) throw new CliValidityError(await notEstablished(`declared output ${JSON.stringify(n)} ${r.outputRefusals?.[n] ?? "was not created"} (process exit ${r.code}); no result is established`), execution.cliValidity, cap.id);
+          }
+          if (stdoutAs !== "artefact" && r.stdoutEncoding === "unsupported") throw new CliValidityError(await notEstablished(`${inv.bin} printed ${r.stdoutBytes ?? 0} byte(s) that are not valid UTF-8; pass "stdoutAs":"artefact" to receive them exactly`), execution.cliValidity, cap.id);
+          // Every check has passed before anything is stored: a run that fails half-way publishes
+          // no artefact, and one the store cannot hold releases what it already stored.
+          const holder = artefactHolder(execution);
+          const produced: Record<string, ArtefactResult> = {};
+          let stdout: string | ArtefactResult;
+          try {
+            for (const n of outputNames) produced[n] = await this.artefacts.put(r.outputs![n], { name: n, holder });
+            stdout = stdoutAs === "artefact" ? await this.artefacts.put(r.stdoutRaw ?? new Uint8Array(), { name: "stdout", holder }) : normaliseSandboxPaths(r.stdout, r.workDir);
+          } catch (e) {
+            for (const a of Object.values(produced)) await this.artefacts.releaseHolder(a.sha256, holder).catch(() => undefined);
+            throw new Error(await notEstablished(`${inv.bin}'s outputs could not be stored: ${(e as Error).message}`));
+          }
+          const raw = r.stdoutRaw ?? new Uint8Array();
+          execution.cliValidity!.artefacts!.outputs = Object.entries(produced).map(([name, a]) => ({ name, ref: contentRef(a.sha256), sha256: a.sha256, bytes: a.bytes }));
+          execution.cliValidity!.artefacts!.stdout = { sha256: await sha256Hex(raw), bytes: raw.length, ...(typeof stdout === "object" ? { ref: contentRef(stdout.sha256) } : {}) };
+          execution.cliValidity!.stdoutBytes = raw.length;
+          execution.cliValidity!.outcome = "result-established";
+          return { exitCode: r.code, stdout, outputs: produced };
+        }
         let envelope: unknown;
         try { envelope = JSON.parse(r.stdout); } catch {}
         execution.cliValidity!.application = reportsApplicationError(envelope) ? "reported-error" : "not-established";
@@ -4084,20 +4205,20 @@ export class RightClick {
         // silently replaced, and the outcome is explicitly unsupported rather than approximate.
         if (r.stdoutEncoding === "unsupported") {
           execution.cliValidity!.rawOutputBase64 = r.stdoutBase64;
-          throw new CliValidityError(`${inv.bin} printed ${r.stdoutBytes ?? 0} byte(s) that are not valid UTF-8, so no text result is established: decoding them substitutes U+FFFD for every invalid sequence and would report that as the program's output. ${r.stdoutBase64 ? "The first bytes are retained as base64 in this run's record." : "The raw bytes could not be retained."} This capability's contract is text; a byte-exact channel for it has not been established, so its encoding is reported unsupported rather than approximated.`, execution.cliValidity, cap.id);
+          throw new CliValidityError(await notEstablished(`${inv.bin} printed ${r.stdoutBytes ?? 0} byte(s) that are not valid UTF-8, so no text result is established: decoding them substitutes U+FFFD for every invalid sequence and would report that as the program's output. ${r.stdoutBase64 ? "The first bytes are retained as base64 in this run's record." : "The raw bytes could not be retained."} This capability's contract is text; a byte-exact channel for it has not been established, so its encoding is reported unsupported rather than approximated.`), execution.cliValidity, cap.id);
         }
         if (execution.cliValidity!.application === "reported-error")
-          throw new CliValidityError(`CLI reported an application-level error envelope (process exit ${r.code}); outcome not established; not replayed`, execution.cliValidity, cap.id);
-        if (!inv.okExit.includes(r.code ?? -1)) throw new Error(`${inv.bin} exited ${r.code}: ${r.stderr.slice(0, 300)}`);
+          throw new CliValidityError(await notEstablished(`CLI reported an application-level error envelope (process exit ${r.code}); outcome not established; not replayed`), execution.cliValidity, cap.id);
+        if (exit.classification === "reported-error") throw new Error(await notEstablished(exitFailure()));
         // Empty standard output on the program's own success code is an empty answer, not a failure:
         // a filter that matched nothing, a checker with nothing to report and a comparison that
         // found no difference all exit 0 having printed nothing. Refusing that substituted this
         // runtime's judgement for the program's exit-code contract. Every way a run can genuinely
         // fail still fails: an exit code outside the learned set, a timeout, a truncation, a sandbox
-        // limit, an application-error envelope, and a non-zero exit never observed with a result.
+        // limit, an application-error envelope, and a nonzero exit without its demonstrated basis.
         const emptyResult = !r.stdout.trim();
         if (emptyResult) {
-          if (r.code !== 0) throw new Error(`${inv.bin} exited ${r.code} without output: ${r.stderr.slice(0, 300)}`);
+          if (r.code !== 0) throw new Error(await notEstablished(`${inv.bin} exited ${r.code} without output: ${r.stderr.slice(0, 300)}`));
           execution.cliValidity!.emptyResult = true;
         }
         // The sandbox directory is created fresh for every run and deleted when it ends, so a
@@ -4106,31 +4227,32 @@ export class RightClick {
         // anyone reads this, and the raw output's digest is kept here, so the evidence is normalised
         // rather than discarded. Only this run's own directory is volatile: any other path
         // difference is a real change in what the program printed and survives untouched.
+        execution.cliValidity!.artefacts!.stdout = { sha256: await sha256Hex(new TextEncoder().encode(r.stdout)), bytes: r.stdoutBytes ?? new TextEncoder().encode(r.stdout).length };
         const output = normaliseSandboxPaths(r.stdout, r.workDir);
         if (output !== r.stdout) {
           execution.cliValidity!.sandboxPathNormalised = true;
           execution.cliValidity!.rawOutputSha256 = await sha256(r.stdout);
         }
+        let result: unknown = output;
         if (inv.output === "json") {
-          try { return parseJsonValue(output); }
+          try { result = parseJsonValue(output); }
           catch (error) {
-            if (error instanceof JsonRepresentationError) throw error;
-            throw new Error(`${inv.bin} did not print JSON this time`);
+            if (error instanceof JsonRepresentationError) { await notEstablished(error.message); throw error; }
+            throw new Error(await notEstablished(`${inv.bin} did not print JSON this time`));
           }
-        }
-        if (inv.lineType) {
-          if (emptyResult) return [];
+        } else if (inv.lineType) {
           // The representation was established by validating every line of every working trial, and
           // it is re-validated here by the same rule: a line that does not classify as the declared
           // element type is a refusal, never a coerced element. Without this the list type a
           // composer bound against would be a promise the run does not keep.
-          if (!linesValidateAs(output, inv.lineType)) {
+          if (emptyResult) result = [];
+          else if (!linesValidateAs(output, inv.lineType)) {
             const offending = output.split("\n").map((l) => l.trim()).filter(Boolean).find((l) => !linesValidateAs(l, inv.lineType!)) ?? "";
-            throw new CliValidityError(`${inv.bin} printed a line that is not ${inv.lineType} (${JSON.stringify(offending.slice(0, 80))}), so the list:${inv.lineType} this capability's contract declares is not established for this input. Nothing is returned rather than a mistyped value.`, execution.cliValidity, cap.id);
-          }
-          return output.split("\n").map((l) => l.trim()).filter(Boolean);
+            throw new CliValidityError(await notEstablished(`${inv.bin} printed a line that is not ${inv.lineType} (${JSON.stringify(offending.slice(0, 80))}), so the list:${inv.lineType} this capability's contract declares is not established for this input. Nothing is returned rather than a mistyped value.`), execution.cliValidity, cap.id);
+          } else result = output.split("\n").map((l) => l.trim()).filter(Boolean);
         }
-        return output;
+        execution.cliValidity!.outcome = "result-established";
+        return result;
       }
       case "composite":
       case "goal":
@@ -4170,6 +4292,32 @@ export class RightClick {
       // rejects; a timer must not produce an unhandled rejection after an effect.
       void this.flush().catch(() => {});
     }, 50);
+  }
+
+  /**
+   * Read a byte-exact artefact this runtime holds (a run's output, or an input it was given), in
+   * bounded slices. Only content-addressed references resolve; nothing here can name a host path.
+   */
+  async readArtefact(ref: string, opts: { offset?: number; length?: number } = {}): Promise<{ ref: string; sha256: string; bytes: number; offset: number; length: number; base64: string; complete: boolean }> {
+    if (typeof ref !== "string") throw new Error("artefact must be the ref string a run returned");
+    const bytes = await this.artefacts.get(ref);
+    const offset = opts.offset ?? 0;
+    const want = opts.length ?? ARTEFACT_LIMITS.maxReadBytes;
+    if (!Number.isInteger(offset) || offset < 0 || offset > bytes.length) throw new Error(`offset must be an integer between 0 and ${bytes.length}`);
+    if (!Number.isInteger(want) || want < 0) throw new Error("length must be a non-negative integer");
+    const length = Math.min(want, ARTEFACT_LIMITS.maxReadBytes, bytes.length - offset);
+    const slice = bytes.subarray(offset, offset + length);
+    return { ref, sha256: await sha256Hex(bytes), bytes: bytes.length, offset, length, base64: Buffer.from(slice).toString("base64"), complete: offset + length === bytes.length };
+  }
+
+  /**
+   * End the hold a read grant belongs to, before its retention would. The run's record keeps the
+   * content digest; the grant stops reading, and content no other hold keeps is deleted now.
+   */
+  async releaseArtefact(ref: string): Promise<{ ref: string; released: boolean; deleted: boolean; remainingHolds: number }> {
+    if (typeof ref !== "string") throw new Error("artefact must be the ref string a run returned");
+    const r = await this.artefacts.release(ref);
+    return { ref: contentRef(refDigest(ref)!), ...r };
   }
 
   async flush(): Promise<void> {

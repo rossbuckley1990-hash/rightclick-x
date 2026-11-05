@@ -187,20 +187,37 @@ export interface CliInvoke {
    * their arguments) in the input named `port`; anything else is refused before running.
    * These are placed before `args`: group-level options, or a program's only options.
    */
-  options?: { port: string; allowed: Array<{ flags: string[]; arg: boolean; optionalArg?: boolean }>; excluded?: string[] };
+  options?: { port: string; allowed: Array<{ flags: string[]; arg: boolean; arity?: number; optionalArg?: boolean; file?: "read" | "write" }>; excluded?: string[] };
   /**
    * Documented options placed after `args`. A subcommand's own options belong after the verb
    * when a program requires `prog [global options] verb [verb options] [files]`.
    */
-  optionsAfterArgs?: { port: string; allowed: Array<{ flags: string[]; arg: boolean; optionalArg?: boolean }>; excluded?: string[] };
+  optionsAfterArgs?: { port: string; allowed: Array<{ flags: string[]; arg: boolean; arity?: number; optionalArg?: boolean; file?: "read" | "write" }>; excluded?: string[] };
   /** Input holding named files ({name: content}) written exactly into the sandbox. */
   filesPort?: string;
   /** Optional list of named files to append as operands, in order. Omitted means all files; [] means none. */
   operandsPort?: string;
+  /** Input naming files the program creates (flat names); their exact bytes are returned as artefacts. */
+  outputsPort?: string;
+  /** Input choosing how stdout is returned: "text" (default, UTF-8 required) or "artefact" (exact bytes). */
+  stdoutAsPort?: string;
   /** Input whose value is written to stdin. */
   stdin?: string;
-  /** Exit codes observed together with real output for valid input. */
+  /**
+   * Exit codes after which this operation's result may be established. Exit 0 is success by
+   * convention. A nonzero code here is a success only with an entry in `exitSemantics`: see there.
+   */
   okExit: number[];
+  /**
+   * The demonstrated basis for each nonzero code in `okExit`, keyed by the code. A nonzero exit is
+   * a valid outcome of this operation (a comparison that found differences) only when the
+   * investigation observed it with output derived from the input, nothing on standard error, and
+   * the same operation exiting 0 on other input. Every run re-checks the observable part: a run
+   * that exits with this code but writes to standard error or produces nothing is a failure.
+   * A nonzero code without an entry is never a success, whatever `okExit` lists (a declared
+   * interface whose behaviour was never observed, or state learned before this was recorded).
+   */
+  exitSemantics?: Record<string, { meaning: string; evidence: string }>;
   output: "text" | "json" | "html" | "xml";
   /** SHA-256 of the program when it was investigated; a different program is not run as this. */
   sha256: string;

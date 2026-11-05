@@ -78,8 +78,8 @@ export const TOOLS = [
   },
   {
     name: "context_run_status",
-    description: "Read a previous run by runId, or list recent runs. Also reports whether the receipt chain is intact. With runId, view counts, projects or slices that run's recorded output without running it again.",
-    inputSchema: obj({ runId: str("Run id."), limit: num("Recent runs to list."), view }),
+    description: "Read a previous run by runId, or list recent runs. Also reports whether the receipt chain is intact. With runId, view counts, projects or slices that run's recorded output without running it again. With artefact, read the exact bytes of an artefact a run produced (base64, bounded slices via offset/length), or release it early with release:true.",
+    inputSchema: obj({ runId: str("Run id."), limit: num("Recent runs to list."), view, artefact: str('The artefact ref a run returned: "sha256:<64 hex>.<grant>". A bare digest from a provenance record is not a read grant and is refused.'), offset: num("Byte offset into the artefact (default 0)."), length: num("Bytes to read (default and maximum 8 MiB)."), release: { type: "boolean", description: "End this grant's hold now instead of at its retention; content no other hold keeps is deleted. The run's record keeps its digest." } }),
   },
   {
     name: "context_compose",
@@ -187,6 +187,15 @@ export async function dispatch(rc: RightClick, name: string, a: Record<string, a
       return viewed(r, v, rerun(r.runId));
     }
     case "context_run_status": {
+      if (a.artefact !== undefined) {
+        if (a.runId !== undefined || a.view !== undefined) throw new Error("artefact reads take only artefact, offset, length and release");
+        if (a.release !== undefined) {
+          if (a.release !== true || a.offset !== undefined || a.length !== undefined) throw new Error("release takes only artefact and release:true");
+          return rc.releaseArtefact(a.artefact);
+        }
+        return rc.readArtefact(a.artefact, { offset: a.offset, length: a.length });
+      }
+      if (a.offset !== undefined || a.length !== undefined || a.release !== undefined) throw new Error("offset, length and release apply only to an artefact");
       const v = parseView(a.view);
       if (!a.runId) return { ...(rc.runStatus({ limit: a.limit }) as object), chain: await rc.verifyReceipts() };
       return viewed(rc.runStatus({ runId: a.runId }) as { runId: string; output?: unknown }, v, rerun(a.runId));

@@ -1,0 +1,9 @@
+# The evaluator's own CE1 and CE4 scripts (unmodified, print-only), run against both commits
+# ce1-parseusage-enum-value.mjs sha256 de79bddd07a561536603f53679ac34b6774c2992f7232819275a97d510fce7c2
+# ce4-multivalue-option.mjs     sha256 5d8a77e023994d6b5acd98fccfcf73e7c2dab2f1724f59147f30e6e451b8a6c3
+$ node ce1-parseusage-enum-value.mjs at-20bc3a7 at-23fb754
+at-20bc3a7 {"flags":["-n","--numeric-sort","--sort"],"arg":"numeric"}
+at-23fb754 {"flags":["-n","--numeric-sort"],"arg":null}
+$ node ce4-multivalue-option.mjs at-20bc3a7 at-23fb754
+at-20bc3a7 {"crop":{"arg":"<x>"},"resize":{"arg":"<w>"},"tiffcp -c":{"arg":null},"tiffcp -r":{"arg":null}}
+at-23fb754 {"crop":{"arg":"<x>"},"resize":{"arg":"<w>"},"tiffcp -c":{"arg":"lzw[:opts]"},"tiffcp -r":{"arg":"#"}}

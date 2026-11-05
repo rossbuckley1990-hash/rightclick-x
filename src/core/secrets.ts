@@ -2,6 +2,8 @@
 // credential when the name it travels under says so (headers, parameters, inputs). Redaction
 // happens where data leaves the request that needed it: audit logs, stored records, exports.
 
+import { isArtefactValue, summariseArtefactValue } from "./artefact-shape.ts";
+
 const SENSITIVE = /^(authorization|proxy-authorization|cookie|set-cookie)$|api[-_]?key|apikey|access[-_]?key|secret|token|passw(or)?d|passphrase|credential|session[-_]?(id|key|token)?$|private[-_]?key|bearer|signature/i;
 
 export const REDACTED = "[redacted]";
@@ -30,6 +32,8 @@ function redactUninspected(value: unknown): unknown {
 export function redact<T>(value: T, depth = 0): T {
   if (value === null || typeof value !== "object") return value;
   if (depth >= MAX_REDACTION_DEPTH) return redactUninspected(value) as T;
+  // Artefact payloads never leave the request in logs, records or exports: identity and size only.
+  if (isArtefactValue(value)) return summariseArtefactValue(value) as T;
   if (Array.isArray(value)) return value.map((v) => redact(v, depth + 1)) as T;
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(value as Record<string, unknown>)) {

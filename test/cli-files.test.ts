@@ -34,7 +34,7 @@ else cat
 fi
 `, { mode: 0o755 });
   const calls: Array<{ args: string[]; files: Record<string, string> | undefined }> = [];
-  const sandbox: Sandbox = { ...base!, async run(program, args, options) { if (options?.purpose === "execution") calls.push({ args, files: options.files }); return base!.run(program, args, options); } };
+  const sandbox: Sandbox = { ...base!, async run(program, args, options) { if (options?.purpose === "execution") calls.push({ args, files: options.files as Record<string, string> | undefined }); return base!.run(program, args, options); } };
   const store = new FileStore(`${dir}/state.json`);
   const rc = await RightClick.create({ directories: [], store, authority: { investigate: [bin] }, sandbox });
   await rc.learn({ source: `cli:${bin}` });

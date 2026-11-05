@@ -19,6 +19,11 @@ import { execFileSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { validateFileNames } from "./cli-files.ts";
 
+/** Bounds on byte-exact artefacts (mirrors ARTEFACT_LIMITS in artefacts.ts, which is not imported
+ *  here so the sandbox keeps no dependency on the store). */
+const ARTEFACT_BYTES_MAX = 64 * 1024 * 1024;
+const ARTEFACT_OUTPUTS_MAX = 32;
+
 export type LocaleProfileName = "c" | "utf8";
 
 export interface SandboxLocale {
@@ -186,6 +191,12 @@ export interface SandboxRun {
   stdoutEncoding?: "unsupported";
   /** Bounded base64 of the raw stdout bytes, retained only when they are not valid UTF-8. */
   stdoutBase64?: string;
+  /** Exact stdout bytes, when requested with `rawStdout`. */
+  stdoutRaw?: Uint8Array;
+  /** Exact bytes of each requested output file the program created as a regular file. */
+  outputs?: Record<string, Uint8Array>;
+  /** Requested outputs that were not returned, and why (missing, not a regular file, too large). */
+  outputRefusals?: Record<string, string>;
 }
 
 /** How many raw bytes of an undecodable stdout are retained as evidence. */
@@ -506,7 +517,18 @@ export interface Sandbox {
   enforces: string[];
   forRevalidation?: () => Sandbox;
   /** purpose is host telemetry only; it grants no authority and changes no confinement. */
-  run(bin: string, args: string[], opts?: { stdin?: string; files?: Record<string, string>; limits?: Partial<SandboxLimits>; purpose?: "execution" | "investigation" | "revalidation" | "agent-run" }): Promise<SandboxRun>;
+  run(bin: string, args: string[], opts?: {
+    /** Standard input. A string is UTF-8 text; bytes are written exactly. */
+    stdin?: string | Uint8Array;
+    /** Input files staged in the run's private directory. A string is UTF-8 text; bytes are written exactly. */
+    files?: Record<string, string | Uint8Array>;
+    /** Flat names of files the program is expected to create; their exact bytes are returned in `outputs`. */
+    collect?: string[];
+    /** Return stdout's exact bytes as well as its text decoding. */
+    rawStdout?: boolean;
+    limits?: Partial<SandboxLimits>;
+    purpose?: "execution" | "investigation" | "revalidation" | "agent-run";
+  }): Promise<SandboxRun>;
 }
 
 let probed: Promise<Sandbox | null> | undefined;
@@ -620,6 +642,14 @@ export function makeSandbox(kind: Sandbox["kind"], policy: SandboxPolicy, bwrap 
       const path = await import("node:path");
       const limits = { ...policy.limits, ...opts.limits };
       validateFileNames(Object.keys(opts.files ?? {}));
+      const collect = opts.collect ?? [];
+      if (collect.length) {
+        validateFileNames(collect);
+        if (collect.length > ARTEFACT_OUTPUTS_MAX) throw new Error(`at most ${ARTEFACT_OUTPUTS_MAX} output files may be collected (HTTP 400 equivalent: nothing was run)`);
+        const inputs = new Set(Object.keys(opts.files ?? {}).map((n) => n.normalize("NFC").toLowerCase()));
+        const clash = collect.find((n) => inputs.has(n.normalize("NFC").toLowerCase()));
+        if (clash) throw new Error(`output ${JSON.stringify(clash)} has the same name as an input file (HTTP 400 equivalent: nothing was run)`);
+      }
       const work = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "rcx-sbx-")));
       const given = new Set<string>();
       try {
@@ -743,6 +773,42 @@ export function makeSandbox(kind: Sandbox["kind"], policy: SandboxPolicy, bwrap 
           } catch {
             /* gone */
           }
+          // Requested outputs are read before the directory goes: regular files only, never through a
+          // link (a program could point one at a host file), each bounded by the per-file limit.
+          // Any run that did not complete cleanly returns none, so a partial file is never a result.
+          const outputs: Record<string, Uint8Array> = {};
+          const outputRefusals: Record<string, string> = {};
+          const clean = !timedOut && !truncated && !limit;
+          // The bytes are read through a descriptor opened without following a link and checked to
+          // be the same regular file, never by path again: a process that outlived the program's
+          // group could otherwise swap the file for a link between the check and the read, and this
+          // process (not the sandbox) would read the host file the link names.
+          const cap = Math.min(limits.maxFileBytes, ARTEFACT_BYTES_MAX);
+          for (const name of collect) {
+            if (!clean) { outputRefusals[name] = "the run did not complete cleanly; no output is returned"; continue; }
+            let st;
+            try { st = fs.lstatSync(path.join(work, name)); } catch { outputRefusals[name] = "was not created"; continue; }
+            if (st.isSymbolicLink()) { outputRefusals[name] = "is a symbolic link, not a file the program wrote"; continue; }
+            if (!st.isFile()) { outputRefusals[name] = "is not a regular file"; continue; }
+            if (st.size > cap) { outputRefusals[name] = `exceeds ${cap} bytes`; continue; }
+            let fd: number | undefined;
+            try {
+              fd = fs.openSync(path.join(work, name), fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW | fs.constants.O_NONBLOCK);
+              const fst = fs.fstatSync(fd);
+              if (!fst.isFile() || fst.ino !== st.ino || fst.dev !== st.dev) { outputRefusals[name] = "changed while it was being collected; not returned"; continue; }
+              if (fst.size > cap) { outputRefusals[name] = `exceeds ${cap} bytes`; continue; }
+              // One byte more than its size shows a file still being written to.
+              const buf = Buffer.alloc(fst.size + 1);
+              let n = 0;
+              for (let r; n < buf.length && (r = fs.readSync(fd, buf, n, buf.length - n, n)) > 0;) n += r;
+              if (n !== fst.size) { outputRefusals[name] = "changed while it was being collected; not returned"; continue; }
+              outputs[name] = buf.subarray(0, n);
+            } catch {
+              outputRefusals[name] = "could not be read as a regular file; not returned";
+            } finally {
+              if (fd !== undefined) fs.closeSync(fd);
+            }
+          }
           fs.rmSync(work, { recursive: true, force: true });
           const decoded = limit === "supervision" ? { text: "", valid: true } : decodeProcessOutput(out, truncated);
           done({
@@ -758,6 +824,8 @@ export function makeSandbox(kind: Sandbox["kind"], policy: SandboxPolicy, bwrap 
             workDir: work,
             stdoutBytes: out.length,
             ...(decoded.valid ? {} : { stdoutEncoding: "unsupported" as const, stdoutBase64: out.subarray(0, RAW_EVIDENCE_BYTES).toString("base64") }),
+            ...(opts.rawStdout && limit !== "supervision" ? { stdoutRaw: out } : {}),
+            ...(collect.length ? { outputs, outputRefusals } : {}),
             ...(limit ? { limit } : {}),
           });
         };

@@ -114,12 +114,17 @@ test("documented-options interface: a caller chooses a documented option with a 
   await rc.learn({ source: `cli:${p}` });
   const inv = rc.graph.list().find((c) => c.id === "cli:folder:invoke");
   assert.ok(inv, rc.graph.list().map((c) => c.id).join(", "));
-  assert.ok(!(inv!.invoke as any).options.allowed.some((o: any) => o.flags.includes("-o")), "an option that writes files is not offered");
+  // An option that writes a file is offered only in a write role: its value must be an output the
+  // caller declared, created in the sandbox's private directory and returned as an artefact.
+  assert.equal((inv!.invoke as any).options.allowed.find((o: any) => o.flags.includes("-o"))?.file, "write", "an option that writes files is offered only in its write role");
   const r = await rc.run(inv!.id, { input: "abcdefghij\n", options: ["-w", "4"] });
   assert.equal(r.output, "abcd\nefgh\nij\n", String(r.error));
   const refused = await rc.run(inv!.id, { input: "abc\n", options: ["-o", "out.txt"] });
   assert.equal(refused.status, "failed");
-  assert.match(String(refused.error), /excluded from this capability/);
+  assert.match(String(refused.error), /writes a file: its value must be a name declared in "outputs"/);
+  const hostPath = await rc.run(inv!.id, { input: "abc\n", options: ["-o", "/tmp/out.txt"], outputs: ["out.txt"] });
+  assert.equal(hostPath.status, "failed");
+  assert.match(String(hostPath.error), /host path/);
   assert.equal(refused.healing, undefined, "a caller's mistake triggers no repair");
   const card: any = rc.card(inv!);
   assert.ok(card.verification.evidence.some((e: string) => /option -w width .* changes the output/.test(e)), card.verification.evidence.join(" | "));
@@ -239,7 +244,7 @@ test("manual pages: arguments with optional suffixes, optional arguments, and op
   assert.deepEqual(validateOptions(["--trace=FOO:$1", "-t", "BAR", "--color", "--color=always"], allowed), ["--trace=FOO:$1", "-t", "BAR", "--color", "--color=always"]);
 });
 
-test("documented-options interface offers options that write to standard output, not ones that write files", { skip, timeout: 60_000 }, async () => {
+test("documented-options interface offers options that write to standard output, and file-writing ones only in their write role", { skip, timeout: 60_000 }, async () => {
   const dir = tmp("rcx-gen-");
   const help = `usage: conv [-o toformat] [-O outname] [file]
   -o toformat   Write the data in the given format to standard output.
@@ -247,9 +252,11 @@ test("documented-options interface offers options that write to standard output,
   const p = program(dir, "conv", `if [ "$1" = "--help" ]; then cat <<'EOF'\n${help}\nEOF\nexit 0; fi\nif [ "$1" = "-o" ]; then shift 2; /usr/bin/tr a-z A-Z; else /bin/cat; fi`);
   const rc = await RightClick.create({ directories: [], authority: { investigate: [`${dir}/`] } });
   await rc.learn({ source: `cli:${p}` });
-  const allowed = ((rc.graph.get("cli:conv:invoke")?.invoke as any)?.options?.allowed ?? []).map((o: any) => o.flags[0]);
+  const specs = (rc.graph.get("cli:conv:invoke")?.invoke as any)?.options?.allowed ?? [];
+  const allowed = specs.map((o: any) => o.flags[0]);
   assert.ok(allowed.includes("-o"), allowed.join(" "));
-  assert.ok(!allowed.includes("-O"), allowed.join(" "));
+  assert.equal(specs.find((o: any) => o.flags[0] === "-o")?.file, undefined, "-o's value is a format, not a file");
+  assert.equal(specs.find((o: any) => o.flags[0] === "-O")?.file, "write", "-O writes a file, so its value must be a declared output");
 });
 
 test("synopsis spellings are retained without inventing constituent single-letter options", () => {
